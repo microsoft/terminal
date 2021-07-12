@@ -95,18 +95,39 @@ bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const 
 TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& movement)
 {
     ptrdiff_t move = movement;
+    FAIL_FAST_IF_MSG(move < 0, "Use -= instead");
+
     auto newPos = _pos;
-    while (move > 0 && !_exceeded)
+    while (move > 0)
     {
-        _exceeded = !_bounds.IncrementInBounds(newPos);
+        if (newPos.X == _bounds.RightInclusive())
+        {
+            newPos.X = _bounds.Left();
+            newPos.Y++;
+            if (newPos.Y > _bounds.BottomInclusive())
+            {
+                newPos.Y = _bounds.Top();
+                _exceeded = true;
+                break;
+            }
+        }
+        else
+        {
+            newPos.X++;
+            _exceeded = false;
+        }
         move--;
     }
-    while (move < 0 && !_exceeded)
+
+    if (newPos.X != _pos.X)
     {
-        _exceeded = !_bounds.DecrementInBounds(newPos);
-        move++;
+        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
+        _attrIter += diff;
     }
-    _SetPos(newPos);
+
+    _pos = newPos;
+
+    _GenerateView();
     return (*this);
 }
 
@@ -118,7 +139,26 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 // - Reference to self after movement.
 TextBufferCellIterator& TextBufferCellIterator::operator-=(const ptrdiff_t& movement)
 {
-    return this->operator+=(-movement);
+    ptrdiff_t move = movement;
+    FAIL_FAST_IF_MSG(move > 0, "Use += instead");
+
+    auto newPos = _pos;
+    while (move > 0 && !_exceeded)
+    {
+        _exceeded = !_bounds.DecrementInBounds(newPos);
+        move--;
+    }
+
+    if (newPos.X != _pos.X)
+    {
+        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
+        _attrIter += diff;
+    }
+
+    _pos = newPos;
+
+    _GenerateView();
+    return (*this);
 }
 
 // Routine Description:
@@ -198,30 +238,6 @@ ptrdiff_t TextBufferCellIterator::operator-(const TextBufferCellIterator& it)
 }
 
 // Routine Description:
-// - Sets the coordinate position that this iterator will inspect within the text buffer on dereference.
-// Arguments:
-// - newPos - The new coordinate position.
-void TextBufferCellIterator::_SetPos(const COORD newPos)
-{
-    if (newPos.Y != _pos.Y)
-    {
-        _pRow = s_GetRow(_buffer, newPos);
-        _attrIter = _pRow->GetAttrRow().cbegin();
-        _pos.X = 0;
-    }
-
-    if (newPos.X != _pos.X)
-    {
-        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
-        _attrIter += diff;
-    }
-
-    _pos = newPos;
-
-    _GenerateView();
-}
-
-// Routine Description:
 // - Shortcut for pulling the row out of the text buffer embedded in the screen information.
 //   We'll hold and cache this to improve performance over looking it up every time.
 // Arguments:
@@ -238,10 +254,9 @@ const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const COOR
 // - Updates the internal view. Call after updating row, attribute, or positions.
 void TextBufferCellIterator::_GenerateView()
 {
-    _view = OutputCellView(_pRow->GetCharRow().GlyphAt(_pos.X),
-                           _pRow->GetCharRow().DbcsAttrAt(_pos.X),
-                           *_attrIter,
-                           TextAttributeBehavior::Stored);
+    _view.UpdateText(_pRow->GetCharRow().GlyphAt(_pos.X));
+    _view.UpdateDbcsAttribute(_pRow->GetCharRow().DbcsAttrAt(_pos.X));
+    _view.UpdateTextAttribute(*_attrIter);
 }
 
 // Routine Description:

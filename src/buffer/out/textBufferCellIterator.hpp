@@ -50,7 +50,6 @@ public:
     COORD Pos() const noexcept;
 
 protected:
-    void _SetPos(const COORD newPos);
     void _GenerateView();
     static const ROW* s_GetRow(const TextBuffer& buffer, const COORD pos);
 
