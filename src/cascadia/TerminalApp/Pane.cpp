@@ -412,7 +412,8 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             // This mildly reprodes ApplySplitDefinitions, but is different in
             // that it does not want to utilize the parent's border to set child
             // borders.
-            //parent->_ApplySplitDefinitions();
+            parent->_ApplySplitDefinitions();
+            /*
             if (parent->_splitState == SplitState::Vertical)
             {
                 Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
@@ -425,6 +426,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             }
             parent->_firstChild->_UpdateBorders();
             parent->_secondChild->_UpdateBorders();
+            */
         };
 
         // If the firstParent and secondParent are the same, then we are just
@@ -459,10 +461,57 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 // - direction: The direction to search in from the reference pane.
 // Return Value:
 // - true if the two panes are adjacent.
-bool _IsAdjacent(const std::shared_ptr<Pane> first, const std::shared_ptr<Pane> second, const FocusDirection& direction) {
+bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
+                 const Pane::PanePoint firstOffset,
+                 const std::shared_ptr<Pane> second,
+                 const Pane::PanePoint secondOffset,
+                 const FocusDirection& direction) {
+    // Since float equality is tricky (arithmetic is non-associative, commutative),
+    // test if the two numbers are within an epsilon distance of each other.
+    auto floatEqual = [](float left, float right) {
+        return abs(left - right) < 1e-4F;
+    };
+
+    // When checking containment in a range, the range is half-closed, i.e. [x, x+w].
+    // If the direction is left test that the left side of the first element is
+    // next to the right side of the second element, and that the top left
+    // corner of the first element is within the second element's height 
     if (direction == FocusDirection::Left)
     {
-        return true;
+        auto sharesBorders = floatEqual(firstOffset.x, secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
+        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
+
+       return sharesBorders && withinHeight;
+    }
+    // If the direction is right test that the right side of the first element is
+    // next to the left side of the second element, and that the top left
+    // corner of the first element is within the second element's height 
+    else if (direction == FocusDirection::Right)
+    {
+        auto sharesBorders = floatEqual(firstOffset.x + gsl::narrow_cast<float>(first->GetRootElement().ActualWidth()), secondOffset.x);
+        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
+
+       return sharesBorders && withinHeight;
+    }
+    // If the direction is up test that the top side of the first element is
+    // next to the bottom side of the second element, and that the top left
+    // corner of the first element is within the second element's width
+    else if (direction == FocusDirection::Up)
+    {
+        auto sharesBorders = floatEqual(firstOffset.y, secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
+        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
+
+       return sharesBorders && withinWidth;
+    }
+    // If the direction is down test that the bottom side of the first element is
+    // next to the top side of the second element, and that the top left
+    // corner of the first element is within the second element's width
+    else if (direction == FocusDirection::Down)
+    {
+        auto sharesBorders = floatEqual(firstOffset.y + gsl::narrow_cast<float>(first->GetRootElement().ActualHeight()), secondOffset.y);
+        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
+
+       return sharesBorders && withinWidth;
     }
     return false;
 }
@@ -481,9 +530,10 @@ bool _IsAdjacent(const std::shared_ptr<Pane> first, const std::shared_ptr<Pane> 
 // - A tuple of Panes, the first being the focused pane if found, and the second
 //   being the adjacent pane if it exists, and a bool that represents if the move
 //   goes out of bounds.
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_FindNeighborFromFocus(const FocusDirection& direction,
-                                                                                 std::shared_ptr<Pane> focus,
-                                                                                 const bool focusIsSecondSide)
+Pane::FocusNeighborSearch Pane::_FindNeighborFromFocus(const FocusDirection& direction,
+                                                       FocusNeighborSearch focus,
+                                                       const bool focusIsSecondSide,
+                                                       Pane::PanePoint offset)
 {
     // Test if the move will go out of boundaries. E.g. if the focus is already
     // on the second child of some pane and it attempts to move right, there
@@ -491,23 +541,34 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_FindNeighborFromF
     if ((focusIsSecondSide && (direction == FocusDirection::Right || direction == FocusDirection::Down)) ||
         (!focusIsSecondSide && (direction == FocusDirection::Left || direction == FocusDirection::Up)))
     {
-        return { focus, nullptr };
+        return focus;
     }
 
     // If we are a leaf node test if we adjacent to the focus node
     if (_IsLeaf()) {
-        if (_IsAdjacent(focus, shared_from_this(), direction)) {
-            return { focus, shared_from_this() };
+        if (_IsAdjacent(focus.focus, focus.focusOffset, shared_from_this(), offset, direction)) {
+            focus.neighbor = shared_from_this();
         }
-        return { focus, nullptr };
+        return focus;
     }
     
-    auto focusNeighborPair = _firstChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide);
-    if (focusNeighborPair.second) {
-        return focusNeighborPair;
+    auto firstOffset = offset;
+    auto secondOffset = offset;
+    // The second child has an offset depending on the split
+    if (_splitState == SplitState::Horizontal)
+    {
+        secondOffset.y += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualHeight());
+    }
+    else
+    {
+        secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
+    }
+    auto focusNeighborSearch = _firstChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide, firstOffset);
+    if (focusNeighborSearch.neighbor) {
+        return focusNeighborSearch;
     }
 
-    return _secondChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide);
+    return _secondChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide, secondOffset);
 }
 
 
@@ -516,47 +577,71 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_FindNeighborFromF
 //   visually adjacent pane by direction.
 // Arguments:
 // - direction: The direction to search in from the focused pane.
+// - offset: The offset, with the top-left corner being (0,0), that the current pane is relative to the root.
 // Return Value:
 // - A tuple of Panes, the first being the focused pane if found, and the second
 //   being the adjacent pane if it exists, and a bool that represents if the move
 //   goes out of bounds.
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_FindFocusAndNeighbor(const FocusDirection& direction) {
+Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& direction, const Pane::PanePoint offset) {
     // If we are the currently focused pane, return ourselves
     if (_IsLeaf())
     {
-        return { _lastActive ? shared_from_this() : nullptr, nullptr};
+        return { _lastActive ? shared_from_this() : nullptr, nullptr, offset};
     }
 
 
-    auto focusNeighborPair = _firstChild->_FindFocusAndNeighbor(direction);
-    // If we have both the focus element and its neighbor, we are done
-    if (focusNeighborPair.first && focusNeighborPair.second)
+    // Search the first child, which has no offset from the parent pane
+    auto firstOffset = offset;
+    auto secondOffset = offset;
+    // The second child has an offset depending on the split
+    if (_splitState == SplitState::Horizontal)
     {
-        return focusNeighborPair;
+        secondOffset.y += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualHeight());
+    }
+    else
+    {
+        secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
+    }
+
+    auto focusNeighborSearch = _firstChild->_FindFocusAndNeighbor(direction, firstOffset);
+    // If we have both the focus element and its neighbor, we are done
+    if (focusNeighborSearch.focus && focusNeighborSearch.neighbor)
+    {
+        return focusNeighborSearch;
     }
     // if we only found the focus, then we search the second branch for the
     // neighbor.
-    if (focusNeighborPair.first)
+    if (focusNeighborSearch.focus)
     {
-        return _secondChild->_FindNeighborFromFocus(direction, focusNeighborPair.first, false);
+        // If we can possibly have both sides of a direction, check if the sibling has the neighbor
+        if (DirectionMatchesSplit(direction, _splitState))
+        {
+            return _secondChild->_FindNeighborFromFocus(direction, focusNeighborSearch, false, secondOffset);
+        }
+        return focusNeighborSearch;
     }
 
     // If we didn't find the focus at all, we need to search the second branch
     // for the focus (and possibly its neighbor).
-    focusNeighborPair = _secondChild->_FindFocusAndNeighbor(direction);
+    focusNeighborSearch = _secondChild->_FindFocusAndNeighbor(direction, secondOffset);
     // We found both so we are done.
-    if (focusNeighborPair.first && focusNeighborPair.second)
+    if (focusNeighborSearch.focus && focusNeighborSearch.neighbor)
     {
-        return focusNeighborPair;
+        return focusNeighborSearch;
     }
     // We only found the focus, which means that its neighbor might be in the
     // first branch.
-    if (focusNeighborPair.first)
+    if (focusNeighborSearch.focus)
     {
-        return _firstChild->_FindNeighborFromFocus(direction, focusNeighborPair.first, true);
+        // If we can possibly have both sides of a direction, check if the sibling has the neighbor
+        if (DirectionMatchesSplit(direction, _splitState))
+        {
+            return _firstChild->_FindNeighborFromFocus(direction, focusNeighborSearch, true, firstOffset);
+        }
+        return focusNeighborSearch;
     }
 
-    return { nullptr, nullptr};
+    return { nullptr, nullptr, offset};
 }
 
 // Method Description:
@@ -598,13 +683,15 @@ bool Pane::MovePane(const FocusDirection& direction)
     // Since the direction is the same as our split, it is possible that we must
     // swap a pane from one child to the other child.
     // We now must keep track of state while we recurse.
-    auto focusNeighborPair = _FindFocusAndNeighbor(direction);
+    auto focusNeighborPair = _FindFocusAndNeighbor(direction, { 0, 0 });
 
     // Once we have found the focused pane and its neighbor, wherever they may
     // be, we can swap them.
-    if (focusNeighborPair.first && focusNeighborPair.second)
+    if (focusNeighborPair.focus && focusNeighborPair.neighbor)
     {
-        return SwapPanes(focusNeighborPair.first, focusNeighborPair.second);
+        auto swapped = SwapPanes(focusNeighborPair.focus, focusNeighborPair.neighbor);
+        focusNeighborPair.focus->_FocusFirstChild();
+        return swapped;
     }
 
     return false;

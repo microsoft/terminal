@@ -91,6 +91,8 @@ public:
     DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
 
 private:
+    struct PanePoint;
+    struct FocusNeighborSearch;
     struct SnapSizeResult;
     struct SnapChildrenSizeResult;
     struct LayoutSizeNode;
@@ -141,10 +143,14 @@ private:
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _FindNeighborFromFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
-                                                                               std::shared_ptr<Pane> focus,
-                                                                               const bool focusIsSecondSide);
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _FindFocusAndNeighbor(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+
+    bool _IsAdjacent(const std::shared_ptr<Pane> first, const PanePoint firstOffset, const std::shared_ptr<Pane> second, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    FocusNeighborSearch _FindNeighborFromFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                                                               FocusNeighborSearch focus,
+                                                                               const bool focusIsSecondSide,
+                                                                               const PanePoint offset);
+    FocusNeighborSearch _FindFocusAndNeighbor(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                                                                  const Pane::PanePoint offset);
 
     void _CloseChild(const bool closeFirst);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
@@ -208,6 +214,20 @@ private:
     }
 
     static void _SetupResources();
+
+    struct PanePoint
+    {
+        float x;
+        float y;
+    };
+
+    struct FocusNeighborSearch
+    {
+        std::shared_ptr<Pane> focus;
+        std::shared_ptr<Pane> neighbor;
+        PanePoint focusOffset;
+    };
+
 
     struct SnapSizeResult
     {
