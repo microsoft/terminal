@@ -618,6 +618,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetFontFeatures(_fontFeatures);
             _renderEngine->SetFontAxes(_fontAxes);
         }
+        _terminal->SetFontInfo(_actualFont);
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.

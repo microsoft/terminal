@@ -35,7 +35,15 @@
         <Pack>true</Pack>
         <PackagePath>runtimes\win-x86\native\</PackagePath>
       </None>
+      <None Include="$(RepoBinPath)\Win32\$(Configuration)\api-ms-win-core-synch-l1-2-0.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x86\native\</PackagePath>
+      </None>
       <None Include="$(RepoBinPath)\x64\$(Configuration)\PublicTerminalCore.dll">
+        <Pack>true</Pack>
+        <PackagePath>runtimes\win-x64\native\</PackagePath>
+      </None>
+      <None Include="$(RepoBinPath)\x64\$(Configuration)\api-ms-win-core-synch-l1-2-0.dll">
         <Pack>true</Pack>
         <PackagePath>runtimes\win-x64\native\</PackagePath>
       </None>

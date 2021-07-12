@@ -50,6 +50,7 @@ reserializes
 rlig
 runtimes
 shcha
+slnt
 Sos
 timestamped
 tokenizes

@@ -88,6 +88,15 @@
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
 
+            <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
+                                     x:Uid="Nav_ProfileDefaults"
+                                     Tag="GlobalProfile_Nav"
+                                     Visibility="{x:Bind ShowBaseLayerMenuItem}">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE81E;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
         </muxc:NavigationView.MenuItems>
 
         <muxc:NavigationView.PaneFooter>

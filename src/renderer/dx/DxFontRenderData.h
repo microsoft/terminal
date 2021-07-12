@@ -83,8 +83,7 @@ namespace Microsoft::Console::Render
         void SetAxes(std::unordered_map<std::wstring_view, int32_t> axes);
 
     private:
-        void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
-        Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
+        using FontAttributeMapKey = uint32_t;
 
         bool _didUserSetFeatures{ false };
         // The font features to apply to the text
@@ -94,23 +93,28 @@ namespace Microsoft::Console::Render
         // The font axes to apply to the text
         std::vector<DWRITE_FONT_AXIS_VALUE> _axesVector;
 
-        ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
+        // We use this to identify font variants with different attributes.
+        static FontAttributeMapKey _ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept
+        {
+            return (weight << 16) | (style << 8) | stretch;
+        };
 
-        ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+        void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 
-        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>> _textFormatMap;
-        std::unordered_map<DxFontInfo, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>> _fontFaceMap;
+        std::unordered_map<FontAttributeMapKey, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>> _textFormatMap;
+        std::unordered_map<FontAttributeMapKey, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>> _fontFaceMap;
 
         ::Microsoft::WRL::ComPtr<IBoxDrawingEffect> _boxDrawingEffect;
-
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> _systemFontFallback;
-        mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _nearbyCollection;
+        ::Microsoft::WRL::ComPtr<IDWriteFactory1> _dwriteFactory;
+        ::Microsoft::WRL::ComPtr<IDWriteTextAnalyzer1> _dwriteTextAnalyzer;
+
         std::wstring _userLocaleName;
         DxFontInfo _defaultFontInfo;
-
-        float _fontSize;
         til::size _glyphCell;
         DWRITE_LINE_SPACING _lineSpacing;
         LineMetrics _lineMetrics;
+        float _fontSize;
     };
 }
