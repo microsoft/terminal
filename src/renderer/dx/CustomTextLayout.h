@@ -16,6 +16,17 @@
 
 namespace Microsoft::Console::Render
 {
+    enum class AxisTagPresence : BYTE
+    {
+        AxisTagPresenceNone = 0x00,
+        AxisTagPresenceWeight = 0x01,
+        AxisTagPresenceWidth = 0x02,
+        AxisTagPresenceItalic = 0x04,
+        AxisTagPresenceSlant = 0x08,
+        AxisTagPresenceOpticalSize = 0x10,
+    };
+    DEFINE_ENUM_FLAG_OPERATORS(AxisTagPresence);
+
     class CustomTextLayout : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IDWriteTextAnalysisSource, IDWriteTextAnalysisSink>
     {
     public:

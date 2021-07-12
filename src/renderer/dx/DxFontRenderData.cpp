@@ -93,7 +93,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
     return _defaultFontInfo.GetStretch();
 }
 
-[[nodiscard]] std::vector<DWRITE_FONT_FEATURE> DxFontRenderData::DefaultFontFeatures()
+[[nodiscard]] const std::vector<DWRITE_FONT_FEATURE>& DxFontRenderData::DefaultFontFeatures() const
 {
     return _featureVector;
 }
@@ -507,12 +507,13 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
 // - axes - the axes to update our map with
 void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int32_t> axes)
 {
-    _axesMap.clear();
+    _axesVector.clear();
 
     // Update our axis map with the provided axes
     for (const auto [axis, value] : axes)
     {
-        _axesMap[axis] = value;
+        const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(gsl::at(axis, 0), gsl::at(axis, 1), gsl::at(axis, 2), gsl::at(axis, 3));
+        _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow<float>(value) });
     }
 }
 
@@ -727,16 +728,10 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
 
     // If the OS supports IDWriteTextFormat3, set the font axes
     ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
-    if (!FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))) && !_axesMap.empty())
+    if (!FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))) && !_axesVector.empty())
     {
-        std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
-        for (const auto [axis, value] : _axesMap)
-        {
-            const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(gsl::at(axis, 0), gsl::at(axis, 1), gsl::at(axis, 2), gsl::at(axis, 3));
-            axesVector.push_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow<float>(value) });
-        }
-        DWRITE_FONT_AXIS_VALUE const* axesList = &gsl::at(axesVector, 0);
-        format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(axesVector.size()));
+        DWRITE_FONT_AXIS_VALUE const* axesList = &gsl::at(_axesVector, 0);
+        format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(_axesVector.size()));
     }
 
     return format;

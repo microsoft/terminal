@@ -14,6 +14,9 @@
 
 using namespace Microsoft::Console::Render;
 
+// 10 elements from DWRITE_FONT_STRETCH_UNDEFINED (0) to DWRITE_FONT_STRETCH_ULTRA_EXPANDED (9)
+static constexpr auto fontStretchEnumToVal = std::array{ 100.0f, 50.0f, 62.5f, 75.0f, 87.5f, 100.0f, 112.5f, 125.0f, 150.0f, 200.0f };
+
 // Routine Description:
 // - Creates a CustomTextLayout object for calculating which glyphs should be placed and where
 // Arguments:
@@ -395,8 +398,7 @@ CATCH_RETURN()
         DWRITE_FONT_FEATURE* featureList = features.data();
         DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { &featureList[0], gsl::narrow<uint32_t>(features.size()) };
         DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
-        const uint32_t fontFeatureLengths[1] = { textLength };
-        const auto featureLengthsSpan = gsl::make_span(fontFeatureLengths);
+        const uint32_t fontFeatureLengths[] = { textLength };
 
         // Get the glyphs from the text, retrying if needed.
 
@@ -415,7 +417,7 @@ CATCH_RETURN()
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
                 &typographicFeaturesPointer, // features
-                featureLengthsSpan.data(), // featureLengths
+                fontFeatureLengths, // featureLengths
                 1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
@@ -465,7 +467,7 @@ CATCH_RETURN()
             &run.script,
             _localeName.data(),
             &typographicFeaturesPointer, // features
-            featureLengthsSpan.data(), // featureLengths
+            fontFeatureLengths, // featureLengths
             1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
@@ -1233,28 +1235,13 @@ CATCH_RETURN();
 // - The float value corresponding to the passed in fontStretch
 float CustomTextLayout::_FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept
 {
-    switch (fontStretch)
+    if (fontStretch > fontStretchEnumToVal.size())
     {
-    case DWRITE_FONT_STRETCH_ULTRA_CONDENSED:
-        return 50.0f;
-    case DWRITE_FONT_STRETCH_EXTRA_CONDENSED:
-        return 62.5f;
-    case DWRITE_FONT_STRETCH_CONDENSED:
-        return 75.0f;
-    case DWRITE_FONT_STRETCH_SEMI_CONDENSED:
-        return 87.5f;
-    case DWRITE_FONT_STRETCH_MEDIUM:
-        return 100.0f;
-    case DWRITE_FONT_STRETCH_SEMI_EXPANDED:
-        return 112.5f;
-    case DWRITE_FONT_STRETCH_EXPANDED:
-        return 125.0f;
-    case DWRITE_FONT_STRETCH_EXTRA_EXPANDED:
-        return 150.0f;
-    case DWRITE_FONT_STRETCH_ULTRA_EXPANDED:
-        return 200.0f;
-    default:
-        return 100.0f;
+        return fontStretchEnumToVal[DWRITE_FONT_STRETCH_NORMAL];
+    }
+    else
+    {
+        return fontStretchEnumToVal[fontStretch];
     }
 }
 
@@ -1305,21 +1292,12 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
                                                                      const float fontSize,
                                                                      IDWriteTextFormat3* format)
 {
-    enum AxisTagPresence
-    {
-        AxisTagPresenceNone = 0,
-        AxisTagPresenceWeight = 1,
-        AxisTagPresenceWidth = 2,
-        AxisTagPresenceItalic = 4,
-        AxisTagPresenceSlant = 8,
-        AxisTagPresenceOpticalSize = 16,
-    };
     const auto axesCount = format->GetFontAxisValueCount();
     std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
     axesVector.resize(axesCount);
     format->GetFontAxisValues(axesVector.data(), axesCount);
 
-    uint32_t axisTagPresence = AxisTagPresenceNone;
+    auto axisTagPresence = AxisTagPresence::AxisTagPresenceNone;
     for (const auto& fontAxisValue : axesVector)
     {
         switch (fontAxisValue.axisTag)
@@ -1344,23 +1322,23 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
 
     if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceWeight))
     {
-        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WEIGHT, float(fontWeight) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, float(fontWeight) });
     }
     if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceWidth))
     {
-        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_WIDTH, _FontStretchToWidthAxisValue(fontStretch) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WIDTH, _FontStretchToWidthAxisValue(fontStretch) });
     }
     if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceItalic))
     {
-        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_ITALIC, (fontStyle == DWRITE_FONT_STYLE_ITALIC ? 1.0f : 0.0f) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, (fontStyle == DWRITE_FONT_STYLE_ITALIC ? 1.0f : 0.0f) });
     }
     if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceSlant))
     {
-        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_SLANT, _FontStyleToSlantFixedAxisValue(fontStyle) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, _FontStyleToSlantFixedAxisValue(fontStyle) });
     }
     if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceOpticalSize))
     {
-        axesVector.push_back({ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, _DIPsToPoints(fontSize) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, _DIPsToPoints(fontSize) });
     }
 
     return axesVector;
@@ -1463,6 +1441,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
                                         &mappedFont,
                                         &scale);
 
+                RETURN_LAST_ERROR_IF(!mappedFont.Get());
                 ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
                 RETURN_IF_FAILED(mappedFont.Get()->CreateFontFace(&face));
                 RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, face, scale));
