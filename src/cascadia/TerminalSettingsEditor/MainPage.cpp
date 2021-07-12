@@ -169,14 +169,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // couldn't find the selected item,
-        // fallback to first menu item
-        const auto& firstItem{ menuItems.GetAt(0) };
+        // Couldn't find the selected item, fallback to first menu item
+        // This happens when the selected item was a profile which doesn't exist in the new configuration
+        // We can use menuItemsSTL here because the only things they miss are profile entries.
+        const auto& firstItem{ menuItemsSTL.at(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
-        if (const auto& tag{ SettingsNav().SelectedItem().try_as<MUX::Controls::NavigationViewItem>().Tag() })
-        {
-            _Navigate(unbox_value<hstring>(tag));
-        }
+        _Navigate(unbox_value<hstring>(firstItem.Tag()));
     }
 
     void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
