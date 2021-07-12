@@ -182,7 +182,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_canSendVTMouseInput(modifiers))
         {
-            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            auto adjustment = 0;
+            if (_core->ScrollOffset() > 0)
+            {
+                adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
+            }
+            _core->SendMouseEvent({ terminalPosition.x(), terminalPosition.y() - adjustment }, pointerUpdateKind, modifiers, 0, buttonState);
         }
         else if (buttonState.isLeftButtonDown)
         {
