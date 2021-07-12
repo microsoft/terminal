@@ -52,7 +52,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] DWRITE_FONT_STRETCH DefaultFontStretch() noexcept;
 
         // The font features of the default font
-        [[nodiscard]] const std::vector<DWRITE_FONT_FEATURE>& DefaultFontFeatures() const;
+        [[nodiscard]] const std::vector<DWRITE_FONT_FEATURE>& DefaultFontFeatures() const noexcept;
 
         // The DirectWrite format object representing the size and other text properties to be applied (by default)
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DefaultTextFormat();

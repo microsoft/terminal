@@ -405,7 +405,6 @@ CATCH_RETURN()
         DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { &featureList[0], gsl::narrow<uint32_t>(features.size()) };
         DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
         const uint32_t fontFeatureLengths[] = { textLength };
-        const auto featureLengthsSpan = gsl::make_span(fontFeatureLengths);
 
         // Get the glyphs from the text, retrying if needed.
 
@@ -424,7 +423,7 @@ CATCH_RETURN()
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
                 &typographicFeaturesPointer, // features
-                featureLengthsSpan.data(), // featureLengths
+                &fontFeatureLengths[0], // featureLengths
                 1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
@@ -474,7 +473,7 @@ CATCH_RETURN()
             &run.script,
             _localeName.data(),
             &typographicFeaturesPointer, // features
-            featureLengthsSpan.data(), // featureLengths
+            &fontFeatureLengths[0], // featureLengths
             1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
@@ -1334,7 +1333,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> CustomTextLayout::_GetAxisVector(const DWRIT
 
     if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceWeight))
     {
-        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, float(fontWeight) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, gsl::narrow<float>(fontWeight) });
     }
     if (!WI_IsFlagSet(axisTagPresence, AxisTagPresence::AxisTagPresenceWidth))
     {
