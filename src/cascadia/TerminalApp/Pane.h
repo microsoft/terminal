@@ -146,11 +146,11 @@ private:
 
     bool _IsAdjacent(const std::shared_ptr<Pane> first, const PanePoint firstOffset, const std::shared_ptr<Pane> second, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
     FocusNeighborSearch _FindNeighborFromFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
-                                                                               FocusNeighborSearch focus,
-                                                                               const bool focusIsSecondSide,
-                                                                               const PanePoint offset);
+                                               FocusNeighborSearch focus,
+                                               const bool focusIsSecondSide,
+                                               const PanePoint offset);
     FocusNeighborSearch _FindFocusAndNeighbor(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
-                                                                                  const Pane::PanePoint offset);
+                                              const Pane::PanePoint offset);
 
     void _CloseChild(const bool closeFirst);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
@@ -176,8 +176,6 @@ private:
     winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType) const;
 
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
-
-    
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
@@ -228,7 +226,6 @@ private:
         PanePoint focusOffset;
     };
 
-
     struct SnapSizeResult
     {
         float lower;
@@ -265,5 +262,4 @@ private:
     private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
-
 };

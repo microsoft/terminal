@@ -302,12 +302,11 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
     return false;
 }
 
-
 // Method Description:
 // - Attempts to swap the location of the two given panes in the tree.
 //   Searches the tree starting at this pane to find the parent pane for each of
 //   the arguments, and if both parents are found, replaces the appropriate
-//   child in each. 
+//   child in each.
 // Arguments:
 // - first: A pointer to the first pane to switch.
 // - second: A pointer to the second pane to switch.
@@ -370,7 +369,6 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         findOrAdd(parent->_firstChild);
         findOrAdd(parent->_secondChild);
     }
-
 
     // We should have found either no elements, or both elements.
     // If we only found one parent then the pane SwapPane was called on did not
@@ -436,7 +434,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             firstParent->_firstChild->Closed(firstParent->_firstClosedToken);
             firstParent->_secondChild->Closed(firstParent->_secondClosedToken);
             std::swap(firstParent->_firstChild, firstParent->_secondChild);
-            
+
             updateParent(firstParent);
         }
         else
@@ -462,10 +460,11 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 // Return Value:
 // - true if the two panes are adjacent.
 bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
-                 const Pane::PanePoint firstOffset,
-                 const std::shared_ptr<Pane> second,
-                 const Pane::PanePoint secondOffset,
-                 const FocusDirection& direction) {
+                       const Pane::PanePoint firstOffset,
+                       const std::shared_ptr<Pane> second,
+                       const Pane::PanePoint secondOffset,
+                       const FocusDirection& direction)
+{
     // Since float equality is tricky (arithmetic is non-associative, commutative),
     // test if the two numbers are within an epsilon distance of each other.
     auto floatEqual = [](float left, float right) {
@@ -475,23 +474,23 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // When checking containment in a range, the range is half-closed, i.e. [x, x+w].
     // If the direction is left test that the left side of the first element is
     // next to the right side of the second element, and that the top left
-    // corner of the first element is within the second element's height 
+    // corner of the first element is within the second element's height
     if (direction == FocusDirection::Left)
     {
         auto sharesBorders = floatEqual(firstOffset.x, secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
         auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
 
-       return sharesBorders && withinHeight;
+        return sharesBorders && withinHeight;
     }
     // If the direction is right test that the right side of the first element is
     // next to the left side of the second element, and that the top left
-    // corner of the first element is within the second element's height 
+    // corner of the first element is within the second element's height
     else if (direction == FocusDirection::Right)
     {
         auto sharesBorders = floatEqual(firstOffset.x + gsl::narrow_cast<float>(first->GetRootElement().ActualWidth()), secondOffset.x);
         auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
 
-       return sharesBorders && withinHeight;
+        return sharesBorders && withinHeight;
     }
     // If the direction is up test that the top side of the first element is
     // next to the bottom side of the second element, and that the top left
@@ -501,7 +500,7 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
         auto sharesBorders = floatEqual(firstOffset.y, secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
         auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
 
-       return sharesBorders && withinWidth;
+        return sharesBorders && withinWidth;
     }
     // If the direction is down test that the bottom side of the first element is
     // next to the top side of the second element, and that the top left
@@ -511,11 +510,10 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
         auto sharesBorders = floatEqual(firstOffset.y + gsl::narrow_cast<float>(first->GetRootElement().ActualHeight()), secondOffset.y);
         auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
 
-       return sharesBorders && withinWidth;
+        return sharesBorders && withinWidth;
     }
     return false;
 }
-
 
 // Method Description:
 // - Given the focused pane, and its relative position in the tree, attempt to
@@ -545,13 +543,15 @@ Pane::FocusNeighborSearch Pane::_FindNeighborFromFocus(const FocusDirection& dir
     }
 
     // If we are a leaf node test if we adjacent to the focus node
-    if (_IsLeaf()) {
-        if (_IsAdjacent(focus.focus, focus.focusOffset, shared_from_this(), offset, direction)) {
+    if (_IsLeaf())
+    {
+        if (_IsAdjacent(focus.focus, focus.focusOffset, shared_from_this(), offset, direction))
+        {
             focus.neighbor = shared_from_this();
         }
         return focus;
     }
-    
+
     auto firstOffset = offset;
     auto secondOffset = offset;
     // The second child has an offset depending on the split
@@ -564,13 +564,13 @@ Pane::FocusNeighborSearch Pane::_FindNeighborFromFocus(const FocusDirection& dir
         secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
     }
     auto focusNeighborSearch = _firstChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide, firstOffset);
-    if (focusNeighborSearch.neighbor) {
+    if (focusNeighborSearch.neighbor)
+    {
         return focusNeighborSearch;
     }
 
     return _secondChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide, secondOffset);
 }
-
 
 // Method Description:
 // - Searches the tree to find the currently focused pane, and if it exists, the
@@ -582,13 +582,13 @@ Pane::FocusNeighborSearch Pane::_FindNeighborFromFocus(const FocusDirection& dir
 // - A tuple of Panes, the first being the focused pane if found, and the second
 //   being the adjacent pane if it exists, and a bool that represents if the move
 //   goes out of bounds.
-Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& direction, const Pane::PanePoint offset) {
+Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& direction, const Pane::PanePoint offset)
+{
     // If we are the currently focused pane, return ourselves
     if (_IsLeaf())
     {
-        return { _lastActive ? shared_from_this() : nullptr, nullptr, offset};
+        return { _lastActive ? shared_from_this() : nullptr, nullptr, offset };
     }
-
 
     // Search the first child, which has no offset from the parent pane
     auto firstOffset = offset;
@@ -641,7 +641,7 @@ Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& dire
         return focusNeighborSearch;
     }
 
-    return { nullptr, nullptr, offset};
+    return { nullptr, nullptr, offset };
 }
 
 // Method Description:
@@ -2023,7 +2023,7 @@ bool Pane::FocusPane(const uint32_t id)
 // Method Description:
 // - Recursive function that finds a pane with the given ID
 // Arguments:
-// - The ID of the pane we want to find 
+// - The ID of the pane we want to find
 // Return Value:
 // - A pointer to the pane with the given ID, if found.
 std::shared_ptr<Pane> Pane::FindPane(const uint32_t id)

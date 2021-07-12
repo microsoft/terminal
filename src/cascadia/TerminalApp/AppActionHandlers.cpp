@@ -314,7 +314,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
-                                        const ActionEventArgs& args)
+                                       const ActionEventArgs& args)
     {
         if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
