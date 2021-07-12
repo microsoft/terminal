@@ -33,6 +33,8 @@ namespace Microsoft::Console::Render
         IRenderTarget& operator=(IRenderTarget&&) = default;
 
     public:
+        virtual void TriggerIntereaction(IntereactionType type) = 0;
+
         virtual void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) = 0;
         virtual void TriggerRedraw(const COORD* const pcoord) = 0;
         virtual void TriggerRedrawCursor(const COORD* const pcoord) = 0;
@@ -40,7 +42,6 @@ namespace Microsoft::Console::Render
         virtual void TriggerRedrawAll() = 0;
         virtual void TriggerTeardown() noexcept = 0;
 
-        virtual void TriggerSelection() = 0;
         virtual void TriggerScroll() = 0;
         virtual void TriggerScroll(const COORD* const pcoordDelta) = 0;
         virtual void TriggerCircling() = 0;

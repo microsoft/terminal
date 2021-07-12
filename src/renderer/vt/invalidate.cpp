@@ -10,6 +10,12 @@ using namespace Microsoft::Console::Types;
 
 using namespace Microsoft::Console::Render;
 
+
+[[nodiscard]] HRESULT VtEngine::InvalidateIntereaction(IRenderData* /*pData*/, IntereactionType /*type*/) noexcept
+{
+    return S_OK;
+}
+
 // Routine Description:
 // - Notifies us that the system has requested a particular pixel area of the
 //      client rectangle should be redrawn. (On WM_PAINT)
@@ -21,21 +27,6 @@ using namespace Microsoft::Console::Render;
 // - S_OK
 [[nodiscard]] HRESULT VtEngine::InvalidateSystem(const RECT* const /*prcDirtyClient*/) noexcept
 {
-    return S_OK;
-}
-
-// Routine Description:
-// - Notifies us that the console has changed the selection region and would
-//      like it updated
-// Arguments:
-// - rectangles - Vector of rectangles to draw, line by line
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
-{
-    // Selection shouldn't be handled bt the VT Renderer Host, it should be
-    //      handled by the client.
-
     return S_OK;
 }
 

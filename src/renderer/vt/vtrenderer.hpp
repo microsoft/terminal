@@ -45,7 +45,8 @@ namespace Microsoft::Console::Render
 
         virtual ~VtEngine() override = default;
 
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateIntereaction(IRenderData* pData, IntereactionType type) noexcept override;
+
         [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;

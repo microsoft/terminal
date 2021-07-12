@@ -319,10 +319,14 @@ void Renderer::TriggerTeardown() noexcept
 // - <none>
 // Return Value:
 // - <none>
-void Renderer::TriggerSelection()
+void Renderer::TriggerIntereaction(IntereactionType type)
 {
     try
     {
+        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            LOG_IF_FAILED(pEngine->InvalidateIntereaction(_pData, type));
+        });
+
         _NotifyPaintFrame();
     }
     CATCH_LOG();
@@ -363,8 +367,6 @@ bool Renderer::_CheckViewportAndScroll()
             LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
         }
 
-        _ScrollPreviousSelection(coordDelta);
-
         return true;
     }
 
@@ -400,8 +402,6 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
     });
-
-    _ScrollPreviousSelection(*pcoordDelta);
 
     _NotifyPaintFrame();
 }
@@ -621,32 +621,6 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     return std::nullopt;
 }
 
-// Method Description:
-// - Offsets all of the selection rectangles we might be holding onto
-//   as the previously selected area. If the whole viewport scrolls,
-//   we need to scroll these areas also to ensure they're invalidated
-//   properly when the selection further changes.
-// Arguments:
-// - delta - The scroll delta
-// Return Value:
-// - <none> - Updates internal state instead.
-void Renderer::_ScrollPreviousSelection(const til::point delta)
-{
-    if (delta != til::point{ 0, 0 })
-    {
-        for (auto& sr : _previousSelection)
-        {
-            // Get a rectangle representing this piece of the selection.
-            til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
-
-            // Offset the entire existing rectangle by the delta.
-            rc += delta;
-
-            // Store it back into the vector.
-            sr = Viewport::FromInclusive(rc).ToExclusive();
-        }
-    }
-}
 
 // Method Description:
 // - Adds another Render engine to this renderer. Future rendering calls will

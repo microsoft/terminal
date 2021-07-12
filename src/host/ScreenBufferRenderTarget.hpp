@@ -20,6 +20,7 @@ Author(s):
 
 #pragma once
 #include "../renderer/inc/IRenderTarget.hpp"
+#include "../renderer/inc/IRenderEngine.hpp"
 
 // fwdecl
 class SCREEN_INFORMATION;
@@ -28,13 +29,13 @@ class ScreenBufferRenderTarget final : public Microsoft::Console::Render::IRende
 {
 public:
     ScreenBufferRenderTarget(SCREEN_INFORMATION& owner);
+    void TriggerIntereaction(Microsoft::Console::Render::IntereactionType type) override;
 
     void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
     void TriggerRedraw(const COORD* const pcoord) override;
     void TriggerRedrawCursor(const COORD* const pcoord) override;
     void TriggerRedrawAll() override;
     void TriggerTeardown() noexcept override;
-    void TriggerSelection() override;
     void TriggerScroll() override;
     void TriggerScroll(const COORD* const pcoordDelta) override;
     void TriggerCircling() override;

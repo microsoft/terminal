@@ -65,7 +65,10 @@ namespace Microsoft::Console::Render
 
         static GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 
-        std::vector<SMALL_RECT> _GetSelectionRects(IRenderData* pData) const;
+        std::vector<SMALL_RECT> _GetSelectionRects(IRenderData* pData) noexcept;
+        std::vector<SMALL_RECT> _CalculateCurrentSelection(IRenderData* pData) noexcept;
+
+        void _ScrollPreviousSelection(const til::point delta);
 
         static bool s_IsAllSpaces(const std::wstring_view v)
         {
@@ -91,6 +94,8 @@ namespace Microsoft::Console::Render
 
         std::vector<Cluster> _clusterBuffer;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
+
+        std::vector<SMALL_RECT> _previousSelection;
     };
 
     inline Microsoft::Console::Render::RenderEngineBase::~RenderEngineBase() {}

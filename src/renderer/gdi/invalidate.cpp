@@ -45,6 +45,21 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
         _szInvalidScroll = szInvalidScrollNew;
     }
 
+    _ScrollPreviousSelection(*pcoordDelta);
+
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT GdiEngine::InvalidateIntereaction(IRenderData* pData, IntereactionType type) noexcept
+{
+    if (type == IntereactionType::Selection)
+    {
+        const auto rects = _CalculateCurrentSelection(pData);
+        LOG_IF_FAILED(InvalidateSelection(_previousSelection));
+        LOG_IF_FAILED(InvalidateSelection(rects));
+        _previousSelection = rects;
+    }
+
     return S_OK;
 }
 

@@ -50,6 +50,19 @@ UiaEngine::UiaEngine(IUiaEventDispatcher* dispatcher) :
     return S_OK;
 }
 
+[[nodiscard]] HRESULT UiaEngine::InvalidateIntereaction(IRenderData* pData, IntereactionType type) noexcept
+{
+    if (type == IntereactionType::Selection)
+    {
+        const auto rects = _CalculateCurrentSelection(pData);
+        LOG_IF_FAILED(InvalidateSelection(_previousSelection));
+        LOG_IF_FAILED(InvalidateSelection(rects));
+        _previousSelection = rects;
+    }
+
+    return S_OK;
+}
+
 // Routine Description:
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes

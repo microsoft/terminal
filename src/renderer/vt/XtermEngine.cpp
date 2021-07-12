@@ -480,6 +480,8 @@ try
         _scrollDelta += delta;
     }
 
+    _ScrollPreviousSelection(*pcoordDelta);
+
     return S_OK;
 }
 CATCH_RETURN();

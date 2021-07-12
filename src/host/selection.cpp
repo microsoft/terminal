@@ -120,7 +120,7 @@ void Selection::_PaintSelection() const
 {
     if (ServiceLocator::LocateGlobals().pRender != nullptr)
     {
-        ServiceLocator::LocateGlobals().pRender->TriggerSelection();
+        ServiceLocator::LocateGlobals().pRender->TriggerIntereaction(Microsoft::Console::Render::IntereactionType::Selection);
     }
 }
 
