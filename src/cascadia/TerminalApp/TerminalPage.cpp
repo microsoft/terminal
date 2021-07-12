@@ -1394,11 +1394,8 @@ namespace winrt::TerminalApp::implementation
             // TODO: Modify this when https://github.com/microsoft/terminal/issues/877 is resolved
             menuShortcut.Key(static_cast<Windows::System::VirtualKey>(keyChord.Vkey()));
 
-            // inspect the modifiers from the KeyChord and set the flags in the XAML value
-            auto modifiers = keyChord.Modifiers();
-
             // add the modifiers to the shortcut
-            menuShortcut.Modifiers(modifiers);
+            menuShortcut.Modifiers(keyChord.Modifiers());
 
             // add to the menu
             menuItem.KeyboardAccelerators().Append(menuShortcut);
