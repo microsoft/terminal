@@ -313,6 +313,24 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        {
+            if (realArgs.FocusDirection() == FocusDirection::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                _MovePane(realArgs.FocusDirection());
+                args.Handled(true);
+            }
+        }
+    }
+
     void TerminalPage::_HandleCopyText(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {

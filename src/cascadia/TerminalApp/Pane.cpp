@@ -302,6 +302,314 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
     return false;
 }
 
+
+// Method Description:
+// - Attempts to swap the location of the two given panes in the tree.
+//   Searches the tree starting at this pane to find the parent pane for each of
+//   the arguments, and if both parents are found, replaces the appropriate
+//   child in each. 
+// Arguments:
+// - first: A pointer to the first pane to switch.
+// - second: A pointer to the second pane to switch.
+// Return Value:
+// - true if a swap was performed.
+bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
+{
+    // If there is nothing to swap, just return.
+    if (first == second || _IsLeaf())
+    {
+        return false;
+    }
+
+    std::unique_lock lock{ _createCloseLock };
+
+    // Recurse through the tree to find the parent panes of each pane that is
+    // being swapped.
+    std::vector<std::shared_ptr<Pane>> parents;
+    parents.push_back(shared_from_this());
+    std::shared_ptr<Pane> firstParent = nullptr;
+    std::shared_ptr<Pane> secondParent = nullptr;
+
+    while (parents.size() > 0)
+    {
+        auto parent = parents.back();
+        parents.pop_back();
+
+        if (!parent || parent->_IsLeaf())
+        {
+            continue;
+        }
+
+        // Check if the child of the current parent is one of the two panes we
+        // are swapping. If so, record whose parent it belongs to. Otherwise
+        // add the child to the stack to be searched.
+        // This does not perform the swap of panes at this time because we do
+        // not want to leave the tree in an inconsistent state (one pane belongs
+        // to multiple other panes).
+        auto findOrAdd = [&](auto& current) {
+            if (current == first)
+            {
+                firstParent = parent;
+            }
+            else if (current == second)
+            {
+                secondParent = parent;
+            }
+            else
+            {
+                if (!current->_IsLeaf())
+                {
+                    parents.push_back(current);
+                }
+                return false;
+            }
+
+            return true;
+        };
+
+        findOrAdd(parent->_firstChild);
+        findOrAdd(parent->_secondChild);
+    }
+
+
+    // We should have found either no elements, or both elements.
+    // If we only found one parent then the pane SwapPane was called on did not
+    // contain both panes as leaves, as could happen if the tree was modified
+    // after the pointers were found but before we reached this function.
+    if (firstParent && secondParent)
+    {
+        // Swap size/display information of the two panes.
+        std::swap(first->_borders, second->_borders);
+
+        // Replace the old child with new one, and revoke appropriate event
+        // handlers.
+        auto replaceChild = [&](auto& parent, auto oldChild, auto newChild) {
+            // Revoke the old handlers
+            if (parent->_firstChild == oldChild)
+            {
+                parent->_firstChild->Closed(parent->_firstClosedToken);
+                parent->_firstChild = newChild;
+            }
+            else if (parent->_secondChild == oldChild)
+            {
+                parent->_secondChild->Closed(parent->_secondClosedToken);
+                parent->_secondChild = newChild;
+            }
+            // Clear now to ensure that we can add the child's grid to us later
+            parent->_root.Children().Clear();
+        };
+
+        // Make sure that the right event handlers are set, and the children
+        // are placed in the appropriate locations in the grid.
+        auto updateParent = [&](auto& parent) {
+            parent->_SetupChildCloseHandlers();
+            parent->_root.Children().Clear();
+            parent->_root.Children().Append(parent->_firstChild->GetRootElement());
+            parent->_root.Children().Append(parent->_secondChild->GetRootElement());
+            // TODO: properly switch panes so they display correctly
+            // Make sure they have the correct borders, and also that they are
+            // placed in the right location in the grid.
+            // This mildly reprodes ApplySplitDefinitions, but is different in
+            // that it does not want to utilize the parent's border to set child
+            // borders.
+            //parent->_ApplySplitDefinitions();
+            if (parent->_splitState == SplitState::Vertical)
+            {
+                Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
+                Controls::Grid::SetColumn(_secondChild->GetRootElement(), 1);
+            }
+            else if (parent->_splitState == SplitState::Horizontal)
+            {
+                Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
+                Controls::Grid::SetRow(_secondChild->GetRootElement(), 1);
+            }
+            parent->_firstChild->_UpdateBorders();
+            parent->_secondChild->_UpdateBorders();
+        };
+
+        // If the firstParent and secondParent are the same, then we are just
+        // swapping the first child and second child of that parent.
+        if (firstParent == secondParent)
+        {
+            firstParent->_firstChild->Closed(firstParent->_firstClosedToken);
+            firstParent->_secondChild->Closed(firstParent->_secondClosedToken);
+            std::swap(firstParent->_firstChild, firstParent->_secondChild);
+            
+            updateParent(firstParent);
+        }
+        else
+        {
+            replaceChild(firstParent, first, second);
+            replaceChild(secondParent, second, first);
+            updateParent(firstParent);
+            updateParent(secondParent);
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+// Method Description:
+// - Given two panes, test whether the `direction` side of first is adjacent to second.
+// Arguments:
+// - first: The reference pane.
+// - second: the pane to test adjacency with.
+// - direction: The direction to search in from the reference pane.
+// Return Value:
+// - true if the two panes are adjacent.
+bool _IsAdjacent(const std::shared_ptr<Pane> first, const std::shared_ptr<Pane> second, const FocusDirection& direction) {
+    if (direction == FocusDirection::Left)
+    {
+        return true;
+    }
+    return false;
+}
+
+
+// Method Description:
+// - Given the focused pane, and its relative position in the tree, attempt to
+//   find its visual neighbor within the current pane's tree.
+//   The neighbor, if it exists, will be a leaf pane.
+// Arguments:
+// - direction: The direction to search in from the focused pane.
+// - focus: the focused pane
+// - focusIsSecondSide: If the focused pane is on the "second" side (down/right of split)
+//   relative to the branch being searched
+// Return Value:
+// - A tuple of Panes, the first being the focused pane if found, and the second
+//   being the adjacent pane if it exists, and a bool that represents if the move
+//   goes out of bounds.
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_FindNeighborFromFocus(const FocusDirection& direction,
+                                                                                 std::shared_ptr<Pane> focus,
+                                                                                 const bool focusIsSecondSide)
+{
+    // Test if the move will go out of boundaries. E.g. if the focus is already
+    // on the second child of some pane and it attempts to move right, there
+    // can't possibly be a neighbor to be found in the first child.
+    if ((focusIsSecondSide && (direction == FocusDirection::Right || direction == FocusDirection::Down)) ||
+        (!focusIsSecondSide && (direction == FocusDirection::Left || direction == FocusDirection::Up)))
+    {
+        return { focus, nullptr };
+    }
+
+    // If we are a leaf node test if we adjacent to the focus node
+    if (_IsLeaf()) {
+        if (_IsAdjacent(focus, shared_from_this(), direction)) {
+            return { focus, shared_from_this() };
+        }
+        return { focus, nullptr };
+    }
+    
+    auto focusNeighborPair = _firstChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide);
+    if (focusNeighborPair.second) {
+        return focusNeighborPair;
+    }
+
+    return _secondChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide);
+}
+
+
+// Method Description:
+// - Searches the tree to find the currently focused pane, and if it exists, the
+//   visually adjacent pane by direction.
+// Arguments:
+// - direction: The direction to search in from the focused pane.
+// Return Value:
+// - A tuple of Panes, the first being the focused pane if found, and the second
+//   being the adjacent pane if it exists, and a bool that represents if the move
+//   goes out of bounds.
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_FindFocusAndNeighbor(const FocusDirection& direction) {
+    // If we are the currently focused pane, return ourselves
+    if (_IsLeaf())
+    {
+        return { _lastActive ? shared_from_this() : nullptr, nullptr};
+    }
+
+
+    auto focusNeighborPair = _firstChild->_FindFocusAndNeighbor(direction);
+    // If we have both the focus element and its neighbor, we are done
+    if (focusNeighborPair.first && focusNeighborPair.second)
+    {
+        return focusNeighborPair;
+    }
+    // if we only found the focus, then we search the second branch for the
+    // neighbor.
+    if (focusNeighborPair.first)
+    {
+        return _secondChild->_FindNeighborFromFocus(direction, focusNeighborPair.first, false);
+    }
+
+    // If we didn't find the focus at all, we need to search the second branch
+    // for the focus (and possibly its neighbor).
+    focusNeighborPair = _secondChild->_FindFocusAndNeighbor(direction);
+    // We found both so we are done.
+    if (focusNeighborPair.first && focusNeighborPair.second)
+    {
+        return focusNeighborPair;
+    }
+    // We only found the focus, which means that its neighbor might be in the
+    // first branch.
+    if (focusNeighborPair.first)
+    {
+        return _firstChild->_FindNeighborFromFocus(direction, focusNeighborPair.first, true);
+    }
+
+    return { nullptr, nullptr};
+}
+
+// Method Description:
+// - Attempts to swap places of the focused pane with one of our children. This
+//   will swap with the visually adjacent leaf pane if one exists in the
+//   direction requested, maintaining the existing tree structure.
+//   This breaks down into a few possible cases
+//   - If the move direction would encounter the edge of the pane, no move occurs
+//   - If the focused pane has a single neighbor according to the direction,
+//     then it will swap with it.
+//   - If the focused pane has multiple neighbors, it will swap with the
+//     first-most leaf of the neighboring panes.
+// Arguments:
+// - direction: The direction to move the focused pane in.
+// Return Value:
+// - true if we or a child handled this pane move request.
+bool Pane::MovePane(const FocusDirection& direction)
+{
+    // If we're a leaf, do nothing. We can't possibly swap anything.
+    if (_IsLeaf())
+    {
+        return false;
+    }
+
+    // If we get a request to move to the previous pane return false because
+    // that needs to be handled at the tab level.
+    if (direction == FocusDirection::Previous)
+    {
+        return false;
+    }
+
+    // If the move direction does not match the split direction, the focused pane
+    // and its neighbor must necessarily be contained within the same child.
+    if (!DirectionMatchesSplit(direction, _splitState))
+    {
+        return _firstChild->MovePane(direction) || _secondChild->MovePane(direction);
+    }
+
+    // Since the direction is the same as our split, it is possible that we must
+    // swap a pane from one child to the other child.
+    // We now must keep track of state while we recurse.
+    auto focusNeighborPair = _FindFocusAndNeighbor(direction);
+
+    // Once we have found the focused pane and its neighbor, wherever they may
+    // be, we can swap them.
+    if (focusNeighborPair.first && focusNeighborPair.second)
+    {
+        return SwapPanes(focusNeighborPair.first, focusNeighborPair.second);
+    }
+
+    return false;
+}
+
 // Method Description:
 // - Called when our attached control is closed. Triggers listeners to our close
 //   event, if we're a leaf pane.
@@ -1623,6 +1931,36 @@ bool Pane::FocusPane(const uint32_t id)
         }
     }
     return false;
+}
+
+// Method Description:
+// - Recursive function that finds a pane with the given ID
+// Arguments:
+// - The ID of the pane we want to find 
+// Return Value:
+// - A pointer to the pane with the given ID, if found.
+std::shared_ptr<Pane> Pane::FindPane(const uint32_t id)
+{
+    if (_IsLeaf())
+    {
+        if (id == _id)
+        {
+            return shared_from_this();
+        }
+    }
+    else
+    {
+        if (auto pane = _firstChild->FindPane(id))
+        {
+            return pane;
+        }
+        if (auto pane = _secondChild->FindPane(id))
+        {
+            return pane;
+        }
+    }
+
+    return nullptr;
 }
 
 // Method Description:

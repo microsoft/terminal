@@ -235,6 +235,7 @@ namespace winrt::TerminalApp::implementation
         void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
         bool _SelectTab(const uint32_t tabIndex);
         void _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        void _MovePane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
         winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;

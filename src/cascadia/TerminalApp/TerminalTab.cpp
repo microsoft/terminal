@@ -497,6 +497,31 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+
+    // Method Description:
+    // - Attempt to move a separator between panes, as to resize each child on
+    //   either size of the separator. See Pane::ResizePane for details.
+    // Arguments:
+    // - direction: The direction to move the separator in.
+    // Return Value:
+    // - <none>
+    void TerminalTab::MovePane(const FocusDirection& direction)
+    {
+        if (direction == FocusDirection::Previous)
+        {
+            if (auto lastPane = _rootPane->FindPane(_mruPanes.at(1)))
+            {
+                _rootPane->SwapPanes(_activePane, lastPane);
+            }
+        }
+        else
+        {
+            // NOTE: This _must_ be called on the root pane, so that it can propagate
+            // throughout the entire tree.
+            _rootPane->MovePane(direction);
+        }
+    }
+
     bool TerminalTab::FocusPane(const uint32_t id)
     {
         return _rootPane->FocusPane(id);

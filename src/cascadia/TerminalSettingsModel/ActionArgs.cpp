@@ -12,6 +12,7 @@
 #include "SwitchToTabArgs.g.cpp"
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
+#include "MovePaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
@@ -278,6 +279,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
+                        directionString)
+        };
+    }
+
+    winrt::hstring MovePaneArgs::GenerateName() const
+    {
+        winrt::hstring directionString;
+        switch (FocusDirection())
+        {
+        case FocusDirection::Left:
+            directionString = RS_(L"DirectionLeft");
+            break;
+        case FocusDirection::Right:
+            directionString = RS_(L"DirectionRight");
+            break;
+        case FocusDirection::Up:
+            directionString = RS_(L"DirectionUp");
+            break;
+        case FocusDirection::Down:
+            directionString = RS_(L"DirectionDown");
+            break;
+        case FocusDirection::Previous:
+            return RS_(L"MovePaneToLastUsedPane");
+        }
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"MovePaneWithArgCommandKey")),
                         directionString)
         };
     }

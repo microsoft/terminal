@@ -158,6 +158,12 @@ namespace Microsoft.Terminal.Settings.Model
         FocusDirection FocusDirection { get; };
     };
 
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    {
+        MovePaneArgs(FocusDirection direction);
+        FocusDirection FocusDirection { get; };
+    };
+
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
         Int32 Delta { get; };

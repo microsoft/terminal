@@ -238,6 +238,7 @@
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
+        "movePane",
         "moveTab",
         "newTab",
         "newWindow",
@@ -508,6 +509,23 @@
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
               "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane."
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
+    "MovePaneAction": {
+      "description": "Arguments corresponding to a Move Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "movePane" },
+            "direction": {
+              "$ref": "#/definitions/FocusDirection",
+              "default": "left",
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane."
             }
           }
         }
@@ -952,6 +970,7 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
+              { "$ref": "#/definitions/MovePaneAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
