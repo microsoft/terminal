@@ -73,7 +73,6 @@ using namespace Microsoft::Console::Types;
             _virtualTop--;
         }
     }
-    _circled = false;
 
     // If we deferred a cursor movement during the frame, make sure we put the
     //      cursor in the right place before we end the frame.
@@ -82,7 +81,12 @@ using namespace Microsoft::Console::Types;
         RETURN_IF_FAILED(_MoveCursor(_deferredCursorPos));
     }
 
-    RETURN_IF_FAILED(_Flush());
+    if (!_circled)
+    {
+        RETURN_IF_FAILED(_Flush());
+    }
+
+    _circled = false;
 
     return S_OK;
 }
