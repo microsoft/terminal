@@ -1049,6 +1049,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Focus(FocusState::Pointer);
         }
 
+        // Mark that this pointer event actually started within our bounds.
+        // We'll need this later, for PointerMoved events.
         _pointerPressedInBounds = true;
 
         if (type == Windows::Devices::Input::PointerDeviceType::Touch)
@@ -1105,6 +1107,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         _focused,
                                         pixelPosition);
 
+            // GH#9109 - Only start an auto-scroll when the drag actually
+            // started within our bounds. Otherwise, someone could start a drag
+            // outside the terminal control, drag into the padding, and trick us
+            // into starting to scroll.
             if (_focused && _pointerPressedInBounds && point.Properties().IsLeftButtonPressed())
             {
                 // We want to find the distance relative to the bounds of the
