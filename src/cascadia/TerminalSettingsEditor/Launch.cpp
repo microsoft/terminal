@@ -20,6 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_LaunchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
 
+#if 0
         // BODGY
         // Xaml code generator for x:Bind to this will fail to find UnloadObject() on Launch class.
         // To work around, check it ourselves on construction and FindName to force load.
@@ -28,6 +29,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             FindName(L"DefaultTerminalDropdown");
         }
+#endif
     }
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
