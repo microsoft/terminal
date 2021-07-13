@@ -404,27 +404,23 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             parent->_root.Children().Clear();
             parent->_root.Children().Append(parent->_firstChild->GetRootElement());
             parent->_root.Children().Append(parent->_secondChild->GetRootElement());
-            // TODO: properly switch panes so they display correctly
             // Make sure they have the correct borders, and also that they are
             // placed in the right location in the grid.
-            // This mildly reprodes ApplySplitDefinitions, but is different in
+            // This mildly reproduces ApplySplitDefinitions, but is different in
             // that it does not want to utilize the parent's border to set child
             // borders.
-            parent->_ApplySplitDefinitions();
-            /*
             if (parent->_splitState == SplitState::Vertical)
             {
-                Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
-                Controls::Grid::SetColumn(_secondChild->GetRootElement(), 1);
+                Controls::Grid::SetColumn(parent->_firstChild->GetRootElement(), 0);
+                Controls::Grid::SetColumn(parent->_secondChild->GetRootElement(), 1);
             }
             else if (parent->_splitState == SplitState::Horizontal)
             {
-                Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
-                Controls::Grid::SetRow(_secondChild->GetRootElement(), 1);
+                Controls::Grid::SetRow(parent->_firstChild->GetRootElement(), 0);
+                Controls::Grid::SetRow(parent->_secondChild->GetRootElement(), 1);
             }
             parent->_firstChild->_UpdateBorders();
             parent->_secondChild->_UpdateBorders();
-            */
         };
 
         // If the firstParent and secondParent are the same, then we are just
@@ -439,6 +435,8 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         }
         else
         {
+            // Replace both children before updating display to ensure
+            // that the grid elements are not attached to multiple panes
             replaceChild(firstParent, first, second);
             replaceChild(secondParent, second, first);
             updateParent(firstParent);
@@ -471,7 +469,7 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
         return abs(left - right) < 1e-4F;
     };
 
-    // When checking containment in a range, the range is half-closed, i.e. [x, x+w].
+    // When checking containment in a range, the range is half-closed, i.e. [x, x+w).
     // If the direction is left test that the left side of the first element is
     // next to the right side of the second element, and that the top left
     // corner of the first element is within the second element's height
