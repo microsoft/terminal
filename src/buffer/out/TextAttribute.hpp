@@ -212,7 +212,7 @@ constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexce
 #ifdef UNIT_TESTING
 
 #define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format( \
-    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
+    L## #attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX
 {
