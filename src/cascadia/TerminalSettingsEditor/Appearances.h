@@ -67,9 +67,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // AppearanceViewModel is so we can continue to have the 'Text' grouping
         // we currently have in xaml, since that grouping has some settings that
         // are defined in AppearanceConfig and some that are not.
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile(), FontFace);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile(), FontSize);
-        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile(), FontWeight);
+        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontFace);
+        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontSize);
+        OBSERVABLE_PROJECTED_SETTING(_appearance.SourceProfile().FontInfo(), FontWeight);
 
         OBSERVABLE_PROJECTED_SETTING(_appearance, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_SETTING(_appearance, CursorShape);

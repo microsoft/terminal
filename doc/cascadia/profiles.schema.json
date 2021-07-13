@@ -165,6 +165,49 @@
       },
       "type": "object"
     },
+    "FontConfig": {
+      "properties": {
+        "face": {
+          "default": "Cascadia Mono",
+          "description": "Name of the font face used in the profile.",
+          "type": "string"
+        },
+        "size": {
+          "default": 12,
+          "description": "Size of the font in points.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "weight": {
+          "default": "normal",
+          "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\"\n or the corresponding numeric representation of OpenType font weight.",
+          "oneOf": [
+            {
+              "enum": [
+                "thin",
+                "extra-light",
+                "light",
+                "semi-light",
+                "normal",
+                "medium",
+                "semi-bold",
+                "bold",
+                "extra-bold",
+                "black",
+                "extra-black"
+              ],
+              "type": "string"
+            },
+            {
+              "maximum": 990,
+              "minimum": 100,
+              "type": "integer"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -546,12 +589,14 @@
             "action": { "type": "string", "pattern": "openSettings" },
             "target": {
               "type": "string",
-              "default": "settingsFile",
-              "description": "The settings file to open.",
+              "default": "settingsUI",
+              "description": "Opens Settings UI or settings file.",
               "enum": [
                 "settingsFile",
                 "defaultsFile",
-                "allFiles"
+                "allFiles",
+                "settingsUI"
+                
               ]
             }
           }
@@ -641,6 +686,25 @@
               ],
               "default": null,
               "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
+            }
+          }
+        }
+      ]
+    },
+    "CloseTabAction": {
+      "description": "Arguments for a closeTab action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeTab" },
+            "index": {
+              "oneOf": [
+                { "type": "integer" },
+                { "type": "null" }
+              ],
+              "default": null,
+              "description": "Close the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
@@ -897,6 +961,7 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/CloseTabAction" },
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
               { "$ref": "#/definitions/MoveTabAction" },
@@ -1242,6 +1307,11 @@
           "description": "Sets the appearance of the terminal when it is unfocused.",
           "type": ["object", "null"]
         },
+        "font": {
+          "$ref": "#/definitions/FontConfig",
+          "description": "Sets the font options of the terminal.",
+          "type": ["object", "null"]
+        },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
           "oneOf": [
@@ -1358,18 +1428,20 @@
         },
         "fontFace": {
           "default": "Cascadia Mono",
-          "description": "Name of the font face used in the profile.",
-          "type": "string"
+          "description": "[deprecated] Define 'face' within the 'font' object instead.",
+          "type": "string",
+          "deprecated": true
         },
         "fontSize": {
           "default": 12,
-          "description": "Size of the font in points.",
+          "description": "[deprecated] Define 'size' within the 'font' object instead.",
           "minimum": 1,
-          "type": "integer"
+          "type": "integer",
+          "deprecated": true
         },
         "fontWeight": {
           "default": "normal",
-          "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\"\n or the corresponding numeric representation of OpenType font weight.",
+          "description": "[deprecated] Define 'weight' within the 'font' object instead.",
           "oneOf": [
             {
               "enum": [
@@ -1392,7 +1464,8 @@
               "minimum": 100,
               "type": "integer"
             }
-          ]
+          ],
+          "deprecated": true
         },
         "foreground": {
           "$ref": "#/definitions/Color",

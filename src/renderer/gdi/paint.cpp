@@ -328,11 +328,13 @@ using namespace Microsoft::Console::Render;
 
         const auto pPolyTextLine = &_pPolyText[_cPolyText];
 
-        auto& polyString = _polyStrings.emplace_back(cchLine, UNICODE_NULL);
+        auto& polyString = _polyStrings.emplace_back();
+        polyString.reserve(cchLine);
 
         COORD const coordFontSize = _GetFontSize();
 
-        auto& polyWidth = _polyWidths.emplace_back(cchLine, 0);
+        auto& polyWidth = _polyWidths.emplace_back();
+        polyWidth.reserve(cchLine);
 
         // Sum up the total widths the entire line/run is expected to take while
         // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
@@ -343,11 +345,11 @@ using namespace Microsoft::Console::Render;
         {
             const auto& cluster = til::at(clusters, i);
 
-            // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
-            // So replace anything complicated with a replacement character for drawing purposes.
-            polyString[i] = cluster.GetTextAsSingle();
-            polyWidth[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
-            cchCharWidths += polyWidth[i];
+            const auto text = cluster.GetText();
+            polyString += text;
+            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X);
+            cchCharWidths += polyWidth.back();
+            polyWidth.append(text.size() - 1, 0);
         }
 
         // Detect and convert for raster font...
@@ -396,7 +398,7 @@ using namespace Microsoft::Console::Render;
         const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
 
         pPolyTextLine->lpstr = polyString.data();
-        pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
+        pPolyTextLine->n = gsl::narrow<UINT>(polyString.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
@@ -436,9 +438,14 @@ using namespace Microsoft::Console::Render;
 
     if (_cPolyText > 0)
     {
-        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
+        for (size_t i = 0; i != _cPolyText; ++i)
         {
-            hr = E_FAIL;
+            const auto& t = _pPolyText[i];
+            if (!ExtTextOutW(_hdcMemoryContext, t.x, t.y, t.uiFlags, &t.rcl, t.lpstr, t.n, t.pdx))
+            {
+                hr = E_FAIL;
+                break;
+            }
         }
 
         _polyStrings.clear();

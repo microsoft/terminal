@@ -27,22 +27,27 @@ static int _GetActiveAppIconResource()
     return iconResource;
 }
 
-void UpdateWindowIconForActiveMetrics(HWND window)
+HANDLE GetActiveAppIconHandle(int size)
 {
     auto iconResource{ MAKEINTRESOURCEW(_GetActiveAppIconResource()) };
 
+    const auto smXIcon = size == ICON_SMALL ? SM_CXSMICON : SM_CXICON;
+    const auto smYIcon = size == ICON_SMALL ? SM_CYSMICON : SM_CYICON;
+
     // These handles are loaded with LR_SHARED, so they are safe to "leak".
-    HANDLE smallIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_SHARED) };
-    LOG_LAST_ERROR_IF_NULL(smallIcon);
+    HANDLE hIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(smXIcon), GetSystemMetrics(smYIcon), LR_SHARED) };
+    LOG_LAST_ERROR_IF_NULL(hIcon);
 
-    HANDLE largeIcon{ LoadImageW(wil::GetModuleInstanceHandle(), iconResource, IMAGE_ICON, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_SHARED) };
-    LOG_LAST_ERROR_IF_NULL(largeIcon);
+    return hIcon;
+}
 
-    if (smallIcon)
+void UpdateWindowIconForActiveMetrics(HWND window)
+{
+    if (auto smallIcon = GetActiveAppIconHandle(ICON_SMALL))
     {
         SendMessageW(window, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(smallIcon));
     }
-    if (largeIcon)
+    if (auto largeIcon = GetActiveAppIconHandle(ICON_BIG))
     {
         SendMessageW(window, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(largeIcon));
     }

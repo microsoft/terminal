@@ -8,6 +8,7 @@
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace Microsoft::Terminal::Settings::Model::JsonUtils;
+using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 static constexpr std::wstring_view CTRL_KEY{ L"ctrl" };
 static constexpr std::wstring_view SHIFT_KEY{ L"shift" };
@@ -124,7 +125,7 @@ static KeyChord _fromString(const std::wstring_view& wstr)
         }
     }
 
-    KeyModifiers modifiers = KeyModifiers::None;
+    VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
     int32_t vkey = 0;
 
     // Look for ctrl, shift, alt. Anything else might be a key
@@ -134,19 +135,19 @@ static KeyChord _fromString(const std::wstring_view& wstr)
         std::transform(lowercase.begin(), lowercase.end(), lowercase.begin(), std::towlower);
         if (lowercase == CTRL_KEY)
         {
-            modifiers |= KeyModifiers::Ctrl;
+            modifiers |= VirtualKeyModifiers::Control;
         }
         else if (lowercase == ALT_KEY)
         {
-            modifiers |= KeyModifiers::Alt;
+            modifiers |= VirtualKeyModifiers::Menu;
         }
         else if (lowercase == SHIFT_KEY)
         {
-            modifiers |= KeyModifiers::Shift;
+            modifiers |= VirtualKeyModifiers::Shift;
         }
         else if (lowercase == WIN_KEY)
         {
-            modifiers |= KeyModifiers::Windows;
+            modifiers |= VirtualKeyModifiers::Windows;
         }
         else
         {
@@ -195,9 +196,9 @@ static KeyChord _fromString(const std::wstring_view& wstr)
                     // to the user's specified modifiers. ctrl+| should be the same as ctrl+shift+\,
                     // but if we used WI_UpdateFlag, ctrl+shift+\ would turn _off_ Shift because \ doesn't
                     // require it.
-                    WI_SetFlagIf(modifiers, KeyModifiers::Shift, WI_IsFlagSet(oemModifiers, 1U));
-                    WI_SetFlagIf(modifiers, KeyModifiers::Ctrl, WI_IsFlagSet(oemModifiers, 2U));
-                    WI_SetFlagIf(modifiers, KeyModifiers::Alt, WI_IsFlagSet(oemModifiers, 4U));
+                    WI_SetFlagIf(modifiers, VirtualKeyModifiers::Shift, WI_IsFlagSet(oemModifiers, 1U));
+                    WI_SetFlagIf(modifiers, VirtualKeyModifiers::Control, WI_IsFlagSet(oemModifiers, 2U));
+                    WI_SetFlagIf(modifiers, VirtualKeyModifiers::Menu, WI_IsFlagSet(oemModifiers, 4U));
                     foundKey = true;
                 }
             }
@@ -234,22 +235,22 @@ static std::wstring _toString(const KeyChord& chord)
     std::wstring buffer{ L"" };
 
     // Add modifiers
-    if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
+    if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows))
     {
         buffer += WIN_KEY;
         buffer += L"+";
     }
-    if (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl))
+    if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control))
     {
         buffer += CTRL_KEY;
         buffer += L"+";
     }
-    if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
+    if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu))
     {
         buffer += ALT_KEY;
         buffer += L"+";
     }
-    if (WI_IsFlagSet(modifiers, KeyModifiers::Shift))
+    if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift))
     {
         buffer += SHIFT_KEY;
         buffer += L"+";

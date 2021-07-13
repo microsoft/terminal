@@ -8,7 +8,6 @@
     <ProjectName>PublicTerminalCore</ProjectName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
-  <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -21,26 +20,23 @@
     <ClInclude Include="pch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\terminal\input\lib\terminalinput.vcxproj">
+    <ProjectReference Include="$(SolutionDir)src\terminal\input\lib\terminalinput.vcxproj">
       <Project>{1cf55140-ef6a-4736-a403-957e4f7430bb}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\TerminalCore\lib\TerminalCore-lib.vcxproj">
+    <ProjectReference Include="$(SolutionDir)src\cascadia\TerminalCore\lib\TerminalCore-lib.vcxproj">
       <Project>{ca5cad1a-abcd-429c-b551-8562ec954746}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj">
+    <ProjectReference Include="$(SolutionDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\buffer\out\lib\bufferout.vcxproj">
-      <Project>{0cf235bd-2da0-407e-90ee-c467e8bbc714}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj">
+    <ProjectReference Include="$(SolutionDir)src\renderer\base\lib\base.vcxproj">
       <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
     </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\terminal\parser\lib\parser.vcxproj">
-      <Project>{3ae13314-1939-4dfa-9c14-38ca0834050c}</Project>
-    </ProjectReference>
-    <ProjectReference Include="$(OpenConsoleDir)src\renderer\dx\lib\dx.vcxproj">
+    <ProjectReference Include="$(SolutionDir)src\renderer\dx\lib\dx.vcxproj">
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)src\api-ms-win-core-synch-l1-2-0\api-ms-win-core-synch-l1-2-0.vcxproj">
+      <Project>{9CF74355-F018-4C19-81AD-9DC6B7F2C6F5}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>

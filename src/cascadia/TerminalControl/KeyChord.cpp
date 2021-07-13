@@ -6,6 +6,8 @@
 
 #include "KeyChord.g.cpp"
 
+using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     KeyChord::KeyChord() noexcept :
@@ -15,34 +17,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     KeyChord::KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) noexcept :
-        _modifiers{ (ctrl ? Control::KeyModifiers::Ctrl : Control::KeyModifiers::None) |
-                    (alt ? Control::KeyModifiers::Alt : Control::KeyModifiers::None) |
-                    (shift ? Control::KeyModifiers::Shift : Control::KeyModifiers::None) },
+        _modifiers{ (ctrl ? VirtualKeyModifiers::Control : VirtualKeyModifiers::None) |
+                    (alt ? VirtualKeyModifiers::Menu : VirtualKeyModifiers::None) |
+                    (shift ? VirtualKeyModifiers::Shift : VirtualKeyModifiers::None) },
         _vkey{ vkey }
     {
     }
 
     KeyChord::KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey) noexcept :
-        _modifiers{ (ctrl ? Control::KeyModifiers::Ctrl : Control::KeyModifiers::None) |
-                    (alt ? Control::KeyModifiers::Alt : Control::KeyModifiers::None) |
-                    (shift ? Control::KeyModifiers::Shift : Control::KeyModifiers::None) |
-                    (win ? Control::KeyModifiers::Windows : Control::KeyModifiers::None) },
+        _modifiers{ (ctrl ? VirtualKeyModifiers::Control : VirtualKeyModifiers::None) |
+                    (alt ? VirtualKeyModifiers::Menu : VirtualKeyModifiers::None) |
+                    (shift ? VirtualKeyModifiers::Shift : VirtualKeyModifiers::None) |
+                    (win ? VirtualKeyModifiers::Windows : VirtualKeyModifiers::None) },
         _vkey{ vkey }
     {
     }
 
-    KeyChord::KeyChord(Control::KeyModifiers const& modifiers, int32_t vkey) noexcept :
+    KeyChord::KeyChord(VirtualKeyModifiers const& modifiers, int32_t vkey) noexcept :
         _modifiers{ modifiers },
         _vkey{ vkey }
     {
     }
 
-    Control::KeyModifiers KeyChord::Modifiers() noexcept
+    VirtualKeyModifiers KeyChord::Modifiers() noexcept
     {
         return _modifiers;
     }
 
-    void KeyChord::Modifiers(Control::KeyModifiers const& value) noexcept
+    void KeyChord::Modifiers(VirtualKeyModifiers const& value) noexcept
     {
         _modifiers = value;
     }

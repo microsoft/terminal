@@ -53,6 +53,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         TerminalSettings() = default;
 
+        static Model::TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
+                                                                     const Model::Profile& profile,
+                                                                     const Control::IKeyBindings& keybindings);
+
         static Model::TerminalSettingsCreateResult CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
                                                                          guid profileGuid,
                                                                          const Control::IKeyBindings& keybindings);
