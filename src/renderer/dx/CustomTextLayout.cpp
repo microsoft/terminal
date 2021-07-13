@@ -410,6 +410,7 @@ CATCH_RETURN()
 
         int tries = 0;
 
+#pragma warning(suppress : 26485) // so we can pass in the fontFeatureLengths to GetGlyphs without the analyzer complaining
         HRESULT hr = S_OK;
         do
         {
