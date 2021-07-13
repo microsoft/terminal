@@ -9,6 +9,9 @@
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
 #include "VirtualDesktopUtils.h"
+#include "icon.h"
+
+#include <ScopedResourceLoader.h>
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
@@ -77,8 +80,14 @@ AppHost::AppHost() noexcept :
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
+    _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
+
+    if (_window->IsQuakeWindow())
+    {
+        _UpdateTrayIcon();
+    }
 
     _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
@@ -90,6 +99,11 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
+    if (_trayIconData)
+    {
+        Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
+        _trayIconData.reset();
+    }
 
     _window = nullptr;
     _app.Close();
@@ -925,12 +939,26 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
+    if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
+    {
+        // If we're exiting quake mode, we should make our
+        // tray icon disappear.
+        if (_trayIconData)
+        {
+            Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
+            _trayIconData.reset();
+        }
+    }
+    else if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
+    {
+        _UpdateTrayIcon();
+    }
+
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Windows::Foundation::IInspectable&)
-
 {
     const Remoting::SummonWindowBehavior summonArgs{};
     summonArgs.MoveToCurrentDesktop(false);
@@ -938,4 +966,57 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     _HandleSummon(sender, summonArgs);
+}
+
+void AppHost::_HandleTrayIconPressed()
+{
+    // Currently scoping "minimize to tray" to only
+    // the quake window.
+    if (_logic.IsQuakeWindow())
+    {
+        const Remoting::SummonWindowBehavior summonArgs{};
+        summonArgs.DropdownDuration(200);
+        _window->SummonWindow(summonArgs);
+    }
+}
+
+// Method Description:
+// - Creates and adds an icon to the notification tray.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+void AppHost::_UpdateTrayIcon()
+{
+    if (!_trayIconData && _window->GetHandle())
+    {
+        NOTIFYICONDATA nid{};
+
+        // This HWND will receive the callbacks sent by the tray icon.
+        nid.hWnd = _window->GetHandle();
+
+        // App-defined identifier of the icon. The HWND and ID are used
+        // to identify which icon to operate on when calling Shell_NotifyIcon.
+        // Multiple icons can be associated with one HWND, but here we're only
+        // going to be showing one so the ID doesn't really matter.
+        nid.uID = 1;
+
+        nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
+
+        ScopedResourceLoader cascadiaLoader{ L"Resources" };
+
+        nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
+        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), cascadiaLoader.GetLocalizedString(L"AppName").c_str());
+        nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
+        Shell_NotifyIcon(NIM_ADD, &nid);
+
+        // For whatever reason, the NIM_ADD call doesn't seem to set the version
+        // properly, resulting in us being unable to receive the expected notification
+        // events. We actually have to make a separate NIM_SETVERSION call for it to
+        // work properly.
+        nid.uVersion = NOTIFYICON_VERSION_4;
+        Shell_NotifyIcon(NIM_SETVERSION, &nid);
+
+        _trayIconData = nid;
+    }
 }

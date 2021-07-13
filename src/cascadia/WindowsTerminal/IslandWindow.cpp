@@ -18,6 +18,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal;
 using namespace ::Microsoft::Console::Types;
+using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
 
@@ -452,6 +453,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
+            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -506,6 +508,19 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
+    case CM_NOTIFY_FROM_TRAY:
+    {
+        switch (LOWORD(lparam))
+        {
+        case NIN_SELECT:
+        case NIN_KEYSELECT:
+        {
+            _NotifyTrayIconPressedHandlers();
+            return 0;
+        }
+        }
+        break;
+    }
     }
 
     // TODO: handle messages here...
@@ -995,10 +1010,10 @@ void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal
     {
         const auto modifiers = hotkey.Modifiers();
         const auto hotkeyFlags = MOD_NOREPEAT |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Windows) ? MOD_WIN : 0) |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Alt) ? MOD_ALT : 0) |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl) ? MOD_CONTROL : 0) |
-                                 (WI_IsFlagSet(modifiers, KeyModifiers::Shift) ? MOD_SHIFT : 0);
+                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows) ? MOD_WIN : 0) |
+                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu) ? MOD_ALT : 0) |
+                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control) ? MOD_CONTROL : 0) |
+                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift) ? MOD_SHIFT : 0);
 
         // TODO GH#8888: We should display a warning of some kind if this fails.
         // This can fail if something else already bound this hotkey.

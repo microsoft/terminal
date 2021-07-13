@@ -88,6 +88,15 @@
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
 
+            <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
+                                     x:Uid="Nav_ProfileDefaults"
+                                     Tag="GlobalProfile_Nav"
+                                     Visibility="{x:Bind ShowBaseLayerMenuItem}">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE81E;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
         </muxc:NavigationView.MenuItems>
 
         <muxc:NavigationView.PaneFooter>
@@ -107,8 +116,9 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Frame x:Name="contentFrame"
-                   Grid.Row="0" />
+            <ScrollViewer Grid.Row="0">
+                <Frame x:Name="contentFrame" />
+            </ScrollViewer>
             <Grid Grid.Row="1"
                   Height="100"
                   BorderBrush="{ThemeResource SystemBaseLowColor}"

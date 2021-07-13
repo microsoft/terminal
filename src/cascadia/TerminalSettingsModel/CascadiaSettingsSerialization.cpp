@@ -530,14 +530,20 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                     auto matchingProfile = _FindMatchingProfile(profileStub);
                     if (matchingProfile)
                     {
-                        // We found a matching profile, create a child of it and put the modifications there
-                        // (we add a new inheritance layer)
-                        auto childImpl{ matchingProfile->CreateChild() };
-                        childImpl->LayerJson(profileStub);
-                        childImpl->Origin(OriginTag::Fragment);
+                        try
+                        {
+                            // We found a matching profile, create a child of it and put the modifications there
+                            // (we add a new inheritance layer)
+                            auto childImpl{ matchingProfile->CreateChild() };
+                            childImpl->LayerJson(profileStub);
+                            childImpl->Origin(OriginTag::Fragment);
 
-                        // replace parent in _profiles with child
-                        _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                            // replace parent in _profiles with child
+                            _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                        }
+                        catch (...)
+                        {
+                        }
                     }
                 }
                 else
@@ -546,13 +552,19 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                     // (it must have at least a name)
                     if (profileStub.isMember(JsonKey(NameKey)))
                     {
-                        auto newProfile = Profile::FromJson(profileStub);
-                        // Make sure to give the new profile a source, then we add it to our list of profiles
-                        // We don't make modifications to the user's settings file yet, that will happen when
-                        // _AppendDynamicProfilesToUserSettings() is called later
-                        newProfile->Source(source);
-                        newProfile->Origin(OriginTag::Fragment);
-                        _allProfiles.Append(*newProfile);
+                        try
+                        {
+                            auto newProfile = Profile::FromJson(profileStub);
+                            // Make sure to give the new profile a source, then we add it to our list of profiles
+                            // We don't make modifications to the user's settings file yet, that will happen when
+                            // _AppendDynamicProfilesToUserSettings() is called later
+                            newProfile->Source(source);
+                            newProfile->Origin(OriginTag::Fragment);
+                            _allProfiles.Append(*newProfile);
+                        }
+                        catch (...)
+                        {
+                        }
                     }
                 }
             }
@@ -850,6 +862,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 {
     // Layer the json on top of an existing profile, if we have one:
+    winrt::com_ptr<implementation::Profile> profile{ nullptr };
     auto profileIndex{ _FindMatchingProfileIndex(profileJson) };
     if (profileIndex)
     {
@@ -862,6 +875,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             // When we loaded Profile.Defaults, we created an empty child already.
             // So this just populates the empty child
             parent->LayerJson(profileJson);
+            profile.copy_from(parent);
         }
         else
         {
@@ -871,6 +885,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 
             // replace parent in _profiles with child
             _allProfiles.SetAt(*profileIndex, *childImpl);
+            profile = std::move(childImpl);
         }
     }
     else
@@ -880,7 +895,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
         if (!Profile::IsDynamicProfileObject(profileJson))
         {
-            auto profile{ winrt::make_self<Profile>() };
+            profile = winrt::make_self<Profile>();
 
             // GH#2325: If we have a set of default profile settings, set that as my parent.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
@@ -892,6 +907,12 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             profile->LayerJson(profileJson);
             _allProfiles.Append(*profile);
         }
+    }
+
+    if (profile && _userDefaultProfileSettings)
+    {
+        // If we've loaded defaults{} we're in the "user settings" phase for sure
+        profile->Origin(OriginTag::User);
     }
 }
 

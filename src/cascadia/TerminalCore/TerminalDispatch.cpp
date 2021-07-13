@@ -733,6 +733,10 @@ bool TerminalDispatch::HardReset() noexcept
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;
 
+    // Reset the mouse mode
+    success = EnableSGRExtendedMouseMode(false);
+    success = EnableAnyEventMouseMode(false);
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
 

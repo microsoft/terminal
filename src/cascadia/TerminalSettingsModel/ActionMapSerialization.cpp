@@ -96,33 +96,4 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         return actionList;
     }
-
-    // Method Description:
-    // - Takes the KeyModifier flags from Terminal and maps them to the Windows WinRT types
-    // Return Value:
-    // - a Windows::System::VirtualKeyModifiers object with the flags of which modifiers used.
-    Windows::System::VirtualKeyModifiers ActionMap::ConvertVKModifiers(KeyModifiers modifiers)
-    {
-        Windows::System::VirtualKeyModifiers keyModifiers = Windows::System::VirtualKeyModifiers::None;
-
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Ctrl))
-        {
-            keyModifiers |= Windows::System::VirtualKeyModifiers::Control;
-        }
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Shift))
-        {
-            keyModifiers |= Windows::System::VirtualKeyModifiers::Shift;
-        }
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Alt))
-        {
-            // note: Menu is the Alt VK_MENU
-            keyModifiers |= Windows::System::VirtualKeyModifiers::Menu;
-        }
-        if (WI_IsFlagSet(modifiers, KeyModifiers::Windows))
-        {
-            keyModifiers |= Windows::System::VirtualKeyModifiers::Windows;
-        }
-
-        return keyModifiers;
-    }
 }

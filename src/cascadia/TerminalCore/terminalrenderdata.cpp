@@ -27,23 +27,15 @@ const TextBuffer& Terminal::GetTextBuffer() noexcept
     return *_buffer;
 }
 
-// Creating a FontInfo can technically throw (on string allocation) and this is noexcept.
-// That means this will std::terminate. We could come back and make there be a default constructor
-// backup to FontInfo that throws no exceptions and allocates a default FontInfo structure.
-#pragma warning(push)
-#pragma warning(disable : 26447)
 const FontInfo& Terminal::GetFontInfo() noexcept
 {
-    // TODO: This font value is only used to check if the font is a raster font.
-    // Otherwise, the font is changed with the renderer via TriggerFontChange.
-    // The renderer never uses any of the other members from the value returned
-    //      by this method.
-    // We could very likely replace this with just an IsRasterFont method
-    //      (which would return false)
-    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
-    return _fakeFontInfo;
+    return _fontInfo;
 }
-#pragma warning(pop)
+
+void Terminal::SetFontInfo(const FontInfo& fontInfo)
+{
+    _fontInfo = fontInfo;
+}
 
 const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 {

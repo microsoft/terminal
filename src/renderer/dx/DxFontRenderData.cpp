@@ -118,14 +118,14 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                                                                                   DWRITE_FONT_STYLE style,
                                                                                                   DWRITE_FONT_STRETCH stretch)
 {
-    DxFontInfo fontInfo = _defaultFontInfo;
-    fontInfo.SetWeight(weight);
-    fontInfo.SetStyle(style);
-    fontInfo.SetStretch(stretch);
-
-    const auto textFormatIt = _textFormatMap.find(fontInfo);
+    const auto textFormatIt = _textFormatMap.find(_ToMapKey(weight, style, stretch));
     if (textFormatIt == _textFormatMap.end())
     {
+        DxFontInfo fontInfo = _defaultFontInfo;
+        fontInfo.SetWeight(weight);
+        fontInfo.SetStyle(style);
+        fontInfo.SetStretch(stretch);
+
         // Create the font with the fractional pixel height size.
         // It should have an integer pixel width by our math.
         // Then below, apply the line spacing to the format to position the floating point pixel height characters
@@ -137,12 +137,12 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
         THROW_IF_FAILED(textFormat->SetParagraphAlignment(DWRITE_PARAGRAPH_ALIGNMENT_NEAR));
         THROW_IF_FAILED(textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP));
 
-        _textFormatMap.insert({ fontInfo, textFormat });
+        _textFormatMap.emplace(_ToMapKey(weight, style, stretch), textFormat);
         return textFormat;
     }
     else
     {
-        return (*textFormatIt).second;
+        return textFormatIt->second;
     }
 }
 
@@ -150,23 +150,23 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                                                                                DWRITE_FONT_STYLE style,
                                                                                                DWRITE_FONT_STRETCH stretch)
 {
-    DxFontInfo fontInfo = _defaultFontInfo;
-    fontInfo.SetWeight(weight);
-    fontInfo.SetStyle(style);
-    fontInfo.SetStretch(stretch);
-
-    const auto fontFaceIt = _fontFaceMap.find(fontInfo);
+    const auto fontFaceIt = _fontFaceMap.find(_ToMapKey(weight, style, stretch));
     if (fontFaceIt == _fontFaceMap.end())
     {
+        DxFontInfo fontInfo = _defaultFontInfo;
+        fontInfo.SetWeight(weight);
+        fontInfo.SetStyle(style);
+        fontInfo.SetStretch(stretch);
+
         std::wstring fontLocaleName = UserLocaleName();
         Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace = fontInfo.ResolveFontFaceWithFallback(_dwriteFactory.Get(), fontLocaleName);
 
-        _fontFaceMap.insert({ fontInfo, fontFace });
+        _fontFaceMap.emplace(_ToMapKey(weight, style, stretch), fontFace);
         return fontFace;
     }
     else
     {
-        return (*fontFaceIt).second;
+        return fontFaceIt->second;
     }
 }
 
