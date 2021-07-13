@@ -261,8 +261,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _unfocusedAppearanceViewModel.Schemes(schemes);
         _unfocusedAppearanceViewModel.WindowRoot(windowRoot);
 
-        _NotifyChanges(L"UnfocusedAppearance");
-        _NotifyChanges(L"HasUnfocusedAppearance");
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance");
     }
 
     void ProfileViewModel::DeleteUnfocusedAppearance()

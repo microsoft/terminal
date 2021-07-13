@@ -326,8 +326,8 @@
                         </StackPanel>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal">
-                                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}"
-                                           Text="Unfocused Appearance" />
+                                <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
+                                           Style="{StaticResource SubtitleTextBlockStyle}" />
                                 <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
                                         Margin="32,0,0,0"
                                         Click="CreateUnfocusedAppearance_Click"
