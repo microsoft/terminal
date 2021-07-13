@@ -347,7 +347,7 @@ IRenderEngine::GridLines RenderEngineBase::_CalculateGridLines(IRenderData* pDat
  // - Helper to determine the selected region of the buffer.
  // Return Value:
  // - A vector of rectangles representing the regions to select, line by line.
- std::vector<SMALL_RECT> RenderEngineBase::_GetSelectionRects(IRenderData* pData) noexcept
+ std::vector<SMALL_RECT> RenderEngineBase::_GetSelectionRects(IRenderData* pData) const
  {
      const auto& buffer = pData->GetTextBuffer();
      auto rects = pData->GetSelectionRects();
@@ -373,55 +373,4 @@ IRenderEngine::GridLines RenderEngineBase::_CalculateGridLines(IRenderData* pDat
      }
 
      return result;
- }
-
-std::vector<SMALL_RECT> RenderEngineBase::_CalculateCurrentSelection(IRenderData* pData) noexcept
- {
-     // Get selection rectangles
-     const auto rects = _GetSelectionRects(pData);
-
-     // Restrict all previous selection rectangles to inside the current viewport bounds
-     for (auto& sr : _previousSelection)
-     {
-         // Make the exclusive SMALL_RECT into a til::rectangle.
-         til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
-
-         // Make a viewport representing the coordinates that are currently presentable.
-         const til::rectangle viewport{ til::size{ pData->GetViewport().Dimensions() } };
-
-         // Intersect them so we only invalidate things that are still visible.
-         rc &= viewport;
-
-         // Convert back into the exclusive SMALL_RECT and store in the vector.
-         sr = Viewport::FromInclusive(rc).ToExclusive();
-     }
-
-     return rects;
- }
-
-// Method Description:
- // - Offsets all of the selection rectangles we might be holding onto
- //   as the previously selected area. If the whole viewport scrolls,
- //   we need to scroll these areas also to ensure they're invalidated
- //   properly when the selection further changes.
- // Arguments:
- // - delta - The scroll delta
- // Return Value:
- // - <none> - Updates internal state instead.
- void RenderEngineBase::_ScrollPreviousSelection(const til::point delta)
- {
-     if (delta != til::point{ 0, 0 })
-     {
-         for (auto& sr : _previousSelection)
-         {
-             // Get a rectangle representing this piece of the selection.
-             til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
-
-             // Offset the entire existing rectangle by the delta.
-             rc += delta;
-
-             // Store it back into the vector.
-             sr = Viewport::FromInclusive(rc).ToExclusive();
-         }
-     }
  }

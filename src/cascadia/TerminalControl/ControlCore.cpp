@@ -307,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (!modifiers.IsWinPressed())
             {
                 _terminal->ClearSelection();
-                _renderer->TriggerIntereaction(::Microsoft::Console::Render::IntereactionType::Selection);
+                _renderer->TriggerSelection();
             }
 
             if (vkey == VK_ESCAPE)
@@ -808,7 +808,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
-        _renderer->TriggerIntereaction(::Microsoft::Console::Render::IntereactionType::Selection);
+        _renderer->TriggerSelection();
     }
 
     // Called when the Terminal wants to set something to the clipboard, i.e.
@@ -868,7 +868,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (!_settings.CopyOnSelect())
         {
             _terminal->ClearSelection();
-            _renderer->TriggerIntereaction(::Microsoft::Console::Render::IntereactionType::Selection);
+            _renderer->TriggerSelection();
         }
 
         // send data up for clipboard
@@ -1120,7 +1120,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _terminal->SetBlockSelection(false);
             search.Select();
-            _renderer->TriggerIntereaction(::Microsoft::Console::Render::IntereactionType::Selection);
+            _renderer->TriggerSelection();
         }
     }
 
@@ -1310,7 +1310,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             selectionNeedsToBeCopied = true;
         }
 
-        _renderer->TriggerIntereaction(::Microsoft::Console::Render::IntereactionType::Selection);
+        _renderer->TriggerSelection();
     }
 
     void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)

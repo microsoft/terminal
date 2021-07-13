@@ -46,7 +46,6 @@ namespace Microsoft::Console::Render
         virtual ~Renderer() override;
 
         [[nodiscard]] HRESULT PaintFrame();
-        void TriggerIntereaction(IntereactionType type) override;
 
         void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
@@ -55,6 +54,7 @@ namespace Microsoft::Console::Render
         void TriggerRedrawAll() override;
         void TriggerTeardown() noexcept override;
 
+        void TriggerSelection() override;
         void TriggerScroll() override;
         void TriggerScroll(const COORD* const pcoordDelta) override;
 
@@ -98,6 +98,9 @@ namespace Microsoft::Console::Render
 
         static constexpr float _shrinkThreshold = 0.8f;
         std::vector<Cluster> _clusterBuffer;
+
+        void _ScrollPreviousSelection(const til::point delta);
+        std::vector<SMALL_RECT> _previousSelection;
 
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
 

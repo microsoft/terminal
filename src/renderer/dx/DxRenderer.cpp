@@ -1063,20 +1063,7 @@ bool DxEngine::_IsAllInvalid() const noexcept
     return std::llabs(_invalidScroll.y()) >= _invalidMap.size().height();
 }
 
-[[nodiscard]] HRESULT DxEngine::InvalidateIntereaction(IRenderData* pData, IntereactionType type) noexcept
-{
-    if (type == IntereactionType::Selection)
-    {
-        const auto rects = _CalculateCurrentSelection(pData);
-        LOG_IF_FAILED(InvalidateSelection(_previousSelection));
-        LOG_IF_FAILED(InvalidateSelection(rects));
-        _previousSelection = rects;
-    }
-
-    return S_OK;
-}
-
-    // Routine Description:
+// Routine Description:
 // - Invalidates a rectangle described in characters
 // Arguments:
 // - psrRegion - Character rectangle
@@ -1172,8 +1159,6 @@ try
             _allInvalid = _IsAllInvalid();
         }
     }
-
-    _ScrollPreviousSelection(*pcoordDelta);
 
     return S_OK;
 }

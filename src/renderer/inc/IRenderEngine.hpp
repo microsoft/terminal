@@ -27,11 +27,6 @@ namespace Microsoft::Console::Render
         std::optional<CursorOptions> cursorInfo;
     };
 
-    enum class IntereactionType
-    {
-        Selection
-    };
-
     class IRenderEngine
     {
     public:
@@ -69,11 +64,10 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT InvalidateIntereaction(IRenderData* pData, IntereactionType type) noexcept = 0;
-
         [[nodiscard]] virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept = 0;

@@ -11,16 +11,6 @@ ScreenBufferRenderTarget::ScreenBufferRenderTarget(SCREEN_INFORMATION& owner) :
 {
 }
 
-void ScreenBufferRenderTarget::TriggerIntereaction(Microsoft::Console::Render::IntereactionType type)
-{
-    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
-    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
-    if (pRenderer != nullptr && pActive == &_owner)
-    {
-        pRenderer->TriggerIntereaction(type);
-    }
-}
-
 void ScreenBufferRenderTarget::TriggerRedraw(const Microsoft::Console::Types::Viewport& region)
 {
     auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
@@ -68,6 +58,16 @@ void ScreenBufferRenderTarget::TriggerTeardown() noexcept
     if (pRenderer != nullptr && pActive == &_owner)
     {
         pRenderer->TriggerTeardown();
+    }
+}
+
+void ScreenBufferRenderTarget::TriggerSelection()
+{
+    auto* pRenderer = ServiceLocator::LocateGlobals().pRender;
+    const auto* pActive = &ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer();
+    if (pRenderer != nullptr && pActive == &_owner)
+    {
+        pRenderer->TriggerSelection();
     }
 }
 
