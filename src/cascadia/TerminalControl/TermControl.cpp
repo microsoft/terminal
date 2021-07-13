@@ -1105,7 +1105,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         TermControl::GetPointerUpdateKind(point),
                                         ControlKeyStates(args.KeyModifiers()),
                                         _focused,
-                                        pixelPosition);
+                                        pixelPosition,
+                                        _pointerPressedInBounds);
 
             // GH#9109 - Only start an auto-scroll when the drag actually
             // started within our bounds. Otherwise, someone could start a drag
