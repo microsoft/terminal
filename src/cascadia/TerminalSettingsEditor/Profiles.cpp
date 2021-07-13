@@ -32,7 +32,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _profile{ profile },
         _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
         _originalProfileGuid{ profile.Guid() },
-        _appSettings{ appSettings }
+        _appSettings{ appSettings },
+        _unfocusedAppearanceViewModel{ nullptr }
     {
         // Add a property changed handler to our own property changed event.
         // This propagates changes from the settings model to anybody listening to our
@@ -63,6 +64,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             UpdateFontList();
         }
+
+        if (profile.HasUnfocusedAppearance())
+        {
+            _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
+        }
+
+        _defaultAppearanceViewModel.IsDefault(true);
     }
 
     Model::TerminalSettings ProfileViewModel::TermSettings() const
@@ -239,6 +247,51 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _defaultAppearanceViewModel;
     }
 
+    bool ProfileViewModel::HasUnfocusedAppearance()
+    {
+        return _profile.HasUnfocusedAppearance();
+    }
+
+    bool ProfileViewModel::EditableUnfocusedAppearance()
+    {
+        if constexpr (Feature_EditableUnfocusedAppearance::IsEnabled())
+        {
+            return true;
+        }
+        return false;
+    }
+
+    bool ProfileViewModel::ShowUnfocusedAppearance()
+    {
+        return EditableUnfocusedAppearance() && HasUnfocusedAppearance();
+    }
+
+    void ProfileViewModel::CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                                     const IHostedInWindow& windowRoot)
+    {
+        _profile.CreateUnfocusedAppearance();
+
+        _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
+        _unfocusedAppearanceViewModel.Schemes(schemes);
+        _unfocusedAppearanceViewModel.WindowRoot(windowRoot);
+
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance");
+    }
+
+    void ProfileViewModel::DeleteUnfocusedAppearance()
+    {
+        _profile.DeleteUnfocusedAppearance();
+
+        _unfocusedAppearanceViewModel = nullptr;
+
+        _NotifyChanges(L"HasUnfocusedAppearance");
+    }
+
+    Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
+    {
+        return _unfocusedAppearanceViewModel;
+    }
+
     bool ProfileViewModel::UseParentProcessDirectory()
     {
         return StartingDirectory().empty();
@@ -289,6 +342,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(_Profile.Guid()) };
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
+    }
+
+    void ProfilePageNavigationState::CreateUnfocusedAppearance()
+    {
+        _Profile.CreateUnfocusedAppearance(_Schemes, _WindowRoot);
+    }
+
+    void ProfilePageNavigationState::DeleteUnfocusedAppearance()
+    {
+        _Profile.DeleteUnfocusedAppearance();
     }
 
     Profiles::Profiles() :
@@ -421,6 +484,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
         state->DeleteProfile();
+    }
+
+    void Profiles::CreateUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _State.CreateUnfocusedAppearance();
+    }
+
+    void Profiles::DeleteUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _State.DeleteUnfocusedAppearance();
     }
 
     fire_and_forget Profiles::Icon_Click(IInspectable const&, RoutedEventArgs const&)

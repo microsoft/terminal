@@ -43,6 +43,9 @@ namespace Microsoft.Terminal.Settings.Model
         Profile();
         Profile(Guid guid);
 
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
+
         OriginTag Origin { get; };
 
         INHERITABLE_PROFILE_SETTING(String, Name);

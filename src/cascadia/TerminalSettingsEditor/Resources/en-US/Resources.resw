@@ -791,6 +791,10 @@
     <value>Replaces the profile name as the title to pass to the shell on startup.</value>
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
+    <value>Unfocused Appearance</value>
+    <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
+  </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
     <value>Enable acrylic</value>
     <comment>Header for a control to toggle the acrylic-like rendering of the background. The acrylic material creates a translucent texture.</comment>
@@ -1109,6 +1113,14 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If checked, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
+  </data>
+  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
+    <comment>A description for what the create unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Delete the unfocused appearance for this profile.</value>
+    <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete key binding</value>
