@@ -93,6 +93,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestPreviewDismissScheme);
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
 
+        TEST_METHOD(TestClampSwitchToTab);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1340,6 +1342,50 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
             VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
         });
+    }
+
+    void TabTests::TestClampSwitchToTab()
+    {
+        Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        Log::Comment(L"Create a second tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+
+        Log::Comment(L"Create a third tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 2 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(3u, page->_tabs.Size());
+
+        auto focusedTabIndexOpt{ page->_GetFocusedTabIndex() };
+        VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+        VERIFY_ARE_EQUAL(3u, focusedTabIndexOpt.value());
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Switch to the first tab");
+            page->_SelectTab(0);
+        });
+
+        focusedTabIndexOpt = page->_GetFocusedTabIndex();
+        VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+        VERIFY_ARE_EQUAL(0u, focusedTabIndexOpt.value());
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Switch to the tab 6, which is greater than number of tabs. This should switch to the third tab");
+            page->_SelectTab(6);
+        });
+
+        focusedTabIndexOpt = page->_GetFocusedTabIndex();
+        VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+        VERIFY_ARE_EQUAL(2u, focusedTabIndexOpt.value());
     }
 
 }
