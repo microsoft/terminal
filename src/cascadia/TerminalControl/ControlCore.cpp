@@ -198,6 +198,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            dxEngine->SetIntenseIsBold(!_settings.DisableIntenseIsBold());
 
             _updateAntiAliasingMode(dxEngine.get());
 
@@ -526,6 +527,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+        _renderEngine->SetIntenseIsBold(!_settings.DisableIntenseIsBold());
+
         _updateAntiAliasingMode(_renderEngine.get());
 
         // Refresh our font with the renderer

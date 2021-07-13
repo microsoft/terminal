@@ -202,6 +202,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
         _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
+
+        _DisableIntenseIsBold = appearance.DisableIntenseIsBold();
     }
 
     // Method Description:

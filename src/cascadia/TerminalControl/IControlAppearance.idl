@@ -12,6 +12,7 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
 
+        Boolean DisableIntenseIsBold;
         // Experimental settings
         Boolean RetroTerminalEffect;
         String PixelShaderPath;

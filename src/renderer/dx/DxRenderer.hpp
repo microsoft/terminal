@@ -70,6 +70,8 @@ namespace Microsoft::Console::Render
 
         void SetSoftwareRendering(bool enable) noexcept;
 
+        void SetIntenseIsBold(bool enable) noexcept;
+
         HANDLE GetSwapChainHandle();
 
         // IRenderEngine Members
@@ -252,6 +254,7 @@ namespace Microsoft::Console::Render
         // Preferences and overrides
         bool _softwareRendering;
         bool _forceFullRepaintRendering;
+        bool _intenseIsBold{ true };
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 

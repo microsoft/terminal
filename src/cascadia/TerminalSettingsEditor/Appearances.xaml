@@ -44,6 +44,8 @@
             <local:PaddingConverter x:Key="PaddingConverter" />
             <local:StringIsNotDesktopConverter x:Key="StringIsNotDesktopConverter" />
             <local:DesktopWallpaperToEmptyStringConverter x:Key="DesktopWallpaperToEmptyStringConverter" />
+            <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter" />
+
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -157,6 +159,14 @@
                                     SettingOverrideSource="{x:Bind Appearance.RetroTerminalEffectOverrideSource, Mode=OneWay}">
                 <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
             </local:SettingContainer>
+            <!--  Intense is bold  -->
+            <local:SettingContainer x:Uid="Profile_DisableIntenseIsBold"
+                                    ClearSettingValue="{x:Bind Appearance.ClearDisableIntenseIsBold}"
+                                    HasSettingValue="{x:Bind Appearance.HasDisableIntenseIsBold, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.DisableIntenseIsBoldOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.DisableIntenseIsBold, Mode=TwoWay, Converter={StaticResource InvertedBooleanConverter}}" />
+            </local:SettingContainer>
+
         </StackPanel>
 
         <!--  Grouping: Cursor  -->

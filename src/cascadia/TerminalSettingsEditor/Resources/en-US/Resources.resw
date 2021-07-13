@@ -926,6 +926,10 @@
     <value>Flash window</value>
     <comment>An option to choose from for the "bell style" setting. When selected, a visual notification is used to notify the user. In this case, the window is flashed.</comment>
   </data>
+  <data name="Profile_DisableIntenseIsBold.Header" xml:space="preserve">
+    <value>Render "intense" text as bold</value>
+    <comment>Header for a control to toggle if text formatted as "intense" should be rendered with a bold font weight or not.</comment>
+  </data>
   <data name="ColorScheme_AddNewButton.Text" xml:space="preserve">
     <value>Add new</value>
     <comment>Button label that creates a new color scheme.</comment>

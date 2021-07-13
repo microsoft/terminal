@@ -340,6 +340,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_APPEARANCE_SETTING_MACRO(SelectionBackground);
     DUPLICATE_APPEARANCE_SETTING_MACRO(CursorColor);
     DUPLICATE_APPEARANCE_SETTING_MACRO(PixelShaderPath);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(DisableIntenseIsBold);
     DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImagePath);
     DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageOpacity);
     DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageStretchMode);

@@ -150,6 +150,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, DisableIntenseIsBold, false);
+
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
         gsl::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
