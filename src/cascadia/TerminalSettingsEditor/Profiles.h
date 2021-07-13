@@ -36,6 +36,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::AppearanceViewModel DefaultAppearance();
         Editor::AppearanceViewModel UnfocusedAppearance();
         bool HasUnfocusedAppearance();
+        bool EditableUnfocusedAppearance();
+        bool ShowUnfocusedAppearance();
 
         void CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
                                        const IHostedInWindow& windowRoot);

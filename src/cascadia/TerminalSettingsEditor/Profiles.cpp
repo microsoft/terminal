@@ -252,6 +252,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _profile.HasUnfocusedAppearance();
     }
 
+    bool ProfileViewModel::EditableUnfocusedAppearance()
+    {
+        if constexpr (Feature_EditableUnfocusedAppearance::IsEnabled())
+        {
+            return true;
+        }
+        return false;
+    }
+
+    bool ProfileViewModel::ShowUnfocusedAppearance()
+    {
+        return EditableUnfocusedAppearance() && HasUnfocusedAppearance();
+    }
+
     void ProfileViewModel::CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
                                                      const IHostedInWindow& windowRoot)
     {

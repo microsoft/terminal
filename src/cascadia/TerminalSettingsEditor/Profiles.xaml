@@ -325,9 +325,10 @@
                             </local:SettingContainer>
                         </StackPanel>
                         <StackPanel>
-                            <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal"
+                                        Visibility="{x:Bind State.Profile.EditableUnfocusedAppearance, Mode=OneWay}">
                                 <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
-                                           Style="{StaticResource SubtitleTextBlockStyle}" />
+                                           Style="{StaticResource TitleTextBlockStyle}" />
                                 <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
                                         Margin="32,0,0,0"
                                         Click="CreateUnfocusedAppearance_Click"
@@ -399,7 +400,7 @@
                             </StackPanel>
                             <local:Appearances Appearance="{x:Bind State.Profile.UnfocusedAppearance, Mode=OneWay}"
                                                SourceProfile="{x:Bind State.Profile, Mode=OneWay}"
-                                               Visibility="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}" />
+                                               Visibility="{x:Bind State.Profile.ShowUnfocusedAppearance, Mode=OneWay}" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
