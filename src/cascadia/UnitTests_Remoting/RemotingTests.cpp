@@ -165,7 +165,7 @@ namespace RemotingUnitTests
             return;
         }
 
-        m->_peasants[peasantID] = *winrt::make_self<DeadPeasant>();
+        m->_peasants[peasantID] = winrt::make<DeadPeasant>();
     }
 
     // Helper to get the first argument out of the commandline, and try to
