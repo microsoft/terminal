@@ -972,7 +972,6 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
     }
 
-
     void TabTests::NextMRUTab()
     {
         // This is a test for GH#8025 - we want to make sure that we can do both

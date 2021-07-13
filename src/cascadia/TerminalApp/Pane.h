@@ -269,6 +269,5 @@ private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
 
-
     friend class ::TerminalAppLocalTests::TabTests;
 };
