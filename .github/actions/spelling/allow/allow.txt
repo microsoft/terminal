@@ -17,6 +17,7 @@ dzhe
 Enum'd
 formattings
 ftp
+fvar
 geeksforgeeks
 ghe
 gje

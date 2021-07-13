@@ -540,7 +540,7 @@ void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int32_t> ax
 // - The float value corresponding to the passed in fontStretch
 float DxFontRenderData::FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept
 {
-    if (fontStretch > fontStretchEnumToVal.size())
+    if (gsl::narrow<size_t>(fontStretch) > fontStretchEnumToVal.size())
     {
         return gsl::at(fontStretchEnumToVal, DWRITE_FONT_STRETCH_NORMAL);
     }
