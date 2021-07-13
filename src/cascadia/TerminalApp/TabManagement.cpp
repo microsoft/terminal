@@ -499,7 +499,10 @@ namespace winrt::TerminalApp::implementation
     // true iff we were able to select that tab index, false otherwise
     bool TerminalPage::_SelectTab(uint32_t tabIndex)
     {
-        tabIndex = std::clamp(0u, _tabs.Size(), tabIndex);
+        // GH#9369 - if the argument is out of range, then clamp to the number
+        // of available tabs. Previously, we'd just silently do nothing if the
+        // value was greater than the number of tabs.
+        tabIndex = std::clamp(tabIndex, 0u, _tabs.Size() - 1);
 
         auto tab{ _tabs.GetAt(tabIndex) };
         if (_startupState == StartupState::InStartup)
