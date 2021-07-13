@@ -564,9 +564,9 @@ float DxFontRenderData::FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE f
     // vast majority of italic fonts are also slanted. Ideally the slant comes from the
     // 'slnt' value in the STAT or fvar table, or the post table italic angle.
 
-    return (fontStyle == DWRITE_FONT_STYLE_ITALIC)  ? -12.0f :
-           (fontStyle == DWRITE_FONT_STYLE_OBLIQUE) ? -20.0f :
-                                                      /*fontStyle == DWRITE_FONT_STYLE_NORMAL*/ 0.0f;
+    return (fontStyle == DWRITE_FONT_STYLE_ITALIC) ? -12.0f :
+                                                     (fontStyle == DWRITE_FONT_STYLE_OBLIQUE) ? -20.0f :
+                                                                                                /*fontStyle == DWRITE_FONT_STYLE_NORMAL*/ 0.0f;
 }
 
 // Method Description:
