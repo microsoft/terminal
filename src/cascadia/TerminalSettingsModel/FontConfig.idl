@@ -17,6 +17,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_FONT_SETTING(Int32, FontSize);
         INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);
 
+        // The INHERITABLE_FONT_SETTING macro doesn't like Windows.Foundation.Collections.IMap<String, UInt32>
+        // (possibly because of the comma) so features and axes are being declared manually for now
         Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures;
         Boolean HasFontFeatures { get; };
         void ClearFontFeatures();

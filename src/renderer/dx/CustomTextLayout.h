@@ -16,17 +16,6 @@
 
 namespace Microsoft::Console::Render
 {
-    enum class AxisTagPresence : BYTE
-    {
-        AxisTagPresenceNone = 0x00,
-        AxisTagPresenceWeight = 0x01,
-        AxisTagPresenceWidth = 0x02,
-        AxisTagPresenceItalic = 0x04,
-        AxisTagPresenceSlant = 0x08,
-        AxisTagPresenceOpticalSize = 0x10,
-    };
-    DEFINE_ENUM_FLAG_OPERATORS(AxisTagPresence);
-
     class CustomTextLayout : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IDWriteTextAnalysisSource, IDWriteTextAnalysisSink>
     {
     public:
@@ -135,15 +124,6 @@ namespace Microsoft::Console::Render
         void _SetCurrentRun(const UINT32 textPosition);
         void _SplitCurrentRun(const UINT32 splitPosition);
         void _OrderRuns();
-
-        float _FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept;
-        float _FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle) noexcept;
-        float _DIPsToPoints(const float fontSize) noexcept;
-        std::vector<DWRITE_FONT_AXIS_VALUE> _GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
-                                                           const DWRITE_FONT_STRETCH fontStretch,
-                                                           const DWRITE_FONT_STYLE fontStyle,
-                                                           const float fontSize,
-                                                           IDWriteTextFormat3* format);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFontFace(UINT32 textPosition, UINT32 textLength, ::Microsoft::WRL::ComPtr<IDWriteFontFace> const fontFace, FLOAT const scale);

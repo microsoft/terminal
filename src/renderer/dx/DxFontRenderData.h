@@ -16,6 +16,17 @@
 
 namespace Microsoft::Console::Render
 {
+    enum class AxisTagPresence : BYTE
+    {
+        AxisTagPresenceNone = 0x00,
+        AxisTagPresenceWeight = 0x01,
+        AxisTagPresenceWidth = 0x02,
+        AxisTagPresenceItalic = 0x04,
+        AxisTagPresenceSlant = 0x08,
+        AxisTagPresenceOpticalSize = 0x10,
+    };
+    DEFINE_ENUM_FLAG_OPERATORS(AxisTagPresence);
+
     class DxFontRenderData
     {
     public:
@@ -81,6 +92,15 @@ namespace Microsoft::Console::Render
         void InitializeFeatureMap();
         void SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features);
         void SetAxes(std::unordered_map<std::wstring_view, int32_t> axes);
+
+        float FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept;
+        float FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle) noexcept;
+        float DIPsToPoints(const float fontSize) noexcept;
+        std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
+                                                          const DWRITE_FONT_STRETCH fontStretch,
+                                                          const DWRITE_FONT_STYLE fontStyle,
+                                                          const float fontSize,
+                                                          IDWriteTextFormat3* format);
 
     private:
         using FontAttributeMapKey = uint32_t;
