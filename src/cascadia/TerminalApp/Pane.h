@@ -22,6 +22,12 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class TabTests;
+};
+
 enum class Borders : int
 {
     None = 0x0,
@@ -262,4 +268,7 @@ private:
     private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
+
+
+    friend class ::TerminalAppLocalTests::TabTests;
 };

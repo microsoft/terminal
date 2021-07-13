@@ -381,7 +381,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 
         // Replace the old child with new one, and revoke appropriate event
         // handlers.
-        auto replaceChild = [&](auto& parent, auto oldChild, auto newChild) {
+        auto replaceChild = [](auto& parent, auto oldChild, auto newChild) {
             // Revoke the old handlers
             if (parent->_firstChild == oldChild)
             {
@@ -399,7 +399,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 
         // Make sure that the right event handlers are set, and the children
         // are placed in the appropriate locations in the grid.
-        auto updateParent = [&](auto& parent) {
+        auto updateParent = [](auto& parent) {
             parent->_SetupChildCloseHandlers();
             parent->_root.Children().Clear();
             parent->_root.Children().Append(parent->_firstChild->GetRootElement());
