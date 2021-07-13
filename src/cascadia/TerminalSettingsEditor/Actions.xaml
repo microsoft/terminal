@@ -133,13 +133,9 @@
                 <Setter Property="TextWrapping" Value="WrapWholeWords" />
             </Style>
             <Style x:Key="KeyChordEditorStyle"
-                   BasedOn="{StaticResource DefaultTextBoxStyle}"
-                   TargetType="TextBox">
+                   TargetType="local:KeyChordListener">
                 <Setter Property="HorizontalAlignment" Value="Right" />
                 <Setter Property="VerticalAlignment" Value="Center" />
-                <Setter Property="TextAlignment" Value="Right" />
-                <Setter Property="TextWrapping" Value="Wrap" />
-                <Setter Property="IsSpellCheckEnabled" Value="False" />
             </Style>
             <x:Int32 x:Key="EditButtonSize">32</x:Int32>
             <x:Double x:Key="EditButtonIconSize">15</x:Double>
@@ -222,13 +218,11 @@
                                        TextWrapping="WrapWholeWords" />
                         </Border>
 
-                        <!--  Edit Mode: Key Chord Text Box  -->
-                        <TextBox Grid.Column="1"
-                                 DataContext="{x:Bind Mode=OneWay}"
-                                 KeyDown="KeyChordEditor_KeyDown"
-                                 Style="{StaticResource KeyChordEditorStyle}"
-                                 Text="{x:Bind ProposedKeys, Mode=TwoWay}"
-                                 Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
+                        <!--  Edit Mode: Key Chord Listener  -->
+                        <local:KeyChordListener Grid.Column="1"
+                                                CurrentKeys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                Style="{StaticResource KeyChordEditorStyle}"
+                                                Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
 
                         <!--  Edit Button  -->
                         <Button x:Uid="Actions_EditButton"

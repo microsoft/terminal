@@ -60,9 +60,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void ToggleEditMode();
         void DisableEditMode() { IsInEditMode(false); }
         void AttemptAcceptChanges();
-        void AttemptAcceptChanges(hstring newKeyChordText);
+        void AttemptAcceptChanges(const Control::KeyChord newKeys);
         void CancelChanges();
-        void DeleteKeyBinding() { _DeleteKeyBindingRequestedHandlers(*this, _Keys); }
+        void DeleteKeyBinding() { _DeleteKeyBindingRequestedHandlers(*this, _CurrentKeys); }
 
         // ProposedAction:   the entry selected by the combo box; may disagree with the settings model.
         // CurrentAction:    the combo box item that maps to the settings model value.
@@ -77,10 +77,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, CurrentAction);
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
 
-        // ProposedKeys: the text shown in the text box; may disagree with the settings model.
-        // Keys:         the key chord bound in the settings model.
-        VIEW_MODEL_OBSERVABLE_PROPERTY(hstring, ProposedKeys);
-        VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, Keys, nullptr);
+        // ProposedKeys: the keys proposed by the control; may disagree with the settings model.
+        // CurrentKeys:         the key chord bound in the settings model.
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, CurrentKeys, nullptr);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsNewlyAdded, false);
@@ -114,7 +114,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        void KeyChordEditor_KeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
         void AddNew_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);

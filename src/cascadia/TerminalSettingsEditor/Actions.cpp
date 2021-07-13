@@ -25,8 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         KeyBindingViewModel(nullptr, availableActions.First().Current(), availableActions) {}
 
     KeyBindingViewModel::KeyBindingViewModel(const Control::KeyChord& keys, const hstring& actionName, const IObservableVector<hstring>& availableActions) :
-        _Keys{ keys },
-        _KeyChordText{ Model::KeyChordSerialization::ToString(keys) },
+        _CurrentKeys{ keys },
+        _KeyChordText{ KeyChordSerialization::ToString(keys) },
         _CurrentAction{ actionName },
         _ProposedAction{ box_value(actionName) },
         _AvailableActions{ availableActions }
@@ -36,9 +36,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //  unique view model members.
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"Keys")
+            if (viewModelProperty == L"CurrentKeys")
             {
-                _KeyChordText = Model::KeyChordSerialization::ToString(_Keys);
+                _KeyChordText = Model::KeyChordSerialization::ToString(_CurrentKeys);
                 _NotifyChanges(L"KeyChordText");
             }
             else if (viewModelProperty == L"IsContainerFocused" ||
@@ -75,7 +75,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // if we're in edit mode,
             // - pre-populate the text box with the current keys
             // - reset the combo box with the current action
-            ProposedKeys(KeyChordText());
+            ProposedKeys(CurrentKeys());
             ProposedAction(box_value(CurrentAction()));
         }
     }
@@ -85,35 +85,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         AttemptAcceptChanges(_ProposedKeys);
     }
 
-    void KeyBindingViewModel::AttemptAcceptChanges(hstring newKeyChordText)
+    void KeyBindingViewModel::AttemptAcceptChanges(const Control::KeyChord newKeys)
     {
-        try
-        {
-            // empty string --> don't accept changes
-            if (newKeyChordText.empty())
-            {
-                return;
-            }
-
-            // ModifyKeyBindingEventArgs
-            const auto args{ make_self<ModifyKeyBindingEventArgs>(_Keys, // OldKeys
-                                                                  KeyChordSerialization::FromString(newKeyChordText), // NewKeys: Attempt to convert the provided key chord text
-                                                                  _IsNewlyAdded ? hstring{} : _CurrentAction, // OldAction
-                                                                  unbox_value<hstring>(_ProposedAction)) }; //
-            _ModifyKeyBindingRequestedHandlers(*this, *args);
-        }
-        catch (hresult_invalid_argument)
-        {
-            // Converting the text into a key chord failed.
-            // Don't accept the changes.
-            // TODO GH #6900:
-            //  This is tricky. I still haven't found a way to reference the
-            //  key chord text box. It's hidden behind the data template.
-            //  Ideally, some kind of notification would alert the user, but
-            //  to make it look nice, we need it to somehow target the text box.
-            //  Alternatively, we want a full key chord editor/listener.
-            //  If we implement that, we won't need this validation or error message.
-        }
+        const auto args{ make_self<ModifyKeyBindingEventArgs>(_CurrentKeys, // OldKeys
+                                                              newKeys, // NewKeys
+                                                              _IsNewlyAdded ? hstring{} : _CurrentAction, // OldAction
+                                                              unbox_value<hstring>(_ProposedAction)) }; // NewAction
+        _ModifyKeyBindingRequestedHandlers(*this, *args);
     }
 
     void KeyBindingViewModel::CancelChanges()
@@ -177,34 +155,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         std::sort(begin(keyBindingList), end(keyBindingList), KeyBindingViewModelComparator{});
         _KeyBindingList = single_threaded_observable_vector(std::move(keyBindingList));
-    }
-
-    void Actions::KeyChordEditor_KeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
-    {
-        const auto& senderTB{ sender.as<TextBox>() };
-        const auto& kbdVM{ senderTB.DataContext().as<Editor::KeyBindingViewModel>() };
-        if (e.OriginalKey() == VirtualKey::Enter)
-        {
-            // Fun fact: this is happening _before_ "_ProposedKeys" gets updated
-            // with the two-way data binding. So we need to directly extract the text
-            // and tell the view model to update itself.
-            get_self<KeyBindingViewModel>(kbdVM)->AttemptAcceptChanges(senderTB.Text());
-
-            // For an unknown reason, when 'AcceptChangesFlyout' is set in the code above,
-            // the flyout isn't shown, forcing the 'Enter' key to do nothing.
-            // To get around this, detect if the flyout was set, and display it
-            // on the text box.
-            if (kbdVM.AcceptChangesFlyout() != nullptr)
-            {
-                kbdVM.AcceptChangesFlyout().ShowAt(senderTB);
-            }
-            e.Handled(true);
-        }
-        else if (e.OriginalKey() == VirtualKey::Escape)
-        {
-            kbdVM.CancelChanges();
-            e.Handled(true);
-        }
     }
 
     void Actions::AddNew_Click(const IInspectable& /*sender*/, const RoutedEventArgs& /*eventArgs*/)
@@ -314,7 +264,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
                 // update view model
                 auto senderVMImpl{ get_self<KeyBindingViewModel>(senderVM) };
-                senderVMImpl->Keys(args.NewKeys());
+                senderVMImpl->CurrentKeys(args.NewKeys());
             }
 
             // If the action was changed,
@@ -418,7 +368,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         for (uint32_t i = 0; i < _KeyBindingList.Size(); ++i)
         {
             const auto kbdVM{ get_self<KeyBindingViewModel>(_KeyBindingList.GetAt(i)) };
-            const auto& otherKeys{ kbdVM->Keys() };
+            const auto& otherKeys{ kbdVM->CurrentKeys() };
             if (keys.Modifiers() == otherKeys.Modifiers() && keys.Vkey() == otherKeys.Vkey())
             {
                 return i;
