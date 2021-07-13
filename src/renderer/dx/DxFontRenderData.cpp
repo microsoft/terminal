@@ -512,7 +512,7 @@ void DxFontRenderData::SetFeatures(std::unordered_map<std::wstring_view, uint32_
 
 // Routine Description:
 // - Updates our internal map of font axes with the given axes
-// - NOTE TO CALLER: Make sure to call UpdateFont after calling this for the feature changes
+// - NOTE TO CALLER: Make sure to call UpdateFont after calling this for the axes changes
 //   to take place
 // Arguments:
 // - axes - the axes to update our map with
@@ -540,13 +540,13 @@ void DxFontRenderData::SetAxes(std::unordered_map<std::wstring_view, int32_t> ax
 // - The float value corresponding to the passed in fontStretch
 float DxFontRenderData::FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept
 {
-    if (gsl::narrow<size_t>(fontStretch) > fontStretchEnumToVal.size())
+    if (gsl::narrow_cast<size_t>(fontStretch) > fontStretchEnumToVal.size())
     {
         return gsl::at(fontStretchEnumToVal, DWRITE_FONT_STRETCH_NORMAL);
     }
     else
     {
-        return gsl::at(fontStretchEnumToVal, fontStretch);
+        return fontStretchEnumToVal[fontStretch];
     }
 }
 
@@ -597,11 +597,8 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
                                                                     const float fontSize,
                                                                     IDWriteTextFormat3* format)
 {
-    if (!format)
-    {
-        // return early
-        return {};
-    }
+    THROW_IF_NULL_ALLOC(format);
+
     const auto axesCount = format->GetFontAxisValueCount();
     std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
     axesVector.resize(axesCount);
