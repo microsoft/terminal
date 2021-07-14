@@ -75,38 +75,6 @@ constexpr std::wstring_view WIN_KEY{ L"win" };
     XX(VK_NUMPAD9, L"numpad9", L"numpad_9")              \
     XX(VK_OEM_PLUS, L"plus")
 
-// clang-format off
-using nameToVkeyPair = std::pair<std::wstring_view, int32_t>;
-static const til::static_map nameToVkey{
-    // The above VKEY_NAME_PAIRS macro contains a list of key-binding names for each virtual key.
-    // This god-awful macro inverts VKEY_NAME_PAIRS and creates a static map of key-binding names to virtual keys.
-#define GENERATOR_1(vkey, name1) nameToVkeyPair{ name1, vkey },
-#define GENERATOR_2(vkey, name1, name2) nameToVkeyPair{ name1, vkey }, nameToVkeyPair{ name2, vkey },
-#define GENERATOR_3(vkey, name1, name2, name3) nameToVkeyPair{ name1, vkey }, nameToVkeyPair{ name2, vkey }, nameToVkeyPair{ name3, vkey },
-#define GENERATOR_N(vkey, name1, name2, name3, MACRO, ...) MACRO
-#define GENERATOR(...) GENERATOR_N(__VA_ARGS__, GENERATOR_3, GENERATOR_2, GENERATOR_1)(__VA_ARGS__)
-    VKEY_NAME_PAIRS(GENERATOR)
-#undef GENERATOR_1
-#undef GENERATOR_2
-#undef GENERATOR_3
-#undef GENERATOR_N
-#undef GENERATOR
-};
-// clang-format on
-
-// clang-format off
-using vkeyToNamePair = std::pair<int32_t, std::wstring_view>;
-static const til::static_map vkeyToName{
-    // The above VKEY_NAME_PAIRS macro contains a list of key-binding strings for each virtual key.
-    // This macro picks the first (most preferred) name and creates a static map of virtual keys to key-binding names.
-#define GENERATOR(vkey, name1, ...) vkeyToNamePair{ vkey, name1 },
-    VKEY_NAME_PAIRS(GENERATOR)
-#undef GENERATOR
-};
-// clang-format on
-
-#undef VKEY_NAME_PAIRS
-
 // Function Description:
 // - Deserializes the given string into a new KeyChord instance. If this
 //   fails to translate the string into a keychord, it will throw a
@@ -120,6 +88,25 @@ static const til::static_map vkeyToName{
 // - a newly constructed KeyChord
 static KeyChord _fromString(std::wstring_view wstr)
 {
+    using nameToVkeyPair = std::pair<std::wstring_view, int32_t>;
+    static const til::static_map nameToVkey{
+    // The above VKEY_NAME_PAIRS macro contains a list of key-binding names for each virtual key.
+    // This god-awful macro inverts VKEY_NAME_PAIRS and creates a static map of key-binding names to virtual keys.
+    // clang-format off
+#define GENERATOR_1(vkey, name1) nameToVkeyPair{ name1, vkey },
+#define GENERATOR_2(vkey, name1, name2) nameToVkeyPair{ name1, vkey }, nameToVkeyPair{ name2, vkey },
+#define GENERATOR_3(vkey, name1, name2, name3) nameToVkeyPair{ name1, vkey }, nameToVkeyPair{ name2, vkey }, nameToVkeyPair{ name3, vkey },
+#define GENERATOR_N(vkey, name1, name2, name3, MACRO, ...) MACRO
+#define GENERATOR(...) GENERATOR_N(__VA_ARGS__, GENERATOR_3, GENERATOR_2, GENERATOR_1)(__VA_ARGS__)
+        VKEY_NAME_PAIRS(GENERATOR)
+#undef GENERATOR_1
+#undef GENERATOR_2
+#undef GENERATOR_3
+#undef GENERATOR_N
+#undef GENERATOR
+        // clang-format on
+    };
+
     VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
     int32_t vkey = 0;
 
@@ -201,6 +188,15 @@ static KeyChord _fromString(std::wstring_view wstr)
 // - a string which is an equivalent serialization of this object.
 static std::wstring _toString(const KeyChord& chord)
 {
+    using vkeyToNamePair = std::pair<int32_t, std::wstring_view>;
+    static const til::static_map vkeyToName{
+    // The above VKEY_NAME_PAIRS macro contains a list of key-binding strings for each virtual key.
+    // This macro picks the first (most preferred) name and creates a static map of virtual keys to key-binding names.
+#define GENERATOR(vkey, name1, ...) vkeyToNamePair{ vkey, name1 },
+        VKEY_NAME_PAIRS(GENERATOR)
+#undef GENERATOR
+    };
+
     if (!chord)
     {
         return {};
