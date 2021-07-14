@@ -177,10 +177,9 @@ namespace winrt::TerminalApp::implementation
             {
                 lastFocusedControl.Focus(_focusState);
 
-                // Update our own progress state, and fire an event signaling
+                // Update our own progress state. This will fire an event signaling
                 // that our taskbar progress changed.
                 _UpdateProgressState();
-                _TaskbarProgressChangedHandlers(lastFocusedControl, nullptr);
             }
             // When we gain focus, remove the bell indicator if it is active
             if (_tabStatus.BellIndicator())
@@ -630,6 +629,14 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    TaskbarState TerminalTab::GetCombinedTaskbarState() const
+    {
+        std::vector<TaskbarState> states;
+        _rootPane->CollectTaskbarStates(states);
+        std::sort(states.begin(), states.end(), TaskbarState::ComparePriority);
+        return states.empty() ? TaskbarState{} : states[0];
+    }
+
     // Method Description:
     // - This should be called on the UI thread. If you don't, then it might
     //   silently do nothing.
@@ -645,43 +652,39 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_UpdateProgressState()
     {
-        std::vector<TaskbarState> states;
-        _rootPane->CollectTaskbarStates(states);
-        std::sort(states.begin(), states.end(), TaskbarState::ComparePriority);
-        if (!states.empty())
-        {
-            const auto& state{ states[0] };
-            // if (const auto& activeControl{ GetActiveTerminalControl() })
-            // {
-            const auto taskbarState = state.state;
-            // The progress of the control changed, but not necessarily the progress of the tab.
-            // Set the tab's progress ring to the active pane's progress
-            if (taskbarState > 0)
-            {
-                if (taskbarState == 3)
-                {
-                    // 3 is the indeterminate state, set the progress ring as such
-                    _tabStatus.IsProgressRingIndeterminate(true);
-                }
-                else
-                {
-                    // any non-indeterminate state has a value, set the progress ring as such
-                    _tabStatus.IsProgressRingIndeterminate(false);
+        const auto state{ GetCombinedTaskbarState() };
 
-                    const auto progressValue = gsl::narrow<uint32_t>(state.progress);
-                    _tabStatus.ProgressValue(progressValue);
-                }
-                // Hide the tab icon (the progress ring is placed over it)
-                HideIcon(true);
-                _tabStatus.IsProgressRingActive(true);
+        const auto taskbarState = state.state;
+        // The progress of the control changed, but not necessarily the progress of the tab.
+        // Set the tab's progress ring to the active pane's progress
+        if (taskbarState > 0)
+        {
+            if (taskbarState == 3)
+            {
+                // 3 is the indeterminate state, set the progress ring as such
+                _tabStatus.IsProgressRingIndeterminate(true);
             }
             else
             {
-                // Show the tab icon
-                HideIcon(false);
-                _tabStatus.IsProgressRingActive(false);
+                // any non-indeterminate state has a value, set the progress ring as such
+                _tabStatus.IsProgressRingIndeterminate(false);
+
+                const auto progressValue = gsl::narrow<uint32_t>(state.progress);
+                _tabStatus.ProgressValue(progressValue);
             }
+            // Hide the tab icon (the progress ring is placed over it)
+            HideIcon(true);
+            _tabStatus.IsProgressRingActive(true);
         }
+        else
+        {
+            // Show the tab icon
+            HideIcon(false);
+            _tabStatus.IsProgressRingActive(false);
+        }
+
+        // fire an event signaling that our taskbar progress changed.
+        _TaskbarProgressChangedHandlers(nullptr, nullptr);
     }
 
     // Method Description:

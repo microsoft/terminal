@@ -35,6 +35,7 @@ DEFINE_ENUM_FLAG_OPERATORS(Borders);
 class TaskbarState
 {
 public:
+    TaskbarState();
     TaskbarState(const uint64_t dispatchTypesState, const uint64_t progress);
     static int ComparePriority(const TaskbarState& lhs, const TaskbarState& rhs);
 

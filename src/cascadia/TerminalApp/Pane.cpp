@@ -2133,6 +2133,10 @@ bool Pane::ContainsReadOnly() const
     return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
+// Default to unset, 0%.
+TaskbarState::TaskbarState() :
+    TaskbarState(0, 0){};
+
 TaskbarState::TaskbarState(const uint64_t dispatchTypesState, const uint64_t progressParam) :
     state{ dispatchTypesState },
     progress{ progressParam } {}

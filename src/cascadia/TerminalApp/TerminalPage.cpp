@@ -2022,9 +2022,9 @@ namespace winrt::TerminalApp::implementation
     // - The taskbar state of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarState()
     {
-        if (auto control{ _GetActiveControl() })
+        if (auto tab{ _GetFocusedTabImpl() })
         {
-            return gsl::narrow_cast<size_t>(control.TaskbarState());
+            return gsl::narrow_cast<size_t>(tab->GetCombinedTaskbarState().state);
         }
         return {};
     }
@@ -2035,9 +2035,9 @@ namespace winrt::TerminalApp::implementation
     // - The taskbar progress of the last active control
     size_t TerminalPage::GetLastActiveControlTaskbarProgress()
     {
-        if (auto control{ _GetActiveControl() })
+        if (auto tab{ _GetFocusedTabImpl() })
         {
-            return gsl::narrow_cast<size_t>(control.TaskbarProgress());
+            return gsl::narrow_cast<size_t>(tab->GetCombinedTaskbarState().progress);
         }
         return {};
     }
