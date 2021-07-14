@@ -7,7 +7,7 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         KeyChordListener();
 
-        Microsoft.Terminal.Control.KeyChord CurrentKeys;
-        static Windows.UI.Xaml.DependencyProperty CurrentKeysProperty { get; };
+        Microsoft.Terminal.Control.KeyChord Keys;
+        static Windows.UI.Xaml.DependencyProperty KeysProperty { get; };
     }
 }

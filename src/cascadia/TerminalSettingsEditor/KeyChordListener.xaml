@@ -7,11 +7,10 @@
 
     <!--  Use PreviewKeyDown to prevent ctrl+a from selecting  -->
     <TextBox x:Name="KeyChordTextBox"
-             x:Uid="KeyChordListener_KeyChordTextBox"
+             x:Uid="KeyChordListener"
              IsReadOnly="True"
              IsSpellCheckEnabled="False"
              IsTabStop="True"
-             LosingFocus="KeyChordTextBox_LosingFocus"
              PreviewKeyDown="KeyChordTextBox_KeyDown"
              TextAlignment="Right"
              TextWrapping="Wrap" />

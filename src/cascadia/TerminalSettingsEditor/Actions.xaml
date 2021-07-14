@@ -198,7 +198,8 @@
                                    Visibility="{x:Bind IsInEditMode, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" />
 
                         <!--  Edit Mode: Action Combo-box  -->
-                        <ComboBox Grid.Column="0"
+                        <ComboBox x:Uid="Actions_ActionComboBox"
+                                  Grid.Column="0"
                                   VerticalAlignment="Center"
                                   ItemsSource="{x:Bind AvailableActions, Mode=OneWay}"
                                   SelectedItem="{x:Bind ProposedAction, Mode=TwoWay}"
@@ -220,7 +221,7 @@
 
                         <!--  Edit Mode: Key Chord Listener  -->
                         <local:KeyChordListener Grid.Column="1"
-                                                CurrentKeys="{x:Bind ProposedKeys, Mode=TwoWay}"
+                                                Keys="{x:Bind ProposedKeys, Mode=TwoWay}"
                                                 Style="{StaticResource KeyChordEditorStyle}"
                                                 Visibility="{x:Bind IsInEditMode, Mode=OneWay}" />
 

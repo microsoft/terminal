@@ -16,7 +16,7 @@ using namespace winrt::Windows::UI::Xaml::Input;
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    DependencyProperty KeyChordListener::_CurrentKeysProperty{ nullptr };
+    DependencyProperty KeyChordListener::_KeysProperty{ nullptr };
 
     static constexpr std::array<VirtualKey, 10> ModifierKeys{
         VirtualKey::Menu,
@@ -81,13 +81,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
         _InitializeProperties();
-
-        PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
-            if (args.PropertyName() == L"ProposedKeys")
-            {
-                KeyChordTextBox().Text(Model::KeyChordSerialization::ToString(_ProposedKeys));
-            }
-        });
     }
 
     void KeyChordListener::_InitializeProperties()
@@ -95,30 +88,33 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // Initialize any KeyChordListener dependency properties here.
         // This performs a lazy load on these properties, instead of
         // initializing them when the DLL loads.
-        if (!_CurrentKeysProperty)
+        if (!_KeysProperty)
         {
-            _CurrentKeysProperty =
+            _KeysProperty =
                 DependencyProperty::Register(
-                    L"CurrentKeys",
+                    L"Keys",
                     xaml_typename<Control::KeyChord>(),
                     xaml_typename<Editor::KeyChordListener>(),
-                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &KeyChordListener::_OnCurrentKeysChanged } });
+                    PropertyMetadata{ nullptr, PropertyChangedCallback{ &KeyChordListener::_OnKeysChanged } });
         }
     }
 
-    void KeyChordListener::_OnCurrentKeysChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& e)
+    void KeyChordListener::_OnKeysChanged(DependencyObject const& d, DependencyPropertyChangedEventArgs const& e)
     {
         if (auto control{ d.try_as<Editor::KeyChordListener>() })
         {
             auto controlImpl{ get_self<KeyChordListener>(control) };
-            controlImpl->ProposedKeys(unbox_value<Control::KeyChord>(e.NewValue()));
+            TextBox tb{ controlImpl->FindName(L"KeyChordTextBox").as<TextBox>() };
+            tb.Text(Model::KeyChordSerialization::ToString(unbox_value<Control::KeyChord>(e.NewValue())));
+            if (auto automationPeer{ Automation::Peers::FrameworkElementAutomationPeer::FromElement(tb) })
+            {
+                automationPeer.RaiseNotificationEvent(
+                    Automation::Peers::AutomationNotificationKind::ActionCompleted,
+                    Automation::Peers::AutomationNotificationProcessing::MostRecent,
+                    tb.Text(),
+                    L"KeyChordListenerText");
+            }
         }
-    }
-
-    void KeyChordListener::KeyChordTextBox_LosingFocus(IInspectable const& /*sender*/, LosingFocusEventArgs const& /*e*/)
-    {
-        // export our key chord into the attached view model
-        SetValue(_CurrentKeysProperty, _ProposedKeys);
     }
 
     void KeyChordListener::KeyChordTextBox_KeyDown(IInspectable const& /*sender*/, KeyRoutedEventArgs const& e)
@@ -140,8 +136,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             return;
         }
 
-        // Permitted key events are used to update _ProposedKeys
-        ProposedKeys({ modifiers, static_cast<int32_t>(key) });
+        // Permitted key events are used to update _Keys
+        Keys({ modifiers, static_cast<int32_t>(key) });
         e.Handled(true);
     }
 }

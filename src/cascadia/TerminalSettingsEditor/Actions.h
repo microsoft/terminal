@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Windows::Foundation::Collections::IObservableVector<hstring>, AvailableActions, nullptr);
 
         // ProposedKeys: the keys proposed by the control; may disagree with the settings model.
-        // CurrentKeys:         the key chord bound in the settings model.
+        // CurrentKeys:  the key chord bound in the settings model.
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, ProposedKeys);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, CurrentKeys, nullptr);
 
