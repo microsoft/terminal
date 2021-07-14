@@ -114,6 +114,7 @@ Backgrounder
 backgrounding
 backport
 backstory
+barbaz
 Batang
 baz
 Bazz
@@ -794,6 +795,7 @@ FONTTYPE
 FONTWEIGHT
 FONTWIDTH
 FONTWINDOW
+fooo
 forceinline
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
@@ -1644,6 +1646,7 @@ oss
 ostream
 ostringstream
 ouicompat
+OUnter
 outdir
 outfile
 Outof
@@ -1986,6 +1989,7 @@ rhs
 RIGHTALIGN
 RIGHTBUTTON
 riid
+Rike
 RIPMSG
 RIS
 RMENU
@@ -2208,6 +2212,7 @@ stoi
 stol
 stoul
 stoutapot
+Stri
 strikethrough
 stringstream
 STRINGTABLE
