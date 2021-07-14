@@ -99,7 +99,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // Just like _memicmp, but without annoying locales.
     template<typename T, typename Traits>
-    _TIL_INLINEPREFIX bool equals_insensitive_ascii(const std::basic_string_view<T, Traits>& str1, const std::basic_string_view<T, Traits>& str2) noexcept
+    bool equals_insensitive_ascii(const std::basic_string_view<T, Traits>& str1, const std::basic_string_view<T, Traits>& str2) noexcept
     {
         if (str1.size() != str2.size())
         {
@@ -139,7 +139,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // * return "foo"
     // If the needle cannot be found the "str" argument is returned as is.
     template<typename T, typename Traits>
-    _TIL_INLINEPREFIX std::basic_string_view<T, Traits> prefix_split(std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& needle) noexcept
+    std::basic_string_view<T, Traits> prefix_split(std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& needle) noexcept
     {
         using view_type = std::basic_string_view<T, Traits>;
 
