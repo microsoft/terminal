@@ -13,6 +13,7 @@ cmdletbinding
 COLORPROPERTY
 colspan
 COMDLG
+comparand
 cstdint
 CXICON
 CYICON
@@ -25,6 +26,7 @@ DWORDLONG
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+filetime
 FILTERSPEC
 FORCEFILESYSTEM
 FORCEMINIMIZE
@@ -124,6 +126,8 @@ smoothstep
 snprintf
 spsc
 sregex
+SRWLOC
+SRWLOCK
 STDCPP
 STDMETHOD
 strchr
@@ -134,6 +138,7 @@ Subpage
 syscall
 TBPF
 THEMECHANGED
+tlg
 tmp
 tolower
 TTask
@@ -152,6 +157,7 @@ XDocument
 XElement
 xfacet
 xhash
+XIcon
 xiosbase
 xlocale
 xlocbuf
@@ -167,3 +173,4 @@ xstddef
 xstring
 xtree
 xutility
+YIcon

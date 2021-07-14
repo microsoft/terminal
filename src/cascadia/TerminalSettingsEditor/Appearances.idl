@@ -21,6 +21,8 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
+        Boolean IsDefault;
+
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 

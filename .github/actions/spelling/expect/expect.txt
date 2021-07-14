@@ -14,7 +14,6 @@ ACTIVEBORDER
 ACTIVECAPTION
 adaa
 ADDALIAS
-ADDB
 ADDREF
 addressof
 ADDSTRING
@@ -50,6 +49,7 @@ APARTMENTTHREADED
 APCs
 api
 APIENTRY
+apimswincoresynchl
 apiset
 APPBARDATA
 appconsult
@@ -379,6 +379,7 @@ cplusplus
 cpp
 CPPCORECHECK
 cppcorecheckrules
+cppm
 cpprest
 cpprestsdk
 cppwinrt
@@ -496,7 +497,6 @@ DEADCHAR
 dealloc
 Debian
 debolden
-debounce
 debugtype
 DECALN
 DECANM
@@ -757,7 +757,6 @@ filepath
 FILESUBTYPE
 FILESYSPATH
 filesystem
-FILETIME
 FILETYPE
 fileurl
 FILEW
@@ -981,7 +980,7 @@ hostlib
 Hostx
 HPA
 HPAINTBUFFER
-hpcon
+HPCON
 hpj
 hpp
 HPR
@@ -1113,6 +1112,7 @@ interop
 interoperability
 inthread
 intptr
+intrin
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1165,6 +1165,7 @@ IWin
 IWindow
 IXaml
 IXMP
+ixx
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1653,6 +1654,7 @@ Outptr
 OVERLAPPEDWINDOW
 OWNDC
 OWNERDRAWFIXED
+packagename
 packageuwp
 PACKCOORD
 PACKVERSION
@@ -1944,7 +1946,6 @@ reingest
 Relayout
 RELBINPATH
 remoting
-Remoting
 renamer
 renderengine
 rendersize
@@ -2033,7 +2034,6 @@ scanline
 schemename
 SCL
 scm
-scprintf
 SCRBUF
 SCRBUFSIZE
 screenbuffer
@@ -2065,7 +2065,7 @@ selectany
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
-serializers
+SERIALIZERS
 SERVERDLL
 SETACTIVE
 SETBUDDYINT
@@ -2306,7 +2306,6 @@ testmddefinition
 testmode
 testname
 testnameprefix
-testnetv
 TESTNULL
 testpass
 testpasses
@@ -2342,7 +2341,6 @@ TITLEISLINKNAME
 TJson
 TLambda
 TLEN
-Tlg
 Tlgdata
 TMAE
 TMPF
@@ -2542,7 +2540,6 @@ VMs
 VPA
 VPATH
 VPR
-VPrintf
 VProc
 VRaw
 VREDRAW
@@ -2769,11 +2766,9 @@ XCount
 xdy
 XEncoding
 xes
-Xes
 xff
 XFile
 XFORM
-xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2781,7 +2776,6 @@ xml
 xmlns
 xor
 xorg
-Xpath
 XPosition
 XResource
 xsd
@@ -2807,7 +2801,6 @@ YCast
 YCENTER
 YCount
 YDPI
-yIcon
 yml
 YOffset
 YPosition
