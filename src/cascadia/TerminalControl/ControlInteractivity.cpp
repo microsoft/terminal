@@ -182,12 +182,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_canSendVTMouseInput(modifiers))
         {
-            auto adjustment = 0;
-            if (_core->ScrollOffset() > 0)
+            const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
+            // If the click happened outside the active region, just don't send any mouse event
+            if (const auto adjustedY = terminalPosition.y() - adjustment >= 0)
             {
-                adjustment = _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight();
+                _core->SendMouseEvent({ terminalPosition.x(), adjustedY }, pointerUpdateKind, modifiers, 0, buttonState);
             }
-            _core->SendMouseEvent({ terminalPosition.x(), terminalPosition.y() - adjustment }, pointerUpdateKind, modifiers, 0, buttonState);
         }
         else if (buttonState.isLeftButtonDown)
         {
