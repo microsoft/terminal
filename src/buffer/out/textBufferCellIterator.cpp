@@ -95,39 +95,48 @@ bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const 
 TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& movement)
 {
     ptrdiff_t move = movement;
-    FAIL_FAST_IF_MSG(move < 0, "Use -= instead");
+    if (move < 0)
+    {
+        return (*this) -= (-move);
+    }
 
-    auto newPos = _pos;
+    auto oldX = _pos.X;
+    auto newX = _pos.X;
+    auto newY = _pos.Y;
+    auto bounds = _bounds;
     while (move > 0)
     {
-        if (newPos.X == _bounds.RightInclusive())
+        if (newX == bounds.RightInclusive())
         {
-            newPos.X = _bounds.Left();
-            newPos.Y++;
-            if (newPos.Y > _bounds.BottomInclusive())
+            newX = bounds.Left();
+            newY++;
+            if (newY > bounds.BottomInclusive())
             {
-                newPos.Y = _bounds.Top();
+                newY = bounds.Top();
                 _exceeded = true;
                 break;
             }
         }
         else
         {
-            newPos.X++;
+            newX++;
             _exceeded = false;
         }
         move--;
     }
 
-    if (newPos.X != _pos.X)
+    if (newX != oldX)
     {
-        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
+        const auto diff = gsl::narrow_cast<ptrdiff_t>(newX) - gsl::narrow_cast<ptrdiff_t>(oldX);
         _attrIter += diff;
+        _view.UpdateTextAttribute(*_attrIter);
     }
 
-    _pos = newPos;
+    const CharRow& charRow = _pRow->GetCharRow();
+    _view.UpdateText(charRow.GlyphAt(newX));
+    _view.UpdateDbcsAttribute(charRow.DbcsAttrAt(newX));
+    _pos.X = newX;
 
-    _GenerateView();
     return (*this);
 }
 
@@ -140,7 +149,10 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 TextBufferCellIterator& TextBufferCellIterator::operator-=(const ptrdiff_t& movement)
 {
     ptrdiff_t move = movement;
-    FAIL_FAST_IF_MSG(move > 0, "Use += instead");
+    if (move < 0)
+    {
+        return (*this) += (-move);
+    }
 
     auto newPos = _pos;
     while (move > 0 && !_exceeded)
@@ -254,8 +266,10 @@ const ROW* TextBufferCellIterator::s_GetRow(const TextBuffer& buffer, const COOR
 // - Updates the internal view. Call after updating row, attribute, or positions.
 void TextBufferCellIterator::_GenerateView()
 {
-    _view.UpdateText(_pRow->GetCharRow().GlyphAt(_pos.X));
-    _view.UpdateDbcsAttribute(_pRow->GetCharRow().DbcsAttrAt(_pos.X));
+    const CharRow& charRow = _pRow->GetCharRow();
+    const auto posX = _pos.X;
+    _view.UpdateText(charRow.GlyphAt(posX));
+    _view.UpdateDbcsAttribute(charRow.DbcsAttrAt(posX));
     _view.UpdateTextAttribute(*_attrIter);
 }
 
