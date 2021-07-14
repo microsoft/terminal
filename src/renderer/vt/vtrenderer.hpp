@@ -45,8 +45,6 @@ namespace Microsoft::Console::Render
 
         virtual ~VtEngine() override = default;
 
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
-        [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
@@ -75,7 +73,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
                                          _Out_ FontInfo& pfiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
-        [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
+        COORD UpdateViewport(IRenderData* pData) noexcept override;
+        COORD UpdateViewport(const SMALL_RECT srNewViewport) noexcept;
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
                                               _Out_ FontInfo& Font,
@@ -112,8 +111,6 @@ namespace Microsoft::Console::Render
         std::string _conversionBuffer;
 
         TextAttribute _lastTextAttributes;
-
-        Microsoft::Console::Types::Viewport _lastViewport;
 
         std::pmr::unsynchronized_pool_resource _pool;
         til::pmr::bitmap _invalidMap;

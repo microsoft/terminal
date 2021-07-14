@@ -76,8 +76,8 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT TriggerSelection(IRenderData* pData) noexcept override;
+        [[nodiscard]] HRESULT TriggerScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
@@ -107,7 +107,6 @@ namespace Microsoft::Console::Render
                                                    const bool isSettingDefaultBrushes) noexcept;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
-        [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
@@ -128,8 +127,8 @@ namespace Microsoft::Console::Render
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle() noexcept;
         void _PaintBufferLineHelper(const BufferLineRenderData& renderData);
+        [[nodiscard]] HRESULT _UpdateTitle(const std::wstring_view newTitle) noexcept;
         [[nodiscard]] HRESULT _PaintTerminalEffects() noexcept;
         [[nodiscard]] bool _FullRepaintNeeded() const noexcept;
 

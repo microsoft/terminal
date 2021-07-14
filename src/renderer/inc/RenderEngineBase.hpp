@@ -49,6 +49,7 @@ namespace Microsoft::Console::Render
 
     protected:
         RenderEngineBase();
+        RenderEngineBase(const Microsoft::Console::Types::Viewport initialViewport);
         RenderEngineBase(const RenderEngineBase&) = default;
         RenderEngineBase(RenderEngineBase&&) = default;
         RenderEngineBase& operator=(const RenderEngineBase&) = default;
@@ -65,9 +66,12 @@ namespace Microsoft::Console::Render
 
         static GridLines s_GetGridlines(const TextAttribute& textAttribute) noexcept;
 
-        std::vector<SMALL_RECT> _GetSelectionRects(IRenderData* pData) const;
+        std::vector<SMALL_RECT> _GetSelectionRects(IRenderData* pData) noexcept;
+        std::vector<SMALL_RECT> _CalculateCurrentSelection(IRenderData* pData) noexcept;
 
-        static bool s_IsAllSpaces(const std::wstring_view v)
+        void _ScrollPreviousSelection(const til::point delta);
+
+        static constexpr bool s_IsAllSpaces(const std::wstring_view v) noexcept
         {
             // first non-space char is not found (is npos)
             return v.find_first_not_of(L" ") == decltype(v)::npos;
@@ -75,12 +79,18 @@ namespace Microsoft::Console::Render
 
     public:
         [[nodiscard]] HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept override;
+        COORD UpdateViewport(IRenderData* pData) noexcept override;
+        [[nodiscard]] bool TriggerRedraw(IRenderData* pData, const Microsoft::Console::Types::Viewport& region) noexcept override;
+        [[nodiscard]] HRESULT TriggerSelection(IRenderData* /*pData*/) noexcept override { return S_OK; };
+        [[nodiscard]] HRESULT TriggerScroll(const COORD* const /*pcoordDelta*/) noexcept override { return S_OK; };
 
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept override;
+        [[nodiscard]] virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept = 0;
 
         void WaitUntilCanRender() noexcept override;
 
-        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval)
+        void UpdateLastHoveredInterval(const std::optional<interval_tree::IntervalTree<til::point, size_t>::interval>& newInterval) noexcept
         {
             _hoveredInterval = newInterval;
         }
@@ -91,6 +101,11 @@ namespace Microsoft::Console::Render
 
         std::vector<Cluster> _clusterBuffer;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
+
+        Microsoft::Console::Types::Viewport _viewport;
+        std::vector<SMALL_RECT> _previousSelection;
+
+        static constexpr float _shrinkThreshold = 0.8f;
     };
 
     inline Microsoft::Console::Render::RenderEngineBase::~RenderEngineBase() {}

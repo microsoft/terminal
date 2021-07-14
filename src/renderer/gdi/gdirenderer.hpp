@@ -26,8 +26,8 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
 
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT TriggerSelection(IRenderData* pData) noexcept override;
+        [[nodiscard]] HRESULT TriggerScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
@@ -66,7 +66,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                          _Out_ FontInfo& FontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
-        [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontDesired,
                                               _Out_ FontInfo& Font,
@@ -79,7 +78,7 @@ namespace Microsoft::Console::Render
     protected:
         void GdiEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData);
 
-        [[nodiscard]] HRESULT _DoUpdateTitle() noexcept;
+        [[nodiscard]] HRESULT _UpdateTitle(const std::wstring_view newTitle) noexcept;
 
     private:
         HWND _hwndTargetWindow;

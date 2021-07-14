@@ -47,7 +47,7 @@ namespace Microsoft::Console::Render
                                               const bool lineWrapped) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
 
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT TriggerScroll(const COORD* const pcoordDelta) noexcept override;
 
         [[nodiscard]] HRESULT WriteTerminalW(const std::wstring_view str) noexcept override;
 
@@ -59,7 +59,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _MoveCursor(const COORD coord) noexcept override;
 
-        [[nodiscard]] HRESULT _DoUpdateTitle(const std::wstring_view newTitle) noexcept;
+        [[nodiscard]] HRESULT _UpdateTitle(const std::wstring_view newTitle) noexcept;
 
 #ifdef UNIT_TESTING
         friend class VtRendererTest;

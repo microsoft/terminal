@@ -240,7 +240,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     Log::Comment(NoThrowString().Format(
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
     COORD scrollDelta = { 0, 1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
@@ -257,7 +257,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     });
 
     scrollDelta = { 0, 3 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
 
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
@@ -282,7 +282,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     });
 
     scrollDelta = { 0, -1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
@@ -299,7 +299,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     });
 
     scrollDelta = { 0, -3 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
@@ -327,9 +327,9 @@ void VtRendererTest::Xterm256TestInvalidate()
         L"Multiple scrolls are coalesced"));
 
     scrollDelta = { 0, 1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     scrollDelta = { 0, 2 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
@@ -354,11 +354,11 @@ void VtRendererTest::Xterm256TestInvalidate()
     });
 
     scrollDelta = { 0, 1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     Log::Comment(engine->_invalidMap.to_string().c_str());
 
     scrollDelta = { 0, -1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     Log::Comment(engine->_invalidMap.to_string().c_str());
 
     qExpectedInput.push_back("\x1b[2J");
@@ -903,7 +903,7 @@ void VtRendererTest::XtermTestInvalidate()
     Log::Comment(NoThrowString().Format(
         L"Make sure that scrolling only invalidates part of the viewport, and sends the right sequences"));
     COORD scrollDelta = { 0, 1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one down, only top line is invalid. ----"));
@@ -920,7 +920,7 @@ void VtRendererTest::XtermTestInvalidate()
     });
 
     scrollDelta = { 0, 3 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
@@ -944,7 +944,7 @@ void VtRendererTest::XtermTestInvalidate()
     });
 
     scrollDelta = { 0, -1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled one up, only bottom line is invalid. ----"));
@@ -961,7 +961,7 @@ void VtRendererTest::XtermTestInvalidate()
     });
 
     scrollDelta = { 0, -3 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three up, only bottom 3 lines are invalid. ----"));
@@ -989,9 +989,9 @@ void VtRendererTest::XtermTestInvalidate()
         L"Multiple scrolls are coalesced"));
 
     scrollDelta = { 0, 1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     scrollDelta = { 0, 2 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     TestPaint(*engine, [&]() {
         Log::Comment(NoThrowString().Format(
             L"---- Scrolled three down, only top 3 lines are invalid. ----"));
@@ -1016,11 +1016,11 @@ void VtRendererTest::XtermTestInvalidate()
     });
 
     scrollDelta = { 0, 1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     Log::Comment(engine->_invalidMap.to_string().c_str());
 
     scrollDelta = { 0, -1 };
-    VERIFY_SUCCEEDED(engine->InvalidateScroll(&scrollDelta));
+    VERIFY_SUCCEEDED(engine->TriggerScroll(&scrollDelta));
     Log::Comment(engine->_invalidMap.to_string().c_str());
 
     qExpectedInput.push_back("\x1b[2J");
@@ -1417,7 +1417,7 @@ void VtRendererTest::TestResize()
     // The renderer (in Renderer@_PaintFrameForEngine..._CheckViewportAndScroll)
     //      will manually call UpdateViewport once before actually painting the
     //      first frame. Replicate that behavior here
-    VERIFY_SUCCEEDED(engine->UpdateViewport(view.ToInclusive()));
+    engine->UpdateViewport(view.ToInclusive());
 
     TestPaint(*engine, [&]() {
         VERIFY_IS_FALSE(engine->_firstPaint);
@@ -1429,7 +1429,7 @@ void VtRendererTest::TestResize()
     const auto newView = Viewport::FromDimensions({ 0, 0 }, { 120, 30 });
     qExpectedInput.push_back("\x1b[8;30;120t");
 
-    VERIFY_SUCCEEDED(engine->UpdateViewport(newView.ToInclusive()));
+    engine->UpdateViewport(newView.ToInclusive());
 
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.all());

@@ -25,21 +25,6 @@ using namespace Microsoft::Console::Render;
 }
 
 // Routine Description:
-// - Notifies us that the console has changed the selection region and would
-//      like it updated
-// Arguments:
-// - rectangles - Vector of rectangles to draw, line by line
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT VtEngine::InvalidateSelection(const std::vector<SMALL_RECT>& /*rectangles*/) noexcept
-{
-    // Selection shouldn't be handled bt the VT Renderer Host, it should be
-    //      handled by the client.
-
-    return S_OK;
-}
-
-// Routine Description:
 // - Notifies us that the console has changed the character region specified.
 // - NOTE: This typically triggers on cursor or text buffer changes
 // Arguments:
@@ -91,7 +76,7 @@ CATCH_RETURN();
 [[nodiscard]] HRESULT VtEngine::InvalidateAll() noexcept
 try
 {
-    _trace.TraceInvalidateAll(_lastViewport.ToOrigin().ToInclusive());
+    _trace.TraceInvalidateAll(_viewport.ToOrigin().ToInclusive());
     _invalidMap.set_all();
     return S_OK;
 }

@@ -27,10 +27,9 @@ const COORD VtEngine::INVALID_COORDS = { -1, -1 };
 // - An instance of a Renderer.
 VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
                    const Viewport initialViewport) :
-    RenderEngineBase(),
+    RenderEngineBase(initialViewport),
     _hFile(std::move(pipe)),
     _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
-    _lastViewport(initialViewport),
     _pool(til::pmr::get_default_resource()),
     _invalidMap(initialViewport.Dimensions(), false, &_pool),
     _lastText({ 0 }),
@@ -213,13 +212,23 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
+COORD VtEngine::UpdateViewport(IRenderData* pData) noexcept
+{
+    SMALL_RECT const srNewViewport = pData->GetViewport().ToInclusive();
+    return UpdateViewport(srNewViewport);
+}
+
+COORD VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
     HRESULT hr = S_OK;
-    const Viewport oldView = _lastViewport;
+    const Viewport oldView = _viewport;
     const Viewport newView = Viewport::FromInclusive(srNewViewport);
 
-    _lastViewport = newView;
+    COORD coordDelta;
+    coordDelta.X = oldView.Left() - newView.Left();
+    coordDelta.Y = oldView.Top() - newView.Top();
+
+    _viewport = newView;
 
     if ((oldView.Height() != newView.Height()) || (oldView.Width() != newView.Width()))
     {
@@ -258,15 +267,14 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
             // Viewport is smaller now - just update it all.
             if (oldView.Height() > newView.Height() || oldView.Width() > newView.Width())
             {
-                hr = InvalidateAll();
+                LOG_IF_FAILED(InvalidateAll());
             }
         }
     }
 
-    return hr;
+    return coordDelta;
 }
-
-// Method Description:
+    // Method Description:
 // - This method will figure out what the new font should be given the starting font information and a DPI.
 // - When the final font is determined, the FontInfo structure given will be updated with the actual resulting font chosen as the nearest match.
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.

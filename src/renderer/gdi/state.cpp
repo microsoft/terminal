@@ -437,18 +437,6 @@ GdiEngine::~GdiEngine()
     return S_OK;
 }
 
-// Method Description:
-// - This method will update our internal reference for how big the viewport is.
-//      Does nothing for GDI.
-// Arguments:
-// - srNewViewport - The bounds of the new viewport.
-// Return Value:
-// - HRESULT S_OK
-[[nodiscard]] HRESULT GdiEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
-{
-    return S_OK;
-}
-
 // Routine Description:
 // - This method will figure out what the new font should be given the starting font information and a DPI.
 // - When the final font is determined, the FontInfo structure given will be updated with the actual resulting font chosen as the nearest match.
@@ -639,10 +627,18 @@ void GdiEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
 //      title must be updated on the main window's windowproc thread.
 // Return Value:
 // -  S_OK if PostMessageW succeeded, otherwise E_FAIL
-[[nodiscard]] HRESULT GdiEngine::_DoUpdateTitle() noexcept
+[[nodiscard]] HRESULT GdiEngine::_UpdateTitle(const std::wstring_view newTitle) noexcept
 {
-    // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
-    return PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM) nullptr) ? S_OK : E_FAIL;
+    HRESULT hr = S_FALSE;
+    if (newTitle != _lastFrameTitle)
+    {
+        // the CM_UPDATE_TITLE handler in windowproc will query the updated title.
+        hr = PostMessageW(_hwndTargetWindow, CM_UPDATE_TITLE, 0, (LPARAM) nullptr) ? S_OK : E_FAIL;
+        _lastFrameTitle = newTitle;
+        _titleChanged = false;
+        hr = S_OK;
+    }
+    return hr;
 }
 
 // Routine Description:

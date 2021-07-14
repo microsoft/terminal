@@ -90,7 +90,7 @@ using namespace Microsoft::Console::Render;
     }
 
     // Paint window title
-    RETURN_IF_FAILED(_DoUpdateTitle());
+    RETURN_IF_FAILED(_UpdateTitle(pData->GetConsoleTitle()));
 
     return S_OK;
 }

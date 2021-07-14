@@ -94,15 +94,9 @@ namespace Microsoft::Console::Render
 
         bool _CheckViewportAndScroll();
 
-        Microsoft::Console::Types::Viewport _viewport;
-
-        static constexpr float _shrinkThreshold = 0.8f;
         std::vector<Cluster> _clusterBuffer;
 
-        void _ScrollPreviousSelection(const til::point delta);
         std::vector<SMALL_RECT> _previousSelection;
-
-        [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
 
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.

@@ -19,6 +19,7 @@ Author(s):
 #include "FontInfoDesired.hpp"
 #include "IRenderData.hpp"
 #include "../../buffer/out/LineRendition.hpp"
+#include "../../types/inc/viewport.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -64,11 +65,11 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept = 0;
 
-        [[nodiscard]] virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept = 0;
+        [[nodiscard]] virtual bool TriggerRedraw(IRenderData* pData, const Microsoft::Console::Types::Viewport& region) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
+        [[nodiscard]] virtual HRESULT TriggerSelection(IRenderData* pData) noexcept = 0;
+        [[nodiscard]] virtual HRESULT TriggerScroll(const COORD* const pcoordDelta) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept = 0;
 
@@ -77,7 +78,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                                  _Out_ FontInfo& FontInfo) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDpi(const int iDpi) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept = 0;
+        virtual COORD UpdateViewport(IRenderData* pData) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired,
                                                       _Out_ FontInfo& FontInfo,

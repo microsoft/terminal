@@ -380,7 +380,7 @@ try
         // statement here.
 
         // Move the cursor to the bottom of the current viewport
-        const short bottom = _lastViewport.BottomInclusive();
+        const short bottom = _viewport.BottomInclusive();
         RETURN_IF_FAILED(_MoveCursor({ 0, bottom }));
         // Emit some number of newlines to create space in the buffer.
         RETURN_IF_FAILED(_Write(std::string(absDy, '\n')));
@@ -429,7 +429,7 @@ try
         // changes _above_ the wrapped line, that we maintain the wrap state in
         // the Terminal.
         const til::rectangle lastCellOfWrappedRow{
-            til::point{ _lastViewport.RightInclusive(), _wrappedRow.value() },
+            til::point{ _viewport.RightInclusive(), _wrappedRow.value() },
             til::size{ 1, 1 }
         };
         _trace.TraceInvalidate(lastCellOfWrappedRow);
@@ -465,7 +465,7 @@ CATCH_RETURN();
 //      console would like us to move while scrolling.
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for safemath failure
-[[nodiscard]] HRESULT XtermEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT XtermEngine::TriggerScroll(const COORD* const pcoordDelta) noexcept
 try
 {
     const til::point delta{ *pcoordDelta };
@@ -479,6 +479,8 @@ try
 
         _scrollDelta += delta;
     }
+
+    _ScrollPreviousSelection(*pcoordDelta);
 
     return S_OK;
 }
@@ -541,19 +543,28 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT XtermEngine::_DoUpdateTitle(const std::wstring_view newTitle) noexcept
+[[nodiscard]] HRESULT XtermEngine::_UpdateTitle(const std::wstring_view newTitle) noexcept
 {
-    // inbox telnet uses xterm-ascii as its mode. If we're in ascii mode, don't
-    //      do anything, to maintain compatibility.
-    if (_fUseAsciiOnly)
+    HRESULT hr = S_FALSE;
+    if (newTitle != _lastFrameTitle)
     {
-        return S_OK;
-    }
+        // inbox telnet uses xterm-ascii as its mode. If we're in ascii mode, don't
+        //      do anything, to maintain compatibility.
+        if (_fUseAsciiOnly)
+        {
+            hr = S_OK;
+        }
 
-    try
-    {
-        const auto converted = ConvertToA(CP_UTF8, newTitle);
-        return VtEngine::_ChangeTitle(converted);
+        try
+        {
+            const auto converted = ConvertToA(CP_UTF8, newTitle);
+            hr = VtEngine::_ChangeTitle(converted);
+        }
+        CATCH_RETURN();
+
+        _lastFrameTitle = newTitle;
+        _titleChanged = false;
+        hr = S_OK;
     }
-    CATCH_RETURN();
+    return hr;
 }

@@ -44,14 +44,12 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT TriggerSelection(IRenderData* pData) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
-        [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
 
@@ -68,7 +66,6 @@ namespace Microsoft::Console::Render
 
         Microsoft::Console::Types::IUiaEventDispatcher* _dispatcher;
 
-        std::vector<SMALL_RECT> _prevSelection;
         SMALL_RECT _prevCursorRegion;
     };
 }

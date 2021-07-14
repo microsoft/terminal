@@ -28,7 +28,7 @@ HRESULT GdiEngine::InvalidateSystem(const RECT* const prcDirtyClient) noexcept
 // - pcoordDelta - Pointer to character dimension (COORD) of the distance the console would like us to move while scrolling.
 // Return Value:
 // - HRESULT S_OK, GDI-based error code, or safemath error
-HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+HRESULT GdiEngine::TriggerScroll(const COORD* const pcoordDelta) noexcept
 {
     if (pcoordDelta->X != 0 || pcoordDelta->Y != 0)
     {
@@ -45,6 +45,8 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
         _szInvalidScroll = szInvalidScrollNew;
     }
 
+    _ScrollPreviousSelection(*pcoordDelta);
+
     return S_OK;
 }
 
@@ -54,12 +56,21 @@ HRESULT GdiEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
 // - rectangles - Vector of rectangles to draw, line by line
 // Return Value:
 // - HRESULT S_OK or GDI-based error code
-HRESULT GdiEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+HRESULT GdiEngine::TriggerSelection(IRenderData* pData) noexcept
 {
+    const auto rectangles = _CalculateCurrentSelection(pData);
+
+    for (const auto& rect : _previousSelection)
+    {
+        RETURN_IF_FAILED(Invalidate(&rect));
+    }
+
     for (const auto& rect : rectangles)
     {
         RETURN_IF_FAILED(Invalidate(&rect));
     }
+
+    _previousSelection = rectangles;
 
     return S_OK;
 }

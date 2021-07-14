@@ -31,8 +31,7 @@ Renderer::Renderer(IRenderData* pData,
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
     _pThread{ std::move(thread) },
     _destructing{ false },
-    _clusterBuffer{},
-    _viewport{ pData->GetViewport() }
+    _clusterBuffer{}
 {
     for (size_t i = 0; i < cEngines; i++)
     {
@@ -192,30 +191,13 @@ void Renderer::TriggerSystemRedraw(const RECT* const prcDirtyClient)
 // - <none>
 void Renderer::TriggerRedraw(const Viewport& region)
 {
-    Viewport view = _viewport;
-    SMALL_RECT srUpdateRegion = region.ToExclusive();
-
-    // If the dirty region has double width lines, we need to double the size of
-    // the right margin to make sure all the affected cells are invalidated.
-    const auto& buffer = _pData->GetTextBuffer();
-    for (auto row = srUpdateRegion.Top; row < srUpdateRegion.Bottom; row++)
-    {
-        if (buffer.IsDoubleWidthLine(row))
+    std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+        const bool needRedraw = pEngine->TriggerRedraw(_pData, region);
+        if (needRedraw)
         {
-            srUpdateRegion.Right *= 2;
-            break;
+            _NotifyPaintFrame();
         }
-    }
-
-    if (view.TrimToViewport(&srUpdateRegion))
-    {
-        view.ConvertToOrigin(&srUpdateRegion);
-        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-            LOG_IF_FAILED(pEngine->Invalidate(&srUpdateRegion));
-        });
-
-        _NotifyPaintFrame();
-    }
+    });
 }
 
 // Routine Description:
@@ -323,6 +305,10 @@ void Renderer::TriggerSelection()
 {
     try
     {
+        std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
+            LOG_IF_FAILED(pEngine->TriggerSelection(_pData));
+        });
+
         _NotifyPaintFrame();
     }
     CATCH_LOG();
@@ -336,36 +322,13 @@ void Renderer::TriggerSelection()
 // - True if something changed and we scrolled. False otherwise.
 bool Renderer::_CheckViewportAndScroll()
 {
-    SMALL_RECT const srOldViewport = _viewport.ToInclusive();
-    SMALL_RECT const srNewViewport = _pData->GetViewport().ToInclusive();
-
-    COORD coordDelta;
-    coordDelta.X = srOldViewport.Left - srNewViewport.Left;
-    coordDelta.Y = srOldViewport.Top - srNewViewport.Top;
-
     for (auto engine : _rgpEngines)
     {
-        LOG_IF_FAILED(engine->UpdateViewport(srNewViewport));
-    }
-
-    _viewport = Viewport::FromInclusive(srNewViewport);
-
-    // If we're keeping some buffers between calls, let them know about the viewport size
-    // so they can prepare the buffers for changes to either preallocate memory at once
-    // (instead of growing naturally) or shrink down to reduce usage as appropriate.
-    const size_t lineLength = gsl::narrow_cast<size_t>(til::rectangle{ srNewViewport }.width());
-    til::manage_vector(_clusterBuffer, lineLength, _shrinkThreshold);
-
-    if (coordDelta.X != 0 || coordDelta.Y != 0)
-    {
-        for (auto engine : _rgpEngines)
+        COORD coordDelta = engine->UpdateViewport(_pData);
+        if (coordDelta.X != 0 || coordDelta.Y != 0)
         {
-            LOG_IF_FAILED(engine->InvalidateScroll(&coordDelta));
+            LOG_IF_FAILED(engine->TriggerScroll(&coordDelta));
         }
-
-        _ScrollPreviousSelection(coordDelta);
-
-        return true;
     }
 
     return false;
@@ -398,10 +361,8 @@ void Renderer::TriggerScroll()
 void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
-        LOG_IF_FAILED(pEngine->InvalidateScroll(pcoordDelta));
+        LOG_IF_FAILED(pEngine->TriggerScroll(pcoordDelta));
     });
-
-    _ScrollPreviousSelection(*pcoordDelta);
 
     _NotifyPaintFrame();
 }
@@ -557,97 +518,6 @@ void Renderer::WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs)
     _pThread->WaitForPaintCompletionAndDisable(dwTimeoutMs);
 }
 
-// Routine Description:
-// - Retrieve information about the cursor, and pack it into a CursorOptions
-//   which the render engine can use for painting the cursor.
-// - If the cursor is "off", or the cursor is out of bounds of the viewport,
-//   this will return nullopt (indicating the cursor shouldn't be painted this
-//   frame)
-// Arguments:
-// - <none>
-// Return Value:
-// - nullopt if the cursor is off or out-of-frame, otherwise a CursorOptions
-[[nodiscard]] std::optional<CursorOptions> Renderer::_GetCursorInfo()
-{
-    if (_pData->IsCursorVisible())
-    {
-        // Get cursor position in buffer
-        COORD coordCursor = _pData->GetCursorPosition();
-
-        // GH#3166: Only draw the cursor if it's actually in the viewport. It
-        // might be on the line that's in that partially visible row at the
-        // bottom of the viewport, the space that's not quite a full line in
-        // height. Since we don't draw that text, we shouldn't draw the cursor
-        // there either.
-
-        // The cursor is never rendered as double height, so we don't care about
-        // the exact line rendition - only whether it's double width or not.
-        const auto doubleWidth = _pData->GetTextBuffer().IsDoubleWidthLine(coordCursor.Y);
-        const auto lineRendition = doubleWidth ? LineRendition::DoubleWidth : LineRendition::SingleWidth;
-
-        // We need to convert the screen coordinates of the viewport to an
-        // equivalent range of buffer cells, taking line rendition into account.
-        const auto view = ScreenToBufferLine(_pData->GetViewport().ToInclusive(), lineRendition);
-
-        // Note that we allow the X coordinate to be outside the left border by 1 position,
-        // because the cursor could still be visible if the focused character is double width.
-        const auto xInRange = coordCursor.X >= view.Left - 1 && coordCursor.X <= view.Right;
-        const auto yInRange = coordCursor.Y >= view.Top && coordCursor.Y <= view.Bottom;
-        if (xInRange && yInRange)
-        {
-            // Adjust cursor Y offset to viewport.
-            // The viewport X offset is saved in the options and handled with a transform.
-            coordCursor.Y -= view.Top;
-
-            COLORREF cursorColor = _pData->GetCursorColor();
-            bool useColor = cursorColor != INVALID_COLOR;
-
-            // Build up the cursor parameters including position, color, and drawing options
-            CursorOptions options;
-            options.coordCursor = coordCursor;
-            options.viewportLeft = _pData->GetViewport().Left();
-            options.lineRendition = lineRendition;
-            options.ulCursorHeightPercent = _pData->GetCursorHeight();
-            options.cursorPixelWidth = _pData->GetCursorPixelWidth();
-            options.fIsDoubleWidth = _pData->IsCursorDoubleWidth();
-            options.cursorType = _pData->GetCursorStyle();
-            options.fUseColor = useColor;
-            options.cursorColor = cursorColor;
-            options.isOn = _pData->IsCursorOn();
-
-            return { options };
-        }
-    }
-    return std::nullopt;
-}
-
-// Method Description:
-// - Offsets all of the selection rectangles we might be holding onto
-//   as the previously selected area. If the whole viewport scrolls,
-//   we need to scroll these areas also to ensure they're invalidated
-//   properly when the selection further changes.
-// Arguments:
-// - delta - The scroll delta
-// Return Value:
-// - <none> - Updates internal state instead.
-void Renderer::_ScrollPreviousSelection(const til::point delta)
-{
-    if (delta != til::point{ 0, 0 })
-    {
-        for (auto& sr : _previousSelection)
-        {
-            // Get a rectangle representing this piece of the selection.
-            til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
-
-            // Offset the entire existing rectangle by the delta.
-            rc += delta;
-
-            // Store it back into the vector.
-            sr = Viewport::FromInclusive(rc).ToExclusive();
-        }
-    }
-}
-
 // Method Description:
 // - Adds another Render engine to this renderer. Future rendering calls will
 //      also be sent to the new renderer.
@@ -660,6 +530,7 @@ void Renderer::_ScrollPreviousSelection(const til::point delta)
 void Renderer::AddRenderEngine(_In_ IRenderEngine* const pEngine)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, pEngine);
+    pEngine->UpdateViewport(_pData);
     _rgpEngines.push_back(pEngine);
 }
 

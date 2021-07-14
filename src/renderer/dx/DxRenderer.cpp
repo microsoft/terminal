@@ -1122,17 +1122,28 @@ CATCH_RETURN();
 // - rectangles - One or more rectangles describing character positions on the grid
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept
+[[nodiscard]] HRESULT DxEngine::TriggerSelection(IRenderData* pData) noexcept
+try
 {
+    const auto rects = _CalculateCurrentSelection(pData);
     if (!_allInvalid)
     {
-        for (const auto& rect : rectangles)
+        for (const auto& rect : _previousSelection)
+        {
+            RETURN_IF_FAILED(Invalidate(&rect));
+        }
+
+        for (const auto& rect : rects)
         {
             RETURN_IF_FAILED(Invalidate(&rect));
         }
     }
+
+    _previousSelection = rects;
+
     return S_OK;
 }
+CATCH_RETURN();
 
 // Routine Description:
 // - Scrolls the existing dirty region (if it exists) and
@@ -1142,7 +1153,7 @@ CATCH_RETURN();
 //               - -Y is up, Y is down, -X is left, X is right.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::InvalidateScroll(const COORD* const pcoordDelta) noexcept
+[[nodiscard]] HRESULT DxEngine::TriggerScroll(const COORD* const pcoordDelta) noexcept
 try
 {
     RETURN_HR_IF(E_INVALIDARG, !pcoordDelta);
@@ -1159,6 +1170,8 @@ try
             _allInvalid = _IsAllInvalid();
         }
     }
+
+    _ScrollPreviousSelection(*pcoordDelta);
 
     return S_OK;
 }
@@ -1360,7 +1373,13 @@ CATCH_RETURN()
 // Return Value:
 // - Any DirectX error, a memory error, etc.
 [[nodiscard]] HRESULT DxEngine::PaintFrame(IRenderData *pData) noexcept
+try
 {
+    if (pData == nullptr)
+    {
+        return S_OK;
+    }
+
     // Prep Colors
     RETURN_IF_FAILED(UpdateDrawingBrushes(pData->GetDefaultBrushColors(), pData, true));
 
@@ -1382,10 +1401,12 @@ CATCH_RETURN()
     _LoopSelection(pData, std::bind(&DxEngine::PaintSelection, this, std::placeholders::_1));
 
     // Paint window title
-    RETURN_IF_FAILED(_DoUpdateTitle());
+    RETURN_IF_FAILED(_UpdateTitle(pData->GetConsoleTitle()));
 
     return S_OK;
 }
+CATCH_RETURN();
+
     // Routine Description:
 // - Ends batch drawing and captures any state necessary for presentation
 // Arguments:
@@ -2055,18 +2076,6 @@ float DxEngine::GetScaling() const noexcept
     return _scale;
 }
 
-// Method Description:
-// - This method will update our internal reference for how big the viewport is.
-//      Does nothing for DX.
-// Arguments:
-// - srNewViewport - The bounds of the new viewport.
-// Return Value:
-// - HRESULT S_OK
-[[nodiscard]] HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
-{
-    return S_OK;
-}
-
 // Routine Description:
 // - Currently unused by this renderer
 // Arguments:
@@ -2143,14 +2152,24 @@ CATCH_RETURN();
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT DxEngine::_DoUpdateTitle() noexcept
+[[nodiscard]] HRESULT DxEngine::_UpdateTitle(const std::wstring_view newTitle) noexcept
+try
 {
-    if (_hwndTarget != INVALID_HANDLE_VALUE)
+    HRESULT hr = S_FALSE;
+    if (newTitle != _lastFrameTitle)
     {
-        return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+        if (_hwndTarget != INVALID_HANDLE_VALUE)
+        {
+            return PostMessageW(_hwndTarget, CM_UPDATE_TITLE, 0, 0) ? S_OK : E_FAIL;
+        }
+
+        _lastFrameTitle = newTitle;
+        _titleChanged = false;
+        hr = S_OK;
     }
-    return S_FALSE;
+    return hr;
 }
+CATCH_RETURN();
 
 void DxEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
 {
@@ -2222,7 +2241,7 @@ void DxEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
             const auto thisPointPatterns = pData->GetPatternId(thisPoint);
             if (color != it->TextAttr() || patternIds != thisPointPatterns)
             {
-                auto newAttr{ it->TextAttr() };
+                const auto newAttr{ it->TextAttr() };
                 // foreground doesn't matter for runs of spaces (!)
                 // if we trick it . . . we call Paint far fewer times for cmatrix
                 if (!s_IsAllSpaces(it->Chars()) || !newAttr.HasIdenticalVisualRepresentationForBlankSpace(color, renderData.globalInvert) || patternIds != thisPointPatterns)
@@ -2293,8 +2312,8 @@ void DxEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
                 // Do that in the future if some WPR trace points you to this spot as super bad.
                 for (auto colsPainted = 0u; colsPainted < cols; ++colsPainted, ++lineIt, ++lineTarget.X)
                 {
-                    auto lines = lineIt->TextAttr();
-                    auto gridLines = _CalculateGridLines(pData, lines, lineTarget);
+                    const auto lines = lineIt->TextAttr();
+                    const auto gridLines = _CalculateGridLines(pData, lines, lineTarget);
                     // Return early if there are no lines to paint.
                     if (gridLines != IRenderEngine::GridLines::None)
                     {
@@ -2308,7 +2327,7 @@ void DxEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
             else
             {
                 // If nothing exciting is going on, draw the lines in bulk.
-                auto gridLines = _CalculateGridLines(pData, currentRunColor, screenPoint);
+                const auto gridLines = _CalculateGridLines(pData, currentRunColor, screenPoint);
                 // Return early if there are no lines to paint.
                 if (gridLines != IRenderEngine::GridLines::None)
                 {

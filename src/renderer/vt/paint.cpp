@@ -35,7 +35,7 @@ using namespace Microsoft::Console::Types;
     _quickReturn = !somethingToDo;
     _trace.TraceStartPaint(_quickReturn,
                            _invalidMap,
-                           _lastViewport.ToInclusive(),
+                           _viewport.ToInclusive(),
                            _scrollDelta,
                            _cursorMoved,
                            _wrappedRow);
@@ -521,7 +521,7 @@ void VtEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
     const bool useEraseChar = (optimalToUseECH) &&
                               (!_newBottomLine) &&
                               (!_clearedAllThisFrame);
-    const bool printingBottomLine = coord.Y == _lastViewport.BottomInclusive();
+    const bool printingBottomLine = coord.Y == _viewport.BottomInclusive();
 
     // GH#5502 - If the background color of the "new bottom line" is different
     // than when we emitted the line, we can't optimize out the spaces from it.
@@ -604,7 +604,7 @@ void VtEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
     // GH#1245: This needs to be RightExclusive, _not_ inclusive. Otherwise, we
     // won't update our internal cursor position tracker correctly at the last
     // character of the row.
-    if (_lastText.X < _lastViewport.RightExclusive())
+    if (_lastText.X < _viewport.RightExclusive())
     {
         _lastText.X += static_cast<short>(columnsActual);
     }
@@ -614,7 +614,7 @@ void VtEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
     // Mark that we're in the delayed EOL wrap state - we don't want to be
     // clever about how we move the cursor in this state, since different
     // terminals will handle a backspace differently in this state.
-    if (_lastText.X >= _lastViewport.RightInclusive())
+    if (_lastText.X >= _viewport.RightInclusive())
     {
         _delayedEolWrap = true;
     }
@@ -636,7 +636,7 @@ void VtEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
         //   before we need to print new text.
         _deferredCursorPos = { _lastText.X + sNumSpaces, _lastText.Y };
 
-        if (_deferredCursorPos.X <= _lastViewport.RightInclusive())
+        if (_deferredCursorPos.X <= _viewport.RightInclusive())
         {
             RETURN_IF_FAILED(_EraseCharacter(sNumSpaces));
         }
