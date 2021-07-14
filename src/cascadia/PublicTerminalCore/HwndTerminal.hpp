@@ -73,7 +73,6 @@ private:
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
     int _currentDpi;
-    bool _uiaProviderInitialized;
     std::function<void(wchar_t*)> _pfnWriteCallback;
     ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
 

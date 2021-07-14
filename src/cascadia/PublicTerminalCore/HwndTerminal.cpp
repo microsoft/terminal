@@ -172,7 +172,6 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _desiredFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8 },
     _actualFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
-    _uiaProviderInitialized{ false },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
     _pfnWriteCallback{ nullptr },
     _multiClickTime{ 500 } // this will be overwritten by the windows system double-click time
@@ -324,18 +323,11 @@ void HwndTerminal::_UpdateFont(int newDpi)
 
 IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
 {
-    if (nullptr == _uiaProvider && !_uiaProviderInitialized)
+    if (!_uiaProvider)
     {
-        std::unique_lock<std::shared_mutex> lock;
         try
         {
-#pragma warning(suppress : 26441) // The lock is named, this appears to be a false positive
-            lock = _terminal->LockForWriting();
-            if (_uiaProviderInitialized)
-            {
-                return _uiaProvider.Get();
-            }
-
+            auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, this->GetUiaData(), this));
         }
         catch (...)
@@ -343,7 +335,6 @@ IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
             LOG_HR(wil::ResultFromCaughtException());
             _uiaProvider = nullptr;
         }
-        _uiaProviderInitialized = true;
     }
 
     return _uiaProvider.Get();
