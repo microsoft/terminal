@@ -360,18 +360,22 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
 //   sizes of our child XAML Islands to match our new sizing.
 void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
 {
-    const auto topBorderHeight = Utils::ClampToShortMax(_GetTopBorderHeight(), 0);
+    const short topBorderHeight = _GetTopBorderHeight() == 0 ? -1 : 1; //Utils::ClampToShortMax(_GetTopBorderHeight(), 0);
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
+    const til::size newSize{ static_cast<int>(windowWidth),
+                             static_cast<int>(windowHeight - topBorderHeight) };
     winrt::check_bool(SetWindowPos(_interopWindowHandle,
                                    HWND_BOTTOM,
                                    newIslandPos.X,
                                    newIslandPos.Y,
-                                   windowWidth,
-                                   windowHeight - topBorderHeight,
+                                   newSize.width<int>(),
+                                   newSize.height<int>(),
                                    SWP_SHOWWINDOW | SWP_NOACTIVATE));
 
+    // _rootGrid.Width(newSize.width<int>());
+    // _rootGrid.Height(newSize.height<int>());
     // This happens when we go from maximized to restored or the opposite
     // because topBorderHeight changes.
     if (!_oldIslandPos.has_value() || _oldIslandPos.value() != newIslandPos)
@@ -428,6 +432,11 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // Re-apply the original top from before the size of the default frame was applied.
     newSize.top = originalTop;
 
+    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
+    MONITORINFO monInfo{};
+    monInfo.cbSize = sizeof(MONITORINFO);
+    GetMonitorInfoW(hMon, &monInfo);
+
     // WM_NCCALCSIZE is called before WM_SIZE
     _UpdateMaximizedState();
 
@@ -450,7 +459,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // still mouse-over the taskbar to reveal it.
     // GH#5209 - make sure to use MONITOR_DEFAULTTONEAREST, so that this will
     // still find the right monitor even when we're restoring from minimized.
-    HMONITOR hMon = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
     if (hMon && (_isMaximized || _fullscreen))
     {
         MONITORINFO monInfo{ 0 };
