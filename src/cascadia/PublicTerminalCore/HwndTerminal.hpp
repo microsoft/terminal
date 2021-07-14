@@ -82,6 +82,7 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
     bool _focused{ false };
+    bool _uiaProviderInitialized{ false };
 
     std::chrono::milliseconds _multiClickTime;
     unsigned int _multiClickCounter{};

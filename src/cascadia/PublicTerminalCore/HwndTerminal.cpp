@@ -323,12 +323,16 @@ void HwndTerminal::_UpdateFont(int newDpi)
 
 IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
 {
-    if (!_uiaProvider)
+    // If TermControlUiaProvider throws during construction,
+    // we don't want to try constructing an instance again and again.
+    // _uiaProviderInitialized helps us prevent this.
+    if (!_uiaProviderInitialized)
     {
         try
         {
             auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, this->GetUiaData(), this));
+            _uiaProviderInitialized = true;
         }
         catch (...)
         {
