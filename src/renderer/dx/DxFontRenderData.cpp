@@ -546,7 +546,7 @@ float DxFontRenderData::FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fo
     }
     else
     {
-        return fontStretchEnumToVal[fontStretch];
+        return til::at(fontStretchEnumToVal, fontStretch);
     }
 }
 
@@ -597,7 +597,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
                                                                     const float fontSize,
                                                                     IDWriteTextFormat3* format)
 {
-    THROW_IF_NULL_ALLOC(format);
+    FAIL_FAST_IF_NULL(format);
 
     const auto axesCount = format->GetFontAxisValueCount();
     std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
