@@ -2133,6 +2133,50 @@ bool Pane::ContainsReadOnly() const
     return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
+TaskbarState::TaskbarState(const uint64_t dispatchTypesState, const uint64_t progressParam) :
+    state{ dispatchTypesState },
+    progress{ progressParam } {}
+
+uint64_t TaskbarState::_getPriority() const
+{
+    // This seemingly nonsensical ordering is from
+    // https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate#how-the-taskbar-button-chooses-the-progress-indicator-for-a-group
+    switch (state)
+    {
+    case 0: // Clear = 0,
+        return 5;
+    case 1: // Set = 1,
+        return 3;
+    case 2: // Error = 2,
+        return 1;
+    case 3: // Indeterminate = 3,
+        return 4;
+    case 4: // Paused = 4
+        return 2;
+    }
+    // Here, return 6, to definitely be greater than all the other valid values.
+    // This should never really happen.
+    return 6;
+}
+
+int TaskbarState::ComparePriority(const TaskbarState& lhs, const TaskbarState& rhs)
+{
+    return lhs._getPriority() < rhs._getPriority();
+}
+
+void Pane::CollectTaskbarStates(std::vector<TaskbarState>& states)
+{
+    if (_IsLeaf())
+    {
+        states.emplace_back(_control.TaskbarState(), _control.TaskbarProgress());
+    }
+    else
+    {
+        _firstChild->CollectTaskbarStates(states);
+        _secondChild->CollectTaskbarStates(states);
+    }
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);

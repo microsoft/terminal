@@ -645,9 +645,15 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_UpdateProgressState()
     {
-        if (const auto& activeControl{ GetActiveTerminalControl() })
+        std::vector<TaskbarState> states;
+        _rootPane->CollectTaskbarStates(states);
+        std::sort(states.begin(), states.end(), TaskbarState::ComparePriority);
+        if (!states.empty())
         {
-            const auto taskbarState = activeControl.TaskbarState();
+            const auto& state{ states[0] };
+            // if (const auto& activeControl{ GetActiveTerminalControl() })
+            // {
+            const auto taskbarState = state.state;
             // The progress of the control changed, but not necessarily the progress of the tab.
             // Set the tab's progress ring to the active pane's progress
             if (taskbarState > 0)
@@ -662,7 +668,7 @@ namespace winrt::TerminalApp::implementation
                     // any non-indeterminate state has a value, set the progress ring as such
                     _tabStatus.IsProgressRingIndeterminate(false);
 
-                    const auto progressValue = gsl::narrow<uint32_t>(activeControl.TaskbarProgress());
+                    const auto progressValue = gsl::narrow<uint32_t>(state.progress);
                     _tabStatus.ProgressValue(progressValue);
                 }
                 // Hide the tab icon (the progress ring is placed over it)

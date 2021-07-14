@@ -32,6 +32,19 @@ enum class Borders : int
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
 
+class TaskbarState
+{
+public:
+    TaskbarState(const uint64_t dispatchTypesState, const uint64_t progress);
+    static int ComparePriority(const TaskbarState& lhs, const TaskbarState& rhs);
+
+    uint64_t state{ 0 };
+    uint64_t progress{ 0 };
+
+private:
+    uint64_t _getPriority() const;
+};
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -81,6 +94,8 @@ public:
     bool FocusPane(const uint32_t id);
 
     bool ContainsReadOnly() const;
+
+    void CollectTaskbarStates(std::vector<TaskbarState>& states);
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
