@@ -5,6 +5,7 @@
 #include "KeyChordSerialization.h"
 #include "KeyChordSerialization.g.cpp"
 
+#include <charconv>
 #include <til/static_map.h>
 
 using namespace winrt::Microsoft::Terminal::Control;
@@ -73,7 +74,39 @@ constexpr std::wstring_view WIN_KEY{ L"win" };
     XX(VK_NUMPAD7, L"numpad7", L"numpad_7")              \
     XX(VK_NUMPAD8, L"numpad8", L"numpad_8")              \
     XX(VK_NUMPAD9, L"numpad9", L"numpad_9")              \
-    XX(VK_OEM_PLUS, L"plus")
+    XX(VK_OEM_PLUS, L"plus") /* '+' any country */       \
+    XX(VK_OEM_COMMA, L"comma") /* ',' any country */     \
+    XX(VK_OEM_MINUS, L"minus") /* '-' any country */     \
+    XX(VK_OEM_PERIOD, L"period") /* '.' any country */
+
+constexpr std::wstring_view vkeyPrefix{ L"vk(" };
+constexpr std::wstring_view scanCodePrefix{ L"sc(" };
+constexpr std::wstring_view codeSuffix{ L")" };
+
+// Parses a vk(nnn) or sc(nnn) key chord part.
+// If the part doesn't contain either of these two this function returns 0.
+// For invalid arguments we throw an exception.
+static int32_t parseNumericCode(const std::wstring_view& str, const std::wstring_view& prefix, const std::wstring_view& suffix)
+{
+    if (!til::ends_with(str, suffix) || !til::starts_with(str, prefix))
+    {
+        return 0;
+    }
+
+    try
+    {
+        const auto value = til::from_wchars({ str.data() + prefix.size(), str.size() - prefix.size() - suffix.size() });
+        if (value < 256)
+        {
+            return gsl::narrow_cast<int32_t>(value);
+        }
+    }
+    catch (...)
+    {
+    }
+
+    throw winrt::hresult_invalid_argument(L"Invalid numeric argument to vk() or sc()");
+}
 
 // Function Description:
 // - Deserializes the given string into a new KeyChord instance. If this
@@ -109,6 +142,7 @@ static KeyChord _fromString(std::wstring_view wstr)
 
     VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
     int32_t vkey = 0;
+    int32_t scanCode = 0;
 
     while (!wstr.empty())
     {
@@ -132,10 +166,9 @@ static KeyChord _fromString(std::wstring_view wstr)
         }
         else
         {
-            if (vkey)
+            if (vkey || scanCode)
             {
-                // Key bindings like Ctrl+A+B are not valid.
-                throw winrt::hresult_invalid_argument();
+                throw winrt::hresult_invalid_argument(L"Key bindings like Ctrl+A+B are not valid");
             }
 
             // Characters 0-9, a-z, A-Z directly map to virtual keys.
@@ -147,6 +180,22 @@ static KeyChord _fromString(std::wstring_view wstr)
                     vkey = static_cast<int32_t>(wch);
                     continue;
                 }
+            }
+
+            // vk() allows a user to specify a virtual key code
+            // and sc() allows them to specify a scan code manually.
+            //
+            // ctrl+vk(0x09) for instance is the same as ctrl+tab, while win+sc(29) specifies
+            // a key binding which is (seemingly) always bound to the key below Esc.
+            vkey = parseNumericCode(part, vkeyPrefix, codeSuffix);
+            if (vkey)
+            {
+                continue;
+            }
+            scanCode = parseNumericCode(part, scanCodePrefix, codeSuffix);
+            if (scanCode)
+            {
+                continue;
             }
 
             // nameToVkey contains a few more mappings like "F11".
@@ -172,11 +221,11 @@ static KeyChord _fromString(std::wstring_view wstr)
                 }
             }
 
-            throw winrt::hresult_invalid_argument();
+            throw winrt::hresult_invalid_argument(L"Invalid key binding");
         }
     }
 
-    return KeyChord{ modifiers, vkey };
+    return KeyChord{ modifiers, vkey, scanCode };
 }
 
 // Function Description:
@@ -204,6 +253,7 @@ static std::wstring _toString(const KeyChord& chord)
 
     const auto modifiers = chord.Modifiers();
     const auto vkey = chord.Vkey();
+    const auto scanCode = chord.ScanCode();
     std::wstring buffer;
 
     // Add modifiers
@@ -228,6 +278,14 @@ static std::wstring _toString(const KeyChord& chord)
         buffer.push_back(L'+');
     }
 
+    if (scanCode)
+    {
+        buffer.append(scanCodePrefix);
+        buffer.append(std::to_wstring(scanCode));
+        buffer.append(codeSuffix);
+        return buffer;
+    }
+
     // Quick lookup: ranges of vkeys that correlate directly to a key.
     if ((vkey >= L'0' && vkey <= L'9') || (vkey >= L'A' && vkey <= L'Z'))
     {
@@ -245,6 +303,14 @@ static std::wstring _toString(const KeyChord& chord)
     if (mappedChar != 0)
     {
         buffer.push_back(gsl::narrow_cast<wchar_t>(mappedChar));
+        return buffer;
+    }
+
+    if (vkey)
+    {
+        buffer.append(vkeyPrefix);
+        buffer.append(std::to_wstring(vkey));
+        buffer.append(codeSuffix);
         return buffer;
     }
 

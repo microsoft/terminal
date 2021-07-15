@@ -513,9 +513,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 //       If we had to find one from a layer above that, parent->_MaskingActions
                 //       would have found it, so we inherit it for free!
                 const auto& inheritedCmd{ parent->_GetActionByID(actionID) };
-                if (inheritedCmd.has_value() && inheritedCmd.value())
+                if (inheritedCmd && *inheritedCmd)
                 {
-                    const auto& inheritedCmdImpl{ get_self<Command>(inheritedCmd.value()) };
+                    const auto& inheritedCmdImpl{ get_self<Command>(*inheritedCmd) };
                     maskingCmd = *inheritedCmdImpl->Copy();
                     _MaskingActions.emplace(actionID, maskingCmd);
                 }
@@ -683,18 +683,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - keys: the key chord of the command to search for
     // Return Value:
     // - the command with the given key chord
-    // - nullptr if the key chord is explicitly unbound
+    // - nullptr if the key chord doesn't exist
     Model::Command ActionMap::GetActionByKeyChord(Control::KeyChord const& keys) const
     {
-        // Check the current layer
-        const auto cmd{ _GetActionByKeyChordInternal(keys) };
-        if (cmd.has_value())
+        const auto modifiers = keys.Modifiers();
+
+        if (auto vkey = keys.Vkey())
         {
-            return *cmd;
+            if (auto command = _GetActionByKeyChordInternal({ modifiers, vkey, 0 }))
+            {
+                return *command;
+            }
         }
 
-        // This key chord is not explicitly bound
-        return nullptr;
+        return _GetActionByKeyChordInternal({ modifiers, 0, keys.ScanCode() }).value_or(nullptr);
     }
 
     // Method Description:
@@ -709,8 +711,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(Control::KeyChord const& keys) const
     {
         // Check the current layer
-        const auto actionIDPair{ _KeyMap.find(keys) };
-        if (actionIDPair != _KeyMap.end())
+        if (const auto actionIDPair = _KeyMap.find(keys); actionIDPair != _KeyMap.end())
         {
             // the command was explicitly bound,
             // return what we found (invalid commands exposed as nullptr)
@@ -723,7 +724,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         for (const auto& parent : _parents)
         {
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal(keys) };
-            if (inheritedCmd.has_value())
+            if (inheritedCmd)
             {
                 return *inheritedCmd;
             }
@@ -765,7 +766,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         const auto hash{ Hash(actionAndArgs) };
         if (const auto& cmd{ _GetActionByID(hash) })
         {
-            return cmd.value().Keys();
+            return cmd->Keys();
         }
 
         // Check our parents

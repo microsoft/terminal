@@ -73,6 +73,74 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
+    // from_wchars is what happens when you want a wchar_t version
+    // of std::from_chars, but you don't quite know what you're doing.
+    // It has been fuzz-tested.
+    _TIL_INLINEPREFIX unsigned long from_wchars(const std::wstring_view& str)
+    {
+        static constexpr unsigned long maximumValue = ULONG_MAX / 16;
+
+        // We don't have to test ptr for nullability, as we only access it under either condition:
+        // * str.length() > 0, for determining the base
+        // * ptr != end, when parsing the characters; if ptr is null, length will be 0 as well as end
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
+        auto ptr = str.data();
+        const auto end = ptr + str.length();
+
+        unsigned long base = 10;
+        if (str.length() > 2 && wmemcmp(ptr, L"0x", 2) == 0)
+        {
+            base = 16;
+            ptr += 2;
+        }
+        else if (str.length() > 1 && *ptr == '0')
+        {
+            base = 8;
+            ptr += 1;
+        }
+
+        if (ptr != end)
+        {
+            unsigned long accumulator = 0;
+            for (;; accumulator *= base)
+            {
+                unsigned long value = ULONG_MAX;
+                if (*ptr >= L'0' && *ptr <= L'9')
+                {
+                    value = *ptr - L'0';
+                }
+                else if (*ptr >= L'A' && *ptr <= L'F')
+                {
+                    value = *ptr - L'A' + 10;
+                }
+                else if (*ptr >= L'a' && *ptr <= L'f')
+                {
+                    value = *ptr - L'a' + 10;
+                }
+                else
+                {
+                    break;
+                }
+
+                accumulator += value;
+                if (accumulator >= maximumValue)
+                {
+                    break;
+                }
+
+                if (++ptr == end)
+                {
+                    return accumulator;
+                }
+            }
+        }
+#pragma warning(pop)
+
+        throw std::invalid_argument("invalid number");
+    }
+
     // Just like std::tolower, but without annoying locales.
     template<typename T>
     constexpr T tolower_ascii(T c)

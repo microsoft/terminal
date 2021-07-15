@@ -20,18 +20,17 @@ public:
     bool HasWindow();
 
 private:
-    bool _useNonClientArea;
 
     std::unique_ptr<IslandWindow> _window;
     winrt::TerminalApp::App _app;
     winrt::TerminalApp::AppLogic _logic;
-    bool _shouldCreateWindow{ false };
     winrt::Microsoft::Terminal::Remoting::WindowManager _windowManager{ nullptr };
 
-    std::vector<winrt::Microsoft::Terminal::Control::KeyChord> _hotkeys{};
-    winrt::Windows::Foundation::Collections::IMapView<winrt::Microsoft::Terminal::Control::KeyChord, winrt::Microsoft::Terminal::Settings::Model::Command> _hotkeyActions{ nullptr };
-
+    std::vector<winrt::Microsoft::Terminal::Settings::Model::GlobalSummonArgs> _hotkeys;
     winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
+
+    bool _shouldCreateWindow{ false };
+    bool _useNonClientArea{ false };
 
     void _HandleCommandlineArgs();
 

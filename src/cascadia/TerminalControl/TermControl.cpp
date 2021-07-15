@@ -802,7 +802,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     modifiers.IsCtrlPressed(),
                     modifiers.IsAltPressed(),
                     modifiers.IsShiftPressed(),
+                    modifiers.IsWinPressed(),
                     VK_F7,
+                    0,
                 });
             }
 
@@ -931,6 +933,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             modifiers.IsShiftPressed(),
             modifiers.IsWinPressed(),
             vkey,
+            scanCode,
         });
         if (!success)
         {
