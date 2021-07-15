@@ -185,7 +185,7 @@ static KeyChord _fromString(std::wstring_view wstr)
             // vk() allows a user to specify a virtual key code
             // and sc() allows them to specify a scan code manually.
             //
-            // ctrl+vk(0x09) for instance is the same as ctrl+tab, while win+sc(29) specifies
+            // ctrl+vk(0x09) for instance is the same as ctrl+tab, while win+sc(41) specifies
             // a key binding which is (seemingly) always bound to the key below Esc.
             vkey = parseNumericCode(part, vkeyPrefix, codeSuffix);
             if (vkey)

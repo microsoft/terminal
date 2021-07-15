@@ -81,8 +81,7 @@ protected:
     bool _fWasMaximizedBeforeFullscreen{ false };
     RECT _rcWindowBeforeFullscreen{};
     RECT _rcWorkBeforeFullscreen{};
-    UINT _dpiBeforeFullscreen{ 1 };
-    int _nextHotkeyIndex{ 0 };
+    UINT _dpiBeforeFullscreen{ 96 };
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
