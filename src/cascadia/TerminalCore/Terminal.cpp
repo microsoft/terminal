@@ -1049,10 +1049,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // scroll if...
         //   - no selection is active
         //   - viewport is already at the bottom
-        const Viewport visible{ _GetVisibleViewport() };
-        const bool cursorInViewport{ proposedCursorPosition.Y >= visible.Top() &&
-                                     proposedCursorPosition.Y <= visible.BottomInclusive() };
-        const bool scrollToOutput = !IsSelectionActive() && !cursorInViewport /*&& _scrollOffset == 0*/;
+        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
 
         _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
