@@ -137,7 +137,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 
     if (yChanged)
     {
-        _pRow = s_GetRow(_buffer, {newX, newY});
+        _pRow = s_GetRow(_buffer, { newX, newY });
         _attrIter = _pRow->GetAttrRow().cbegin() + newX;
         _pos.X = newX;
         _pos.Y = newY;

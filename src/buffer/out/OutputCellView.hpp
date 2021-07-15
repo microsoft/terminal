@@ -6,7 +6,7 @@ Module Name:
 - OutputCellView.hpp
 
 Abstract:
-- Read-only view into a single cell of data that someone is attempting to write into the output buffer.
+- Read view into a single cell of data that someone is attempting to write into the output buffer.
 - This is done for performance reasons (avoid heap allocs and copies).
 
 Author:
