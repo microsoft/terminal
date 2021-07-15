@@ -33,6 +33,7 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
+
             <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
             <local:PercentageConverter x:Key="PercentageConverter" />
             <local:PercentageSignConverter x:Key="PercentageSignConverter" />
@@ -322,6 +323,84 @@
                                                    ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
+                        </StackPanel>
+                        <StackPanel>
+                            <StackPanel Orientation="Horizontal"
+                                        Visibility="{x:Bind State.Profile.EditableUnfocusedAppearance, Mode=OneWay}">
+                                <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
+                                           Style="{StaticResource TitleTextBlockStyle}" />
+                                <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
+                                        Margin="32,0,0,0"
+                                        Click="CreateUnfocusedAppearance_Click"
+                                        Style="{StaticResource BaseButtonStyle}"
+                                        Visibility="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                                    <Button.Content>
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE710;" />
+                                    </Button.Content>
+                                </Button>
+                                <Button x:Uid="Profile_DeleteUnfocusedAppearanceButton"
+                                        Margin="32,0,0,0"
+                                        Click="DeleteUnfocusedAppearance_Click"
+                                        Style="{StaticResource BaseButtonStyle}"
+                                        Visibility="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay}">
+                                    <Button.Content>
+                                        <FontIcon FontSize="{StaticResource StandardIconSize}"
+                                                  Glyph="&#xE74D;" />
+                                    </Button.Content>
+                                    <Button.Resources>
+                                        <ResourceDictionary>
+                                            <ResourceDictionary.ThemeDictionaries>
+                                                <ResourceDictionary x:Key="Light">
+                                                    <SolidColorBrush x:Key="ButtonBackground"
+                                                                     Color="Firebrick" />
+                                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                                     Color="#C23232" />
+                                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                                     Color="#A21212" />
+                                                    <SolidColorBrush x:Key="ButtonForeground"
+                                                                     Color="White" />
+                                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                                     Color="White" />
+                                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                                     Color="White" />
+                                                </ResourceDictionary>
+                                                <ResourceDictionary x:Key="Dark">
+                                                    <SolidColorBrush x:Key="ButtonBackground"
+                                                                     Color="Firebrick" />
+                                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                                     Color="#C23232" />
+                                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                                     Color="#A21212" />
+                                                    <SolidColorBrush x:Key="ButtonForeground"
+                                                                     Color="White" />
+                                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                                     Color="White" />
+                                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                                     Color="White" />
+                                                </ResourceDictionary>
+                                                <ResourceDictionary x:Key="HighContrast">
+                                                    <SolidColorBrush x:Key="ButtonBackground"
+                                                                     Color="{ThemeResource SystemColorButtonFaceColor}" />
+                                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver"
+                                                                     Color="{ThemeResource SystemColorHighlightColor}" />
+                                                    <SolidColorBrush x:Key="ButtonBackgroundPressed"
+                                                                     Color="{ThemeResource SystemColorHighlightColor}" />
+                                                    <SolidColorBrush x:Key="ButtonForeground"
+                                                                     Color="{ThemeResource SystemColorButtonTextColor}" />
+                                                    <SolidColorBrush x:Key="ButtonForegroundPointerOver"
+                                                                     Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                                    <SolidColorBrush x:Key="ButtonForegroundPressed"
+                                                                     Color="{ThemeResource SystemColorHighlightTextColor}" />
+                                                </ResourceDictionary>
+                                            </ResourceDictionary.ThemeDictionaries>
+                                        </ResourceDictionary>
+                                    </Button.Resources>
+                                </Button>
+                            </StackPanel>
+                            <local:Appearances Appearance="{x:Bind State.Profile.UnfocusedAppearance, Mode=OneWay}"
+                                               SourceProfile="{x:Bind State.Profile, Mode=OneWay}"
+                                               Visibility="{x:Bind State.Profile.ShowUnfocusedAppearance, Mode=OneWay}" />
                         </StackPanel>
                     </StackPanel>
                 </ScrollViewer>

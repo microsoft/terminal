@@ -5,95 +5,75 @@
 #include "KeyChordSerialization.h"
 #include "KeyChordSerialization.g.cpp"
 
+#include <til/static_map.h>
+
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace Microsoft::Terminal::Settings::Model::JsonUtils;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
-static constexpr std::wstring_view CTRL_KEY{ L"ctrl" };
-static constexpr std::wstring_view SHIFT_KEY{ L"shift" };
-static constexpr std::wstring_view ALT_KEY{ L"alt" };
-static constexpr std::wstring_view WIN_KEY{ L"win" };
+constexpr std::wstring_view CTRL_KEY{ L"ctrl" };
+constexpr std::wstring_view SHIFT_KEY{ L"shift" };
+constexpr std::wstring_view ALT_KEY{ L"alt" };
+constexpr std::wstring_view WIN_KEY{ L"win" };
 
-static constexpr int MAX_CHORD_PARTS = 5; // win+ctrl+alt+shift+key
-
-// clang-format off
-static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
-    { L"app"             , VK_APPS },
-    { L"backspace"       , VK_BACK },
-    { L"tab"             , VK_TAB },
-    { L"enter"           , VK_RETURN },
-    { L"esc"             , VK_ESCAPE },
-    { L"escape"          , VK_ESCAPE },
-    { L"menu"            , VK_APPS },
-    { L"space"           , VK_SPACE },
-    { L"pgup"            , VK_PRIOR },
-    { L"pageup"          , VK_PRIOR },
-    { L"pgdn"            , VK_NEXT },
-    { L"pagedown"        , VK_NEXT },
-    { L"end"             , VK_END },
-    { L"home"            , VK_HOME },
-    { L"left"            , VK_LEFT },
-    { L"up"              , VK_UP },
-    { L"right"           , VK_RIGHT },
-    { L"down"            , VK_DOWN },
-    { L"insert"          , VK_INSERT },
-    { L"delete"          , VK_DELETE },
-    { L"numpad_0"        , VK_NUMPAD0 },
-    { L"numpad0"         , VK_NUMPAD0 },
-    { L"numpad_1"        , VK_NUMPAD1 },
-    { L"numpad1"         , VK_NUMPAD1 },
-    { L"numpad_2"        , VK_NUMPAD2 },
-    { L"numpad2"         , VK_NUMPAD2 },
-    { L"numpad_3"        , VK_NUMPAD3 },
-    { L"numpad3"         , VK_NUMPAD3 },
-    { L"numpad_4"        , VK_NUMPAD4 },
-    { L"numpad4"         , VK_NUMPAD4 },
-    { L"numpad_5"        , VK_NUMPAD5 },
-    { L"numpad5"         , VK_NUMPAD5 },
-    { L"numpad_6"        , VK_NUMPAD6 },
-    { L"numpad6"         , VK_NUMPAD6 },
-    { L"numpad_7"        , VK_NUMPAD7 },
-    { L"numpad7"         , VK_NUMPAD7 },
-    { L"numpad_8"        , VK_NUMPAD8 },
-    { L"numpad8"         , VK_NUMPAD8 },
-    { L"numpad_9"        , VK_NUMPAD9 },
-    { L"numpad9"         , VK_NUMPAD9 },
-    { L"numpad_multiply" , VK_MULTIPLY },
-    { L"numpad_plus"     , VK_ADD },
-    { L"numpad_add"      , VK_ADD },
-    { L"numpad_minus"    , VK_SUBTRACT },
-    { L"numpad_subtract" , VK_SUBTRACT },
-    { L"numpad_period"   , VK_DECIMAL },
-    { L"numpad_decimal"  , VK_DECIMAL },
-    { L"numpad_divide"   , VK_DIVIDE },
-    { L"f1"              , VK_F1 },
-    { L"f2"              , VK_F2 },
-    { L"f3"              , VK_F3 },
-    { L"f4"              , VK_F4 },
-    { L"f5"              , VK_F5 },
-    { L"f6"              , VK_F6 },
-    { L"f7"              , VK_F7 },
-    { L"f8"              , VK_F8 },
-    { L"f9"              , VK_F9 },
-    { L"f10"             , VK_F10 },
-    { L"f11"             , VK_F11 },
-    { L"f12"             , VK_F12 },
-    { L"f13"             , VK_F13 },
-    { L"f14"             , VK_F14 },
-    { L"f15"             , VK_F15 },
-    { L"f16"             , VK_F16 },
-    { L"f17"             , VK_F17 },
-    { L"f18"             , VK_F18 },
-    { L"f19"             , VK_F19 },
-    { L"f20"             , VK_F20 },
-    { L"f21"             , VK_F21 },
-    { L"f22"             , VK_F22 },
-    { L"f23"             , VK_F23 },
-    { L"f24"             , VK_F24 },
-    { L"plus"            , VK_OEM_PLUS }
-};
-// clang-format on
+#define VKEY_NAME_PAIRS(XX)                              \
+    XX(VK_RETURN, L"enter")                              \
+    XX(VK_TAB, L"tab")                                   \
+    XX(VK_SPACE, L"space")                               \
+    XX(VK_BACK, L"backspace")                            \
+    XX(VK_APPS, L"menu", L"app")                         \
+    XX(VK_INSERT, L"insert")                             \
+    XX(VK_DELETE, L"delete")                             \
+    XX(VK_HOME, L"home")                                 \
+    XX(VK_END, L"end")                                   \
+    XX(VK_NEXT, L"pgdn", L"pagedown")                    \
+    XX(VK_PRIOR, L"pgup", L"pageup")                     \
+    XX(VK_ESCAPE, L"esc", L"escape")                     \
+    XX(VK_LEFT, L"left")                                 \
+    XX(VK_RIGHT, L"right")                               \
+    XX(VK_UP, L"up")                                     \
+    XX(VK_DOWN, L"down")                                 \
+    XX(VK_F1, L"f1")                                     \
+    XX(VK_F2, L"f2")                                     \
+    XX(VK_F3, L"f3")                                     \
+    XX(VK_F4, L"f4")                                     \
+    XX(VK_F5, L"f5")                                     \
+    XX(VK_F6, L"f6")                                     \
+    XX(VK_F7, L"f7")                                     \
+    XX(VK_F8, L"f8")                                     \
+    XX(VK_F9, L"f9")                                     \
+    XX(VK_F10, L"f10")                                   \
+    XX(VK_F11, L"f11")                                   \
+    XX(VK_F12, L"f12")                                   \
+    XX(VK_F13, L"f13")                                   \
+    XX(VK_F14, L"f14")                                   \
+    XX(VK_F15, L"f15")                                   \
+    XX(VK_F16, L"f16")                                   \
+    XX(VK_F17, L"f17")                                   \
+    XX(VK_F18, L"f18")                                   \
+    XX(VK_F19, L"f19")                                   \
+    XX(VK_F20, L"f20")                                   \
+    XX(VK_F21, L"f21")                                   \
+    XX(VK_F22, L"f22")                                   \
+    XX(VK_F23, L"f23")                                   \
+    XX(VK_F24, L"f24")                                   \
+    XX(VK_ADD, L"numpad_plus", L"numpad_add")            \
+    XX(VK_SUBTRACT, L"numpad_minus", L"numpad_subtract") \
+    XX(VK_MULTIPLY, L"numpad_multiply")                  \
+    XX(VK_DIVIDE, L"numpad_divide")                      \
+    XX(VK_DECIMAL, L"numpad_period", L"numpad_decimal")  \
+    XX(VK_NUMPAD0, L"numpad0", L"numpad_0")              \
+    XX(VK_NUMPAD1, L"numpad1", L"numpad_1")              \
+    XX(VK_NUMPAD2, L"numpad2", L"numpad_2")              \
+    XX(VK_NUMPAD3, L"numpad3", L"numpad_3")              \
+    XX(VK_NUMPAD4, L"numpad4", L"numpad_4")              \
+    XX(VK_NUMPAD5, L"numpad5", L"numpad_5")              \
+    XX(VK_NUMPAD6, L"numpad6", L"numpad_6")              \
+    XX(VK_NUMPAD7, L"numpad7", L"numpad_7")              \
+    XX(VK_NUMPAD8, L"numpad8", L"numpad_8")              \
+    XX(VK_NUMPAD9, L"numpad9", L"numpad_9")              \
+    XX(VK_OEM_PLUS, L"plus")
 
 // Function Description:
 // - Deserializes the given string into a new KeyChord instance. If this
@@ -106,108 +86,93 @@ static const std::unordered_map<std::wstring_view, int32_t> vkeyNamePairs {
 // - hstr: the string to parse into a keychord.
 // Return Value:
 // - a newly constructed KeyChord
-static KeyChord _fromString(const std::wstring_view& wstr)
+static KeyChord _fromString(std::wstring_view wstr)
 {
-    // Split the string on '+'
-    std::wstring temp;
-    std::vector<std::wstring> parts;
-    std::wstringstream wss;
-    wss << wstr;
-
-    while (std::getline(wss, temp, L'+'))
-    {
-        parts.push_back(temp);
-
-        // If we have > 4, something's wrong.
-        if (parts.size() > MAX_CHORD_PARTS)
-        {
-            throw winrt::hresult_invalid_argument();
-        }
-    }
+    using nameToVkeyPair = std::pair<std::wstring_view, int32_t>;
+    static const til::static_map nameToVkey{
+    // The above VKEY_NAME_PAIRS macro contains a list of key-binding names for each virtual key.
+    // This god-awful macro inverts VKEY_NAME_PAIRS and creates a static map of key-binding names to virtual keys.
+    // clang-format off
+#define GENERATOR_1(vkey, name1) nameToVkeyPair{ name1, vkey },
+#define GENERATOR_2(vkey, name1, name2) nameToVkeyPair{ name1, vkey }, nameToVkeyPair{ name2, vkey },
+#define GENERATOR_3(vkey, name1, name2, name3) nameToVkeyPair{ name1, vkey }, nameToVkeyPair{ name2, vkey }, nameToVkeyPair{ name3, vkey },
+#define GENERATOR_N(vkey, name1, name2, name3, MACRO, ...) MACRO
+#define GENERATOR(...) GENERATOR_N(__VA_ARGS__, GENERATOR_3, GENERATOR_2, GENERATOR_1)(__VA_ARGS__)
+        VKEY_NAME_PAIRS(GENERATOR)
+#undef GENERATOR_1
+#undef GENERATOR_2
+#undef GENERATOR_3
+#undef GENERATOR_N
+#undef GENERATOR
+        // clang-format on
+    };
 
     VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
     int32_t vkey = 0;
 
-    // Look for ctrl, shift, alt. Anything else might be a key
-    for (const auto& part : parts)
+    while (!wstr.empty())
     {
-        std::wstring lowercase = part;
-        std::transform(lowercase.begin(), lowercase.end(), lowercase.begin(), std::towlower);
-        if (lowercase == CTRL_KEY)
+        const auto part = til::prefix_split(wstr, L"+");
+
+        if (til::equals_insensitive_ascii(part, CTRL_KEY))
         {
             modifiers |= VirtualKeyModifiers::Control;
         }
-        else if (lowercase == ALT_KEY)
+        else if (til::equals_insensitive_ascii(part, ALT_KEY))
         {
             modifiers |= VirtualKeyModifiers::Menu;
         }
-        else if (lowercase == SHIFT_KEY)
+        else if (til::equals_insensitive_ascii(part, SHIFT_KEY))
         {
             modifiers |= VirtualKeyModifiers::Shift;
         }
-        else if (lowercase == WIN_KEY)
+        else if (til::equals_insensitive_ascii(part, WIN_KEY))
         {
             modifiers |= VirtualKeyModifiers::Windows;
         }
         else
         {
-            bool foundKey = false;
-            // For potential keys, look through the pairs of strings and vkeys
+            if (vkey)
+            {
+                // Key bindings like Ctrl+A+B are not valid.
+                throw winrt::hresult_invalid_argument();
+            }
+
+            // Characters 0-9, a-z, A-Z directly map to virtual keys.
             if (part.size() == 1)
             {
-                const wchar_t wch = part.at(0);
-                // Quick lookup: ranges of vkeys that correlate directly to a key.
-                if (wch >= L'0' && wch <= L'9')
+                const auto wch = til::toupper_ascii(part[0]);
+                if ((wch >= L'0' && wch <= L'9') || (wch >= L'A' && wch <= L'Z'))
                 {
                     vkey = static_cast<int32_t>(wch);
-                    foundKey = true;
-                }
-                else if (wch >= L'a' && wch <= L'z')
-                {
-                    // subtract 0x20 to shift to uppercase
-                    vkey = static_cast<int32_t>(wch - 0x20);
-                    foundKey = true;
-                }
-                else if (wch >= L'A' && wch <= L'Z')
-                {
-                    vkey = static_cast<int32_t>(wch);
-                    foundKey = true;
+                    continue;
                 }
             }
 
-            // If we didn't find the key with a quick lookup, search the
-            // table to see if we have a matching name.
-            if (!foundKey && vkeyNamePairs.find(part) != vkeyNamePairs.end())
+            // nameToVkey contains a few more mappings like "F11".
+            if (const auto it = nameToVkey.find(part); it != nameToVkey.end())
             {
-                vkey = vkeyNamePairs.at(part);
-                foundKey = true;
-                break;
+                vkey = it->second;
+                continue;
             }
 
             // If we haven't found a key, attempt a keyboard mapping
-            if (!foundKey && part.size() == 1)
+            if (part.size() == 1)
             {
-                auto oemVk = VkKeyScanW(part[0]);
+                const auto oemVk = VkKeyScanW(part[0]);
                 if (oemVk != -1)
                 {
-                    vkey = oemVk & 0xFF;
-                    auto oemModifiers = (oemVk & 0xFF00) >> 8;
-                    // We're using WI_SetFlagIf instead of WI_UpdateFlag because we want to be strictly additive
-                    // to the user's specified modifiers. ctrl+| should be the same as ctrl+shift+\,
-                    // but if we used WI_UpdateFlag, ctrl+shift+\ would turn _off_ Shift because \ doesn't
-                    // require it.
+                    vkey = oemVk & 0xff;
+                    const auto oemModifiers = oemVk >> 8;
+                    // NOTE: WI_UpdateFlag _replaces_ a bit. This code _adds_ a bit.
                     WI_SetFlagIf(modifiers, VirtualKeyModifiers::Shift, WI_IsFlagSet(oemModifiers, 1U));
                     WI_SetFlagIf(modifiers, VirtualKeyModifiers::Control, WI_IsFlagSet(oemModifiers, 2U));
                     WI_SetFlagIf(modifiers, VirtualKeyModifiers::Menu, WI_IsFlagSet(oemModifiers, 4U));
-                    foundKey = true;
+                    continue;
                 }
             }
 
-            // If we weren't able to find a match, throw an exception.
-            if (!foundKey)
-            {
-                throw winrt::hresult_invalid_argument();
-            }
+            throw winrt::hresult_invalid_argument();
         }
     }
 
@@ -223,82 +188,67 @@ static KeyChord _fromString(const std::wstring_view& wstr)
 // - a string which is an equivalent serialization of this object.
 static std::wstring _toString(const KeyChord& chord)
 {
+    using vkeyToNamePair = std::pair<int32_t, std::wstring_view>;
+    static const til::static_map vkeyToName{
+    // The above VKEY_NAME_PAIRS macro contains a list of key-binding strings for each virtual key.
+    // This macro picks the first (most preferred) name and creates a static map of virtual keys to key-binding names.
+#define GENERATOR(vkey, name1, ...) vkeyToNamePair{ vkey, name1 },
+        VKEY_NAME_PAIRS(GENERATOR)
+#undef GENERATOR
+    };
+
     if (!chord)
     {
         return {};
     }
 
-    bool serializedSuccessfully = false;
     const auto modifiers = chord.Modifiers();
     const auto vkey = chord.Vkey();
-
-    std::wstring buffer{ L"" };
+    std::wstring buffer;
 
     // Add modifiers
     if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows))
     {
-        buffer += WIN_KEY;
-        buffer += L"+";
+        buffer.append(WIN_KEY);
+        buffer.push_back(L'+');
     }
     if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control))
     {
-        buffer += CTRL_KEY;
-        buffer += L"+";
+        buffer.append(CTRL_KEY);
+        buffer.push_back(L'+');
     }
     if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu))
     {
-        buffer += ALT_KEY;
-        buffer += L"+";
+        buffer.append(ALT_KEY);
+        buffer.push_back(L'+');
     }
     if (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift))
     {
-        buffer += SHIFT_KEY;
-        buffer += L"+";
+        buffer.append(SHIFT_KEY);
+        buffer.push_back(L'+');
     }
 
     // Quick lookup: ranges of vkeys that correlate directly to a key.
-    if (vkey >= L'0' && vkey <= L'9')
+    if ((vkey >= L'0' && vkey <= L'9') || (vkey >= L'A' && vkey <= L'Z'))
     {
-        buffer += std::wstring(1, static_cast<wchar_t>(vkey));
-        serializedSuccessfully = true;
-    }
-    else if (vkey >= L'A' && vkey <= L'Z')
-    {
-        // add 0x20 to shift to lowercase
-        buffer += std::wstring(1, static_cast<wchar_t>(vkey + 0x20));
-        serializedSuccessfully = true;
-    }
-    else
-    {
-        bool foundKey = false;
-        for (const auto& pair : vkeyNamePairs)
-        {
-            if (pair.second == vkey)
-            {
-                buffer += pair.first;
-                serializedSuccessfully = true;
-                foundKey = true;
-                break;
-            }
-        }
-        if (!foundKey)
-        {
-            auto mappedChar = MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
-            if (mappedChar != 0)
-            {
-                wchar_t mappedWch = gsl::narrow_cast<wchar_t>(mappedChar);
-                buffer += std::wstring_view{ &mappedWch, 1 };
-                serializedSuccessfully = true;
-            }
-        }
+        buffer.push_back(til::tolower_ascii(gsl::narrow_cast<wchar_t>(vkey)));
+        return buffer;
     }
 
-    if (!serializedSuccessfully)
+    if (const auto it = vkeyToName.find(vkey); it != vkeyToName.end())
     {
-        buffer = L"";
+        buffer.append(it->second);
+        return buffer;
     }
 
-    return buffer;
+    const auto mappedChar = MapVirtualKeyW(vkey, MAPVK_VK_TO_CHAR);
+    if (mappedChar != 0)
+    {
+        buffer.push_back(gsl::narrow_cast<wchar_t>(mappedChar));
+        return buffer;
+    }
+
+    return {};
 }
 
 KeyChord KeyChordSerialization::FromString(const winrt::hstring& hstr)

@@ -18,6 +18,13 @@
     </feature>
 
     <feature>
+        <name>Feature_EditableUnfocusedAppearance</name>
+        <description>The unfocused appearance section in profiles in the SUI that allows users to create and edit unfocused appearances.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+    </feature>
+
+    <feature>
         <name>Feature_AttemptHandoff</name>
         <description>conhost should try to hand connections over to OpenConsole</description>
         <stage>AlwaysDisabled</stage>

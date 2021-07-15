@@ -230,14 +230,14 @@ catch (...)
 //      they're done with any querying they need to do.
 void Terminal::LockConsole() noexcept
 {
-    _readWriteLock.lock_shared();
+    _readWriteLock.lock();
 }
 
 // Method Description:
 // - Unlocks the terminal after a call to Terminal::LockConsole.
 void Terminal::UnlockConsole() noexcept
 {
-    _readWriteLock.unlock_shared();
+    _readWriteLock.unlock();
 }
 
 // Method Description:
