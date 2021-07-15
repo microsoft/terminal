@@ -99,6 +99,10 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Appearances.h">
+      <DependentUpon>Appearances.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
     <ClInclude Include="ReadOnlyActions.h">
       <DependentUpon>ReadOnlyActions.xaml</DependentUpon>
     </ClInclude>
@@ -141,6 +145,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="ReadOnlyActions.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Appearances.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Rendering.xaml">
@@ -215,6 +222,10 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Appearances.cpp">
+      <DependentUpon>Appearances.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="ReadOnlyActions.cpp">
       <DependentUpon>ReadOnlyActions.xaml</DependentUpon>
     </ClCompile>
@@ -270,6 +281,10 @@
     </Midl>
     <Midl Include="Profiles.idl">
       <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Appearances.idl">
+      <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingContainer.idl">

@@ -20,7 +20,7 @@ Revision History:
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
 #define INIT_TEST_PROPERTY(type, identifer, description) \
     type identifer;                                      \
-    VERIFY_SUCCEEDED(TestData::TryGetValue(L#identifer, identifer), description);
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L## #identifer, identifer), description);
 
 // Thinking of adding a new VerifyOutputTraits for a new type? MAKE SURE that
 // you include this header (or at least the relevant definition) before _every_
@@ -270,73 +270,60 @@ namespace WEX::TestExecution
         static WEX::Common::NoThrowString ToString(const INPUT_RECORD& ir)
         {
             SetVerifyOutput verifySettings(VerifyOutputSettings::LogOnlyFailures);
-            WCHAR szBuf[1024];
-            VERIFY_SUCCEEDED(StringCchCopy(szBuf, ARRAYSIZE(szBuf), L"(ev: "));
+
+            WEX::Common::NoThrowString str;
+            str.Append(L"(ev: ");
+
             switch (ir.EventType)
             {
             case FOCUS_EVENT:
             {
-                WCHAR szFocus[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szFocus,
-                                                 ARRAYSIZE(szFocus),
-                                                 L"FOCUS set: %s)",
-                                                 ir.Event.FocusEvent.bSetFocus ? L"T" : L"F"));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szFocus));
+                str.AppendFormat(
+                    L"FOCUS set: %s)",
+                    ir.Event.FocusEvent.bSetFocus ? L"T" : L"F");
                 break;
             }
 
             case KEY_EVENT:
             {
-                WCHAR szKey[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szKey,
-                                                 ARRAYSIZE(szKey),
-                                                 L"KEY down: %s reps: %d kc: 0x%x sc: 0x%x uc: %d ctl: 0x%x)",
-                                                 ir.Event.KeyEvent.bKeyDown ? L"T" : L"F",
-                                                 ir.Event.KeyEvent.wRepeatCount,
-                                                 ir.Event.KeyEvent.wVirtualKeyCode,
-                                                 ir.Event.KeyEvent.wVirtualScanCode,
-                                                 ir.Event.KeyEvent.uChar.UnicodeChar,
-                                                 ir.Event.KeyEvent.dwControlKeyState));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szKey));
+                str.AppendFormat(
+                    L"KEY down: %s reps: %d kc: 0x%x sc: 0x%x uc: %d ctl: 0x%x)",
+                    ir.Event.KeyEvent.bKeyDown ? L"T" : L"F",
+                    ir.Event.KeyEvent.wRepeatCount,
+                    ir.Event.KeyEvent.wVirtualKeyCode,
+                    ir.Event.KeyEvent.wVirtualScanCode,
+                    ir.Event.KeyEvent.uChar.UnicodeChar,
+                    ir.Event.KeyEvent.dwControlKeyState);
                 break;
             }
 
             case MENU_EVENT:
             {
-                WCHAR szMenu[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szMenu,
-                                                 ARRAYSIZE(szMenu),
-                                                 L"MENU cmd: %d (0x%x))",
-                                                 ir.Event.MenuEvent.dwCommandId,
-                                                 ir.Event.MenuEvent.dwCommandId));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szMenu));
+                str.AppendFormat(
+                    L"MENU cmd: %d (0x%x))",
+                    ir.Event.MenuEvent.dwCommandId,
+                    ir.Event.MenuEvent.dwCommandId);
                 break;
             }
 
             case MOUSE_EVENT:
             {
-                WCHAR szMouse[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szMouse,
-                                                 ARRAYSIZE(szMouse),
-                                                 L"MOUSE pos: (%d, %d) buttons: 0x%x ctl: 0x%x evflags: 0x%x)",
-                                                 ir.Event.MouseEvent.dwMousePosition.X,
-                                                 ir.Event.MouseEvent.dwMousePosition.Y,
-                                                 ir.Event.MouseEvent.dwButtonState,
-                                                 ir.Event.MouseEvent.dwControlKeyState,
-                                                 ir.Event.MouseEvent.dwEventFlags));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szMouse));
+                str.AppendFormat(
+                    L"MOUSE pos: (%d, %d) buttons: 0x%x ctl: 0x%x evflags: 0x%x)",
+                    ir.Event.MouseEvent.dwMousePosition.X,
+                    ir.Event.MouseEvent.dwMousePosition.Y,
+                    ir.Event.MouseEvent.dwButtonState,
+                    ir.Event.MouseEvent.dwControlKeyState,
+                    ir.Event.MouseEvent.dwEventFlags);
                 break;
             }
 
             case WINDOW_BUFFER_SIZE_EVENT:
             {
-                WCHAR szBufferSize[512];
-                VERIFY_SUCCEEDED(StringCchPrintf(szBufferSize,
-                                                 ARRAYSIZE(szBufferSize),
-                                                 L"WINDOW_BUFFER_SIZE (%d, %d)",
-                                                 ir.Event.WindowBufferSizeEvent.dwSize.X,
-                                                 ir.Event.WindowBufferSizeEvent.dwSize.Y));
-                VERIFY_SUCCEEDED(StringCchCat(szBuf, ARRAYSIZE(szBuf), szBufferSize));
+                str.AppendFormat(
+                    L"WINDOW_BUFFER_SIZE (%d, %d)",
+                    ir.Event.WindowBufferSizeEvent.dwSize.X,
+                    ir.Event.WindowBufferSizeEvent.dwSize.Y);
                 break;
             }
 
@@ -344,7 +331,7 @@ namespace WEX::TestExecution
                 VERIFY_FAIL(L"ERROR: unknown input event type encountered");
             }
 
-            return WEX::Common::NoThrowString(szBuf);
+            return str;
         }
     };
 

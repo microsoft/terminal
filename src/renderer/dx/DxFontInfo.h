@@ -79,30 +79,3 @@ namespace Microsoft::Console::Render
         bool _didFallback;
     };
 }
-
-namespace std
-{
-    template<>
-    struct hash<Microsoft::Console::Render::DxFontInfo>
-    {
-        size_t operator()(const Microsoft::Console::Render::DxFontInfo& fontInfo) const noexcept
-        {
-            const size_t h1 = std::hash<std::wstring_view>{}(fontInfo.GetFamilyName());
-            const size_t h2 = std::hash<DWRITE_FONT_WEIGHT>{}(fontInfo.GetWeight());
-            const size_t h3 = std::hash<DWRITE_FONT_STYLE>{}(fontInfo.GetStyle());
-            const size_t h4 = std::hash<DWRITE_FONT_STRETCH>{}(fontInfo.GetStretch());
-            const size_t h5 = std::hash<bool>{}(fontInfo.GetFallback());
-
-            static const auto combine = [](std::initializer_list<size_t> list) {
-                size_t seed = 0;
-                for (auto hash : list)
-                {
-                    seed ^= hash + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-                }
-                return seed;
-            };
-
-            return combine({ h1, h2, h3, h4, h5 });
-        }
-    };
-}

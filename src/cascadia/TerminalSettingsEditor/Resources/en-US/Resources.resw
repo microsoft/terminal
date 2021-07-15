@@ -452,8 +452,8 @@
     <comment>Header for a menu item. This opens the JSON file that is used to log the app's settings.</comment>
   </data>
   <data name="Nav_ProfileDefaults.Content" xml:space="preserve">
-    <value>Base layer</value>
-    <comment>Header for the "base layer" menu item. This navigates to a page that lets you see and modify settings that affect profiles. The base layer is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, base layer is responsible for figuring out what that setting is supposed to be.</comment>
+    <value>Defaults</value>
+    <comment>Header for the "defaults" menu item. This navigates to a page that lets you see and modify settings that affect profiles. This is the lowest layer of profile settings that all other profile settings are based on. If a profile doesn't define a setting, this page is responsible for figuring out what that setting is supposed to be.</comment>
   </data>
   <data name="Nav_Rendering.Content" xml:space="preserve">
     <value>Rendering</value>
@@ -791,6 +791,10 @@
     <value>Replaces the profile name as the title to pass to the shell on startup.</value>
     <comment>A description for what the "tab title" setting does. Presented near "Profile_TabTitle".</comment>
   </data>
+  <data name="Profile_UnfocusedAppearanceTextBlock.Text" xml:space="preserve">
+    <value>Unfocused Appearance</value>
+    <comment>The header for the section where the unfocused appearance settings can be changed.</comment>
+  </data>
   <data name="Profile_UseAcrylic.Header" xml:space="preserve">
     <value>Enable acrylic</value>
     <comment>Header for a control to toggle the acrylic-like rendering of the background. The acrylic material creates a translucent texture.</comment>
@@ -1012,7 +1016,7 @@
   </data>
   <data name="Profile_BaseLayerDisclaimer.Text" xml:space="preserve">
     <value>Settings defined here will apply to all profiles unless they are overridden by a profile's settings.</value>
-    <comment>A disclaimer presented at the top of a page. See "Nav_ProfileDefaults.Content" for a description on what the base layer does in the app.</comment>
+    <comment>A disclaimer presented at the top of a page. See "Nav_ProfileDefaults.Content" for a description on what the defaults layer does in the app.</comment>
   </data>
   <data name="Profile_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete profile</value>
@@ -1087,8 +1091,8 @@
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
-    <value>Reset to base layer value.</value>
-    <comment>"base layer" should match Nav_ProfileDefaults.Content's text. This is a text label on a button.</comment>
+    <value>Reset to inherited value.</value>
+    <comment>This button will remove a user's customization from a given setting, restoring it to the value that the profile inherited. This is a text label on a button.</comment>
   </data>
   <data name="ColorScheme_TerminalColorsHeader.Text" xml:space="preserve">
     <value>Terminal colors</value>
@@ -1109,6 +1113,14 @@
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>If checked, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
+  </data>
+  <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Create an unfocused appearance for this profile. This will be the appearance of the profile when it is inactive.</value>
+    <comment>A description for what the create unfocused appearance button does.</comment>
+  </data>
+  <data name="Profile_DeleteUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>Delete the unfocused appearance for this profile.</value>
+    <comment>A description for what the delete unfocused appearance button does.</comment>
   </data>
   <data name="Actions_DeleteConfirmationButton.Content" xml:space="preserve">
     <value>Yes, delete key binding</value>

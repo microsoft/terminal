@@ -76,6 +76,17 @@ try
         }
     }
 
+    // Create the accessibility notifier early in the startup process.
+    // Only create if we're not in PTY mode.
+    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
+    // for the terminal user interface, so we should set ourselves up to skip all
+    // those notifications and the mathematical calculations required to send those events
+    // for performance reasons.
+    if (!args->InConptyMode())
+    {
+        RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier());
+    }
+
     // Removed allocation of scroll buffer here.
     return S_OK;
 }

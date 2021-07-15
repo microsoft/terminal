@@ -79,6 +79,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Profile();
         Profile(guid guid);
 
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
+
         hstring ToString()
         {
             return Name();
@@ -103,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _FinalizeInheritance() override;
 
-        WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
+        WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
 
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");

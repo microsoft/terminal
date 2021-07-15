@@ -5,6 +5,7 @@
 #include "XamlUiaTextRange.h"
 #include "../types/TermControlUiaTextRange.hpp"
 #include <UIAutomationClient.h>
+#include <UIAutomationCoreApi.h>
 
 // the same as COR_E_NOTSUPPORTED
 // we don't want to import the CLR headers to get it
@@ -89,12 +90,52 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::IInspectable XamlUiaTextRange::GetAttributeValue(int32_t textAttributeId) const
     {
-        // Copied functionality from Types::UiaTextRange.cpp
-        if (textAttributeId == UIA_IsReadOnlyAttributeId)
+        // Call the function off of the underlying UiaTextRange.
+        VARIANT result;
+        THROW_IF_FAILED(_uiaProvider->GetAttributeValue(textAttributeId, &result));
+
+        // Convert the resulting VARIANT into a format that is consumable by XAML.
+        switch (result.vt)
         {
-            return winrt::box_value(false);
+        case VT_BSTR:
+        {
+            return box_value(result.bstrVal);
         }
-        else
+        case VT_I4:
+        {
+            // Surprisingly, `long` is _not_ a WinRT type.
+            // So we have to use `int32_t` to make sure this is output properly.
+            // Otherwise, you'll get "Attribute does not exist" out the other end.
+            return box_value<int32_t>(result.lVal);
+        }
+        case VT_R8:
+        {
+            return box_value(result.dblVal);
+        }
+        case VT_BOOL:
+        {
+            return box_value<bool>(result.boolVal);
+        }
+        case VT_UNKNOWN:
+        {
+            // This one is particularly special.
+            // We might return a special value like UiaGetReservedMixedAttributeValue
+            //  or UiaGetReservedNotSupportedValue.
+            // Some text attributes may return a real value, however, none of those
+            //  are supported at this time.
+            // So we need to figure out what was actually intended to be returned.
+
+            com_ptr<IUnknown> mixedAttributeVal;
+            UiaGetReservedMixedAttributeValue(mixedAttributeVal.put());
+
+            if (result.punkVal == mixedAttributeVal.get())
+            {
+                return Windows::UI::Xaml::DependencyProperty::UnsetValue();
+            }
+
+            [[fallthrough]];
+        }
+        default:
         {
             // We _need_ to return XAML_E_NOT_SUPPORTED here.
             // Returning nullptr is an improper implementation of it being unsupported.
@@ -102,6 +143,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Anything else will result in the UIA Client refusing to read when navigating by word
             // Magically, this doesn't affect other forms of navigation...
             winrt::throw_hresult(XAML_E_NOT_SUPPORTED);
+        }
         }
     }
 
