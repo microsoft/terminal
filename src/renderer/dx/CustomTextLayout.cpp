@@ -1327,9 +1327,9 @@ CATCH_RETURN();
                                         &mappedFont,
                                         &scale);
 
-                RETURN_LAST_ERROR_IF(!mappedFont.Get());
+                RETURN_LAST_ERROR_IF(!mappedFont);
                 ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-                RETURN_IF_FAILED(mappedFont.Get()->CreateFontFace(&face));
+                RETURN_IF_FAILED(mappedFont->CreateFontFace(&face));
                 RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, face, scale));
 
                 textPosition += mappedLength;
@@ -1354,7 +1354,7 @@ CATCH_RETURN();
 // - S_OK or appropriate STL/GSL failure code.
 [[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFontFace(UINT32 textPosition,
                                                                              UINT32 textLength,
-                                                                             ::Microsoft::WRL::ComPtr<IDWriteFontFace> const fontFace,
+                                                                             const ::Microsoft::WRL::ComPtr<IDWriteFontFace>& fontFace,
                                                                              FLOAT const scale)
 {
     try

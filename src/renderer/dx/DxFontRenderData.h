@@ -89,12 +89,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
         bool DidUserSetFeatures() const noexcept;
-        void InitializeFeatureMap();
-        void SetFeatures(std::unordered_map<std::wstring_view, uint32_t> features);
-        void SetAxes(std::unordered_map<std::wstring_view, int32_t> axes);
+        void SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features);
+        void SetAxes(const std::unordered_map<std::wstring_view, int32_t>& axes);
 
-        float FontStretchToWidthAxisValue(const DWRITE_FONT_STRETCH fontStretch) noexcept;
-        float FontStyleToSlantFixedAxisValue(const DWRITE_FONT_STYLE fontStyle) noexcept;
+        float FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept;
+        float FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept;
         float DIPsToPoints(const float fontSize) noexcept;
         std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                           const DWRITE_FONT_STRETCH fontStretch,
@@ -107,7 +106,6 @@ namespace Microsoft::Console::Render
 
         bool _didUserSetFeatures{ false };
         // The font features to apply to the text
-        std::unordered_map<std::wstring_view, uint32_t> _featureMap;
         std::vector<DWRITE_FONT_FEATURE> _featureVector;
 
         // The font axes to apply to the text

@@ -8,6 +8,8 @@ import "Profile.idl";
     _BASE_INHERITABLE_SETTING(Type, Name);      \
     Microsoft.Terminal.Settings.Model.FontConfig Name##OverrideSource { get; }
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass FontConfig {
@@ -17,16 +19,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_FONT_SETTING(Int32, FontSize);
         INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);
 
-        // The INHERITABLE_FONT_SETTING macro doesn't like Windows.Foundation.Collections.IMap<String, UInt32>
-        // (possibly because of the comma) so features and axes are being declared manually for now
-        Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures;
-        Boolean HasFontFeatures { get; };
-        void ClearFontFeatures();
-        Microsoft.Terminal.Settings.Model.FontConfig FontFeaturesOverrideSource { get; };
-
-        Windows.Foundation.Collections.IMap<String, Int32> FontAxes;
-        Boolean HasFontAxes { get; };
-        void ClearFontAxes();
-        Microsoft.Terminal.Settings.Model.FontConfig FontAxesOverrideSource { get; };
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Int32>, FontAxes);
     }
 }

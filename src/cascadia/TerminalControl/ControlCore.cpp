@@ -159,8 +159,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            dxEngine->SetFontFeatures(_fontFeatures);
-            dxEngine->SetFontAxes(_fontAxes);
+            SetFontFeaturesInEngine(dxEngine.get());
+            SetFontAxesInEngine(dxEngine.get());
             _updateFont(true);
 
             const COORD windowSize{ static_cast<short>(windowWidth),
@@ -507,24 +507,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontFace = _settings.FontFace();
         const short fontHeight = ::base::saturated_cast<short>(_settings.FontSize());
         const auto fontWeight = _settings.FontWeight();
-        const auto fontFeatures = _settings.FontFeatures();
-        const auto fontAxes = _settings.FontAxes();
-        _fontFeatures.clear();
-        if (fontFeatures)
-        {
-            for (const auto& [tag, param] : _settings.FontFeatures())
-            {
-                _fontFeatures[tag.data()] = param;
-            }
-        }
-        _fontAxes.clear();
-        if (fontAxes)
-        {
-            for (const auto& [axis, value] : _settings.FontAxes())
-            {
-                _fontAxes[axis.data()] = value;
-            }
-        }
+
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
@@ -614,9 +597,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (_renderEngine)
         {
-            // Make sure to call these before we call TriggerFontChange
-            _renderEngine->SetFontFeatures(_fontFeatures);
-            _renderEngine->SetFontAxes(_fontAxes);
+            // Make sure to call SetFontFeatures/SetFontAxes before we call TriggerFontChange
+            SetFontFeaturesInEngine(_renderEngine.get());
+            SetFontAxesInEngine(_renderEngine.get());
         }
         _terminal->SetFontInfo(_actualFont);
 
@@ -925,6 +908,44 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::size fontSize{ GetFont().GetSize() };
         return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
+    }
+
+    void ControlCore::SetFontFeaturesInEngine(::Microsoft::Console::Render::DxEngine* engine)
+    {
+        if (engine)
+        {
+            if (const auto fontFeatures = _settings.FontFeatures())
+            {
+                std::unordered_map<std::wstring_view, uint32_t> featureMap;
+                featureMap.reserve(fontFeatures.Size());
+
+                for (const auto& [tag, param] : fontFeatures)
+                {
+                    featureMap.emplace(tag, param);
+                }
+
+                engine->SetFontFeatures(featureMap);
+            }
+        }
+    }
+
+    void ControlCore::SetFontAxesInEngine(::Microsoft::Console::Render::DxEngine* engine)
+    {
+        if (engine)
+        {
+            if (const auto fontAxes = _settings.FontAxes())
+            {
+                std::unordered_map<std::wstring_view, int32_t> axesMap;
+                axesMap.reserve(fontAxes.Size());
+
+                for (const auto& [axis, value] : fontAxes)
+                {
+                    axesMap.emplace(axis, value);
+                }
+
+                engine->SetFontAxes(axesMap);
+            }
+        }
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const
