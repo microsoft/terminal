@@ -98,7 +98,9 @@ namespace Microsoft::Console::Render
                                                            const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
-                                                 _Out_ FontInfo& FontInfo) noexcept = 0;
+                                                 _Out_ FontInfo& FontInfo,
+                                                 std::optional<std::unordered_map<std::wstring_view, uint32_t>> features = std::nullopt,
+                                                 std::optional<std::unordered_map<std::wstring_view, int32_t>> axes = std::nullopt) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDpi(const int iDpi) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept = 0;
 

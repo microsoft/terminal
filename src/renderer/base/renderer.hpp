@@ -63,7 +63,9 @@ namespace Microsoft::Console::Render
 
         void TriggerFontChange(const int iDpi,
                                const FontInfoDesired& FontInfoDesired,
-                               _Out_ FontInfo& FontInfo) override;
+                               _Out_ FontInfo& FontInfo,
+                               std::optional<std::unordered_map<std::wstring_view, uint32_t>> features = std::nullopt,
+                               std::optional<std::unordered_map<std::wstring_view, int32_t>> axes = std::nullopt) override;
 
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
                                               const FontInfoDesired& FontInfoDesired,

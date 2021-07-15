@@ -190,7 +190,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 // - dpi - The DPI of the screen
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& desired, FontInfo& actual, const int dpi) noexcept
+[[nodiscard]] HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& desired, FontInfo& actual, const int dpi, std::optional<std::unordered_map<std::wstring_view, uint32_t>> features, std::optional<std::unordered_map<std::wstring_view, int32_t>> axes) noexcept
 {
     try
     {
@@ -204,7 +204,14 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                       desired.GetWeight(),
                                       DWRITE_FONT_STYLE_NORMAL,
                                       DWRITE_FONT_STRETCH_NORMAL);
-
+        if (features)
+        {
+            SetFeatures(features.value());
+        }
+        if (axes)
+        {
+            SetAxes(axes.value());
+        }
         _BuildFontRenderData(desired, actual, dpi);
     }
     CATCH_RETURN();

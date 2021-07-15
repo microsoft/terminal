@@ -77,7 +77,9 @@ namespace Microsoft::Console::Render
                                                            const gsl::not_null<IRenderData*> pData,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired,
-                                         _Out_ FontInfo& pfiFontInfo) noexcept override;
+                                         _Out_ FontInfo& pfiFontInfo,
+                                         std::optional<std::unordered_map<std::wstring_view, uint32_t>> features = std::nullopt,
+                                         std::optional<std::unordered_map<std::wstring_view, int32_t>> axes = std::nullopt) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 

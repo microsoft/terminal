@@ -54,8 +54,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResetFontSize();
         FontInfo GetFont() const;
         til::size FontSizeInDips() const;
-        void SetFontFeaturesInEngine(::Microsoft::Console::Render::DxEngine* engine);
-        void SetFontAxesInEngine(::Microsoft::Console::Render::DxEngine* engine);
 
         til::color BackgroundColor() const;
         void SetBackgroundOpacity(const float opacity);

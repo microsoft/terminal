@@ -159,8 +159,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
             // and react accordingly.
-            SetFontFeaturesInEngine(dxEngine.get());
-            SetFontAxesInEngine(dxEngine.get());
             _updateFont(true);
 
             const COORD windowSize{ static_cast<short>(windowWidth),
@@ -595,17 +593,31 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
                                             _compositionScale);
 
-        if (_renderEngine)
-        {
-            // Make sure to call SetFontFeatures/SetFontAxes before we call TriggerFontChange
-            SetFontFeaturesInEngine(_renderEngine.get());
-            SetFontAxesInEngine(_renderEngine.get());
-        }
         _terminal->SetFontInfo(_actualFont);
 
+        std::unordered_map<std::wstring_view, uint32_t> featureMap;
+        if (const auto fontFeatures = _settings.FontFeatures())
+        {
+            featureMap.reserve(fontFeatures.Size());
+
+            for (const auto& [tag, param] : fontFeatures)
+            {
+                featureMap.emplace(tag, param);
+            }
+        }
+        std::unordered_map<std::wstring_view, int32_t> axesMap;
+        if (const auto fontAxes = _settings.FontAxes())
+        {
+            axesMap.reserve(fontAxes.Size());
+
+            for (const auto& [axis, value] : fontAxes)
+            {
+                axesMap.emplace(axis, value);
+            }
+        }
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.
-        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont, featureMap, axesMap);
 
         // If the actual font isn't what was requested...
         if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
@@ -908,44 +920,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const til::size fontSize{ GetFont().GetSize() };
         return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
-    }
-
-    void ControlCore::SetFontFeaturesInEngine(::Microsoft::Console::Render::DxEngine* engine)
-    {
-        if (engine)
-        {
-            if (const auto fontFeatures = _settings.FontFeatures())
-            {
-                std::unordered_map<std::wstring_view, uint32_t> featureMap;
-                featureMap.reserve(fontFeatures.Size());
-
-                for (const auto& [tag, param] : fontFeatures)
-                {
-                    featureMap.emplace(tag, param);
-                }
-
-                engine->SetFontFeatures(featureMap);
-            }
-        }
-    }
-
-    void ControlCore::SetFontAxesInEngine(::Microsoft::Console::Render::DxEngine* engine)
-    {
-        if (engine)
-        {
-            if (const auto fontAxes = _settings.FontAxes())
-            {
-                std::unordered_map<std::wstring_view, int32_t> axesMap;
-                axesMap.reserve(fontAxes.Size());
-
-                for (const auto& [axis, value] : fontAxes)
-                {
-                    axesMap.emplace(axis, value);
-                }
-
-                engine->SetFontAxes(axesMap);
-            }
-        }
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const

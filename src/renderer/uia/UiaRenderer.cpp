@@ -381,7 +381,7 @@ CATCH_RETURN();
 // - fiFontInfo - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
-[[nodiscard]] HRESULT UiaEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*fiFontInfo*/) noexcept
+[[nodiscard]] HRESULT UiaEngine::UpdateFont(const FontInfoDesired& /*pfiFontInfoDesired*/, FontInfo& /*fiFontInfo*/, std::optional<std::unordered_map<std::wstring_view, uint32_t>> /*features*/, std::optional<std::unordered_map<std::wstring_view, int32_t>> /*axes*/) noexcept
 {
     return S_FALSE;
 }

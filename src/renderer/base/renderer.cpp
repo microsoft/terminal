@@ -516,11 +516,11 @@ HRESULT Renderer::_PaintTitle(IRenderEngine* const pEngine)
 // - FontInfo - Data that will be fixed up/filled on return with the chosen font data.
 // Return Value:
 // - <none>
-void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo)
+void Renderer::TriggerFontChange(const int iDpi, const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, std::optional<std::unordered_map<std::wstring_view, uint32_t>> features, std::optional<std::unordered_map<std::wstring_view, int32_t>> axes)
 {
     std::for_each(_rgpEngines.begin(), _rgpEngines.end(), [&](IRenderEngine* const pEngine) {
         LOG_IF_FAILED(pEngine->UpdateDpi(iDpi));
-        LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo));
+        LOG_IF_FAILED(pEngine->UpdateFont(FontInfoDesired, FontInfo, features, axes));
     });
 
     _NotifyPaintFrame();
