@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "OpenTerminalHere.h"
 
+#include "../WinRTUtils/inc/LibraryResources.h"
+
 using namespace Microsoft::WRL;
 
 STDAPI DllCanUnloadNow()
@@ -30,3 +32,6 @@ DllMain(_In_opt_ HINSTANCE hinst, DWORD reason, _In_opt_ void*)
     }
     return TRUE;
 }
+
+// Usurp the TerminalApp's resource group.
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources")

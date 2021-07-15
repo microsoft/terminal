@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
+#include "AllShortcutActions.h"
 #include "ActionMap.h"
 
 #include "ActionMap.g.cpp"
@@ -18,12 +19,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         size_t hashedArgs{};
         if (const auto& args{ actionAndArgs.Args() })
         {
+            // Args are defined, so hash them
             hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
         }
         else
         {
-            std::hash<IActionArgs> argsHash;
-            hashedArgs = argsHash(nullptr);
+            // Args are not defined.
+            // Check if the ShortcutAction supports args.
+            switch (actionAndArgs.Action())
+            {
+#define ON_ALL_ACTIONS_WITH_ARGS(action)                        \
+    case ShortcutAction::action:                                \
+        /* If it does, hash the default values for the args.*/  \
+        hashedArgs = EmptyHash<implementation::action##Args>(); \
+        break;
+                ALL_SHORTCUT_ACTIONS_WITH_ARGS
+#undef ON_ALL_ACTIONS_WITH_ARGS
+            default:
+            {
+                // Otherwise, hash nullptr.
+                std::hash<IActionArgs> argsHash;
+                hashedArgs = argsHash(nullptr);
+            }
+            }
         }
         return hashedAction ^ hashedArgs;
     }
