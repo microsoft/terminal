@@ -154,6 +154,10 @@
           "description": "Sets how the background image aligns to the boundaries of the window when unfocused. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
           "type": "string"
         },
+        "disableIntenseIsBold": {
+          "description": "When set to true, text formatted as 'intense' will not be rendered as 'bold'.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
