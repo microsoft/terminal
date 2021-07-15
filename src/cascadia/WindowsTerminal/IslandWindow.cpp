@@ -1406,6 +1406,13 @@ void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
                      currentWindowRect.width<int>(),
                      currentWindowRect.height<int>(),
                      SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+
+        // GH#10274, GH#10182: Re-evaluate the size of the quake window when we
+        // move to another monitor.
+        if (IsQuakeWindow())
+        {
+            _enterQuakeMode();
+        }
     }
 }
 
