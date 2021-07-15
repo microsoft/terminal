@@ -117,6 +117,7 @@ try
     _end = a._end;
     _pData = a._pData;
     _wordDelimiters = a._wordDelimiters;
+    _blockRange = a._blockRange;
 
     UiaTracing::TextRange::Constructor(*this);
     return S_OK;
