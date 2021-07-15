@@ -55,7 +55,7 @@ class StringTests
 
     // Normally this would be the spot where you'd find a TEST_METHOD(from_wchars).
     // I didn't quite trust my coding skills and thus opted to use fuzz-testing.
-    // The below function was used to test from_wchars for unsafety and conformance with clang's strotul.
+    // The below function was used to test from_wchars for unsafety and conformance with clang's strtoul.
     // The test was run as:
     //   clang++ -fsanitize=address,undefined,fuzzer -std=c++17 file.cpp
     // and was run for 20min across 16 jobs in parallel.
