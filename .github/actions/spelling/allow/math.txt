@@ -1,3 +1,11 @@
+atan
+CPrime
+HBar
+HPrime
 isnan
+LPrime
+LStep
 powf
+RSub
 sqrtf
+ULP
