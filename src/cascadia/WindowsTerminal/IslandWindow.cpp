@@ -452,6 +452,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
+            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -506,6 +507,19 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
+    case CM_NOTIFY_FROM_TRAY:
+    {
+        switch (LOWORD(lparam))
+        {
+        case NIN_SELECT:
+        case NIN_KEYSELECT:
+        {
+            _NotifyTrayIconPressedHandlers();
+            return 0;
+        }
+        }
+        break;
+    }
     }
 
     // TODO: handle messages here...

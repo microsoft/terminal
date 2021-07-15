@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct KeyBindingViewModel : KeyBindingViewModelT<KeyBindingViewModel>, ViewModelHelper<KeyBindingViewModel>
     {
     public:
+        KeyBindingViewModel(const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions);
         KeyBindingViewModel(const Control::KeyChord& keys, const hstring& name, const Windows::Foundation::Collections::IObservableVector<hstring>& availableActions);
 
         hstring Name() const { return _CurrentAction; }
@@ -60,6 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DisableEditMode() { IsInEditMode(false); }
         void AttemptAcceptChanges();
         void AttemptAcceptChanges(hstring newKeyChordText);
+        void CancelChanges();
         void DeleteKeyBinding() { _DeleteKeyBindingRequestedHandlers(*this, _Keys); }
 
         // ProposedAction:   the entry selected by the combo box; may disagree with the settings model.
@@ -81,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Control::KeyChord, Keys, nullptr);
 
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsInEditMode, false);
+        VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsNewlyAdded, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Controls::Flyout, AcceptChangesFlyout, nullptr);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsAutomationPeerAttached, false);
         VIEW_MODEL_OBSERVABLE_PROPERTY(bool, IsHovered, false);
@@ -89,6 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         VIEW_MODEL_OBSERVABLE_PROPERTY(Windows::UI::Xaml::Media::Brush, ContainerBackground, nullptr);
         TYPED_EVENT(ModifyKeyBindingRequested, Editor::KeyBindingViewModel, Editor::ModifyKeyBindingEventArgs);
         TYPED_EVENT(DeleteKeyBindingRequested, Editor::KeyBindingViewModel, Terminal::Control::KeyChord);
+        TYPED_EVENT(DeleteNewlyAddedKeyBinding, Editor::KeyBindingViewModel, IInspectable);
 
     private:
         hstring _KeyChordText{};
@@ -111,6 +115,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
         void KeyChordEditor_KeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+        void AddNew_Click(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(Editor::ActionsPageNavigationState, State, nullptr);
@@ -120,8 +125,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _ViewModelPropertyChangedHandler(const Windows::Foundation::IInspectable& senderVM, const Windows::UI::Xaml::Data::PropertyChangedEventArgs& args);
         void _ViewModelDeleteKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Control::KeyChord& args);
         void _ViewModelModifyKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const Editor::ModifyKeyBindingEventArgs& args);
+        void _ViewModelDeleteNewlyAddedKeyBindingHandler(const Editor::KeyBindingViewModel& senderVM, const IInspectable& args);
 
         std::optional<uint32_t> _GetContainerIndexByKeyChord(const Control::KeyChord& keys);
+        void _RegisterEvents(com_ptr<implementation::KeyBindingViewModel>& kbdVM);
 
         bool _AutomationPeerAttached{ false };
         Windows::Foundation::Collections::IObservableVector<hstring> _AvailableActionAndArgs;
