@@ -618,17 +618,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the currently focused tab. Focus will move to the left, if possible.
-    void TerminalPage::_CloseFocusedTab()
-    {
-        if (auto index{ _GetFocusedTabIndex() })
-        {
-            auto tab{ _tabs.GetAt(*index) };
-            _HandleCloseTabRequested(tab);
-        }
-    }
-
-    // Method Description:
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
@@ -672,6 +661,20 @@ namespace winrt::TerminalApp::implementation
             {
                 _HandleCloseTabRequested(tab);
             }
+        }
+    }
+
+    // Method Description:
+    // - Close the tab at the given index.
+    void TerminalPage::_CloseTabAtIndex(uint32_t index)
+    {
+        if (index >= _tabs.Size())
+        {
+            return;
+        }
+        if (auto tab{ _tabs.GetAt(index) })
+        {
+            _HandleCloseTabRequested(tab);
         }
     }
 

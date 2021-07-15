@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IAppearanceConfig.idl";
+import "FontConfig.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_PROFILE_SETTING(Type, Name) \
@@ -62,14 +63,13 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
         INHERITABLE_PROFILE_SETTING(Double, AcrylicOpacity);
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
-        INHERITABLE_PROFILE_SETTING(String, FontFace);
-        INHERITABLE_PROFILE_SETTING(Int32, FontSize);
-        INHERITABLE_PROFILE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
 
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
+
+        FontConfig FontInfo { get; };
 
         IAppearanceConfig DefaultAppearance { get; };
         INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);

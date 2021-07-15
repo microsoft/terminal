@@ -22,6 +22,7 @@
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
+#include "CloseTabArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
@@ -467,6 +468,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"CloseTabsAfterDefaultCommandKey");
+    }
+
+    winrt::hstring CloseTabArgs::GenerateName() const
+    {
+        if (Index())
+        {
+            // "Close tab at index {0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"CloseTabAtIndexCommandKey")),
+                            Index().Value())
+            };
+        }
+        return RS_(L"CloseTabCommandKey");
     }
 
     winrt::hstring ScrollUpArgs::GenerateName() const
