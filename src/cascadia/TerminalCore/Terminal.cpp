@@ -1016,6 +1016,13 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _patternIntervalTree = {};
     }
 
+    // GH#10332 - If the viewport is scrolled up, and the cursor would move
+    // _below_ the visible viewport, then snap down to where the mutable
+    // viewport is.
+    if (_scrollOffset != 0 && proposedCursorPosition.Y > _GetVisibleViewport().BottomInclusive())
+    {
+        _scrollOffset = 0;
+    }
     // Update Cursor Position
     cursor.SetPosition(proposedCursorPosition);
 
@@ -1042,7 +1049,10 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // scroll if...
         //   - no selection is active
         //   - viewport is already at the bottom
-        const bool scrollToOutput = !IsSelectionActive() && _scrollOffset == 0;
+        const Viewport visible{ _GetVisibleViewport() };
+        const bool cursorInViewport{ proposedCursorPosition.Y >= visible.Top() &&
+                                     proposedCursorPosition.Y <= visible.BottomInclusive() };
+        const bool scrollToOutput = !IsSelectionActive() && !cursorInViewport /*&& _scrollOffset == 0*/;
 
         _scrollOffset = scrollToOutput ? 0 : _scrollOffset + scrollAmount + newRows;
 
