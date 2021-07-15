@@ -481,7 +481,6 @@
                                           IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
                             </StackPanel>
                         </local:SettingContainer>
-
                     </StackPanel>
                 </ScrollViewer>
             </PivotItem>

@@ -155,6 +155,7 @@
           "type": "string"
         },
         "disableIntenseIsBold": {
+          "default": "false",
           "description": "When set to true, text formatted as 'intense' will not be rendered as 'bold'.",
           "type": "boolean"
         },

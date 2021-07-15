@@ -254,7 +254,7 @@ namespace Microsoft::Console::Render
         // Preferences and overrides
         bool _softwareRendering;
         bool _forceFullRepaintRendering;
-        bool _intenseIsBold{ true };
+        bool _intenseIsBold;
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
