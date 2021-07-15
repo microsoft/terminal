@@ -196,6 +196,10 @@ namespace Microsoft::Console::Render
 
         std::vector<float> _glyphAdvances;
 
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> _format1;
+        ::Microsoft::WRL::ComPtr<IDWriteFontFallback1> _fallback1;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> _format3;
+
         struct ScaleCorrection
         {
             UINT32 textIndex;

@@ -592,6 +592,8 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
                                                                     const float fontSize,
                                                                     IDWriteTextFormat3* format)
 {
+#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro
+                                  // checks format for nullness
     FAIL_FAST_IF_NULL(format);
 
     const auto axesCount = format->GetFontAxisValueCount();

@@ -101,6 +101,10 @@ CATCH_RETURN()
     *columns = 0;
 
     _formatInUse = _fontRenderData->DefaultTextFormat().Get();
+    // the _formatInUse changed, make sure to clear _format1, _format3 and _fallback1
+    _format1.Reset();
+    _format3.Reset();
+    _fallback1.Reset();
     _fontInUse = _fontRenderData->DefaultFontFace().Get();
 
     RETURN_IF_FAILED(_AnalyzeTextComplexity());
@@ -154,6 +158,11 @@ try
 
     _formatInUse = _fontRenderData->TextFormatWithAttribute(weight, style, stretch).Get();
     _fontInUse = _fontRenderData->FontFaceWithAttribute(weight, style, stretch).Get();
+
+    // the _formatInUse changed, make sure to clear _format1, _format3 and _fallback1
+    _format1.Reset();
+    _format3.Reset();
+    _fallback1.Reset();
 
     RETURN_IF_FAILED(_AnalyzeTextComplexity());
     RETURN_IF_FAILED(_AnalyzeRuns());
@@ -1245,39 +1254,55 @@ CATCH_RETURN();
     try
     {
         // Get the font fallback first
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat1> format1;
-        if (FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format1))))
+        if (!_format1)
         {
-            // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
-            return S_FALSE;
+            if (FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&_format1))))
+            {
+                // If IDWriteTextFormat1 does not exist, return directly as this OS version doesn't have font fallback.
+                return S_FALSE;
+            }
         }
-        RETURN_HR_IF_NULL(E_NOINTERFACE, format1);
+        RETURN_HR_IF_NULL(E_NOINTERFACE, _format1);
 
         ::Microsoft::WRL::ComPtr<IDWriteFontFallback> fallback;
-        RETURN_IF_FAILED(format1->GetFontFallback(&fallback));
+        RETURN_IF_FAILED(_format1->GetFontFallback(&fallback));
 
         ::Microsoft::WRL::ComPtr<IDWriteFontCollection> collection;
-        RETURN_IF_FAILED(format1->GetFontCollection(&collection));
+        RETURN_IF_FAILED(_format1->GetFontCollection(&collection));
 
         std::wstring familyName;
-        familyName.resize(gsl::narrow_cast<size_t>(format1->GetFontFamilyNameLength()) + 1);
-        RETURN_IF_FAILED(format1->GetFontFamilyName(familyName.data(), gsl::narrow<UINT32>(familyName.size())));
+        familyName.resize(gsl::narrow_cast<size_t>(_format1->GetFontFamilyNameLength()) + 1);
+        RETURN_IF_FAILED(_format1->GetFontFamilyName(familyName.data(), gsl::narrow<UINT32>(familyName.size())));
 
-        const auto weight = format1->GetFontWeight();
-        const auto style = format1->GetFontStyle();
-        const auto stretch = format1->GetFontStretch();
+        const auto weight = _format1->GetFontWeight();
+        const auto style = _format1->GetFontStyle();
+        const auto stretch = _format1->GetFontStretch();
 
         if (!fallback)
         {
             fallback = _fontRenderData->SystemFontFallback();
         }
 
-        ::Microsoft::WRL::ComPtr<IDWriteFontFallback1> fallback1;
-        ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
-        if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
+        // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can use the
+        // newer MapCharacters to apply axes of variation to the font
+        bool useNewMapCharacters{ true };
+        if (!_format3)
         {
-            // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can apply axes of variation to the font
-            const auto axesVector = _fontRenderData->GetAxisVector(weight, stretch, style, format1->GetFontSize(), format3.Get());
+            if (FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&_format3))))
+            {
+                useNewMapCharacters = false;
+            }
+        }
+        if (!_fallback1)
+        {
+            if (FAILED(fallback->QueryInterface(IID_PPV_ARGS(&_fallback1))))
+            {
+                useNewMapCharacters = false;
+            }
+        }
+        if (useNewMapCharacters)
+        {
+            const auto axesVector = _fontRenderData->GetAxisVector(weight, stretch, style, _format1->GetFontSize(), _format3.Get());
             // Walk through and analyze the entire string
             while (textLength > 0)
             {
@@ -1285,7 +1310,7 @@ CATCH_RETURN();
                 ::Microsoft::WRL::ComPtr<IDWriteFontFace5> mappedFont;
                 FLOAT scale = 0.0f;
 
-                fallback1->MapCharacters(source,
+                _fallback1->MapCharacters(source,
                                          textPosition,
                                          textLength,
                                          collection.Get(),
