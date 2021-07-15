@@ -84,6 +84,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
+#pragma warning(disable : 26438) // Avoid 'goto'
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
 
         // I'm declaring all these variables here,
