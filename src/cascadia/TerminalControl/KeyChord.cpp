@@ -54,11 +54,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _vkey = value;
     }
 
-    int32_t KeyChord::ScanCode() noexcept {
+    int32_t KeyChord::ScanCode() noexcept
+    {
         return _scanCode;
     }
 
-    void KeyChord::ScanCode(int32_t value) noexcept {
+    void KeyChord::ScanCode(int32_t value) noexcept
+    {
         _scanCode = value;
     }
 }

@@ -20,7 +20,6 @@ public:
     bool HasWindow();
 
 private:
-
     std::unique_ptr<IslandWindow> _window;
     winrt::TerminalApp::App _app;
     winrt::TerminalApp::AppLogic _logic;
