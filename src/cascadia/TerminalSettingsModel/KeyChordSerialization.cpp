@@ -18,6 +18,8 @@ constexpr std::wstring_view SHIFT_KEY{ L"shift" };
 constexpr std::wstring_view ALT_KEY{ L"alt" };
 constexpr std::wstring_view WIN_KEY{ L"win" };
 
+// If you modify this list you should modify the
+// KeyChordSegment description in profiles.schema.json.
 #define VKEY_NAME_PAIRS(XX)                              \
     XX(VK_RETURN, L"enter")                              \
     XX(VK_TAB, L"tab")                                   \
