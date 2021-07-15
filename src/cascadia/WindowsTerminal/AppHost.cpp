@@ -677,7 +677,7 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     // If a hotkey with a given HWND and ID combination already exists
     // then a duplicate one will be added, which we don't want.
     // (Additionally we want to remove hotkeys that were removed from the settings.)
-    for (int i = 0; i < _hotkeys.size(); ++i)
+    for (int i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
     {
         _window->UnregisterHotKey(i);
     }
