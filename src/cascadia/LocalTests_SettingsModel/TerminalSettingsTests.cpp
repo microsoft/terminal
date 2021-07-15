@@ -113,7 +113,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(12u, actionMapImpl->_KeyMap.size());
 
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('A'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -134,7 +134,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('B') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('B'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -156,7 +156,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('C'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -178,7 +178,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -200,7 +200,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -222,7 +222,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -245,7 +245,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('G'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
@@ -265,7 +265,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('H'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
@@ -287,7 +287,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('I'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
@@ -310,7 +310,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('J') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('J'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
@@ -332,7 +332,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('K') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('K'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
@@ -355,7 +355,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('L') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('L'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
