@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "icon.h"
 #include "TrayIcon.h"
+#include "CustomWindowMessages.h"
 
 #include <ScopedResourceLoader.h>
 #include <LibraryResources.h>

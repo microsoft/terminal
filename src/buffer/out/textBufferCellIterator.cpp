@@ -265,3 +265,8 @@ const OutputCellView* TextBufferCellIterator::operator->() const noexcept
 {
     return &_view;
 }
+
+COORD TextBufferCellIterator::Pos() const noexcept
+{
+    return _pos;
+}

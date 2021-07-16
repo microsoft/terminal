@@ -51,6 +51,7 @@ Author(s):
 #include "JsonUtils.h"
 #include <DefaultSettings.h>
 #include "AppearanceConfig.h"
+#include "FontConfig.h"
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
@@ -78,6 +79,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Profile();
         Profile(guid guid);
 
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
+
         hstring ToString()
         {
             return Name();
@@ -98,10 +102,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         Model::IAppearanceConfig DefaultAppearance();
+        Model::FontConfig FontInfo();
 
         void _FinalizeInheritance() override;
 
-        WINRT_PROPERTY(OriginTag, Origin, OriginTag::Custom);
+        WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
 
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
@@ -121,9 +126,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, double, AcrylicOpacity, 0.5);
         INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
 
-        INHERITABLE_SETTING(Model::Profile, hstring, FontFace, DEFAULT_FONT_FACE);
-        INHERITABLE_SETTING(Model::Profile, int32_t, FontSize, DEFAULT_FONT_SIZE);
-        INHERITABLE_SETTING(Model::Profile, Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
         INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
@@ -143,6 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+        Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
         static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;

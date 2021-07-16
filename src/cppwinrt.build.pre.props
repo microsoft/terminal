@@ -72,8 +72,10 @@
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
 
       <!-- All new code should be in non-permissive mode. Big objects for C++/WinRT. -->
-      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase-</AdditionalOptions>
-      <DisableSpecificWarnings>28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ConformanceMode>true</ConformanceMode>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /Zc:twoPhase-</AdditionalOptions>
+      <DisableSpecificWarnings>5104;5105;28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
 
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>

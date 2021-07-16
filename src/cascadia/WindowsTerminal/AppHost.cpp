@@ -659,7 +659,10 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
 #if TIL_FEATURE_TRAYICON_ENABLED
-    _CreateTrayIcon();
+    if (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray())
+    {
+        _CreateTrayIcon();
+    }
 #endif
 
     _setupGlobalHotkeys();

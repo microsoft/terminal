@@ -4,8 +4,6 @@
 #include "pch.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 
-#define CM_NOTIFY_FROM_TRAY (WM_APP + 1)
-
 // This enumerates all the possible actions
 // that our tray icon context menu could do.
 enum class TrayMenuItemAction

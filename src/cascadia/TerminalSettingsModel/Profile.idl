@@ -2,6 +2,7 @@
 // Licensed under the MIT license.
 
 import "IAppearanceConfig.idl";
+import "FontConfig.idl";
 #include "IInheritable.idl.h"
 
 #define INHERITABLE_PROFILE_SETTING(Type, Name) \
@@ -13,7 +14,8 @@ namespace Microsoft.Terminal.Settings.Model
     // This tag is used to identify the context in which the Profile was created
     enum OriginTag
     {
-        Custom = 0,
+        None = 0,
+        User,
         InBox,
         Generated,
         Fragment,
@@ -41,6 +43,9 @@ namespace Microsoft.Terminal.Settings.Model
         Profile();
         Profile(Guid guid);
 
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
+
         OriginTag Origin { get; };
 
         INHERITABLE_PROFILE_SETTING(String, Name);
@@ -62,14 +67,13 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
         INHERITABLE_PROFILE_SETTING(Double, AcrylicOpacity);
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
-        INHERITABLE_PROFILE_SETTING(String, FontFace);
-        INHERITABLE_PROFILE_SETTING(Int32, FontSize);
-        INHERITABLE_PROFILE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);
 
         INHERITABLE_PROFILE_SETTING(String, StartingDirectory);
         String EvaluatedStartingDirectory { get; };
+
+        FontConfig FontInfo { get; };
 
         IAppearanceConfig DefaultAppearance { get; };
         INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);

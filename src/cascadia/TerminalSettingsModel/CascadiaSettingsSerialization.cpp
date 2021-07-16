@@ -7,8 +7,6 @@
 #include <fmt/chrono.h>
 #include <shlobj.h>
 
-#include <WtExeUtils.h>
-
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
 #include "defaults-universal.h"
@@ -17,12 +15,15 @@
 // Both defaults.h and userDefaults.h are generated at build time into the
 // "Generated Files" directory.
 
+#include "ApplicationState.h"
+#include "FileUtils.h"
+
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace ::Microsoft::Console;
+using namespace ::Microsoft::Terminal::Settings::Model;
 
 static constexpr std::wstring_view SettingsFilename{ L"settings.json" };
 static constexpr std::wstring_view LegacySettingsFilename{ L"profiles.json" };
-static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
@@ -40,7 +41,6 @@ static constexpr std::string_view GuidKey{ "guid" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
-static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
 
@@ -234,7 +234,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
 
             try
             {
-                _WriteSettings(resultPtr->_userSettingsString, CascadiaSettings::SettingsPath());
+                WriteUTF8FileAtomic(_SettingsPath(), resultPtr->_userSettingsString);
             }
             catch (...)
             {
@@ -491,23 +491,11 @@ std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirector
     {
         if (fragmentExt.path().extension() == jsonExtension)
         {
-            wil::unique_hfile hFile{ CreateFileW(fragmentExt.path().c_str(),
-                                                 GENERIC_READ,
-                                                 FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                 nullptr,
-                                                 OPEN_EXISTING,
-                                                 FILE_ATTRIBUTE_NORMAL,
-                                                 nullptr) };
-
-            if (!hFile)
+            try
             {
-                LOG_LAST_ERROR();
+                jsonFiles.emplace(ReadUTF8File(fragmentExt.path()));
             }
-            else
-            {
-                const auto fileData = _ReadFile(hFile.get()).value();
-                jsonFiles.emplace(fileData);
-            }
+            CATCH_LOG();
         }
     }
     return jsonFiles;
@@ -542,14 +530,20 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                     auto matchingProfile = _FindMatchingProfile(profileStub);
                     if (matchingProfile)
                     {
-                        // We found a matching profile, create a child of it and put the modifications there
-                        // (we add a new inheritance layer)
-                        auto childImpl{ matchingProfile->CreateChild() };
-                        childImpl->LayerJson(profileStub);
-                        childImpl->Origin(OriginTag::Fragment);
+                        try
+                        {
+                            // We found a matching profile, create a child of it and put the modifications there
+                            // (we add a new inheritance layer)
+                            auto childImpl{ matchingProfile->CreateChild() };
+                            childImpl->LayerJson(profileStub);
+                            childImpl->Origin(OriginTag::Fragment);
 
-                        // replace parent in _profiles with child
-                        _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                            // replace parent in _profiles with child
+                            _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                        }
+                        catch (...)
+                        {
+                        }
                     }
                 }
                 else
@@ -558,13 +552,19 @@ void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std:
                     // (it must have at least a name)
                     if (profileStub.isMember(JsonKey(NameKey)))
                     {
-                        auto newProfile = Profile::FromJson(profileStub);
-                        // Make sure to give the new profile a source, then we add it to our list of profiles
-                        // We don't make modifications to the user's settings file yet, that will happen when
-                        // _AppendDynamicProfilesToUserSettings() is called later
-                        newProfile->Source(source);
-                        newProfile->Origin(OriginTag::Fragment);
-                        _allProfiles.Append(*newProfile);
+                        try
+                        {
+                            auto newProfile = Profile::FromJson(profileStub);
+                            // Make sure to give the new profile a source, then we add it to our list of profiles
+                            // We don't make modifications to the user's settings file yet, that will happen when
+                            // _AppendDynamicProfilesToUserSettings() is called later
+                            newProfile->Source(source);
+                            newProfile->Origin(OriginTag::Fragment);
+                            _allProfiles.Append(*newProfile);
+                        }
+                        catch (...)
+                        {
+                        }
                     }
                 }
             }
@@ -637,13 +637,8 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
 Json::Value CascadiaSettings::_ParseUtf8JsonString(std::string_view fileData)
 {
     Json::Value result;
-    // Ignore UTF-8 BOM
-    auto actualDataStart = fileData.data();
+    const auto actualDataStart = fileData.data();
     const auto actualDataEnd = fileData.data() + fileData.size();
-    if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
-    {
-        actualDataStart += Utf8Bom.size();
-    }
 
     std::string errs; // This string will receive any error text from failing to parse.
     std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
@@ -693,8 +688,7 @@ bool CascadiaSettings::_PrependSchemaDirective()
 //   them into the user's settings at the end of the list of profiles.
 // - Does not reformat the user's settings file.
 // - Does not write the file! Only modifies in-place the _userSettingsString
-//   member. Callers should make sure to call
-//   _WriteSettings(_userSettingsString) to make sure to persist these changes!
+//   member. Callers should make sure to persist these changes (see WriteSettingsToDisk).
 // - Assumes that the `profiles` object is at an indentation of 4 spaces, and
 //   therefore each profile should be indented 8 spaces. If the user's settings
 //   have a different indentation, we'll still insert valid json, it'll just be
@@ -868,6 +862,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 {
     // Layer the json on top of an existing profile, if we have one:
+    winrt::com_ptr<implementation::Profile> profile{ nullptr };
     auto profileIndex{ _FindMatchingProfileIndex(profileJson) };
     if (profileIndex)
     {
@@ -880,6 +875,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             // When we loaded Profile.Defaults, we created an empty child already.
             // So this just populates the empty child
             parent->LayerJson(profileJson);
+            profile.copy_from(parent);
         }
         else
         {
@@ -889,6 +885,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 
             // replace parent in _profiles with child
             _allProfiles.SetAt(*profileIndex, *childImpl);
+            profile = std::move(childImpl);
         }
     }
     else
@@ -898,7 +895,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
         if (!Profile::IsDynamicProfileObject(profileJson))
         {
-            auto profile{ winrt::make_self<Profile>() };
+            profile = winrt::make_self<Profile>();
 
             // GH#2325: If we have a set of default profile settings, set that as my parent.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
@@ -910,6 +907,12 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             profile->LayerJson(profileJson);
             _allProfiles.Append(*profile);
         }
+    }
+
+    if (profile && _userDefaultProfileSettings)
+    {
+        // If we've loaded defaults{} we're in the "user settings" phase for sure
+        profile->Origin(OriginTag::User);
     }
 }
 
@@ -1056,28 +1059,15 @@ winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Jso
 }
 
 // Method Description:
-// - Writes the given content in UTF-8 to a settings file using the Win32 APIS's.
-//   Will overwrite any existing content in the file.
+// - Returns the path of the settings.json file.
 // Arguments:
-// - content: the given string of content to write to the file.
-// Return Value:
 // - <none>
-//   This can throw an exception if we fail to open the file for writing, or we
-//      fail to write the file
-void CascadiaSettings::_WriteSettings(const std::string_view content, const hstring filepath)
+// Return Value:
+// - Returns a path in 80% of cases. I measured!
+const std::filesystem::path& CascadiaSettings::_SettingsPath()
 {
-    wil::unique_hfile hOut{ CreateFileW(filepath.c_str(),
-                                        GENERIC_WRITE,
-                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                        nullptr,
-                                        CREATE_ALWAYS,
-                                        FILE_ATTRIBUTE_NORMAL,
-                                        nullptr) };
-    if (!hOut)
-    {
-        THROW_LAST_ERROR();
-    }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
+    static const auto path = GetBaseSettingsPath() / SettingsFilename;
+    return path;
 }
 
 // Method Description:
@@ -1091,92 +1081,7 @@ void CascadiaSettings::_WriteSettings(const std::string_view content, const hstr
 //      from reading the file
 std::optional<std::string> CascadiaSettings::_ReadUserSettings()
 {
-    const auto pathToSettingsFile{ CascadiaSettings::SettingsPath() };
-    wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
-                                         GENERIC_READ,
-                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                         nullptr,
-                                         OPEN_EXISTING,
-                                         FILE_ATTRIBUTE_NORMAL,
-                                         nullptr) };
-
-    if (!hFile)
-    {
-        // GH#5186 - We moved from profiles.json to settings.json; we want to
-        // migrate any file we find. We're using MoveFile in case their settings.json
-        // is a symbolic link.
-        std::filesystem::path pathToLegacySettingsFile{ std::wstring_view{ pathToSettingsFile } };
-        pathToLegacySettingsFile.replace_filename(LegacySettingsFilename);
-
-        wil::unique_hfile hLegacyFile{ CreateFileW(pathToLegacySettingsFile.c_str(),
-                                                   GENERIC_READ,
-                                                   FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                   nullptr,
-                                                   OPEN_EXISTING,
-                                                   FILE_ATTRIBUTE_NORMAL,
-                                                   nullptr) };
-
-        if (hLegacyFile)
-        {
-            // Close the file handle, move it, and re-open the file in its new location.
-            hLegacyFile.reset();
-
-            // Note: We're unsure if this is unsafe. Theoretically it's possible
-            // that two instances of the app will try and move the settings file
-            // simultaneously. We don't know what might happen in that scenario,
-            // but we're also not sure how to safely lock the file to prevent
-            // that from occurring.
-            THROW_LAST_ERROR_IF(!MoveFile(pathToLegacySettingsFile.c_str(),
-                                          pathToSettingsFile.c_str()));
-
-            hFile.reset(CreateFileW(pathToSettingsFile.c_str(),
-                                    GENERIC_READ,
-                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                    nullptr,
-                                    OPEN_EXISTING,
-                                    FILE_ATTRIBUTE_NORMAL,
-                                    nullptr));
-
-            // hFile shouldn't be INVALID. That's unexpected - We just moved the
-            // file, we should be able to open it. Throw the error so we can get
-            // some information here.
-            THROW_LAST_ERROR_IF(!hFile);
-        }
-        else
-        {
-            // If the roaming file didn't exist, and the local file doesn't exist,
-            //      that's fine. Just log the error and return nullopt - we'll
-            //      create the defaults.
-            LOG_LAST_ERROR();
-            return std::nullopt;
-        }
-    }
-
-    return _ReadFile(hFile.get());
-}
-
-// Method Description:
-// - Reads the content in UTF-8 encoding of the given file using the Win32 APIs
-// Arguments:
-// - <none>
-// Return Value:
-// - an optional with the content of the file if we were able to read it. If we
-//   fail to read it, this can throw an exception from reading the file
-std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
-{
-    // fileSize is in bytes
-    const auto fileSize = GetFileSize(hFile, nullptr);
-    THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
-
-    auto utf8buffer = std::make_unique<char[]>(fileSize);
-
-    DWORD bytesRead = 0;
-    THROW_LAST_ERROR_IF(!ReadFile(hFile, utf8buffer.get(), fileSize, &bytesRead, nullptr));
-
-    // convert buffer to UTF-8 string
-    std::string utf8string(utf8buffer.get(), fileSize);
-
-    return { utf8string };
+    return ReadUTF8FileIfExists(_SettingsPath());
 }
 
 // function Description:
@@ -1191,23 +1096,7 @@ std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
 // - the full path to the settings file
 winrt::hstring CascadiaSettings::SettingsPath()
 {
-    wil::unique_cotaskmem_string localAppDataFolder;
-    // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
-    // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
-    // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
-    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder));
-
-    std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
-
-    if (!IsPackaged())
-    {
-        parentDirectoryForSettingsFile /= UnpackagedSettingsFolderName;
-    }
-
-    // Create the directory if it doesn't exist
-    std::filesystem::create_directories(parentDirectoryForSettingsFile);
-
-    return winrt::hstring{ (parentDirectoryForSettingsFile / SettingsFilename).wstring() };
+    return winrt::hstring{ _SettingsPath().wstring() };
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()
@@ -1222,15 +1111,12 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
     // directory as the exe, that will work for unpackaged scenarios as well. So
     // let's try that.
 
-    HMODULE hModule = GetModuleHandle(nullptr);
-    THROW_LAST_ERROR_IF(hModule == nullptr);
-
     std::wstring exePathString;
-    THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, exePathString));
+    THROW_IF_FAILED(wil::GetModuleFileNameW(nullptr, exePathString));
 
-    const std::filesystem::path exePath{ exePathString };
-    const std::filesystem::path rootDir = exePath.parent_path();
-    return winrt::hstring{ (rootDir / DefaultsFilename).wstring() };
+    std::filesystem::path path{ exePathString };
+    path.replace_filename(DefaultsFilename);
+    return winrt::hstring{ path.wstring() };
 }
 
 // Function Description:
@@ -1275,15 +1161,13 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 // - <none>
 void CascadiaSettings::WriteSettingsToDisk() const
 {
-    const auto settingsPath{ CascadiaSettings::SettingsPath() };
+    const auto settingsPath = _SettingsPath();
 
     try
     {
         // create a timestamped backup file
-        const auto clock{ std::chrono::system_clock() };
-        const auto timeStamp{ clock.to_time_t(clock.now()) };
-        const winrt::hstring backupSettingsPath{ fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath, fmt::localtime(timeStamp)) };
-        _WriteSettings(_userSettingsString, backupSettingsPath);
+        const auto backupSettingsPath = fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath.wstring(), fmt::localtime(std::time(nullptr)));
+        WriteUTF8File(backupSettingsPath, _userSettingsString);
     }
     CATCH_LOG();
 
@@ -1293,7 +1177,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    _WriteSettings(styledString, settingsPath);
+    WriteUTF8FileAtomic(settingsPath, styledString);
 
     // Persists the default terminal choice
     //

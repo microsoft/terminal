@@ -3,6 +3,7 @@
 
 import "EnumEntry.idl";
 import "MainPage.idl";
+import "Appearances.idl";
 
 #include "ViewModelHelpers.idl.h"
 
@@ -12,12 +13,6 @@ import "MainPage.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass Font : Windows.Foundation.IStringable
-    {
-        String Name { get; };
-        String LocalizedName { get; };
-    }
-
     runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
@@ -25,14 +20,18 @@ namespace Microsoft.Terminal.Settings.Editor
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
         Boolean CanDeleteProfile { get; };
-        Boolean UsingMonospaceFont { get; };
         Boolean IsBaseLayer;
-        Boolean UseDesktopBGImage;
         Boolean UseParentProcessDirectory;
-        Boolean ShowAllFonts;
         Boolean UseCustomStartingDirectory { get; };
-        Boolean BackgroundImageSettingsVisible { get; };
+        AppearanceViewModel DefaultAppearance { get; };
         Guid OriginalProfileGuid { get; };
+        Boolean HasUnfocusedAppearance { get; };
+        Boolean EditableUnfocusedAppearance { get; };
+        Boolean ShowUnfocusedAppearance { get; };
+        AppearanceViewModel UnfocusedAppearance { get; };
+
+        void CreateUnfocusedAppearance(Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes, IHostedInWindow WindowRoot);
+        void DeleteUnfocusedAppearance();
 
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
@@ -47,21 +46,12 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAcrylic);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, AcrylicOpacity);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, FontFace);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, FontSize);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, BackgroundImagePath);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, BackgroundImageOpacity);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, RetroTerminalEffect);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, ColorSchemeName);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
@@ -69,8 +59,6 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(UInt32, CursorHeight);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
     }
 
@@ -88,11 +76,13 @@ namespace Microsoft.Terminal.Settings.Editor
 
     runtimeclass ProfilePageNavigationState
     {
-        Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
         IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
 
         ProfileViewModel Profile;
         ProfilesPivots LastActivePivot;
+
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
 
         event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
     };
@@ -107,13 +97,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
         void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
 
-        IInspectable CurrentCursorShape;
-        Boolean IsVintageCursor { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
-
-        IInspectable CurrentBackgroundImageStretchMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
-
         IInspectable CurrentAntiAliasingMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
 
@@ -122,14 +105,5 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
-
-        IInspectable CurrentFontWeight;
-        Boolean IsCustomFontWeight { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
-
-        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
-
-        IInspectable CurrentFontFace { get; };
     }
 }

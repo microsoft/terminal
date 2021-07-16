@@ -114,23 +114,23 @@ private:                                                       \
 // private _setName() method, that the class can internally use to change the
 // value when it _knows_ it doesn't need to raise the PropertyChanged event
 // (like when the class is being initialized).
-#define WINRT_OBSERVABLE_PROPERTY(type, name, event, ...)                              \
-public:                                                                                \
-    type name() const noexcept { return _##name; };                                    \
-    void name(const type& value)                                                       \
-    {                                                                                  \
-        if (_##name != value)                                                          \
-        {                                                                              \
-            _##name = value;                                                           \
-            event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
-        }                                                                              \
-    };                                                                                 \
-                                                                                       \
-private:                                                                               \
-    type _##name{ __VA_ARGS__ };                                                       \
-    void _set##name(const type& value)                                                 \
-    {                                                                                  \
-        const_cast<type&>(_##name) = value;                                            \
+#define WINRT_OBSERVABLE_PROPERTY(type, name, event, ...)                                 \
+public:                                                                                   \
+    type name() const noexcept { return _##name; };                                       \
+    void name(const type& value)                                                          \
+    {                                                                                     \
+        if (_##name != value)                                                             \
+        {                                                                                 \
+            _##name = value;                                                              \
+            event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L## #name }); \
+        }                                                                                 \
+    };                                                                                    \
+                                                                                          \
+private:                                                                                  \
+    type _##name{ __VA_ARGS__ };                                                          \
+    void _set##name(const type& value)                                                    \
+    {                                                                                     \
+        _##name = value;                                                                  \
     };
 
 // Use this macro for quickly defining the factory_implementation part of a
