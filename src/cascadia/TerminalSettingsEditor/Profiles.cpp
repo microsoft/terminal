@@ -284,7 +284,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         _unfocusedAppearanceViewModel = nullptr;
 
-        _NotifyChanges(L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
     }
 
     Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
