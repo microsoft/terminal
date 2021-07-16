@@ -205,8 +205,8 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                       DWRITE_FONT_STYLE_NORMAL,
                                       DWRITE_FONT_STRETCH_NORMAL);
 
-        SetFeatures(features);
-        SetAxes(axes);
+        _SetFeatures(features);
+        _SetAxes(axes);
 
         _BuildFontRenderData(desired, actual, dpi);
     }
@@ -469,7 +469,7 @@ bool DxFontRenderData::DidUserSetFeatures() const noexcept
 //   to take place
 // Arguments:
 // - features - the features to update our map with
-void DxFontRenderData::SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features)
+void DxFontRenderData::_SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features)
 {
     // Populate the feature map with the standard list first
     std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> featureMap{
@@ -517,7 +517,7 @@ void DxFontRenderData::SetFeatures(const std::unordered_map<std::wstring_view, u
 //   to take place
 // Arguments:
 // - axes - the axes to update our map with
-void DxFontRenderData::SetAxes(const std::unordered_map<std::wstring_view, int32_t>& axes)
+void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, int32_t>& axes)
 {
     _axesVector.clear();
 

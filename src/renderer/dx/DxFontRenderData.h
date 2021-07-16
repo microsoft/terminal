@@ -89,8 +89,6 @@ namespace Microsoft::Console::Render
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
         bool DidUserSetFeatures() const noexcept;
-        void SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features);
-        void SetAxes(const std::unordered_map<std::wstring_view, int32_t>& axes);
 
         float FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept;
         float FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept;
@@ -117,6 +115,8 @@ namespace Microsoft::Console::Render
             return (weight << 16) | (style << 8) | stretch;
         };
 
+        void _SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features);
+        void _SetAxes(const std::unordered_map<std::wstring_view, int32_t>& axes);
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 

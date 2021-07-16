@@ -72,9 +72,6 @@ namespace Microsoft::Console::Render
 
         HANDLE GetSwapChainHandle();
 
-        void SetFontFeatures(const std::unordered_map<std::wstring_view, uint32_t> features);
-        void SetFontAxes(const std::unordered_map<std::wstring_view, int32_t> axes);
-
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;

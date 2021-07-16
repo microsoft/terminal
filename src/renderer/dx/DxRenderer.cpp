@@ -1977,24 +1977,6 @@ CATCH_RETURN()
 }
 
 // Routine Description:
-// - Updates the font render data's internal map of font features with the given features
-// Arguments:
-// - features - the features to update the map with
-void DxEngine::SetFontFeatures(const std::unordered_map<std::wstring_view, uint32_t> features)
-{
-    _fontRenderData->SetFeatures(features);
-}
-
-// Routine Description:
-// - Updates the font render data's internal map of font axes with the given axes
-// Arguments:
-// - axes - the axes to update the map with
-void DxEngine::SetFontAxes(const std::unordered_map<std::wstring_view, int32_t> axes)
-{
-    _fontRenderData->SetAxes(axes);
-}
-
-// Routine Description:
 // - Updates the font used for drawing
 // - This is the version that complies with the IRenderEngine interface
 // Arguments:
