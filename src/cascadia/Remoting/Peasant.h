@@ -30,6 +30,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void DisplayWindowId();
         void RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
+        void RequestShowTrayIcon();
+        void RequestHideTrayIcon();
+
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
@@ -41,6 +44,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RenameRequestArgs);
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
+
+        TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
         uint64_t _ourPID;
