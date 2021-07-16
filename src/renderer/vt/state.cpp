@@ -187,9 +187,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // Return Value:
 // - HRESULT S_OK
 [[nodiscard]] HRESULT VtEngine::UpdateFont(const FontInfoDesired& /*pfiFontDesired*/,
-                                           _Out_ FontInfo& /*pfiFont*/,
-                                           std::optional<std::unordered_map<std::wstring_view, uint32_t>> /*features*/,
-                                           std::optional<std::unordered_map<std::wstring_view, int32_t>> /*axes*/) noexcept
+                                           _Out_ FontInfo& /*pfiFont*/) noexcept
 {
     return S_OK;
 }

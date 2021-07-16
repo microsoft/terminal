@@ -323,7 +323,7 @@ GdiEngine::~GdiEngine()
 // - Font - reference to font information where the chosen font information will be populated.
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
-[[nodiscard]] HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font, std::optional<std::unordered_map<std::wstring_view, uint32_t>> /*features*/, std::optional<std::unordered_map<std::wstring_view, int32_t>> /*axes*/) noexcept
+[[nodiscard]] HRESULT GdiEngine::UpdateFont(const FontInfoDesired& FontDesired, _Out_ FontInfo& Font) noexcept
 {
     wil::unique_hfont hFont, hFontItalic;
     RETURN_IF_FAILED(_GetProposedFont(FontDesired, Font, _iCurrentDpi, hFont, hFontItalic));

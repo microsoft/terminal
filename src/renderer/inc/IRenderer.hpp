@@ -48,9 +48,7 @@ namespace Microsoft::Console::Render
         virtual void TriggerTitleChange() = 0;
         virtual void TriggerFontChange(const int iDpi,
                                        const FontInfoDesired& FontInfoDesired,
-                                       _Out_ FontInfo& FontInfo,
-                                       std::optional<std::unordered_map<std::wstring_view, uint32_t>> features = std::nullopt,
-                                       std::optional<std::unordered_map<std::wstring_view, int32_t>> axes = std::nullopt) = 0;
+                                       _Out_ FontInfo& FontInfo) = 0;
 
         [[nodiscard]] virtual HRESULT GetProposedFont(const int iDpi,
                                                       const FontInfoDesired& FontInfoDesired,
