@@ -93,22 +93,12 @@ class StringTests
             return 0;
         }
 
-        auto actual = ULONG_MAX;
-        try
-        {
-            actual = from_wchars({ wide_buffer, size });
-        }
-        catch (const std::invalid_argument&)
-        {
-        }
-        catch (const std::out_of_range&)
-        {
-        }
-
+        const auto actual = from_wchars({ wide_buffer, size });
         if (expected != actual)
         {
             __builtin_trap();
         }
+
         return 0;
     }
 #endif

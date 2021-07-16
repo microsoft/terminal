@@ -688,6 +688,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         const auto modifiers = keys.Modifiers();
 
+        // The "keys" given to us can contain both a Vkey, as well as a ScanCode.
+        // For instance our UI code fills out a KeyChord with all available information.
+        // But our _KeyMap only contains KeyChords that contain _either_ a Vkey or ScanCode.
+        // Due to this we'll have to call _GetActionByKeyChordInternal twice.
         if (auto vkey = keys.Vkey())
         {
             if (auto command = _GetActionByKeyChordInternal({ modifiers, vkey, 0 }))

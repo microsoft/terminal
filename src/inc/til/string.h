@@ -73,9 +73,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
+    inline constexpr unsigned long from_wchars_error = ULONG_MAX;
+
     // Just like std::wcstoul, but without annoying locales and null-terminating strings.
     // It has been fuzz-tested against clang's strtoul implementation.
-    _TIL_INLINEPREFIX unsigned long from_wchars(const std::wstring_view& str)
+    _TIL_INLINEPREFIX unsigned long from_wchars(const std::wstring_view& str) noexcept
     {
         static constexpr unsigned long maximumValue = ULONG_MAX / 16;
 
@@ -84,7 +86,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
 #pragma warning(push)
 #pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
-#pragma warning(disable : 26438) // Avoid 'goto'
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
 
         // I'm declaring all these variables here,
@@ -109,7 +110,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         if (ptr == end)
         {
-            goto throwInvalid;
+            return from_wchars_error;
         }
 
         for (;; accumulator *= base)
@@ -129,13 +130,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             }
             else
             {
-                goto throwInvalid;
+                return from_wchars_error;
             }
 
             accumulator += value;
             if (accumulator >= maximumValue)
             {
-                goto throwOverflow;
+                return from_wchars_error;
             }
 
             if (++ptr == end)
@@ -143,11 +144,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 return accumulator;
             }
         }
-
-    throwInvalid:
-        throw std::invalid_argument("invalid from_wchars input");
-    throwOverflow:
-        throw std::out_of_range("from_wchars overflow");
 #pragma warning(pop)
     }
 
