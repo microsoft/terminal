@@ -18,17 +18,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty KeyChordListener::_KeysProperty{ nullptr };
 
-    static constexpr std::array<VirtualKey, 10> ModifierKeys{
-        VirtualKey::Menu,
-        VirtualKey::RightMenu,
-        VirtualKey::LeftMenu,
-        VirtualKey::Control,
-        VirtualKey::RightControl,
-        VirtualKey::LeftControl,
+    static constexpr std::array ModifierKeys{
         VirtualKey::Shift,
-        VirtualKey::LeftShift,
+        VirtualKey::Control,
+        VirtualKey::Menu,
+        VirtualKey::LeftWindows,
         VirtualKey::RightWindows,
-        VirtualKey::LeftWindows
+        VirtualKey::LeftShift,
+        VirtualKey::LeftControl,
+        VirtualKey::RightControl,
+        VirtualKey::LeftMenu,
+        VirtualKey::RightMenu
     };
 
     static VirtualKeyModifiers _GetModifiers()
@@ -48,29 +48,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 case VirtualKey::Control:
                 case VirtualKey::LeftControl:
                 case VirtualKey::RightControl:
-                {
                     flags |= VirtualKeyModifiers::Control;
                     break;
-                }
                 case VirtualKey::Menu:
                 case VirtualKey::LeftMenu:
                 case VirtualKey::RightMenu:
-                {
                     flags |= VirtualKeyModifiers::Menu;
                     break;
-                }
                 case VirtualKey::Shift:
                 case VirtualKey::LeftShift:
-                {
                     flags |= VirtualKeyModifiers::Shift;
                     break;
-                }
                 case VirtualKey::LeftWindows:
                 case VirtualKey::RightWindows:
-                {
                     flags |= VirtualKeyModifiers::Windows;
                     break;
-                }
                 }
             }
         }

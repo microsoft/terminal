@@ -38,7 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             const auto viewModelProperty{ args.PropertyName() };
             if (viewModelProperty == L"CurrentKeys")
             {
-                _KeyChordText = Model::KeyChordSerialization::ToString(_CurrentKeys);
+                _KeyChordText = KeyChordSerialization::ToString(_CurrentKeys);
                 _NotifyChanges(L"KeyChordText");
             }
             else if (viewModelProperty == L"IsContainerFocused" ||
@@ -75,8 +75,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // if we're in edit mode,
             // - pre-populate the text box with the current keys
             // - reset the combo box with the current action
-            ProposedKeys(CurrentKeys());
-            ProposedAction(box_value(CurrentAction()));
+            ProposedKeys(_CurrentKeys);
+            ProposedAction(box_value(_CurrentAction));
         }
     }
 
