@@ -556,7 +556,6 @@ namespace ControlUnitTests
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
         const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
-        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
 
         const til::size fontSize{ 9, 21 };
 
