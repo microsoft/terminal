@@ -21,7 +21,7 @@ rem Add nuget to PATH
 set PATH=%PATH%%OPENCON%\dep\nuget;
 
 rem Run nuget restore so you can use vswhere
-nuget restore %OPENCON% -Verbosity quiet
+nuget restore %OPENCON%\OpenConsole.sln -Verbosity quiet
 
 rem Find vswhere
 rem from https://github.com/microsoft/vs-setup-samples/blob/master/tools/vswhere.cmd
@@ -104,7 +104,7 @@ shift
 goto :ARGS_LOOP
 
 :POST_ARGS_LOOP
-set TAEF=%OPENCON%\packages\Microsoft.Taef.10.58.210305002\build\Binaries\%ARCH%\TE.exe
+set TAEF=%OPENCON%\packages\Microsoft.Taef.10.60.210621002\build\Binaries\%ARCH%\TE.exe
 rem Set this envvar so setup won't repeat itself
 set OpenConBuild=true
 

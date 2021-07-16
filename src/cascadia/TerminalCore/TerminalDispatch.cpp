@@ -734,8 +734,8 @@ bool TerminalDispatch::HardReset() noexcept
     success = CursorPosition(1, 1) && success;
 
     // Reset the mouse mode
-    success = EnableSGRExtendedMouseMode(false);
-    success = EnableAnyEventMouseMode(false);
+    success = EnableSGRExtendedMouseMode(false) && success;
+    success = EnableAnyEventMouseMode(false) && success;
 
     // Delete all current tab stops and reapply
     _ResetTabStops();

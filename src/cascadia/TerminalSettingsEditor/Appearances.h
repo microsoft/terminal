@@ -59,6 +59,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
         void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
 
+        WINRT_PROPERTY(bool, IsDefault, false);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
 
         // These settings are not defined in AppearanceConfig, so we grab them

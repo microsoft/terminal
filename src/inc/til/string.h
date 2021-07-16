@@ -30,27 +30,29 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return visualize_control_codes(std::wstring{ str });
     }
 
+    // std::string_view::starts_with support for C++17.
     template<typename T, typename Traits>
-    constexpr bool starts_with(const std::basic_string_view<T, Traits> str, const std::basic_string_view<T, Traits> prefix) noexcept
+    constexpr bool starts_with(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& prefix) noexcept
     {
 #ifdef __cpp_lib_starts_ends_with
 #error This code can be replaced in C++20, which natively supports .starts_with().
 #endif
         return str.size() >= prefix.size() && Traits::compare(str.data(), prefix.data(), prefix.size()) == 0;
-    };
+    }
 
-    constexpr bool starts_with(const std::string_view str, const std::string_view prefix) noexcept
+    constexpr bool starts_with(const std::string_view& str, const std::string_view& prefix) noexcept
     {
         return starts_with<>(str, prefix);
-    };
+    }
 
-    constexpr bool starts_with(const std::wstring_view str, const std::wstring_view prefix) noexcept
+    constexpr bool starts_with(const std::wstring_view& str, const std::wstring_view& prefix) noexcept
     {
         return starts_with<>(str, prefix);
-    };
+    }
 
+    // std::string_view::ends_with support for C++17.
     template<typename T, typename Traits>
-    constexpr bool ends_with(const std::basic_string_view<T, Traits> str, const std::basic_string_view<T, Traits> prefix) noexcept
+    constexpr bool ends_with(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& prefix) noexcept
     {
 #ifdef __cpp_lib_ends_ends_with
 #error This code can be replaced in C++20, which natively supports .ends_with().
@@ -59,15 +61,110 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
         return str.size() >= prefix.size() && Traits::compare(str.data() + (str.size() - prefix.size()), prefix.data(), prefix.size()) == 0;
 #pragma warning(pop)
-    };
+    }
 
-    constexpr bool ends_with(const std::string_view str, const std::string_view prefix) noexcept
+    constexpr bool ends_with(const std::string_view& str, const std::string_view& prefix) noexcept
     {
         return ends_with<>(str, prefix);
-    };
+    }
 
-    constexpr bool ends_with(const std::wstring_view str, const std::wstring_view prefix) noexcept
+    constexpr bool ends_with(const std::wstring_view& str, const std::wstring_view& prefix) noexcept
     {
         return ends_with<>(str, prefix);
-    };
+    }
+
+    // Just like std::tolower, but without annoying locales.
+    template<typename T>
+    constexpr T tolower_ascii(T c)
+    {
+        if ((c >= 'A') && (c <= 'Z'))
+        {
+            c |= 0x20;
+        }
+
+        return c;
+    }
+
+    // Just like std::toupper, but without annoying locales.
+    template<typename T>
+    constexpr T toupper_ascii(T c)
+    {
+        if ((c >= 'a') && (c <= 'z'))
+        {
+            c &= ~0x20;
+        }
+
+        return c;
+    }
+
+    // Just like _memicmp, but without annoying locales.
+    template<typename T, typename Traits>
+    bool equals_insensitive_ascii(const std::basic_string_view<T, Traits>& str1, const std::basic_string_view<T, Traits>& str2) noexcept
+    {
+        if (str1.size() != str2.size())
+        {
+            return false;
+        }
+
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'data1' is never tested for nullness, it can be marked as not_null
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
+        auto remaining = str1.size();
+        auto data1 = str1.data();
+        auto data2 = str2.data();
+        for (; remaining; --remaining, ++data1, ++data2)
+        {
+            if (*data1 != *data2 && tolower_ascii(*data1) != tolower_ascii(*data2))
+            {
+                return false;
+            }
+        }
+#pragma warning(pop)
+
+        return true;
+    }
+
+    inline bool equals_insensitive_ascii(const std::string_view& str1, const std::string_view& str2) noexcept
+    {
+        return equals_insensitive_ascii<>(str1, str2);
+    }
+
+    inline bool equals_insensitive_ascii(const std::wstring_view& str1, const std::wstring_view& str2) noexcept
+    {
+        return equals_insensitive_ascii<>(str1, str2);
+    }
+
+    // Give the arguments ("foo bar baz", " "), this method will
+    // * modify the first argument to "bar baz"
+    // * return "foo"
+    // If the needle cannot be found the "str" argument is returned as is.
+    template<typename T, typename Traits>
+    std::basic_string_view<T, Traits> prefix_split(std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& needle) noexcept
+    {
+        using view_type = std::basic_string_view<T, Traits>;
+
+        const auto idx = str.find(needle);
+        // > If the needle cannot be found the "str" argument is returned as is.
+        // ...but if needle is empty, idx will always be npos, forcing us to return str.
+        if (idx == view_type::npos || needle.empty())
+        {
+            return std::exchange(str, {});
+        }
+
+        const auto suffixIdx = idx + needle.size();
+        const view_type result{ str.data(), idx };
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead
+        str = { str.data() + suffixIdx, str.size() - suffixIdx };
+        return result;
+    }
+
+    inline std::string_view prefix_split(std::string_view& str, const std::string_view& needle) noexcept
+    {
+        return prefix_split<>(str, needle);
+    }
+
+    inline std::wstring_view prefix_split(std::wstring_view& str, const std::wstring_view& needle) noexcept
+    {
+        return prefix_split<>(str, needle);
+    }
 }

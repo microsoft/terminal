@@ -34,6 +34,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::guid OriginalProfileGuid() const noexcept;
         bool CanDeleteProfile() const;
         Editor::AppearanceViewModel DefaultAppearance();
+        Editor::AppearanceViewModel UnfocusedAppearance();
+        bool HasUnfocusedAppearance();
+        bool EditableUnfocusedAppearance();
+        bool ShowUnfocusedAppearance();
+
+        void CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                       const IHostedInWindow& windowRoot);
+        void DeleteUnfocusedAppearance();
+
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
         PERMANENT_OBSERVABLE_PROJECTED_SETTING(_profile, Guid);
@@ -77,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static Editor::Font _GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames);
 
         Model::CascadiaSettings _appSettings;
+        Editor::AppearanceViewModel _unfocusedAppearanceViewModel;
     };
 
     struct DeleteProfileEventArgs :
@@ -100,6 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                    const Editor::ProfilePageNavigationState& lastState,
                                    const IHostedInWindow& windowRoot) :
             _Profile{ viewModel },
+            _Schemes{ schemes },
             _WindowRoot{ windowRoot }
         {
             // If there was a previous nav state copy the selected pivot from it.
@@ -109,14 +120,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             viewModel.DefaultAppearance().Schemes(schemes);
             viewModel.DefaultAppearance().WindowRoot(windowRoot);
+
+            if (viewModel.UnfocusedAppearance())
+            {
+                viewModel.UnfocusedAppearance().Schemes(schemes);
+                viewModel.UnfocusedAppearance().WindowRoot(windowRoot);
+            }
         }
 
         void DeleteProfile();
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
 
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> Schemes() { return _Schemes; }
+        void Schemes(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& val) { _Schemes = val; }
         TYPED_EVENT(DeleteProfile, Editor::ProfilePageNavigationState, Editor::DeleteProfileEventArgs);
         WINRT_PROPERTY(IHostedInWindow, WindowRoot, nullptr);
         WINRT_PROPERTY(Editor::ProfilesPivots, LastActivePivot, Editor::ProfilesPivots::General);
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+
+    private:
+        Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
     struct Profiles : ProfilesT<Profiles>
@@ -138,6 +162,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         fire_and_forget Icon_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void Pivot_SelectionChanged(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void CreateUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
+        void DeleteUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 

@@ -116,8 +116,9 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Frame x:Name="contentFrame"
-                   Grid.Row="0" />
+            <ScrollViewer Grid.Row="0">
+                <Frame x:Name="contentFrame" />
+            </ScrollViewer>
             <Grid Grid.Row="1"
                   Height="100"
                   BorderBrush="{ThemeResource SystemBaseLowColor}"
