@@ -1070,7 +1070,10 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
-    _NotifyTerminalCursorPositionChanged();
+    if (!cursor.IsDeferDrawing())
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
