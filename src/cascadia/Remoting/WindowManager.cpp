@@ -255,6 +255,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
 
+#if TIL_FEATURE_TRAYICON_ENABLED
+        _monarch.ShowTrayIconRequested([this](auto&&, auto&&){ _ShowTrayIconRequestedHandlers(*this, nullptr); });
+        _monarch.HideTrayIconRequested([this](auto&&, auto&&){ _HideTrayIconRequestedHandlers(*this, nullptr); });
+#endif
+
         _BecameMonarchHandlers(*this, nullptr);
     }
 

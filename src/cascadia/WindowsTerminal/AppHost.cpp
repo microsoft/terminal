@@ -659,10 +659,19 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
 #if TIL_FEATURE_TRAYICON_ENABLED
+    // TODO: Check if there's a quake window _somewhere_. If there is,
+    // we'll need to show our tray icon regardless of settings.
+
     if (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray())
     {
         _CreateTrayIcon();
     }
+
+    // These events are coming from peasants that become or un-become quake windows.
+    // A "show" event's priority comes _before_ any tray icon display settings.
+    // A "hide" event's priority comes _after_ the tray icon display settings.
+    _windowManager.ShowTrayIconRequested({ this, &AppHost::_ShowTrayIconRequested });
+    _windowManager.HideTrayIconRequested({ this, &AppHost::_HideTrayIconRequested });
 #endif
 
     _setupGlobalHotkeys();
@@ -1026,5 +1035,26 @@ void AppHost::_DestroyTrayIcon()
 
     _trayIcon->DestroyTrayIcon();
     _trayIcon = nullptr;
+}
+
+void AppHost::_ShowTrayIconRequested(const winrt::Windows::Foundation::IInspectable&,
+                                     const winrt::Windows::Foundation::IInspectable&)
+{
+    if (!_trayIcon)
+    {
+        _CreateTrayIcon();
+    }
+}
+
+void AppHost::_HideTrayIconRequested(const winrt::Windows::Foundation::IInspectable&,
+                                     const winrt::Windows::Foundation::IInspectable&)
+{
+    // Destroy it only if our settings allow it
+    if (_trayIcon &&
+        !_logic.GetAlwaysShowTrayIcon() &&
+        !_logic.GetMinimizeToTray())
+    {
+        _DestroyTrayIcon();
+    }
 }
 #endif

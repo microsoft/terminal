@@ -45,5 +45,7 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
     };
 }
