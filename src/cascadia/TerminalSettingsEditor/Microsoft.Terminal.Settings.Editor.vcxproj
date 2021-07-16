@@ -60,6 +60,9 @@
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="KeyChordListener.h">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PercentageSignConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -135,6 +138,9 @@
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="KeyChordListener.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Launch.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -182,6 +188,9 @@
     </ClCompile>
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="KeyChordListener.cpp">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="PercentageSignConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
@@ -258,6 +267,10 @@
     </Midl>
     <Midl Include="ColorSchemes.idl">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="KeyChordListener.idl">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Launch.idl">
