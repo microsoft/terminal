@@ -44,8 +44,8 @@ void TrayIcon::CreateTrayIcon()
     nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
 
     // AppName happens to be in CascadiaPackage's Resources.
-    ScopedResourceLoader srl{ L"Resources" };
-    auto appNameLoc = srl.GetLocalizedString(L"AppName");
+    ScopedResourceLoader loader{ L"Resources" };
+    auto appNameLoc = loader.GetLocalizedString(L"AppName");
 
     nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
     StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), appNameLoc.c_str());
