@@ -183,10 +183,12 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::unordered_map<std::string, T> FromJson(const Json::Value& json) const
         {
             std::unordered_map<std::string, T> val;
+            val.reserve(json.size());
 
-            for (const auto& element : json.getMemberNames())
+            ConversionTrait<T> trait;
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
             {
-                GetValueForKey(json, element, val[element.c_str()]);
+                GetValue(*it, val[it.name()], trait);
             }
 
             return val;
@@ -199,9 +201,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 return false;
             }
             ConversionTrait<T> trait;
-            for (const auto& element : json.getMemberNames())
+            for (const auto& v : json)
             {
-                if (!trait.CanConvert(json[JsonKey(element)]))
+                if (!trait.CanConvert(v))
                 {
                     return false;
                 }
@@ -263,10 +265,12 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T> FromJson(const Json::Value& json) const
         {
             std::unordered_map<winrt::hstring, T> val;
+            val.reserve(json.size());
 
-            for (const auto& element : json.getMemberNames())
+            ConversionTrait<T> trait;
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
             {
-                GetValueForKey(json, element, val[winrt::to_hstring(element)]);
+                GetValue(*it, val[winrt::to_hstring(it.name())], trait);
             }
 
             return winrt::single_threaded_map<winrt::hstring, T>(std::move(val));
@@ -279,9 +283,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 return false;
             }
             ConversionTrait<T> trait;
-            for (const auto& element : json.getMemberNames())
+            for (const auto& v : json)
             {
-                if (!trait.CanConvert(json[JsonKey(element)]))
+                if (!trait.CanConvert(v))
                 {
                     return false;
                 }
