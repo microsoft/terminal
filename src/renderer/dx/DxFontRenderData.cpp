@@ -465,7 +465,7 @@ bool DxFontRenderData::DidUserSetFeatures() const noexcept
 
 // Routine Description:
 // - Updates our internal map of font features with the given features
-// - NOTE TO CALLER: Make sure to call UpdateFont after calling this for the feature changes
+// - NOTE TO CALLER: Make sure to call _BuildFontRenderData after calling this for the feature changes
 //   to take place
 // Arguments:
 // - features - the features to update our map with
@@ -498,6 +498,10 @@ void DxFontRenderData::SetFeatures(const std::unordered_map<std::wstring_view, u
         }
         _didUserSetFeatures = true;
     }
+    else
+    {
+        _didUserSetFeatures = false;
+    }
 
     // Convert the data to DWRITE_FONT_FEATURE and store it in a vector for CustomTextLayout
     _featureVector.clear();
@@ -509,7 +513,7 @@ void DxFontRenderData::SetFeatures(const std::unordered_map<std::wstring_view, u
 
 // Routine Description:
 // - Updates our internal map of font axes with the given axes
-// - NOTE TO CALLER: Make sure to call UpdateFont after calling this for the axes changes
+// - NOTE TO CALLER: Make sure to call _BuildFontRenderData after calling this for the axes changes
 //   to take place
 // Arguments:
 // - axes - the axes to update our map with
@@ -518,12 +522,12 @@ void DxFontRenderData::SetAxes(const std::unordered_map<std::wstring_view, int32
     _axesVector.clear();
 
     // Update our axis map with the provided axes
-    for (const auto [axis, value] : axes)
+    for (const auto& [axis, value] : axes)
     {
         if (axis.length() == TAG_LENGTH)
         {
             const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(til::at(axis, 0), til::at(axis, 1), til::at(axis, 2), til::at(axis, 3));
-            _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow<float>(value) });
+            _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, gsl::narrow_cast<float>(value) });
         }
     }
 }
@@ -604,46 +608,46 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
     axesVector.resize(axesCount);
     format->GetFontAxisValues(axesVector.data(), axesCount);
 
-    auto axisTagPresence = AxisTagPresence::AxisTagPresenceNone;
+    auto axisTagPresence = AxisTagPresence::None;
     for (const auto& fontAxisValue : axesVector)
     {
         switch (fontAxisValue.axisTag)
         {
         case DWRITE_FONT_AXIS_TAG_WEIGHT:
-            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceWeight);
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Weight);
             break;
         case DWRITE_FONT_AXIS_TAG_WIDTH:
-            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceWidth);
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Width);
             break;
         case DWRITE_FONT_AXIS_TAG_ITALIC:
-            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceItalic);
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Italic);
             break;
         case DWRITE_FONT_AXIS_TAG_SLANT:
-            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceSlant);
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Slant);
             break;
         case DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE:
-            WI_SetFlag(axisTagPresence, AxisTagPresence::AxisTagPresenceOpticalSize);
+            WI_SetFlag(axisTagPresence, AxisTagPresence::OpticalSize);
             break;
         }
     }
 
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::AxisTagPresenceWeight))
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Weight))
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, gsl::narrow<float>(fontWeight) });
     }
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::AxisTagPresenceWidth))
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Width))
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WIDTH, FontStretchToWidthAxisValue(fontStretch) });
     }
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::AxisTagPresenceItalic))
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Italic))
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, (fontStyle == DWRITE_FONT_STYLE_ITALIC ? 1.0f : 0.0f) });
     }
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::AxisTagPresenceSlant))
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Slant))
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, FontStyleToSlantFixedAxisValue(fontStyle) });
     }
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::AxisTagPresenceOpticalSize))
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::OpticalSize))
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, DIPsToPoints(fontSize) });
     }

@@ -505,7 +505,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto fontFace = _settings.FontFace();
         const short fontHeight = ::base::saturated_cast<short>(_settings.FontSize());
         const auto fontWeight = _settings.FontWeight();
-
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
