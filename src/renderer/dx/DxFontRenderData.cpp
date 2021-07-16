@@ -483,7 +483,7 @@ void DxFontRenderData::_SetFeatures(const std::unordered_map<std::wstring_view, 
         { DWRITE_MAKE_FONT_FEATURE_TAG('k', 'e', 'r', 'n'), 1 }, // Kerning
         { DWRITE_MAKE_FONT_FEATURE_TAG('m', 'a', 'r', 'k'), 1 }, // Mark Positioning
         { DWRITE_MAKE_FONT_FEATURE_TAG('m', 'k', 'm', 'k'), 1 }, // Mark to Mark Positioning
-        { DWRITE_MAKE_FONT_FEATURE_TAG('d', 'i', 's', 't'), 1 }  // Distances
+        { DWRITE_MAKE_FONT_FEATURE_TAG('d', 'i', 's', 't'), 1 } // Distances
     };
 
     // Update our feature map with the provided features
@@ -599,8 +599,8 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
                                                                     const float fontSize,
                                                                     IDWriteTextFormat3* format)
 {
-#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro
-                                  // checks format for nullness
+#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro \
+    // checks format for nullness
     FAIL_FAST_IF_NULL(format);
 
     const auto axesCount = format->GetFontAxisValueCount();
