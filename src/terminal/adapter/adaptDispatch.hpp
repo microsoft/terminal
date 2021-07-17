@@ -152,7 +152,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         StringHandler DefineSixelImage(const VTInt macroParameter,
                                        const DispatchTypes::SixelBackground backgroundSelect,
-                                       const VTParameter backgroundColor) noexcept override; // SIXEL
+                                       const VTParameter backgroundColor) override; // SIXEL
 
         StringHandler DownloadDRCS(const VTInt fontNumber,
                                    const VTParameter startChar,
@@ -188,6 +188,7 @@ namespace Microsoft::Console::VirtualTerminal
             Column,
             AllowDECCOLM,
             AllowDECSLRM,
+            SixelDisplay,
             EraseColor,
             RectangularChangeExtent,
             PageCursorCoupling
@@ -296,6 +297,7 @@ namespace Microsoft::Console::VirtualTerminal
         TerminalOutput _termOutput;
         PageManager _pages;
         friend class SixelParser;
+        std::shared_ptr<SixelParser> _sixelParser;
         std::unique_ptr<FontBuffer> _fontBuffer;
         std::shared_ptr<MacroBuffer> _macroBuffer;
         std::optional<unsigned int> _initialCodePage;

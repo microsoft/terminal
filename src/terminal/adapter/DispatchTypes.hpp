@@ -535,6 +535,7 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DECNKM_NumericKeypadMode = DECPrivateMode(66),
         DECBKM_BackarrowKeyMode = DECPrivateMode(67),
         DECLRMM_LeftRightMarginMode = DECPrivateMode(69),
+        DECSDM_SixelDisplayMode = DECPrivateMode(80),
         DECECM_EraseColorMode = DECPrivateMode(117),
         VT200_MOUSE_MODE = DECPrivateMode(1000),
         BUTTON_EVENT_MOUSE_MODE = DECPrivateMode(1002),
