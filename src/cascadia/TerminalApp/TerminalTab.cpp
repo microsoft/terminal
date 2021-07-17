@@ -498,10 +498,11 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Attempt to move a separator between panes, as to resize each child on
-    //   either size of the separator. See Pane::ResizePane for details.
+    // - Attempts to swap the location of the focused pane with another pane
+    //   according to direction. When there are multiple adjacent panes it will
+    //   select the first one (top-left-most).
     // Arguments:
-    // - direction: The direction to move the separator in.
+    // - direction: The direction to move the pane in.
     // Return Value:
     // - <none>
     void TerminalTab::MovePane(const FocusDirection& direction)

@@ -461,7 +461,7 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
                        const Pane::PanePoint firstOffset,
                        const std::shared_ptr<Pane> second,
                        const Pane::PanePoint secondOffset,
-                       const FocusDirection& direction)
+                       const FocusDirection& direction) const
 {
     // Since float equality is tricky (arithmetic is non-associative, commutative),
     // test if the two numbers are within an epsilon distance of each other.
