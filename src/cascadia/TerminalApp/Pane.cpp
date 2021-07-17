@@ -214,49 +214,14 @@ bool Pane::ResizePane(const ResizeDirection& direction)
 }
 
 // Method Description:
-// - Attempts to handle moving focus to one of our children. If our split
-//   direction isn't appropriate for the move direction, then we'll return
-//   false, to try and let our parent handle the move. If our child we'd move
-//   focus to is already focused, we'll also return false, to again let our
-//   parent try and handle the focus movement.
-// Arguments:
-// - direction: The direction to move the focus in.
-// Return Value:
-// - true if we handled this focus move request.
-bool Pane::_NavigateFocus(const FocusDirection& direction)
-{
-    if (!DirectionMatchesSplit(direction, _splitState))
-    {
-        return false;
-    }
-
-    const bool focusSecond = (direction == FocusDirection::Right) || (direction == FocusDirection::Down);
-
-    const auto newlyFocusedChild = focusSecond ? _secondChild : _firstChild;
-
-    // If the child we want to move focus to is _already_ focused, return false,
-    // to try and let our parent figure it out.
-    if (newlyFocusedChild->_HasFocusedChild())
-    {
-        return false;
-    }
-
-    // Transfer focus to our child, and update the focus of our tree.
-    newlyFocusedChild->_FocusFirstChild();
-    UpdateVisuals();
-
-    return true;
-}
-
-// Method Description:
 // - Attempts to move focus to one of our children. If we have a focused child,
 //   we'll try to move the focus in the direction requested.
 //   - If there isn't a pane that exists as a child of this pane in the correct
 //     direction, we'll return false. This will indicate to our parent that they
 //     should try and move the focus themselves. In this way, the focus can move
 //     up and down the tree to the correct pane.
-// - This method is _very_ similar to ResizePane. Both are trying to find the
-//   right separator to move (focus) in a direction.
+// - This method is _very_ similar to MovePane. Both are trying to find the
+//   right pane to move (focus) in a direction.
 // Arguments:
 // - direction: The direction to move the focus in.
 // Return Value:
@@ -270,33 +235,24 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
         return false;
     }
 
-    // Check if either our first or second child is the currently focused leaf.
-    // If it is, and the requested move direction matches our separator, then
-    // we're the pane that needs to handle this focus move.
-    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
-    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
-    if (firstIsFocused || secondIsFocused)
+    // If the focus direction does not match the split direction, the focused pane
+    // and its neighbor must necessarily be contained within the same child.
+    if (!DirectionMatchesSplit(direction, _splitState))
     {
-        return _NavigateFocus(direction);
+        return _firstChild->NavigateFocus(direction) || _secondChild->NavigateFocus(direction);
     }
 
-    // If neither of our children were the focused leaf, then recurse into
-    // our children and see if they can handle the focus move.
-    // For each child, if it has a focused descendant, try having that child
-    // handle the focus move.
-    // If the child wasn't able to handle the focus move, it's possible that
-    // there were no descendants with a separator the correct direction. If
-    // our separator _is_ the correct direction, then we should be the pane
-    // to move focus into our other child. Otherwise, just return false, as
-    // we couldn't handle it either.
-    if ((!_firstChild->_IsLeaf()) && _firstChild->_HasFocusedChild())
-    {
-        return _firstChild->NavigateFocus(direction) || _NavigateFocus(direction);
-    }
+    // Since the direction is the same as our split, it is possible that we must
+    // move focus from from one child to another child.
+    // We now must keep track of state while we recurse.
+    auto focusNeighborPair = _FindFocusAndNeighbor(direction, { 0, 0 });
 
-    if ((!_secondChild->_IsLeaf()) && _secondChild->_HasFocusedChild())
+    // Once we have found the focused pane and its neighbor, wherever they may
+    // be we can update the focus.
+    if (focusNeighborPair.focus && focusNeighborPair.neighbor)
     {
-        return _secondChild->NavigateFocus(direction) || _NavigateFocus(direction);
+        focusNeighborPair.neighbor->_FocusFirstChild();
+        return true;
     }
 
     return false;
