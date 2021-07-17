@@ -41,7 +41,7 @@ CharRowCellReference::operator std::wstring_view() const
 // - ref to the CharRowCell
 CharRowCell& CharRowCellReference::_cellData()
 {
-    return _parent._data.at(_index);
+    return _parent._data[_index];
 }
 
 // Routine Description:
@@ -50,7 +50,7 @@ CharRowCell& CharRowCellReference::_cellData()
 // - ref to the CharRowCell
 const CharRowCell& CharRowCellReference::_cellData() const
 {
-    return _parent._data.at(_index);
+    return _parent._data[_index];
 }
 
 // Routine Description:

@@ -49,15 +49,12 @@ class CharRow final
 public:
     using glyph_type = typename wchar_t;
     using value_type = typename CharRowCell;
-    using iterator = typename boost::container::small_vector_base<value_type>::iterator;
-    using const_iterator = typename boost::container::small_vector_base<value_type>::const_iterator;
-    using const_reverse_iterator = typename boost::container::small_vector_base<value_type>::const_reverse_iterator;
     using reference = typename CharRowCellReference;
 
-    CharRow(size_t rowWidth, ROW* const pParent) noexcept;
+    CharRow(CharRowCell* buffer, size_t rowWidth, ROW* const pParent) noexcept;
 
     size_t size() const noexcept;
-    [[nodiscard]] HRESULT Resize(const size_t newSize) noexcept;
+    void Resize(CharRowCell* buffer, const size_t newSize) noexcept;
     size_t MeasureLeft() const noexcept;
     size_t MeasureRight() const;
     bool ContainsText() const noexcept;
@@ -71,14 +68,25 @@ public:
     const reference GlyphAt(const size_t column) const;
     reference GlyphAt(const size_t column);
 
-    // iterators
-    iterator begin() noexcept;
-    const_iterator cbegin() const noexcept;
-    const_iterator begin() const noexcept { return cbegin(); }
+    auto begin() noexcept
+    {
+        return _data.begin();
+    }
 
-    iterator end() noexcept;
-    const_iterator cend() const noexcept;
-    const_iterator end() const noexcept { return cend(); }
+    auto begin() const noexcept
+    {
+        return _data.begin();
+    }
+
+    auto end() noexcept
+    {
+        return _data.end();
+    }
+
+    auto end() const noexcept
+    {
+        return _data.end();
+    }
 
     UnicodeStorage& GetUnicodeStorage() noexcept;
     const UnicodeStorage& GetUnicodeStorage() const noexcept;
@@ -96,20 +104,21 @@ private:
 
 protected:
     // storage for glyph data and dbcs attributes
-    boost::container::small_vector<value_type, 120> _data;
+    gsl::span<CharRowCell> _data;
 
     // ROW that this CharRow belongs to
     ROW* _pParent;
 };
 
-template<typename InputIt1, typename InputIt2>
-void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttrs, CharRow::iterator outIt)
+template<typename InputIt1, typename InputIt2, typename OutputIt>
+void OverwriteColumns(InputIt1 startChars, InputIt1 endChars, InputIt2 startAttrs, OutputIt outIt)
 {
-    std::transform(startChars,
-                   endChars,
-                   startAttrs,
-                   outIt,
-                   [](const wchar_t wch, const DbcsAttribute attr) {
-                       return CharRow::value_type{ wch, attr };
-                   });
+    std::transform(
+        startChars,
+        endChars,
+        startAttrs,
+        outIt,
+        [](const wchar_t wch, const DbcsAttribute attr) {
+            return CharRow::value_type{ wch, attr };
+        });
 }

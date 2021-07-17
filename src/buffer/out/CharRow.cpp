@@ -17,8 +17,8 @@
 // Note: will through if unable to allocate char/attribute buffers
 #pragma warning(push)
 #pragma warning(disable : 26447) // small_vector's constructor says it can throw but it should not given how we use it.  This suppresses this error for the AuditMode build.
-CharRow::CharRow(size_t rowWidth, ROW* const pParent) noexcept :
-    _data(rowWidth, value_type()),
+CharRow::CharRow(CharRowCell* buffer, size_t rowWidth, ROW* const pParent) noexcept :
+    _data(buffer, rowWidth),
     _pParent{ FAIL_FAST_IF_NULL(pParent) }
 {
 }
@@ -53,38 +53,9 @@ void CharRow::Reset() noexcept
 // - resizes the width of the CharRowBase
 // Arguments:
 // - newSize - the new width of the character and attributes rows
-// Return Value:
-// - S_OK on success, otherwise relevant error code
-[[nodiscard]] HRESULT CharRow::Resize(const size_t newSize) noexcept
+void CharRow::Resize(CharRowCell* buffer, const size_t newSize) noexcept
 {
-    try
-    {
-        const value_type insertVals;
-        _data.resize(newSize, insertVals);
-    }
-    CATCH_RETURN();
-
-    return S_OK;
-}
-
-typename CharRow::iterator CharRow::begin() noexcept
-{
-    return _data.begin();
-}
-
-typename CharRow::const_iterator CharRow::cbegin() const noexcept
-{
-    return _data.cbegin();
-}
-
-typename CharRow::iterator CharRow::end() noexcept
-{
-    return _data.end();
-}
-
-typename CharRow::const_iterator CharRow::cend() const noexcept
-{
-    return _data.cend();
+    _data = {buffer, newSize};
 }
 
 // Routine Description:
@@ -95,12 +66,16 @@ typename CharRow::const_iterator CharRow::cend() const noexcept
 // - The calculated left boundary of the internal string.
 size_t CharRow::MeasureLeft() const noexcept
 {
-    const_iterator it = _data.cbegin();
-    while (it != _data.cend() && it->IsSpace())
+    const auto beg = _data.begin();
+    const auto end = _data.end();
+
+    auto it = beg;
+    while (it != end && it->IsSpace())
     {
         ++it;
     }
-    return it - _data.cbegin();
+
+    return it - beg;
 }
 
 // Routine Description:
@@ -111,17 +86,21 @@ size_t CharRow::MeasureLeft() const noexcept
 // - The calculated right boundary of the internal string.
 size_t CharRow::MeasureRight() const
 {
-    const_reverse_iterator it = _data.crbegin();
-    while (it != _data.crend() && it->IsSpace())
+    const auto beg = _data.rbegin();
+    const auto end = _data.rend();
+
+    auto it = beg;
+    while (it != end && it->IsSpace())
     {
         ++it;
     }
-    return _data.crend() - it;
+
+    return end - it;
 }
 
 void CharRow::ClearCell(const size_t column)
 {
-    _data.at(column).Reset();
+    _data[column].Reset();
 }
 
 // Routine Description:
@@ -132,7 +111,7 @@ void CharRow::ClearCell(const size_t column)
 // - True if there is valid text in this row. False otherwise.
 bool CharRow::ContainsText() const noexcept
 {
-    for (const value_type& cell : _data)
+    for (const auto& cell : _data)
     {
         if (!cell.IsSpace())
         {
@@ -151,7 +130,7 @@ bool CharRow::ContainsText() const noexcept
 // Note: will throw exception if column is out of bounds
 const DbcsAttribute& CharRow::DbcsAttrAt(const size_t column) const
 {
-    return _data.at(column).DbcsAttr();
+    return _data[column].DbcsAttr();
 }
 
 // Routine Description:
@@ -163,7 +142,7 @@ const DbcsAttribute& CharRow::DbcsAttrAt(const size_t column) const
 // Note: will throw exception if column is out of bounds
 DbcsAttribute& CharRow::DbcsAttrAt(const size_t column)
 {
-    return _data.at(column).DbcsAttr();
+    return _data[column].DbcsAttr();
 }
 
 // Routine Description:
@@ -175,7 +154,7 @@ DbcsAttribute& CharRow::DbcsAttrAt(const size_t column)
 // Note: will throw exception if column is out of bounds
 void CharRow::ClearGlyph(const size_t column)
 {
-    _data.at(column).EraseChars();
+    _data[column].EraseChars();
 }
 
 // Routine Description:

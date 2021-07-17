@@ -32,9 +32,9 @@ class TextBuffer;
 class ROW final
 {
 public:
-    ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent);
+    ROW(const SHORT rowId, CharRowCell* buffer, const unsigned short rowWidth, const TextAttribute& fillAttribute, TextBuffer* const pParent);
 
-    size_t size() const noexcept { return _rowWidth; }
+    size_t size() const noexcept { return _charRow.size(); }
 
     void SetWrapForced(const bool wrap) noexcept { _wrapForced = wrap; }
     bool WasWrapForced() const noexcept { return _wrapForced; }
@@ -54,8 +54,7 @@ public:
     SHORT GetId() const noexcept { return _id; }
     void SetId(const SHORT id) noexcept { _id = id; }
 
-    bool Reset(const TextAttribute Attr);
-    [[nodiscard]] HRESULT Resize(const unsigned short width);
+    bool Reset(const TextAttribute& Attr);
 
     void ClearColumn(const size_t column);
     std::wstring GetText() const { return _charRow.GetText(); }
@@ -74,13 +73,12 @@ private:
     CharRow _charRow;
     ATTR_ROW _attrRow;
     LineRendition _lineRendition;
+    TextBuffer* _pParent; // non ownership pointer
     SHORT _id;
-    unsigned short _rowWidth;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line
     bool _doubleBytePadded;
-    TextBuffer* _pParent; // non ownership pointer
 };
 
 #ifdef UNIT_TESTING

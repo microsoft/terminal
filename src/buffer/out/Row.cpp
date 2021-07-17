@@ -16,10 +16,9 @@
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
+ROW::ROW(const SHORT rowId, CharRowCell* buffer, const unsigned short rowWidth, const TextAttribute& fillAttribute, TextBuffer* const pParent) :
     _id{ rowId },
-    _rowWidth{ rowWidth },
-    _charRow{ rowWidth, this },
+    _charRow{ buffer, rowWidth, this },
     _attrRow{ rowWidth, fillAttribute },
     _lineRendition{ LineRendition::SingleWidth },
     _wrapForced{ false },
@@ -34,7 +33,7 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
 // - Attr - The default attribute (color) to fill
 // Return Value:
 // - <none>
-bool ROW::Reset(const TextAttribute Attr)
+bool ROW::Reset(const TextAttribute& Attr)
 {
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
@@ -50,26 +49,6 @@ bool ROW::Reset(const TextAttribute Attr)
         return false;
     }
     return true;
-}
-
-// Routine Description:
-// - resizes ROW to new width
-// Arguments:
-// - width - the new width, in cells
-// Return Value:
-// - S_OK if successful, otherwise relevant error
-[[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
-{
-    RETURN_IF_FAILED(_charRow.Resize(width));
-    try
-    {
-        _attrRow.Resize(width);
-    }
-    CATCH_RETURN();
-
-    _rowWidth = width;
-
-    return S_OK;
 }
 
 // Routine Description:

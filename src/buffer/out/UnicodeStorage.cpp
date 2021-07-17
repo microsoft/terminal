@@ -47,7 +47,7 @@ void UnicodeStorage::Erase(const key_type key) noexcept
 // - rowMap - A map of the old row IDs to the new row IDs.
 // - width - The width of the new row. Remove any items that are beyond the row width.
 //         - Use nullopt if we're not resizing the width of the row, just renumbering the rows.
-void UnicodeStorage::Remap(const std::unordered_map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width)
+void UnicodeStorage::Remap(const std::unordered_map<SHORT, SHORT>& rowMap, SHORT width)
 {
     // Make a temporary map to hold all the new row positioning
     std::unordered_map<key_type, mapped_type> newMap;
@@ -58,18 +58,10 @@ void UnicodeStorage::Remap(const std::unordered_map<SHORT, SHORT>& rowMap, const
         // Extract the old coordinate position
         const auto oldCoord = pair.first;
 
-        // Only try to short-circuit based on width if we were told it changed
-        // by being given a new width value.
-        if (width.has_value())
+        // If the column index is at/beyond the row width, don't bother copying it to the new map.
+        if (oldCoord.X >= width)
         {
-            // Get the column ID
-            const auto oldColId = oldCoord.X;
-
-            // If the column index is at/beyond the row width, don't bother copying it to the new map.
-            if (oldColId >= width.value())
-            {
-                continue;
-            }
+            continue;
         }
 
         // Get the row ID from the position as that's what we need to remap

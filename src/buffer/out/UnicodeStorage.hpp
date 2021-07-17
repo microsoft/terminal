@@ -55,7 +55,7 @@ public:
 
     void Erase(const key_type key) noexcept;
 
-    void Remap(const std::unordered_map<SHORT, SHORT>& rowMap, const std::optional<SHORT> width);
+    void Remap(const std::unordered_map<SHORT, SHORT>& rowMap, SHORT width);
 
 private:
     std::unordered_map<key_type, mapped_type> _map;
