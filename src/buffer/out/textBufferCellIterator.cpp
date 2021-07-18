@@ -95,12 +95,12 @@ bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const 
 TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& movement)
 {
     // Note that this method is called intensively when the terminal is under heavy load.
-    // We need to aggresively optimize it, comparing to the -= operator.
+    // We need to aggressively optimize it, comparing to the -= operator.
     ptrdiff_t move = movement;
     if (move < 0)
     {
         // Early branching to leave the rare case to -= operator.
-        // This helps reducing the intruction count within this method, which is good for instruction cache.
+        // This helps reducing the instruction count within this method, which is good for instruction cache.
         return (*this) -= (-move);
     }
 
