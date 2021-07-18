@@ -94,16 +94,22 @@ bool TextBufferCellIterator::operator!=(const TextBufferCellIterator& it) const 
 // - Reference to self after movement.
 TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& movement)
 {
+    // Note that this method is called intensively when the terminal is under heavy load.
+    // We need to aggresively optimize it, comparing to the -= operator.
     ptrdiff_t move = movement;
     if (move < 0)
     {
+        // Early branching to leave the rare case to -= operator.
+        // This helps reducing the intruction count within this method, which is good for instruction cache.
         return (*this) -= (-move);
     }
 
     auto oldX = _pos.X;
+    // Note that individual integers newX and newY perform slightly better than a COORD.
     auto newX = oldX;
     auto newY = _pos.Y;
     bool yChanged = false;
+    // Hoist these integers which will be used frequently later.
     const auto boundsRightInclusive = _bounds.RightInclusive();
     const auto boundsLeft = _bounds.Left();
     const auto boundsBottomInclusive = _bounds.BottomInclusive();
@@ -132,11 +138,13 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
 
     if (_exceeded)
     {
+        // Early return because nothing needs to be done here.
         return (*this);
     }
 
     if (yChanged)
     {
+        // This is the cold path.
         _pRow = s_GetRow(_buffer, { newX, newY });
         _attrIter = _pRow->GetAttrRow().cbegin() + newX;
         _pos.X = newX;
@@ -145,6 +153,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     }
     else
     {
+        // This is the hot path.
         const auto diff = gsl::narrow_cast<ptrdiff_t>(newX) - gsl::narrow_cast<ptrdiff_t>(oldX);
         _attrIter += diff;
         _view.UpdateTextAttribute(*_attrIter);
@@ -178,21 +187,7 @@ TextBufferCellIterator& TextBufferCellIterator::operator-=(const ptrdiff_t& move
         _exceeded = !_bounds.DecrementInBounds(newPos);
         move--;
     }
-
-    if (newPos.Y != _pos.Y)
-    {
-        _pRow = s_GetRow(_buffer, newPos);
-        _attrIter = _pRow->GetAttrRow().cbegin();
-        _pos.X = 0;
-    }
-
-    if (newPos.X != _pos.X)
-    {
-        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
-        _attrIter += diff;
-    }
-
-    _pos = newPos;
+    _SetPos(newPos);
 
     _GenerateView();
     return (*this);
@@ -272,6 +267,30 @@ ptrdiff_t TextBufferCellIterator::operator-(const TextBufferCellIterator& it)
 {
     THROW_HR_IF(E_NOT_VALID_STATE, &_buffer != &it._buffer); // It's not valid to compare this for iterators pointing at different buffers.
     return _bounds.CompareInBounds(_pos, it._pos);
+}
+
+// Routine Description:
+// - Sets the coordinate position that this iterator will inspect within the text buffer on dereference.
+// Arguments:
+// - newPos - The new coordinate position.
+void TextBufferCellIterator::_SetPos(const COORD newPos)
+{
+    if (newPos.Y != _pos.Y)
+    {
+        _pRow = s_GetRow(_buffer, newPos);
+        _attrIter = _pRow->GetAttrRow().cbegin();
+        _pos.X = 0;
+    }
+
+    if (newPos.X != _pos.X)
+    {
+        const auto diff = gsl::narrow_cast<ptrdiff_t>(newPos.X) - gsl::narrow_cast<ptrdiff_t>(_pos.X);
+        _attrIter += diff;
+    }
+
+    _pos = newPos;
+
+    _GenerateView();
 }
 
 // Routine Description:
