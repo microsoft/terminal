@@ -43,6 +43,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> GetPeasantNames();
 
+#if TIL_FEATURE_TRAYICON_ENABLED
+        void RequestShowTrayIcon();
+        void RequestHideTrayIcon();
+#endif
+
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 

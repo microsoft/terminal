@@ -526,4 +526,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _monarch.GetPeasantNames();
     }
 
+#if TIL_FEATURE_TRAYICON_ENABLED
+    // These should only be called if we're a Peasant.
+    void WindowManager::RequestShowTrayIcon()
+    {
+        _peasant.RequestShowTrayIcon();
+    }
+
+    void WindowManager::RequestHideTrayIcon()
+    {
+        _peasant.RequestHideTrayIcon();
+    }
+#endif
+
 }

@@ -13,6 +13,8 @@ namespace Microsoft.Terminal.Remoting
         Boolean IsMonarch { get; };
         void SummonWindow(SummonWindowSelectionArgs args);
         void SummonAllWindows();
+        void RequestShowTrayIcon();
+        void RequestHideTrayIcon();
         Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames();
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;

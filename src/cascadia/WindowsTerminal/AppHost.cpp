@@ -97,13 +97,20 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
 #if TIL_FEATURE_TRAYICON_ENABLED
-    // destruction order is important for proper teardown here
+    // We either delete our tray icon if we're the monarch and we have one,
+    // or we have to let the monarch know they should attempt to delete their
+    // icon.
     if (_windowManager.IsMonarch() && _trayIcon)
     {
         _DestroyTrayIcon();
     }
+    else if (_window->IsQuakeWindow())
+    {
+        _windowManager.RequestHideTrayIcon();
+    }
 #endif
 
+    // destruction order is important for proper teardown here
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -668,10 +675,8 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     }
 
     // These events are coming from peasants that become or un-become quake windows.
-    // A "show" event's priority comes _before_ any tray icon display settings.
-    // A "hide" event's priority comes _after_ the tray icon display settings.
-    _windowManager.ShowTrayIconRequested({ this, &AppHost::_ShowTrayIconRequested });
-    _windowManager.HideTrayIconRequested({ this, &AppHost::_HideTrayIconRequested });
+    _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
+    _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });
 #endif
 
     _setupGlobalHotkeys();
@@ -982,6 +987,22 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
                                     const winrt::Windows::Foundation::IInspectable&)
 {
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
+
+#if TIL_FEATURE_TRAYICON_ENABLED
+    // We want the quake window to be accessible through the tray icon.
+    // This means if there's a quake window _somewhere_, we want the tray icon
+    // to show regardless of the tray icon settings.
+    // This also means we'll need to destroy the tray icon if it was created
+    // specifically for the quake window. If not, it should not be destroyed.
+    if (_window->IsQuakeWindow())
+    {
+        _ShowTrayIconRequested();
+    }
+    else
+    {
+        _HideTrayIconRequested();
+    }
+#endif
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1037,24 +1058,38 @@ void AppHost::_DestroyTrayIcon()
     _trayIcon = nullptr;
 }
 
-void AppHost::_ShowTrayIconRequested(const winrt::Windows::Foundation::IInspectable&,
-                                     const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_ShowTrayIconRequested()
 {
-    if (!_trayIcon)
+    if (_windowManager.IsMonarch())
     {
-        _CreateTrayIcon();
+        if (!_trayIcon)
+        {
+            _CreateTrayIcon();
+        }
+    }
+    else
+    {
+        // TODO: Tell WindowManager to notify Monarch to show icon.
+        _windowManager.RequestShowTrayIcon();
     }
 }
 
-void AppHost::_HideTrayIconRequested(const winrt::Windows::Foundation::IInspectable&,
-                                     const winrt::Windows::Foundation::IInspectable&)
+void AppHost::_HideTrayIconRequested()
 {
-    // Destroy it only if our settings allow it
-    if (_trayIcon &&
-        !_logic.GetAlwaysShowTrayIcon() &&
-        !_logic.GetMinimizeToTray())
+    if (_windowManager.IsMonarch())
     {
-        _DestroyTrayIcon();
+        // Destroy it only if our settings allow it
+        if (_trayIcon &&
+            !_logic.GetAlwaysShowTrayIcon() &&
+            !_logic.GetMinimizeToTray())
+        {
+            _DestroyTrayIcon();
+        }
+    }
+    else
+    {
+        // TODO: Tell WindowManager to notify Monarch to hide the icon.
+        _windowManager.RequestHideTrayIcon();
     }
 }
 #endif
