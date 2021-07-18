@@ -1070,6 +1070,8 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
+    // Firing the CursorPositionChanged event is very expensive so we try not to do that when
+    // the cursor does not need to be redrawn.
     if (!cursor.IsDeferDrawing())
     {
         _NotifyTerminalCursorPositionChanged();
