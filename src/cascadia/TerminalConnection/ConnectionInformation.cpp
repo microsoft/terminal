@@ -27,8 +27,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         Windows::Foundation::IInspectable inspectable{};
 
-        auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
-        auto pointer = winrt::put_abi(inspectable);
+        const auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
+        const auto pointer = winrt::put_abi(inspectable);
         ::IInspectable** raw = reinterpret_cast<::IInspectable**>(pointer);
 
         // RoActivateInstance() will try to create an instance of the object,
@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
 
         // Now that thing we made, make sure it's actually a ITerminalConnection
-        if (auto connection{ inspectable.try_as<TerminalConnection::ITerminalConnection>() })
+        if (const auto connection{ inspectable.try_as<TerminalConnection::ITerminalConnection>() })
         {
             // Initialize it, and return it.
             connection.Initialize(info.Settings());

@@ -824,7 +824,7 @@ namespace winrt::TerminalApp::implementation
 
             auto conhostConn = TerminalConnection::ConptyConnection();
             conhostConn.Initialize(TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                        winrt::hstring{ cwd.c_str() },
+                                                                                        winrt::hstring{ cwd.wstring() },
                                                                                         settings.StartingTitle(),
                                                                                         envMap.GetView(),
                                                                                         ::base::saturated_cast<uint32_t>(settings.InitialRows()),
