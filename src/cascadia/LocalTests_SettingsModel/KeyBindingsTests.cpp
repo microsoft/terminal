@@ -36,6 +36,7 @@ namespace SettingsModelLocalTests
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
+        TEST_METHOD(KeyChords);
         TEST_METHOD(ManyKeysSameAction);
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(UnbindKeybindings);
@@ -61,6 +62,59 @@ namespace SettingsModelLocalTests
         }
     };
 
+    void KeyBindingsTests::KeyChords()
+    {
+        struct testCase
+        {
+            VirtualKeyModifiers modifiers;
+            int32_t vkey;
+            int32_t scanCode;
+            std::wstring_view expected;
+        };
+
+        static constexpr std::array testCases{
+            testCase{
+                VirtualKeyModifiers::None,
+                'A',
+                0,
+                L"a",
+            },
+            testCase{
+                VirtualKeyModifiers::Control,
+                'A',
+                0,
+                L"ctrl+a",
+            },
+            testCase{
+                VirtualKeyModifiers::Control | VirtualKeyModifiers::Shift,
+                VK_OEM_PLUS,
+                0,
+                L"ctrl+shift+plus",
+            },
+            testCase{
+                VirtualKeyModifiers::Control | VirtualKeyModifiers::Menu | VirtualKeyModifiers::Shift | VirtualKeyModifiers::Windows,
+                255,
+                0,
+                L"ctrl+shift+alt+win+vk(255)",
+            },
+            testCase{
+                VirtualKeyModifiers::Windows,
+                0,
+                123,
+                L"ctrl+shift+alt+win+sc(123)",
+            },
+        };
+
+        for (const auto& tc : testCases)
+        {
+            KeyChord expectedKeyChord{ tc.modifiers, tc.vkey, tc.scanCode };
+            const auto actualString = KeyChordSerialization::ToString(expectedKeyChord);
+            VERIFY_ARE_EQUAL(tc.expected, actualString);
+            const auto actualKeyChord = KeyChordSerialization::FromString(actualString);
+            VERIFY_ARE_EQUAL(expectedKeyChord, actualKeyChord);
+        }
+    }
+
     void KeyBindingsTests::ManyKeysSameAction()
     {
         const std::string bindings0String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
@@ -75,7 +129,6 @@ namespace SettingsModelLocalTests
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings0Json);
@@ -99,7 +152,6 @@ namespace SettingsModelLocalTests
         const auto bindings2Json = VerifyParseSucceeded(bindings2String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings0Json);
@@ -129,7 +181,6 @@ namespace SettingsModelLocalTests
         const auto bindings5Json = VerifyParseSucceeded(bindings5String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         actionMap->LayerJson(bindings0Json);
@@ -203,7 +254,6 @@ namespace SettingsModelLocalTests
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(10u, actionMap->_KeyMap.size());
@@ -213,8 +263,7 @@ namespace SettingsModelLocalTests
                 L"Verify that `copy` without args parses as Copy(SingleLine=false)"));
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('C'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
-            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<CopyTextArgs>();
             // Verify the args have the expected value
             VERIFY_IS_FALSE(realArgs.SingleLine());
         }
@@ -224,8 +273,7 @@ namespace SettingsModelLocalTests
                 L"Verify that `copy` with args parses them correctly"));
             KeyChord kc{ true, false, true, false, static_cast<int32_t>('C'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
-            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<CopyTextArgs>();
             // Verify the args have the expected value
             VERIFY_IS_FALSE(realArgs.SingleLine());
         }
@@ -235,8 +283,7 @@ namespace SettingsModelLocalTests
                 L"Verify that `copy` with args parses them correctly"));
             KeyChord kc{ false, true, true, false, static_cast<int32_t>('C'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
-            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<CopyTextArgs>();
             // Verify the args have the expected value
             VERIFY_IS_TRUE(realArgs.SingleLine());
         }
@@ -247,8 +294,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('T'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_NULL(realArgs.TerminalArgs().ProfileIndex());
@@ -259,8 +305,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, true, false, static_cast<int32_t>('T'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
@@ -273,8 +318,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, true, false, static_cast<int32_t>('Y'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<NewTabArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs().ProfileIndex());
@@ -287,8 +331,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, true, false, static_cast<int32_t>('B'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<CopyTextArgs>();
             // Verify the args have the expected value
             VERIFY_IS_FALSE(realArgs.SingleLine());
         }
@@ -299,8 +342,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, true, false, static_cast<int32_t>('B'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::CopyText, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<CopyTextArgs>();
             // Verify the args have the expected value
             VERIFY_IS_FALSE(realArgs.SingleLine());
         }
@@ -311,8 +353,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::AdjustFontSize, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<AdjustFontSizeArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(1, realArgs.Delta());
         }
@@ -323,8 +364,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('G'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::AdjustFontSize, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<AdjustFontSizeArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<AdjustFontSizeArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(-1, realArgs.Delta());
         }
@@ -342,7 +382,6 @@ namespace SettingsModelLocalTests
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(4u, actionMap->_KeyMap.size());
@@ -351,8 +390,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
         }
@@ -360,8 +398,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
         }
@@ -369,8 +406,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('G'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
         }
@@ -378,8 +414,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('H'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
         }
@@ -396,7 +431,6 @@ namespace SettingsModelLocalTests
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
@@ -405,8 +439,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('C'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<SetTabColorArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NULL(realArgs.TabColor());
         }
@@ -414,8 +447,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<SetTabColorArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.TabColor());
             // Remember that COLORREFs are actually BBGGRR order, while the string is in #RRGGBB order
@@ -425,8 +457,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SetTabColor, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SetTabColorArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<SetTabColorArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NULL(realArgs.TabColor());
         }
@@ -441,7 +472,6 @@ namespace SettingsModelLocalTests
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
@@ -449,8 +479,7 @@ namespace SettingsModelLocalTests
         {
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('C'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
-            const auto& realArgs = actionAndArgs.Args().try_as<CopyTextArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<CopyTextArgs>();
             // Verify the args have the expected value
             VERIFY_IS_FALSE(realArgs.SingleLine());
         }
@@ -470,7 +499,6 @@ namespace SettingsModelLocalTests
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(6u, actionMap->_KeyMap.size());
@@ -479,8 +507,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ false, false, false, false, static_cast<int32_t>(VK_UP), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ScrollUp, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ScrollUpArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ScrollUpArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NULL(realArgs.RowsToScroll());
         }
@@ -488,8 +515,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ false, false, false, false, static_cast<int32_t>(VK_DOWN), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ScrollDown, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ScrollDownArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ScrollDownArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NULL(realArgs.RowsToScroll());
         }
@@ -497,8 +523,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>(VK_UP), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ScrollUp, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ScrollUpArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ScrollUpArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NULL(realArgs.RowsToScroll());
         }
@@ -506,8 +531,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>(VK_DOWN), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ScrollDown, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ScrollDownArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ScrollDownArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NULL(realArgs.RowsToScroll());
         }
@@ -515,8 +539,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, true, false, static_cast<int32_t>(VK_UP), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ScrollUp, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ScrollUpArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ScrollUpArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.RowsToScroll());
             VERIFY_ARE_EQUAL(10u, realArgs.RowsToScroll().Value());
@@ -525,8 +548,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, true, false, static_cast<int32_t>(VK_DOWN), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ScrollDown, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ScrollDownArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ScrollDownArgs>();
             // Verify the args have the expected value
             VERIFY_IS_NOT_NULL(realArgs.RowsToScroll());
             VERIFY_ARE_EQUAL(10u, realArgs.RowsToScroll().Value());
@@ -535,7 +557,6 @@ namespace SettingsModelLocalTests
             const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "scrollDown", "rowsToScroll": -1 } }])" };
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
-            VERIFY_IS_NOT_NULL(invalidActionMap);
             VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
             VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
         }
@@ -551,7 +572,6 @@ namespace SettingsModelLocalTests
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
@@ -560,8 +580,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ false, false, false, false, static_cast<int32_t>(VK_UP), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::MoveTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<MoveTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<MoveTabArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(realArgs.Direction(), MoveTabDirection::Forward);
         }
@@ -569,8 +588,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ false, false, false, false, static_cast<int32_t>(VK_DOWN), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::MoveTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<MoveTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<MoveTabArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(realArgs.Direction(), MoveTabDirection::Backward);
         }
@@ -584,7 +602,6 @@ namespace SettingsModelLocalTests
             const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "moveTab", "direction": "bad" } }])" };
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
-            VERIFY_IS_NOT_NULL(invalidActionMap);
             VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
             VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
         }
@@ -601,7 +618,6 @@ namespace SettingsModelLocalTests
         const auto bindings0Json = VerifyParseSucceeded(bindings0String);
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
         actionMap->LayerJson(bindings0Json);
         VERIFY_ARE_EQUAL(3u, actionMap->_KeyMap.size());
@@ -610,8 +626,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ false, false, false, false, static_cast<int32_t>(VK_UP), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ToggleCommandPalette, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ToggleCommandPaletteArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ToggleCommandPaletteArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(realArgs.LaunchMode(), CommandPaletteLaunchMode::Action);
         }
@@ -619,8 +634,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, false, false, static_cast<int32_t>(VK_UP), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ToggleCommandPalette, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ToggleCommandPaletteArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ToggleCommandPaletteArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(realArgs.LaunchMode(), CommandPaletteLaunchMode::Action);
         }
@@ -628,8 +642,7 @@ namespace SettingsModelLocalTests
             KeyChord kc{ true, false, true, false, static_cast<int32_t>(VK_UP), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::ToggleCommandPalette, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<ToggleCommandPaletteArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& realArgs = actionAndArgs.Args().as<ToggleCommandPaletteArgs>();
             // Verify the args have the expected value
             VERIFY_ARE_EQUAL(realArgs.LaunchMode(), CommandPaletteLaunchMode::CommandLine);
         }
@@ -637,7 +650,6 @@ namespace SettingsModelLocalTests
             const std::string bindingsInvalidString{ R"([{ "keys": ["up"], "command": { "action": "commandPalette", "launchMode": "bad" } }])" };
             const auto bindingsInvalidJson = VerifyParseSucceeded(bindingsInvalidString);
             auto invalidActionMap = winrt::make_self<implementation::ActionMap>();
-            VERIFY_IS_NOT_NULL(invalidActionMap);
             VERIFY_ARE_EQUAL(0u, invalidActionMap->_KeyMap.size());
             VERIFY_THROWS(invalidActionMap->LayerJson(bindingsInvalidJson);, std::exception);
         }
@@ -669,7 +681,6 @@ namespace SettingsModelLocalTests
         };
 
         auto actionMap = winrt::make_self<implementation::ActionMap>();
-        VERIFY_IS_NOT_NULL(actionMap);
         VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
 
         {
