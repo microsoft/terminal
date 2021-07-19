@@ -47,6 +47,8 @@ public:
     const OutputCellView& operator*() const noexcept;
     const OutputCellView* operator->() const noexcept;
 
+    COORD Pos() const noexcept;
+
 protected:
     void _SetPos(const COORD newPos);
     void _GenerateView();

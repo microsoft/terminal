@@ -8,6 +8,7 @@
 #include "Interaction.h"
 #include "Rendering.h"
 #include "Actions.h"
+#include "ReadOnlyActions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
@@ -33,6 +34,7 @@ static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
 static const std::wstring_view actionsTag{ L"Actions_Nav" };
+static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
 static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
@@ -130,7 +132,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // refresh the current page using the SelectedItem data we collected before the refresh
         if (selectedItemTag)
         {
-            for (const auto& item : menuItemsSTL)
+            for (const auto& item : menuItems)
             {
                 if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
                 {
@@ -167,14 +169,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // couldn't find the selected item,
-        // fallback to first menu item
-        const auto& firstItem{ menuItems.GetAt(0) };
+        // Couldn't find the selected item, fallback to first menu item
+        // This happens when the selected item was a profile which doesn't exist in the new configuration
+        // We can use menuItemsSTL here because the only things they miss are profile entries.
+        const auto& firstItem{ menuItemsSTL.at(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
-        if (const auto& tag{ SettingsNav().SelectedItem().try_as<MUX::Controls::NavigationViewItem>().Tag() })
-        {
-            _Navigate(unbox_value<hstring>(tag));
-        }
+        _Navigate(unbox_value<hstring>(firstItem.Tag()));
     }
 
     void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
@@ -293,7 +293,32 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == actionsTag)
         {
-            contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            if constexpr (Feature_EditableActionsPage::IsEnabled())
+            {
+                contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            }
+            else
+            {
+                auto actionsState{ winrt::make<ReadOnlyActionsPageNavigationState>(_settingsClone) };
+                actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+                    if (auto self{ weakThis.get() })
+                    {
+                        self->_OpenJsonHandlers(nullptr, arg);
+                    }
+                });
+                contentFrame().Navigate(xaml_typename<Editor::ReadOnlyActions>(), actionsState);
+            }
+        }
+        else if (clickedItemTag == globalProfileTag)
+        {
+            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
+            profileVM.IsBaseLayer(true);
+            _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
+                                                                            _settingsClone.GlobalSettings().ColorSchemes(),
+                                                                            _lastProfilesNavState,
+                                                                            *this);
+
+            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), _lastProfilesNavState);
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -455,5 +480,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>());
+    }
+
+    bool MainPage::ShowBaseLayerMenuItem() const noexcept
+    {
+        return Feature_ShowProfileDefaultsInSettings::IsEnabled();
     }
 }

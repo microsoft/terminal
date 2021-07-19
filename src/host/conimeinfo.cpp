@@ -376,7 +376,10 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     area.Paint();
 
     // Notify accessibility that we have updated the text in this display region within the viewport.
-    screenInfo.NotifyAccessibilityEventing(insertionPos.X, insertionPos.Y, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), insertionPos.Y);
+    if (screenInfo.HasAccessibilityEventing())
+    {
+        screenInfo.NotifyAccessibilityEventing(insertionPos.X, insertionPos.Y, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), insertionPos.Y);
+    }
 
     // Hand back the iterator representing the end of what we used to be fed into the beginning of the next call.
     return lineEnd;

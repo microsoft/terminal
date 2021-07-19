@@ -3,4 +3,5 @@
 
 #pragma once
 
+HANDLE GetActiveAppIconHandle(const int size);
 void UpdateWindowIconForActiveMetrics(HWND window);

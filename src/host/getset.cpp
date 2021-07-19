@@ -2210,10 +2210,14 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         screenInfo.Write(fillData, startPosition, false);
 
         // Notify accessibility
-        auto endPosition = startPosition;
-        const auto bufferSize = screenInfo.GetBufferSize();
-        bufferSize.MoveInBounds(fillLength - 1, endPosition);
-        screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+        if (screenInfo.HasAccessibilityEventing())
+        {
+            auto endPosition = startPosition;
+            const auto bufferSize = screenInfo.GetBufferSize();
+            bufferSize.MoveInBounds(fillLength - 1, endPosition);
+            screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+        }
+
         return S_OK;
     }
     CATCH_RETURN();

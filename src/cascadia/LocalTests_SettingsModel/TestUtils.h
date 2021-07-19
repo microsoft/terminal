@@ -26,16 +26,18 @@ public:
     static const winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs GetActionAndArgs(const winrt::Microsoft::Terminal::Settings::Model::ActionMap& actionMap,
                                                                                              const winrt::Microsoft::Terminal::Control::KeyChord& kc)
     {
+        using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+
         std::wstring buffer{ L"" };
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Ctrl))
+        if (WI_IsFlagSet(kc.Modifiers(), VirtualKeyModifiers::Control))
         {
             buffer += L"Ctrl+";
         }
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Shift))
+        if (WI_IsFlagSet(kc.Modifiers(), VirtualKeyModifiers::Shift))
         {
             buffer += L"Shift+";
         }
-        if (WI_IsFlagSet(kc.Modifiers(), winrt::Microsoft::Terminal::Control::KeyModifiers::Alt))
+        if (WI_IsFlagSet(kc.Modifiers(), VirtualKeyModifiers::Menu))
         {
             buffer += L"Alt+";
         }

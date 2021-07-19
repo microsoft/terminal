@@ -18,7 +18,7 @@ using namespace WEX::TestExecution;
 namespace TerminalCoreUnitTests
 {
 #define WCS(x) WCSHELPER(x)
-#define WCSHELPER(x) L#x
+#define WCSHELPER(x) L## #x
 
     class TerminalApiTest
     {

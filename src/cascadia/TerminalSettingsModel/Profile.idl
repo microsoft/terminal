@@ -14,7 +14,8 @@ namespace Microsoft.Terminal.Settings.Model
     // This tag is used to identify the context in which the Profile was created
     enum OriginTag
     {
-        Custom = 0,
+        None = 0,
+        User,
         InBox,
         Generated,
         Fragment,
@@ -41,6 +42,9 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass Profile : Windows.Foundation.IStringable {
         Profile();
         Profile(Guid guid);
+
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
 
         OriginTag Origin { get; };
 
