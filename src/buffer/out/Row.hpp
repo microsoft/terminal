@@ -65,6 +65,8 @@ public:
 
     OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
 
+    void WriteCells(std::vector<LooseOutputCell>& cells, const size_t index);
+
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
     friend class RowTests;

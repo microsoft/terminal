@@ -196,3 +196,65 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     return it;
 }
+
+void ROW::WriteCells(std::vector<LooseOutputCell>& cells, const size_t index)
+{
+    if (cells.size() == 0)
+    {
+        return;
+    }
+
+    THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
+    const auto finalColumnInRow = _charRow.size() - 1;
+
+    uint16_t colorUses = 0;
+    uint16_t colorStarts = gsl::narrow_cast<uint16_t>(index);
+    uint16_t currentIndex = colorStarts;
+
+    auto currentColor = cells.at(0).Attr;
+    for (size_t i = 0; i < cells.size() && currentIndex <= finalColumnInRow;)
+    {
+        LooseOutputCell& it = cells.at(i);
+        // If the color of this cell is the same as the run we're currently on,
+        // just increment the counter.
+        if (currentColor == it.Attr)
+        {
+            ++colorUses;
+        }
+
+        const bool fillingLastColumn = currentIndex == finalColumnInRow;
+
+        // TODO: MSFT: 19452170 - We need to ensure when writing any trailing byte that the one to the left
+        // is a matching leading byte. Likewise, if we're writing a leading byte, we need to make sure we still have space in this loop
+        // for the trailing byte coming up before writing it.
+
+        // If we're trying to fill the first cell with a trailing byte, pad it out instead by clearing it.
+        // Don't increment iterator. We'll advance the index and try again with this value on the next round through the loop.
+        if (currentIndex == 0 && it.Dbcs.IsTrailing())
+        {
+            _charRow.ClearCell(currentIndex);
+        }
+        // If we're trying to fill the last cell with a leading byte, pad it out instead by clearing it.
+        // Don't increment iterator. We'll exit because we couldn't write a lead at the end of a line.
+        else if (fillingLastColumn && it.Dbcs.IsLeading())
+        {
+            _charRow.ClearCell(currentIndex);
+            SetDoubleBytePadded(true);
+        }
+        // Otherwise, copy the data given and increment the iterator.
+        else
+        {
+            _charRow.DbcsAttrAt(currentIndex) = it.Dbcs;
+            _charRow.GlyphAt(currentIndex) = it.View;
+            ++i;
+        }
+
+        ++currentIndex;
+    }
+
+    // Now commit the final color into the attr row
+    if (colorUses)
+    {
+        _attrRow.Replace(colorStarts, currentIndex, currentColor);
+    }
+}

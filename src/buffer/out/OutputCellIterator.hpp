@@ -24,6 +24,19 @@ Revision History:
 #include "OutputCell.hpp"
 #include "OutputCellView.hpp"
 
+struct LooseOutputCell final
+{
+    std::wstring_view View;
+
+    TextAttribute Attr;
+
+    DbcsAttribute Dbcs;
+
+    size_t Pos = 0;
+
+    size_t Distance = 0;
+};
+
 class OutputCellIterator final
 {
 public:

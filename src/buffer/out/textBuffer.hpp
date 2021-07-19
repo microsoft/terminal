@@ -92,6 +92,8 @@ public:
                              const COORD target,
                              const std::optional<bool> wrap = true);
 
+    void Write(std::vector<LooseOutputCell>& cell);
+
     OutputCellIterator WriteLine(const OutputCellIterator givenIt,
                                  const COORD target,
                                  const std::optional<bool> setWrap = std::nullopt,

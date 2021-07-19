@@ -391,6 +391,26 @@ OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
     return newIt;
 }
 
+// Routine Description:
+// - Writes cells to the output buffer. Writes at the cursor.
+// Arguments:
+// - givenIt - Iterator representing output cell data to write
+// Return Value:
+// - The final position of the iterator
+void TextBuffer::Write(std::vector<LooseOutputCell>& cells)
+{
+    const auto& cursor = GetCursor();
+    const auto target = cursor.GetPosition();
+    auto lineTarget = target;
+    ROW& row = GetRowByOffset(target.Y);
+    row.WriteCells(cells, target.X);
+
+    const auto written = cells.size();
+    const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
+    _NotifyPaint(paint);
+}
+
+
 //Routine Description:
 // - Inserts one codepoint into the buffer at the current cursor position and advances the cursor as appropriate.
 //Arguments:
