@@ -63,23 +63,15 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void ColorPickupFlyout::ShowColorPickerButton_Click(Windows::Foundation::IInspectable const&, Windows::UI::Xaml::RoutedEventArgs const&)
     {
-        auto targetType = this->FlyoutPresenterStyle().TargetType();
-        auto s = Windows::UI::Xaml::Style{};
-        s.TargetType(targetType);
         auto visibility = customColorPanel().Visibility();
         if (visibility == winrt::Windows::UI::Xaml::Visibility::Collapsed)
         {
             customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Visible);
-            auto setter = Windows::UI::Xaml::Setter(Windows::UI::Xaml::FrameworkElement::MinWidthProperty(), winrt::box_value(540));
-            s.Setters().Append(setter);
         }
         else
         {
             customColorPanel().Visibility(winrt::Windows::UI::Xaml::Visibility::Collapsed);
-            auto setter = Windows::UI::Xaml::Setter(Windows::UI::Xaml::FrameworkElement::MinWidthProperty(), winrt::box_value(0));
-            s.Setters().Append(setter);
         }
-        this->FlyoutPresenterStyle(s);
     }
 
     // Method Description:
