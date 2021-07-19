@@ -36,6 +36,7 @@
     ON_ALL_ACTIONS(PrevTab)              \
     ON_ALL_ACTIONS(SendInput)            \
     ON_ALL_ACTIONS(SplitPane)            \
+    ON_ALL_ACTIONS(TogglePaneSplit)      \
     ON_ALL_ACTIONS(TogglePaneZoom)       \
     ON_ALL_ACTIONS(SwitchToTab)          \
     ON_ALL_ACTIONS(AdjustFontSize)       \

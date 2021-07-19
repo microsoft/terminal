@@ -270,6 +270,7 @@
         "toggleFocusMode",
         "toggleFullscreen",
         "togglePaneZoom",
+        "togglePaneSplit",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",

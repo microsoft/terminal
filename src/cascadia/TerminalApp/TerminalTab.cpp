@@ -441,6 +441,16 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Find the currently active pane, and then switch the split direction of
+    //   its parent. E.g. switch from Horizontal to Vertical.
+    // Return Value:
+    // - <none>
+    void TerminalTab::TogglePaneSplit()
+    {
+        _rootPane->TogglePaneSplit();
+    }
+
+    // Method Description:
     // - See Pane::CalcSnappedDimension
     float TerminalTab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
@@ -1188,6 +1198,7 @@ namespace winrt::TerminalApp::implementation
             EnterZoom();
         }
     }
+
     void TerminalTab::EnterZoom()
     {
         _zoomedPane = _activePane;

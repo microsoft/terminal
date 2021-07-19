@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
                        const GUID& profile,
                        winrt::Microsoft::Terminal::Control::TermControl& control);
 
+        void TogglePaneSplit();
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
         winrt::fire_and_forget HideIcon(const bool hide);
 

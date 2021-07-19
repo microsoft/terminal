@@ -161,6 +161,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleTogglePaneSplit(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        _TogglePaneSplit();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
