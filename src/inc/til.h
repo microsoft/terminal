@@ -15,8 +15,6 @@
 #include "til/rectangle.h"
 #include "til/rle.h"
 #include "til/bitmap.h"
-#include "til/u8u16convert.h"
-#include "til/spsc.h"
 #include "til/coalesce.h"
 #include "til/replace.h"
 #include "til/string.h"

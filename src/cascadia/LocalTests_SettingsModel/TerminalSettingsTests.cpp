@@ -51,7 +51,6 @@ namespace SettingsModelLocalTests
     void TerminalSettingsTests::TryCreateWinRTType()
     {
         TerminalSettings settings;
-        VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
         settings.FontSize(oldFontSize + 5);
         auto newFontSize = settings.FontSize();
@@ -60,7 +59,10 @@ namespace SettingsModelLocalTests
 
     void TerminalSettingsTests::TestTerminalArgsForBinding()
     {
-        const std::string settingsJson{ R"(
+        const winrt::guid guid0{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}") };
+        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}") };
+
+        CascadiaSettings settings{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -97,11 +99,6 @@ namespace SettingsModelLocalTests
                 { "keys": ["ctrl+l"], "command": { "action": "newTab", "profile": "profile1", "tabTitle": "bar", "startingDirectory": "c:\\foo", "commandline":"foo.exe" } }
             ]
         })" };
-
-        const winrt::guid guid0{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}") };
-        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}") };
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
 
         auto actionMap = settings.GlobalSettings().ActionMap();
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -385,7 +382,7 @@ namespace SettingsModelLocalTests
     void TerminalSettingsTests::MakeSettingsForProfileThatDoesntExist()
     {
         // Test that making settings throws when the GUID doesn't exist
-        const std::string settingsString{ R"(
+        CascadiaSettings settings{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -401,7 +398,6 @@ namespace SettingsModelLocalTests
                 }
             ]
         })" };
-        CascadiaSettings settings{ til::u8u16(settingsString) };
 
         const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
@@ -449,7 +445,7 @@ namespace SettingsModelLocalTests
         // defaultProfile that's not in the list, we validate the settings, and
         // then call MakeSettings(nullopt). The validation should ensure that
         // the default profile is something reasonable
-        const std::string settingsString{ R"(
+        CascadiaSettings settings{ LR"(
         {
             "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -465,7 +461,6 @@ namespace SettingsModelLocalTests
                 }
             ]
         })" };
-        CascadiaSettings settings{ til::u8u16(settingsString) };
 
         VERIFY_ARE_EQUAL(2u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(2u, settings.ActiveProfiles().Size());
@@ -487,7 +482,7 @@ namespace SettingsModelLocalTests
         Log::Comment(NoThrowString().Format(
             L"Ensure that setting (or not) a property in the profile that should override a property of the color scheme works correctly."));
 
-        const std::string settings0String{ R"(
+        CascadiaSettings settings{ LR"(
         {
             "defaultProfile": "profile5",
             "profiles": [
@@ -527,8 +522,6 @@ namespace SettingsModelLocalTests
                 }
             ]
         })" };
-
-        CascadiaSettings settings{ til::u8u16(settings0String) };
 
         VERIFY_ARE_EQUAL(6u, settings.ActiveProfiles().Size());
         VERIFY_ARE_EQUAL(2u, settings.GlobalSettings().ColorSchemes().Size());

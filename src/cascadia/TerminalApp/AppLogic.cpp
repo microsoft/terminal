@@ -1335,8 +1335,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     // The string they provided wasn't an int, it wasn't "new"
                     // or "last", so whatever it is, that's the name they get.
-                    winrt::hstring winrtName{ til::u8u16(parsedTarget) };
-                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseName, winrtName);
+                    return winrt::make<FindTargetWindowResult>(WindowingBehaviorUseName, til::u8u16(parsedTarget));
                 }
             }
         }

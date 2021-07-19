@@ -6,6 +6,7 @@
 #include "KeyChordSerialization.g.cpp"
 
 #include <til/static_map.h>
+#include <til/u8u16convert.h>
 
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;

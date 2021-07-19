@@ -70,20 +70,22 @@ VtInputThread::VtInputThread(_In_ wil::unique_hfile hPipe,
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
+    std::wstring wstr;
     try
     {
-        std::wstring wstr{};
-        auto hr = til::u8u16(u8Str, wstr, _u8State);
-        // If we hit a parsing error, eat it. It's bad utf-8, we can't do anything with it.
-        if (FAILED(hr))
-        {
-            return S_FALSE;
-        }
+        til::u8u16(u8Str, wstr, _u8State);
+    }
+    catch (...)
+    {
+        return S_FALSE;
+    }
+
+    try
+    {
         _pInputStateMachine->ProcessString(wstr);
+        return S_OK;
     }
     CATCH_RETURN();
-
-    return S_OK;
 }
 
 // Function Description:

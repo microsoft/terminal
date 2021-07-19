@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../terminal/parser/StateMachine.hpp"
+#include <til/u8u16convert.h>
 
 namespace Microsoft::Console
 {

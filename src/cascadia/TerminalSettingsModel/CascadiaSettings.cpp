@@ -5,6 +5,7 @@
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
 
+#include <til/u8u16convert.h>
 #include <LibraryResources.h>
 
 #include "AzureCloudShellGenerator.h"

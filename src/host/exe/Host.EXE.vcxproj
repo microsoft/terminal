@@ -43,9 +43,6 @@
     <ProjectReference Include="..\..\renderer\base\lib\base.vcxproj">
       <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\renderer\dx\lib\dx.vcxproj">
-      <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\renderer\gdi\lib\gdi.vcxproj">
       <Project>{1c959542-bac2-4e55-9a6d-13251914cbb9}</Project>
     </ProjectReference>

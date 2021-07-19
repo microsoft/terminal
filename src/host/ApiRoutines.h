@@ -375,4 +375,7 @@ public:
                                                       const CONSOLE_FONT_INFOEX& consoleFontInfoEx) noexcept override;
 
 #pragma endregion
+
+private:
+    til::u8state _u8State;
 };

@@ -1137,19 +1137,22 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         auto leadByteCaptured{ false };
         auto leadByteConsumed{ false };
         std::wstring wstr{};
-        static til::u8state u8State{};
 
         // Convert our input parameters to Unicode
         if (codepage == CP_UTF8)
         {
-            RETURN_IF_FAILED(til::u8u16(buffer, wstr, u8State));
+            try
+            {
+                til::u8u16(buffer, wstr, _u8State);
+            }
+            CATCH_RETURN()
             read = buffer.size();
         }
         else
         {
             // In case the codepage changes from UTF-8 to another,
             // we discard partials that might still be cached.
-            u8State.reset();
+            _u8State.reset();
 
             int mbPtrLength{};
             RETURN_IF_FAILED(SizeTToInt(buffer.size(), &mbPtrLength));

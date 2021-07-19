@@ -119,8 +119,7 @@ namespace Microsoft::Console::Render
 
         Microsoft::Console::Types::Viewport _lastViewport;
 
-        std::pmr::unsynchronized_pool_resource _pool;
-        til::pmr::bitmap _invalidMap;
+        til::bitmap _invalidMap;
 
         COORD _lastText;
         til::point _scrollDelta;

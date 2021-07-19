@@ -129,7 +129,6 @@ namespace TerminalAppLocalTests
         // Verify we can create a WinRT type we authored
         // Just creating it is enough to know that everything is working.
         TerminalSettings settings;
-        VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
         settings.FontSize(oldFontSize + 5);
         auto newFontSize = settings.FontSize();
@@ -307,7 +306,7 @@ namespace TerminalAppLocalTests
         // TerminalPage and not only create them successfully, but also create a
         // tab using those settings successfully.
 
-        const std::string settingsJson0{ R"(
+        CascadiaSettings settings0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -323,9 +322,6 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
-        VERIFY_IS_NOT_NULL(settings0);
 
         // This is super wacky, but we can't just initialize the
         // com_ptr<impl::TerminalPage> in the lambda and assign it back out of
@@ -353,7 +349,7 @@ namespace TerminalAppLocalTests
         //
         // Created to test GH#2455
 
-        const std::string settingsJson0{ R"(
+        CascadiaSettings settings0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -368,9 +364,9 @@ namespace TerminalAppLocalTests
                     "historySize": 2
                 }
             ]
-        })" };
+        })") };
 
-        const std::string settingsJson1{ R"(
+        CascadiaSettings settings1{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -381,12 +377,6 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
-        VERIFY_IS_NOT_NULL(settings0);
-
-        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
-        VERIFY_IS_NOT_NULL(settings1);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
@@ -440,7 +430,7 @@ namespace TerminalAppLocalTests
         //
         // Created to test GH#2455
 
-        const std::string settingsJson0{ R"(
+        CascadiaSettings settings0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -457,7 +447,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        const std::string settingsJson1{ R"(
+        CascadiaSettings settings1{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -468,12 +458,6 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
-        VERIFY_IS_NOT_NULL(settings0);
-
-        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
-        VERIFY_IS_NOT_NULL(settings1);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
@@ -554,7 +538,7 @@ namespace TerminalAppLocalTests
     // - The initialized TerminalPage, ready to use.
     winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
     {
-        const std::string settingsJson0{ R"(
+        CascadiaSettings settings0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "showTabsInTitlebar": false,
@@ -654,9 +638,6 @@ namespace TerminalAppLocalTests
                 }
             ]
         })" };
-
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
-        VERIFY_IS_NOT_NULL(settings0);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");

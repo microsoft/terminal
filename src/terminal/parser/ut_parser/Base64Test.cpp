@@ -28,15 +28,6 @@ class Microsoft::Console::VirtualTerminal::Base64Test
 {
     TEST_CLASS(Base64Test);
 
-    TEST_METHOD(TestBase64Encode)
-    {
-        VERIFY_ARE_EQUAL(L"Zm9v", Base64::s_Encode(L"foo"));
-        VERIFY_ARE_EQUAL(L"Zm9vYg==", Base64::s_Encode(L"foob"));
-        VERIFY_ARE_EQUAL(L"Zm9vYmE=", Base64::s_Encode(L"fooba"));
-        VERIFY_ARE_EQUAL(L"Zm9vYmFy", Base64::s_Encode(L"foobar"));
-        VERIFY_ARE_EQUAL(L"Zm9vYmFyDQo=", Base64::s_Encode(L"foobar\r\n"));
-    }
-
     TEST_METHOD(TestBase64Decode)
     {
         std::wstring result;

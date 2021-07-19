@@ -4,66 +4,22 @@
 #include "precomp.h"
 #include "base64.hpp"
 
+#include <til/u8u16convert.h>
+
 using namespace Microsoft::Console::VirtualTerminal;
 
-static const char base64Chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-static const char padChar = '=';
-
-#pragma warning(disable : 26446 26447 26482 26485 26493 26494)
-
-// Routine Description:
-// - Encode a string using base64. When there are not enough characters
-//      for one quantum, paddings are added.
-// Arguments:
-// - src - String to base64 encode.
-// Return Value:
-// - the encoded string.
-std::wstring Base64::s_Encode(const std::wstring_view src) noexcept
-{
-    std::wstring dst;
-    wchar_t input[3];
-
-    const auto len = (src.size() + 2) / 3 * 4;
-    if (len == 0)
-    {
-        return dst;
-    }
-    dst.reserve(len);
-
-    auto iter = src.cbegin();
-    // Encode each three chars into one quantum (four chars).
-    while (iter < src.cend() - 2)
-    {
-        input[0] = *iter++;
-        input[1] = *iter++;
-        input[2] = *iter++;
-        dst.push_back(base64Chars[input[0] >> 2]);
-        dst.push_back(base64Chars[(input[0] & 0x03) << 4 | input[1] >> 4]);
-        dst.push_back(base64Chars[(input[1] & 0x0f) << 2 | input[2] >> 6]);
-        dst.push_back(base64Chars[(input[2] & 0x3f)]);
-    }
-
-    // Here only zero, or one, or two chars are left. We may need to add paddings.
-    if (iter < src.cend())
-    {
-        input[0] = *iter++;
-        dst.push_back(base64Chars[input[0] >> 2]);
-        if (iter < src.cend()) // Two chars left.
-        {
-            input[1] = *iter++;
-            dst.push_back(base64Chars[(input[0] & 0x03) << 4 | input[1] >> 4]);
-            dst.push_back(base64Chars[(input[1] & 0x0f) << 2]);
-        }
-        else // Only one char left.
-        {
-            dst.push_back(base64Chars[(input[0] & 0x03) << 4]);
-            dst.push_back(padChar);
-        }
-        dst.push_back(padChar);
-    }
-
-    return dst;
-}
+// clang-format off
+static constexpr uint8_t decodeTable[128] = {
+	255 /* NUL */, 255 /* SOH */, 255 /* STX */, 255 /* ETX */, 255 /* EOT */, 255 /* ENQ */, 255 /* ACK */, 255 /* BEL */, 255 /* BS  */, 255 /* HT  */, 64  /* LF  */, 255 /* VT  */, 255 /* FF  */, 64  /* CR  */, 255 /* SO  */, 255 /* SI  */,
+	255 /* DLE */, 255 /* DC1 */, 255 /* DC2 */, 255 /* DC3 */, 255 /* DC4 */, 255 /* NAK */, 255 /* SYN */, 255 /* ETB */, 255 /* CAN */, 255 /* EM  */, 255 /* SUB */, 255 /* ESC */, 255 /* FS  */, 255 /* GS  */, 255 /* RS  */, 255 /* US  */,
+	255 /* SP  */, 255 /* !   */, 255 /* "   */, 255 /* #   */, 255 /* $   */, 255 /* %   */, 255 /* &   */, 255 /* '   */, 255 /* (   */, 255 /* )   */, 255 /* *   */, 62  /* +   */, 255 /* ,   */, 62  /* -   */, 255 /* .   */, 63  /* /   */,
+	52  /* 0   */, 53  /* 1   */, 54  /* 2   */, 55  /* 3   */, 56  /* 4   */, 57  /* 5   */, 58  /* 6   */, 59  /* 7   */, 60  /* 8   */, 61  /* 9   */, 255 /* :   */, 255 /* ;   */, 255 /* <   */, 255 /* =   */, 255 /* >   */, 255 /* ?   */,
+	255 /* @   */, 0   /* A   */, 1   /* B   */, 2   /* C   */, 3   /* D   */, 4   /* E   */, 5   /* F   */, 6   /* G   */, 7   /* H   */, 8   /* I   */, 9   /* J   */, 10  /* K   */, 11  /* L   */, 12  /* M   */, 13  /* N   */, 14  /* O   */,
+	15  /* P   */, 16  /* Q   */, 17  /* R   */, 18  /* S   */, 19  /* T   */, 20  /* U   */, 21  /* V   */, 22  /* W   */, 23  /* X   */, 24  /* Y   */, 25  /* Z   */, 255 /* [   */, 255 /* \   */, 255 /* ]   */, 255 /* ^   */, 63  /* _   */,
+	255 /* `   */, 26  /* a   */, 27  /* b   */, 28  /* c   */, 29  /* d   */, 30  /* e   */, 31  /* f   */, 32  /* g   */, 33  /* h   */, 34  /* i   */, 35  /* j   */, 36  /* k   */, 37  /* l   */, 38  /* m   */, 39  /* n   */, 40  /* o   */,
+	41  /* p   */, 42  /* q   */, 43  /* r   */, 44  /* s   */, 45  /* t   */, 46  /* u   */, 47  /* v   */, 48  /* w   */, 49  /* x   */, 50  /* y   */, 51  /* z   */, 255 /* {   */, 255 /* |   */, 255 /* }   */, 255 /* ~   */, 255 /* DEL */,
+};
+// clang-format on
 
 // Routine Description:
 // - Decode a base64 string. This requires the base64 string is properly padded.
@@ -73,121 +29,98 @@ std::wstring Base64::s_Encode(const std::wstring_view src) noexcept
 // - dst - Destination to decode into.
 // Return Value:
 // - true if decoding successfully, otherwise false.
-bool Base64::s_Decode(const std::wstring_view src, std::wstring& dst) noexcept
+void Base64::s_Decode(const std::wstring_view src, std::wstring& dst)
 {
-    std::string mbStr;
-    int state = 0;
-    char tmp;
+    std::string result;
+    result.resize((src.size() / 4) * 3);
 
-    const auto len = src.size() / 4 * 3;
-    if (len == 0)
+    auto in = src.data();
+    const auto inEnd = in + src.size();
+    const auto inEndBatched = inEnd - 3;
+    const auto outBeg = reinterpret_cast<uint8_t*>(result.data());
+    auto out = outBeg;
+    uint_fast32_t r = 0;
+    uint_fast8_t ri = 0;
+    uint_fast16_t error = 0;
+
+#define accumulate(ch)                         \
+    do                                         \
+    {                                          \
+        const auto n = decodeTable[ch & 0x7f]; \
+                                               \
+        error |= (ch | n) & 0xff80;            \
+                                               \
+        if ((n & 0b01000000) == 0)             \
+        {                                      \
+            r = r << 6 | n;                    \
+            ri++;                              \
+        }                                      \
+    } while (0)
+
+    while (in < inEndBatched)
     {
-        return false;
-    }
-    mbStr.reserve(len);
+        const auto a = in[0];
+        const auto b = in[1];
+        const auto c = in[2];
+        const auto d = in[3];
 
-    auto iter = src.cbegin();
-    while (iter < src.cend())
-    {
-        if (s_IsSpace(*iter)) // Skip whitespace anywhere.
-        {
-            iter++;
-            continue;
-        }
+        accumulate(a);
+        accumulate(b);
+        accumulate(c);
+        accumulate(d);
 
-        if (*iter == padChar)
+        switch (ri)
         {
-            break;
-        }
-
-        auto pos = strchr(base64Chars, *iter);
-        if (!pos) // A non-base64 character found.
-        {
-            return false;
-        }
-
-        switch (state)
-        {
-        case 0:
-            tmp = (char)(pos - base64Chars) << 2;
-            state = 1;
-            break;
-        case 1:
-            tmp |= (char)(pos - base64Chars) >> 4;
-            mbStr += tmp;
-            tmp = (char)((pos - base64Chars) & 0x0f) << 4;
-            state = 2;
-            break;
         case 2:
-            tmp |= (char)(pos - base64Chars) >> 2;
-            mbStr += tmp;
-            tmp = (char)((pos - base64Chars) & 0x03) << 6;
-            state = 3;
+            out[0] = uint8_t(r >> 4);
+            out += 1;
+            ri = 1;
             break;
         case 3:
-            tmp |= pos - base64Chars;
-            mbStr += tmp;
-            state = 0;
+            out[0] = uint8_t(r >> 10);
+            out[1] = uint8_t(r >> 2);
+            out += 2;
+            ri = 1;
             break;
-        default:
-            break;
-        }
-
-        iter++;
-    }
-
-    if (iter < src.cend()) // Padding char is met.
-    {
-        iter++;
-        switch (state)
-        {
-        // Invalid when state is 0 or 1.
-        case 0:
-        case 1:
-            return false;
-        case 2:
-            // Skip any number of spaces.
-            while (iter < src.cend() && s_IsSpace(*iter))
-            {
-                iter++;
-            }
-            // Make sure there is another trailing padding character.
-            if (iter == src.cend() || *iter != padChar)
-            {
-                return false;
-            }
-            iter++; // Skip the padding character and fallthrough to "single trailing padding character" case.
-            [[fallthrough]];
-        case 3:
-            while (iter < src.cend())
-            {
-                if (!s_IsSpace(*iter))
-                {
-                    return false;
-                }
-                iter++;
-            }
-            break;
-        default:
+        case 4:
+            out[0] = uint8_t(r >> 16);
+            out[1] = uint8_t(r >> 8);
+            out[2] = uint8_t(r >> 0);
+            out += 3;
+            ri = 0;
             break;
         }
+
+        in += 4;
     }
-    else if (state != 0) // When no padding, we must be in state 0.
+
+    for (size_t i = 0, remaining = inEnd - in; i < remaining; i++)
     {
-        return false;
+        const auto ch = in[i];
+        accumulate(ch);
     }
 
-    return SUCCEEDED(til::u8u16(mbStr, dst));
-}
+    switch (ri)
+    {
+    case 2:
+        out[0] = uint8_t(r >> 4);
+        break;
+    case 3:
+        out[0] = uint8_t(r >> 10);
+        out[1] = uint8_t(r >> 2);
+        break;
+    case 4:
+        out[0] = uint8_t(r >> 16);
+        out[1] = uint8_t(r >> 8);
+        out[2] = uint8_t(r >> 0);
+        break;
+    }
 
-// Routine Description:
-// - Check if parameter is a base64 whitespace. Only carriage return or line feed
-//      is valid whitespace.
-// Arguments:
-// - ch - Character to check.
-// Return Value:
-// - true iff ch is a carriage return or line feed.
-constexpr bool Base64::s_IsSpace(const wchar_t ch) noexcept
-{
-    return ch == L'\r' || ch == L'\n';
+    if (error)
+    {
+        throw std::runtime_error("invalid base64");
+    }
+
+    result.resize(out - outBeg);
+    til::u8u16(result, dst);
 }

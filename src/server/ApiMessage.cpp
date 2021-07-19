@@ -104,8 +104,9 @@ try
     {
         RETURN_HR_IF(E_FAIL, State.ReadOffset > Descriptor.InputSize);
 
-        ULONG const cbReadSize = Descriptor.InputSize - State.ReadOffset;
-
+        // We need to limit the read buffer to something reasonable (here: 16MiB) unless we want to
+        // consume the user's entire system memory when someone calls WriteFile() with a huge buffer.
+        const ULONG cbReadSize = std::min(16777216ul, Descriptor.InputSize - State.ReadOffset);
         _inputBuffer.resize(cbReadSize);
 
         RETURN_IF_FAILED(ReadMessageInput(0, _inputBuffer.data(), cbReadSize));

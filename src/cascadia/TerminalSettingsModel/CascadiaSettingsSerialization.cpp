@@ -5,6 +5,7 @@
 #include "CascadiaSettings.h"
 
 #include <fmt/chrono.h>
+#include <til/u8u16convert.h>
 #include <shlobj.h>
 
 // defaults.h is a file containing the default json settings in a std::string_view

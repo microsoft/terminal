@@ -1081,22 +1081,27 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
                                                    std::wstring& content,
                                                    bool& queryClipboard) const noexcept
 {
-    const size_t pos = string.find(';');
-    if (pos != std::wstring_view::npos)
+    const auto pos = string.find(L';');
+    if (pos == std::wstring_view::npos)
     {
-        const std::wstring_view substr = string.substr(pos + 1);
-        if (substr == L"?")
-        {
-            queryClipboard = true;
-            return true;
-        }
-        else
-        {
-            return Base64::s_Decode(substr, content);
-        }
+        return false;
     }
 
-    return false;
+    const auto substr = string.substr(pos + 1);
+    if (substr == L"?")
+    {
+        queryClipboard = true;
+        return true;
+    }
+
+    try {
+        Base64::s_Decode(substr, content);
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
 }
 
 // Method Description:

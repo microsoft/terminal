@@ -5,6 +5,7 @@
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/convert.hpp"
+#include <til/u8u16convert.h>
 
 // For _vcprintf
 #include <conio.h>
@@ -31,8 +32,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _hFile(std::move(pipe)),
     _lastTextAttributes(INVALID_COLOR, INVALID_COLOR),
     _lastViewport(initialViewport),
-    _pool(til::pmr::get_default_resource()),
-    _invalidMap(initialViewport.Dimensions(), false, &_pool),
+    _invalidMap(initialViewport.Dimensions(), false),
     _lastText({ 0 }),
     _scrollDelta({ 0, 0 }),
     _quickReturn(false),
