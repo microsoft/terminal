@@ -594,8 +594,8 @@ float DxFontRenderData::DIPsToPoints(const float fontSize) noexcept
 // - format: the IDWriteTextFormat3 to get the defined axes from
 // Return value:
 // - The fully formed axes vector
-#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro
-                                  // checks format for nullness
+#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro \
+    // checks format for nullness
 std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                                     const DWRITE_FONT_STRETCH fontStretch,
                                                                     const DWRITE_FONT_STYLE fontStyle,
