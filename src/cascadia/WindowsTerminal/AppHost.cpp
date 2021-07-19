@@ -952,8 +952,10 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     _setupGlobalHotkeys();
 
 #if TIL_FEATURE_TRAYICON_ENABLED
-    // If we're monarch, we need to check two particular settings for
-    // the tray icon - MinimizeToTray and AlwaysShowTrayIcon. If either
+    // If we're monarch, we need to check some conditions to show the tray icon.
+    // If there's a Quake window somewhere, we'll want to keep the tray icon.
+    // Then there's also two particular settings for the tray icon -
+    // MinimizeToTray and AlwaysShowTrayIcon. If either
     // one of them are true, we want to make sure there's a tray icon.
     // If both are false, we want to remove our icon from the tray (if we had one).
     // When we remove our icon from the tray, we'll also want to re-summon
