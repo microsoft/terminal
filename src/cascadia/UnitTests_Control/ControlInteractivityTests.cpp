@@ -557,7 +557,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
 
@@ -602,7 +603,7 @@ namespace ControlUnitTests
             interactivity->MouseWheel(modifiers,
                                       WHEEL_DELTA,
                                       til::point{ 0, 0 },
-                                      { false, false, false });
+                                      noMouseDown);
         }
 
         // Enable VT mouse event tracking
