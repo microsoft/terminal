@@ -866,9 +866,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
 {
-    return std::shared_lock<std::shared_mutex>(_readWriteLock);
+    return std::unique_lock{ _readWriteLock };
 }
 
 // Method Description:
@@ -876,9 +876,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
 {
-    return std::unique_lock<std::shared_mutex>(_readWriteLock);
+    return std::unique_lock{ _readWriteLock };
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept

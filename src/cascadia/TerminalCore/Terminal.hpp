@@ -18,6 +18,8 @@
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
 
+#include <til/ticket_lock.h>
+
 static constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
 static constexpr size_t TaskbarMinProgress{ 10 };
 
@@ -77,8 +79,8 @@ public:
     // WritePastedText goes directly to the connection
     void WritePastedText(std::wstring_view stringView);
 
-    [[nodiscard]] std::shared_lock<std::shared_mutex> LockForReading();
-    [[nodiscard]] std::unique_lock<std::shared_mutex> LockForWriting();
+    [[nodiscard]] std::unique_lock<til::ticket_lock> LockForReading();
+    [[nodiscard]] std::unique_lock<til::ticket_lock> LockForWriting();
 
     short GetBufferHeight() const noexcept;
 
@@ -244,6 +246,15 @@ private:
     std::function<void()> _pfnWarningBell;
     std::function<void(std::wstring_view)> _pfnTitleChanged;
     std::function<void(std::wstring_view)> _pfnCopyToClipboard;
+
+    // I've specifically put this instance here as it requires
+    //   alignas(std::hardware_destructive_interference_size)
+    // for best performance.
+    //
+    // But we can abuse the fact that the surrounding members rarely change and are huge
+    // (std::function is like 64 bytes) to create some natural padding without wasting space.
+    til::ticket_lock _readWriteLock;
+
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const til::color)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
@@ -298,8 +309,6 @@ private:
     std::wstring _wordDelimiters;
     SelectionExpansionMode _multiClickSelectionMode;
 #pragma endregion
-
-    std::shared_mutex _readWriteLock;
 
     // TODO: These members are not shared by an alt-buffer. They should be
     //      encapsulated, such that a Terminal can have both a main and alt buffer.

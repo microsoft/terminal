@@ -77,6 +77,7 @@ llu
 localtime
 lround
 LSHIFT
+memicmp
 mov
 msappx
 MULTIPLEUSE
@@ -141,6 +142,7 @@ THEMECHANGED
 tlg
 tmp
 tolower
+toupper
 TTask
 TVal
 UChar
