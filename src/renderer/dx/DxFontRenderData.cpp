@@ -522,6 +522,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, int3
     _axesVector.clear();
 
     // Update our axis map with the provided axes
+#pragma warning(suppress : 26445) // the analyzer doesn't like reference to string_view
     for (const auto& [axis, value] : axes)
     {
         if (axis.length() == TAG_LENGTH)
@@ -593,14 +594,14 @@ float DxFontRenderData::DIPsToPoints(const float fontSize) noexcept
 // - format: the IDWriteTextFormat3 to get the defined axes from
 // Return value:
 // - The fully formed axes vector
+#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro
+                                  // checks format for nullness
 std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                                     const DWRITE_FONT_STRETCH fontStretch,
                                                                     const DWRITE_FONT_STYLE fontStyle,
                                                                     const float fontSize,
                                                                     IDWriteTextFormat3* format)
 {
-#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro \
-    // checks format for nullness
     FAIL_FAST_IF_NULL(format);
 
     const auto axesCount = format->GetFontAxisValueCount();
