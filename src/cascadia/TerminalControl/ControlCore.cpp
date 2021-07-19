@@ -426,7 +426,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Updates last hovered cell, renders / removes rendering of hyper-link if required
     // Arguments:
     // - terminalPosition: The terminal position of the pointer
-    void ControlCore::UpdateHoveredCell(const std::optional<til::point>& terminalPosition)
+    void ControlCore::SetHoveredCell(Core::Point pos)
+    {
+        _updateHoveredCell(std::optional<til::point>{ pos });
+    }
+    void ControlCore::ClearHoveredCell()
+    {
+        _updateHoveredCell(std::nullopt);
+    }
+
+    void ControlCore::_updateHoveredCell(const std::optional<til::point> terminalPosition)
     {
         if (terminalPosition == _lastHoveredCell)
         {
@@ -477,7 +486,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return winrt::hstring{ _terminal->GetHyperlinkAtPosition(pos) };
     }
 
-    winrt::hstring ControlCore::GetHoveredUriText() const
+    winrt::hstring ControlCore::HoveredUriText() const
     {
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
@@ -487,9 +496,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return {};
     }
 
-    std::optional<til::point> ControlCore::GetHoveredCell() const
+    Windows::Foundation::IReference<Core::Point> ControlCore::HoveredCell() const
     {
-        return _lastHoveredCell;
+        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value() } : nullptr;
     }
 
     // Method Description:
@@ -895,6 +904,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _actualFont;
     }
 
+    winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
+    {
+        const auto fontSize = GetFont().GetSize();
+        return {
+            ::base::saturated_cast<float>(fontSize.X),
+            ::base::saturated_cast<float>(fontSize.Y)
+        };
+    }
+    winrt::hstring ControlCore::FontFaceName() const noexcept
+    {
+        return winrt::hstring{ GetFont().GetFaceName() };
+    }
+
+    uint16_t ControlCore::FontWeight() const noexcept
+    {
+        return static_cast<uint16_t>(GetFont().GetWeight());
+    }
+
     til::size ControlCore::FontSizeInDips() const
     {
         const til::size fontSize{ GetFont().GetSize() };
@@ -1077,10 +1104,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings.CopyOnSelect();
     }
 
-    std::vector<std::wstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        return _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text;
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
+
+        auto result = winrt::single_threaded_vector<winrt::hstring>();
+
+        for (const auto& row : internalResult)
+        {
+            result.Append(winrt::hstring{ row });
+        }
+        return result;
     }
 
     ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
@@ -1124,7 +1159,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SetBackgroundOpacity(const float opacity)
+    void ControlCore::SetBackgroundOpacity(const double opacity)
     {
         if (_renderEngine)
         {
@@ -1176,7 +1211,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    HANDLE ControlCore::GetSwapChainHandle() const
+    uint64_t ControlCore::SwapChainHandle() const
     {
         // This is called by:
         // * TermControl::RenderEngineSwapChainChanged, who is only registered
@@ -1184,7 +1219,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * TermControl::_InitializeTerminal, after the call to Initialize, for
         //   _AttachDxgiSwapChainToXaml.
         // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine->GetSwapChainHandle();
+        return reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle());
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)

@@ -118,6 +118,7 @@ namespace ControlUnitTests
         core->TransparencyChanged(opacityCallback);
 
         const auto modifiers = ControlKeyStates(ControlKeyStates::RightCtrlPressed | ControlKeyStates::ShiftPressed);
+        const Control::MouseButtonState buttonState{};
 
         Log::Comment(L"Scroll in the positive direction, increasing opacity");
         // Scroll more than enough times to get to 1.0 from .5.
@@ -134,7 +135,7 @@ namespace ControlUnitTests
             interactivity->MouseWheel(modifiers,
                                       30,
                                       til::point{ 0, 0 },
-                                      { false, false, false });
+                                      buttonState);
         }
 
         Log::Comment(L"Scroll in the negative direction, decreasing opacity");
@@ -152,7 +153,7 @@ namespace ControlUnitTests
             interactivity->MouseWheel(modifiers,
                                       30,
                                       til::point{ 0, 0 },
-                                      { false, false, false });
+                                      buttonState);
         }
     }
 
@@ -197,6 +198,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(41, core->BufferHeight());
 
         Log::Comment(L"Scroll up a line");
+        const Control::MouseButtonState buttonState{};
         const auto modifiers = ControlKeyStates();
         expectedBufferHeight = 41;
         expectedTop = 20;
@@ -204,7 +206,7 @@ namespace ControlUnitTests
         interactivity->MouseWheel(modifiers,
                                   WHEEL_DELTA,
                                   til::point{ 0, 0 },
-                                  { false, false, false });
+                                  buttonState);
 
         Log::Comment(L"Scroll up 19 more times, to the top");
         for (int i = 0; i < 20; ++i)
@@ -213,18 +215,18 @@ namespace ControlUnitTests
             interactivity->MouseWheel(modifiers,
                                       WHEEL_DELTA,
                                       til::point{ 0, 0 },
-                                      { false, false, false });
+                                      buttonState);
         }
         Log::Comment(L"Scrolling up more should do nothing");
         expectedTop = 0;
         interactivity->MouseWheel(modifiers,
                                   WHEEL_DELTA,
                                   til::point{ 0, 0 },
-                                  { false, false, false });
+                                  buttonState);
         interactivity->MouseWheel(modifiers,
                                   WHEEL_DELTA,
                                   til::point{ 0, 0 },
-                                  { false, false, false });
+                                  buttonState);
 
         Log::Comment(L"Scroll down 21 more times, to the bottom");
         for (int i = 0; i < 21; ++i)
@@ -234,7 +236,7 @@ namespace ControlUnitTests
             interactivity->MouseWheel(modifiers,
                                       -WHEEL_DELTA,
                                       til::point{ 0, 0 },
-                                      { false, false, false });
+                                      buttonState);
             Log::Comment(NoThrowString().Format(L"internal scrollbar pos:%f", interactivity->_internalScrollbarPosition));
         }
         Log::Comment(L"Scrolling up more should do nothing");
@@ -242,11 +244,11 @@ namespace ControlUnitTests
         interactivity->MouseWheel(modifiers,
                                   -WHEEL_DELTA,
                                   til::point{ 0, 0 },
-                                  { false, false, false });
+                                  buttonState);
         interactivity->MouseWheel(modifiers,
                                   -WHEEL_DELTA,
                                   til::point{ 0, 0 },
-                                  { false, false, false });
+                                  buttonState);
     }
 
     void ControlInteractivityTests::CreateSubsequentSelectionWithDragging()
@@ -260,8 +262,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
-        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
 
@@ -358,8 +360,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
-        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
 
@@ -401,7 +403,7 @@ namespace ControlUnitTests
         interactivity->MouseWheel(modifiers,
                                   WHEEL_DELTA,
                                   cursorPosition1,
-                                  { true, false, false });
+                                  leftMouseDown);
 
         Log::Comment(L"Verify the location of the selection");
         // The viewport is now on row 20, so the selection will be on:
@@ -444,7 +446,7 @@ namespace ControlUnitTests
 
         const int delta = WHEEL_DELTA / 5;
         const til::point mousePos{ 0, 0 };
-        TerminalInput::MouseButtonState state{ false, false, false };
+        Control::MouseButtonState state{};
 
         interactivity->MouseWheel(modifiers, delta, mousePos, state); // 1/5
         VERIFY_ARE_EQUAL(21, core->ScrollOffset());
@@ -508,8 +510,8 @@ namespace ControlUnitTests
 
         // For this test, don't use any modifiers
         const auto modifiers = ControlKeyStates();
-        const TerminalInput::MouseButtonState leftMouseDown{ true, false, false };
-        const TerminalInput::MouseButtonState noMouseDown{ false, false, false };
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
 
