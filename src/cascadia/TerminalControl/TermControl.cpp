@@ -1676,7 +1676,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _closing = true;
 
-            _core.ReceivedOutput(_coreOutputEventToken);
             _RestorePointerCursorHandlers(*this, nullptr);
 
             // Disconnect the TSF input control so it doesn't receive EditContext events.

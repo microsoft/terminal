@@ -133,7 +133,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher,
             TsfRedrawInterval,
             [weakThis = get_weak()]() {
-                if (auto core{ weakThis.get() })
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
                     core->_CursorPositionChangedHandlers(*core, nullptr);
                 }
@@ -143,7 +143,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher,
             UpdatePatternLocationsInterval,
             [weakThis = get_weak()]() {
-                if (auto core{ weakThis.get() })
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
                     core->UpdatePatternLocations();
                 }
@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _dispatcher,
             ScrollBarUpdateInterval,
             [weakThis = get_weak()](const auto& update) {
-                if (auto core{ weakThis.get() })
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
                 {
                     core->_ScrollPositionChangedHandlers(*core, update);
                 }
@@ -665,6 +665,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
                                             _compositionScale);
+
+        _terminal->SetFontInfo(_actualFont);
 
         // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
         //      actually fail. We need a way to gracefully fallback.

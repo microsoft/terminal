@@ -126,6 +126,44 @@ inline std::wstring UiaTracing::_getValue(const TextUnit unit) noexcept
     }
 }
 
+inline std::wstring UiaTracing::_getValue(const VARIANT val) noexcept
+{
+    // This is not a comprehensive conversion of VARIANT result to string
+    // We're only including the one's we need at this time.
+    switch (val.vt)
+    {
+    case VT_BSTR:
+        return val.bstrVal;
+    case VT_R8:
+        return std::to_wstring(val.dblVal);
+    case VT_BOOL:
+        return std::to_wstring(val.boolVal);
+    case VT_I4:
+        return std::to_wstring(val.lVal);
+    case VT_UNKNOWN:
+    default:
+    {
+        return L"unknown";
+    }
+    }
+}
+
+inline std::wstring UiaTracing::_getValue(const AttributeType attrType) noexcept
+{
+    switch (attrType)
+    {
+    case AttributeType::Mixed:
+        return L"Mixed";
+    case AttributeType::Unsupported:
+        return L"Unsupported";
+    case AttributeType::Error:
+        return L"Error";
+    case AttributeType::Standard:
+    default:
+        return L"Standard";
+    }
+}
+
 void UiaTracing::TextRange::Constructor(UiaTextRangeBase& result) noexcept
 {
     EnsureRegistration();
@@ -206,15 +244,20 @@ void UiaTracing::TextRange::ExpandToEnclosingUnit(TextUnit unit, const UiaTextRa
     }
 }
 
-void UiaTracing::TextRange::FindAttribute(const UiaTextRangeBase& utr) noexcept
+void UiaTracing::TextRange::FindAttribute(const UiaTextRangeBase& utr, TEXTATTRIBUTEID id, VARIANT val, BOOL searchBackwards, const UiaTextRangeBase& result, AttributeType attrType) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
         TraceLoggingWrite(
             g_UiaProviderTraceProvider,
-            "UiaTextRange::FindAttribute (UNSUPPORTED)",
+            "UiaTextRange::FindAttribute",
             TraceLoggingValue(_getValue(utr).c_str(), "base"),
+            TraceLoggingValue(id, "text attribute ID"),
+            TraceLoggingValue(_getValue(val).c_str(), "text attribute sub-data"),
+            TraceLoggingValue(searchBackwards ? L"true" : L"false", "search backwards"),
+            TraceLoggingValue(_getValue(attrType).c_str(), "attribute type"),
+            TraceLoggingValue(_getValue(result).c_str(), "result"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
@@ -238,7 +281,7 @@ void UiaTracing::TextRange::FindText(const UiaTextRangeBase& base, std::wstring 
     }
 }
 
-void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result) noexcept
+void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXTATTRIBUTEID id, VARIANT result, AttributeType attrType) noexcept
 {
     EnsureRegistration();
     if (TraceLoggingProviderEnabled(g_UiaProviderTraceProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -247,8 +290,9 @@ void UiaTracing::TextRange::GetAttributeValue(const UiaTextRangeBase& base, TEXT
             g_UiaProviderTraceProvider,
             "UiaTextRange::GetAttributeValue",
             TraceLoggingValue(_getValue(base).c_str(), "base"),
-            TraceLoggingValue(id, "textAttributeId"),
-            TraceLoggingValue(result.vt, "result (type)"),
+            TraceLoggingValue(id, "text attribute ID"),
+            TraceLoggingValue(_getValue(result).c_str(), "result"),
+            TraceLoggingValue(_getValue(attrType).c_str(), "attribute type"),
             TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }

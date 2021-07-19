@@ -11,6 +11,20 @@
     </feature>
 
     <feature>
+        <name>Feature_EditableActionsPage</name>
+        <description>The Actions page in the settings UI should allow users to edit actions.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+    </feature>
+
+    <feature>
+        <name>Feature_EditableUnfocusedAppearance</name>
+        <description>The unfocused appearance section in profiles in the SUI that allows users to create and edit unfocused appearances.</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+    </feature>
+
+    <feature>
         <name>Feature_AttemptHandoff</name>
         <description>conhost should try to hand connections over to OpenConsole</description>
         <stage>AlwaysDisabled</stage>
@@ -48,5 +62,14 @@
             -->
             <brandingToken>WindowsInbox</brandingToken>
         </alwaysEnabledBrandingTokens>
+    </feature>
+
+    <feature>
+        <name>Feature_ShowProfileDefaultsInSettings</name>
+        <description>Whether to show the "defaults" page in the Terminal settings UI</description>
+        <id>10430</id>
+        <stage>AlwaysEnabled</stage>
+        <!-- This feature will not ship to Stable until it is complete. -->
+        <alwaysDisabledReleaseTokens />
     </feature>
 </featureStaging>

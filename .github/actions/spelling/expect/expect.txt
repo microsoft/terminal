@@ -14,7 +14,6 @@ ACTIVEBORDER
 ACTIVECAPTION
 adaa
 ADDALIAS
-ADDB
 ADDREF
 addressof
 ADDSTRING
@@ -50,6 +49,7 @@ APARTMENTTHREADED
 APCs
 api
 APIENTRY
+apimswincoresynchl
 apiset
 APPBARDATA
 appconsult
@@ -114,6 +114,7 @@ Backgrounder
 backgrounding
 backport
 backstory
+barbaz
 Batang
 baz
 Bazz
@@ -379,6 +380,7 @@ cplusplus
 cpp
 CPPCORECHECK
 cppcorecheckrules
+cppm
 cpprest
 cpprestsdk
 cppwinrt
@@ -496,7 +498,6 @@ DEADCHAR
 dealloc
 Debian
 debolden
-debounce
 debugtype
 DECALN
 DECANM
@@ -757,7 +758,6 @@ filepath
 FILESUBTYPE
 FILESYSPATH
 filesystem
-FILETIME
 FILETYPE
 fileurl
 FILEW
@@ -795,6 +795,7 @@ FONTTYPE
 FONTWEIGHT
 FONTWIDTH
 FONTWINDOW
+fooo
 forceinline
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
@@ -981,7 +982,7 @@ hostlib
 Hostx
 HPA
 HPAINTBUFFER
-hpcon
+HPCON
 hpj
 hpp
 HPR
@@ -1113,6 +1114,7 @@ interop
 interoperability
 inthread
 intptr
+intrin
 intsafe
 INVALIDARG
 INVALIDATERECT
@@ -1165,6 +1167,7 @@ IWin
 IWindow
 IXaml
 IXMP
+ixx
 jconcpp
 JOBOBJECT
 JOBOBJECTINFOCLASS
@@ -1643,6 +1646,7 @@ oss
 ostream
 ostringstream
 ouicompat
+OUnter
 outdir
 outfile
 Outof
@@ -1653,6 +1657,7 @@ Outptr
 OVERLAPPEDWINDOW
 OWNDC
 OWNERDRAWFIXED
+packagename
 packageuwp
 PACKCOORD
 PACKVERSION
@@ -1944,7 +1949,6 @@ reingest
 Relayout
 RELBINPATH
 remoting
-Remoting
 renamer
 renderengine
 rendersize
@@ -1985,6 +1989,7 @@ rhs
 RIGHTALIGN
 RIGHTBUTTON
 riid
+Rike
 RIPMSG
 RIS
 RMENU
@@ -2033,7 +2038,6 @@ scanline
 schemename
 SCL
 scm
-scprintf
 SCRBUF
 SCRBUFSIZE
 screenbuffer
@@ -2065,7 +2069,7 @@ selectany
 SELECTEDFONT
 SELECTSTRING
 Selfhosters
-serializers
+SERIALIZERS
 SERVERDLL
 SETACTIVE
 SETBUDDYINT
@@ -2208,6 +2212,7 @@ stoi
 stol
 stoul
 stoutapot
+Stri
 strikethrough
 stringstream
 STRINGTABLE
@@ -2306,7 +2311,6 @@ testmddefinition
 testmode
 testname
 testnameprefix
-testnetv
 TESTNULL
 testpass
 testpasses
@@ -2342,7 +2346,6 @@ TITLEISLINKNAME
 TJson
 TLambda
 TLEN
-Tlg
 Tlgdata
 TMAE
 TMPF
@@ -2542,7 +2545,6 @@ VMs
 VPA
 VPATH
 VPR
-VPrintf
 VProc
 VRaw
 VREDRAW
@@ -2769,11 +2771,9 @@ XCount
 xdy
 XEncoding
 xes
-Xes
 xff
 XFile
 XFORM
-xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2781,7 +2781,6 @@ xml
 xmlns
 xor
 xorg
-Xpath
 XPosition
 XResource
 xsd
@@ -2807,7 +2806,6 @@ YCast
 YCENTER
 YCount
 YDPI
-yIcon
 yml
 YOffset
 YPosition

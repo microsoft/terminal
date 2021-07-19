@@ -77,8 +77,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void DeleteKeyBinding(Control::KeyChord const& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
 
-        static Windows::System::VirtualKeyModifiers ConvertVKModifiers(Control::KeyModifiers modifiers);
-
     private:
         std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
         std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;

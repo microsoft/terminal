@@ -255,7 +255,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
 // - source: the Profile object we are duplicating (must not be null)
 // Return Value:
 // - a reference to the new profile
-winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DuplicateProfile(Model::Profile source)
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
 {
     THROW_HR_IF_NULL(E_INVALIDARG, source);
 
@@ -289,25 +289,24 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     }
     duplicated->Name(winrt::hstring(newName));
 
-#define DUPLICATE_SETTING_MACRO(settingName)                                                                                                   \
-    if (source.Has##settingName() ||                                                                                                           \
-        (source.##settingName##OverrideSource() != nullptr && source.##settingName##OverrideSource().Origin() != OriginTag::ProfilesDefaults)) \
-    {                                                                                                                                          \
-        duplicated->##settingName(source.##settingName());                                                                                     \
+    const auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
+        return profile && profile.Origin() != OriginTag::ProfilesDefaults;
+    };
+
+    const auto isProfilesDefaultsOriginSub = [=](const auto& sub) -> bool {
+        return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
+    };
+
+#define DUPLICATE_SETTING_MACRO(settingName)                                                         \
+    if (source.Has##settingName() || isProfilesDefaultsOrigin(source.settingName##OverrideSource())) \
+    {                                                                                                \
+        duplicated->settingName(source.settingName());                                               \
     }
 
-#define DUPLICATE_FONT_SETTING_MACRO(settingName)                                                                                                                                    \
-    if (source.FontInfo().Has##settingName() ||                                                                                                                                      \
-        (source.FontInfo().##settingName##OverrideSource() != nullptr && source.FontInfo().##settingName##OverrideSource().SourceProfile().Origin() != OriginTag::ProfilesDefaults)) \
-    {                                                                                                                                                                                \
-        duplicated->FontInfo().##settingName(source.FontInfo().##settingName());                                                                                                     \
-    }
-
-#define DUPLICATE_APPEARANCE_SETTING_MACRO(settingName)                                                                                                                                                \
-    if (source.DefaultAppearance().Has##settingName() ||                                                                                                                                               \
-        (source.DefaultAppearance().##settingName##OverrideSource() != nullptr && source.DefaultAppearance().##settingName##OverrideSource().SourceProfile().Origin() != OriginTag::ProfilesDefaults)) \
-    {                                                                                                                                                                                                  \
-        duplicated->DefaultAppearance().##settingName(source.DefaultAppearance().##settingName());                                                                                                     \
+#define DUPLICATE_SETTING_MACRO_SUB(source, target, settingName)                                        \
+    if (source.Has##settingName() || isProfilesDefaultsOriginSub(source.settingName##OverrideSource())) \
+    {                                                                                                   \
+        target.settingName(source.settingName());                                                       \
     }
 
     DUPLICATE_SETTING_MACRO(Hidden);
@@ -330,23 +329,31 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_SETTING_MACRO(AltGrAliasing);
     DUPLICATE_SETTING_MACRO(BellStyle);
 
-    DUPLICATE_FONT_SETTING_MACRO(FontFace);
-    DUPLICATE_FONT_SETTING_MACRO(FontSize);
-    DUPLICATE_FONT_SETTING_MACRO(FontWeight);
+    {
+        const auto font = source.FontInfo();
+        auto target = duplicated->FontInfo();
+        DUPLICATE_SETTING_MACRO_SUB(font, target, FontFace);
+        DUPLICATE_SETTING_MACRO_SUB(font, target, FontSize);
+        DUPLICATE_SETTING_MACRO_SUB(font, target, FontWeight);
+    }
 
-    DUPLICATE_APPEARANCE_SETTING_MACRO(ColorSchemeName);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(Foreground);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(Background);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(SelectionBackground);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorColor);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(PixelShaderPath);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImagePath);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageOpacity);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageStretchMode);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(BackgroundImageAlignment);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(RetroTerminalEffect);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorShape);
-    DUPLICATE_APPEARANCE_SETTING_MACRO(CursorHeight);
+    {
+        const auto appearance = source.DefaultAppearance();
+        auto target = duplicated->DefaultAppearance();
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, ColorSchemeName);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, Foreground);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, Background);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, SelectionBackground);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorColor);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, PixelShaderPath);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImagePath);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageOpacity);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageStretchMode);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageAlignment);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, RetroTerminalEffect);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorShape);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorHeight);
+    }
 
     // UnfocusedAppearance is treated as a single setting,
     // but requires a little more legwork to duplicate properly

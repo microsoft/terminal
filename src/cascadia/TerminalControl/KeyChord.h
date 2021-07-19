@@ -10,17 +10,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct KeyChord : KeyChordT<KeyChord>
     {
         KeyChord() noexcept;
-        KeyChord(Control::KeyModifiers const& modifiers, int32_t vkey) noexcept;
+        KeyChord(winrt::Windows::System::VirtualKeyModifiers const& modifiers, int32_t vkey) noexcept;
         KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) noexcept;
         KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey) noexcept;
 
-        Control::KeyModifiers Modifiers() noexcept;
-        void Modifiers(Control::KeyModifiers const& value) noexcept;
+        winrt::Windows::System::VirtualKeyModifiers Modifiers() noexcept;
+        void Modifiers(winrt::Windows::System::VirtualKeyModifiers const& value) noexcept;
         int32_t Vkey() noexcept;
         void Vkey(int32_t value) noexcept;
 
     private:
-        Control::KeyModifiers _modifiers;
+        winrt::Windows::System::VirtualKeyModifiers _modifiers;
         int32_t _vkey;
     };
 }

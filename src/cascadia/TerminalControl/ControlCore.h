@@ -244,6 +244,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
 
+        inline bool _IsClosing() const noexcept
+        {
+            return _closing.load();
+        }
+
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
     };
