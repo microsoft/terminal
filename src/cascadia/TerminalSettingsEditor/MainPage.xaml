@@ -116,13 +116,14 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <ScrollViewer Grid.Row="0">
-                <Frame x:Name="contentFrame" />
-            </ScrollViewer>
+            <Frame x:Name="contentFrame"
+                   Grid.Row="0"/>
+            <!-- Explictly set the background color on grid to prevent the navigation animation from overflowing it -->
             <Grid Grid.Row="1"
                   Height="100"
                   BorderBrush="{ThemeResource SystemBaseLowColor}"
-                  BorderThickness="0,1,0,0">
+                  BorderThickness="0,1,0,0"
+                  Background="{ThemeResource SystemAltHighColor}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
