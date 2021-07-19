@@ -74,7 +74,8 @@
             <local:SettingContainer x:Uid="Profile_FontFace"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontFace}"
                                     HasSettingValue="{x:Bind Appearance.HasFontFace, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.FontFaceOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.FontFaceOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <StackPanel>
                     <!--
                         Binding the ItemsSource to a separate variable that switches between the
@@ -104,7 +105,8 @@
             <local:SettingContainer x:Uid="Profile_FontSize"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontSize}"
                                     HasSettingValue="{x:Bind Appearance.HasFontSize, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.FontSizeOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.FontSizeOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <muxc:NumberBox AcceptsExpression="False"
                                 LargeChange="10"
                                 Maximum="128"
@@ -119,7 +121,8 @@
                                     x:Uid="Profile_FontWeight"
                                     ClearSettingValue="{x:Bind Appearance.ClearFontWeight}"
                                     HasSettingValue="{x:Bind Appearance.HasFontWeight, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.FontWeightOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.FontWeightOverrideSource, Mode=OneWay}"
+                                    Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
                 <StackPanel>
                     <ComboBox x:Name="FontWeightComboBox"
                               ItemTemplate="{StaticResource EnumComboBoxItemTemplate}"
