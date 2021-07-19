@@ -338,6 +338,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+        constexpr point(const winrt::Microsoft::Terminal::Core::Point& corePoint) :
+            point(corePoint.X, corePoint.Y)
+        {
+        }
+
+        operator winrt::Microsoft::Terminal::Core::Point() const
+        {
+            winrt::Microsoft::Terminal::Core::Point ret;
+            ret.X = x<int>();
+            ret.Y = y<int>();
+            return ret;
+        }
+#endif
+
         std::wstring to_string() const
         {
             return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x(), y());
