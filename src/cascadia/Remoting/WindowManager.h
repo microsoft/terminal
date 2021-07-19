@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 #if TIL_FEATURE_TRAYICON_ENABLED
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
+        bool DoesQuakeWindowExist();
 #endif
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);

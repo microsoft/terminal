@@ -97,14 +97,7 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
 #if TIL_FEATURE_TRAYICON_ENABLED
-    // We either delete our tray icon if we're the monarch and we have one,
-    // or we have to let the monarch know they should attempt to delete their
-    // icon.
-    if (_windowManager.IsMonarch() && _trayIcon)
-    {
-        _DestroyTrayIcon();
-    }
-    else if (_window->IsQuakeWindow())
+    if (_window->IsQuakeWindow())
     {
         _windowManager.RequestHideTrayIcon();
     }
@@ -665,11 +658,15 @@ winrt::fire_and_forget AppHost::_WindowActivated()
 void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
-#if TIL_FEATURE_TRAYICON_ENABLED
-    // TODO: Check if there's a quake window _somewhere_. If there is,
-    // we'll need to show our tray icon regardless of settings.
+    _setupGlobalHotkeys();
 
-    if (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray())
+    // The monarch is just going to be THE listener for inbound connections.
+    _listenForInboundConnections();
+
+#if TIL_FEATURE_TRAYICON_ENABLED
+    if (_windowManager.DoesQuakeWindowExist() ||
+        _window->IsQuakeWindow() ||
+        (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray()))
     {
         _CreateTrayIcon();
     }
@@ -678,11 +675,6 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
     _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });
 #endif
-
-    _setupGlobalHotkeys();
-
-    // The monarch is just going to be THE listener for inbound connections.
-    _listenForInboundConnections();
 }
 
 void AppHost::_listenForInboundConnections()
@@ -968,14 +960,17 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     // any hidden windows.
     if (_windowManager.IsMonarch())
     {
-        if (!_trayIcon && (_logic.GetMinimizeToTray() || _logic.GetAlwaysShowTrayIcon()))
+        if (!_windowManager.DoesQuakeWindowExist())
         {
-            _CreateTrayIcon();
-        }
-        else if (_trayIcon && !_logic.GetMinimizeToTray() && !_logic.GetAlwaysShowTrayIcon())
-        {
-            _windowManager.SummonAllWindows();
-            _DestroyTrayIcon();
+            if (!_trayIcon && (_logic.GetMinimizeToTray() || _logic.GetAlwaysShowTrayIcon()))
+            {
+                _CreateTrayIcon();
+            }
+            else if (_trayIcon && !_logic.GetMinimizeToTray() && !_logic.GetAlwaysShowTrayIcon())
+            {
+                _windowManager.SummonAllWindows();
+                _DestroyTrayIcon();
+            }
         }
     }
 
@@ -986,23 +981,23 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->IsQuakeWindow(_logic.IsQuakeWindow());
-
 #if TIL_FEATURE_TRAYICON_ENABLED
     // We want the quake window to be accessible through the tray icon.
     // This means if there's a quake window _somewhere_, we want the tray icon
     // to show regardless of the tray icon settings.
     // This also means we'll need to destroy the tray icon if it was created
     // specifically for the quake window. If not, it should not be destroyed.
-    if (_window->IsQuakeWindow())
+    if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
     {
         _ShowTrayIconRequested();
     }
-    else
+    else if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
     {
         _HideTrayIconRequested();
     }
 #endif
+
+    _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

@@ -226,20 +226,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
+#if TIL_FEATURE_TRAYICON_ENABLED
     void Peasant::RequestShowTrayIcon()
     {
         try
         {
-            // Try/catch this, because the other side of this event is handled
-            // by the monarch. The monarch might have died. If they have, this
-            // will throw an exception. Just eat it, the election thread will
-            // handle hooking up the new one.
             _ShowTrayIconRequestedHandlers(*this, nullptr);
-            //if (args.Succeeded())
-            //{
-            //    _WindowName = args.NewName();
-            //}
-            //successfullyNotified = true;
         }
         catch (...)
         {
@@ -255,16 +247,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            // Try/catch this, because the other side of this event is handled
-            // by the monarch. The monarch might have died. If they have, this
-            // will throw an exception. Just eat it, the election thread will
-            // handle hooking up the new one.
             _HideTrayIconRequestedHandlers(*this, nullptr);
-            //if (args.Succeeded())
-            //{
-            //    _WindowName = args.NewName();
-            //}
-            //successfullyNotified = true;
         }
         catch (...)
         {
@@ -275,4 +258,5 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
+#endif
 }

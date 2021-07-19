@@ -30,14 +30,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void DisplayWindowId();
         void RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
+#if TIL_FEATURE_TRAYICON_ENABLED
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
+#endif
 
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
         WINRT_PROPERTY(winrt::hstring, WindowName);
-        WINRT_PROPERTY(bool, IsQuake);
 
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::CommandlineArgs);
@@ -46,8 +47,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RenameRequestArgs);
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
 
+#if TIL_FEATURE_TRAYICON_ENABLED
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+#endif
 
     private:
         uint64_t _ourPID;

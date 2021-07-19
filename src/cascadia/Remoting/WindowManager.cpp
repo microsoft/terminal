@@ -537,6 +537,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         _peasant.RequestHideTrayIcon();
     }
+
+    bool WindowManager::DoesQuakeWindowExist()
+    {
+        const auto names = GetPeasantNames();
+        for (const auto [id, name] : names)
+        {
+            if (name == QuakeWindowName)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
 #endif
 
 }
