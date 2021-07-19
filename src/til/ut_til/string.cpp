@@ -19,7 +19,7 @@ class StringTests
         VERIFY_ARE_EQUAL(expected, actual);
     }
 
-    TEST_METHOD(StartsWith)
+    TEST_METHOD(starts_with)
     {
         VERIFY_IS_TRUE(til::starts_with("", ""));
 
@@ -36,7 +36,7 @@ class StringTests
         VERIFY_IS_TRUE(til::starts_with("abcd", "abc"));
     }
 
-    TEST_METHOD(EndsWith)
+    TEST_METHOD(ends_with)
     {
         VERIFY_IS_TRUE(til::ends_with("", ""));
 
@@ -51,5 +51,72 @@ class StringTests
         VERIFY_IS_FALSE(til::ends_with("bc", "abc"));
         VERIFY_IS_TRUE(til::ends_with("abc", "abc"));
         VERIFY_IS_TRUE(til::ends_with("0abc", "abc"));
+    }
+
+    TEST_METHOD(tolower_ascii)
+    {
+        for (wchar_t ch = 0; ch < 128; ++ch)
+        {
+            VERIFY_ARE_EQUAL(std::towlower(ch), til::tolower_ascii(ch));
+        }
+    }
+
+    TEST_METHOD(toupper_ascii)
+    {
+        for (wchar_t ch = 0; ch < 128; ++ch)
+        {
+            VERIFY_ARE_EQUAL(std::towupper(ch), til::toupper_ascii(ch));
+        }
+    }
+
+    TEST_METHOD(equals_insensitive_ascii)
+    {
+        VERIFY_IS_TRUE(til::equals_insensitive_ascii("", ""));
+        VERIFY_IS_FALSE(til::equals_insensitive_ascii("", "foo"));
+        VERIFY_IS_FALSE(til::equals_insensitive_ascii("foo", "fo"));
+        VERIFY_IS_FALSE(til::equals_insensitive_ascii("fooo", "foo"));
+        VERIFY_IS_TRUE(til::equals_insensitive_ascii("cOUnterStriKE", "COuntERStRike"));
+    }
+
+    TEST_METHOD(prefix_split)
+    {
+        {
+            std::string_view s{ "" };
+            VERIFY_ARE_EQUAL("", til::prefix_split(s, ""));
+            VERIFY_ARE_EQUAL("", s);
+        }
+        {
+            std::string_view s{ "" };
+            VERIFY_ARE_EQUAL("", til::prefix_split(s, " "));
+            VERIFY_ARE_EQUAL("", s);
+        }
+        {
+            std::string_view s{ " " };
+            VERIFY_ARE_EQUAL(" ", til::prefix_split(s, ""));
+            VERIFY_ARE_EQUAL("", s);
+        }
+        {
+            std::string_view s{ "foo" };
+            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, ""));
+            VERIFY_ARE_EQUAL("", s);
+        }
+        {
+            std::string_view s{ "foo bar baz" };
+            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, " "));
+            VERIFY_ARE_EQUAL("bar baz", s);
+            VERIFY_ARE_EQUAL("bar", til::prefix_split(s, " "));
+            VERIFY_ARE_EQUAL("baz", s);
+            VERIFY_ARE_EQUAL("baz", til::prefix_split(s, " "));
+            VERIFY_ARE_EQUAL("", s);
+        }
+        {
+            std::string_view s{ "foo123barbaz123" };
+            VERIFY_ARE_EQUAL("foo", til::prefix_split(s, "123"));
+            VERIFY_ARE_EQUAL("barbaz123", s);
+            VERIFY_ARE_EQUAL("barbaz", til::prefix_split(s, "123"));
+            VERIFY_ARE_EQUAL("", s);
+            VERIFY_ARE_EQUAL("", til::prefix_split(s, ""));
+            VERIFY_ARE_EQUAL("", s);
+        }
     }
 };

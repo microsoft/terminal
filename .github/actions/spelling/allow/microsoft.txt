@@ -28,6 +28,7 @@ LKG
 mfcribbon
 microsoft
 microsoftonline
+MSAA
 msixbundle
 MSVC
 muxc
@@ -44,6 +45,7 @@ pscustomobject
 QWORD
 robocopy
 SACLs
+sdkddkver
 Shobjidl
 Skype
 SRW
@@ -61,6 +63,7 @@ Virtualization
 visualstudio
 vscode
 VSTHRD
+winsdkver
 wlk
 wslpath
 wtl
