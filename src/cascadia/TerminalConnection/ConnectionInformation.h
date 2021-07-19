@@ -28,8 +28,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         static TerminalConnection::ITerminalConnection CreateConnection(TerminalConnection::ConnectionInformation info);
 
-        WINRT_PROPERTY(hstring, ClassName);
+        winrt::hstring ClassName() const { return _ClassName; }
+        void ClassName(const winrt::hstring& value) { _ClassName = value; }
+
         WINRT_PROPERTY(Windows::Foundation::Collections::ValueSet, Settings);
+
+    private:
+        winrt::hstring _ClassName{};
     };
 }
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation

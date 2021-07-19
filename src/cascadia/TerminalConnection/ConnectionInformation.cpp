@@ -29,7 +29,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         const auto name = static_cast<HSTRING>(winrt::get_abi(info.ClassName()));
         const auto pointer = winrt::put_abi(inspectable);
+
+#pragma warning(push)
+#pragma warning(disable : 26490)
+        // C++/WinRT just loves it's void**, nothing we can do here _except_ reinterpret_cast
         ::IInspectable** raw = reinterpret_cast<::IInspectable**>(pointer);
+#pragma warning(pop)
 
         // RoActivateInstance() will try to create an instance of the object,
         // who's fully qualified name is the string in Name().
