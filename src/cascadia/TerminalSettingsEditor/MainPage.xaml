@@ -118,7 +118,7 @@
             </Grid.RowDefinitions>
             <Frame x:Name="contentFrame"
                    Grid.Row="0"/>
-            <!-- Explictly set the background color on grid to prevent the navigation animation from overflowing it -->
+            <!-- Explicitly set the background color on grid to prevent the navigation animation from overflowing it -->
             <Grid Grid.Row="1"
                   Height="100"
                   BorderBrush="{ThemeResource SystemBaseLowColor}"
