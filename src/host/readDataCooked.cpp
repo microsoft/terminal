@@ -1008,13 +1008,13 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
     {
         // Figure out where real string ends (at carriage return or end of buffer).
         PWCHAR StringPtr = _backupLimit;
-        size_t StringLength = _bytesRead;
+        size_t StringLength = _bytesRead / sizeof(WCHAR);
         bool FoundCR = false;
-        for (size_t i = 0; i < (_bytesRead / sizeof(WCHAR)); i++)
+        for (size_t i = 0; i < StringLength; i++)
         {
             if (*StringPtr++ == UNICODE_CARRIAGERETURN)
             {
-                StringLength = i * sizeof(WCHAR);
+                StringLength = i;
                 FoundCR = true;
                 break;
             }
@@ -1026,11 +1026,11 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
             {
                 // add to command line recall list if we have a history list.
                 CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-                LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, StringLength / sizeof(wchar_t) },
+                LOG_IF_FAILED(_commandHistory->Add({ _backupLimit, StringLength },
                                                    WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
             }
 
-            Tracing::s_TraceCookedRead(_backupLimit);
+            Tracing::s_TraceCookedRead(_backupLimit, base::saturated_cast<ULONG>(StringLength));
 
             // check for alias
             ProcessAliases(LineCount);

@@ -405,12 +405,13 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
     }
 }
 
-void Tracing::s_TraceCookedRead(_In_z_ const wchar_t* pwszCookedBuffer)
+void Tracing::s_TraceCookedRead(_In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength)
 {
     TraceLoggingWrite(
         g_hConhostV2EventTraceProvider,
         "CookedRead",
-        TraceLoggingWideString(pwszCookedBuffer, "ReadBuffer"),
+        TraceLoggingCountedWideString(pwchCookedBuffer, cchCookedBufferLength, "ReadBuffer"),
+        TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
         TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::CookedRead));
 }
