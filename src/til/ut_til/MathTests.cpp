@@ -44,10 +44,7 @@ class MathTests
 
         _RunCases(til::math::truncating, cases);
 
-        const auto fn = []() {
-            const auto v = til::math::details::truncating_t::cast<ptrdiff_t>(NAN);
-        };
-        VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        VERIFY_THROWS_SPECIFIC(til::math::details::truncating_t::cast<ptrdiff_t>(NAN), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
     }
 
     TEST_METHOD(Ceiling)
@@ -65,10 +62,7 @@ class MathTests
 
         _RunCases(til::math::ceiling, cases);
 
-        const auto fn = []() {
-            const auto v = til::math::details::ceiling_t::cast<ptrdiff_t>(NAN);
-        };
-        VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        VERIFY_THROWS_SPECIFIC(til::math::details::ceiling_t::cast<ptrdiff_t>(NAN), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
     }
 
     TEST_METHOD(Flooring)
@@ -86,10 +80,7 @@ class MathTests
 
         _RunCases(til::math::flooring, cases);
 
-        const auto fn = []() {
-            const auto v = til::math::details::flooring_t::cast<ptrdiff_t>(NAN);
-        };
-        VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        VERIFY_THROWS_SPECIFIC(til::math::details::flooring_t::cast<ptrdiff_t>(NAN), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
     }
 
     TEST_METHOD(Rounding)
@@ -107,10 +98,7 @@ class MathTests
 
         _RunCases(til::math::rounding, cases);
 
-        const auto fn = []() {
-            const auto v = til::math::details::rounding_t::cast<ptrdiff_t>(NAN);
-        };
-        VERIFY_THROWS_SPECIFIC(fn(), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
+        VERIFY_THROWS_SPECIFIC(til::math::details::rounding_t::cast<ptrdiff_t>(NAN), wil::ResultException, [](wil::ResultException& e) { return e.GetErrorCode() == E_ABORT; });
     }
 
     TEST_METHOD(NormalIntegers)
