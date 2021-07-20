@@ -1460,12 +1460,15 @@ void IslandWindow::_enterQuakeMode()
     const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
     const til::size availableSpace = desktopDimensions + ncSize;
 
+    // GH#10201 - The borders are still visible in quake mode, so make us 1px
+    // smaller on either side to account for that, so they don't hang onto
+    // adjacent monitors.
     const til::point origin{
-        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)),
+        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)) + 1,
         (nearestMonitorInfo.rcWork.top)
     };
     const til::size dimensions{
-        availableSpace.width(),
+        availableSpace.width() - 2,
         availableSpace.height() / 2
     };
 
