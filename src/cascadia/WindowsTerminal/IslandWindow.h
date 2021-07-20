@@ -114,7 +114,6 @@ protected:
 
     void _enterQuakeMode();
     til::rectangle _getQuakeModeSize(HMONITOR hmon);
-    void _enterQuakeMode(const til::rectangle newSize);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 

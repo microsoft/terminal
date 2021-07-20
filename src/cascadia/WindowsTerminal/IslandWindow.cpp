@@ -510,44 +510,53 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         return 0;
     case WM_WINDOWPOSCHANGING:
     {
+        // GH#10274 - if the quake window gets moved to another monitor via aero
+        // snap (win+shift+arrows), then re-adjust the size for the new monitor.
         if (IsQuakeWindow())
         {
             // Retrieve the suggested dimensions and make a rect and size.
             LPWINDOWPOS lpwpos = (LPWINDOWPOS)lparam;
 
-            // We only need to apply restrictions if the size is changing.
-            if (!WI_IsFlagSet(lpwpos->flags, SWP_NOSIZE))
+            // We only need to apply restrictions if the position is changing.
+            // The SWP_ flags are confusing to read. This is
+            // "if we're not NOT moving the window"
+            if (!WI_IsFlagSet(lpwpos->flags, SWP_NOMOVE))
             {
-                // Figure out the suggested dimensions
+                // Figure out the suggested dimensions and position.
                 RECT rcSuggested;
                 rcSuggested.left = lpwpos->x;
                 rcSuggested.top = lpwpos->y;
                 rcSuggested.right = rcSuggested.left + lpwpos->cx;
                 rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
 
+                // Find the bounds of the current monitor, and the monitor that
+                // we're suggested to be on.
+
                 RECT windowRect = GetWindowRect();
-                HMONITOR currentMonitor = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
-                MONITORINFO currentMonitorInfo;
-                currentMonitorInfo.cbSize = sizeof(MONITORINFO);
-                GetMonitorInfo(currentMonitor, &currentMonitorInfo);
+                HMONITOR current = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
+                MONITORINFO currentInfo;
+                currentInfo.cbSize = sizeof(MONITORINFO);
+                GetMonitorInfo(current, &currentInfo);
 
-                HMONITOR proposedMonitor = MonitorFromRect(&rcSuggested, MONITOR_DEFAULTTONEAREST);
-                MONITORINFO proposedMonitorInfo;
-                proposedMonitorInfo.cbSize = sizeof(MONITORINFO);
-                GetMonitorInfo(proposedMonitor, &proposedMonitorInfo);
+                HMONITOR proposed = MonitorFromRect(&rcSuggested, MONITOR_DEFAULTTONEAREST);
+                MONITORINFO proposedInfo;
+                proposedInfo.cbSize = sizeof(MONITORINFO);
+                GetMonitorInfo(proposed, &proposedInfo);
 
-                if (til::rectangle{ proposedMonitorInfo.rcMonitor } !=
-                    til::rectangle{ currentMonitorInfo.rcMonitor })
+                // If the monitor changed...
+                if (til::rectangle{ proposedInfo.rcMonitor } !=
+                    til::rectangle{ currentInfo.rcMonitor })
                 {
-                    // _enterQuakeMode(proposedMonitor);
-                    // til::rectangle newWindowRect{ GetWindowRect() };
-                    til::rectangle newWindowRect{ _getQuakeModeSize(proposedMonitor) };
+                    til::rectangle newWindowRect{ _getQuakeModeSize(proposed) };
+
+                    // Inform User32 that we want to be placed at the position
+                    // and dimensions that _getQuakeModeSize returned. When we
+                    // snap across monitor boundaries, this will re-evaluate our
+                    // size for the new monitor.
                     lpwpos->x = newWindowRect.left<int>();
                     lpwpos->y = newWindowRect.top<int>();
                     lpwpos->cx = newWindowRect.width<int>();
                     lpwpos->cy = newWindowRect.height<int>();
-
-                    // OnSize(lpwpos->cx, lpwpos->cy);
 
                     return 0;
                 }
@@ -1480,6 +1489,13 @@ void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
     }
 }
 
+// Method Description:
+// - Enter quake mode for the monitor this window is currently on. This involves
+//   resizing it to the top half of the monitor.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void IslandWindow::_enterQuakeMode()
 {
     if (!_window)
@@ -1489,10 +1505,27 @@ void IslandWindow::_enterQuakeMode()
 
     RECT windowRect = GetWindowRect();
     HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
-    const auto newSize{ _getQuakeModeSize(hmon) };
-    _enterQuakeMode(newSize);
+
+    // Get the size and position of the window that we should occupy
+    const auto newRect{ _getQuakeModeSize(hmon) };
+
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 newRect.left<int>(),
+                 newRect.top<int>(),
+                 newRect.width<int>(),
+                 newRect.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
+// Method Description:
+// - Get the size and position of the window that a "quake mode" should occupy
+//   on the given monitor.
+// - The window will occupy the top half of the monitor.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
 {
     MONITORINFO nearestMonitorInfo;
@@ -1527,17 +1560,6 @@ til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
     };
 
     return til::rectangle{ origin, dimensions };
-}
-
-void IslandWindow::_enterQuakeMode(const til::rectangle newRect)
-{
-    SetWindowPos(GetHandle(),
-                 HWND_TOP,
-                 newRect.left<int>(),
-                 newRect.top<int>(),
-                 newRect.width<int>(),
-                 newRect.height<int>(),
-                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
