@@ -6,6 +6,7 @@
 #include "Utils.h"
 #include "../../types/inc/utils.hpp"
 
+#include <filesystem>
 #include <LibraryResources.h>
 
 #include "TerminalPage.g.cpp"
@@ -172,40 +173,13 @@ namespace winrt::TerminalApp::implementation
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto page{ weakThis.get() })
             {
-                // if alt is pressed, open a pane
-                const CoreWindow window = CoreWindow::GetForCurrentThread();
-                const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-                const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-                const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                        WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-
-                const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
-                const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
-                const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
-                const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
-                                         WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
-                                         WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
-
-                // Check for DebugTap
-                bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
-                                WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
-                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-
-                if (altPressed && !debugTap)
-                {
-                    page->_SplitPane(SplitState::Automatic,
-                                     SplitType::Manual,
-                                     0.5f,
-                                     nullptr);
-                }
-                else if (shiftPressed && !debugTap)
-                {
-                    page->_OpenNewWindow(false, NewTerminalArgs());
-                }
-                else
-                {
-                    page->_OpenNewTab(nullptr);
-                }
+                page->_OpenNewTerminal(NewTerminalArgs());
+            }
+        });
+        _newTabButton.Drop([weakThis{ get_weak() }](Windows::Foundation::IInspectable const&, winrt::Windows::UI::Xaml::DragEventArgs e) {
+            if (auto page{ weakThis.get() })
+            {
+                page->NewTerminalByDrop(e);
             }
         });
         _tabView.SelectionChanged({ this, &TerminalPage::_OnTabSelectionChanged });
@@ -260,6 +234,37 @@ namespace winrt::TerminalApp::implementation
             _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
         }
         CATCH_LOG();
+    }
+
+    winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
+    {
+        Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
+        try
+        {
+            items = co_await e.DataView().GetStorageItemsAsync();
+        }
+        CATCH_LOG();
+
+        if (items.Size() == 1)
+        {
+            std::filesystem::path path(items.GetAt(0).Path().c_str());
+            if (!std::filesystem::is_directory(path))
+            {
+                path = path.parent_path();
+            }
+
+            std::wstring pathText = path.wstring();
+
+            // Handle edge case of "C:\\", seems like the "StartingDirectory" doesn't like path which ends with '\'
+            if (pathText.back() == L'\\')
+            {
+                pathText.erase(std::prev(pathText.end()));
+            }
+
+            NewTerminalArgs args;
+            args.StartingDirectory(winrt::hstring{ pathText });
+            this->_OpenNewTerminal(args);
+        }
     }
 
     // Method Description:
@@ -622,43 +627,7 @@ namespace winrt::TerminalApp::implementation
                 if (auto page{ weakThis.get() })
                 {
                     NewTerminalArgs newTerminalArgs{ profileIndex };
-
-                    // if alt is pressed, open a pane
-                    const CoreWindow window = CoreWindow::GetForCurrentThread();
-                    const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-                    const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-                    const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
-                                            WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-
-                    const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
-                    const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
-                    const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
-                    const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
-                                             WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
-                                             WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
-
-                    // Check for DebugTap
-                    bool debugTap = page->_settings.GlobalSettings().DebugFeaturesEnabled() &&
-                                    WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
-                                    WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-
-                    if (altPressed && !debugTap)
-                    {
-                        page->_SplitPane(SplitState::Automatic,
-                                         SplitType::Manual,
-                                         0.5f,
-                                         newTerminalArgs);
-                    }
-                    else if (shiftPressed && !debugTap)
-                    {
-                        // Manually fill in the evaluated profile.
-                        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(page->_settings.GetProfileForArgs(newTerminalArgs)));
-                        page->_OpenNewWindow(false, newTerminalArgs);
-                    }
-                    else
-                    {
-                        page->_OpenNewTab(newTerminalArgs);
-                    }
+                    page->_OpenNewTerminal(newTerminalArgs);
                 }
             });
             newTabFlyout.Items().Append(profileMenuItem);
@@ -750,6 +719,49 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_OpenNewTabDropdown()
     {
         _newTabButton.Flyout().ShowAt(_newTabButton);
+    }
+
+    void TerminalPage::_OpenNewTerminal(const NewTerminalArgs newTerminalArgs)
+    {
+        // if alt is pressed, open a pane
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+        const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+        const bool altPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) ||
+                                WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+        const auto shiftState{ window.GetKeyState(VirtualKey::Shift) };
+        const auto rShiftState = window.GetKeyState(VirtualKey::RightShift);
+        const auto lShiftState = window.GetKeyState(VirtualKey::LeftShift);
+        const auto shiftPressed{ WI_IsFlagSet(shiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(lShiftState, CoreVirtualKeyStates::Down) ||
+                                 WI_IsFlagSet(rShiftState, CoreVirtualKeyStates::Down) };
+
+        // Check for DebugTap
+        bool debugTap = this->_settings.GlobalSettings().DebugFeaturesEnabled() &&
+                        WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                        WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+
+        if (altPressed && !debugTap)
+        {
+            this->_SplitPane(SplitState::Automatic,
+                             SplitType::Manual,
+                             0.5f,
+                             newTerminalArgs);
+        }
+        else if (shiftPressed && !debugTap)
+        {
+            // Manually fill in the evaluated profile.
+            if (newTerminalArgs.ProfileIndex() != nullptr)
+            {
+                newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(this->_settings.GetProfileForArgs(newTerminalArgs)));
+            }
+            this->_OpenNewWindow(false, newTerminalArgs);
+        }
+        else
+        {
+            this->_OpenNewTab(newTerminalArgs);
+        }
     }
 
     winrt::fire_and_forget TerminalPage::_RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page)
