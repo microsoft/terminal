@@ -522,14 +522,15 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
 // - focus: the focused pane
 // - focusIsSecondSide: If the focused pane is on the "second" side (down/right of split)
 //   relative to the branch being searched
+// - offset: the offset of the current pane
 // Return Value:
 // - A tuple of Panes, the first being the focused pane if found, and the second
 //   being the adjacent pane if it exists, and a bool that represents if the move
 //   goes out of bounds.
-Pane::FocusNeighborSearch Pane::_FindNeighborFromFocus(const FocusDirection& direction,
-                                                       FocusNeighborSearch focus,
-                                                       const bool focusIsSecondSide,
-                                                       Pane::PanePoint offset)
+Pane::FocusNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direction,
+                                                     FocusNeighborSearch searchResult,
+                                                     const bool focusIsSecondSide,
+                                                     const Pane::PanePoint offset)
 {
     // Test if the move will go out of boundaries. E.g. if the focus is already
     // on the second child of some pane and it attempts to move right, there
@@ -537,17 +538,17 @@ Pane::FocusNeighborSearch Pane::_FindNeighborFromFocus(const FocusDirection& dir
     if ((focusIsSecondSide && (direction == FocusDirection::Right || direction == FocusDirection::Down)) ||
         (!focusIsSecondSide && (direction == FocusDirection::Left || direction == FocusDirection::Up)))
     {
-        return focus;
+        return searchResult;
     }
 
     // If we are a leaf node test if we adjacent to the focus node
     if (_IsLeaf())
     {
-        if (_IsAdjacent(focus.focus, focus.focusOffset, shared_from_this(), offset, direction))
+        if (_IsAdjacent(searchResult.focus, searchResult.focusOffset, shared_from_this(), offset, direction))
         {
-            focus.neighbor = shared_from_this();
+            searchResult.neighbor = shared_from_this();
         }
-        return focus;
+        return searchResult;
     }
 
     auto firstOffset = offset;
@@ -561,13 +562,13 @@ Pane::FocusNeighborSearch Pane::_FindNeighborFromFocus(const FocusDirection& dir
     {
         secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
     }
-    auto focusNeighborSearch = _firstChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide, firstOffset);
+    auto focusNeighborSearch = _firstChild->_FindNeighborForPane(direction, searchResult, focusIsSecondSide, firstOffset);
     if (focusNeighborSearch.neighbor)
     {
         return focusNeighborSearch;
     }
 
-    return _secondChild->_FindNeighborFromFocus(direction, focus, focusIsSecondSide, secondOffset);
+    return _secondChild->_FindNeighborForPane(direction, searchResult, focusIsSecondSide, secondOffset);
 }
 
 // Method Description:
@@ -614,7 +615,7 @@ Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& dire
         // If we can possibly have both sides of a direction, check if the sibling has the neighbor
         if (DirectionMatchesSplit(direction, _splitState))
         {
-            return _secondChild->_FindNeighborFromFocus(direction, focusNeighborSearch, false, secondOffset);
+            return _secondChild->_FindNeighborForPane(direction, focusNeighborSearch, false, secondOffset);
         }
         return focusNeighborSearch;
     }
@@ -634,7 +635,7 @@ Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& dire
         // If we can possibly have both sides of a direction, check if the sibling has the neighbor
         if (DirectionMatchesSplit(direction, _splitState))
         {
-            return _firstChild->_FindNeighborFromFocus(direction, focusNeighborSearch, true, firstOffset);
+            return _firstChild->_FindNeighborForPane(direction, focusNeighborSearch, true, firstOffset);
         }
         return focusNeighborSearch;
     }

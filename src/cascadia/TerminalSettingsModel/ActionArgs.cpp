@@ -286,7 +286,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MovePaneArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (FocusDirection())
+        switch (Direction())
         {
         case FocusDirection::Left:
             directionString = RS_(L"DirectionLeft");

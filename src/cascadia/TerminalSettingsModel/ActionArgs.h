@@ -456,9 +456,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         MovePaneArgs() = default;
         MovePaneArgs(Model::FocusDirection direction) :
-            _FocusDirection{ direction } {};
+            _Direction{ direction } {};
 
-        ACTION_ARG(Model::FocusDirection, FocusDirection, FocusDirection::None);
+        ACTION_ARG(Model::FocusDirection, Direction, FocusDirection::None);
 
         static constexpr std::string_view DirectionKey{ "direction" };
 
@@ -470,7 +470,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<MovePaneArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_FocusDirection == _FocusDirection;
+                return otherAsUs->_Direction == _Direction;
             }
             return false;
         };
@@ -478,8 +478,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MovePaneArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_FocusDirection);
-            if (args->FocusDirection() == FocusDirection::None)
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            if (args->Direction() == FocusDirection::None)
             {
                 return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
             }
@@ -496,18 +496,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<MovePaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_FocusDirection);
+            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
             return json;
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<MovePaneArgs>() };
-            copy->_FocusDirection = _FocusDirection;
+            copy->_Direction = _Direction;
             return *copy;
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(FocusDirection());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Direction());
         }
     };
 

@@ -1240,7 +1240,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.FocusDirection());
+            VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.Direction());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1257,7 +1257,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.FocusDirection());
+            VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.Direction());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1274,7 +1274,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(FocusDirection::Up, myArgs.FocusDirection());
+            VERIFY_ARE_EQUAL(FocusDirection::Up, myArgs.Direction());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1291,7 +1291,7 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(FocusDirection::Down, myArgs.FocusDirection());
+            VERIFY_ARE_EQUAL(FocusDirection::Down, myArgs.Direction());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1315,14 +1315,14 @@ namespace TerminalAppLocalTests
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.FocusDirection());
+            VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.Direction());
 
             actionAndArgs = appArgs._startupActions.at(2);
             VERIFY_ARE_EQUAL(ShortcutAction::MovePane, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
             myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
-            VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.FocusDirection());
+            VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.Direction());
         }
     }
 

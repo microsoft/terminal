@@ -318,14 +318,14 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
-            if (realArgs.FocusDirection() == FocusDirection::None)
+            if (realArgs.Direction() == FocusDirection::None)
             {
                 // Do nothing
                 args.Handled(false);
             }
             else
             {
-                _MovePane(realArgs.FocusDirection());
+                _MovePane(realArgs.Direction());
                 args.Handled(true);
             }
         }
