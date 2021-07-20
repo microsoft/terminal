@@ -271,17 +271,17 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 //   with the resultant position.
 // Return Value:
 // - true iff we handled this message.
-LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
+LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM /*lParam*/)
 {
-    LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
-    // If we're the quake window, prevent moving the window
-    if (IsQuakeWindow())
-    {
-        // Stuff our current window into the lParam, and return true. This
-        // will tell User32 to use our current position to move to.
-        ::GetWindowRect(_window.get(), winRect);
-        return true;
-    }
+    // LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+    // // If we're the quake window, prevent moving the window
+    // if (IsQuakeWindow())
+    // {
+    //     // Stuff our current window into the lParam, and return true. This
+    //     // will tell User32 to use our current position to move to.
+    //     ::GetWindowRect(_window.get(), winRect);
+    //     return true;
+    // }
     return false;
 }
 
@@ -506,6 +506,51 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
+    case WM_WINDOWPOSCHANGING:
+    {
+        if (IsQuakeWindow())
+        {
+            // Retrieve the suggested dimensions and make a rect and size.
+            LPWINDOWPOS lpwpos = (LPWINDOWPOS)lparam;
+
+            // We only need to apply restrictions if the size is changing.
+            if (!WI_IsFlagSet(lpwpos->flags, SWP_NOSIZE))
+            {
+                // Figure out the suggested dimensions
+                RECT rcSuggested;
+                rcSuggested.left = lpwpos->x;
+                rcSuggested.top = lpwpos->y;
+                rcSuggested.right = rcSuggested.left + lpwpos->cx;
+                rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
+
+                RECT windowRect = GetWindowRect();
+                HMONITOR currentMonitor = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
+                MONITORINFO currentMonitorInfo;
+                currentMonitorInfo.cbSize = sizeof(MONITORINFO);
+                GetMonitorInfo(currentMonitor, &currentMonitorInfo);
+
+                HMONITOR proposedMonitor = MonitorFromRect(&rcSuggested, MONITOR_DEFAULTTONEAREST);
+                MONITORINFO proposedMonitorInfo;
+                proposedMonitorInfo.cbSize = sizeof(MONITORINFO);
+                GetMonitorInfo(proposedMonitor, &proposedMonitorInfo);
+
+                if (til::rectangle{ proposedMonitorInfo.rcMonitor } !=
+                    til::rectangle{ currentMonitorInfo.rcMonitor })
+                {
+                    _enterQuakeMode(proposedMonitor);
+                    til::rectangle newWindowRect{ GetWindowRect() };
+                    lpwpos->x = newWindowRect.left<int>();
+                    lpwpos->y = newWindowRect.top<int>();
+                    lpwpos->cx = newWindowRect.width<int>();
+                    lpwpos->cy = newWindowRect.height<int>();
+
+                    OnSize(lpwpos->cx, lpwpos->cy);
+
+                    return 0;
+                }
+            }
+        }
+    }
     case CM_NOTIFY_FROM_TRAY:
     {
         switch (LOWORD(lparam))
@@ -1441,8 +1486,12 @@ void IslandWindow::_enterQuakeMode()
 
     RECT windowRect = GetWindowRect();
     HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
-    MONITORINFO nearestMonitorInfo;
+    _enterQuakeMode(hmon);
+}
 
+void IslandWindow::_enterQuakeMode(HMONITOR hmon)
+{
+    MONITORINFO nearestMonitorInfo;
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
     // If this fails, we'll use the default of 96. I think it can only fail for

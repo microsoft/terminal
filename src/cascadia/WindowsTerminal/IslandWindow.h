@@ -112,6 +112,7 @@ protected:
 
     bool _isQuakeWindow{ false };
     void _enterQuakeMode();
+    void _enterQuakeMode(HMONITOR hMon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
