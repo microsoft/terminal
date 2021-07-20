@@ -1656,7 +1656,7 @@ namespace RemotingUnitTests
 
         auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
-        auto p2 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
         p1->WindowName(L"one");
         p2->WindowName(L"two");

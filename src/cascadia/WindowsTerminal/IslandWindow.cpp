@@ -287,8 +287,6 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 
 void IslandWindow::Initialize()
 {
-    const bool initialized = (_interopWindowHandle != nullptr);
-
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();
