@@ -84,7 +84,7 @@ namespace Microsoft::Console::Render
                                                                                      DWRITE_FONT_STYLE style,
                                                                                      DWRITE_FONT_STRETCH stretch);
 
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi, std::unordered_map<std::wstring_view, uint32_t> features = {}, std::unordered_map<std::wstring_view, int32_t> axes = {}) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi, const std::unordered_map<std::wstring_view, uint32_t>& features = {}, const std::unordered_map<std::wstring_view, float>& axes = {}) noexcept;
 
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
@@ -92,7 +92,6 @@ namespace Microsoft::Console::Render
 
         float FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept;
         float FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept;
-        float DIPsToPoints(const float fontSize) noexcept;
         std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                           const DWRITE_FONT_STRETCH fontStretch,
                                                           const DWRITE_FONT_STYLE fontStyle,
@@ -116,7 +115,7 @@ namespace Microsoft::Console::Render
         };
 
         void _SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features);
-        void _SetAxes(const std::unordered_map<std::wstring_view, int32_t>& axes);
+        void _SetAxes(const std::unordered_map<std::wstring_view, float>& axes);
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 

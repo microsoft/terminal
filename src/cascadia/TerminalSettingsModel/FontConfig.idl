@@ -20,6 +20,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);
 
         INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
-        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Int32>, FontAxes);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
     }
 }

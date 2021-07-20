@@ -9,7 +9,7 @@ Licensed under the MIT license.
 #include <conattrs.hpp>
 
 using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
-using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, int32_t>;
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
 
 namespace ControlUnitTests
 {

@@ -606,7 +606,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     featureMap.emplace(tag, param);
                 }
             }
-            std::unordered_map<std::wstring_view, int32_t> axesMap;
+            std::unordered_map<std::wstring_view, float> axesMap;
             if (const auto fontAxes = _settings.FontAxes())
             {
                 axesMap.reserve(fontAxes.Size());
