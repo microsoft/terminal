@@ -111,8 +111,10 @@ protected:
     void _moveToMonitor(const MONITORINFO activeMonitor);
 
     bool _isQuakeWindow{ false };
+
     void _enterQuakeMode();
-    void _enterQuakeMode(HMONITOR hMon);
+    til::rectangle _getQuakeModeSize(HMONITOR hmon);
+    void _enterQuakeMode(const til::rectangle newSize);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 

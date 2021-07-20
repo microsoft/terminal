@@ -537,14 +537,15 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 if (til::rectangle{ proposedMonitorInfo.rcMonitor } !=
                     til::rectangle{ currentMonitorInfo.rcMonitor })
                 {
-                    _enterQuakeMode(proposedMonitor);
-                    til::rectangle newWindowRect{ GetWindowRect() };
+                    // _enterQuakeMode(proposedMonitor);
+                    // til::rectangle newWindowRect{ GetWindowRect() };
+                    til::rectangle newWindowRect{ _getQuakeModeSize(proposedMonitor) };
                     lpwpos->x = newWindowRect.left<int>();
                     lpwpos->y = newWindowRect.top<int>();
                     lpwpos->cx = newWindowRect.width<int>();
                     lpwpos->cy = newWindowRect.height<int>();
 
-                    OnSize(lpwpos->cx, lpwpos->cy);
+                    // OnSize(lpwpos->cx, lpwpos->cy);
 
                     return 0;
                 }
@@ -1486,12 +1487,14 @@ void IslandWindow::_enterQuakeMode()
 
     RECT windowRect = GetWindowRect();
     HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
-    _enterQuakeMode(hmon);
+    const auto newSize{ _getQuakeModeSize(hmon) };
+    _enterQuakeMode(newSize);
 }
 
-void IslandWindow::_enterQuakeMode(HMONITOR hmon)
+til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
 {
     MONITORINFO nearestMonitorInfo;
+
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
     UINT dpiy = USER_DEFAULT_SCREEN_DPI;
     // If this fails, we'll use the default of 96. I think it can only fail for
@@ -1521,7 +1524,11 @@ void IslandWindow::_enterQuakeMode(HMONITOR hmon)
         availableSpace.height() / 2
     };
 
-    const til::rectangle newRect{ origin, dimensions };
+    return til::rectangle{ origin, dimensions };
+}
+
+void IslandWindow::_enterQuakeMode(const til::rectangle newRect)
+{
     SetWindowPos(GetHandle(),
                  HWND_TOP,
                  newRect.left<int>(),
