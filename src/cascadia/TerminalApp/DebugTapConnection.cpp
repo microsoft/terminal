@@ -19,6 +19,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
             _wrappedConnection{ std::move(wrappedConnection) }
         {
         }
+        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {}
         ~DebugInputTapConnection() = default;
         void Start()
         {
