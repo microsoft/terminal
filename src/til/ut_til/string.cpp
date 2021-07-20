@@ -53,6 +53,56 @@ class StringTests
         VERIFY_IS_TRUE(til::ends_with("0abc", "abc"));
     }
 
+    // Normally this would be the spot where you'd find a TEST_METHOD(from_wchars).
+    // I didn't quite trust my coding skills and thus opted to use fuzz-testing.
+    // The below function was used to test from_wchars for unsafety and conformance with clang's strtoul.
+    // The test was run as:
+    //   clang++ -fsanitize=address,undefined,fuzzer -std=c++17 file.cpp
+    // and was run for 20min across 16 jobs in parallel.
+#if 0
+    extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+    {
+        while (size > 0 && (isspace(*data) || *data == '+' || *data == '-'))
+        {
+            --size;
+            ++data;
+        }
+
+        if (size == 0 || size > 127)
+        {
+            return 0;
+        }
+
+        char narrow_buffer[128];
+        wchar_t wide_buffer[128];
+
+        memcpy(narrow_buffer, data, size);
+        for (size_t i = 0; i < size; ++i)
+        {
+            wide_buffer[i] = data[i];
+        }
+
+        // strtoul requires a null terminator
+        narrow_buffer[size] = 0;
+        wide_buffer[size] = 0;
+
+        char* end;
+        const auto expected = strtoul(narrow_buffer, &end, 0);
+        if (end != narrow_buffer + size || expected >= ULONG_MAX / 16)
+        {
+            return 0;
+        }
+
+        const auto actual = from_wchars({ wide_buffer, size });
+        if (expected != actual)
+        {
+            __builtin_trap();
+        }
+
+        return 0;
+    }
+#endif
+
     TEST_METHOD(tolower_ascii)
     {
         for (wchar_t ch = 0; ch < 128; ++ch)

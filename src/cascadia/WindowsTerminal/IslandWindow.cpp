@@ -966,62 +966,62 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 }
 
 // Method Description:
-// - Call UnregisterHotKey once for each entry in hotkeyList, to unset all the bound global hotkeys.
-// Arguments:
-// - hotkeyList: a list of hotkeys to unbind
+// - Call UnregisterHotKey once for each previously registered hotkey.
 // Return Value:
 // - <none>
-void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+void IslandWindow::UnregisterHotKey(const int index) noexcept
 {
-    TraceLoggingWrite(g_hWindowsTerminalProvider,
-                      "UnsetHotkeys",
-                      TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
-                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "UnregisterAllHotKeys",
+        TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
-    {
-        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
-    }
+    LOG_IF_WIN32_BOOL_FALSE(::UnregisterHotKey(_window.get(), index));
 }
 
 // Method Description:
-// - Call RegisterHotKey once for each entry in hotkeyList, to attempt to
-//   register that keybinding as a global hotkey.
+// - Call RegisterHotKey to attempt to register that keybinding as a global hotkey.
 // - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
 //   containing the index we registered here.
+// - Call UnregisterHotKey() before registering your hotkeys.
+//   See: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey#remarks
 // Arguments:
-// - hotkeyList: a list of hotkeys to bind
+// - hotkey: The key-combination to register.
 // Return Value:
 // - <none>
-void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+void IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
 {
-    TraceLoggingWrite(g_hWindowsTerminalProvider,
-                      "SetGlobalHotkeys",
-                      TraceLoggingDescription("Emitted when setting hotkeys"),
-                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-    int index = 0;
-    for (const auto& hotkey : hotkeyList)
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "RegisterHotKey",
+        TraceLoggingDescription("Emitted when setting hotkeys"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    auto vkey = hotkey.Vkey();
+    if (!vkey)
+    {
+        vkey = MapVirtualKeyW(hotkey.ScanCode(), MAPVK_VSC_TO_VK);
+    }
+    if (!vkey)
+    {
+        return;
+    }
+
+    auto hotkeyFlags = MOD_NOREPEAT;
     {
         const auto modifiers = hotkey.Modifiers();
-        const auto hotkeyFlags = MOD_NOREPEAT |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows) ? MOD_WIN : 0) |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu) ? MOD_ALT : 0) |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control) ? MOD_CONTROL : 0) |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift) ? MOD_SHIFT : 0);
-
-        // TODO GH#8888: We should display a warning of some kind if this fails.
-        // This can fail if something else already bound this hotkey.
-        LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
-                                               index,
-                                               hotkeyFlags,
-                                               hotkey.Vkey()));
-
-        index++;
+        WI_SetFlagIf(hotkeyFlags, MOD_WIN, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows));
+        WI_SetFlagIf(hotkeyFlags, MOD_ALT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu));
+        WI_SetFlagIf(hotkeyFlags, MOD_CONTROL, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control));
+        WI_SetFlagIf(hotkeyFlags, MOD_SHIFT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift));
     }
+
+    // TODO GH#8888: We should display a warning of some kind if this fails.
+    // This can fail if something else already bound this hotkey.
+    LOG_IF_WIN32_BOOL_FALSE(::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey));
 }
 
 // Method Description:
