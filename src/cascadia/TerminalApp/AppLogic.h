@@ -89,8 +89,8 @@ namespace winrt::TerminalApp::implementation
 
         void WindowCloseButtonClicked();
 
-        size_t GetLastActiveControlTaskbarState();
-        size_t GetLastActiveControlTaskbarProgress();
+        uint64_t GetLastActiveControlTaskbarState();
+        uint64_t GetLastActiveControlTaskbarProgress();
 
         bool GetMinimizeToTray();
         bool GetAlwaysShowTrayIcon();

@@ -83,8 +83,8 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::IDialogPresenter DialogPresenter() const;
         void DialogPresenter(winrt::TerminalApp::IDialogPresenter dialogPresenter);
 
-        size_t GetLastActiveControlTaskbarState();
-        size_t GetLastActiveControlTaskbarProgress();
+        uint64_t GetLastActiveControlTaskbarState();
+        uint64_t GetLastActiveControlTaskbarProgress();
 
         void ShowKeyboardServiceWarning();
         winrt::hstring KeyboardServiceDisabledText();

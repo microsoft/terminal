@@ -55,6 +55,7 @@ public:
     const COLORREF GetColor() const noexcept;
 
     void StartDeferDrawing() noexcept;
+    bool IsDeferDrawing() noexcept;
     void EndDeferDrawing() noexcept;
 
     void SetHasMoved(const bool fHasMoved) noexcept;
