@@ -844,8 +844,14 @@ namespace TerminalAppLocalTests
             // -------------------
             page->_SplitPane(SplitState::Vertical, SplitType::Duplicate, 0.5f, nullptr);
             secondId = tab->_activePane->Id().value();
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
             // After this the `2` pane is focused, go back to `1` being focused
             page->_MoveFocus(FocusDirection::Left);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
             // Split again to make the 3rd tab
             // -------------------
             // |   1    |        |
@@ -855,9 +861,17 @@ namespace TerminalAppLocalTests
             // |        |        |
             // -------------------
             page->_SplitPane(SplitState::Horizontal, SplitType::Duplicate, 0.5f, nullptr);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            // Split again to make the 3rd tab
             thirdId = tab->_activePane->Id().value();
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
             // After this the `3` pane is focused, go back to `2` being focused
             page->_MoveFocus(FocusDirection::Right);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
             // Split to create the final pane
             // -------------------
             // |   1    |   2    |
@@ -867,8 +881,13 @@ namespace TerminalAppLocalTests
             // |        |        |
             // -------------------
             page->_SplitPane(SplitState::Horizontal, SplitType::Duplicate, 0.5f, nullptr);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             fourthId = tab->_activePane->Id().value();
+        });
 
+        Sleep(250);
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
             // just to be complete, make sure we actually have 4 different ids
             VERIFY_ARE_NOT_EQUAL(firstId, fourthId);
