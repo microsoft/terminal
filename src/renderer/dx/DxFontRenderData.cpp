@@ -13,7 +13,10 @@ static constexpr float POINTS_PER_INCH = 72.0f;
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 static constexpr size_t TAG_LENGTH = 4;
-static constexpr auto DIPsToPoints = [](const float fontSize) { return fontSize * (72.0f / 96.0f); };
+static constexpr float FontSizeToPoints(const float fontSize)
+{
+    return fontSize * (72.0f / 96.0f);
+}
 
 using namespace Microsoft::Console::Render;
 
@@ -576,7 +579,8 @@ float DxFontRenderData::FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontSty
 // Method Description:
 // - Fill any missing axis values that might be known but were unspecified, such as omitting
 //   the 'wght' axis tag but specifying the old DWRITE_FONT_WEIGHT enum
-// - Note to caller: make sure to only call this with a valid IDWriteTextFormat3!
+// - This function will only be called with a valid IDWriteTextFormat3
+//   (on platforms where IDWriteTextFormat3 is supported)
 // Arguments:
 // - fontWeight: the old DWRITE_FONT_WEIGHT enum to be converted into an axis value
 // - fontStretch: the old DWRITE_FONT_STRETCH enum to be converted into an axis value
@@ -641,7 +645,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
     }
     if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::OpticalSize))
     {
-        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, DIPsToPoints(fontSize) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, FontSizeToPoints(fontSize) });
     }
 
     return axesVector;
