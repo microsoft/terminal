@@ -5,7 +5,6 @@
 #include "KeyChordSerialization.h"
 #include "KeyChordSerialization.g.cpp"
 
-#include <charconv>
 #include <til/static_map.h>
 
 using namespace winrt::Microsoft::Terminal::Control;
