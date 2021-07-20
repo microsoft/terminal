@@ -168,7 +168,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     private:
         bool _initializedTerminal{ false };
-        std::atomic<bool> _closing{ false };
+        bool _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
         event_token _connectionOutputEventToken;
@@ -246,7 +246,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         inline bool _IsClosing() const noexcept
         {
-            return _closing.load();
+#ifndef NDEBUG
+            if (_dispatcher)
+            {
+                // _closing isn't atomic and may only be accessed from the main thread.
+                assert(_dispatcher.HasThreadAccess());
+            }
+#endif
+            return _closing;
         }
 
         friend class ControlUnitTests::ControlCoreTests;

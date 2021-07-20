@@ -1267,8 +1267,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::Close()
     {
-        if (!_closing.exchange(true))
+        if (!_IsClosing())
         {
+            _closing = true;
+
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
