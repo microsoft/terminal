@@ -271,17 +271,19 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 //   with the resultant position.
 // Return Value:
 // - true iff we handled this message.
-LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM /*lParam*/)
+LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 {
-    // LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
-    // // If we're the quake window, prevent moving the window
-    // if (IsQuakeWindow())
-    // {
-    //     // Stuff our current window into the lParam, and return true. This
-    //     // will tell User32 to use our current position to move to.
-    //     ::GetWindowRect(_window.get(), winRect);
-    //     return true;
-    // }
+    LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
+
+    // If we're the quake window, prevent moving the window. If we don't do
+    // this, then Alt+Space...Move will still be able to move the window.
+    if (IsQuakeWindow())
+    {
+        // Stuff our current window into the lParam, and return true. This
+        // will tell User32 to use our current position to move to.
+        ::GetWindowRect(_window.get(), winRect);
+        return true;
+    }
     return false;
 }
 
