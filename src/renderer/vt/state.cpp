@@ -148,7 +148,11 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - S_OK or suitable HRESULT error from either conversion or writing pipe.
 [[nodiscard]] HRESULT VtEngine::_WriteTerminalUtf8(const std::wstring_view wstr) noexcept
 {
-    RETURN_IF_FAILED(til::u16u8(wstr, _conversionBuffer));
+    try
+    {
+        til::u16u8(wstr, _conversionBuffer);
+    }
+    CATCH_RETURN();
     return _Write(_conversionBuffer);
 }
 

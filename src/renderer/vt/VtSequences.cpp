@@ -5,6 +5,8 @@
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
 
+#include <til/u8u16convert.h>
+
 #pragma hdrstop
 using namespace Microsoft::Console::Render;
 

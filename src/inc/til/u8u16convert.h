@@ -20,15 +20,14 @@ functions MultiByteToWideChar and WideCharToMultiByte.
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    struct u8accumulator
+    struct u8state
     {
         uint32_t buffer{};
         uint32_t remaining{};
-    };
 
-    struct u16accumulator
-    {
-        uint32_t buffer{};
+        constexpr void reset() noexcept {
+            *this = {};
+        }
     };
 
     // Routine Description:
@@ -61,7 +60,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting UTF-16 string
     // - state - reference to a til::u8state class holding the status of the current partials handling
     template<typename Output>
-    void u8u16(const std::string_view& in, Output& out, u8accumulator& state) noexcept
+    void u8u16(const std::string_view& in, Output& out, u8state& state) noexcept
     {
         auto data = in.data();
         auto size = in.size();
@@ -75,7 +74,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
             if (remaining > size)
             {
-                remaining = size;
+                remaining = gsl::narrow_cast<uint32_t>(size);
             }
 
             state.remaining -= remaining;
@@ -83,14 +82,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             do
             {
                 state.buffer <<= 6;
-                state.buffer |= *data++;
+                state.buffer |= *data++ & 0x3f;
             } while (--remaining);
 
             if (!state.remaining)
             {
                 if (state.buffer < 0x10000)
                 {
-                    out.append(static_cast<wchar_t>(state.buffer));
+                    const auto buffer = static_cast<wchar_t>(state.buffer);
+                    out.append(&buffer, 1);
                 }
                 else
                 {
@@ -104,36 +104,36 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         {
             auto end = data + size;
-            size_t count = 1;
+            size_t have = 1;
             // Skip UTF-8 continuation bytes in the form of 0b10xxxxxx.
-            while ((*--end & 0b11000000) == 0b10000000 && end != data) {
-                ++count;
+            while ((*--end & 0b11000000) == 0b10000000 && end != data)
+            {
+                ++have;
             }
 
             // A leading UTF-8 byte is either of:
             // * 0b110xxxxx
             // * 0b1110xxxx
             // * 0b11110xxx
-            if (count != 1)
+            if (have != 1)
             {
-                DWORD index;
+                DWORD index = 0;
                 if (_BitScanReverse(&index, ~*end & 0xff))
                 {
-                    index -= 24;
-
-                    if ((index <= 4) & (index > count))
+                    const auto want = 7 - index;
+                    if (want <= 4 && want > have)
                     {
                         auto ptr = end;
-                        uint32_t buffer = *ptr++ & (0xff >> (7 - index));
+                        uint32_t buffer = *ptr++ & ((1 << index) - 1);
 
-                        for (size_t i = 0; i < count; ++i)
+                        for (size_t i = 1; i < have; ++i)
                         {
                             buffer <<= 6;
-                            buffer |= *ptr++;
+                            buffer |= *ptr++ & 0x3f;
                         }
 
                         state.buffer = buffer;
-                        state.remaining = index - count;
+                        state.remaining = gsl::narrow_cast<uint32_t>(want - have);
                     }
                 }
                 else
@@ -141,11 +141,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     ++end;
                 }
 
-                size = data - end;
+                size = end - data;
             }
         }
 
-        u16u8({ data, size }, out);
+        u8u16({ data, size }, out);
     }
 
     // Routine Description:
@@ -188,6 +188,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         THROW_LAST_ERROR_IF(lengthOut == 0);
     }
 
+    struct u16state
+    {
+        wchar_t buffer{};
+
+        constexpr void reset() noexcept
+        {
+            *this = {};
+        }
+    };
+
     // Routine Description:
     // - Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
     // Arguments:
@@ -195,7 +205,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - out - reference to the resulting UTF-8 string
     // - state - reference to a til::u16state class holding the status of the current partials handling
     template<typename Output>
-    void u16u8(const std::wstring_view& in, Output& out, u16accumulator& state) noexcept
+    void u16u8(const std::wstring_view& in, Output& out, u16state& state) noexcept
     {
         auto data = in.data();
         auto size = in.size();
@@ -207,14 +217,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         if (state.buffer)
         {
-            if (*data >= 0xDC00 & *data <= 0xDFFF)
+            if (*data >= 0xDC00 && *data <= 0xDFFF)
             {
-                const auto buffer = (state.buffer << 10) | (*data - 0xDC00);
+                const uint32_t high = state.buffer - 0xD800;
+                const uint32_t low = *data - 0xDC00;
+                const auto codePoint = ((high << 10) | low) + 0x10000;
+
                 char buffer[4];
-                buffer[0] = 0b11110000 | ((buffer >> 18) & 0x3f);
-                buffer[1] = 0b10000000 | ((buffer >> 12) & 0x3f);
-                buffer[2] = 0b10000000 | ((buffer >> 6) & 0x3f);
-                buffer[3] = 0b10000000 | ((buffer >> 0) & 0x3f);
+                buffer[0] = 0b11110000 | ((codePoint >> 18) & 0x3f);
+                buffer[1] = 0b10000000 | ((codePoint >> 12) & 0x3f);
+                buffer[2] = 0b10000000 | ((codePoint >> 6) & 0x3f);
+                buffer[3] = 0b10000000 | ((codePoint >> 0) & 0x3f);
                 out.append(&buffer[0], 4);
 
                 ++data;
@@ -230,7 +243,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         if (auto end = data + size - 1; *end >= 0xD800 && *end <= 0xDBFF)
         {
-            state.buffer = *end - 0xD800;
+            state.buffer = *end;
 
             --size;
             if (!size)
