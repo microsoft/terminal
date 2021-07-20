@@ -679,6 +679,48 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
     }
 }
 
+
+// Method Description:
+// - Attempts to find one of our children matching `id,` if found remove the
+//   pane from the tree and return it.
+// - If the removed pane was (or contained the focus) the first sibling will
+//   gain focus
+// Arguments:
+// - The id of the pane to close
+// Return Value:
+// - The removed pane, if found.
+std::shared_ptr<Pane> Pane::DetachPane(uint32_t id) {
+    // We can't remove a pane if we only have a reference to a leaf, even if we
+    // match the id.
+    if (_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    // Check if either of our children matches the search 
+    auto isFirstChild = _firstChild->_IsLeaf() && _firstChild->_id == id;
+    auto isSecondChild = _secondChild->_IsLeaf() && _secondChild->_id == id;
+
+    if (isFirstChild || isSecondChild)
+    {
+        // Keep a reference to the child we are removing
+        auto detached = isFirstChild ? _firstChild : _secondChild;
+        // Remove the child from the tree, replace the current node with the
+        // other child.
+        _CloseChild(isFirstChild);
+
+        return detached;
+    }
+
+
+    if (auto detached = !_firstChild->_IsLeaf() ? _firstChild->DetachPane(id) : nullptr)
+    {
+        return detached;
+    }
+
+    return !_secondChild->_IsLeaf() ? _secondChild->DetachPane(id) : nullptr;
+}
+
 // Method Description:
 // - Closes one of our children. In doing so, takes the control from the other
 //   child, and makes this pane a leaf node again.
@@ -741,12 +783,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // them.
         _lastActive = _firstChild->_lastActive || _secondChild->_lastActive;
 
-        // Remove all the ui elements of our children. This'll make sure we can
-        // re-attach the TermControl to our Grid.
-        _firstChild->_root.Children().Clear();
-        _secondChild->_root.Children().Clear();
-        _firstChild->_border.Child(nullptr);
-        _secondChild->_border.Child(nullptr);
+        // Remove all the ui elements of the remaining child. This'll make sure
+        // we can re-attach the TermControl to our Grid.
+        remainingChild->_root.Children().Clear();
+        remainingChild->_border.Child(nullptr);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1625,6 +1665,18 @@ bool Pane::FocusPane(const uint32_t id)
     }
     return false;
 }
+
+template <typename F>
+void WalkTree(F f)
+{
+    f(shared_from_this());
+    if (!_IsLeaf())
+    {
+        _firstChild->WalkTree(f);
+        _secondChild->WalkTree(f);
+    }
+}
+
 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they

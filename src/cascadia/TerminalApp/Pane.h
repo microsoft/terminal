@@ -71,6 +71,8 @@ public:
     void Shutdown();
     void Close();
 
+    std::shared_ptr<Pane> DetachPane(uint32_t id);
+
     int GetLeafPaneCount() const noexcept;
 
     void Maximize(std::shared_ptr<Pane> zoomedPane);
@@ -81,6 +83,10 @@ public:
     bool FocusPane(const uint32_t id);
 
     bool ContainsReadOnly() const;
+
+    template <typename F>
+    void WalkTree(F f);
+
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -236,4 +242,6 @@ private:
     private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
+
+    friend class winrt::TerminalApp::implementation::TerminalTab;
 };

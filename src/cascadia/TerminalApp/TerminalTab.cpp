@@ -68,6 +68,63 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().Header(_headerControl);
     }
 
+    TerminalTab::TerminalTab(std::shared_ptr<Pane> rootPane)
+    {
+        _rootPane = rootPane;
+        _activePane = nullptr;
+
+        auto firstId = _nextPaneId;
+
+        _rootPane->WalkTree([&](std::shared_ptr<Pane> pane) {
+            if (pane->_IsLeaf())
+            {
+                pane->Id(_nextPaneId);
+                _nextPaneId++;
+            }
+            if (pane->_lastActive)
+            {
+                _activePane = pane;
+            }
+        });
+
+        if (_activePane == nullptr)
+        {
+            _rootPane->FocusPane(firstId);
+            _activePane = _rootPane->GetActivePane();
+        }
+        // Set the ac
+        _mruPanes.insert(_mruPanes.begin(), _activePane->Id().value());
+
+        Content(_rootPane->GetRootElement());
+
+        _MakeTabViewItem();
+        _CreateContextMenu();
+
+        _headerControl.TabStatus(_tabStatus);
+
+        // Add an event handler for the header control to tell us when they want their title to change
+        _headerControl.TitleChangeRequested([weakThis = get_weak()](auto&& title) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->SetTabText(title);
+            }
+        });
+
+        // GH#9162 - when the header is done renaming, ask for focus to be
+        // tossed back to the control, rather into ourselves.
+        _headerControl.RenameEnded([weakThis = get_weak()](auto&&, auto&&) {
+            if (auto tab{ weakThis.get() })
+            {
+                tab->_RequestFocusActiveControlHandlers();
+            }
+        });
+
+        _UpdateHeaderControlMaxWidth();
+
+        // Use our header control as the TabViewItem's header
+        TabViewItem().Header(_headerControl);
+    }
+
     // Method Description:
     // - Called when the timer for the bell indicator in the tab header fires
     // - Removes the bell indicator from the tab header
