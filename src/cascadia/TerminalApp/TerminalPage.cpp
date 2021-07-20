@@ -264,6 +264,13 @@ namespace winrt::TerminalApp::implementation
             NewTerminalArgs args;
             args.StartingDirectory(winrt::hstring{ pathText });
             this->_OpenNewTerminal(args);
+
+            TraceLoggingWrite(
+                g_hTerminalAppProvider,
+                "NewTabByDragDrop",
+                TraceLoggingDescription("Event emitted when the user drag&drops onto the new tab button"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
         }
     }
 
