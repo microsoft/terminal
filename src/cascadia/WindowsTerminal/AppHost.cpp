@@ -669,23 +669,30 @@ void AppHost::_listenForInboundConnections()
 winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
 {
     // The hotkey MUST be registered on the main thread. It will fail otherwise!
-    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher(),
-                                      winrt::Windows::UI::Core::CoreDispatcherPriority::Normal);
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
 
-    // Remove all the already registered hotkeys before setting up the new ones.
-    _window->UnsetHotkeys(_hotkeys);
-
-    _hotkeyActions = _logic.GlobalHotkeys();
-    _hotkeys.clear();
-    for (const auto& [k, v] : _hotkeyActions)
+    // Unregister all previously registered hotkeys.
+    //
+    // RegisterHotKey(), will not unregister hotkeys automatically.
+    // If a hotkey with a given HWND and ID combination already exists
+    // then a duplicate one will be added, which we don't want.
+    // (Additionally we want to remove hotkeys that were removed from the settings.)
+    for (int i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
     {
-        if (k != nullptr)
-        {
-            _hotkeys.push_back(k);
-        }
+        _window->UnregisterHotKey(i);
     }
 
-    _window->SetGlobalHotkeys(_hotkeys);
+    _hotkeys.clear();
+
+    // Re-register all current hotkeys.
+    for (const auto& [keyChord, cmd] : _logic.GlobalHotkeys())
+    {
+        if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
+        {
+            _window->RegisterHotKey(gsl::narrow_cast<int>(_hotkeys.size()), keyChord);
+            _hotkeys.emplace_back(summonArgs);
+        }
+    }
 }
 
 // Method Description:
@@ -706,47 +713,40 @@ void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
     {
         return;
     }
-    // Lookup the matching keychord
-    Control::KeyChord kc = _hotkeys.at(hotkeyIndex);
-    // Get the stored Command for that chord
-    if (const auto& cmd{ _hotkeyActions.Lookup(kc) })
+
+    const auto& summonArgs = til::at(_hotkeys, hotkeyIndex);
+    Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
+
+    // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
+    // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
+    // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
+    args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
+    args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
+    args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
+    args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
+
+    switch (summonArgs.Monitor())
     {
-        if (const auto& summonArgs{ cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>() })
-        {
-            Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
+    case Settings::Model::MonitorBehavior::Any:
+        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+        break;
+    case Settings::Model::MonitorBehavior::ToCurrent:
+        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+        break;
+    case Settings::Model::MonitorBehavior::ToMouse:
+        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
+        break;
+    }
 
-            // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
-            // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
-            // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
-            args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
-            args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
-            args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
-            args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
-
-            switch (summonArgs.Monitor())
-            {
-            case Settings::Model::MonitorBehavior::Any:
-                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
-                break;
-            case Settings::Model::MonitorBehavior::ToCurrent:
-                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
-                break;
-            case Settings::Model::MonitorBehavior::ToMouse:
-                args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
-                break;
-            }
-
-            _windowManager.SummonWindow(args);
-            if (args.FoundMatch())
-            {
-                // Excellent, the window was found. We have nothing else to do here.
-            }
-            else
-            {
-                // We should make the window ourselves.
-                _createNewTerminalWindow(summonArgs);
-            }
-        }
+    _windowManager.SummonWindow(args);
+    if (args.FoundMatch())
+    {
+        // Excellent, the window was found. We have nothing else to do here.
+    }
+    else
+    {
+        // We should make the window ourselves.
+        _createNewTerminalWindow(summonArgs);
     }
 }
 

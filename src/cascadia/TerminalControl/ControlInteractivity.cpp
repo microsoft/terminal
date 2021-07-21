@@ -8,13 +8,15 @@
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
 #include <Utils.h>
-#include <WinUser.h>
 #include <LibraryResources.h>
 #include "../../types/inc/GlyphWidth.hpp"
 #include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
 
+#include "InteractivityAutomationPeer.h"
+
 #include "ControlInteractivity.g.cpp"
+#include "TermControl.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -27,6 +29,15 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    static constexpr TerminalInput::MouseButtonState toInternalMouseState(const Control::MouseButtonState& state)
+    {
+        return TerminalInput::MouseButtonState{
+            WI_IsFlagSet(state, MouseButtonState::IsLeftButtonDown),
+            WI_IsFlagSet(state, MouseButtonState::IsMiddleButtonDown),
+            WI_IsFlagSet(state, MouseButtonState::IsRightButtonDown)
+        };
+    }
+
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
                                                TerminalConnection::ITerminalConnection connection) :
         _touchAnchor{ std::nullopt },
@@ -37,6 +48,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core = winrt::make_self<ControlCore>(settings, connection);
     }
 
+    // Method Description:
+    // - Updates our internal settings. These settings should be
+    //   interactivity-specific. Right now, we primarily update _rowsToScroll
+    //   with the current value of SPI_GETWHEELSCROLLLINES.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void ControlInteractivity::UpdateSettings()
     {
         _updateSystemParameterSettings();
@@ -50,9 +69,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _multiClickTimer = GetDoubleClickTime() * 1000;
     }
 
-    winrt::com_ptr<ControlCore> ControlInteractivity::GetCore()
+    Control::ControlCore ControlInteractivity::Core()
     {
-        return _core;
+        return *_core;
     }
 
     // Method Description:
@@ -85,9 +104,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _multiClickCounter;
     }
 
-    void ControlInteractivity::GainFocus()
+    void ControlInteractivity::GotFocus()
     {
+        if (_uiaEngine.get())
+        {
+            THROW_IF_FAILED(_uiaEngine->Enable());
+        }
+
         _updateSystemParameterSettings();
+    }
+
+    void ControlInteractivity::LostFocus()
+    {
+        if (_uiaEngine.get())
+        {
+            THROW_IF_FAILED(_uiaEngine->Disable());
+        }
     }
 
     // Method Description
@@ -156,7 +188,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core->PasteText(winrt::hstring{ wstr });
     }
 
-    void ControlInteractivity::PointerPressed(TerminalInput::MouseButtonState buttonState,
+    void ControlInteractivity::PointerPressed(Control::MouseButtonState buttonState,
                                               const unsigned int pointerUpdateKind,
                                               const uint64_t timestamp,
                                               const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
@@ -170,7 +202,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // GH#9396: we prioritize hyper-link over VT mouse events
         auto hyperlink = _core->GetHyperlink(terminalPosition);
-        if (buttonState.isLeftButtonDown &&
+        if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
             ctrlEnabled && !hyperlink.empty())
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
@@ -182,9 +214,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_canSendVTMouseInput(modifiers))
         {
-            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
+            // If the click happened outside the active region, just don't send any mouse event
+            if (const auto adjustedY = terminalPosition.y() - adjustment; adjustedY >= 0)
+            {
+                _core->SendMouseEvent({ terminalPosition.x(), adjustedY }, pointerUpdateKind, modifiers, 0, toInternalMouseState(buttonState));
+            }
         }
-        else if (buttonState.isLeftButtonDown)
+        else if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
         {
             const auto clickCount = _numberOfClicks(pixelPosition, timestamp);
             // This formula enables the number of clicks to cycle properly
@@ -219,7 +256,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _singleClickTouchdownPos = std::nullopt;
             }
         }
-        else if (buttonState.isRightButtonDown)
+        else if (WI_IsFlagSet(buttonState, MouseButtonState::IsRightButtonDown))
         {
             // CopyOnSelect right click always pastes
             if (_core->CopyOnSelect() || !_core->HasSelection())
@@ -238,7 +275,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _touchAnchor = contactPoint;
     }
 
-    void ControlInteractivity::PointerMoved(TerminalInput::MouseButtonState buttonState,
+    void ControlInteractivity::PointerMoved(Control::MouseButtonState buttonState,
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                             const bool focused,
@@ -249,9 +286,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, toInternalMouseState(buttonState));
         }
-        else if (focused && buttonState.isLeftButtonDown)
+        else if (focused && WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
         {
             if (_singleClickTouchdownPos)
             {
@@ -279,7 +316,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             SetEndSelectionPoint(pixelPosition);
         }
 
-        _core->UpdateHoveredCell(terminalPosition);
+        _core->SetHoveredCell(terminalPosition);
     }
 
     void ControlInteractivity::TouchMoved(const til::point newTouchPoint,
@@ -319,7 +356,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlInteractivity::PointerReleased(TerminalInput::MouseButtonState buttonState,
+    void ControlInteractivity::PointerReleased(Control::MouseButtonState buttonState,
                                                const unsigned int pointerUpdateKind,
                                                const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                const til::point pixelPosition)
@@ -328,7 +365,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, toInternalMouseState(buttonState));
             return;
         }
 
@@ -366,7 +403,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlInteractivity::MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                           const int32_t delta,
                                           const til::point pixelPosition,
-                                          const TerminalInput::MouseButtonState state)
+                                          const Control::MouseButtonState buttonState)
     {
         const til::point terminalPosition = _getTerminalPosition(pixelPosition);
 
@@ -382,7 +419,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                          WM_MOUSEWHEEL,
                                          modifiers,
                                          ::base::saturated_cast<short>(delta),
-                                         state);
+                                         toInternalMouseState(buttonState));
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
@@ -398,7 +435,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            _mouseScrollHandler(delta, pixelPosition, state.isLeftButtonDown);
+            _mouseScrollHandler(delta, pixelPosition, WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown));
         }
         return false;
     }
@@ -557,4 +594,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Convert the location in pixels to characters within the current viewport.
         return til::point{ pixelPosition / fontSize };
     }
+
+    // Method Description:
+    // - Creates an automation peer for the Terminal Control, enabling
+    //   accessibility on our control.
+    // - Our implementation implements the ITextProvider pattern, and the
+    //   IControlAccessibilityInfo, to connect to the UiaEngine, which must be
+    //   attached to the core's renderer.
+    // - The TermControlAutomationPeer will connect this to the UI tree.
+    // Arguments:
+    // - None
+    // Return Value:
+    // - The automation peer for our control
+    Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
+    try
+    {
+        auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
+
+        _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
+        _core->AttachUiaEngine(_uiaEngine.get());
+        return *autoPeer;
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
+        return nullptr;
+    }
+
+    ::Microsoft::Console::Types::IUiaData* ControlInteractivity::GetUiaData() const
+    {
+        return _core->GetUiaData();
+    }
+
 }

@@ -257,6 +257,20 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
                 }
             });
+
+            // make sure to send all the property changed events once here
+            // we do this in the case an old appearance was deleted and then a new one is created,
+            // the old settings need to be updated in xaml
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
+            _UpdateBIAlignmentControl(static_cast<int32_t>(Appearance().BackgroundImageAlignment()));
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
         }
     }
 

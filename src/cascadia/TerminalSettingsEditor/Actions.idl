@@ -23,7 +23,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean ShowEditButton { get; };
         Boolean IsInEditMode { get; };
         Boolean IsNewlyAdded { get; };
-        String ProposedKeys;
+        Microsoft.Terminal.Control.KeyChord ProposedKeys;
         Object ProposedAction;
         Windows.UI.Xaml.Controls.Flyout AcceptChangesFlyout;
         String EditButtonName { get; };

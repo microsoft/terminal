@@ -79,6 +79,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Profile();
         Profile(guid guid);
 
+        void CreateUnfocusedAppearance();
+        void DeleteUnfocusedAppearance();
+
         hstring ToString()
         {
             return Name();

@@ -73,7 +73,6 @@ private:
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
     int _currentDpi;
-    bool _uiaProviderInitialized;
     std::function<void(wchar_t*)> _pfnWriteCallback;
     ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
 
@@ -83,6 +82,7 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
     bool _focused{ false };
+    bool _uiaProviderInitialized{ false };
 
     std::chrono::milliseconds _multiClickTime;
     unsigned int _multiClickCounter{};

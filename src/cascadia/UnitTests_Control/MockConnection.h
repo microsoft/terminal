@@ -16,6 +16,7 @@ namespace ControlUnitTests
     public:
         MockConnection() noexcept = default;
 
+        void Initialize(const winrt::Windows::Foundation::Collections::ValueSet& /*settings*/){};
         void Start() noexcept {};
         void WriteInput(winrt::hstring const& data)
         {

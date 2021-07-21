@@ -1077,7 +1077,6 @@ void ConptyRoundtripTests::PassthroughClearAll()
     }
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool afterClear = false) {
-        const auto firstRow = viewport.top<short>();
         const auto width = viewport.width<short>();
 
         // "~" rows
@@ -1781,7 +1780,6 @@ void ConptyRoundtripTests::ClearHostTrickeryTest()
     END_TEST_METHOD_PROPERTIES();
     constexpr int PaintEveryNewline = 0;
     constexpr int PaintAfterAllNewlines = 1;
-    constexpr int DontPaintAfterNewlines = 2;
 
     INIT_TEST_PROPERTY(int, paintEachNewline, L"Any of: manually PaintFrame after each newline is emitted, once at the end of all newlines, or not at all");
     INIT_TEST_PROPERTY(bool, cursorOnNextLine, L"Either leave the cursor on the first line, or place it on the second line of the buffer");
@@ -2562,7 +2560,6 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
         sm.ProcessString(L"BBB");
         sm.ProcessString(L"\r\n");
 
-        const auto end = 2 * hostView.Height();
         for (auto i = 2; i < hostView.BottomInclusive(); i++)
         {
             // IMPORTANT! The way vim writes these blank lines is as '~' followed by
@@ -2580,10 +2577,6 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
     };
 
     drawVim();
-
-    const auto firstTextLength = TerminalViewWidth - 2;
-    const auto spacesLength = 3;
-    const auto secondTextLength = 1;
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport) {
         const auto firstRow = viewport.top<short>();
@@ -2696,7 +2689,6 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
     }
 
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool afterClear = false) {
-        const auto firstRow = viewport.top<short>();
         const auto width = viewport.width<short>();
 
         // "~" rows
@@ -2910,8 +2902,6 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
     //                                         { static_cast<BYTE>(XTERM_GREEN_ATTR) });
     terminalGreenAttrs.SetIndexedBackground(XTERM_GREEN_ATTR);
 
-    const size_t width = static_cast<size_t>(TerminalViewWidth);
-
     // Use an initial ^[[m to start printing with default-on-default
     sm.ProcessString(L"\x1b[m");
 
@@ -3043,8 +3033,6 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
     terminalBlueAttrs.SetIndexedForeground(XTERM_GREEN_ATTR);
     terminalBlueAttrs.SetIndexedBackground(XTERM_BLUE_ATTR);
 
-    const size_t width = static_cast<size_t>(TerminalViewWidth);
-
     // We're going to print 4 more rows than the entire height of the viewport,
     // causing the buffer to circle 4 times. This is 2 extra iterations of the
     // two lines we're printing per iteration.
@@ -3162,7 +3150,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     // timings for the frame affect the results. In this test we'll be printing
     // a bunch of paired lines. These values control when the PaintFrame calls
     // will occur:
-    constexpr int DontPaint = 0; // Only paint at the end of all the output
     constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
     constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
 
@@ -3343,7 +3330,6 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
     // timings for the frame affect the results. In this test we'll be printing
     // a bunch of paired lines. These values control when the PaintFrame calls
     // will occur:
-    constexpr int DontPaint = 0; // Only paint at the end of all the output
     constexpr int PaintAfterBothLines = 1; // Paint after each pair of lines is output
     constexpr int PaintEveryLine = 2; // Paint after each and every line is output.
 
