@@ -20,6 +20,7 @@
     <ClInclude Include="PercentageSignConverter.h">
       <Filter>Converters</Filter>
     </ClInclude>
+    <ClInclude Include="PreviewConnection.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="EnumEntry.idl" />
@@ -44,6 +45,9 @@
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
     <Page Include="SettingContainerStyle.xaml" />
+    <Page Include="AddProfile.xaml" />
+    <Page Include="ReadOnlyActions.xaml" />
+    <Page Include="KeyChordListener.xaml" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Converters">

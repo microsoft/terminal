@@ -47,7 +47,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             if constexpr (!SortedInput::value)
             {
                 const auto compareKeys = [&](const auto& p1, const auto& p2) { return _predicate(p1.first, p2.first); };
-                std::sort(_array.begin(), _array.end(), compareKeys); // compile-time sorting!
+                std::sort(_array.begin(), _array.end(), compareKeys); // compile-time sorting starting C++20
             }
         }
 

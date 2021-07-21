@@ -170,8 +170,8 @@
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
 
         // Visual Adjustments
-        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
-        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
+        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
+        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
 
         // Other commands

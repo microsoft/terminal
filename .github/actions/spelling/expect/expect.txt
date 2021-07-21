@@ -114,6 +114,7 @@ Backgrounder
 backgrounding
 backport
 backstory
+barbaz
 Batang
 baz
 Bazz
@@ -794,6 +795,7 @@ FONTTYPE
 FONTWEIGHT
 FONTWIDTH
 FONTWINDOW
+fooo
 forceinline
 FORCEOFFFEEDBACK
 FORCEONFEEDBACK
@@ -1500,6 +1502,7 @@ nfe
 nlength
 Nls
 NLSMODE
+nnn
 NOACTIVATE
 NOAPPLYNOW
 NOCLIP
@@ -1580,6 +1583,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nullability
 nullness
 nullonfailure
 nullopt
@@ -1644,6 +1648,7 @@ oss
 ostream
 ostringstream
 ouicompat
+OUnter
 outdir
 outfile
 Outof
@@ -1986,6 +1991,7 @@ rhs
 RIGHTALIGN
 RIGHTBUTTON
 riid
+Rike
 RIPMSG
 RIS
 RMENU
@@ -2208,6 +2214,7 @@ stoi
 stol
 stoul
 stoutapot
+Stri
 strikethrough
 stringstream
 STRINGTABLE

@@ -181,7 +181,6 @@ using namespace Microsoft::Console::Types;
 
         // First retrieve the new DPI and the current DPI.
         DWORD const dpiProposed = (WORD)wParam;
-        DWORD const dpiCurrent = g.dpi;
 
         // Now we need to get what the font size *would be* if we had this new DPI. We need to ask the renderer about that.
         const FontInfo& fiCurrent = ScreenInfo.GetCurrentFont();

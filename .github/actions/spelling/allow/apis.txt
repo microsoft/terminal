@@ -63,6 +63,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isspace
 IStorage
 istream
 IStringable
@@ -77,6 +78,7 @@ llu
 localtime
 lround
 LSHIFT
+memicmp
 mov
 msappx
 MULTIPLEUSE
@@ -132,6 +134,7 @@ STDCPP
 STDMETHOD
 strchr
 streambuf
+strtoul
 Stubless
 Subheader
 Subpage
@@ -141,6 +144,7 @@ THEMECHANGED
 tlg
 tmp
 tolower
+toupper
 TTask
 TVal
 UChar
@@ -149,6 +153,7 @@ userenv
 wcsstr
 wcstoui
 winmain
+wmemcmp
 wpc
 wsregex
 wwinmain

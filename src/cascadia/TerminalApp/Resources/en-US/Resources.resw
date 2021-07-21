@@ -649,4 +649,7 @@
     <value>Open in Windows Terminal</value>
     <comment>{Locked="Windows"} This is a menu item that will be displayed in the Windows File Explorer that launches the non-preview version of Windows Terminal</comment>
   </data>
+  <data name="DropPathTabRun.Text" xml:space="preserve">
+    <value>Open a new tab in given starting directory</value>
+  </data>
 </root>

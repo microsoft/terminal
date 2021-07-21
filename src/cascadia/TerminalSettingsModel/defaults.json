@@ -298,7 +298,7 @@
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
-        { "command": "quakeMode", "keys":"win+`" },
+        { "command": "quakeMode", "keys":"win+sc(41)" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -362,8 +362,8 @@
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
 
         // Visual Adjustments
-        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
-        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
+        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
+        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+minus" },
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+numpad_plus" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+numpad_minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },

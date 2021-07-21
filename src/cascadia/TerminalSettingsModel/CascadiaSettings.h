@@ -98,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::guid GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
 
-        Model::Profile DuplicateProfile(Model::Profile source);
+        Model::Profile DuplicateProfile(const Model::Profile& source);
         void RefreshDefaultTerminals();
 
         static bool IsDefaultTerminalAvailable() noexcept;
