@@ -2046,7 +2046,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto tab{ _GetFocusedTabImpl() })
         {
-            return tab->GetCombinedTaskbarState().state;
+            return tab->GetCombinedTaskbarState().State();
         }
         return {};
     }
@@ -2059,7 +2059,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (auto tab{ _GetFocusedTabImpl() })
         {
-            return tab->GetCombinedTaskbarState().progress;
+            return tab->GetCombinedTaskbarState().Progress();
         }
         return {};
     }

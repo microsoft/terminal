@@ -89,6 +89,9 @@
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TabPaletteItem.h" />
+    <ClInclude Include="TaskbarState.h">
+      <DependentUpon>TaskbarState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalTab.h">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
@@ -164,6 +167,9 @@
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TabPaletteItem.cpp" />
+    <ClCompile Include="TaskbarState.cpp">
+      <DependentUpon>TaskbarState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalTab.cpp">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClCompile>
@@ -256,6 +262,7 @@
     </Midl>
     <Midl Include="TabBase.idl" />
     <Midl Include="TabPaletteItem.idl" />
+    <Midl Include="TaskbarState.idl" />
     <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
