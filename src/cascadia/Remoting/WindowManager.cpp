@@ -254,11 +254,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // window, and when the current monarch dies.
 
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
-
-#if TIL_FEATURE_TRAYICON_ENABLED
         _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
         _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
-#endif
 
         _BecameMonarchHandlers(*this, nullptr);
     }
@@ -516,7 +513,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::SummonAllWindows()
     {
+#if TIL_FEATURE_TRAYICON_ENABLED
         _monarch.SummonAllWindows();
+#endif
     }
 
     Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> WindowManager::GetPeasantNames()
@@ -526,7 +525,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _monarch.GetPeasantNames();
     }
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     // These should only be called if we're a Peasant.
     void WindowManager::RequestShowTrayIcon()
     {
@@ -550,6 +548,5 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         return false;
     }
-#endif
 
 }

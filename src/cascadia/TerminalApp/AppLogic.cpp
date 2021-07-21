@@ -1452,6 +1452,7 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::GetMinimizeToTray()
     {
+#if TIL_FEATURE_TRAYICON_ENABLED
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
@@ -1459,10 +1460,14 @@ namespace winrt::TerminalApp::implementation
         }
 
         return _settings.GlobalSettings().MinimizeToTray();
+#else
+        return false;
+#endif
     }
 
     bool AppLogic::GetAlwaysShowTrayIcon()
     {
+#if TIL_FEATURE_TRAYICON_ENABLED
         if (!_loadedInitialSettings)
         {
             // Load settings if we haven't already
@@ -1470,5 +1475,8 @@ namespace winrt::TerminalApp::implementation
         }
 
         return _settings.GlobalSettings().AlwaysShowTrayIcon();
+#else
+        return false;
+#endif
     }
 }

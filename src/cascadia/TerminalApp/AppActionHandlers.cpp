@@ -843,7 +843,6 @@ namespace winrt::TerminalApp::implementation
             _MinimizeToTrayRequestedHandlers(*this, nullptr);
         }
 #endif
-
         args.Handled(true);
     }
 }

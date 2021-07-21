@@ -2,12 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-
 #include "NonClientIslandWindow.h"
-
-#if TIL_FEATURE_TRAYICON_ENABLED
 #include "TrayIcon.h"
-#endif
 
 class AppHost
 {
@@ -90,7 +86,6 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     void _MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                   const winrt::Windows::Foundation::IInspectable&);
 
@@ -103,5 +98,4 @@ private:
     winrt::event_token _TrayIconPressedToken;
     winrt::event_token _ShowTrayContextMenuToken;
     winrt::event_token _TrayMenuItemSelectedToken;
-#endif
 };

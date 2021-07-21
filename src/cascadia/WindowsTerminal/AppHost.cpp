@@ -65,9 +65,7 @@ AppHost::AppHost() noexcept :
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
-#endif
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
@@ -96,12 +94,10 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
-#if TIL_FEATURE_TRAYICON_ENABLED
     if (_window->IsQuakeWindow())
     {
         _windowManager.RequestHideTrayIcon();
     }
-#endif
 
     // destruction order is important for proper teardown here
     _window = nullptr;
@@ -280,10 +276,7 @@ void AppHost::Initialize()
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
-
-#if TIL_FEATURE_TRAYICON_ENABLED
     _logic.MinimizeToTrayRequested({ this, &AppHost::_MinimizeToTrayRequested });
-#endif
 
     _window->UpdateTitle(_logic.Title());
 
@@ -663,7 +656,6 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     // The monarch is just going to be THE listener for inbound connections.
     _listenForInboundConnections();
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     if (_windowManager.DoesQuakeWindowExist() ||
         _window->IsQuakeWindow() ||
         (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray()))
@@ -674,7 +666,6 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     // These events are coming from peasants that become or un-become quake windows.
     _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
     _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });
-#endif
 }
 
 void AppHost::_listenForInboundConnections()
@@ -951,15 +942,14 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 {
     _setupGlobalHotkeys();
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     // If we're monarch, we need to check some conditions to show the tray icon.
     // If there's a Quake window somewhere, we'll want to keep the tray icon.
-    // Then there's also two particular settings for the tray icon -
-    // MinimizeToTray and AlwaysShowTrayIcon. If either
+    // Then there's also two settings - MinimizeToTray and AlwaysShowTrayIcon. If either
     // one of them are true, we want to make sure there's a tray icon.
     // If both are false, we want to remove our icon from the tray (if we had one).
     // When we remove our icon from the tray, we'll also want to re-summon
-    // any hidden windows.
+    // any hidden windows, but right now we're not keeping track of who's hidden,
+    // so just summon them all.
     if (_windowManager.IsMonarch())
     {
         if (!_windowManager.DoesQuakeWindowExist())
@@ -977,13 +967,11 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     }
 
     _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
-#endif
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-#if TIL_FEATURE_TRAYICON_ENABLED
     // We want the quake window to be accessible through the tray icon.
     // This means if there's a quake window _somewhere_, we want the tray icon
     // to show regardless of the tray icon settings.
@@ -997,7 +985,6 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     {
         _HideTrayIconRequested();
     }
-#endif
 
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
@@ -1013,7 +1000,6 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     _HandleSummon(sender, summonArgs);
 }
 
-#if TIL_FEATURE_TRAYICON_ENABLED
 void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspectable&,
                                        const winrt::Windows::Foundation::IInspectable&)
 {
@@ -1028,6 +1014,7 @@ void AppHost::_MinimizeToTrayRequested(const winrt::Windows::Foundation::IInspec
 // - <none>
 void AppHost::_CreateTrayIcon()
 {
+#if TIL_FEATURE_TRAYICON_ENABLED
     _trayIcon = std::make_unique<TrayIcon>(_window->GetHandle());
 
     // Hookup the handlers, save the tokens for revoking if settings change.
@@ -1036,6 +1023,7 @@ void AppHost::_CreateTrayIcon()
     _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantNames()); });
     _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
     _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
+#endif
 }
 
 // Method Description:
@@ -1046,6 +1034,7 @@ void AppHost::_CreateTrayIcon()
 // - <none>
 void AppHost::_DestroyTrayIcon()
 {
+#if TIL_FEATURE_TRAYICON_ENABLED
     _window->NotifyReAddTrayIcon(_ReAddTrayIconToken);
     _window->NotifyTrayIconPressed(_TrayIconPressedToken);
     _window->NotifyShowTrayContextMenu(_ShowTrayContextMenuToken);
@@ -1053,10 +1042,12 @@ void AppHost::_DestroyTrayIcon()
 
     _trayIcon->DestroyTrayIcon();
     _trayIcon = nullptr;
+#endif
 }
 
 void AppHost::_ShowTrayIconRequested()
 {
+#if TIL_FEATURE_TRAYICON_ENABLED
     if (_windowManager.IsMonarch())
     {
         if (!_trayIcon)
@@ -1069,10 +1060,12 @@ void AppHost::_ShowTrayIconRequested()
         // TODO: Tell WindowManager to notify Monarch to show icon.
         _windowManager.RequestShowTrayIcon();
     }
+#endif
 }
 
 void AppHost::_HideTrayIconRequested()
 {
+#if TIL_FEATURE_TRAYICON_ENABLED
     if (_windowManager.IsMonarch())
     {
         // Destroy it only if our settings allow it
@@ -1088,5 +1081,5 @@ void AppHost::_HideTrayIconRequested()
         // TODO: Tell WindowManager to notify Monarch to hide the icon.
         _windowManager.RequestHideTrayIcon();
     }
-}
 #endif
+}

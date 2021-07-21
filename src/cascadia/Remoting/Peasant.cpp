@@ -226,7 +226,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     void Peasant::RequestShowTrayIcon()
     {
         try
@@ -258,5 +257,4 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
-#endif
 }

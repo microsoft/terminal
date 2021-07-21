@@ -637,9 +637,6 @@
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Command Palette</value>
   </data>
-  <data name="AppName" xml:space="preserve">
-    <value>Windows Terminal</value>
-  </data>
   <data name="TrayIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
     <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>

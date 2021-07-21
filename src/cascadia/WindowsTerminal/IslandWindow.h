@@ -48,22 +48,17 @@ public:
 
     void HideWindow();
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     void SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept;
-#endif
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
-
-#if TIL_FEATURE_TRAYICON_ENABLED
     WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyShowTrayContextMenu, winrt::delegate<void(til::point)>);
     WINRT_CALLBACK(NotifyTrayMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
     WINRT_CALLBACK(NotifyReAddTrayIcon, winrt::delegate<void()>);
-#endif
 
 protected:
     void ForceResize()
@@ -126,9 +121,7 @@ protected:
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
-#if TIL_FEATURE_TRAYICON_ENABLED
     bool _minimizeToTray{ false };
-#endif
 
 private:
     // This minimum width allows for width the tabs fit
