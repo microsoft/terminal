@@ -13,10 +13,6 @@ static constexpr float POINTS_PER_INCH = 72.0f;
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
 static constexpr size_t TAG_LENGTH = 4;
-static constexpr float FontSizeToPoints(const float fontSize)
-{
-    return fontSize * (72.0f / 96.0f);
-}
 
 using namespace Microsoft::Console::Render;
 
@@ -594,7 +590,6 @@ float DxFontRenderData::FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontSty
 std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                                     const DWRITE_FONT_STRETCH fontStretch,
                                                                     const DWRITE_FONT_STYLE fontStyle,
-                                                                    const float fontSize,
                                                                     IDWriteTextFormat3* format)
 {
     FAIL_FAST_IF_NULL(format);
@@ -621,9 +616,6 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
         case DWRITE_FONT_AXIS_TAG_SLANT:
             WI_SetFlag(axisTagPresence, AxisTagPresence::Slant);
             break;
-        case DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE:
-            WI_SetFlag(axisTagPresence, AxisTagPresence::OpticalSize);
-            break;
         }
     }
 
@@ -642,10 +634,6 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
     if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Slant))
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, FontStyleToSlantFixedAxisValue(fontStyle) });
-    }
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::OpticalSize))
-    {
-        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_OPTICAL_SIZE, FontSizeToPoints(fontSize) });
     }
 
     return axesVector;

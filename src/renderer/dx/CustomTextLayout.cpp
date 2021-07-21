@@ -1279,7 +1279,7 @@ CATCH_RETURN();
         // newer MapCharacters to apply axes of variation to the font
         if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
-            const auto axesVector = _fontRenderData->GetAxisVector(weight, stretch, style, format1->GetFontSize(), format3.Get());
+            const auto axesVector = _fontRenderData->GetAxisVector(weight, stretch, style, format3.Get());
             // Walk through and analyze the entire string
             while (textLength > 0)
             {

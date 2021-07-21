@@ -23,7 +23,6 @@ namespace Microsoft::Console::Render
         Width = 0x02,
         Italic = 0x04,
         Slant = 0x08,
-        OpticalSize = 0x10,
     };
     DEFINE_ENUM_FLAG_OPERATORS(AxisTagPresence);
 
@@ -95,7 +94,6 @@ namespace Microsoft::Console::Render
         std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                           const DWRITE_FONT_STRETCH fontStretch,
                                                           const DWRITE_FONT_STYLE fontStyle,
-                                                          const float fontSize,
                                                           IDWriteTextFormat3* format);
 
     private:
