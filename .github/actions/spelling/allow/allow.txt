@@ -1,13 +1,13 @@
-Apc
 apc
 calt
 ccmp
+Apc
 clickable
 clig
 copyable
 dalet
-Dcs
 dcs
+Dcs
 dialytika
 dje
 downside
@@ -60,6 +60,7 @@ tonos
 tshe
 UIs
 und
+unregister
 versioned
 We'd
 wildcards

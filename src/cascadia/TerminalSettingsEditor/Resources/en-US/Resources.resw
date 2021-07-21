@@ -1170,4 +1170,20 @@
     <value>Add new</value>
     <comment>Button label that creates a new action on the actions page.</comment>
   </data>
+  <data name="Actions_ActionComboBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Action</value>
+    <comment>Label for a control that sets the action of a key binding.</comment>
+  </data>
+  <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.HelpText" xml:space="preserve">
+    <value>Input your desired keyboard shortcut.</value>
+    <comment>Help text directing users how to use the "KeyChordListener" control. Pressing a keyboard shortcut will be recorded by this control.</comment>
+  </data>
+  <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.LocalizedControlType" xml:space="preserve">
+    <value>shortcut listener</value>
+    <comment>The control type for a control that awaits keyboard input and records it.</comment>
+  </data>
+  <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Shortcut</value>
+    <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+  </data>
 </root>

@@ -13,6 +13,9 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <ItemGroup>
     <ClInclude Include="AzureClientID.h" />
+    <ClInclude Include="ConnectionInformation.h">
+      <DependentUpon>ConnectionInformation.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="AzureConnection.h">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClInclude>
@@ -28,6 +31,9 @@
   <ItemGroup>
     <ClCompile Include="CTerminalHandoff.cpp" />
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="ConnectionInformation.cpp">
+      <DependentUpon>ConnectionInformation.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="AzureConnection.cpp">
       <DependentUpon>AzureConnection.idl</DependentUpon>
     </ClCompile>
@@ -43,6 +49,7 @@
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Midl Include="ConnectionInformation.idl" />
     <Midl Include="ITerminalConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
     <Midl Include="EchoConnection.idl" />

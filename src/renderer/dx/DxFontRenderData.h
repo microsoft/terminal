@@ -89,8 +89,6 @@ namespace Microsoft::Console::Render
 
         bool DidUserSetFeatures() const noexcept;
 
-        float FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept;
-        float FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept;
         std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                           const DWRITE_FONT_STRETCH fontStretch,
                                                           const DWRITE_FONT_STYLE fontStyle,
@@ -114,6 +112,8 @@ namespace Microsoft::Console::Render
 
         void _SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features);
         void _SetAxes(const std::unordered_map<std::wstring_view, float>& axes);
+        float _FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept;
+        float _FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept;
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 

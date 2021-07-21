@@ -82,6 +82,20 @@ public:
     }
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+    constexpr ControlKeyStates(const winrt::Microsoft::Terminal::Core::ControlKeyStates& projKeyStates) :
+        ControlKeyStates(projKeyStates.Value)
+    {
+    }
+
+    operator winrt::Microsoft::Terminal::Core::ControlKeyStates() const noexcept
+    {
+        winrt::Microsoft::Terminal::Core::ControlKeyStates ret;
+        ret.Value = _value;
+        return ret;
+    }
+#endif
+
     constexpr DWORD Value() const noexcept
     {
         return _value;

@@ -911,7 +911,6 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         auto removedChild = closeFirst ? _firstChild : _secondChild;
         auto remainingChild = closeFirst ? _secondChild : _firstChild;
         const bool splitWidth = _splitState == SplitState::Vertical;
-        const auto totalSize = splitWidth ? _root.ActualWidth() : _root.ActualHeight();
 
         Size removedOriginalSize{
             ::base::saturated_cast<float>(removedChild->_root.ActualWidth()),

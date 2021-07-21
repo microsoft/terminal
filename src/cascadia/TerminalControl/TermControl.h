@@ -40,8 +40,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         float SnapDimensionToGrid(const bool widthOrHeight, const float dimension);
 
 #pragma region ICoreState
-        const size_t TaskbarState() const noexcept;
-        const size_t TaskbarProgress() const noexcept;
+        const uint64_t TaskbarState() const noexcept;
+        const uint64_t TaskbarProgress() const noexcept;
 
         hstring Title();
         Windows::Foundation::IReference<winrt::Windows::UI::Color> TabColor() noexcept;
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         TerminalConnection::ConnectionState ConnectionState() const;
 
-        int ScrollOffset();
+        int ScrollOffset() const;
         int ViewHeight() const;
         int BufferHeight() const;
 
@@ -84,7 +84,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ~TermControl();
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
-        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
@@ -104,19 +103,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
 
-        static ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
+        static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
+        static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
 
-        FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs, _core, CopyToClipboard);
-        FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
-        FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
-        FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
-        FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
-        FORWARDED_TYPED_EVENT(PasteFromClipboard,     IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
+        PROJECTED_FORWARDED_TYPED_EVENT(CopyToClipboard,        IInspectable, Control::CopyToClipboardEventArgs, _core, CopyToClipboard);
+        PROJECTED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
+        PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
+
+        PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
         TYPED_EVENT(OpenHyperlink,             IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(RaiseNotice,               IInspectable, Control::NoticeEventArgs);
@@ -141,11 +142,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
         // (C++ class members are destroyed in reverse order.)
         // Further, the TermControlAutomationPeer must be destructed after _uiaEngine!
-        winrt::Windows::UI::Xaml::Automation::Peers::AutomationPeer _automationPeer{ nullptr };
-        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
+        Control::TermControlAutomationPeer _automationPeer{ nullptr };
+        Control::ControlInteractivity _interactivity{ nullptr };
+        Control::ControlCore _core{ nullptr };
 
-        winrt::com_ptr<ControlCore> _core;
-        winrt::com_ptr<ControlInteractivity> _interactivity;
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
         IControlSettings _settings;
@@ -239,8 +239,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _TryStartAutoScroll(Windows::UI::Input::PointerPoint const& pointerPoint, const double scrollVelocity);
         void _TryStopAutoScroll(const uint32_t pointerId);
         void _UpdateAutoScroll(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
-
-        static Windows::UI::Xaml::Thickness _ParseThicknessFromPadding(const hstring padding);
 
         void _KeyHandler(Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e, const bool keyDown);
         ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;

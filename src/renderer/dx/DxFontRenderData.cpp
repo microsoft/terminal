@@ -534,7 +534,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
 // - fontStretch: the old DWRITE_FONT_STRETCH enum to be converted into an axis value
 // Return value:
 // - The float value corresponding to the passed in fontStretch
-float DxFontRenderData::FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept
+float DxFontRenderData::_FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept
 {
     // 10 elements from DWRITE_FONT_STRETCH_UNDEFINED (0) to DWRITE_FONT_STRETCH_ULTRA_EXPANDED (9)
     static constexpr auto fontStretchEnumToVal = std::array{ 100.0f, 50.0f, 62.5f, 75.0f, 87.5f, 100.0f, 112.5f, 125.0f, 150.0f, 200.0f };
@@ -554,7 +554,7 @@ float DxFontRenderData::FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStre
 // - fontStyle: the old DWRITE_FONT_STYLE enum to be converted into an axis value
 // Return value:
 // - The float value corresponding to the passed in fontStyle
-float DxFontRenderData::FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept
+float DxFontRenderData::_FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept
 {
     // DWRITE_FONT_STYLE_NORMAL (0), DWRITE_FONT_STYLE_OBLIQUE (1), DWRITE_FONT_STYLE_ITALIC (2)
     static constexpr auto fontStyleEnumToVal = std::array{ 0.0f, -20.0f, -12.0f };
@@ -625,7 +625,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
     }
     if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Width))
     {
-        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WIDTH, FontStretchToWidthAxisValue(fontStretch) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WIDTH, _FontStretchToWidthAxisValue(fontStretch) });
     }
     if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Italic))
     {
@@ -633,7 +633,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
     }
     if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Slant))
     {
-        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, FontStyleToSlantFixedAxisValue(fontStyle) });
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, _FontStyleToSlantFixedAxisValue(fontStyle) });
     }
 
     return axesVector;
