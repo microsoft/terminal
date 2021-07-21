@@ -1019,6 +1019,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
                     // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
                     if (_selection->end.Y > 0)
                     {
+                        _selection->start.X = 0;
                         _selection->end.Y -= 1;
                     }
                     else
