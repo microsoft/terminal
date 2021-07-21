@@ -40,6 +40,8 @@ public:
     const ConsoleProcessPolicy GetPolicy() const;
     const ConsoleShimPolicy GetShimPolicy() const;
 
+    const HANDLE GetRawHandle() const;
+
     CD_CONNECTION_INFORMATION GetConnectionInformation(IDeviceComm* deviceComm) const;
 
 private:

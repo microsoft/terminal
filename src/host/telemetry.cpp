@@ -587,3 +587,8 @@ void Telemetry::LogRipMessage(_In_z_ const char* pszMessage, ...) const
                                 TraceLoggingString(szMessageEvaluated, "Message"));
     }
 }
+
+bool Telemetry::IsUserInteractive()
+{
+    return _fUserInteractiveForTelemetry;
+}

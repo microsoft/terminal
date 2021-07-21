@@ -21,6 +21,7 @@ enum TraceKeywords
     API = 0x400,
     UIA = 0x800,
     CookedRead = 0x1000,
+    ConsoleAttachDetach = 0x2000,
     All = 0x1FFF
 };
 DEFINE_ENUM_FLAG_OPERATORS(TraceKeywords);
@@ -414,6 +415,38 @@ void Tracing::s_TraceCookedRead(_In_reads_(cchCookedBufferLength) const wchar_t*
         TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
         TraceLoggingKeyword(TIL_KEYWORD_TRACE),
         TraceLoggingKeyword(TraceKeywords::CookedRead));
+}
+
+void Tracing::s_TraceConsoleAttachDetach(_In_ const ConsoleProcessHandle* pConsoleProcessHandle, _In_ bool bIsAttach)
+{
+    FILETIME ftCreationTime, ftDummyTime = { 0 };
+    ULARGE_INTEGER creationTime = { 0 };
+    
+    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider,
+                                    WINEVENT_LEVEL_LOG_ALWAYS,
+                                    TraceKeywords::ConsoleAttachDetach)) {
+
+        if (::GetProcessTimes(pConsoleProcessHandle->GetRawHandle(),
+                              &ftCreationTime,
+                              &ftDummyTime,
+                              &ftDummyTime,
+                              &ftDummyTime)) {
+            creationTime.HighPart = ftCreationTime.dwHighDateTime;
+            creationTime.LowPart = ftCreationTime.dwLowDateTime;
+        }
+
+        bool bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
+
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "ConsoleAttachDetach",
+            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "ProcessId"),
+            TraceLoggingUInt64(creationTime.QuadPart, "ProcessCreationTime"),
+            TraceLoggingBool(bIsAttach, "IsAttach"),
+            TraceLoggingBool(bIsUserInteractive, "IsUserInteractive"),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+            TraceLoggingKeyword(TraceKeywords::ConsoleAttachDetach));
+    }
 }
 
 void __stdcall Tracing::TraceFailure(const wil::FailureInfo& failure) noexcept

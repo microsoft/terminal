@@ -65,3 +65,10 @@ const ConsoleShimPolicy ConsoleProcessHandle::GetShimPolicy() const
 {
     return _shimPolicy;
 }
+
+// Routine Description:
+// - Retrieves the raw process handle
+const HANDLE ConsoleProcessHandle::GetRawHandle() const
+{
+    return _hProcess.get();
+}

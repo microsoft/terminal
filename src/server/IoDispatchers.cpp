@@ -431,6 +431,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         CommandHistory::s_Free((HANDLE)ProcessData);
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
+    
+    Tracing::s_TraceConsoleAttachDetach(ProcessData, true);
 
     UnlockConsole();
 
@@ -469,6 +471,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
     {
         pNotifier->NotifyConsoleEndApplicationEvent(pProcessData->dwProcessId);
     }
+
+    Tracing::s_TraceConsoleAttachDetach(pProcessData, false);
 
     LOG_IF_FAILED(RemoveConsole(pProcessData));
 

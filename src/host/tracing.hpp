@@ -62,7 +62,8 @@ public:
     static void s_TraceWindowMessage(const MSG& msg);
     static void s_TraceInputRecord(const INPUT_RECORD& inputRecord);
 
-    static void Tracing::s_TraceCookedRead(_In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength);
+    static void s_TraceCookedRead(_In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength);
+    static void s_TraceConsoleAttachDetach(_In_ const ConsoleProcessHandle* pConsoleProcessHandle, _In_ bool bIsAttach);
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
