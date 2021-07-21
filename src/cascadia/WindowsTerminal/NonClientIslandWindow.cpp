@@ -365,10 +365,10 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
     // !! BODGY !!
     //
     // For inexplicable reasons, the top row of pixels on our tabs, new tab
-    // button, and caption buttons is totally unclickable. The mouse simply
+    // button, and caption buttons is totally un-clickable. The mouse simply
     // refuses to interact with them. So when we're maximized, on certain
     // monitor configurations, this results in the top row of pixels not
-    // reacting to clicks at all. To obey Fitt's Law, we're gonna hackily shift
+    // reacting to clicks at all. To obey Fitt's Law, we're gonna shift
     // the entire island up one pixel. That will result in the top row of pixels
     // in the window actually being the _second_ row of pixels for those
     // buttons, which will make them clickable. It's perhaps not the right fix,
