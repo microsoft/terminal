@@ -2038,31 +2038,49 @@ namespace winrt::TerminalApp::implementation
         _dialogPresenter = dialogPresenter;
     }
 
-    // Method Description:
-    // - Gets the taskbar state value from the last active control
-    // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarState()
+    winrt::TerminalApp::TaskbarState TerminalPage::TaskbarState() const
     {
-        if (auto tab{ _GetFocusedTabImpl() })
+        std::vector<winrt::TerminalApp::TaskbarState> states;
+
+        for (const auto& tab : _tabs)
         {
-            return tab->GetCombinedTaskbarState().State();
+            if (auto tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                auto tabState{ tabImpl->GetCombinedTaskbarState() };
+                states.push_back(tabState);
+            }
         }
-        return {};
+
+        std::sort(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
+
+        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() : states[0];
     }
 
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarProgress()
-    {
-        if (auto tab{ _GetFocusedTabImpl() })
-        {
-            return tab->GetCombinedTaskbarState().Progress();
-        }
-        return {};
-    }
+    // // Method Description:
+    // // - Gets the taskbar state value from the last active control
+    // // Return Value:
+    // // - The taskbar state of the last active control
+    // uint64_t TerminalPage::GetLastActiveControlTaskbarState()
+    // {
+    //     if (auto tab{ _GetFocusedTabImpl() })
+    //     {
+    //         return tab->GetCombinedTaskbarState().State();
+    //     }
+    //     return {};
+    // }
+
+    // // Method Description:
+    // // - Gets the taskbar progress value from the last active control
+    // // Return Value:
+    // // - The taskbar progress of the last active control
+    // uint64_t TerminalPage::GetLastActiveControlTaskbarProgress()
+    // {
+    //     if (auto tab{ _GetFocusedTabImpl() })
+    //     {
+    //         return tab->GetCombinedTaskbarState().Progress();
+    //     }
+    //     return {};
+    // }
 
     // Method Description:
     // - This is the method that App will call when the titlebar
