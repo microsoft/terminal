@@ -407,7 +407,7 @@ public:
         return {};
     }
 
-    void CircleSelections()
+    void CircleSelections() noexcept
     {
         return;
     }
