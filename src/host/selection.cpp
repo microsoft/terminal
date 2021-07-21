@@ -434,6 +434,13 @@ void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coor
     CATCH_LOG();
 }
 
+void Selection::CircleSelections()
+{
+    _coordSelectionAnchor.Y -= 1;
+    _srSelectionRect.Bottom -= 1;
+    _srSelectionRect.Top -= 1;
+}
+
 // Routine Description:
 // - Enters mark mode selection. Prepares the cursor to move around to select a region and sets up state variables.
 // Arguments:

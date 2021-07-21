@@ -69,6 +69,8 @@ namespace Microsoft::Console::Render
 
         virtual const std::vector<size_t> GetPatternId(const COORD location) const noexcept = 0;
 
+        virtual void CircleSelections() = 0;
+
     protected:
         IRenderData() = default;
     };
