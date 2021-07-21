@@ -216,8 +216,6 @@ Json::Value Profile::GenerateStub() const
         stub[JsonKey(SourceKey)] = winrt::to_string(source);
     }
 
-    stub[JsonKey(HiddenKey)] = Hidden();
-
     return stub;
 }
 
