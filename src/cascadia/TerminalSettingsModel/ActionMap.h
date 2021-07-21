@@ -36,7 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::size_t operator()(const Control::KeyChord& key) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(key.Modifiers(), key.Vkey());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(key.Modifiers(), key.Vkey(), key.ScanCode());
         }
     };
 
@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
         {
-            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
+            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey() && lhs.ScanCode() == rhs.ScanCode();
         }
     };
 
@@ -79,7 +79,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
-        std::optional<Model::Command> _GetActionByKeyChordInternal(Control::KeyChord const& keys) const;
+        std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
