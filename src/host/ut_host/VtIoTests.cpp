@@ -406,11 +406,6 @@ public:
     {
         return {};
     }
-
-    void CircleSelections() noexcept
-    {
-        return;
-    }
 };
 
 void VtIoTests::RendererDtorAndThread()

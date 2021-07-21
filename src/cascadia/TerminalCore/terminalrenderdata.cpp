@@ -169,15 +169,6 @@ catch (...)
     return {};
 }
 
-void Terminal::CircleSelections() noexcept
-{
-    if (_selection)
-    {
-        _selection->start.Y -= 1;
-        _selection->end.Y -= 1;
-    }
-}
-
 void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
 {
 #pragma warning(push)

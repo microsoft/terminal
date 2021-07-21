@@ -59,8 +59,6 @@ public:
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;
 
     const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
-
-    void CircleSelections() noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

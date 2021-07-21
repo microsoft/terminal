@@ -59,7 +59,6 @@ public:
     void ClearSelection(const bool fStartingNewSelection);
     void ColorSelection(const SMALL_RECT& srRect, const TextAttribute attr);
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
-    void CircleSelections() noexcept;
 
     // delete these or we can accidentally get copies of the singleton
     Selection(Selection const&) = delete;

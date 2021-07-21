@@ -1004,6 +1004,13 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
+
+            // Update our selection too, so it doesn't move as the buffer is cycled
+            if (_selection)
+            {
+                _selection->start.Y -= 1;
+                _selection->end.Y -= 1;
+            }
         }
 
         // manually erase our pattern intervals since the locations have changed now

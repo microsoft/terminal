@@ -481,7 +481,6 @@ void Renderer::TriggerCircling()
             LOG_IF_FAILED(_PaintFrameForEngine(pEngine));
         }
     }
-    _pData->CircleSelections();
 }
 
 // Routine Description:
