@@ -1008,8 +1008,25 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             // Update our selection too, so it doesn't move as the buffer is cycled
             if (_selection)
             {
-                _selection->start.Y -= 1;
-                _selection->end.Y -= 1;
+                // If the start of the selection is above 0, we can reduce both the start and end by 1
+                if (_selection->start.Y > 0)
+                {
+                    _selection->start.Y -= 1;
+                    _selection->end.Y -= 1;
+                }
+                else
+                {
+                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
+                    if (_selection->end.Y > 0)
+                    {
+                        _selection->end.Y -= 1;
+                    }
+                    else
+                    {
+                        // Both the start and end of the selection are at 0, clear the selection
+                        _selection.reset();
+                    }
+                }
             }
         }
 
