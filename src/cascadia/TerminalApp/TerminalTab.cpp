@@ -486,6 +486,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (direction == FocusDirection::Previous)
         {
+            if (_mruPanes.size() < 2)
+            {
+                return;
+            }
             // To get to the previous pane, get the id of the previous pane and focus to that
             _rootPane->FocusPane(_mruPanes.at(1));
         }
@@ -509,6 +513,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (direction == FocusDirection::Previous)
         {
+            if (_mruPanes.size() < 2)
+            {
+                return;
+            }
             if (auto lastPane = _rootPane->FindPane(_mruPanes.at(1)))
             {
                 _rootPane->SwapPanes(_activePane, lastPane);

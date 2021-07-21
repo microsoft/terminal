@@ -303,6 +303,32 @@ bool Pane::NavigateFocus(const FocusDirection& direction)
 }
 
 // Method Description:
+// - Attempts to find the parent pane of the provided pane.
+// Arguments:
+// - pane: The pane to search for.
+// Return Value:
+// - the parent of `pane` if pane is in this tree.
+std::shared_ptr<Pane> Pane::_FindParentOfPane(const std::shared_ptr<Pane> pane)
+{
+    if (_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    if (_firstChild == pane || _secondChild == pane)
+    {
+        return shared_from_this();
+    }
+
+    if (auto p = _firstChild->_FindParentOfPane(pane))
+    {
+        return p;
+    }
+
+    return _secondChild->_FindParentOfPane(pane);
+}
+
+// Method Description:
 // - Attempts to swap the location of the two given panes in the tree.
 //   Searches the tree starting at this pane to find the parent pane for each of
 //   the arguments, and if both parents are found, replaces the appropriate
@@ -324,51 +350,8 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 
     // Recurse through the tree to find the parent panes of each pane that is
     // being swapped.
-    std::vector<std::shared_ptr<Pane>> parents;
-    parents.push_back(shared_from_this());
-    std::shared_ptr<Pane> firstParent = nullptr;
-    std::shared_ptr<Pane> secondParent = nullptr;
-
-    while (parents.size() > 0)
-    {
-        auto parent = parents.back();
-        parents.pop_back();
-
-        if (!parent || parent->_IsLeaf())
-        {
-            continue;
-        }
-
-        // Check if the child of the current parent is one of the two panes we
-        // are swapping. If so, record whose parent it belongs to. Otherwise
-        // add the child to the stack to be searched.
-        // This does not perform the swap of panes at this time because we do
-        // not want to leave the tree in an inconsistent state (one pane belongs
-        // to multiple other panes).
-        auto findOrAdd = [&](auto& current) {
-            if (current == first)
-            {
-                firstParent = parent;
-            }
-            else if (current == second)
-            {
-                secondParent = parent;
-            }
-            else
-            {
-                if (!current->_IsLeaf())
-                {
-                    parents.push_back(current);
-                }
-                return false;
-            }
-
-            return true;
-        };
-
-        findOrAdd(parent->_firstChild);
-        findOrAdd(parent->_secondChild);
-    }
+    std::shared_ptr<Pane> firstParent = _FindParentOfPane(first);
+    std::shared_ptr<Pane> secondParent = _FindParentOfPane(second);
 
     // We should have found either no elements, or both elements.
     // If we only found one parent then the pane SwapPane was called on did not
@@ -578,9 +561,8 @@ Pane::FocusNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direc
 // - direction: The direction to search in from the focused pane.
 // - offset: The offset, with the top-left corner being (0,0), that the current pane is relative to the root.
 // Return Value:
-// - A tuple of Panes, the first being the focused pane if found, and the second
-//   being the adjacent pane if it exists, and a bool that represents if the move
-//   goes out of bounds.
+// - The (partial) search result. If the search was successful, the focus and its neighbor will be returned.
+//   Otherwise, the neighbor will be null and the focus will be null/non-null if it was found.
 Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& direction, const Pane::PanePoint offset)
 {
     // If we are the currently focused pane, return ourselves

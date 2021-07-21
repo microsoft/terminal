@@ -409,7 +409,7 @@ void AppCommandlineArgs::_buildMoveFocusParser()
 void AppCommandlineArgs::_buildMovePaneParser()
 {
     _movePaneCommand = _app.add_subcommand("move-pane", RS_A(L"CmdMovePaneDesc"));
-    _movePaneShort = _app.add_subcommand("mp", RS_A(L"CmdMFDesc"));
+    _movePaneShort = _app.add_subcommand("mp", RS_A(L"CmdMPDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
         std::map<std::string, FocusDirection> map = {
