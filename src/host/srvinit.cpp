@@ -340,12 +340,21 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
     // go out of scope by the time that thread starts.
     // (e.g. if someone sent us a pointer to stack memory... that could happen
     //  ask me how I know... :| )
-    auto heapConnectMessage = std::make_unique<CONSOLE_API_MSG>(*connectMessage);
+    std::unique_ptr<CONSOLE_API_MSG> heapConnectMessage;
+    if (connectMessage)
+    {
+        // Allocate and copy onto the heap
+        heapConnectMessage = std::make_unique<CONSOLE_API_MSG>(*connectMessage);
 
-    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, heapConnectMessage.get(), 0, nullptr);
+        // Set the pointer that `CreateThread` uses to the heap space
+        connectMessage = heapConnectMessage.get();
+    }
+
+    HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
 
     // If we successfully started the other thread, it's that guy's problem to free the connect message.
+    // (If we didn't make one, it should be no problem to release the empty unique_ptr.)
     heapConnectMessage.release();
 
     LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
