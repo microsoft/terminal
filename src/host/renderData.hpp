@@ -60,7 +60,7 @@ public:
 
     const std::vector<size_t> GetPatternId(const COORD location) const noexcept override;
 
-    void CircleSelections() override;
+    void CircleSelections() noexcept override;
 #pragma endregion
 
 #pragma region IUiaData

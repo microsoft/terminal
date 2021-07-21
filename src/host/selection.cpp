@@ -434,7 +434,7 @@ void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coor
     CATCH_LOG();
 }
 
-void Selection::CircleSelections()
+void Selection::CircleSelections() noexcept
 {
     _coordSelectionAnchor.Y -= 1;
     _srSelectionRect.Bottom -= 1;

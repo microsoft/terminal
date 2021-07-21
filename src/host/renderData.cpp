@@ -470,7 +470,7 @@ void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coo
     Selection::Instance().ColorSelection(coordSelectionStart, coordSelectionEnd, attr);
 }
 
-void RenderData::CircleSelections()
+void RenderData::CircleSelections() noexcept
 {
     Selection::Instance().CircleSelections();
 }

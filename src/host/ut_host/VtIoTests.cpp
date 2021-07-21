@@ -406,6 +406,11 @@ public:
     {
         return {};
     }
+
+    void CircleSelections()
+    {
+        return;
+    }
 };
 
 void VtIoTests::RendererDtorAndThread()

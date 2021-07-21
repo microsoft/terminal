@@ -169,7 +169,7 @@ catch (...)
     return {};
 }
 
-void Terminal::CircleSelections()
+void Terminal::CircleSelections() noexcept
 {
     if (_selection)
     {
