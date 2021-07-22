@@ -23,11 +23,6 @@
 
 #include "ControlCore.h"
 
-namespace Microsoft::Console::VirtualTerminal
-{
-    struct MouseButtonState;
-}
-
 namespace ControlUnitTests
 {
     class ControlCoreTests;
@@ -42,20 +37,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         ControlInteractivity(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection);
 
-        void GainFocus();
+        void GotFocus();
+        void LostFocus();
         void UpdateSettings();
         void Initialize();
-        winrt::com_ptr<ControlCore> GetCore();
+        Control::ControlCore Core();
+
+        Control::InteractivityAutomationPeer OnCreateAutomationPeer();
+        ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
 #pragma region Input Methods
-        void PointerPressed(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+        void PointerPressed(Control::MouseButtonState buttonState,
                             const unsigned int pointerUpdateKind,
                             const uint64_t timestamp,
                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                             const til::point pixelPosition);
         void TouchPressed(const til::point contactPoint);
 
-        void PointerMoved(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+        void PointerMoved(Control::MouseButtonState buttonState,
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
@@ -63,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void TouchMoved(const til::point newTouchPoint,
                         const bool focused);
 
-        void PointerReleased(::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState,
+        void PointerReleased(Control::MouseButtonState buttonState,
                              const unsigned int pointerUpdateKind,
                              const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                              const til::point pixelPosition);
@@ -72,7 +71,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool MouseWheel(const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                         const int32_t delta,
                         const til::point pixelPosition,
-                        const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
+                        const Control::MouseButtonState state);
 
         void UpdateScrollbar(const double newValue);
 
@@ -83,7 +82,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const til::point pixelPosition);
 
+        TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
+        TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
+        TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+
     private:
+        // NOTE: _uiaEngine must be ordered before _core.
+        //
+        // ControlCore::AttachUiaEngine receives a IRenderEngine as a raw pointer, which we own.
+        // We must ensure that we first destroy the ControlCore before the UiaEngine instance
+        // in order to safely resolve this unsafe pointer dependency. Otherwise a deallocated
+        // IRenderEngine is accessed when ControlCore calls Renderer::TriggerTeardown.
+        // (C++ class members are destroyed in reverse order.)
+        std::unique_ptr<::Microsoft::Console::Render::UiaEngine> _uiaEngine;
+
         winrt::com_ptr<ControlCore> _core{ nullptr };
         unsigned int _rowsToScroll;
         double _internalScrollbarPosition{ 0.0 };
@@ -128,10 +140,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void _sendPastedTextToConnection(std::wstring_view wstr);
         til::point _getTerminalPosition(const til::point& pixelPosition);
-
-        TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
-        TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
-        TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

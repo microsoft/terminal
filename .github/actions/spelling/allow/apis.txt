@@ -13,6 +13,7 @@ cmdletbinding
 COLORPROPERTY
 colspan
 COMDLG
+comparand
 cstdint
 CXICON
 CYICON
@@ -25,6 +26,7 @@ DWORDLONG
 environstrings
 EXPCMDFLAGS
 EXPCMDSTATE
+filetime
 FILTERSPEC
 FORCEFILESYSTEM
 FORCEMINIMIZE
@@ -61,6 +63,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isspace
 IStorage
 istream
 IStringable
@@ -75,6 +78,7 @@ llu
 localtime
 lround
 LSHIFT
+memicmp
 mov
 msappx
 MULTIPLEUSE
@@ -124,18 +128,23 @@ smoothstep
 snprintf
 spsc
 sregex
+SRWLOC
+SRWLOCK
 STDCPP
 STDMETHOD
 strchr
 streambuf
+strtoul
 Stubless
 Subheader
 Subpage
 syscall
 TBPF
 THEMECHANGED
+tlg
 tmp
 tolower
+toupper
 TTask
 TVal
 UChar
@@ -144,6 +153,7 @@ userenv
 wcsstr
 wcstoui
 winmain
+wmemcmp
 wpc
 wsregex
 wwinmain
@@ -152,6 +162,7 @@ XDocument
 XElement
 xfacet
 xhash
+XIcon
 xiosbase
 xlocale
 xlocbuf
@@ -167,3 +178,4 @@ xstddef
 xstring
 xtree
 xutility
+YIcon

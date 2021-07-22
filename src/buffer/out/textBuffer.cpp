@@ -418,7 +418,6 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
 
         // Store character and double byte data
         CharRow& charRow = Row.GetCharRow();
-        short const cBufferWidth = GetSize().Width();
 
         try
         {
@@ -1650,13 +1649,14 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 
             if (!cell.DbcsAttr().IsTrailing())
             {
-                selectionText.append(cell.Chars());
+                const auto chars = cell.Chars();
+                selectionText.append(chars);
 
                 if (copyTextColor)
                 {
                     const auto cellData = cell.TextAttr();
                     const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(cellData);
-                    for (const wchar_t wch : cell.Chars())
+                    for (size_t j = 0; j < chars.size(); ++j)
                     {
                         selectionFgAttr.push_back(CellFgAttr);
                         selectionBkAttr.push_back(CellBkAttr);

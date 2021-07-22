@@ -16,24 +16,6 @@ using namespace WEX::Common;
 using namespace winrt;
 using namespace winrt::Microsoft::Terminal;
 
-// These are some gross macros that let us call a private ctor for
-// Monarch/Peasant. We can't just use make_self, because that doesn't let us
-// call a private ctor. We can use com_ptr::attach, but since we're allocating
-// the thing on the stack, we need to make sure to call detach before the object
-// is destructed.
-
-#define MAKE_MONARCH(name, pid)                               \
-    Remoting::implementation::Monarch _local_##name##{ pid }; \
-    com_ptr<Remoting::implementation::Monarch> name;          \
-    name.attach(&_local_##name##);                            \
-    auto cleanup_##name## = wil::scope_exit([&]() { name.detach(); });
-
-#define MAKE_PEASANT(name, pid)                               \
-    Remoting::implementation::Peasant _local_##name##{ pid }; \
-    com_ptr<Remoting::implementation::Peasant> name;          \
-    name.attach(&_local_##name##);                            \
-    auto cleanup_##name## = wil::scope_exit([&]() { name.detach(); });
-
 namespace RemotingUnitTests
 {
     struct MockDesktopManager : implements<MockDesktopManager, IVirtualDesktopManager>
@@ -161,6 +143,15 @@ namespace RemotingUnitTests
 
         static void _findTargetWindowByNameHelper(const winrt::Windows::Foundation::IInspectable& sender,
                                                   const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);
+
+        // This template that lets us call a private ctor for Monarch/Peasant, unlike make_self.
+        // Currently I use a private implementation detail of winrt::make_self,
+        // which is bad, but I didn't want to deal with the alternatives.
+        template<typename T, typename... Args>
+        static winrt::com_ptr<T> make_private(Args&&... args)
+        {
+            return { new winrt::impl::heap_implements<T>(std::forward<Args>(args)...), winrt::take_ownership_from_abi };
+        }
     };
 
     // Helper to replace the specified peasant in a monarch with a
@@ -174,9 +165,7 @@ namespace RemotingUnitTests
             return;
         }
 
-        com_ptr<DeadPeasant> tombstone;
-        tombstone.attach(new DeadPeasant());
-        m->_peasants[peasantID] = *tombstone;
+        m->_peasants[peasantID] = winrt::make<DeadPeasant>();
     }
 
     // Helper to get the first argument out of the commandline, and try to
@@ -207,8 +196,7 @@ namespace RemotingUnitTests
 
     void RemotingTests::CreateMonarch()
     {
-        auto m1 = winrt::make_self<Remoting::implementation::Monarch>();
-        VERIFY_IS_NOT_NULL(m1);
+        auto m1 = make_private<Remoting::implementation::Monarch>();
         VERIFY_ARE_EQUAL(GetCurrentProcessId(),
                          m1->GetPID(),
                          L"A Monarch without an explicit PID should use the current PID");
@@ -216,9 +204,7 @@ namespace RemotingUnitTests
         Log::Comment(L"That's what we need for window process management, but for tests, it'll be more useful to fake the PIDs.");
 
         auto expectedFakePID = 1234u;
-        MAKE_MONARCH(m2, expectedFakePID);
-
-        VERIFY_IS_NOT_NULL(m2);
+        auto m2 = make_private<Remoting::implementation::Monarch>(expectedFakePID);
         VERIFY_ARE_EQUAL(expectedFakePID,
                          m2->GetPID(),
                          L"A Monarch with an explicit PID should use the one we provided");
@@ -226,8 +212,7 @@ namespace RemotingUnitTests
 
     void RemotingTests::CreatePeasant()
     {
-        auto p1 = winrt::make_self<Remoting::implementation::Peasant>();
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>();
         VERIFY_ARE_EQUAL(GetCurrentProcessId(),
                          p1->GetPID(),
                          L"A Peasant without an explicit PID should use the current PID");
@@ -235,9 +220,7 @@ namespace RemotingUnitTests
         Log::Comment(L"That's what we need for window process management, but for tests, it'll be more useful to fake the PIDs.");
 
         auto expectedFakePID = 2345u;
-        MAKE_PEASANT(p2, expectedFakePID);
-
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Monarch>(expectedFakePID);
         VERIFY_ARE_EQUAL(expectedFakePID,
                          p2->GetPID(),
                          L"A Peasant with an explicit PID should use the one we provided");
@@ -247,19 +230,14 @@ namespace RemotingUnitTests
     {
         Log::Comment(L"The same thing as the above test, but with `new` instead of insanity on the stack");
 
-        auto p1 = winrt::make_self<Remoting::implementation::Peasant>();
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>();
         VERIFY_ARE_EQUAL(GetCurrentProcessId(),
                          p1->GetPID(),
                          L"A Peasant without an explicit PID should use the current PID");
 
         auto expectedFakePID = 2345u;
 
-        com_ptr<Remoting::implementation::Peasant> p2;
-        VERIFY_IS_NULL(p2);
-        p2.attach(new Remoting::implementation::Peasant(expectedFakePID));
-
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(expectedFakePID);
         VERIFY_ARE_EQUAL(expectedFakePID,
                          p2->GetPID(),
                          L"A Peasant with an explicit PID should use the one we provided");
@@ -271,18 +249,9 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
         VERIFY_ARE_EQUAL(0, p1->GetID());
         VERIFY_ARE_EQUAL(0, p2->GetID());
@@ -300,18 +269,9 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
         VERIFY_ARE_EQUAL(0, p1->GetID());
         VERIFY_ARE_EQUAL(0, p2->GetID());
@@ -323,11 +283,9 @@ namespace RemotingUnitTests
         VERIFY_ARE_EQUAL(2, p2->GetID());
 
         auto maybeP1 = m0->_getPeasant(1);
-        VERIFY_IS_NOT_NULL(maybeP1);
         VERIFY_ARE_EQUAL(peasant1PID, maybeP1.GetPID());
 
         auto maybeP2 = m0->_getPeasant(2);
-        VERIFY_IS_NOT_NULL(maybeP2);
         VERIFY_ARE_EQUAL(peasant2PID, maybeP2.GetPID());
     }
 
@@ -338,22 +296,10 @@ namespace RemotingUnitTests
         const auto peasant2PID = 34567u;
         const auto monarch3PID = 45678u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        com_ptr<Remoting::implementation::Monarch> m3;
-        m3.attach(new Remoting::implementation::Monarch(monarch3PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
-        VERIFY_IS_NOT_NULL(m3);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
+        auto m3 = make_private<Remoting::implementation::Monarch>(monarch3PID);
 
         VERIFY_ARE_EQUAL(0, p1->GetID());
         VERIFY_ARE_EQUAL(0, p2->GetID());
@@ -377,18 +323,9 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
         VERIFY_ARE_EQUAL(0, p1->GetID());
         VERIFY_ARE_EQUAL(0, p2->GetID());
@@ -405,7 +342,6 @@ namespace RemotingUnitTests
         RemotingTests::_killPeasant(m0, p1->GetID());
 
         auto maybeP2 = m0->_getPeasant(2);
-        VERIFY_IS_NOT_NULL(maybeP2);
         VERIFY_ARE_EQUAL(peasant2PID, maybeP2.GetPID());
 
         auto maybeP1 = m0->_getPeasant(1);
@@ -420,9 +356,7 @@ namespace RemotingUnitTests
 
         const auto monarch0PID = 12345u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         std::vector<winrt::hstring> args{};
@@ -434,9 +368,7 @@ namespace RemotingUnitTests
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         Log::Comment(L"Propose the same args again after adding a peasant - we should still return {create new window, no ID}");
@@ -450,16 +382,12 @@ namespace RemotingUnitTests
         Log::Comment(L"Test proposing a commandline for a window that currently exists");
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
@@ -480,16 +408,12 @@ namespace RemotingUnitTests
         Log::Comment(L"Test proposing a commandline for an invalid window ID, like -1");
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         {
@@ -514,16 +438,12 @@ namespace RemotingUnitTests
         Log::Comment(L"Test proposing a commandline for the current window (ID=0)");
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
         p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
             Log::Comment(L"Commandline dispatched to p1");
@@ -552,9 +472,7 @@ namespace RemotingUnitTests
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
         m0->AddPeasant(*p2);
         p2->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
             Log::Comment(L"Commandline dispatched to p2");
@@ -594,16 +512,12 @@ namespace RemotingUnitTests
         Log::Comment(L"Test proposing a commandline for an ID that doesn't have a current peasant");
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         {
@@ -631,16 +545,12 @@ namespace RemotingUnitTests
         Log::Comment(L"Test proposing a commandline for a peasant that previously died");
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
         p1->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& /*cmdlineArgs*/) {
             Log::Comment(L"Commandline dispatched to p1");
@@ -649,9 +559,7 @@ namespace RemotingUnitTests
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
         m0->AddPeasant(*p2);
         p2->ExecuteCommandlineRequested([&](auto&&, const Remoting::CommandlineArgs& cmdlineArgs) {
             Log::Comment(L"Commandline dispatched to p2");
@@ -702,23 +610,17 @@ namespace RemotingUnitTests
         const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
         m0->AddPeasant(*p2);
 
         {
@@ -759,23 +661,17 @@ namespace RemotingUnitTests
         const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
         m0->AddPeasant(*p2);
 
         {
@@ -798,9 +694,7 @@ namespace RemotingUnitTests
 
         Log::Comment(L"Add a third peasant");
         const auto peasant3PID = 45678u;
-        com_ptr<Remoting::implementation::Peasant> p3;
-        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
-        VERIFY_IS_NOT_NULL(p3);
+        auto p3 = make_private<Remoting::implementation::Peasant>(peasant3PID);
         m0->AddPeasant(*p3);
         {
             Log::Comment(L"Activate the third peasant, first desktop");
@@ -836,23 +730,17 @@ namespace RemotingUnitTests
         const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
         m0->AddPeasant(*p2);
 
         {
@@ -875,9 +763,7 @@ namespace RemotingUnitTests
 
         Log::Comment(L"Add a third peasant");
         const auto peasant3PID = 45678u;
-        com_ptr<Remoting::implementation::Peasant> p3;
-        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
-        VERIFY_IS_NOT_NULL(p3);
+        auto p3 = make_private<Remoting::implementation::Peasant>(peasant3PID);
         m0->AddPeasant(*p3);
         {
             Log::Comment(L"Activate the third peasant, first desktop");
@@ -937,23 +823,17 @@ namespace RemotingUnitTests
         const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
         m0->AddPeasant(*p2);
 
         {
@@ -974,9 +854,7 @@ namespace RemotingUnitTests
 
         Log::Comment(L"Add a third peasant");
         const auto peasant3PID = 45678u;
-        com_ptr<Remoting::implementation::Peasant> p3;
-        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
-        VERIFY_IS_NOT_NULL(p3);
+        auto p3 = make_private<Remoting::implementation::Peasant>(peasant3PID);
         m0->AddPeasant(*p3);
         {
             Log::Comment(L"Activate the third peasant, first desktop");
@@ -1006,23 +884,17 @@ namespace RemotingUnitTests
         const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
 
         const auto monarch0PID = 12345u;
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowHelper);
 
         Log::Comment(L"Add a peasant");
         const auto peasant1PID = 23456u;
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-        VERIFY_IS_NOT_NULL(p1);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
         m0->AddPeasant(*p1);
 
         Log::Comment(L"Add a second peasant");
         const auto peasant2PID = 34567u;
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-        VERIFY_IS_NOT_NULL(p2);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
         m0->AddPeasant(*p2);
 
         {
@@ -1066,18 +938,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"_quake");
 
@@ -1165,18 +1029,9 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
         p1->WindowName(L"one");
         p2->WindowName(L"two");
@@ -1214,22 +1069,10 @@ namespace RemotingUnitTests
         const auto peasant2PID = 34567u;
         const auto monarch3PID = 45678u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        com_ptr<Remoting::implementation::Monarch> m3;
-        m3.attach(new Remoting::implementation::Monarch(monarch3PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
-        VERIFY_IS_NOT_NULL(m3);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
+        auto m3 = make_private<Remoting::implementation::Monarch>(monarch3PID);
 
         p1->WindowName(L"one");
         p2->WindowName(L"two");
@@ -1271,18 +1114,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1323,18 +1158,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1377,18 +1204,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1437,20 +1256,11 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
-        VERIFY_IS_NOT_NULL(m0);
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
         m0->FindTargetWindowRequested(&RemotingTests::_findTargetWindowByNameHelper);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1515,18 +1325,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1561,18 +1363,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1605,18 +1399,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1659,18 +1445,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1746,18 +1524,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1816,18 +1586,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1892,18 +1654,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
 
@@ -1992,22 +1746,11 @@ namespace RemotingUnitTests
         constexpr auto peasant2PID = 34567u;
         constexpr auto peasant3PID = 45678u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
+        auto p3 = make_private<Remoting::implementation::Peasant>(peasant3PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        com_ptr<Remoting::implementation::Peasant> p3;
-        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
-        VERIFY_IS_NOT_NULL(p3);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
         p3->WindowName(L"three");
@@ -2069,8 +1812,7 @@ namespace RemotingUnitTests
         }
 
         Log::Comment(L"Create a mock IVirtualDesktopManager to handle checking if a window is on a given desktop");
-        winrt::com_ptr<MockDesktopManager> manager;
-        manager.attach(new MockDesktopManager());
+        auto manager = winrt::make_self<MockDesktopManager>();
         m0->_desktopManager = manager.try_as<IVirtualDesktopManager>();
 
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
@@ -2255,22 +1997,11 @@ namespace RemotingUnitTests
         constexpr auto peasant2PID = 34567u;
         constexpr auto peasant3PID = 45678u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
+        auto p3 = make_private<Remoting::implementation::Peasant>(peasant3PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        com_ptr<Remoting::implementation::Peasant> p3;
-        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
-        VERIFY_IS_NOT_NULL(p3);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
         p3->WindowName(L"three");
@@ -2332,8 +2063,7 @@ namespace RemotingUnitTests
         }
 
         Log::Comment(L"Create a mock IVirtualDesktopManager to handle checking if a window is on a given desktop");
-        winrt::com_ptr<MockDesktopManager> manager;
-        manager.attach(new MockDesktopManager());
+        auto manager = winrt::make_self<MockDesktopManager>();
         m0->_desktopManager = manager.try_as<IVirtualDesktopManager>();
 
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
@@ -2408,22 +2138,11 @@ namespace RemotingUnitTests
         constexpr auto peasant2PID = 34567u;
         constexpr auto peasant3PID = 45678u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
+        auto p3 = make_private<Remoting::implementation::Peasant>(peasant3PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        com_ptr<Remoting::implementation::Peasant> p3;
-        p3.attach(new Remoting::implementation::Peasant(peasant3PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
-        VERIFY_IS_NOT_NULL(p3);
         p1->WindowName(L"one");
         p2->WindowName(L"two");
         p3->WindowName(L"three");
@@ -2485,8 +2204,7 @@ namespace RemotingUnitTests
         }
 
         Log::Comment(L"Create a mock IVirtualDesktopManager to handle checking if a window is on a given desktop");
-        winrt::com_ptr<MockDesktopManager> manager;
-        manager.attach(new MockDesktopManager());
+        auto manager = winrt::make_self<MockDesktopManager>();
         m0->_desktopManager = manager.try_as<IVirtualDesktopManager>();
 
         auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
@@ -2541,18 +2259,10 @@ namespace RemotingUnitTests
         const auto peasant1PID = 23456u;
         const auto peasant2PID = 34567u;
 
-        com_ptr<Remoting::implementation::Monarch> m0;
-        m0.attach(new Remoting::implementation::Monarch(monarch0PID));
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
 
-        com_ptr<Remoting::implementation::Peasant> p1;
-        p1.attach(new Remoting::implementation::Peasant(peasant1PID));
-
-        com_ptr<Remoting::implementation::Peasant> p2;
-        p2.attach(new Remoting::implementation::Peasant(peasant2PID));
-
-        VERIFY_IS_NOT_NULL(m0);
-        VERIFY_IS_NOT_NULL(p1);
-        VERIFY_IS_NOT_NULL(p2);
         p1->WindowName(L"one");
         p2->WindowName(L"_quake");
 
