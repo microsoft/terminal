@@ -640,7 +640,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - A TaskbarState object representing the combined taskbar state and
-    //   progress precentage of all our panes.
+    //   progress percentage of all our panes.
     winrt::TerminalApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
     {
         std::vector<winrt::TerminalApp::TaskbarState> states;
