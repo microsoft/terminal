@@ -279,6 +279,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _FontFace = profile.FontInfo().FontFace();
         _FontSize = profile.FontInfo().FontSize();
         _FontWeight = profile.FontInfo().FontWeight();
+        _FontFeatures = profile.FontInfo().FontFeatures();
+        _FontAxes = profile.FontInfo().FontAxes();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();

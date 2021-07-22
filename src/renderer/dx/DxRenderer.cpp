@@ -1978,15 +1978,30 @@ CATCH_RETURN()
 
 // Routine Description:
 // - Updates the font used for drawing
+// - This is the version that complies with the IRenderEngine interface
 // Arguments:
 // - pfiFontInfoDesired - Information specifying the font that is requested
 // - fiFontInfo - Filled with the nearest font actually chosen for drawing
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
+{
+    return UpdateFont(pfiFontInfoDesired, fiFontInfo, {}, {});
+}
+
+// Routine Description:
+// - Updates the font used for drawing
+// Arguments:
+// - pfiFontInfoDesired - Information specifying the font that is requested
+// - fiFontInfo - Filled with the nearest font actually chosen for drawing
+// - features - The map of font features to use
+// - axes - The map of font axes to use
+// Return Value:
+// - S_OK or relevant DirectX error
+[[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
-    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi));
+    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi, features, axes));
 
     // Prepare the text layout.
     _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());

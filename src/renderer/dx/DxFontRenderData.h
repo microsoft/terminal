@@ -16,6 +16,16 @@
 
 namespace Microsoft::Console::Render
 {
+    enum class AxisTagPresence : BYTE
+    {
+        None = 0x00,
+        Weight = 0x01,
+        Width = 0x02,
+        Italic = 0x04,
+        Slant = 0x08,
+    };
+    DEFINE_ENUM_FLAG_OPERATORS(AxisTagPresence);
+
     class DxFontRenderData
     {
     public:
@@ -51,6 +61,9 @@ namespace Microsoft::Console::Render
         // The stretch of default font
         [[nodiscard]] DWRITE_FONT_STRETCH DefaultFontStretch() noexcept;
 
+        // The font features of the default font
+        [[nodiscard]] const std::vector<DWRITE_FONT_FEATURE>& DefaultFontFeatures() const noexcept;
+
         // The DirectWrite format object representing the size and other text properties to be applied (by default)
         [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DefaultTextFormat();
 
@@ -70,12 +83,26 @@ namespace Microsoft::Console::Render
                                                                                      DWRITE_FONT_STYLE style,
                                                                                      DWRITE_FONT_STRETCH stretch);
 
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& desired, FontInfo& fiFontInfo, const int dpi, const std::unordered_map<std::wstring_view, uint32_t>& features = {}, const std::unordered_map<std::wstring_view, float>& axes = {}) noexcept;
 
         [[nodiscard]] static HRESULT STDMETHODCALLTYPE s_CalculateBoxEffect(IDWriteTextFormat* format, size_t widthPixels, IDWriteFontFace1* face, float fontScale, IBoxDrawingEffect** effect) noexcept;
 
+        bool DidUserSetFeatures() const noexcept;
+
+        std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
+                                                          const DWRITE_FONT_STRETCH fontStretch,
+                                                          const DWRITE_FONT_STYLE fontStyle,
+                                                          IDWriteTextFormat3* format);
+
     private:
         using FontAttributeMapKey = uint32_t;
+
+        bool _didUserSetFeatures{ false };
+        // The font features to apply to the text
+        std::vector<DWRITE_FONT_FEATURE> _featureVector;
+
+        // The font axes to apply to the text
+        std::vector<DWRITE_FONT_AXIS_VALUE> _axesVector;
 
         // We use this to identify font variants with different attributes.
         static FontAttributeMapKey _ToMapKey(DWRITE_FONT_WEIGHT weight, DWRITE_FONT_STYLE style, DWRITE_FONT_STRETCH stretch) noexcept
@@ -83,6 +110,10 @@ namespace Microsoft::Console::Render
             return (weight << 16) | (style << 8) | stretch;
         };
 
+        void _SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features);
+        void _SetAxes(const std::unordered_map<std::wstring_view, float>& axes);
+        float _FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept;
+        float _FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept;
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
         Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
 
