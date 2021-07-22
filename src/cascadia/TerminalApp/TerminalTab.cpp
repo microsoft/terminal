@@ -444,6 +444,7 @@ namespace winrt::TerminalApp::implementation
     // - Find the currently active pane, and then switch the split direction of
     //   its parent. E.g. switch from Horizontal to Vertical.
     // Return Value:
+
     // - <none>
     void TerminalTab::ToggleSplitOrientation()
     {
@@ -496,6 +497,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (direction == FocusDirection::Previous)
         {
+            if (_mruPanes.size() < 2)
+            {
+                return;
+            }
             // To get to the previous pane, get the id of the previous pane and focus to that
             _rootPane->FocusPane(_mruPanes.at(1));
         }
@@ -504,6 +509,35 @@ namespace winrt::TerminalApp::implementation
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
             _rootPane->NavigateFocus(direction);
+        }
+    }
+
+    // Method Description:
+    // - Attempts to swap the location of the focused pane with another pane
+    //   according to direction. When there are multiple adjacent panes it will
+    //   select the first one (top-left-most).
+    // Arguments:
+    // - direction: The direction to move the pane in.
+    // Return Value:
+    // - <none>
+    void TerminalTab::MovePane(const FocusDirection& direction)
+    {
+        if (direction == FocusDirection::Previous)
+        {
+            if (_mruPanes.size() < 2)
+            {
+                return;
+            }
+            if (auto lastPane = _rootPane->FindPane(_mruPanes.at(1)))
+            {
+                _rootPane->SwapPanes(_activePane, lastPane);
+            }
+        }
+        else
+        {
+            // NOTE: This _must_ be called on the root pane, so that it can propagate
+            // throughout the entire tree.
+            _rootPane->MovePane(direction);
         }
     }
 
