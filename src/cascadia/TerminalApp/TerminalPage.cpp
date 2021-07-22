@@ -1296,12 +1296,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_TogglePaneSplit()
+    void TerminalPage::_ToggleSplitOrientation()
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->TogglePaneSplit();
+            terminalTab->ToggleSplitOrientation();
         }
     }
 

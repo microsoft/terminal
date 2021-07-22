@@ -445,9 +445,9 @@ namespace winrt::TerminalApp::implementation
     //   its parent. E.g. switch from Horizontal to Vertical.
     // Return Value:
     // - <none>
-    void TerminalTab::TogglePaneSplit()
+    void TerminalTab::ToggleSplitOrientation()
     {
-        _rootPane->TogglePaneSplit();
+        _rootPane->ToggleSplitOrientation();
     }
 
     // Method Description:

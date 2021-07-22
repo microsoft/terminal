@@ -1434,7 +1434,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
 // - <none>
 // Return Value:
 // - true if a split was changed
-bool Pane::TogglePaneSplit()
+bool Pane::ToggleSplitOrientation()
 {
     // If we are a leaf there is no split to toggle.
     if (_IsLeaf())
@@ -1462,7 +1462,7 @@ bool Pane::TogglePaneSplit()
         return true;
     }
 
-    return _firstChild->TogglePaneSplit() || _secondChild->TogglePaneSplit();
+    return _firstChild->ToggleSplitOrientation() || _secondChild->ToggleSplitOrientation();
 }
 
 // Method Description:

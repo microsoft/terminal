@@ -374,8 +374,8 @@
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
     <value>Toggle fullscreen</value>
   </data>
-  <data name="TogglePaneSplitCommandKey" xml:space="preserve">
-    <value>Toggle pane split</value>
+  <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
+    <value>Toggle pane split orientation</value>
   </data>
   <data name="TogglePaneZoomCommandKey" xml:space="preserve">
     <value>Toggle pane zoom</value>
