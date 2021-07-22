@@ -266,7 +266,7 @@ void VtEngine::_PaintBufferLineHelper(const BufferLineRenderData& renderData)
         THROW_IF_FAILED(PaintBufferLine({ _clusterBuffer.data(), _clusterBuffer.size() }, screenPoint, trimLeft, renderData.lineWrapped));
     }
 }
-    // Routine Description:
+// Routine Description:
 // - Write a VT sequence to change the current colors of text. Writes true RGB
 //      color sequences.
 // Arguments:

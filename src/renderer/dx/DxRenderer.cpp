@@ -1372,7 +1372,7 @@ CATCH_RETURN()
 // - <none>
 // Return Value:
 // - Any DirectX error, a memory error, etc.
-[[nodiscard]] HRESULT DxEngine::PaintFrame(IRenderData *pData) noexcept
+[[nodiscard]] HRESULT DxEngine::PaintFrame(IRenderData* pData) noexcept
 try
 {
     if (pData == nullptr)
@@ -1407,7 +1407,7 @@ try
 }
 CATCH_RETURN();
 
-    // Routine Description:
+// Routine Description:
 // - Ends batch drawing and captures any state necessary for presentation
 // Arguments:
 // - <none>

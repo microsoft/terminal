@@ -272,7 +272,7 @@ COORD VtEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 
     return coordDelta;
 }
-    // Method Description:
+// Method Description:
 // - This method will figure out what the new font should be given the starting font information and a DPI.
 // - When the final font is determined, the FontInfo structure given will be updated with the actual resulting font chosen as the nearest match.
 // - NOTE: It is left up to the underling rendering system to choose the nearest font. Please ask for the font dimensions if they are required using the interface. Do not use the size you requested with this structure.

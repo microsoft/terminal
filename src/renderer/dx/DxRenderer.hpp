@@ -83,7 +83,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
 
         [[nodiscard]] HRESULT StartPaint() noexcept override;
-        [[nodiscard]] HRESULT PaintFrame(IRenderData* pdata) noexcept override;
+        [[nodiscard]] HRESULT PaintFrame(IRenderData* pData) noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
 
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;

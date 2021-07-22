@@ -34,7 +34,7 @@ namespace Microsoft::Console::Render
         // Used by GDI Engine.
         Microsoft::Console::Types::Viewport visible;
         // Used by GDI Engine.
-        LineRendition lineRendention;
+        LineRendition lineRendition;
         // Used by GDI Engine.
         bool needLineTransformation;
         bool lineWrapped;

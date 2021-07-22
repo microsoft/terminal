@@ -55,7 +55,7 @@ namespace Microsoft::Console::Render
 
     public:
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintFrame(IRenderData *pData) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintFrame(IRenderData* pData) noexcept = 0;
 
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
 

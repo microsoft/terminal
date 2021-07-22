@@ -329,8 +329,9 @@ void RenderEngineBase::_LoopSelection(IRenderData* pData, std::function<void(SMA
 }
 
 IRenderEngine::GridLines RenderEngineBase::_CalculateGridLines(IRenderData* pData,
-                                            const TextAttribute textAttribute,
-                                            const COORD coordTarget) {
+                                                               const TextAttribute textAttribute,
+                                                               const COORD coordTarget)
+{
     // Convert console grid line representations into rendering engine enum representations.
     IRenderEngine::GridLines lines = s_GetGridlines(textAttribute);
 
@@ -351,142 +352,141 @@ IRenderEngine::GridLines RenderEngineBase::_CalculateGridLines(IRenderData* pDat
     }
 
     return lines;
- }
+}
 
 // Method Description:
- // - Generates a IRenderEngine::GridLines structure from the values in the
- //      provided textAttribute
- // Arguments:
- // - textAttribute: the TextAttribute to generate GridLines from.
- // Return Value:
- // - a GridLines containing all the gridline info from the TextAttribute
- IRenderEngine::GridLines RenderEngineBase::s_GetGridlines(const TextAttribute& textAttribute) noexcept
- {
-     // Convert console grid line representations into rendering engine enum representations.
-     IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
+// - Generates a IRenderEngine::GridLines structure from the values in the
+//      provided textAttribute
+// Arguments:
+// - textAttribute: the TextAttribute to generate GridLines from.
+// Return Value:
+// - a GridLines containing all the gridline info from the TextAttribute
+IRenderEngine::GridLines RenderEngineBase::s_GetGridlines(const TextAttribute& textAttribute) noexcept
+{
+    // Convert console grid line representations into rendering engine enum representations.
+    IRenderEngine::GridLines lines = IRenderEngine::GridLines::None;
 
-     if (textAttribute.IsTopHorizontalDisplayed())
-     {
-         lines |= IRenderEngine::GridLines::Top;
-     }
+    if (textAttribute.IsTopHorizontalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Top;
+    }
 
-     if (textAttribute.IsBottomHorizontalDisplayed())
-     {
-         lines |= IRenderEngine::GridLines::Bottom;
-     }
+    if (textAttribute.IsBottomHorizontalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Bottom;
+    }
 
-     if (textAttribute.IsLeftVerticalDisplayed())
-     {
-         lines |= IRenderEngine::GridLines::Left;
-     }
+    if (textAttribute.IsLeftVerticalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Left;
+    }
 
-     if (textAttribute.IsRightVerticalDisplayed())
-     {
-         lines |= IRenderEngine::GridLines::Right;
-     }
+    if (textAttribute.IsRightVerticalDisplayed())
+    {
+        lines |= IRenderEngine::GridLines::Right;
+    }
 
-     if (textAttribute.IsCrossedOut())
-     {
-         lines |= IRenderEngine::GridLines::Strikethrough;
-     }
+    if (textAttribute.IsCrossedOut())
+    {
+        lines |= IRenderEngine::GridLines::Strikethrough;
+    }
 
-     if (textAttribute.IsUnderlined())
-     {
-         lines |= IRenderEngine::GridLines::Underline;
-     }
+    if (textAttribute.IsUnderlined())
+    {
+        lines |= IRenderEngine::GridLines::Underline;
+    }
 
-     if (textAttribute.IsDoublyUnderlined())
-     {
-         lines |= IRenderEngine::GridLines::DoubleUnderline;
-     }
+    if (textAttribute.IsDoublyUnderlined())
+    {
+        lines |= IRenderEngine::GridLines::DoubleUnderline;
+    }
 
-     if (textAttribute.IsHyperlink())
-     {
-         lines |= IRenderEngine::GridLines::HyperlinkUnderline;
-     }
-     return lines;
- }
+    if (textAttribute.IsHyperlink())
+    {
+        lines |= IRenderEngine::GridLines::HyperlinkUnderline;
+    }
+    return lines;
+}
 
- // Routine Description:
- // - Helper to determine the selected region of the buffer.
- // Return Value:
- // - A vector of rectangles representing the regions to select, line by line.
- std::vector<SMALL_RECT> RenderEngineBase::_GetSelectionRects(IRenderData* pData) noexcept
- {
-     const auto& buffer = pData->GetTextBuffer();
-     auto rects = pData->GetSelectionRects();
-     // Adjust rectangles to viewport
-     Viewport view = pData->GetViewport();
+// Routine Description:
+// - Helper to determine the selected region of the buffer.
+// Return Value:
+// - A vector of rectangles representing the regions to select, line by line.
+std::vector<SMALL_RECT> RenderEngineBase::_GetSelectionRects(IRenderData* pData) noexcept
+{
+    const auto& buffer = pData->GetTextBuffer();
+    auto rects = pData->GetSelectionRects();
+    // Adjust rectangles to viewport
+    Viewport view = pData->GetViewport();
 
-     std::vector<SMALL_RECT> result;
+    std::vector<SMALL_RECT> result;
 
-     for (auto rect : rects)
-     {
-         // Convert buffer offsets to the equivalent range of screen cells
-         // expected by callers, taking line rendition into account.
-         const auto lineRendition = buffer.GetLineRendition(rect.Top());
-         rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
+    for (auto rect : rects)
+    {
+        // Convert buffer offsets to the equivalent range of screen cells
+        // expected by callers, taking line rendition into account.
+        const auto lineRendition = buffer.GetLineRendition(rect.Top());
+        rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
 
-         auto sr = view.ConvertToOrigin(rect).ToInclusive();
+        auto sr = view.ConvertToOrigin(rect).ToInclusive();
 
-         // hopefully temporary, we should be receiving the right selection sizes without correction.
-         sr.Right++;
-         sr.Bottom++;
+        // hopefully temporary, we should be receiving the right selection sizes without correction.
+        sr.Right++;
+        sr.Bottom++;
 
-         result.emplace_back(sr);
-     }
+        result.emplace_back(sr);
+    }
 
-     return result;
- }
+    return result;
+}
 
- 
 std::vector<SMALL_RECT> RenderEngineBase::_CalculateCurrentSelection(IRenderData* pData) noexcept
- {
-     // Get selection rectangles
-     const auto rects = _GetSelectionRects(pData);
+{
+    // Get selection rectangles
+    const auto rects = _GetSelectionRects(pData);
 
-     // Restrict all previous selection rectangles to inside the current viewport bounds
-     for (auto& sr : _previousSelection)
-     {
-         // Make the exclusive SMALL_RECT into a til::rectangle.
-         til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
+    // Restrict all previous selection rectangles to inside the current viewport bounds
+    for (auto& sr : _previousSelection)
+    {
+        // Make the exclusive SMALL_RECT into a til::rectangle.
+        til::rectangle rc{ Viewport::FromExclusive(sr).ToInclusive() };
 
-         // Make a viewport representing the coordinates that are currently presentable.
-         const til::rectangle viewport{ til::size{ pData->GetViewport().Dimensions() } };
+        // Make a viewport representing the coordinates that are currently presentable.
+        const til::rectangle viewport{ til::size{ pData->GetViewport().Dimensions() } };
 
-         // Intersect them so we only invalidate things that are still visible.
-         rc &= viewport;
+        // Intersect them so we only invalidate things that are still visible.
+        rc &= viewport;
 
-         // Convert back into the exclusive SMALL_RECT and store in the vector.
-         sr = Viewport::FromInclusive(rc).ToExclusive();
-     }
+        // Convert back into the exclusive SMALL_RECT and store in the vector.
+        sr = Viewport::FromInclusive(rc).ToExclusive();
+    }
 
-     return rects;
- }
+    return rects;
+}
 
- // Method Description:
- // - Offsets all of the selection rectangles we might be holding onto
- //   as the previously selected area. If the whole viewport scrolls,
- //   we need to scroll these areas also to ensure they're invalidated
- //   properly when the selection further changes.
- // Arguments:
- // - delta - The scroll delta
- // Return Value:
- // - <none> - Updates internal state instead.
- void RenderEngineBase::_ScrollPreviousSelection(const til::point delta)
- {
-     if (delta != til::point{ 0, 0 })
-     {
-         for (auto& sr : _previousSelection)
-         {
-             // Get a rectangle representing this piece of the selection.
-             til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
+// Method Description:
+// - Offsets all of the selection rectangles we might be holding onto
+//   as the previously selected area. If the whole viewport scrolls,
+//   we need to scroll these areas also to ensure they're invalidated
+//   properly when the selection further changes.
+// Arguments:
+// - delta - The scroll delta
+// Return Value:
+// - <none> - Updates internal state instead.
+void RenderEngineBase::_ScrollPreviousSelection(const til::point delta)
+{
+    if (delta != til::point{ 0, 0 })
+    {
+        for (auto& sr : _previousSelection)
+        {
+            // Get a rectangle representing this piece of the selection.
+            til::rectangle rc = Viewport::FromExclusive(sr).ToInclusive();
 
-             // Offset the entire existing rectangle by the delta.
-             rc += delta;
+            // Offset the entire existing rectangle by the delta.
+            rc += delta;
 
-             // Store it back into the vector.
-             sr = Viewport::FromInclusive(rc).ToExclusive();
-         }
-     }
- }
+            // Store it back into the vector.
+            sr = Viewport::FromInclusive(rc).ToExclusive();
+        }
+    }
+}
