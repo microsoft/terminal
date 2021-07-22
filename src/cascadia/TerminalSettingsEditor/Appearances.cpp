@@ -82,6 +82,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
+    bool AppearanceViewModel::IntenseIsBold() const
+    {
+        return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
+    }
+    void AppearanceViewModel::IntenseIsBold(bool value)
+    {
+        auto oldValue{ _appearance.IntenseTextStyle() };
+        WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold, value);
+        _appearance.IntenseTextStyle(oldValue);
+    }
+
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :

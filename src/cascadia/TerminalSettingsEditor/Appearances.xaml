@@ -437,6 +437,14 @@
                                Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay, Converter={StaticResource PercentageSignConverter}}" />
                 </Grid>
             </local:SettingContainer>
+
+            <!--  Intense is bold  -->
+            <local:SettingContainer x:Uid="Appearance_IntenseIsBold"
+                                    ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
+                                    HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.IntenseIsBold, Mode=TwoWay}" />
+            </local:SettingContainer>
         </StackPanel>
     </StackPanel>
 </UserControl>

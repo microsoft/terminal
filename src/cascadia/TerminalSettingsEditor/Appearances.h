@@ -79,6 +79,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageOpacity);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
+
+        bool IntenseIsBold() const;
+        void IntenseIsBold(bool value);
 
     private:
         Model::AppearanceConfig _appearance;

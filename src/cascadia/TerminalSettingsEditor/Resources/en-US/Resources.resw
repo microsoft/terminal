@@ -1186,4 +1186,8 @@
     <value>Shortcut</value>
     <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
   </data>
+  <data name="Appearance_IntenseIsBold.Header" xml:space="preserve">
+    <value>Render "intense" text as bold</value>
+    <comment>Header for a control to toggle if text formatted as "intense" should be rendered with a bold font weight or not.</comment>
+  </data>
 </root>
