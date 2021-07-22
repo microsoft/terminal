@@ -44,6 +44,8 @@ public:
 
     CD_CONNECTION_INFORMATION GetConnectionInformation(IDeviceComm* deviceComm) const;
 
+    const ULONG64 GetProcessCreationTime() const;
+
 private:
     ConsoleProcessHandle(const DWORD dwProcessId,
                          const DWORD dwThreadId,
@@ -57,6 +59,8 @@ private:
     ULONG _ulTerminateCount;
     ULONG const _ulProcessGroupId;
     wil::unique_handle const _hProcess;
+
+    mutable ULONG64 _processCreationTime;
 
     const ConsoleProcessPolicy _policy;
     const ConsoleShimPolicy _shimPolicy;

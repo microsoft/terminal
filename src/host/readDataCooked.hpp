@@ -39,9 +39,9 @@ public:
                      _In_ size_t UserBufferSize,
                      _In_ PWCHAR UserBuffer,
                      _In_ ULONG CtrlWakeupMask,
-                     _In_ CommandHistory* CommandHistory,
-                     const std::wstring_view exeName,
-                     const std::string_view initialData);
+                     _In_ const std::wstring_view exeName,
+                     _In_ const std::string_view initialData,
+                     _In_ ConsoleProcessHandle* const pClientProcess);
 
     ~COOKED_READ_DATA() override;
     COOKED_READ_DATA(COOKED_READ_DATA&&) = default;
@@ -155,6 +155,8 @@ private:
     const bool _processedInput;
     bool _insertMode;
     bool _unicode;
+
+    ConsoleProcessHandle* const _clientProcess;
 
     [[nodiscard]] NTSTATUS _readCharInputLoop(const bool isUnicode, size_t& numBytes) noexcept;
 

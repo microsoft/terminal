@@ -406,42 +406,33 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
     }
 }
 
-void Tracing::s_TraceCookedRead(_In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength)
-{
-    TraceLoggingWrite(
-        g_hConhostV2EventTraceProvider,
-        "CookedRead",
-        TraceLoggingCountedWideString(pwchCookedBuffer, cchCookedBufferLength, "ReadBuffer"),
-        TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE),
-        TraceLoggingKeyword(TraceKeywords::CookedRead));
+void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength)
+{    
+    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::CookedRead)) {
+
+        TraceLoggingWrite(
+            g_hConhostV2EventTraceProvider,
+            "CookedRead",
+            TraceLoggingCountedWideString(pwchCookedBuffer, cchCookedBufferLength, "ReadBuffer"),
+            TraceLoggingULong(cchCookedBufferLength, "ReadBufferLength"),
+            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
+            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
+            TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+            TraceLoggingKeyword(TraceKeywords::CookedRead));
+    }
 }
 
-void Tracing::s_TraceConsoleAttachDetach(_In_ const ConsoleProcessHandle* pConsoleProcessHandle, _In_ bool bIsAttach)
-{
-    FILETIME ftCreationTime, ftDummyTime = { 0 };
-    ULARGE_INTEGER creationTime = { 0 };
-    
-    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider,
-                                    WINEVENT_LEVEL_LOG_ALWAYS,
-                                    TraceKeywords::ConsoleAttachDetach)) {
-
-        if (::GetProcessTimes(pConsoleProcessHandle->GetRawHandle(),
-                              &ftCreationTime,
-                              &ftDummyTime,
-                              &ftDummyTime,
-                              &ftDummyTime)) {
-            creationTime.HighPart = ftCreationTime.dwHighDateTime;
-            creationTime.LowPart = ftCreationTime.dwLowDateTime;
-        }
-
+void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_ bool bIsAttach)
+{    
+    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach)) {
+        
         bool bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
 
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "ConsoleAttachDetach",
-            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "ProcessId"),
-            TraceLoggingUInt64(creationTime.QuadPart, "ProcessCreationTime"),
+            TraceLoggingUInt32(pConsoleProcessHandle->dwProcessId, "AttachedProcessId"),
+            TraceLoggingUInt64(pConsoleProcessHandle->GetProcessCreationTime(), "AttachedProcessCreationTime"),
             TraceLoggingBool(bIsAttach, "IsAttach"),
             TraceLoggingBool(bIsUserInteractive, "IsUserInteractive"),
             TraceLoggingKeyword(TIL_KEYWORD_TRACE),

@@ -34,13 +34,13 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 // - OriginalCursorPosition -
 // - NumberOfVisibleChars
 // - CtrlWakeupMask - Special client parameter to interrupt editing, end the wait, and return control to the client application
-// - CommandHistory -
 // - Echo -
 // - InsertMode -
 // - Processed -
 // - Line -
 // - pTempHandle - A handle to the output buffer to prevent it from being destroyed while we're using it to present 'edit line' text.
 // - initialData - any text data that should be prepopulated into the buffer
+// - pClientProcess - Attached process handle object
 // Return Value:
 // - THROW: Throws E_INVALIDARG for invalid pointers.
 COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
@@ -49,9 +49,9 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
                                    _In_ size_t UserBufferSize,
                                    _In_ PWCHAR UserBuffer,
                                    _In_ ULONG CtrlWakeupMask,
-                                   _In_ CommandHistory* CommandHistory,
-                                   const std::wstring_view exeName,
-                                   const std::string_view initialData) :
+                                   _In_ const std::wstring_view exeName,
+                                   _In_ const std::string_view initialData,
+                                   _In_ ConsoleProcessHandle* const pClientProcess) :
     ReadData(pInputBuffer, pInputReadHandleData),
     _screenInfo{ screenInfo },
     _bytesRead{ 0 },
@@ -62,7 +62,7 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _exeName{ exeName },
     _pdwNumBytes{ nullptr },
 
-    _commandHistory{ CommandHistory },
+    _commandHistory{ CommandHistory::s_Find((HANDLE)pClientProcess) },
     _controlKeyState{ 0 },
     _ctrlWakeupMask{ CtrlWakeupMask },
     _visibleCharCount{ 0 },
@@ -73,7 +73,8 @@ COOKED_READ_DATA::COOKED_READ_DATA(_In_ InputBuffer* const pInputBuffer,
     _lineInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_LINE_INPUT) },
     _processedInput{ WI_IsFlagSet(pInputBuffer->InputMode, ENABLE_PROCESSED_INPUT) },
     _insertMode{ ServiceLocator::LocateGlobals().getConsoleInformation().GetInsertMode() },
-    _unicode{ false }
+    _unicode{ false },
+    _clientProcess{ pClientProcess }
 {
 #ifndef UNIT_TESTING
     THROW_IF_FAILED(screenInfo.GetMainBuffer().AllocateIoHandle(ConsoleHandleData::HandleType::Output,
@@ -1030,7 +1031,9 @@ void COOKED_READ_DATA::SavePendingInput(const size_t index, const bool multiline
                                                    WI_IsFlagSet(gci.Flags, CONSOLE_HISTORY_NODUP)));
             }
 
-            Tracing::s_TraceCookedRead(_backupLimit, base::saturated_cast<ULONG>(StringLength));
+            Tracing::s_TraceCookedRead(_clientProcess,
+                                       _backupLimit,
+                                       base::saturated_cast<ULONG>(StringLength));
 
             // check for alias
             ProcessAliases(LineCount);
