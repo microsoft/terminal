@@ -520,7 +520,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             // We only need to apply restrictions if the position is changing.
             // The SWP_ flags are confusing to read. This is
             // "if we're not NOT moving the window"
-            if (!WI_IsFlagSet(lpwpos->flags, SWP_NOMOVE))
+            if (WI_IsFlagClear(lpwpos->flags, SWP_NOMOVE))
             {
                 // Figure out the suggested dimensions and position.
                 RECT rcSuggested;
