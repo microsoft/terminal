@@ -1346,7 +1346,7 @@ namespace TerminalAppLocalTests
 
     void TabTests::TestClampSwitchToTab()
     {
-        Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
+        Log::Comment(L"Test that switching to a tab index higher than the number of tabs just clamps to the last tab.");
 
         auto page = _commonSetup();
         VERIFY_IS_NOT_NULL(page);
