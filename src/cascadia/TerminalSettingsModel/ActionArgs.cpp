@@ -228,6 +228,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SwitchToTabArgs::GenerateName() const
     {
+        if (TabIndex() == UINT32_MAX)
+        {
+            return RS_(L"SwitchToLastTabCommandKey");
+        }
+
         return winrt::hstring{
             fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), TabIndex())
         };

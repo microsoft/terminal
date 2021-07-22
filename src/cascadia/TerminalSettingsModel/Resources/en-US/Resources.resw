@@ -365,6 +365,9 @@
   <data name="SwitchToTabCommandKey" xml:space="preserve">
     <value>Switch to tab</value>
   </data>
+  <data name="SwitchToLastTabCommandKey" xml:space="preserve">
+    <value>Switch to the last tab</value>
+  </data>
   <data name="TabSearchCommandKey" xml:space="preserve">
     <value>Search for tab...</value>
   </data>

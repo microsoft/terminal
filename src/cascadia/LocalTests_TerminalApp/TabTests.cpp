@@ -95,6 +95,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestPreviewDismissScheme);
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
 
+        TEST_METHOD(TestClampSwitchToTab);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -1547,6 +1549,57 @@ namespace TerminalAppLocalTests
             Log::Comment(L"Color should be changed");
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
             VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
+        });
+    }
+
+    void TabTests::TestClampSwitchToTab()
+    {
+        Log::Comment(L"Test that switching to a tab index higher than the number of tabs just clamps to the last tab.");
+
+        auto page = _commonSetup();
+        VERIFY_IS_NOT_NULL(page);
+
+        Log::Comment(L"Create a second tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 1 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(2u, page->_tabs.Size());
+
+        Log::Comment(L"Create a third tab");
+        TestOnUIThread([&page]() {
+            NewTerminalArgs newTerminalArgs{ 2 };
+            page->_OpenNewTab(newTerminalArgs);
+        });
+        VERIFY_ARE_EQUAL(3u, page->_tabs.Size());
+
+        TestOnUIThread([&page]() {
+            auto focusedTabIndexOpt{ page->_GetFocusedTabIndex() };
+            VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+            VERIFY_ARE_EQUAL(2u, focusedTabIndexOpt.value());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Switch to the first tab");
+            page->_SelectTab(0);
+        });
+
+        TestOnUIThread([&page]() {
+            auto focusedTabIndexOpt{ page->_GetFocusedTabIndex() };
+
+            VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+            VERIFY_ARE_EQUAL(0u, focusedTabIndexOpt.value());
+        });
+
+        TestOnUIThread([&page]() {
+            Log::Comment(L"Switch to the tab 6, which is greater than number of tabs. This should switch to the third tab");
+            page->_SelectTab(6);
+        });
+
+        TestOnUIThread([&page]() {
+            auto focusedTabIndexOpt{ page->_GetFocusedTabIndex() };
+            VERIFY_IS_TRUE(focusedTabIndexOpt.has_value());
+            VERIFY_ARE_EQUAL(2u, focusedTabIndexOpt.value());
         });
     }
 
