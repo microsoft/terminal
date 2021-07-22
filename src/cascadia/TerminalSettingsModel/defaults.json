@@ -343,7 +343,12 @@
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
-        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
+        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left"},
+        { "command": { "action": "movePane", "direction": "down" } },
+        { "command": { "action": "movePane", "direction": "left" } },
+        { "command": { "action": "movePane", "direction": "right" } },
+        { "command": { "action": "movePane", "direction": "up" } },
+        { "command": { "action": "movePane", "direction": "previous"} },
         { "command": "togglePaneZoom" },
         { "command": "toggleReadOnlyMode" },
 

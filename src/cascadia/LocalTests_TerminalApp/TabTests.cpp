@@ -82,6 +82,8 @@ namespace TerminalAppLocalTests
         TEST_METHOD(MoveFocusFromZoomedPane);
         TEST_METHOD(CloseZoomedPane);
 
+        TEST_METHOD(MovePanes);
+
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
 
@@ -815,6 +817,212 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
+    }
+
+    void TabTests::MovePanes()
+    {
+        auto page = _commonSetup();
+
+        Log::Comment(L"Setup 4 panes.");
+        // Create the following layout
+        // -------------------
+        // |   1    |   2    |
+        // |        |        |
+        // -------------------
+        // |   3    |   4    |
+        // |        |        |
+        // -------------------
+        uint32_t firstId = 0, secondId = 0, thirdId = 0, fourthId = 0;
+        TestOnUIThread([&]() {
+            VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            firstId = tab->_activePane->Id().value();
+            // We start with 1 tab, split vertically to get
+            // -------------------
+            // |   1    |   2    |
+            // |        |        |
+            // -------------------
+            page->_SplitPane(SplitState::Vertical, SplitType::Duplicate, 0.5f, nullptr);
+            secondId = tab->_activePane->Id().value();
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // After this the `2` pane is focused, go back to `1` being focused
+            page->_MoveFocus(FocusDirection::Left);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // Split again to make the 3rd tab
+            // -------------------
+            // |   1    |        |
+            // |        |        |
+            // ---------|   2    |
+            // |   3    |        |
+            // |        |        |
+            // -------------------
+            page->_SplitPane(SplitState::Horizontal, SplitType::Duplicate, 0.5f, nullptr);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            // Split again to make the 3rd tab
+            thirdId = tab->_activePane->Id().value();
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // After this the `3` pane is focused, go back to `2` being focused
+            page->_MoveFocus(FocusDirection::Right);
+        });
+        Sleep(250);
+        TestOnUIThread([&]() {
+            // Split to create the final pane
+            // -------------------
+            // |   1    |   2    |
+            // |        |        |
+            // -------------------
+            // |   3    |   4    |
+            // |        |        |
+            // -------------------
+            page->_SplitPane(SplitState::Horizontal, SplitType::Duplicate, 0.5f, nullptr);
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            fourthId = tab->_activePane->Id().value();
+        });
+
+        Sleep(250);
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // just to be complete, make sure we actually have 4 different ids
+            VERIFY_ARE_NOT_EQUAL(firstId, fourthId);
+            VERIFY_ARE_NOT_EQUAL(secondId, fourthId);
+            VERIFY_ARE_NOT_EQUAL(thirdId, fourthId);
+            VERIFY_ARE_NOT_EQUAL(firstId, thirdId);
+            VERIFY_ARE_NOT_EQUAL(secondId, thirdId);
+            VERIFY_ARE_NOT_EQUAL(firstId, secondId);
+        });
+
+        // Gratuitous use of sleep to make sure that the UI has updated properly
+        // after each operation.
+        Sleep(250);
+        // Now try to move the pane through the tree
+        Log::Comment(L"Move pane to the left. This should swap panes 3 and 4");
+        // -------------------
+        // |   1    |   2    |
+        // |        |        |
+        // -------------------
+        // |   4    |   3    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            MovePaneArgs args{ FocusDirection::Left };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleMovePane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_firstChild->_secondChild->Id().value());
+            VERIFY_ARE_EQUAL(thirdId, tab->_rootPane->_secondChild->_secondChild->Id().value());
+        });
+
+        Sleep(250);
+
+        Log::Comment(L"Move pane to up. This should swap panes 1 and 4");
+        // -------------------
+        // |   4    |   2    |
+        // |        |        |
+        // -------------------
+        // |   1    |   3    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            MovePaneArgs args{ FocusDirection::Up };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleMovePane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_firstChild->_firstChild->Id().value());
+            VERIFY_ARE_EQUAL(firstId, tab->_rootPane->_firstChild->_secondChild->Id().value());
+        });
+
+        Sleep(250);
+
+        Log::Comment(L"Move pane to the right. This should swap panes 2 and 4");
+        // -------------------
+        // |   2    |   4    |
+        // |        |        |
+        // -------------------
+        // |   1    |   3    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            MovePaneArgs args{ FocusDirection::Right };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleMovePane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_secondChild->_firstChild->Id().value());
+            VERIFY_ARE_EQUAL(secondId, tab->_rootPane->_firstChild->_firstChild->Id().value());
+        });
+
+        Sleep(250);
+
+        Log::Comment(L"Move pane down. This should swap panes 3 and 4");
+        // -------------------
+        // |   2    |   3    |
+        // |        |        |
+        // -------------------
+        // |   1    |   4    |
+        // |        |        |
+        // -------------------
+        TestOnUIThread([&]() {
+            // Set up action
+            MovePaneArgs args{ FocusDirection::Down };
+            ActionEventArgs eventArgs{ args };
+
+            page->_HandleMovePane(nullptr, eventArgs);
+        });
+
+        Sleep(250);
+
+        TestOnUIThread([&]() {
+            auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
+            VERIFY_ARE_EQUAL(4, tab->GetLeafPaneCount());
+            // Our currently focused pane should be `4`
+            VERIFY_ARE_EQUAL(fourthId, tab->_activePane->Id().value());
+
+            // Inspect the tree to make sure we swapped
+            VERIFY_ARE_EQUAL(fourthId, tab->_rootPane->_secondChild->_secondChild->Id().value());
+            VERIFY_ARE_EQUAL(thirdId, tab->_rootPane->_secondChild->_firstChild->Id().value());
+        });
     }
 
     void TabTests::NextMRUTab()

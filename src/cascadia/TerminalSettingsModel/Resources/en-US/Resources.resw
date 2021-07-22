@@ -246,6 +246,16 @@
   <data name="MoveFocusToLastUsedPane" xml:space="preserve">
     <value>Move focus to the last used pane</value>
   </data>
+  <data name="MovePaneCommandKey" xml:space="preserve">
+    <value>Move pane</value>
+  </data>
+  <data name="MovePaneWithArgCommandKey" xml:space="preserve">
+    <value>Move pane {0}</value>
+    <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
+  </data>
+  <data name="MovePaneToLastUsedPane" xml:space="preserve">
+    <value>Move pane to the last used pane</value>
+  </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>
   </data>
