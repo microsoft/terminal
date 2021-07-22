@@ -2132,6 +2132,14 @@ bool Pane::ContainsReadOnly() const
     return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
+// Method Description:
+// - If we're a parent, place the taskbar state for all our leaves into the
+//   provided vector.
+// - If we're a leaf, place our own state into the vector.
+// Arguments:
+// - states: a vector that will receive all the states of all leaves in the tree
+// Return Value:
+// - <none>
 void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
 {
     if (_IsLeaf())

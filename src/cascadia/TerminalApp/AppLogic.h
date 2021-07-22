@@ -89,8 +89,6 @@ namespace winrt::TerminalApp::implementation
 
         void WindowCloseButtonClicked();
 
-        // uint64_t GetLastActiveControlTaskbarState();
-        // uint64_t GetLastActiveControlTaskbarProgress();
         winrt::TerminalApp::TaskbarState TaskbarState();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);

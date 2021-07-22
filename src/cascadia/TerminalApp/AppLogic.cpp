@@ -1134,19 +1134,6 @@ namespace winrt::TerminalApp::implementation
         return {};
     }
 
-    // // Method Description:
-    // // - Gets the taskbar progress value from the last active control
-    // // Return Value:
-    // // - The taskbar progress of the last active control
-    // uint64_t AppLogic::GetLastActiveControlTaskbarProgress()
-    // {
-    //     if (_root)
-    //     {
-    //         return _root->GetLastActiveControlTaskbarProgress();
-    //     }
-    //     return {};
-    // }
-
     // Method Description:
     // - Sets the initial commandline to process on startup, and attempts to
     //   parse it. Commands will be parsed into a list of ShortcutActions that

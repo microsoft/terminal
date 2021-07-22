@@ -629,6 +629,18 @@ namespace winrt::TerminalApp::implementation
         });
     }
 
+    // Method Description:
+    // - Get the combined taskbar state for the tab. This is the combination of
+    //   all the states of all our panes. Taskbar states are given a priority
+    //   based on the rules in:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate
+    //   under "How the Taskbar Button Chooses the Progress Indicator for a
+    //   Group"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A TaskbarState object representing the combined taskbar state and
+    //   progress precentage of all our panes.
     winrt::TerminalApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
     {
         std::vector<winrt::TerminalApp::TaskbarState> states;

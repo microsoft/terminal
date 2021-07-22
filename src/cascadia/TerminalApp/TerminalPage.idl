@@ -43,8 +43,6 @@ namespace TerminalApp
         void ShowKeyboardServiceWarning();
         String KeyboardServiceDisabledText { get; };
 
-        // UInt64 GetLastActiveControlTaskbarState();
-        // UInt64 GetLastActiveControlTaskbarProgress();
         TaskbarState TaskbarState{ get; };
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
