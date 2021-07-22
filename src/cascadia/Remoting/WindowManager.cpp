@@ -525,12 +525,23 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _monarch.GetPeasantNames();
     }
 
-    // These should only be called if we're a Peasant.
+    // Method Description:
+    // - Ask the monarch to show a tray icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void WindowManager::RequestShowTrayIcon()
     {
         _peasant.RequestShowTrayIcon();
     }
 
+    // Method Description:
+    // - Ask the monarch to hide its tray icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
     void WindowManager::RequestHideTrayIcon()
     {
         _peasant.RequestHideTrayIcon();

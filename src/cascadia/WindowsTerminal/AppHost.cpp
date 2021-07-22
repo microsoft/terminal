@@ -11,8 +11,6 @@
 #include "VirtualDesktopUtils.h"
 #include "icon.h"
 
-#include <LibraryResources.h>
-
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -1057,7 +1055,6 @@ void AppHost::_ShowTrayIconRequested()
     }
     else
     {
-        // TODO: Tell WindowManager to notify Monarch to show icon.
         _windowManager.RequestShowTrayIcon();
     }
 #endif
@@ -1078,7 +1075,6 @@ void AppHost::_HideTrayIconRequested()
     }
     else
     {
-        // TODO: Tell WindowManager to notify Monarch to hide the icon.
         _windowManager.RequestHideTrayIcon();
     }
 #endif

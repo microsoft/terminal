@@ -16,7 +16,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct Peasant : public PeasantT<Peasant>
     {
         Peasant();
-        Peasant(const uint64_t testPID);
 
         void AssignID(uint64_t id);
         uint64_t GetID();
@@ -47,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
+        Peasant(const uint64_t testPID);
         uint64_t _ourPID;
 
         uint64_t _id{ 0 };

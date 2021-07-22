@@ -815,11 +815,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void Monarch::SummonAllWindows()
     {
-        for (const auto [id, peasant] : _peasants)
-        {
+        auto callback = [](auto&& p, auto&& /*id*/) {
             SummonWindowBehavior args{};
             args.ToggleVisibility(false);
-            peasant.Summon(args);
-        }
+            p.Summon(args);
+        };
+        auto onError = [](auto&& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SummonAll_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not summon"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+        _forAllPeasantsIgnoringTheDead(callback, onError);
     }
 }
