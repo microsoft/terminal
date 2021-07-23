@@ -54,7 +54,10 @@ namespace Microsoft::Console::Render
                                                                                std::wstring& localeName,
                                                                                const bool withNearbyLookup);
 
-        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
+        [[nodiscard]] ::Microsoft::WRL::ComPtr<IDWriteFontFace1> _TryWin10FontMatchingLogic(gsl::not_null<IDWriteFontCollection*> fontCollection,
+                                                                                            std::wstring& localeName);
+
+        [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteLocalizedStrings*> const familyNames,
                                                       std::wstring& localeName);
 
         [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& _NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const;

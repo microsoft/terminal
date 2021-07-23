@@ -203,6 +203,63 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 }
 
 // Routine Description:
+// - Locates a suitable font face from the given information using more advanced match filtering on font sets only
+//   possible with Win10 and higher versions of DirectWrite
+// Arguments:
+// - fontCollection - The font collection to dig through
+// - localeName - The locale to search for appropriate fonts.
+// Return Value:
+// - Smart pointer holding interface reference for queryable font data.
+// - The pointer can be empty/null if there was a failure or we're below Win10 and need to fallback
+[[nodiscard]] Microsoft::WRL::ComPtr<IDWriteFontFace1> DxFontInfo::_TryWin10FontMatchingLogic(gsl::not_null<IDWriteFontCollection*> fontCollection,
+                                                                                              std::wstring& localeName)
+{
+    Microsoft::WRL::ComPtr<IDWriteFontFace1> fontFace;
+
+    try
+    {
+        Microsoft::WRL::ComPtr<IDWriteFontCollection1> collection1;
+        THROW_IF_FAILED(fontCollection->QueryInterface(collection1.GetAddressOf()));
+
+        Microsoft::WRL::ComPtr<IDWriteFontSet> set;
+        THROW_IF_FAILED(collection1->GetFontSet(set.GetAddressOf()));
+
+        Microsoft::WRL::ComPtr<IDWriteFontSet1> set1;
+        THROW_IF_FAILED(set.As(&set1));
+
+        const std::array<DWRITE_FONT_PROPERTY, 3> fontProperties{
+            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_TYPOGRAPHIC_FAMILY_NAME, _familyName.data(), localeName.data() },
+            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_WIN32_FAMILY_NAME, _familyName.data(), localeName.data() },
+            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_FULL_NAME, _familyName.data(), localeName.data() }
+        };
+
+        Microsoft::WRL::ComPtr<IDWriteFontSet1> filteredSet1;
+        THROW_IF_FAILED(set1->GetFilteredFonts(fontProperties.data(), gsl::narrow_cast<UINT32>(fontProperties.size()), true, filteredSet1.GetAddressOf()));
+
+        if (filteredSet1->GetFontCount())
+        {
+            Microsoft::WRL::ComPtr<IDWriteFontFace5> fontFace5;
+            THROW_IF_FAILED(filteredSet1->CreateFontFace(0, fontFace5.GetAddressOf()));
+
+            // Retrieve metrics in case the font we created was different than what was requested.
+            _weight = fontFace5->GetWeight();
+            _stretch = fontFace5->GetStretch();
+            _style = fontFace5->GetStyle();
+
+            // Dig the family name out at the end to return it.
+            Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNamesLocalized;
+            THROW_IF_FAILED(fontFace5->GetFamilyNames(familyNamesLocalized.GetAddressOf()));
+            _familyName = _GetFontFamilyName(familyNamesLocalized.Get(), localeName);
+
+            THROW_IF_FAILED(fontFace5.As(&fontFace));
+        }
+    }
+    CATCH_LOG();
+
+    return fontFace;
+}
+
+// Routine Description:
 // - Locates a suitable font face from the given information
 // Arguments:
 // - dwriteFactory - The DWrite factory to use
@@ -215,6 +272,12 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 
     Microsoft::WRL::ComPtr<IDWriteFontCollection> fontCollection;
     THROW_IF_FAILED(dwriteFactory->GetSystemFontCollection(&fontCollection, false));
+
+    fontFace = _TryWin10FontMatchingLogic(fontCollection.Get(), localeName);
+    if (fontFace)
+    {
+        return fontFace;
+    }
 
     UINT32 familyIndex;
     BOOL familyExists;
@@ -229,6 +292,12 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         if (nearbyCollection)
         {
             nearbyCollection.As(&fontCollection);
+            fontFace = _TryWin10FontMatchingLogic(fontCollection.Get(), localeName);
+            if (fontFace)
+            {
+                return fontFace;
+            }
+
             THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
         }
     }
@@ -252,7 +321,10 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         _style = font->GetStyle();
 
         // Dig the family name out at the end to return it.
-        _familyName = _GetFontFamilyName(fontFamily.Get(), localeName);
+        // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
+        Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNamesLocalized;
+        THROW_IF_FAILED(fontFamily->GetFamilyNames(familyNamesLocalized.GetAddressOf()));
+        _familyName = _GetFontFamilyName(familyNamesLocalized.Get(), localeName);
     }
 
     return fontFace;
@@ -262,18 +334,14 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - Retrieves the font family name out of the given object in the given locale.
 // - If we can't find a valid name for the given locale, we'll fallback and report it back.
 // Arguments:
-// - fontFamily - DirectWrite font family object
+// - familyNames - DirectWrite localized strings for the font family
 // - localeName - The locale in which the name should be retrieved.
 //              - If fallback occurred, this is updated to what we retrieved instead.
 // Return Value:
 // - Localized string name of the font family
-[[nodiscard]] std::wstring DxFontInfo::_GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
+[[nodiscard]] std::wstring DxFontInfo::_GetFontFamilyName(gsl::not_null<IDWriteLocalizedStrings*> const familyNames,
                                                           std::wstring& localeName)
 {
-    // See: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nn-dwrite-idwritefontcollection
-    Microsoft::WRL::ComPtr<IDWriteLocalizedStrings> familyNames;
-    THROW_IF_FAILED(fontFamily->GetFamilyNames(&familyNames));
-
     // First we have to find the right family name for the locale. We're going to bias toward what the caller
     // requested, but fallback if we need to and reply with the locale we ended up choosing.
     UINT32 index = 0;
