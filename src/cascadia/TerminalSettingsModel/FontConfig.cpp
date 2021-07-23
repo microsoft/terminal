@@ -14,6 +14,8 @@ static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view FontFaceKey{ "face" };
 static constexpr std::string_view FontSizeKey{ "size" };
 static constexpr std::string_view FontWeightKey{ "weight" };
+static constexpr std::string_view FontFeaturesKey{ "features" };
+static constexpr std::string_view FontAxesKey{ "axes" };
 static constexpr std::string_view LegacyFontFaceKey{ "fontFace" };
 static constexpr std::string_view LegacyFontSizeKey{ "fontSize" };
 static constexpr std::string_view LegacyFontWeightKey{ "fontWeight" };
@@ -29,6 +31,8 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const winrt::com_ptr<FontCon
     fontInfo->_FontFace = source->_FontFace;
     fontInfo->_FontSize = source->_FontSize;
     fontInfo->_FontWeight = source->_FontWeight;
+    fontInfo->_FontAxes = source->_FontAxes;
+    fontInfo->_FontFeatures = source->_FontFeatures;
     return fontInfo;
 }
 
@@ -39,6 +43,8 @@ Json::Value FontConfig::ToJson() const
     JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
     JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
+    JsonUtils::SetValueForKey(json, FontAxesKey, _FontAxes);
+    JsonUtils::SetValueForKey(json, FontFeaturesKey, _FontFeatures);
 
     return json;
 }
@@ -65,6 +71,8 @@ void FontConfig::LayerJson(const Json::Value& json)
         JsonUtils::GetValueForKey(fontInfoJson, FontFaceKey, _FontFace);
         JsonUtils::GetValueForKey(fontInfoJson, FontSizeKey, _FontSize);
         JsonUtils::GetValueForKey(fontInfoJson, FontWeightKey, _FontWeight);
+        JsonUtils::GetValueForKey(fontInfoJson, FontFeaturesKey, _FontFeatures);
+        JsonUtils::GetValueForKey(fontInfoJson, FontAxesKey, _FontAxes);
     }
     else
     {

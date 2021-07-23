@@ -177,6 +177,58 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         }
     };
 
+    template<typename T>
+    struct ConversionTrait<std::unordered_map<std::string, T>>
+    {
+        std::unordered_map<std::string, T> FromJson(const Json::Value& json) const
+        {
+            std::unordered_map<std::string, T> val;
+            val.reserve(json.size());
+
+            ConversionTrait<T> trait;
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
+            {
+                GetValue(*it, val[it.name()], trait);
+            }
+
+            return val;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            if (!json.isObject())
+            {
+                return false;
+            }
+            ConversionTrait<T> trait;
+            for (const auto& v : json)
+            {
+                if (!trait.CanConvert(v))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Json::Value ToJson(const std::unordered_map<std::string, T>& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            for (const auto& [k, v] : val)
+            {
+                SetValueForKey(json, k, v);
+            }
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return fmt::format("map (string, {})", ConversionTrait<T>{}.TypeDescription());
+        }
+    };
+
 #ifdef WINRT_BASE_H
     template<>
     struct ConversionTrait<winrt::hstring> : public ConversionTrait<std::wstring>
@@ -204,6 +256,58 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             // hstring has a specific behavior for null, so it can convert it
             return ConversionTrait<std::wstring>::CanConvert(json) || json.isNull();
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T>>
+    {
+        winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T> FromJson(const Json::Value& json) const
+        {
+            std::unordered_map<winrt::hstring, T> val;
+            val.reserve(json.size());
+
+            ConversionTrait<T> trait;
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
+            {
+                GetValue(*it, val[winrt::to_hstring(it.name())], trait);
+            }
+
+            return winrt::single_threaded_map<winrt::hstring, T>(std::move(val));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            if (!json.isObject())
+            {
+                return false;
+            }
+            ConversionTrait<T> trait;
+            for (const auto& v : json)
+            {
+                if (!trait.CanConvert(v))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T>& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            for (const auto& [k, v] : val)
+            {
+                SetValueForKey(json, til::u16u8(k), v);
+            }
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return fmt::format("map (string, {})", ConversionTrait<T>{}.TypeDescription());
         }
     };
 #endif

@@ -359,6 +359,16 @@
   <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
     <value>The direction to move focus in</value>
   </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>Swap the focused pane with the adjacent pane in the specified direction</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>An alias for the "move-pane" subcommand.</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
+  <data name="CmdMovePaneDirectionArgDesc" xml:space="preserve">
+    <value>The direction to move the focused pane in</value>
+  </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
   </data>

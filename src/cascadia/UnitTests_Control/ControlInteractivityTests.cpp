@@ -32,6 +32,7 @@ namespace ControlUnitTests
         TEST_METHOD(ScrollWithSelection);
         TEST_METHOD(TestScrollWithTrackpad);
         TEST_METHOD(TestQuickDragOnSelect);
+        TEST_METHOD(PointerClickOutsideActiveRegion);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -543,5 +544,94 @@ namespace ControlUnitTests
         Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
         COORD expectedAnchor{ 0, 0 };
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+    }
+
+    void ControlInteractivityTests::PointerClickOutsideActiveRegion()
+    {
+        // This is a test for GH#10642
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
+
+        const til::size fontSize{ 9, 21 };
+
+        interactivity->_rowsToScroll = 1;
+        int expectedTop = 0;
+        int expectedViewHeight = 20;
+        int expectedBufferHeight = 20;
+
+        auto scrollChangedHandler = [&](auto&&, const Control::ScrollPositionChangedArgs& args) mutable {
+            VERIFY_ARE_EQUAL(expectedTop, args.ViewTop());
+            VERIFY_ARE_EQUAL(expectedViewHeight, args.ViewHeight());
+            VERIFY_ARE_EQUAL(expectedBufferHeight, args.BufferSize());
+        };
+        core->ScrollPositionChanged(scrollChangedHandler);
+        interactivity->ScrollPositionChanged(scrollChangedHandler);
+
+        for (int i = 0; i < 40; ++i)
+        {
+            Log::Comment(NoThrowString().Format(L"Writing line #%d", i));
+            // The \r\n in the 19th loop will cause the view to start moving
+            if (i >= 19)
+            {
+                expectedTop++;
+                expectedBufferHeight++;
+            }
+
+            conn->WriteInput(L"Foo\r\n");
+        }
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        expectedBufferHeight = 41;
+        expectedTop = 21;
+
+        Log::Comment(L"Scroll up 10 times");
+        for (int i = 0; i < 11; ++i)
+        {
+            expectedTop--;
+            interactivity->MouseWheel(modifiers,
+                                      WHEEL_DELTA,
+                                      til::point{ 0, 0 },
+                                      noMouseDown);
+        }
+
+        // Enable VT mouse event tracking
+        conn->WriteInput(L"\x1b[?1003;1006h");
+
+        // Mouse clicks in the inactive region (i.e. the top 10 rows in this case) should not register
+        Log::Comment(L"Click on the terminal");
+        const til::point terminalPosition0{ 4, 4 };
+        const til::point cursorPosition0 = terminalPosition0 * fontSize;
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0);
+        Log::Comment(L"Verify that there's not yet a selection");
+
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        Log::Comment(L"Drag the mouse");
+        // move the mouse as if to make a selection
+        const til::point terminalPosition1{ 10, 4 };
+        const til::point cursorPosition1 = terminalPosition1 * fontSize;
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1);
+        Log::Comment(L"Verify that there's still no selection");
+        VERIFY_IS_FALSE(core->HasSelection());
     }
 }

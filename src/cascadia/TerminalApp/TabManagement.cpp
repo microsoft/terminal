@@ -497,24 +497,25 @@ namespace winrt::TerminalApp::implementation
     //   TerminalPage::_OnTabSelectionChanged
     // Return Value:
     // true iff we were able to select that tab index, false otherwise
-    bool TerminalPage::_SelectTab(const uint32_t tabIndex)
+    bool TerminalPage::_SelectTab(uint32_t tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _tabs.Size())
-        {
-            auto tab{ _tabs.GetAt(tabIndex) };
-            if (_startupState == StartupState::InStartup)
-            {
-                _tabView.SelectedItem(tab.TabViewItem());
-                _UpdatedSelectedTab(tab);
-            }
-            else
-            {
-                _SetFocusedTab(tab);
-            }
+        // GH#9369 - if the argument is out of range, then clamp to the number
+        // of available tabs. Previously, we'd just silently do nothing if the
+        // value was greater than the number of tabs.
+        tabIndex = std::clamp(tabIndex, 0u, _tabs.Size() - 1);
 
-            return true;
+        auto tab{ _tabs.GetAt(tabIndex) };
+        if (_startupState == StartupState::InStartup)
+        {
+            _tabView.SelectedItem(tab.TabViewItem());
+            _UpdatedSelectedTab(tab);
         }
-        return false;
+        else
+        {
+            _SetFocusedTab(tab);
+        }
+
+        return true;
     }
 
     // Method Description:
