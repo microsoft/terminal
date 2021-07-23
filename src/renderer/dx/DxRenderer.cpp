@@ -61,7 +61,6 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
-    _invalidateFullRows{ true },
     _pool{ til::pmr::get_default_resource() },
     _invalidMap{ &_pool },
     _invalidScroll{},
@@ -583,6 +582,9 @@ try
 
     _displaySizePixels = _GetClientSize();
 
+    _invalidMap.resize(_displaySizePixels / _fontRenderData->GlyphCell());
+    RETURN_IF_FAILED(InvalidateAll());
+
     // Get the other device types so we have deeper access to more functionality
     // in our pipeline than by just walking straight from the D3D device.
 
@@ -963,8 +965,6 @@ CATCH_RETURN()
 try
 {
     _sizeTarget = Pixels;
-
-    _invalidMap.resize(_sizeTarget / _fontRenderData->GlyphCell(), true);
     return S_OK;
 }
 CATCH_RETURN();
@@ -1047,14 +1047,10 @@ HANDLE DxEngine::GetSwapChainHandle()
 
 void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
 {
-    auto invalidate = rc;
-
-    if (_invalidateFullRows)
-    {
-        invalidate = til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
-    }
-
-    _invalidMap.set(invalidate);
+    const auto size = _invalidMap.size();
+    const auto topLeft = til::point{ 0, std::min(size.height(), rc.top()) };
+    const auto bottomRight = til::point{ size.width(), std::min(size.height(), rc.bottom()) };
+    _invalidMap.set({ topLeft, bottomRight });
 }
 
 bool DxEngine::_IsAllInvalid() const noexcept
@@ -1273,7 +1269,7 @@ try
     // so the entire frame is repainted.
     if (_FullRepaintNeeded())
     {
-        _invalidMap.set_all();
+        RETURN_IF_FAILED(InvalidateAll());
     }
 
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -1322,8 +1318,8 @@ try
             // And persist the new size.
             _displaySizePixels = clientSize;
 
-            // Mark this as the first frame on the new target. We can't use incremental drawing on the first frame.
-            _firstFrame = true;
+            _invalidMap.resize(clientSize / _fontRenderData->GlyphCell());
+            RETURN_IF_FAILED(InvalidateAll());
         }
 
         _d2dDeviceContext->BeginDraw();
