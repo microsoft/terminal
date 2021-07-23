@@ -1,15 +1,46 @@
-# 'Allow scripts to access the OAuth token' was selected in pipeline.  Add the following YAML to any steps requiring access:
-#       env:
-#           MY_ACCESS_TOKEN: $(System.AccessToken)
-# Variable 'Branding' was defined in the Variables tab
-# Variable 'BuildWindowsTerminal' was defined in the Variables tab
-# Variable 'BuildWindowsVPack' was defined in the Variables tab
-# Variable 'BuildWpfControl' was defined in the Variables tab
-# Variable 'PGOBuildMode' was defined in the Variables tab
-# Variable 'RestoreUseSkipNonexistentTargets' was defined in the Variables tab
-# Variable 'TerminalInternalPackageVersion' was defined in the Variables tab
-# Variable 'TouchdownAppKey' was defined in the Variables tab
-# Multi-job configuration must be converted to matrix strategy: https://docs.microsoft.com/en-us/azure/devops/pipelines/process/phases?view=azure-devops&tabs=yaml#multi-job-configuration
+parameters:
+  - name: branding
+    displayName: "Branding (Build Type)"
+    type: string
+    default: Release
+    values:
+      - Release
+      - Preview
+  - name: buildTerminal
+    displayName: "Build Windows Terminal MSIX"
+    type: boolean
+    default: true
+  - name: buildTerminalVPack
+    displayName: "Build Windows Terminal VPack"
+    type: boolean
+    default: false
+  - name: buildWPF
+    displayName: "Build Terminal WPF Control"
+    type: boolean
+    default: false
+  - name: pgoBuildMode
+    displayName: "PGO Build Mode"
+    type: string
+    default: Optimize
+    values:
+      - Optimize
+      - Instrument
+      - None
+
+  - name: buildConfigurations
+    type: object
+    default:
+      - Release
+  - name: buildPlatforms
+    type: object
+    default:
+      - x64
+      - x86
+      - arm64
+
+variables:
+  TerminalInternalPackageVersion: "0.0.7"
+
 name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
 resources:
   repositories:
@@ -17,8 +48,15 @@ resources:
     type: git
     ref: main
 jobs:
-- job: Phase_1
-  displayName: Phase 1
+- job: Build
+  strategy:
+    matrix:
+      ${{ each config in parameters.buildConfigurations }}:
+        ${{ each platform in parameters.buildPlatforms }}:
+          ${{ config }}_${{ platform }}:
+            BuildConfiguration: ${{ config }}
+            BuildPlatform: ${{ platform }}
+  displayName: Build
   cancelTimeoutInMinutes: 1
   pool:
     name: Package ES Standard Build
@@ -61,7 +99,7 @@ jobs:
       packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
       versionListDownload: $(TerminalInternalPackageVersion)
   - task: TouchdownBuildTask@1
-    displayName: Touchdown Build - 7105, PRODEXT
+    displayName: Download Localization Files
     inputs:
       teamId: 7105
       authId: $(TouchdownAppId)
@@ -97,14 +135,10 @@ jobs:
     inputs:
       filePath: .\build\scripts\Generate-ThirdPartyNotices.ps1
       arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
-      script: >-
-        $Files = Get-ChildItem . -R -Filter 'Resources.resw' | ? FullName -Like '*en-US\*\Resources.resw'
-
-        $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
       pwsh: true
   - task: PowerShell@2
     displayName: Restore PGO Database
-    condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Optimize'))
+    condition: and(succeeded(), eq(parameters['pgoBuildMode'], 'Optimize'))
     inputs:
       filePath: tools/PGODatabase/restore-pgodb.ps1
       workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
@@ -117,13 +151,9 @@ jobs:
 
         [System.IO.File]::WriteAllBytes(".\asset.tgz", $by)
 
-
         new-item -type directory src\cascadia\CascadiaPackage\obj -ea:ignore -force
 
         tar -x -v -f .\asset.tgz -C .\src\cascadia\CascadiaPackage\obj
-
-
-
 
         new-item -type directory src\tools\MonarchPeasantPackage\obj -ea:ignore -force
 
@@ -131,11 +161,11 @@ jobs:
       pwsh: true
   - task: VSBuild@1
     displayName: Build solution **\OpenConsole.sln
-    condition: and(succeeded(), eq(variables['BuildWindowsTerminal'], 'true'))
+    condition: and(succeeded(), eq(parameters['buildTerminal'], 'true'))
     inputs:
       solution: '**\OpenConsole.sln'
       vsVersion: 16.0
-      msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=$(Branding) /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+      msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
       clean: true
@@ -149,13 +179,13 @@ jobs:
       ArtifactName: binlog-$(BuildPlatform)
   - task: PowerShell@2
     displayName: Validate binaries are optimized
-    condition: and(and(succeeded(), eq(variables['PGOBuildMode'], 'Optimize')), eq(variables['BuildPlatform'], 'x64'))
+    condition: and(and(succeeded(), eq(parameters['pgoBuildMode'], 'Optimize')), eq(variables['BuildPlatform'], 'x64'))
     inputs:
       targetType: inline
       script: "$Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll' \nforeach ($BinFile in $Binaries)\n{\n    & \"$(Build.SourcesDirectory)\\tools\\PGODatabase\\verify-pgo.ps1\" \"$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile\"\n}"
   - task: PowerShell@2
     displayName: Check MSIX for common regressions
-    condition: and(succeeded(), eq(variables['BuildWindowsTerminal'], 'true'))
+    condition: and(succeeded(), eq(parameters['buildTerminal'], 'true'))
     inputs:
       targetType: inline
       script: >-
@@ -163,32 +193,13 @@ jobs:
 
         .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
       pwsh: true
-  - task: PowerShell@2
-    displayName: Remove AppxManifest produced by Release build
-    condition: and(succeeded(), eq(variables['BuildWindowsTerminal'], 'true'))
-    inputs:
-      targetType: inline
-      filePath: .\build\scripts\Generate-ThirdPartyNotices.ps1
-      arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
-      script: gci src/cascadia/CascadiaPackage/bin -r -filter AppxManifest.xml | rm
-      pwsh: true
-  - task: VSBuild@1
-    displayName: Rebuild only CascadiaPackage in Preview livery
-    condition: and(succeeded(), eq(variables['BuildWindowsTerminal'], 'true'), eq(variables['Branding'], 'Release'))
-    enabled: False
-    inputs:
-      solution: '**\OpenConsole.sln'
-      vsVersion: 16.0
-      msbuildArgs: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview;WindowsTerminalReleaseBuild=true /p:BuildProjectReferences=false;AppxPackageDir=$(Build.SourcesDirectory)\PreviewPackage;AppxPackageName=CascadiaPreview_$(XES_APPXMANIFESTVERSION)_$(BuildPlatform)  /t:Terminal\CascadiaPackage
-      platform: $(BuildPlatform)
-      configuration: $(BuildConfiguration)
   - task: VSBuild@1
     displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
-    condition: and(succeeded(), eq(variables['BuildWpfControl'], 'true'), ne(variables['BuildPlatform'], 'arm64'))
+    condition: and(succeeded(), eq(parameters['buildWPF'], 'true'), ne(variables['BuildPlatform'], 'arm64'))
     inputs:
       solution: '**\OpenConsole.sln'
       vsVersion: 16.0
-      msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=$(Branding) /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
+      msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
       platform: $(BuildPlatform)
       configuration: $(BuildConfiguration)
   - task: PowerShell@2
@@ -213,37 +224,9 @@ jobs:
     inputs:
       filePath: build\scripts\Run-Tests.ps1
       arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
-  - task: VSTest@2
-    displayName: Run Unit Tests
-    condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
-    enabled: False
-    inputs:
-      testAssemblyVer2: >-
-        $(BUILD.SOURCESDIRECTORY)\**\*unit.test*.dll
-
-        !**\obj\**
-      runSettingsFile: $(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings
-      codeCoverageEnabled: true
-      testRunTitle: Console Unit Tests
-      platform: $(BuildPlatform)
-      configuration: $(BuildConfiguration)
-  - task: VSTest@2
-    displayName: Run Feature Tests (x64 only)
-    condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
-    enabled: False
-    inputs:
-      testAssemblyVer2: >-
-        $(BUILD.SOURCESDIRECTORY)\**\*feature.test*.dll
-
-        !**\obj\**
-      runSettingsFile: $(BUILD.SOURCESDIRECTORY)\src\unit.tests.$(BuildPlatform).runsettings
-      codeCoverageEnabled: true
-      testRunTitle: Console Feature Tests
-      platform: $(BuildPlatform)
-      configuration: $(BuildConfiguration)
   - task: CopyFiles@2
     displayName: Copy *.appx/*.msix to Artifacts (Non-PR builds only)
-    condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'),eq(variables['BuildWindowsTerminal'], 'true')))
+    condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'),eq(parameters['buildTerminal'], 'true')))
     inputs:
       Contents: >-
         **/*.appx
@@ -258,7 +241,7 @@ jobs:
       flattenFolders: true
   - task: CopyFiles@2
     displayName: Copy PublicTerminalCore.dll to Artifacts (Non-PR builds only)
-    condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['BuildWpfControl'], 'true')), ne(variables['BuildPlatform'], 'arm64'))
+    condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'), eq(parameters['buildWPF'], 'true')), ne(variables['BuildPlatform'], 'arm64'))
     inputs:
       Contents: '**/PublicTerminalCore.dll'
       TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
@@ -273,20 +256,21 @@ jobs:
       SymbolServerType: TeamServices
   - task: PublishBuildArtifacts@1
     displayName: Publish Artifact (appx) (Non-PR builds only)
-    condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'),eq(variables['BuildWindowsTerminal'], 'true')))
+    condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'),eq(parameters['buildTerminal'], 'true')))
     inputs:
       PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
       ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
   - task: PublishBuildArtifacts@1
     displayName: Publish Artifact (PublicTerminalCore) (Non-PR builds only)
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['BuildWpfControl'], 'true'), ne(variables['BuildPlatform'], 'arm64'))
+    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(parameters['buildWPF'], 'true'), ne(variables['BuildPlatform'], 'arm64'))
     inputs:
       PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
       ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
-- job: Job_1
+
+- job: BundleAndSign
   displayName: Create and sign AppX/MSIX bundles
-  dependsOn: Phase_1
-  condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['BuildWindowsTerminal'], 'true')))
+  dependsOn: Build
+  condition: and(succeeded(), and(ne(variables['Build.Reason'], 'PullRequest'), eq(parameters['buildTerminal'], 'true')))
   pool:
     name: Package ES Standard Build
   steps:
@@ -314,95 +298,11 @@ jobs:
     inputs:
       filePath: build\scripts\Create-AppxBundle.ps1
       arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-      script: >-
-        Function Create-AppxBundleMapping {
-            Param(
-                [Parameter(Mandatory)]
-                [string]
-                $InputPath,
-
-                [Parameter(Mandatory)]
-                [string]
-                $ProjectName
-            )
-
-            $lines = @("[Files]")
-            Get-ChildItem -Path:$InputPath -Recurse -Filter:*$ProjectName* -Include *.appx, *.msix | % {
-                $lines += ("`"{0}`" `"{1}`"" -f ($_.FullName, $_.Name))
-            }
-            $outputFile = New-TemporaryFile
-            $lines | Out-File -Encoding:ASCII $outputFile
-            $outputFile
-        }
-
-
-        $CascadiaMapping = Create-AppxBundleMapping -InputPath:$Env:SYSTEM_ARTIFACTSDIRECTORY -ProjectName:CascadiaPackage
-
-
-        & MakeAppx.exe bundle /v /bv 0.1.0.0 /f $CascadiaMapping.FullName /p $Env:SYSTEM_ARTIFACTSDIRECTORY\Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle
-  - task: PowerShell@2
-    displayName: Create WindowsTerminalPreview*.msixbundle
-    enabled: False
-    inputs:
-      filePath: build\scripts\Create-AppxBundle.ps1
-      arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPreview -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalPreview_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-      script: >-
-        Function Create-AppxBundleMapping {
-            Param(
-                [Parameter(Mandatory)]
-                [string]
-                $InputPath,
-
-                [Parameter(Mandatory)]
-                [string]
-                $ProjectName
-            )
-
-            $lines = @("[Files]")
-            Get-ChildItem -Path:$InputPath -Recurse -Filter:*$ProjectName* -Include *.appx, *.msix | % {
-                $lines += ("`"{0}`" `"{1}`"" -f ($_.FullName, $_.Name))
-            }
-            $outputFile = New-TemporaryFile
-            $lines | Out-File -Encoding:ASCII $outputFile
-            $outputFile
-        }
-
-
-        $CascadiaMapping = Create-AppxBundleMapping -InputPath:$Env:SYSTEM_ARTIFACTSDIRECTORY -ProjectName:CascadiaPackage
-
-
-        & MakeAppx.exe bundle /v /bv 0.1.0.0 /f $CascadiaMapping.FullName /p $Env:SYSTEM_ARTIFACTSDIRECTORY\Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle
   - task: PowerShell@2
     displayName: Create WindowsTerminalUniversal*.msixbundle
     inputs:
       filePath: build\scripts\Create-AppxBundle.ps1
       arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName WindowsTerminalUniversal -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalUniversal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-      script: >-
-        Function Create-AppxBundleMapping {
-            Param(
-                [Parameter(Mandatory)]
-                [string]
-                $InputPath,
-
-                [Parameter(Mandatory)]
-                [string]
-                $ProjectName
-            )
-
-            $lines = @("[Files]")
-            Get-ChildItem -Path:$InputPath -Recurse -Filter:*$ProjectName* -Include *.appx, *.msix | % {
-                $lines += ("`"{0}`" `"{1}`"" -f ($_.FullName, $_.Name))
-            }
-            $outputFile = New-TemporaryFile
-            $lines | Out-File -Encoding:ASCII $outputFile
-            $outputFile
-        }
-
-
-        $CascadiaMapping = Create-AppxBundleMapping -InputPath:$Env:SYSTEM_ARTIFACTSDIRECTORY -ProjectName:CascadiaPackage
-
-
-        & MakeAppx.exe bundle /v /bv 0.1.0.0 /f $CascadiaMapping.FullName /p $Env:SYSTEM_ARTIFACTSDIRECTORY\Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle
   - task: EsrpCodeSigning@1
     displayName: Submit *.msixbundle to ESRP for code signing
     inputs:
@@ -442,10 +342,11 @@ jobs:
     inputs:
       PathtoPublish: $(System.ArtifactsDirectory)
       ArtifactName: appxbundle-signed
-- job: Job_2
+
+- job: PackageAndSignWPF
   displayName: Create NuGet Package (WPF Terminal Control)
-  dependsOn: Phase_1
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['BuildWpfControl'], 'true'))
+  dependsOn: Build
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(parameters['buildWPF'], 'true'))
   pool:
     name: Package ES Standard Build
   steps:
@@ -474,7 +375,7 @@ jobs:
       downloadPath: bin\x64\$(BuildConfiguration)\
       extractTars: false
   - task: PowerShell@2
-    displayName: MOVE AROUND THE FILES BECAUSE THE DOWNLOAD ARTIFACTS TASK IS STUPID
+    displayName: Move downloaded artifacts up a level
     inputs:
       targetType: inline
       script: >-
@@ -494,7 +395,7 @@ jobs:
       selectOrConfig: config
       nugetConfigPath: NuGet.Config
   - task: VSBuild@1
-    displayName: Build solution **\OpenConsole.sln for PublicTerminalCore copy
+    displayName: Build solution **\OpenConsole.sln for WPF Control
     inputs:
       solution: '**\OpenConsole.sln'
       vsVersion: 16.0
@@ -549,10 +450,11 @@ jobs:
     inputs:
       PathtoPublish: $(Build.ArtifactStagingDirectory)\nupkg
       ArtifactName: wpf-nupkg-$(BuildConfiguration)
-- job: Job_3
+
+- job: VPack
   displayName: Create Windows vPack
-  dependsOn: Job_1
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(variables['BuildWindowsVPack'], 'true'))
+  dependsOn: Build
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), eq(parameters['buildTerminalVPack'], 'true'))
   pool:
     name: Package ES Standard Build
   steps:
@@ -583,7 +485,7 @@ jobs:
         mv Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle .\WindowsTerminal.app\
       workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed
   - task: PkgESVPack@10
-    displayName: 'Package ES - VPack '
+    displayName: 'Package ES - VPack'
     inputs:
       sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed\WindowsTerminal.app
       description: Windows Terminal pre-install application
