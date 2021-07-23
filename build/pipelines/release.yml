@@ -2,6 +2,9 @@
 trigger: none
 pr: none
 
+pool:
+  name: Package ES Standard Build
+
 parameters:
   - name: branding
     displayName: "Branding (Build Type)"
@@ -62,8 +65,6 @@ jobs:
             BuildPlatform: ${{ platform }}
   displayName: Build
   cancelTimeoutInMinutes: 1
-  pool:
-    name: Package ES Standard Build
   steps:
   - checkout: self
     clean: true
@@ -276,8 +277,6 @@ jobs:
   - job: BundleAndSign
     displayName: Create and sign AppX/MSIX bundles
     dependsOn: Build
-    pool:
-      name: Package ES Standard Build
     steps:
     - checkout: self
       clean: true
@@ -352,8 +351,6 @@ jobs:
   - job: PackageAndSignWPF
     displayName: Create NuGet Package (WPF Terminal Control)
     dependsOn: Build
-    pool:
-      name: Package ES Standard Build
     steps:
     - checkout: self
       clean: true
@@ -458,8 +455,6 @@ jobs:
   - job: VPack
     displayName: Create Windows vPack
     dependsOn: Build
-    pool:
-      name: Package ES Standard Build
     steps:
     - checkout: self
       clean: true
