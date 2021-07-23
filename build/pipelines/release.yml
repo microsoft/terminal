@@ -1,3 +1,7 @@
+# This build should never run as CI or against a pull request.
+trigger: none
+pr: none
+
 parameters:
   - name: branding
     displayName: "Branding (Build Type)"
@@ -228,7 +232,6 @@ jobs:
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: CopyFiles@2
       displayName: Copy *.appx/*.msix to Artifacts (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         Contents: >-
           **/*.appx
@@ -243,14 +246,13 @@ jobs:
         flattenFolders: true
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (appx) (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
         ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
       displayName: Copy PublicTerminalCore.dll to Artifacts (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['BuildPlatform'], 'arm64'))
+      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         Contents: '**/PublicTerminalCore.dll'
         TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
@@ -258,7 +260,7 @@ jobs:
         flattenFolders: true
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (PublicTerminalCore) (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'), ne(variables['BuildPlatform'], 'arm64'))
+      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
@@ -274,7 +276,6 @@ jobs:
   - job: BundleAndSign
     displayName: Create and sign AppX/MSIX bundles
     dependsOn: Build
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     pool:
       name: Package ES Standard Build
     steps:
@@ -351,7 +352,6 @@ jobs:
   - job: PackageAndSignWPF
     displayName: Create NuGet Package (WPF Terminal Control)
     dependsOn: Build
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     pool:
       name: Package ES Standard Build
     steps:
@@ -418,7 +418,6 @@ jobs:
         SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
     - task: CopyFiles@2
       displayName: Copy *.nupkg to Artifacts (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         Contents: '**/*Wpf*.nupkg'
         TargetFolder: $(Build.ArtifactStagingDirectory)/nupkg
@@ -451,7 +450,6 @@ jobs:
           ]
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (nupkg) (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)\nupkg
         ArtifactName: wpf-nupkg-$(BuildConfiguration)
@@ -460,7 +458,6 @@ jobs:
   - job: VPack
     displayName: Create Windows vPack
     dependsOn: Build
-    condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
     pool:
       name: Package ES Standard Build
     steps:
