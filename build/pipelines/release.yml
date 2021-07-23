@@ -238,7 +238,10 @@ jobs:
       displayName: Copy PublicTerminalCore.dll to Artifacts (Non-PR builds only)
       condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
-        Contents: '**/PublicTerminalCore.dll'
+        Contents: >-
+          **/PublicTerminalCore.dll
+
+          **/api-ms-win-core-synch-l1-2-0.dll
         TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
         OverWrite: true
         flattenFolders: true
@@ -332,6 +335,11 @@ jobs:
 
 - ${{ if eq(parameters.buildWPF, true) }}:
   - job: PackageAndSignWPF
+    strategy:
+      matrix:
+        ${{ each config in parameters.buildConfigurations }}:
+          ${{ config }}:
+            BuildConfiguration: ${{ config }}
     displayName: Create NuGet Package (WPF Terminal Control)
     dependsOn: Build
     steps:
