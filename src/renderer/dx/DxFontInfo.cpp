@@ -228,9 +228,9 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
         THROW_IF_FAILED(set.As(&set1));
 
         const std::array<DWRITE_FONT_PROPERTY, 3> fontProperties{
-            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_TYPOGRAPHIC_FAMILY_NAME, _familyName.data(), localeName.data() },
-            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_WIN32_FAMILY_NAME, _familyName.data(), localeName.data() },
-            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_FULL_NAME, _familyName.data(), localeName.data() }
+            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_TYPOGRAPHIC_FAMILY_NAME, _familyName.data(), nullptr },
+            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_WIN32_FAMILY_NAME, _familyName.data(), nullptr },
+            DWRITE_FONT_PROPERTY{ DWRITE_FONT_PROPERTY_ID_FULL_NAME, _familyName.data(), nullptr }
         };
 
         Microsoft::WRL::ComPtr<IDWriteFontSet1> filteredSet1;
