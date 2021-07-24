@@ -346,6 +346,15 @@
         { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
         { "command": "togglePaneZoom" },
         { "command": "toggleReadOnlyMode" },
+        { "command": { "action": "movePaneToTab", "index": 0 } },
+        { "command": { "action": "movePaneToTab", "index": 1 } },
+        { "command": { "action": "movePaneToTab", "index": 2 } },
+        { "command": { "action": "movePaneToTab", "index": 3 } },
+        { "command": { "action": "movePaneToTab", "index": 4 } },
+        { "command": { "action": "movePaneToTab", "index": 5 } },
+        { "command": { "action": "movePaneToTab", "index": 6 } },
+        { "command": { "action": "movePaneToTab", "index": 7 } },
+        { "command": { "action": "movePaneToTab", "index": 8 } },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },

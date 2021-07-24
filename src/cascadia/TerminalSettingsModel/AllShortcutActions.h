@@ -35,6 +35,7 @@
     ON_ALL_ACTIONS(NextTab)              \
     ON_ALL_ACTIONS(PrevTab)              \
     ON_ALL_ACTIONS(SendInput)            \
+    ON_ALL_ACTIONS(MovePaneToTab)            \
     ON_ALL_ACTIONS(SplitPane)            \
     ON_ALL_ACTIONS(TogglePaneZoom)       \
     ON_ALL_ACTIONS(SwitchToTab)          \
@@ -101,6 +102,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(SendInput)            \
     ON_ALL_ACTIONS_WITH_ARGS(SetColorScheme)       \
     ON_ALL_ACTIONS_WITH_ARGS(SetTabColor)          \
+    ON_ALL_ACTIONS_WITH_ARGS(MovePaneToTab)            \
     ON_ALL_ACTIONS_WITH_ARGS(SplitPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \

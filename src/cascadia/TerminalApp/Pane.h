@@ -32,6 +32,11 @@ enum class Borders : int
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
 
+namespace winrt::TerminalApp::implementation
+{
+    struct TerminalTab;
+}
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -71,6 +76,7 @@ public:
     void Shutdown();
     void Close();
 
+    std::shared_ptr<Pane> AttachPane(std::shared_ptr<Pane> pane);
     std::shared_ptr<Pane> DetachPane(uint32_t id);
 
     int GetLeafPaneCount() const noexcept;
@@ -85,13 +91,28 @@ public:
     bool ContainsReadOnly() const;
 
     template <typename F>
-    void WalkTree(F f);
+    //requires std::predicate<F, std::shared_ptr<Pane>>
+    bool WalkTree(F f)
+    {
+        if (f(shared_from_this()))
+        {
+            return true;
+        }
+
+        if (!_IsLeaf())
+        {
+            return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+        }
+
+        return false;
+    }
 
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
+    DECLARE_EVENT(Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct SnapSizeResult;
@@ -134,8 +155,7 @@ private:
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                    const float splitSize,
-                                                                   const GUID& profile,
-                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
+                                                                   std::shared_ptr<Pane> newPane);
 
     void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
@@ -243,5 +263,5 @@ private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
 
-    friend class winrt::TerminalApp::implementation::TerminalTab;
+    friend struct winrt::TerminalApp::implementation::TerminalTab;
 };

@@ -282,6 +282,19 @@
   <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
     <value>Move focus the tab at the given index</value>
   </data>
+  <data name="CmdMovePaneToTabTargetArgDesc" xml:space="preserve">
+    <value>Move focused pane to the tab at the given index</value>
+  </data>
+  <data name="CmdMovePaneToTabDesc" xml:space="preserve">
+    <value>Move focused pane to another tab</value>
+  </data>
+  <data name="CmdMPTTDesc" xml:space="preserve">
+    <value>An alias for the "move-pane-to-tab" subcommand.</value>
+    <comment>{Locked="\"move-pane-to-tab\""}</comment>
+  </data>
+  <data name="CmdMovePaneToTabTargetArgDesc" xml:space="preserve">
+    <value>Move focused pane to the tab at the given index</value>
+  </data>
   <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
     <value>Specify the size as a percentage of the parent pane. Valid values are between (0,1), exclusive.</value>
   </data>

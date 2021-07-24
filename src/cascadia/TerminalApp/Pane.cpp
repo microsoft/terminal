@@ -679,6 +679,34 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
     }
 }
 
+// Method Description:
+// - Attempts to add the provided pane as a split of the current pane.
+// Arguments:
+// - pane: the new pane to add
+// Return Value:
+// - the new reference to the child created from the current pane.
+std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane)
+{
+    
+    // Splice the new pane into the tree
+    auto [first, _] = _Split(SplitState::Automatic, .5, pane);
+
+    // If the new pane has a child that was the focus, re-focus it
+    // to steal focus from the currently focused pane.
+    if (pane->_HasFocusedChild())
+    {
+        pane->WalkTree([](auto p) {
+            if (p->_lastActive)
+            {
+                p->_FocusFirstChild();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    return first;
+}
 
 // Method Description:
 // - Attempts to find one of our children matching `id,` if found remove the
@@ -708,6 +736,15 @@ std::shared_ptr<Pane> Pane::DetachPane(uint32_t id) {
         // Remove the child from the tree, replace the current node with the
         // other child.
         _CloseChild(isFirstChild);
+
+        detached->_borders = Borders::None;
+        detached->_UpdateBorders();
+
+        // Trigger the detached event on each child
+        detached->WalkTree([](auto pane) {
+            pane->_PaneDetachedHandlers(pane);
+            return false;
+        });
 
         return detached;
     }
@@ -1449,7 +1486,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
         return { nullptr, nullptr };
     }
 
-    return _Split(splitType, splitSize, profile, control);
+    auto newPane = std::make_shared<Pane>(profile, control);
+    return _Split(splitType, splitSize, newPane);
 }
 
 // Method Description:
@@ -1488,8 +1526,7 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
                                                                      const float splitSize,
-                                                                     const GUID& profile,
-                                                                     const TermControl& control)
+                                                                     std::shared_ptr<Pane> newPane)
 {
     if (splitType == SplitState::None)
     {
@@ -1529,7 +1566,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
     _profile = std::nullopt;
     _control = { nullptr };
-    _secondChild = std::make_shared<Pane>(profile, control);
+    _secondChild = newPane;
 
     _CreateRowColDefinitions();
 
@@ -1665,18 +1702,6 @@ bool Pane::FocusPane(const uint32_t id)
     }
     return false;
 }
-
-template <typename F>
-void WalkTree(F f)
-{
-    f(shared_from_this());
-    if (!_IsLeaf())
-    {
-        _firstChild->WalkTree(f);
-        _secondChild->WalkTree(f);
-    }
-}
-
 
 // Method Description:
 // - Gets the size in pixels of each of our children, given the full size they
@@ -2188,3 +2213,4 @@ bool Pane::ContainsReadOnly() const
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
+DEFINE_EVENT(Pane, Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);

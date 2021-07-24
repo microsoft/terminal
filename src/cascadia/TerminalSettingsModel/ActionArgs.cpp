@@ -23,6 +23,7 @@
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
 #include "CloseTabArgs.g.cpp"
+#include "MovePaneToTabArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
 #include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
@@ -222,6 +223,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         return winrt::hstring{
             fmt::format(L"{}, {}", RS_(L"NewTabCommandKey"), newTerminalArgsStr)
+        };
+    }
+
+    winrt::hstring MovePaneToTabArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(L"{}, index:{}", RS_(L"MovePaneToTabCommandKey"), TabIndex())
         };
     }
 

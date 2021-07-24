@@ -25,6 +25,7 @@
 #include "CloseTabArgs.g.h"
 #include "ScrollUpArgs.g.h"
 #include "ScrollDownArgs.g.h"
+#include "MovePaneToTabArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 #include "FindMatchArgs.g.h"
@@ -282,6 +283,57 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         size_t Hash() const
         {
             return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TerminalArgs());
+        }
+    };
+
+    struct MovePaneToTabArgs : public MovePaneToTabArgsT<MovePaneToTabArgs>
+    {
+        MovePaneToTabArgs() = default;
+        MovePaneToTabArgs(uint32_t& tabIndex) :
+            _TabIndex{ tabIndex } {};
+        ACTION_ARG(uint32_t, TabIndex, 0);
+
+        static constexpr std::string_view TabIndexKey{ "index" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<MovePaneToTabArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_TabIndex == _TabIndex;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<MovePaneToTabArgs>();
+            JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
+            return { *args, {} };
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<MovePaneToTabArgs>(val) };
+            JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<MovePaneToTabArgs>() };
+            copy->_TabIndex = _TabIndex;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabIndex());
         }
     };
 
@@ -1643,6 +1695,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
+    BASIC_FACTORY(MovePaneToTabArgs);
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);
     BASIC_FACTORY(NewTabArgs);

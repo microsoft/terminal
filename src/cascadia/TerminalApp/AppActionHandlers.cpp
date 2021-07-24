@@ -143,6 +143,20 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleMovePaneToTab(const IInspectable& /*sender*/,
+                                        const ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneToTabArgs>())
+        {
+            _MovePaneToTab(realArgs.TabIndex());
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {

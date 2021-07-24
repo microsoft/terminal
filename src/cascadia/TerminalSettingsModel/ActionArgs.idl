@@ -141,6 +141,12 @@ namespace Microsoft.Terminal.Settings.Model
         NewTerminalArgs TerminalArgs { get; };
     };
 
+    [default_interface] runtimeclass MovePaneToTabArgs : IActionArgs
+    {
+        MovePaneToTabArgs(UInt32 tabIndex);
+        UInt32 TabIndex;
+    };
+
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
         SwitchToTabArgs(UInt32 tabIndex);

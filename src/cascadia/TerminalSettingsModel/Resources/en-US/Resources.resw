@@ -346,6 +346,9 @@
   <data name="SplitHorizontalCommandKey" xml:space="preserve">
     <value>Split pane horizontally</value>
   </data>
+  <data name="MovePaneToTabCommandKey" xml:space="preserve">
+    <value>Move pane to tab</value>
+  </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
   </data>

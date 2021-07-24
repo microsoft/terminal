@@ -190,6 +190,7 @@ void AppCommandlineArgs::_buildParser()
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
+    _buildMovePaneToTabParser();
     _buildFocusTabParser();
     _buildMoveFocusParser();
     _buildFocusPaneParser();
@@ -295,6 +296,43 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 
     setupSubcommand(_newPaneCommand);
     setupSubcommand(_newPaneShort);
+}
+// Method Description:
+// - Adds the `move-pane-to-tab` subcommand and related options to the commandline parser.
+// - Additionally adds the `mptt` subcommand, which is just a shortened version of `move-pane-to-tab`
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildMovePaneToTabParser()
+{
+    _movePaneToTabCommand = _app.add_subcommand("move-pane-to-tab", RS_A(L"CmdMovePaneToTabDesc"));
+    _movePaneToTabShort = _app.add_subcommand("mptt", RS_A(L"CmdMPTTDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        subcommand->add_option("-t,--target",
+                                                _movePaneToTabIndex,
+                                                RS_A(L"CmdMovePaneToTabTargetArgDesc"));
+
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the action from the values we've parsed on the commandline.
+            ActionAndArgs movePaneToTabAction{};
+
+            if (_movePaneToTabIndex >= 0)
+            {
+                movePaneToTabAction.Action(ShortcutAction::MovePaneToTab);
+                MovePaneToTabArgs args{ static_cast<unsigned int>(_movePaneToTabIndex) };
+                movePaneToTabAction.Args(args);
+                _startupActions.push_back(movePaneToTabAction);
+            }
+        });
+    };
+    setupSubcommand(_movePaneToTabCommand);
+    setupSubcommand(_movePaneToTabShort);
 }
 
 // Method Description:
@@ -570,6 +608,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
 {
     return !(*_newTabCommand.subcommand ||
              *_newTabShort.subcommand ||
+             *_movePaneToTabCommand ||
+             *_movePaneToTabShort ||
              *_focusTabCommand ||
              *_focusTabShort ||
              *_moveFocusCommand ||
@@ -602,6 +642,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _splitPaneSize = 0.5f;
     _splitDuplicate = false;
 
+    _movePaneToTabIndex = -1;
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;

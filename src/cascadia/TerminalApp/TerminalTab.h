@@ -25,7 +25,7 @@ namespace winrt::TerminalApp::implementation
         TerminalTab(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
-        void Initialize(const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void Initialize();
 
         winrt::Microsoft::Terminal::Control::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
@@ -33,6 +33,9 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
         winrt::fire_and_forget Scroll(const int delta);
+
+        std::shared_ptr<Pane> DetachPane();
+        void AttachPane(std::shared_ptr<Pane> pane);
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                        const float splitSize,
@@ -99,6 +102,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
+
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
@@ -130,8 +134,7 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshVisualState();
 
-        void _BindEventHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control) noexcept;
-
+        void _DetachEventHandlersFromControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 

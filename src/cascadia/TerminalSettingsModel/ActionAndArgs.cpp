@@ -40,6 +40,7 @@ static constexpr std::string_view ScrollToBottomKey{ "scrollToBottom" };
 static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
+static constexpr std::string_view MovePaneToTabKey { "movePaneToTab" };
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };
@@ -339,6 +340,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::SendInput, L"" },
                 { ShortcutAction::SetColorScheme, L"" },
                 { ShortcutAction::SetTabColor, RS_(L"ResetTabColorCommandKey") },
+                { ShortcutAction::MovePaneToTab, RS_(L"MovePaneToTabCommandKey") },
                 { ShortcutAction::SplitPane, RS_(L"SplitPaneCommandKey") },
                 { ShortcutAction::SwitchToTab, RS_(L"SwitchToTabCommandKey") },
                 { ShortcutAction::TabSearch, RS_(L"TabSearchCommandKey") },
