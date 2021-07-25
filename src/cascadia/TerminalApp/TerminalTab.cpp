@@ -227,7 +227,7 @@ namespace winrt::TerminalApp::implementation
             _AttachEventHandlersToPane(pane);
             if (auto control = pane->GetTerminalControl())
             {
-                _AttachEventHandlersToControl(control);
+                _AttachEventHandlersToControl(pane->Id().value(), control);
             }
             return false;
         });
@@ -487,10 +487,10 @@ namespace winrt::TerminalApp::implementation
             ++_nextPaneId;
         }
         _activePane = first;
-        _AttachEventHandlersToControl(control);
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
+        _AttachEventHandlersToControl(second->Id().value(), control);
         _AttachEventHandlersToPane(first);
         _AttachEventHandlersToPane(second);
 
@@ -508,6 +508,7 @@ namespace winrt::TerminalApp::implementation
         if (_rootPane == _activePane)
         {
             auto p = _rootPane;
+            p->_PaneDetachedHandlers(p);
             _rootPane = nullptr;
             _activePane = nullptr;
 
@@ -519,17 +520,9 @@ namespace winrt::TerminalApp::implementation
         // Attempt to remove the active pane from the tree
         if (auto pane = _rootPane->DetachPane(_activePane->Id().value()))
         {
-            // Pane->DetachPane will trigger the `Detached` event on a pane
-            // which will clean up the pane event handlers.
-            // But we also need to remove the event handlers from the underlying
-            // terminal control.
-            pane->WalkTree([&](auto p) {
-                if (auto control = p->GetTerminalControl())
-                {
-                    _DetachEventHandlersFromControl(control);
-                }
-                return false;
-            });
+            // Just make sure that the remaining pane is marked active
+            _UpdateActivePane(_rootPane->GetActivePane());
+
             return pane;
         }
 
@@ -543,14 +536,14 @@ namespace winrt::TerminalApp::implementation
         // and update their ids.
         pane->WalkTree([&](auto p) {
             _AttachEventHandlersToPane(p);
-            if (auto control = p->GetTerminalControl())
-            {
-                _AttachEventHandlersToControl(control);
-            }
             if (p->_IsLeaf())
             {
                 p->Id(_nextPaneId);
                 _nextPaneId++;
+            }
+            if (auto control = p->GetTerminalControl())
+            {
+                _AttachEventHandlersToControl(p->Id().value(), control);
             }
             return false;
         });
@@ -686,10 +679,23 @@ namespace winrt::TerminalApp::implementation
         _headerControl.BeginRename();
     }
 
-    void TerminalTab::_DetachEventHandlersFromControl(const TermControl& /*control*/)
+    void TerminalTab::_DetachEventHandlersFromControl(const uint32_t paneId, const TermControl& control)
     {
-        //TODO: Figure out how to remove the tab event handlers from a control
-        return;
+
+        auto it = _controlEvents.find(paneId);
+        if (it != _controlEvents.end())
+        {
+            auto& events = it->second;
+
+            control.TitleChanged(events.titleToken);
+            control.FontSizeChanged(events.fontToken);
+            control.TabColorChanged(events.colorToken);
+            control.SetTaskbarProgress(events.taskbarToken);
+            control.ReadOnlyChanged(events.readOnlyToken);
+            control.FocusFollowMouseRequested(events.focusToken);
+
+            _controlEvents.erase(paneId);
+        }
     }
 
     // Method Description:
@@ -702,12 +708,13 @@ namespace winrt::TerminalApp::implementation
     // - control: the TermControl to add events to.
     // Return Value:
     // - <none>
-    void TerminalTab::_AttachEventHandlersToControl(const TermControl& control)
+    void TerminalTab::_AttachEventHandlersToControl(const uint32_t paneId, const TermControl& control)
     {
         auto weakThis{ get_weak() };
         auto dispatcher = TabViewItem().Dispatcher();
+        ControlEventTokens events{};
 
-        auto titleToken = control.TitleChanged([weakThis](auto&&, auto&&) {
+        events.titleToken = control.TitleChanged([weakThis](auto&&, auto&&) {
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
             {
@@ -722,7 +729,7 @@ namespace winrt::TerminalApp::implementation
         // On the latter event, we tell the root pane to resize itself so that its descendants
         // (including ourself) can properly snap to character grids. In future, we may also
         // want to do that on regular font changes.
-        auto fontToken = control.FontSizeChanged([this](const int /* fontWidth */,
+        events.fontToken = control.FontSizeChanged([this](const int /* fontWidth */,
                                        const int /* fontHeight */,
                                        const bool isInitialChange) {
             if (isInitialChange)
@@ -731,7 +738,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        auto colorToken = control.TabColorChanged([weakThis](auto&&, auto&&) {
+        events.colorToken = control.TabColorChanged([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
                 // The control's tabColor changed, but it is not necessarily the
@@ -741,7 +748,7 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        auto taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
+        events.taskbarToken = control.SetTaskbarProgress([dispatcher, weakThis](auto&&, auto &&) -> winrt::fire_and_forget {
             co_await winrt::resume_foreground(dispatcher);
             // Check if Tab's lifetime has expired
             if (auto tab{ weakThis.get() })
@@ -750,14 +757,14 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        auto readOnlyToken = control.ReadOnlyChanged([weakThis](auto&&, auto&&) {
+        events.readOnlyToken = control.ReadOnlyChanged([weakThis](auto&&, auto&&) {
             if (auto tab{ weakThis.get() })
             {
                 tab->_RecalculateAndApplyReadOnly();
             }
         });
 
-        auto focusToken = control.FocusFollowMouseRequested([weakThis](auto&& sender, auto&&) {
+        events.focusToken = control.FocusFollowMouseRequested([weakThis](auto&& sender, auto&&) {
             if (const auto tab{ weakThis.get() })
             {
                 if (tab->_focusState != FocusState::Unfocused)
@@ -769,6 +776,8 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        _controlEvents[paneId] = events;
     }
 
     // Method Description:
@@ -955,10 +964,9 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        bool alreadyDetached = false;
         // Add a Detached event handler to the Pane to clean up tab state
         // and other event handlers when a pane is removed from this tab.
-        pane->Detached([weakThis, &weakPane, gotFocusToken, lostFocusToken, closedToken, bellToken, &alreadyDetached](std::shared_ptr<Pane> /*sender*/) {
+        pane->Detached([weakThis, weakPane, gotFocusToken, lostFocusToken, closedToken, bellToken, alreadyDetached = false](std::shared_ptr<Pane> /*sender*/) mutable{
 
             // Make sure we do this at most once
             if (alreadyDetached)
@@ -972,8 +980,14 @@ namespace winrt::TerminalApp::implementation
                 pane->LostFocus(lostFocusToken);
                 pane->Closed(closedToken);
                 pane->PaneRaiseBell(bellToken);
+
                 if (auto tab{ weakThis.get() })
                 {
+                    if (auto control = pane->GetTerminalControl())
+                    {
+                        tab->_DetachEventHandlersFromControl(pane->Id().value(), control);
+                    }
+
                     for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {
                         if (*i == pane->Id())

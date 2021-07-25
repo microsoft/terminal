@@ -110,6 +110,18 @@ namespace winrt::TerminalApp::implementation
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
 
+        struct ControlEventTokens
+        {
+            winrt::event_token titleToken;
+            winrt::event_token fontToken;
+            winrt::event_token colorToken;
+            winrt::event_token taskbarToken;
+            winrt::event_token readOnlyToken;
+            winrt::event_token focusToken;
+        };
+
+        std::unordered_map<uint32_t, ControlEventTokens> _controlEvents;
+
         std::vector<uint32_t> _mruPanes;
         uint32_t _nextPaneId{ 0 };
 
@@ -134,8 +146,8 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshVisualState();
 
-        void _DetachEventHandlersFromControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
-        void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void _DetachEventHandlersFromControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void _AttachEventHandlersToControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);

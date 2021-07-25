@@ -238,6 +238,7 @@
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
+        "movePaneToTab",
         "moveTab",
         "newTab",
         "newWindow",
@@ -491,6 +492,23 @@
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+          }
+        }
+      }
+    ],
+    "required": [ "index" ]
+  },
+  "MovePaneToTabAction": {
+      "description": "Arguments corresponding to a Move Pane To Tab Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "movePaneToTab" },
+            "index": {
+              "type": "integer",
+              "default": 0,
+              "description": "Which tab to move the pane to, with the first being 0"
             }
           }
         }
