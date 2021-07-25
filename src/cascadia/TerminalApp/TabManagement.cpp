@@ -95,7 +95,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Sets up state, event handlers, etc on a tab object that was just made.
     // Arguments:
-    // - newTabImpl: the unitialize tab
+    // - newTabImpl: the uninitialized tab.
     void TerminalPage::_InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl)
     {
         newTabImpl->Initialize();

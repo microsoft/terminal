@@ -1182,7 +1182,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Moves the currently active pnae on the currently active tab to the
+    // - Moves the currently active pane on the currently active tab to the
     //   specified tab. If the tab index is greater than the number of
     //   tabs, then a new tab will be created for the pane. Similarly, if a pane
     //   is the last remaining pane on a tab, that tab will be closed upon moving.
