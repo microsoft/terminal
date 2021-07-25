@@ -78,6 +78,7 @@ localtime
 lround
 LSHIFT
 memicmp
+mptt
 mov
 msappx
 MULTIPLEUSE
