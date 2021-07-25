@@ -205,7 +205,6 @@ namespace winrt::TerminalApp::implementation
     //   that was last focused.
     TermControl TerminalTab::GetActiveTerminalControl() const
     {
-
         if (_activePane)
         {
             return _activePane->GetTerminalControl();
@@ -501,6 +500,13 @@ namespace winrt::TerminalApp::implementation
         _UpdateActivePane(second);
     }
 
+    // Method Description:
+    // - Removes the currently active pane from this tab. If that was the only
+    //   remaining pane, then the entire tab is closed as well.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The removed pane.
     std::shared_ptr<Pane> TerminalTab::DetachPane()
     {
         // if we only have one pane, remove it entirely
@@ -526,10 +532,16 @@ namespace winrt::TerminalApp::implementation
             return pane;
         }
 
-
         return nullptr;
     }
 
+    // Method Description:
+    // - Add an arbitrary pane to this tab. This will be added as a split on the
+    //   currently active pane.
+    // Arguments:
+    // - pane: The pane to add.
+    // Return Value:
+    // - <none>
     void TerminalTab::AttachPane(std::shared_ptr<Pane> pane)
     {
         // Add the new event handlers to the new pane(s)
@@ -554,7 +566,7 @@ namespace winrt::TerminalApp::implementation
         _activePane = first;
         _AttachEventHandlersToPane(first);
 
-        // Manually trigger the GotFocus event on the newly attached pane
+        // Make sure that we have the right pane set as the active pane
         pane->WalkTree([&](auto p) {
             if (p->_lastActive)
             {
@@ -679,9 +691,17 @@ namespace winrt::TerminalApp::implementation
         _headerControl.BeginRename();
     }
 
+    // Method Description:
+    // - Removes any event handlers set by the tab on the given pane's control.
+    //   The pane's ID is the most stable identifier for a given control, because
+    //   the control itself doesn't have a particular ID and its pointer is //   unstable since it is moved when panes split.
+    // Arguments:
+    // - paneId: The ID of the pane that contains the given control.
+    // - control: the control to remove events from.
+    // Return Value:
+    // - <none>
     void TerminalTab::_DetachEventHandlersFromControl(const uint32_t paneId, const TermControl& control)
     {
-
         auto it = _controlEvents.find(paneId);
         if (it != _controlEvents.end())
         {
@@ -705,6 +725,7 @@ namespace winrt::TerminalApp::implementation
     //   * notify us when the control's title changed, so we can update our own
     //     title (if necessary)
     // Arguments:
+    // - paneId: the ID of the pane that this control belongs to.
     // - control: the TermControl to add events to.
     // Return Value:
     // - <none>
@@ -730,8 +751,8 @@ namespace winrt::TerminalApp::implementation
         // (including ourself) can properly snap to character grids. In future, we may also
         // want to do that on regular font changes.
         events.fontToken = control.FontSizeChanged([this](const int /* fontWidth */,
-                                       const int /* fontHeight */,
-                                       const bool isInitialChange) {
+                                                          const int /* fontHeight */,
+                                                          const bool isInitialChange) {
             if (isInitialChange)
             {
                 _rootPane->Relayout();
@@ -966,8 +987,7 @@ namespace winrt::TerminalApp::implementation
 
         // Add a Detached event handler to the Pane to clean up tab state
         // and other event handlers when a pane is removed from this tab.
-        pane->Detached([weakThis, weakPane, gotFocusToken, lostFocusToken, closedToken, bellToken, alreadyDetached = false](std::shared_ptr<Pane> /*sender*/) mutable{
-
+        pane->Detached([weakThis, weakPane, gotFocusToken, lostFocusToken, closedToken, bellToken, alreadyDetached = false](std::shared_ptr<Pane> /*sender*/) mutable {
             // Make sure we do this at most once
             if (alreadyDetached)
             {

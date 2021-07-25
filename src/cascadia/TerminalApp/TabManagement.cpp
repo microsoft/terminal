@@ -92,10 +92,14 @@ namespace winrt::TerminalApp::implementation
     }
     CATCH_LOG();
 
+    // Method Description:
+    // - Sets up state, event handlers, etc on a tab object that was just made.
+    // Arguments:
+    // - newTabImpl: the unitialize tab
     void TerminalPage::_InitializeTab(winrt::com_ptr<TerminalTab> newTabImpl)
     {
         newTabImpl->Initialize();
- 
+
         // Add the new tab to the list of our tabs.
         _tabs.Append(*newTabImpl);
         _mruTabs.Append(*newTabImpl);
@@ -203,6 +207,10 @@ namespace winrt::TerminalApp::implementation
         _tabView.SelectedItem(tabViewItem);
     }
 
+    // Method Description:
+    // - Create a new tab using a specified pane as the root.
+    // Arguments:
+    // - pane: The pane to use as the root.
     void TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane)
     {
         auto newTabImpl = winrt::make_self<TerminalTab>(pane);
@@ -251,7 +259,6 @@ namespace winrt::TerminalApp::implementation
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profileGuid, newControl);
         }
-
     }
 
     // Method Description:

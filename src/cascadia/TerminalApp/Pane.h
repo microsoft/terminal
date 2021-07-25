@@ -90,7 +90,15 @@ public:
 
     bool ContainsReadOnly() const;
 
-    template <typename F>
+    // Method Description:
+    // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
+    //   tree, calling a predicate on each pane in a depth-first pattern.
+    // - If the predicate returns true, recursion is stopped early.
+    // Arguments:
+    // - f: The function to be applied to each pane.
+    // Return Value:
+    // - true if the predicate returned true on any pane.
+    template<typename F>
     //requires std::predicate<F, std::shared_ptr<Pane>>
     bool WalkTree(F f)
     {
@@ -106,7 +114,6 @@ public:
 
         return false;
     }
-
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

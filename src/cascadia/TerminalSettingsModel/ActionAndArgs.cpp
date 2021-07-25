@@ -40,7 +40,7 @@ static constexpr std::string_view ScrollToBottomKey{ "scrollToBottom" };
 static constexpr std::string_view SendInputKey{ "sendInput" };
 static constexpr std::string_view SetColorSchemeKey{ "setColorScheme" };
 static constexpr std::string_view SetTabColorKey{ "setTabColor" };
-static constexpr std::string_view MovePaneToTabKey { "movePaneToTab" };
+static constexpr std::string_view MovePaneToTabKey{ "movePaneToTab" };
 static constexpr std::string_view SplitPaneKey{ "splitPane" };
 static constexpr std::string_view SwitchToTabKey{ "switchToTab" };
 static constexpr std::string_view TabSearchKey{ "tabSearch" };

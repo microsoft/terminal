@@ -311,8 +311,8 @@ void AppCommandlineArgs::_buildMovePaneToTabParser()
 
     auto setupSubcommand = [this](auto* subcommand) {
         subcommand->add_option("-t,--target",
-                                                _movePaneToTabIndex,
-                                                RS_A(L"CmdMovePaneToTabTargetArgDesc"));
+                               _movePaneToTabIndex,
+                               RS_A(L"CmdMovePaneToTabTargetArgDesc"));
 
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure

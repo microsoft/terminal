@@ -687,7 +687,6 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
 // - the new reference to the child created from the current pane.
 std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane)
 {
-    
     // Splice the new pane into the tree
     auto [first, _] = _Split(SplitState::Automatic, .5, pane);
 
@@ -717,7 +716,8 @@ std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane)
 // - The id of the pane to close
 // Return Value:
 // - The removed pane, if found.
-std::shared_ptr<Pane> Pane::DetachPane(uint32_t id) {
+std::shared_ptr<Pane> Pane::DetachPane(uint32_t id)
+{
     // We can't remove a pane if we only have a reference to a leaf, even if we
     // match the id.
     if (_IsLeaf())
@@ -725,7 +725,7 @@ std::shared_ptr<Pane> Pane::DetachPane(uint32_t id) {
         return nullptr;
     }
 
-    // Check if either of our children matches the search 
+    // Check if either of our children matches the search
     auto isFirstChild = _firstChild->_IsLeaf() && _firstChild->_id == id;
     auto isSecondChild = _secondChild->_IsLeaf() && _secondChild->_id == id;
 
@@ -748,7 +748,6 @@ std::shared_ptr<Pane> Pane::DetachPane(uint32_t id) {
 
         return detached;
     }
-
 
     if (auto detached = !_firstChild->_IsLeaf() ? _firstChild->DetachPane(id) : nullptr)
     {
