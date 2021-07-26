@@ -246,6 +246,12 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 void DxEngine::ToggleShaderEffects()
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
+    // If we're enabling the shader, try reloading it.
+    // It's not as good as hot reloading the hlsl file itself, but it's good enough. 
+    if (_terminalEffectsEnabled)
+    {
+        _SetupTerminalEffects();
+    }
     LOG_IF_FAILED(InvalidateAll());
 }
 

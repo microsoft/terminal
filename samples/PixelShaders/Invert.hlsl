@@ -31,7 +31,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     float4 color = shaderTexture.Sample(samplerState, tex);
 
     // Inverts the rgb values (xyz) but don't touch the alpha (w)
-    // color.xyz = 1.0 - color.xyz;
+    color.xyz = 1.0 - color.xyz;
 
     float2 relativeCursorPos = CursorPosition / BufferSize;
     if (tex.y >= relativeCursorPos.y) {
