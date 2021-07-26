@@ -11,13 +11,14 @@ cbuffer PixelShaderSettings {
   // UI Scale
   float  Scale;
   // Resolution of the shaderTexture
-  // float2 Resolution;
+  float2 Resolution;
   // Background color as rgba
   float4 Background;
-  
-  // float2 GlyphSize;
+  float2 GlyphSize;
   float2 CursorPosition;
   float2 BufferSize;
+  float foo;
+  float3 bar;
 };
 
 // A pixel shader is a program that given a texture coordinate (tex) produces a color.
@@ -33,7 +34,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     // color.xyz = 1.0 - color.xyz;
 
     float2 relativeCursorPos = CursorPosition / BufferSize;
-    if (tex.y > relativeCursorPos.y) {
+    if (tex.y >= relativeCursorPos.y) {
         color.xy = CursorPosition / BufferSize;
         color.z = 0.0;
     }

@@ -272,7 +272,9 @@ namespace Microsoft::Console::Render
             DirectX::XMFLOAT2 GlyphSize;
             DirectX::XMFLOAT2 CursorPosition;
             DirectX::XMFLOAT2 BufferSize;
-            // You can always add more values to the end, but they must always be in this order!
+            // You can always add more values to the end, but they must always be in this order.
+            // Adding values is not a breaking change. Shaders that don't have those values declared will simply ignore them.
+            // However, if you want to use `CursorPostion`, then you'll need to declare all the members that preceed it.
 #pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
         } _pixelShaderSettings;
 
