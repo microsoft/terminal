@@ -225,7 +225,8 @@ namespace Microsoft::Console::Render
 
         // Controls if configured terminal effects are enabled
         bool _terminalEffectsEnabled;
-        til::point _lastCursor{ 0, 0 };
+        // til::point _lastCursor{ 0, 0 };
+        DirectX::XMFLOAT2 _psCursorPosition;
         til::size _lastBufferSize{ 0, 0 };
 
         // Experimental and deprecated retro terminal effect
@@ -248,6 +249,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID3D11InputLayout> _vertexLayout;
         ::Microsoft::WRL::ComPtr<ID3D11Buffer> _screenQuadVertexBuffer;
         ::Microsoft::WRL::ComPtr<ID3D11Buffer> _pixelShaderSettingsBuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11Buffer> _psCursorPositionBuffer;
         ::Microsoft::WRL::ComPtr<ID3D11SamplerState> _samplerState;
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebufferCapture;
 
@@ -270,7 +272,7 @@ namespace Microsoft::Console::Render
             DirectX::XMFLOAT2 Resolution;
             DirectX::XMFLOAT4 Background;
             DirectX::XMFLOAT2 GlyphSize;
-            DirectX::XMFLOAT2 CursorPosition;
+            // DirectX::XMFLOAT2 CursorPosition;
             DirectX::XMFLOAT2 BufferSize;
             // You can always add more values to the end, but they must always be in this order!
 #pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
