@@ -11,16 +11,14 @@ cbuffer PixelShaderSettings {
   // UI Scale
   float  Scale;
   // Resolution of the shaderTexture
-  float2 Resolution;
+  // float2 Resolution;
   // Background color as rgba
   float4 Background;
   
-  float2 GlyphSize;
-  // float2 CursorPosition;
+  // float2 GlyphSize;
+  float2 CursorPosition;
   float2 BufferSize;
 };
-
-cbuffer CursorPosition { float2 cursor; float foo; };
 
 // A pixel shader is a program that given a texture coordinate (tex) produces a color.
 // tex is an x,y tuple that ranges from 0,0 (top left) to 1,1 (bottom right).
@@ -32,13 +30,13 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     float4 color = shaderTexture.Sample(samplerState, tex);
 
     // Inverts the rgb values (xyz) but don't touch the alpha (w)
-    color.xyz = 1.0 - color.xyz;
+    // color.xyz = 1.0 - color.xyz;
 
-    // float2 relativeCursorPos = CursorPosition.cursor / BufferSize;
-    // if (tex.y > relativeCursorPos.y) {
-    //     color.xy = relativeCursorPos;
-    //     color.z = 0.0;
-    // }
+    float2 relativeCursorPos = CursorPosition / BufferSize;
+    if (tex.y > relativeCursorPos.y) {
+        color.xy = CursorPosition / BufferSize;
+        color.z = 0.0;
+    }
     
 
     // Return the final color

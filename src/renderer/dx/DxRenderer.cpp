@@ -415,16 +415,7 @@ HRESULT DxEngine::_SetupTerminalEffects()
     D3D11_SUBRESOURCE_DATA pixelShaderSettingsInitData{};
     pixelShaderSettingsInitData.pSysMem = &_pixelShaderSettings;
 
-    
-    D3D11_BUFFER_DESC psCursorPositionBufferDesc{};
-    psCursorPositionBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-    psCursorPositionBufferDesc.ByteWidth = sizeof(_psCursorPosition);
-    psCursorPositionBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    D3D11_SUBRESOURCE_DATA psCursorPositionBufferInitData{};
-    psCursorPositionBufferInitData.pSysMem = &_psCursorPosition;
-
     RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&pixelShaderSettingsBufferDesc, &pixelShaderSettingsInitData, &_pixelShaderSettingsBuffer));
-    RETURN_IF_FAILED(_d3dDevice->CreateBuffer(&psCursorPositionBufferDesc, &psCursorPositionBufferInitData, &_psCursorPositionBuffer));
 
     // Sampler state is needed to use texture as input to shader.
     D3D11_SAMPLER_DESC samplerDesc{};
@@ -481,12 +472,10 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             background.w = _backgroundColor.a;
             _pixelShaderSettings.Background = background;
 
-            // _pixelShaderSettings.CursorPosition = XMFLOAT2{ ::base::saturated_cast<float>(_lastCursor.x()), ::base::saturated_cast<float>(_lastCursor.y()) };
+            _pixelShaderSettings.CursorPosition = XMFLOAT2{ ::base::saturated_cast<float>(_lastCursor.x()), ::base::saturated_cast<float>(_lastCursor.y()) };
             _pixelShaderSettings.BufferSize = XMFLOAT2{ ::base::saturated_cast<float>(_lastBufferSize.width()), ::base::saturated_cast<float>(_lastBufferSize.height()) };
 
             _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
-
-            _d3dDeviceContext->UpdateSubresource(_psCursorPositionBuffer.Get(), 0, nullptr, &_psCursorPosition, 0, 0);
         }
         CATCH_LOG();
     }
@@ -1100,8 +1089,7 @@ CATCH_RETURN()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 {
-    _psCursorPosition = XMFLOAT2{ ::base::saturated_cast<float>(psrRegion->Left), ::base::saturated_cast<float>(psrRegion->Top) };
-    // _lastCursor = til::point{ psrRegion->Left, psrRegion->Top };
+    _lastCursor = til::point{ psrRegion->Left, psrRegion->Top };
     return Invalidate(psrRegion);
 }
 
@@ -1901,7 +1889,6 @@ try
     _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
     _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
     _d3dDeviceContext->PSSetConstantBuffers(0, 1, _pixelShaderSettingsBuffer.GetAddressOf());
-    _d3dDeviceContext->PSSetConstantBuffers(0, 1, _psCursorPositionBuffer.GetAddressOf());
     _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
 
     return S_OK;
