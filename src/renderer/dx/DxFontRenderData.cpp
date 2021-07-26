@@ -467,17 +467,10 @@ void DxFontRenderData::_SetFeatures(const std::unordered_map<std::wstring_view, 
 {
     // Populate the feature map with the standard list first
     std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> featureMap{
-        { DWRITE_MAKE_FONT_FEATURE_TAG('r', 'l', 'i', 'g'), 1 }, // Required Ligatures
-        { DWRITE_MAKE_FONT_FEATURE_TAG('r', 'c', 'l', 't'), 1 }, // Required Contextual Alternates
-        { DWRITE_MAKE_FONT_FEATURE_TAG('l', 'o', 'c', 'l'), 1 }, // Localized Forms
-        { DWRITE_MAKE_FONT_FEATURE_TAG('c', 'c', 'm', 'p'), 1 }, // Glyph Composition / Decomposition
         { DWRITE_MAKE_FONT_FEATURE_TAG('c', 'a', 'l', 't'), 1 }, // Contextual Alternates
         { DWRITE_MAKE_FONT_FEATURE_TAG('l', 'i', 'g', 'a'), 1 }, // Standard Ligatures
         { DWRITE_MAKE_FONT_FEATURE_TAG('c', 'l', 'i', 'g'), 1 }, // Contextual Ligatures
-        { DWRITE_MAKE_FONT_FEATURE_TAG('k', 'e', 'r', 'n'), 1 }, // Kerning
-        { DWRITE_MAKE_FONT_FEATURE_TAG('m', 'a', 'r', 'k'), 1 }, // Mark Positioning
-        { DWRITE_MAKE_FONT_FEATURE_TAG('m', 'k', 'm', 'k'), 1 }, // Mark to Mark Positioning
-        { DWRITE_MAKE_FONT_FEATURE_TAG('d', 'i', 's', 't'), 1 } // Distances
+        { DWRITE_MAKE_FONT_FEATURE_TAG('k', 'e', 'r', 'n'), 1 } // Kerning
     };
 
     // Update our feature map with the provided features
