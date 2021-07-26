@@ -225,6 +225,8 @@ namespace Microsoft::Console::Render
 
         // Controls if configured terminal effects are enabled
         bool _terminalEffectsEnabled;
+        til::point _lastCursor{ 0, 0 };
+        til::size _lastBufferSize{ 0, 0 };
 
         // Experimental and deprecated retro terminal effect
         //  Preserved for backwards compatibility
@@ -262,11 +264,15 @@ namespace Microsoft::Console::Render
         {
             // Note: This can be seen as API endpoint towards user provided pixel shaders.
             //  Changes here can break existing pixel shaders so be careful with changing datatypes
-            //  and order of parameters
+            //  and order of parameters.
             float Time;
             float Scale;
             DirectX::XMFLOAT2 Resolution;
             DirectX::XMFLOAT4 Background;
+            DirectX::XMFLOAT2 GlyphSize;
+            DirectX::XMFLOAT2 CursorPosition;
+            DirectX::XMFLOAT2 BufferSize;
+            // You can always add more values to the end, but they must always be in this order!
 #pragma warning(suppress : 4324) // structure was padded due to __declspec(align())
         } _pixelShaderSettings;
 

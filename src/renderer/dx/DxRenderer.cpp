@@ -472,6 +472,9 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             background.w = _backgroundColor.a;
             _pixelShaderSettings.Background = background;
 
+            _pixelShaderSettings.CursorPosition = XMFLOAT2{ ::base::saturated_cast<float>(_lastCursor.x()), ::base::saturated_cast<float>(_lastCursor.y()) };
+            _pixelShaderSettings.BufferSize = XMFLOAT2{ ::base::saturated_cast<float>(_lastBufferSize.width()), ::base::saturated_cast<float>(_lastBufferSize.height()) };
+
             _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
         }
         CATCH_LOG();
@@ -1086,6 +1089,7 @@ CATCH_RETURN()
 // - S_OK
 [[nodiscard]] HRESULT DxEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 {
+    _lastCursor = til::point{ psrRegion->Left, psrRegion->Top };
     return Invalidate(psrRegion);
 }
 
@@ -1870,6 +1874,8 @@ try
     ::Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResource;
     RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebufferCapture.Get(), &srvDesc, &shaderResource));
 
+    _ComputePixelShaderSettings();
+
     // Render the screen quad with shader effects.
     const UINT stride = sizeof(ShaderInput);
     const UINT offset = 0;
@@ -1967,7 +1973,7 @@ CATCH_RETURN()
     }
 
     // Update pixel shader settings as background color might have changed
-    _ComputePixelShaderSettings();
+    // _ComputePixelShaderSettings();
 
     return S_OK;
 }
@@ -2038,7 +2044,7 @@ CATCH_RETURN();
     RETURN_IF_FAILED(InvalidateAll());
 
     // Update pixel shader settings as scale might have changed
-    _ComputePixelShaderSettings();
+    // _ComputePixelShaderSettings();
 
     return S_OK;
 }
@@ -2062,8 +2068,9 @@ float DxEngine::GetScaling() const noexcept
 // - srNewViewport - The bounds of the new viewport.
 // Return Value:
 // - HRESULT S_OK
-[[nodiscard]] HRESULT DxEngine::UpdateViewport(const SMALL_RECT /*srNewViewport*/) noexcept
+[[nodiscard]] HRESULT DxEngine::UpdateViewport(const SMALL_RECT srNewViewport) noexcept
 {
+    _lastBufferSize = til::size{ srNewViewport.Right - srNewViewport.Left, srNewViewport.Bottom - srNewViewport.Top };
     return S_OK;
 }
 
