@@ -65,7 +65,7 @@ public:
 
     bool IsHeadless() const;
 
-    ApiRoutines api;
+    IApiRoutines* api;
 
     bool handoffTarget = false;
 

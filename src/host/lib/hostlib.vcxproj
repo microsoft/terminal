@@ -8,6 +8,12 @@
     <TargetName>ConhostV2Lib</TargetName>
     <ConfigurationType>StaticLibrary</ConfigurationType>
   </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="..\VtApiRoutines.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\VtApiRoutines.h" />
+  </ItemGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <!-- DONT ADD NEW FILES HERE, ADD THEM TO host-common.vcxitems -->
   <Import Project="$(SolutionDir)src\host\host-common.vcxitems" />
