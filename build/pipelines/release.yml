@@ -371,7 +371,7 @@ jobs:
         # Find all artifact files and move them up a directory. Ugh.
         script: >-
           Get-ChildItem bin -Recurse -Directory -Filter wpf-dll-* | % {
-            Get-ChildItem $_ -Recurse | % {
+            Get-ChildItem $_ -Recurse -File | % {
               Move-Item -Verbose $_.FullName $_.Directory.Parent.FullName
             }
           }
