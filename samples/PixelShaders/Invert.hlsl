@@ -14,11 +14,10 @@ cbuffer PixelShaderSettings {
   float2 Resolution;
   // Background color as rgba
   float4 Background;
+
   float2 GlyphSize;
   float2 CursorPosition;
   float2 BufferSize;
-  float foo;
-  float3 bar;
 };
 
 // A pixel shader is a program that given a texture coordinate (tex) produces a color.
@@ -33,9 +32,15 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
     // Inverts the rgb values (xyz) but don't touch the alpha (w)
     color.xyz = 1.0 - color.xyz;
 
+    float2 cursorTopLeft = CursorPosition * GlyphSize;
+    float2 cursorBottomRight = (CursorPosition + float2(1, 1)) * GlyphSize;
+    float2 relativeTopLeft = cursorTopLeft / Resolution;
+    float2 relativeBottomRight = cursorBottomRight / Resolution;
+
     float2 relativeCursorPos = CursorPosition / BufferSize;
-    if (tex.y >= relativeCursorPos.y) {
-        color.xy = CursorPosition / BufferSize;
+    if ((tex.x >= relativeTopLeft.x && tex.x <= relativeBottomRight.x) &&
+        (tex.y >= relativeTopLeft.y && tex.y <= relativeBottomRight.y)) {
+        color.xy = relativeCursorPos;
         color.z = 0.0;
     }
     

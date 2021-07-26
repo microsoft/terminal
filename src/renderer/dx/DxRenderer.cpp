@@ -478,9 +478,12 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             background.w = _backgroundColor.a;
             _pixelShaderSettings.Background = background;
 
+            til::size glyphSize{ _fontRenderData->GlyphCell() };
+            _pixelShaderSettings.GlyphSize = XMFLOAT2{ ::base::saturated_cast<float>(glyphSize.width()), ::base::saturated_cast<float>(glyphSize.height()) };
             _pixelShaderSettings.CursorPosition = XMFLOAT2{ ::base::saturated_cast<float>(_lastCursor.x()), ::base::saturated_cast<float>(_lastCursor.y()) };
             _pixelShaderSettings.BufferSize = XMFLOAT2{ ::base::saturated_cast<float>(_lastBufferSize.width()), ::base::saturated_cast<float>(_lastBufferSize.height()) };
 
+            
             _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
         }
         CATCH_LOG();
