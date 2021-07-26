@@ -475,6 +475,8 @@ jobs:
         workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed
     - task: PkgESVPack@10
       displayName: 'Package ES - VPack'
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
       inputs:
         sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed\WindowsTerminal.app
         description: Windows Terminal pre-install application
