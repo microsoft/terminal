@@ -371,12 +371,12 @@ jobs:
       displayName: Move downloaded artifacts up a level
       inputs:
         targetType: inline
+        # Find all artifact files and move them up a directory. Ugh.
         script: >-
-          # Find all PublicTerminalCore(s) and move them up a directory. Ugh.
-
-          Get-ChildItem bin -Recurse -Filter PublicTerminalCore.dll | % {
-              Write-Host "Moving $($_.FullName) to $($_.Directory.Parent.FullName)"
-              Move-Item $_.FullName $_.Directory.Parent.FullName
+          Get-ChildItem bin -Recurse -Directory -Filter wpf-dll-* | % {
+            Get-ChildItem $_ -Recurse | % {
+              Move-Item -Verbose $_.FullName $_.Directory.Parent.FullName
+            }
           }
     - task: NuGetToolInstaller@1
       displayName: Use NuGet 5.10.0
