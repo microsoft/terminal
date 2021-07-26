@@ -171,7 +171,14 @@ jobs:
         condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
         inputs:
           targetType: inline
-          script: "$Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll' \nforeach ($BinFile in $Binaries)\n{\n    & \"$(Build.SourcesDirectory)\\tools\\PGODatabase\\verify-pgo.ps1\" \"$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile\"\n}"
+          script: >-
+            $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
+
+            foreach ($BinFile in $Binaries) {
+
+              & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile"
+
+            }
     - task: PowerShell@2
       displayName: Check MSIX for common regressions
       inputs:
