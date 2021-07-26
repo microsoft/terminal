@@ -813,6 +813,37 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 handled = true;
             }
         }
+        else if (vkey == VK_SPACE && down)
+        {
+            // Manually generate an alt+space event into the key bindings
+            // When explicitly unbound, send to terminal
+            //   This is required as part of #GH7125
+            auto bindings{ _settings.KeyBindings() };
+
+            if (bindings)
+            {
+                // Try to perform the normal keychord binding first
+                const KeyChord kc = {
+                    modifiers.IsCtrlPressed(),
+                    modifiers.IsAltPressed(),
+                    modifiers.IsShiftPressed(),
+                    modifiers.IsWinPressed(),
+                    VK_SPACE,
+                    0
+                };
+
+                handled = bindings.TryKeyChord(kc);
+
+                // If it is explicitly unbound, we send it to the terminal
+                if (!handled && bindings.IsKeyChordExplicitlyUnbound(kc))
+                {
+                    (void)_TrySendKeyEvent(VK_SPACE, scanCode, modifiers, true);
+                    // If sent to the terminal, we mark it handled so that it does not
+                    // get processed by the normal XAML handlers
+                    handled = true;
+                }
+            }
+        }
         return handled;
     }
 

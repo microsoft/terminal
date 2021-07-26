@@ -61,6 +61,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // queries
         Model::Command GetActionByKeyChord(Control::KeyChord const& keys) const;
+        bool IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action, IActionArgs const& actionArgs) const;
 
