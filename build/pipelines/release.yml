@@ -452,7 +452,7 @@ jobs:
 - ${{ if eq(parameters.buildTerminalVPack, true) }}:
   - job: VPack
     displayName: Create Windows vPack
-    dependsOn: Build
+    dependsOn: BundleAndSign
     steps:
     - checkout: self
       clean: true
