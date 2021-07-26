@@ -179,7 +179,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
         // explicitly prevent that - for example when an action is bound to it. So similar to
         // above, we steal the event and hand it off to the host. When the host does not process
         // it, we will still dispatch like normal.
-        if(_messageIsAltSpaceKeypress(message))
+        if (_messageIsAltSpaceKeypress(message))
         {
             if (host.OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true))
             {
