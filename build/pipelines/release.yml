@@ -184,7 +184,6 @@ jobs:
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
@@ -215,7 +214,7 @@ jobs:
       arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: CopyFiles@2
-      displayName: Copy *.appx/*.msix to Artifacts (Non-PR builds only)
+      displayName: Copy *.appx/*.msix to Artifacts
       inputs:
         Contents: >-
           **/*.appx
@@ -229,14 +228,13 @@ jobs:
         OverWrite: true
         flattenFolders: true
     - task: PublishBuildArtifacts@1
-      displayName: Publish Artifact (appx) (Non-PR builds only)
+      displayName: Publish Artifact (appx)
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
         ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
   - ${{ if eq(parameters.buildWPF, true) }}:
     - task: CopyFiles@2
-      displayName: Copy PublicTerminalCore.dll to Artifacts (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+      displayName: Copy PublicTerminalCore.dll to Artifacts
       inputs:
         Contents: >-
           **/PublicTerminalCore.dll
@@ -246,8 +244,7 @@ jobs:
         OverWrite: true
         flattenFolders: true
     - task: PublishBuildArtifacts@1
-      displayName: Publish Artifact (PublicTerminalCore) (Non-PR builds only)
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+      displayName: Publish Artifact (PublicTerminalCore)
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
@@ -405,7 +402,7 @@ jobs:
         SymbolServerType: TeamServices
         SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
     - task: CopyFiles@2
-      displayName: Copy *.nupkg to Artifacts (Non-PR builds only)
+      displayName: Copy *.nupkg to Artifacts
       inputs:
         Contents: '**/*Wpf*.nupkg'
         TargetFolder: $(Build.ArtifactStagingDirectory)/nupkg
@@ -437,7 +434,7 @@ jobs:
               }
           ]
     - task: PublishBuildArtifacts@1
-      displayName: Publish Artifact (nupkg) (Non-PR builds only)
+      displayName: Publish Artifact (nupkg)
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)\nupkg
         ArtifactName: wpf-nupkg-$(BuildConfiguration)
