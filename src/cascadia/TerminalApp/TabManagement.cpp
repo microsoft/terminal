@@ -105,6 +105,14 @@ namespace winrt::TerminalApp::implementation
         // Create a connection based on the values in our settings object if we weren't given one.
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings.DefaultSettings());
 
+        // If we had an `existingConnection`, then this is an inbound handoff from somewhere else.
+        // We need to tell it about our size information so it can match the dimensions of what
+        // we are about to present.
+        if (existingConnection)
+        {
+            connection.Resize(settings.DefaultSettings().InitialRows(), settings.DefaultSettings().InitialCols());
+        }
+
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
         {
