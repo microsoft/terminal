@@ -258,7 +258,10 @@ void DxEngine::ToggleShaderEffects()
 }
 
 // Routine Description:
-// - Loads pixel shader source depending on _retroTerminalEffect and _pixelShaderPath
+// - Loads pixel shader source depending on _retroTerminalEffect and _pixelShaderPath.
+// - If for any reason, we failed to load the shader file, then always fall
+//   back to the no-op shader. It does nothing - it simply passes
+//   the color through unmodified.
 // Arguments:
 // Return Value:
 // - Pixel shader source code
@@ -312,6 +315,10 @@ std::string DxEngine::_LoadPixelShaderFile() const
         return std::string{ retroPixelShaderString };
     }
 
+    // If for any reason, we failed to load the shader file, then always fall
+    // back to the no-op shader. This one's embedded as a string inside this
+    // binary. It'll definitely compile, and it does nothing - it simply passes
+    // the color through unmodified.
     return std::string{ NOP_PIXEL_SHADER };
 }
 
@@ -774,8 +781,8 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
 {
     try
     {
-        // Pull surface out of swap chain.
-        // RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
+        // Pull surface out of our frame buffer.
+        // We'll draw to this surface.
         RETURN_IF_FAILED(_framebuffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
 
         // Make a bitmap and bind it to the swap chain surface
@@ -1457,31 +1464,6 @@ try
 }
 CATCH_RETURN()
 
-// // Routine Description:
-// // - Copies the front surface of the swap chain (the one being displayed)
-// //   to the back surface of the swap chain (the one we draw on next)
-// //   so we can draw on top of what's already there.
-// // Arguments:
-// // - <none>
-// // Return Value:
-// // - Any DirectX error, a memory error, etc.
-// [[nodiscard]] HRESULT DxEngine::_CopyFrontToBack() noexcept
-// {
-//     try
-//     {
-//         Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer;
-//         Microsoft::WRL::ComPtr<ID3D11Resource> frontBuffer;
-
-//         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
-//         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&frontBuffer)));
-
-//         _d3dDeviceContext->CopyResource(backBuffer.Get(), frontBuffer.Get());
-//     }
-//     CATCH_RETURN();
-
-//     return S_OK;
-// }
-
 // Method Description:
 // - When the shaders are on, say that we need to keep redrawing every
 //   possible frame in case they have some smooth action on every frame tick.
@@ -1524,6 +1506,14 @@ void DxEngine::WaitUntilCanRender() noexcept
     }
 }
 
+// Method Description:
+// - Draws the contents of our _framebuffer to the swapchain. We always do this,
+//   whether the user has specified a custom pixel shader or not.
+// - This draws a single quad to the entire swapchain, as rendered by the
+//   configured pixel shader.
+// - If no pixel shader is configured, we'll have already decided to use the
+//   no-op shader (see `nopPixelShaderString` in `ScreenPixelShader.h`), which
+//   will render the _framebuffer unmodified.
 [[nodiscard]] HRESULT DxEngine::_RenderToSwapChain() noexcept
 try
 {
@@ -1572,16 +1562,6 @@ CATCH_RETURN()
 {
     if (_presentReady)
     {
-        // if (_HasTerminalEffects() && _pixelShaderLoaded)
-        // {
-        //     const HRESULT hr2 = _PaintTerminalEffects();
-        //     if (FAILED(hr2))
-        //     {
-        //         _pixelShaderLoaded = false;
-        //         LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
-        //     }
-        // }
-
         try
         {
             // Updates the pixel shader resource (including time)
@@ -1656,15 +1636,6 @@ CATCH_RETURN()
                     FAIL_FAST_HR(hr);
                 }
             }
-
-            // // If we are doing full repaints we don't need to copy front buffer to back buffer
-            // if (!_FullRepaintNeeded())
-            // {
-            //     // Finally copy the front image (being presented now) onto the backing buffer
-            //     // (where we are about to draw the next frame) so we can draw only the differences
-            //     // next frame.
-            //     RETURN_IF_FAILED(_CopyFrontToBack());
-            // }
 
             _presentReady = false;
 
@@ -1923,66 +1894,14 @@ CATCH_RETURN()
     return S_OK;
 }
 
-// Routine Description:
-// - Paint terminal effects.
-// Arguments:
-// Return Value:
-// - S_OK or relevant DirectX error.
-[[nodiscard]] HRESULT DxEngine::_PaintTerminalEffects() noexcept
-try
-{
-    // Should have been initialized.
-    RETURN_HR_IF(E_NOT_VALID_STATE, !_framebufferCapture);
-
-    // Capture current frame in swap chain to a texture.
-    ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
-    RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&swapBuffer)));
-    _d3dDeviceContext->CopyResource(_framebufferCapture.Get(), swapBuffer.Get());
-
-    // Prepare captured texture as input resource to shader program.
-    D3D11_TEXTURE2D_DESC desc;
-    _framebufferCapture->GetDesc(&desc);
-
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    srvDesc.Texture2D.MipLevels = desc.MipLevels;
-    srvDesc.Format = desc.Format;
-
-    ::Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResource;
-    RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebufferCapture.Get(), &srvDesc, &shaderResource));
-
-    _ComputePixelShaderSettings();
-
-    // Render the screen quad with shader effects.
-    const UINT stride = sizeof(ShaderInput);
-    const UINT offset = 0;
-
-    _d3dDeviceContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), nullptr);
-    _d3dDeviceContext->IASetVertexBuffers(0, 1, _screenQuadVertexBuffer.GetAddressOf(), &stride, &offset);
-    _d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-    _d3dDeviceContext->IASetInputLayout(_vertexLayout.Get());
-    _d3dDeviceContext->VSSetShader(_vertexShader.Get(), nullptr, 0);
-    _d3dDeviceContext->PSSetShader(_pixelShader.Get(), nullptr, 0);
-    _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
-    _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
-    _d3dDeviceContext->PSSetConstantBuffers(0, 1, _pixelShaderSettingsBuffer.GetAddressOf());
-    _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
-
-    return S_OK;
-}
-CATCH_RETURN()
-
 [[nodiscard]] bool DxEngine::_FullRepaintNeeded() const noexcept
 {
-    // If someone explicitly requested differential rendering off, then we need to invalidate everything
-    // so the entire frame is repainted.
+    // If someone explicitly requested differential rendering off, then we need
+    // to invalidate everything so the entire frame is repainted.
     //
-    // If terminal effects are on, we must invalidate everything for them to draw correctly.
-    // Yes, this will further impact the performance of terminal effects.
-    // But we're talking about running the entire display pipeline through a shader for
-    // cosmetic effect, so performance isn't likely the top concern with this feature.
-    return _forceFullRepaintRendering; // || _HasTerminalEffects();
+    // As of GH#7147, we no longer need to repaint everything when shader
+    // effects are enabled.
+    return _forceFullRepaintRendering;
 }
 
 // Routine Description:
