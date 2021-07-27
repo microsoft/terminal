@@ -481,7 +481,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the focus in.
     // Return Value:
-    // - Whether changing the focus succeeded. This allows a keybind to propagate
+    // - Whether changing the focus succeeded. This allows a keychord to propagate
     //   to the terminal when no other panes are present (GH#6219)
     bool TerminalTab::NavigateFocus(const FocusDirection& direction)
     {
