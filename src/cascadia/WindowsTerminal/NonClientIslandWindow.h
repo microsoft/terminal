@@ -65,6 +65,10 @@ private:
     [[nodiscard]] static LRESULT __stdcall _StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
     [[nodiscard]] LRESULT _InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
+    LONG_PTR _originalWndProc{ 0 };
+    [[nodiscard]] static LRESULT __stdcall _StaticOverrideWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+    [[nodiscard]] LRESULT _OverrideMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+
     void _ResizeDragBarWindow() noexcept;
 
     int _GetResizeHandleHeight() const noexcept;

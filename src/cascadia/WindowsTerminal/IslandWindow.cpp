@@ -289,11 +289,24 @@ void IslandWindow::Initialize()
 {
     _source = DesktopWindowXamlSource{};
 
+    auto originalWndProc{ GetWindowLongPtr(_window.get(), GWLP_WNDPROC) };
+    originalWndProc;
+
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();
     winrt::check_hresult(interop->AttachToWindow(_window.get()));
 
     // stash the child interop handle so we can resize it when the main hwnd is resized
     interop->get_WindowHandle(&_interopWindowHandle);
+
+    auto islandWndProc{ GetWindowLongPtr(_window.get(), GWLP_WNDPROC) };
+    islandWndProc;
+
+    if (islandWndProc == originalWndProc)
+    {
+        auto a = 0;
+        a++;
+        a;
+    }
 
     _rootGrid = winrt::Windows::UI::Xaml::Controls::Grid();
     _source.Content(_rootGrid);

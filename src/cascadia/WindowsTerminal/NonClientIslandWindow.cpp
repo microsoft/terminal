@@ -211,6 +211,25 @@ void NonClientIslandWindow::Initialize()
     // then make sure to update it's visual state to reflect if we're in the
     // maximized state on launch.
     _titlebar.Loaded([this](auto&&, auto&&) { _OnMaximizeChange(); });
+
+    _originalWndProc = GetWindowLongPtr(_window.get(), GWLP_WNDPROC);
+
+    // auto newProc = [originalProc](HWND hwnd, UINT wm, WPARAM wParam, LPARAM lParam) -> LRESULT {
+    //     switch (wm)
+    //     {
+    //     case WM_NCHITTEST:
+    //     {
+    //         int a = 0;
+    //         a++;
+    //         a;
+    //         break;
+    //     }
+    //     }
+
+    //     return reinterpret_cast<WNDPROC>(originalProc)(hwnd, wm, wParam, lParam);
+    // };
+    // SetWindowLongPtr(_window.get(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&newProc));
+    SetWindowLongPtr(_window.get(), GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(&NonClientIslandWindow::_StaticOverrideWndProc));
 }
 
 // Method Description:
@@ -947,4 +966,37 @@ void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY
     {
         PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
     }
+}
+
+[[nodiscard]] LRESULT __stdcall NonClientIslandWindow::_StaticOverrideWndProc(HWND const window,
+                                                                              UINT const message,
+                                                                              WPARAM const wparam,
+                                                                              LPARAM const lparam) noexcept
+{
+    WINRT_ASSERT(window);
+
+    if (auto nonClientIslandWindow{ reinterpret_cast<NonClientIslandWindow*>(GetWindowLongPtr(window, GWLP_USERDATA)) })
+    {
+        return nonClientIslandWindow->_OverrideMessageHandler(message, wparam, lparam);
+    }
+
+    return DefWindowProc(window, message, wparam, lparam);
+}
+
+LRESULT NonClientIslandWindow::_OverrideMessageHandler(UINT const message,
+                                                       WPARAM const wparam,
+                                                       LPARAM const lparam) noexcept
+{
+    switch (message)
+    {
+    case WM_NCHITTEST:
+    {
+        int a = 0;
+        a++;
+        a;
+        break;
+    }
+    }
+
+    return reinterpret_cast<WNDPROC>(_originalWndProc)(_window.get(), message, wparam, lparam);
 }
