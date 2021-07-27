@@ -85,9 +85,7 @@ constexpr std::wstring_view WIN_KEY{ L"win" };
     XX(VK_BROWSER_STOP, L"browser_stop")                 \
     XX(VK_BROWSER_SEARCH, L"browser_search")             \
     XX(VK_BROWSER_FAVORITES, L"browser_favorites")       \
-    XX(VK_BROWSER_HOME, L"browser_home")                 \
-    XX(VK_XBUTTON1, L"mouse_back")                       \
-    XX(VK_XBUTTON2, L"mouse_forward")
+    XX(VK_BROWSER_HOME, L"browser_home")
 
 constexpr std::wstring_view vkeyPrefix{ L"vk(" };
 constexpr std::wstring_view scanCodePrefix{ L"sc(" };
