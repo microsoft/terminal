@@ -60,13 +60,13 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
         // float2 withinCursor = (texelRelativeTopLeft) / texelRelativeBottomRight;
         float2 withinCursor = (tex - texelRelativeTopLeft) * (GlyphSize);
 
-        float duration = 1.0;
+        float duration = 2.0;
         // float hue = lerp(0, 1, 0.5 * cos(((TAU*Time - withinCursor.y)) / duration) + 0.5);
         // float hue = lerp(0, 1, 0.5 * cos(((PI*Time - withinCursor.y)) / duration) + 0.5);
         // float hue = lerp(0, 1, cos(((PI*Time - withinCursor.y)) / duration)+1);
         // float hue = lerp(0.05, .95, .5*cos(((2*TAU*(Time - withinCursor.y))) / duration)+.5);
         // float hue = lerp(0.00, .95, fmod(.5*cos(((TAU*(Time - withinCursor.y))) / duration)+.5, 1));
-        float hue = lerp(0.00, 1, fmod(1.5*(Time - withinCursor.y) / duration, 1));
+        float hue = lerp(0.00, 1, fmod(1.25*(Time - withinCursor.y) / duration, 1));
         // float hue = lerp(0, 1, 0.5 * cos((TAU) / duration * Time) + 0.5);
         // float hue = withinCursor.y;
         float3 hsv = float3(hue, 1, 1);

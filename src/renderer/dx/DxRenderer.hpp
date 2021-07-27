@@ -221,6 +221,7 @@ namespace Microsoft::Console::Render
         wil::unique_handle _swapChainFrameLatencyWaitableObject;
         std::unique_ptr<DrawingContext> _drawingContext;
 
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebuffer;
         // Terminal effects resources.
 
         // Controls if configured terminal effects are enabled
@@ -280,6 +281,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
         [[nodiscard]] HRESULT _CreateSurfaceHandle() noexcept;
+        [[nodiscard]] HRESULT _RenderToSwapChain() noexcept;
 
         bool _HasTerminalEffects() const noexcept;
         std::string _LoadPixelShaderFile() const;
@@ -297,7 +299,7 @@ namespace Microsoft::Console::Render
             _In_ size_t StringLength,
             _Out_ IDWriteTextLayout** ppTextLayout) noexcept;
 
-        [[nodiscard]] HRESULT _CopyFrontToBack() noexcept;
+        // [[nodiscard]] HRESULT _CopyFrontToBack() noexcept;
 
         [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 

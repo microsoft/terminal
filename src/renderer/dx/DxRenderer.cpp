@@ -49,6 +49,8 @@ D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
     { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
 
+static constexpr std::string_view NOP_PIXEL_SHADER{ nopPixelShaderString };
+
 #pragma hdrstop
 
 using namespace Microsoft::Console::Render;
@@ -247,7 +249,7 @@ void DxEngine::ToggleShaderEffects()
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
     // If we're enabling the shader, try reloading it.
-    // It's not as good as hot reloading the hlsl file itself, but it's good enough. 
+    // It's not as good as hot reloading the hlsl file itself, but it's good enough.
     if (_terminalEffectsEnabled)
     {
         _SetupTerminalEffects();
@@ -310,7 +312,7 @@ std::string DxEngine::_LoadPixelShaderFile() const
         return std::string{ retroPixelShaderString };
     }
 
-    return std::string{};
+    return std::string{ NOP_PIXEL_SHADER };
 }
 
 // Routine Description:
@@ -483,7 +485,6 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             _pixelShaderSettings.CursorPosition = XMFLOAT2{ ::base::saturated_cast<float>(_lastCursor.x()), ::base::saturated_cast<float>(_lastCursor.y()) };
             _pixelShaderSettings.BufferSize = XMFLOAT2{ ::base::saturated_cast<float>(_lastBufferSize.width()), ::base::saturated_cast<float>(_lastBufferSize.height()) };
 
-            
             _d3dDeviceContext->UpdateSubresource(_pixelShaderSettingsBuffer.Get(), 0, nullptr, &_pixelShaderSettings, 0, 0);
         }
         CATCH_LOG();
@@ -697,6 +698,15 @@ try
             }
         }
 
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> swapBuffer;
+        RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&swapBuffer));
+
+        // Setup _framebuffer, to where we'll write all console graphics
+        D3D11_TEXTURE2D_DESC framebufferDesc{};
+        swapBuffer->GetDesc(&framebufferDesc);
+        WI_SetFlag(framebufferDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
+        RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_framebuffer));
+
         if (_HasTerminalEffects())
         {
             const HRESULT hr = _SetupTerminalEffects();
@@ -765,7 +775,8 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
     try
     {
         // Pull surface out of swap chain.
-        RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
+        // RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&_dxgiSurface)));
+        RETURN_IF_FAILED(_framebuffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
 
         // Make a bitmap and bind it to the swap chain surface
         const auto bitmapProperties = D2D1::BitmapProperties1(
@@ -872,6 +883,8 @@ void DxEngine::_ReleaseDeviceResources() noexcept
         {
             _d2dDeviceContext->EndDraw();
         }
+
+        _framebuffer.Reset();
 
         _d2dDeviceContext.Reset();
 
@@ -1444,30 +1457,30 @@ try
 }
 CATCH_RETURN()
 
-// Routine Description:
-// - Copies the front surface of the swap chain (the one being displayed)
-//   to the back surface of the swap chain (the one we draw on next)
-//   so we can draw on top of what's already there.
-// Arguments:
-// - <none>
-// Return Value:
-// - Any DirectX error, a memory error, etc.
-[[nodiscard]] HRESULT DxEngine::_CopyFrontToBack() noexcept
-{
-    try
-    {
-        Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer;
-        Microsoft::WRL::ComPtr<ID3D11Resource> frontBuffer;
+// // Routine Description:
+// // - Copies the front surface of the swap chain (the one being displayed)
+// //   to the back surface of the swap chain (the one we draw on next)
+// //   so we can draw on top of what's already there.
+// // Arguments:
+// // - <none>
+// // Return Value:
+// // - Any DirectX error, a memory error, etc.
+// [[nodiscard]] HRESULT DxEngine::_CopyFrontToBack() noexcept
+// {
+//     try
+//     {
+//         Microsoft::WRL::ComPtr<ID3D11Resource> backBuffer;
+//         Microsoft::WRL::ComPtr<ID3D11Resource> frontBuffer;
 
-        RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
-        RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&frontBuffer)));
+//         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer)));
+//         RETURN_IF_FAILED(_dxgiSwapChain->GetBuffer(1, IID_PPV_ARGS(&frontBuffer)));
 
-        _d3dDeviceContext->CopyResource(backBuffer.Get(), frontBuffer.Get());
-    }
-    CATCH_RETURN();
+//         _d3dDeviceContext->CopyResource(backBuffer.Get(), frontBuffer.Get());
+//     }
+//     CATCH_RETURN();
 
-    return S_OK;
-}
+//     return S_OK;
+// }
 
 // Method Description:
 // - When the shaders are on, say that we need to keep redrawing every
@@ -1511,6 +1524,43 @@ void DxEngine::WaitUntilCanRender() noexcept
     }
 }
 
+[[nodiscard]] HRESULT DxEngine::_RenderToSwapChain() noexcept
+try
+{
+    // Should have been initialized.
+    RETURN_HR_IF(E_NOT_VALID_STATE, !_framebuffer);
+
+    D3D11_TEXTURE2D_DESC desc;
+    _framebuffer->GetDesc(&desc);
+
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MostDetailedMip = 0;
+    srvDesc.Texture2D.MipLevels = desc.MipLevels;
+    srvDesc.Format = desc.Format;
+
+    ::Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResource;
+    RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebuffer.Get(), &srvDesc, &shaderResource));
+
+    // Render the screen quad with shader effects.
+    const UINT stride = sizeof(ShaderInput);
+    const UINT offset = 0;
+
+    _d3dDeviceContext->OMSetRenderTargets(1, _renderTargetView.GetAddressOf(), nullptr);
+    _d3dDeviceContext->IASetVertexBuffers(0, 1, _screenQuadVertexBuffer.GetAddressOf(), &stride, &offset);
+    _d3dDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+    _d3dDeviceContext->IASetInputLayout(_vertexLayout.Get());
+    _d3dDeviceContext->VSSetShader(_vertexShader.Get(), nullptr, 0);
+    _d3dDeviceContext->PSSetShader(_pixelShader.Get(), nullptr, 0);
+    _d3dDeviceContext->PSSetShaderResources(0, 1, shaderResource.GetAddressOf());
+    _d3dDeviceContext->PSSetSamplers(0, 1, _samplerState.GetAddressOf());
+    _d3dDeviceContext->PSSetConstantBuffers(0, 1, _pixelShaderSettingsBuffer.GetAddressOf());
+    _d3dDeviceContext->Draw(ARRAYSIZE(_screenQuadVertices), 0);
+
+    return S_OK;
+}
+CATCH_RETURN()
+
 // Routine Description:
 // - Takes queued drawing information and presents it to the screen.
 // - This is separated out so it can be done outside the lock as it's expensive.
@@ -1522,53 +1572,63 @@ void DxEngine::WaitUntilCanRender() noexcept
 {
     if (_presentReady)
     {
-        if (_HasTerminalEffects() && _pixelShaderLoaded)
-        {
-            const HRESULT hr2 = _PaintTerminalEffects();
-            if (FAILED(hr2))
-            {
-                _pixelShaderLoaded = false;
-                LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
-            }
-        }
+        // if (_HasTerminalEffects() && _pixelShaderLoaded)
+        // {
+        //     const HRESULT hr2 = _PaintTerminalEffects();
+        //     if (FAILED(hr2))
+        //     {
+        //         _pixelShaderLoaded = false;
+        //         LOG_HR_MSG(hr2, "Failed to paint terminal effects. Disabling.");
+        //     }
+        // }
 
         try
         {
-            HRESULT hr = S_OK;
+            // Updates the pixel shader resource (including time)
+            _ComputePixelShaderSettings();
 
-            bool recreate = false;
+            // Renders framebuffer texture + potential pixel shader effects
+            LOG_IF_FAILED(_RenderToSwapChain());
 
-            // On anything but the first frame, try partial presentation.
-            // We'll do it first because if it fails, we'll try again with full presentation.
-            if (!_firstFrame)
-            {
-                hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+            const HRESULT hr = _dxgiSwapChain->Present(1, 0);
+            // These two error codes are indicated for destroy-and-recreate
+            const bool recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
 
-                // These two error codes are indicated for destroy-and-recreate
-                // If we were told to destroy-and-recreate, we're going to skip straight into doing that
-                // and not try again with full presentation.
-                recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+            // HRESULT hr = S_OK;
 
-                // Log this as we actually don't expect it to happen, we just will try again
-                // below for robustness of our drawing.
-                if (FAILED(hr) && !recreate)
-                {
-                    LOG_HR(hr);
-                }
-            }
+            // bool recreate = false;
 
-            // If it's the first frame through, we cannot do partial presentation.
-            // Also if partial presentation failed above and we weren't told to skip straight to
-            // device recreation.
-            // In both of these circumstances, do a full presentation.
-            if (_firstFrame || (FAILED(hr) && !recreate))
-            {
-                hr = _dxgiSwapChain->Present(1, 0);
-                _firstFrame = false;
+            // // On anything but the first frame, try partial presentation.
+            // // We'll do it first because if it fails, we'll try again with full presentation.
+            // if (!_firstFrame)
+            // {
+            //     hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
 
-                // These two error codes are indicated for destroy-and-recreate
-                recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
-            }
+            //     // These two error codes are indicated for destroy-and-recreate
+            //     // If we were told to destroy-and-recreate, we're going to skip straight into doing that
+            //     // and not try again with full presentation.
+            //     recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+
+            //     // Log this as we actually don't expect it to happen, we just will try again
+            //     // below for robustness of our drawing.
+            //     if (FAILED(hr) && !recreate)
+            //     {
+            //         LOG_HR(hr);
+            //     }
+            // }
+
+            // // If it's the first frame through, we cannot do partial presentation.
+            // // Also if partial presentation failed above and we weren't told to skip straight to
+            // // device recreation.
+            // // In both of these circumstances, do a full presentation.
+            // if (_firstFrame || (FAILED(hr) && !recreate))
+            // {
+            //     hr = _dxgiSwapChain->Present(1, 0);
+            //     _firstFrame = false;
+
+            //     // These two error codes are indicated for destroy-and-recreate
+            //     recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+            // }
 
             // Now check for failure cases from either presentation mode.
             if (FAILED(hr))
@@ -1588,16 +1648,16 @@ void DxEngine::WaitUntilCanRender() noexcept
                 }
             }
 
-            // If we are doing full repaints we don't need to copy front buffer to back buffer
-            if (!_FullRepaintNeeded())
-            {
-                // Finally copy the front image (being presented now) onto the backing buffer
-                // (where we are about to draw the next frame) so we can draw only the differences
-                // next frame.
-                RETURN_IF_FAILED(_CopyFrontToBack());
-            }
+            // // If we are doing full repaints we don't need to copy front buffer to back buffer
+            // if (!_FullRepaintNeeded())
+            // {
+            //     // Finally copy the front image (being presented now) onto the backing buffer
+            //     // (where we are about to draw the next frame) so we can draw only the differences
+            //     // next frame.
+            //     RETURN_IF_FAILED(_CopyFrontToBack());
+            // }
 
-            _presentReady = false;
+            // _presentReady = false;
 
             _presentDirty.clear();
             _presentOffset = { 0 };
