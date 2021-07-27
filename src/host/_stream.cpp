@@ -555,6 +555,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // line was wrapped if we're writing up to the end of the current row
             OutputCellIterator it(std::wstring_view{ local }, Attributes);
             const auto itEnd = screenInfo.Write(it);
+            local.clear();
 
             // Notify accessibility
             if (screenInfo.HasAccessibilityEventing())
@@ -568,8 +569,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // WCL-NOTE: We are using the "estimated" X position delta instead of the actual delta from
             // WCL-NOTE: the iterator. It is not clear why. If they differ, the cursor ends up in the
             // WCL-NOTE: wrong place (typically inside another character).
-            CursorPosition.X += (SHORT)TempNumSpaces;
-            //XPosition;
+            CursorPosition.X = XPosition;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
             if (WI_IsFlagSet(dwFlags, WC_DELAY_EOL_WRAP) && CursorPosition.X >= coordScreenBufferSize.X && fWrapAtEOL)
