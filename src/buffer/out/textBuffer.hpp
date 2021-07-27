@@ -156,7 +156,6 @@ public:
     uint16_t GetHyperlinkId(std::wstring_view uri, std::wstring_view id);
     void RemoveHyperlinkFromMap(uint16_t id) noexcept;
     std::wstring GetCustomIdFromId(uint16_t id) const;
-    void CopyHyperlinkMaps(const TextBuffer& OtherBuffer);
 
     class TextAndColor
     {
@@ -195,7 +194,6 @@ public:
 
     const size_t AddPatternRecognizer(const std::wstring_view regexString);
     void ClearPatternRecognizers() noexcept;
-    void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const size_t firstRow, const size_t lastRow) const;
 
 private:

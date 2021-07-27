@@ -58,9 +58,14 @@ TextBuffer::TextBuffer(const COORD screenBufferSize,
 // - OtherBuffer - The text buffer to copy properties from
 // Return Value:
 // - <none>
-void TextBuffer::CopyProperties(const TextBuffer& OtherBuffer) noexcept
+void TextBuffer::CopyProperties(const TextBuffer& other) noexcept
 {
-    GetCursor().CopyProperties(OtherBuffer.GetCursor());
+    _cursor.CopyProperties(other._cursor);
+    _hyperlinkMap = other._hyperlinkMap;
+    _hyperlinkCustomIdMap = other._hyperlinkCustomIdMap;
+    _currentHyperlinkId = other._currentHyperlinkId;
+    _idsAndPatterns = other._idsAndPatterns;
+    _currentPatternId = other._currentPatternId;
 }
 
 // Routine Description:
@@ -226,7 +231,10 @@ OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
     {
         // Attempt to write as much data as possible onto this line.
         // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
+        auto oldIt = it;
+        OutputDebugStringW(fmt::format(L"Write starting at {},{}\n", lineTarget.X, lineTarget.Y).c_str());
         it = WriteLine(it, lineTarget, wrap);
+        OutputDebugStringW(fmt::format(L"--- done line {}; distance moved {} CEL {} INP\n", lineTarget.Y, it.GetCellDistance(oldIt), it.GetInputDistance(oldIt)).c_str());
 
         // Move to the next line down.
         lineTarget.X = 0;
@@ -419,7 +427,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
 
     const auto& currRow = GetRowByOffset(coordEndOfText.Y);
     // The X position of the end of the valid text is the Right draw boundary (which is one beyond the final valid character)
-    coordEndOfText.X = gsl::narrow<short>(currRow.GetCharRow().MeasureRight()) - 1;
+    coordEndOfText.X = gsl::narrow<short>(currRow.MeasureRight()) - 1;
 
     // If the X coordinate turns out to be -1, the row was empty, we need to search backwards for the real end of text.
     const auto viewportTop = viewport.Top();
@@ -430,7 +438,7 @@ COORD TextBuffer::GetLastNonSpaceCharacter(std::optional<const Microsoft::Consol
         const auto& backupRow = GetRowByOffset(coordEndOfText.Y);
         // We need to back up to the previous row if this line is empty, AND there are more rows
 
-        coordEndOfText.X = gsl::narrow<short>(backupRow.GetCharRow().MeasureRight()) - 1;
+        coordEndOfText.X = gsl::narrow<short>(backupRow.MeasureRight()) - 1;
         fDoBackUp = (coordEndOfText.X < 0 && coordEndOfText.Y > viewportTop);
     }
 
@@ -787,7 +795,7 @@ void TextBuffer::_RefreshRowIDs(std::optional<SHORT> newRowWidth)
         it.SetId(i++);
 
         // Also update the char row parent pointers as they can get shuffled up in the rotates.
-        it.GetCharRow().UpdateParent(&it);
+        const_cast<CharRow&>(it.GetCharRow()).UpdateParent(&it);
 
         // Resize the rows in the X dimension if we have a new width
         if (newRowWidth.has_value())
@@ -1951,11 +1959,10 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Fetch the row and its "right" which is the last printable character.
         const ROW& row = oldBuffer.GetRowByOffset(iOldRow);
         const short cOldColsTotal = oldBuffer.GetLineWidth(iOldRow);
-        const CharRow& charRow = row.GetCharRow();
-        short iRight = gsl::narrow_cast<short>(charRow.MeasureRight());
+        //const CharRow& charRow = row.GetCharRow();
+        short iRight = gsl::narrow_cast<short>(row.MeasureRight());
         if (iRight == 0 && !row.WasWrapForced())
         {
-            // don't beef it if iRight=0 on iterator
             newBuffer.NewlineCursor();
             continue;
         }
@@ -1994,9 +2001,28 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         }
 
         OutputCellIterator it{ oldBuffer.GetCellDataAt({ 0, iOldRow }, Viewport::FromDimensions({ 0, iOldRow }, iRight, 1)) };
+        const auto first = it;
         auto preCurPos{ newBuffer.GetCursor().GetPosition() };
-        const auto last = newBuffer.Write(it, preCurPos, true); // true - wrap if we don't fit!
-        const auto distance = last.GetCellDistance(it);
+        auto postCurPos{ preCurPos };
+        OutputDebugStringW(fmt::format(L"+++ CURSOR STARTED AT {},{}\n", preCurPos.X, preCurPos.Y).c_str());
+        //const auto last = newBuffer.Write(it, preCurPos, true); // true - wrap if we don't fit!
+        ptrdiff_t totalDistance{};
+        while (it)
+        {
+            auto last = it;
+            it = newBuffer.Write(it, postCurPos, true);
+            auto distance = it.GetCellDistance(last);
+            totalDistance += distance;
+            if (it)
+            {
+                // The iterator is still valid, but we stopped for some reason.
+                // Likely, we ran out of space.
+                newBuffer.IncrementCircularBuffer();
+                postCurPos.Y--; // adjust new write head location
+                preCurPos.Y--; // adjust original origin location (for future cursor repositioning)
+            }
+            newBuffer.GetSize().MoveInBounds(distance, postCurPos);
+        }
 
         if (iOldRow == cOldCursorPos.Y)
         {
@@ -2006,8 +2032,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             fFoundCursorPos = true;
         }
 
-        newBuffer.GetSize().MoveInBounds(distance, preCurPos);
-        newBuffer.GetCursor().SetPosition(preCurPos);
+        OutputDebugStringW(fmt::format(L"+++ AFTER MOVING {}, CURSOR ENDED AT {},{}\n", totalDistance, preCurPos.X, preCurPos.Y).c_str());
+        newBuffer.GetCursor().SetPosition(postCurPos);
 
         // If we found the old row that the caller was interested in, set the
         // out value of that parameter to the cursor's current Y position (the
@@ -2040,7 +2066,7 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             // Only do so if we were not forced to wrap. If we did
             // force a word wrap, then the existing line break was
             // only because we ran out of space.
-            if (distance < cOldColsTotal && !row.WasWrapForced())
+            if (totalDistance < cOldColsTotal && !row.WasWrapForced())
             {
                 if (iRight == cOldCursorPos.X && iOldRow == cOldCursorPos.Y)
                 {
@@ -2097,8 +2123,6 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
     {
         // Finish copying remaining parameters from the old text buffer to the new one
         newBuffer.CopyProperties(oldBuffer);
-        newBuffer.CopyHyperlinkMaps(oldBuffer);
-        newBuffer.CopyPatterns(oldBuffer);
 
         // If we found where to put the cursor while placing characters into the buffer,
         //   just put the cursor there. Otherwise we have to advance manually.
@@ -2161,6 +2185,8 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
         // Set size back to real size as it will be taking over the rendering duties.
         newCursor.SetSize(ulSize);
     }
+
+    OutputDebugStringW(fmt::format(L"+++ REFLOW DONE\n\n\n").c_str());
 
     return hr;
 }
@@ -2260,18 +2286,6 @@ std::wstring TextBuffer::GetCustomIdFromId(uint16_t id) const
 }
 
 // Method Description:
-// - Copies the hyperlink/customID maps of the old buffer into this one,
-//   also copies currentHyperlinkId
-// Arguments:
-// - The other buffer
-void TextBuffer::CopyHyperlinkMaps(const TextBuffer& other)
-{
-    _hyperlinkMap = other._hyperlinkMap;
-    _hyperlinkCustomIdMap = other._hyperlinkCustomIdMap;
-    _currentHyperlinkId = other._currentHyperlinkId;
-}
-
-// Method Description:
 // - Adds a regex pattern we should search for
 // - The searching does not happen here, we only search when asked to by TerminalCore
 // Arguments:
@@ -2291,16 +2305,6 @@ void TextBuffer::ClearPatternRecognizers() noexcept
 {
     _idsAndPatterns.clear();
     _currentPatternId = 0;
-}
-
-// Method Description:
-// - Copies the patterns the other buffer knows about into this one
-// Arguments:
-// - The other buffer
-void TextBuffer::CopyPatterns(const TextBuffer& OtherBuffer)
-{
-    _idsAndPatterns = OtherBuffer._idsAndPatterns;
-    _currentPatternId = OtherBuffer._currentPatternId;
 }
 
 // Method Description:

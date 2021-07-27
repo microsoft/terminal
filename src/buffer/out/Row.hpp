@@ -42,8 +42,10 @@ public:
     void SetDoubleBytePadded(const bool doubleBytePadded) noexcept { _doubleBytePadded = doubleBytePadded; }
     bool WasDoubleBytePadded() const noexcept { return _doubleBytePadded; }
 
-    const CharRow& GetCharRow() const noexcept { return _charRow; }
+    size_t MeasureRight() const noexcept;
+
     CharRow& GetCharRow() noexcept { return _charRow; }
+    const CharRow& GetCharRow() const noexcept { return _charRow; }
 
     const ATTR_ROW& GetAttrRow() const noexcept { return _attrRow; }
     ATTR_ROW& GetAttrRow() noexcept { return _attrRow; }
@@ -76,6 +78,7 @@ private:
     LineRendition _lineRendition;
     SHORT _id;
     unsigned short _rowWidth;
+    unsigned short _highWaterMark;
     // Occurs when the user runs out of text in a given row and we're forced to wrap the cursor to the next line
     bool _wrapForced;
     // Occurs when the user runs out of text to support a double byte character and we're forced to the next line

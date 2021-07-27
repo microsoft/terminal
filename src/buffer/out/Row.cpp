@@ -24,6 +24,7 @@ ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute f
     _lineRendition{ LineRendition::SingleWidth },
     _wrapForced{ false },
     _doubleBytePadded{ false },
+    _highWaterMark{ 0 },
     _pParent{ pParent }
 {
 }
@@ -39,6 +40,7 @@ bool ROW::Reset(const TextAttribute Attr)
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
+    _highWaterMark = 0;
     _charRow.Reset();
     try
     {
@@ -196,5 +198,13 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
         _attrRow.Replace(colorStarts, currentIndex, currentColor);
     }
 
+    //_highWaterMark = std::max(currentIndex, _highWaterMark);
+
     return it;
+}
+
+size_t ROW::MeasureRight() const noexcept
+{
+    return _charRow.MeasureRight();
+    //return _highWaterMark;
 }
