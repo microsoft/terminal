@@ -1590,45 +1590,54 @@ CATCH_RETURN()
             // Renders framebuffer texture + potential pixel shader effects
             LOG_IF_FAILED(_RenderToSwapChain());
 
-            const HRESULT hr = _dxgiSwapChain->Present(1, 0);
-            // These two error codes are indicated for destroy-and-recreate
-            const bool recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+            bool recreate = false;
+            HRESULT hr = S_OK;
 
-            // HRESULT hr = S_OK;
+            // If we're actually rendering a real shader effect, then just call
+            // the normal Present() to present the whole frame. We're assuming
+            // that the user who's configured a pixel shader isn't concerned
+            // with the optimization that Present1 provides (esp. for remote
+            // desktop scenarios)
+            if (_HasTerminalEffects())
+            {
+                hr = _dxgiSwapChain->Present(1, 0);
+                // These two error codes are indicated for destroy-and-recreate
+                recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+            }
+            else
+            {
+                // On anything but the first frame, try partial presentation.
+                // We'll do it first because if it fails, we'll try again with full presentation.
+                if (!_firstFrame)
+                {
+                    hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
 
-            // bool recreate = false;
+                    // These two error codes are indicated for destroy-and-recreate
+                    // If we were told to destroy-and-recreate, we're going to skip straight into doing that
+                    // and not try again with full presentation.
+                    recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
 
-            // // On anything but the first frame, try partial presentation.
-            // // We'll do it first because if it fails, we'll try again with full presentation.
-            // if (!_firstFrame)
-            // {
-            //     hr = _dxgiSwapChain->Present1(1, 0, &_presentParams);
+                    // Log this as we actually don't expect it to happen, we just will try again
+                    // below for robustness of our drawing.
+                    if (FAILED(hr) && !recreate)
+                    {
+                        LOG_HR(hr);
+                    }
+                }
 
-            //     // These two error codes are indicated for destroy-and-recreate
-            //     // If we were told to destroy-and-recreate, we're going to skip straight into doing that
-            //     // and not try again with full presentation.
-            //     recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+                // If it's the first frame through, we cannot do partial presentation.
+                // Also if partial presentation failed above and we weren't told to skip straight to
+                // device recreation.
+                // In both of these circumstances, do a full presentation.
+                if (_firstFrame || (FAILED(hr) && !recreate))
+                {
+                    hr = _dxgiSwapChain->Present(1, 0);
+                    _firstFrame = false;
 
-            //     // Log this as we actually don't expect it to happen, we just will try again
-            //     // below for robustness of our drawing.
-            //     if (FAILED(hr) && !recreate)
-            //     {
-            //         LOG_HR(hr);
-            //     }
-            // }
-
-            // // If it's the first frame through, we cannot do partial presentation.
-            // // Also if partial presentation failed above and we weren't told to skip straight to
-            // // device recreation.
-            // // In both of these circumstances, do a full presentation.
-            // if (_firstFrame || (FAILED(hr) && !recreate))
-            // {
-            //     hr = _dxgiSwapChain->Present(1, 0);
-            //     _firstFrame = false;
-
-            //     // These two error codes are indicated for destroy-and-recreate
-            //     recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
-            // }
+                    // These two error codes are indicated for destroy-and-recreate
+                    recreate = hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+                }
+            }
 
             // Now check for failure cases from either presentation mode.
             if (FAILED(hr))
@@ -1657,7 +1666,7 @@ CATCH_RETURN()
             //     RETURN_IF_FAILED(_CopyFrontToBack());
             // }
 
-            // _presentReady = false;
+            _presentReady = false;
 
             _presentDirty.clear();
             _presentOffset = { 0 };
