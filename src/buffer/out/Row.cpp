@@ -16,13 +16,15 @@
 // Return Value:
 // - constructed object
 ROW::ROW(const SHORT /*rowId*/, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const /*pParent*/) :
-    _attrRow{ rowWidth, fillAttribute },
+    _data{
+        std::wstring(rowWidth, UNICODE_SPACE),
+        { { gsl::narrow_cast<uint8_t>(1), gsl::narrow_cast<uint16_t>(rowWidth) } },
+        { rowWidth, fillAttribute },
+        rowWidth
+    },
     _lineRendition{ LineRendition::SingleWidth },
     _wrapForced{ false },
-    _doubleBytePadded{ false },
-    _rowWidth(rowWidth),
-    _cwid(_rowWidth, 1),
-    _data(_rowWidth, UNICODE_SPACE)
+    _doubleBytePadded{ false }
 {
 }
 
@@ -37,11 +39,11 @@ bool ROW::Reset(const TextAttribute Attr)
     _lineRendition = LineRendition::SingleWidth;
     _wrapForced = false;
     _doubleBytePadded = false;
-    _cwid.replace(0, _rowWidth, { 1, _rowWidth }); // replace entire RLE with one run
-    _data.replace(0, _rowWidth, _rowWidth, UNICODE_SPACE);
+    _data._cwid.replace(0, _data._width, { 1, _data._width }); // replace entire RLE with one run
+    _data._data.replace(0, _data._width, _data._width, UNICODE_SPACE);
     try
     {
-        _attrRow.Reset(Attr);
+        _data._attrRow.Reset(Attr);
     }
     catch (...)
     {
@@ -59,20 +61,20 @@ bool ROW::Reset(const TextAttribute Attr)
 // - S_OK if successful, otherwise relevant error
 [[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
 {
-    _data.resize(width, L' ');
-    auto oldEnd{ _cwid.size() };
-    _cwid.resize_trailing_extent(width);
+    _data._data.resize(width, L' ');
+    auto oldEnd{ _data._cwid.size() };
+    _data._cwid.resize_trailing_extent(width);
     if (width > oldEnd)
     {
-        _cwid.replace(oldEnd, width, { 1, gsl::narrow_cast<uint16_t>(width - oldEnd) });
+        _data._cwid.replace(oldEnd, width, { 1, gsl::narrow_cast<uint16_t>(width - oldEnd) });
     }
     try
     {
-        _attrRow.Resize(width);
+        _data._attrRow.Resize(width);
     }
     CATCH_RETURN();
 
-    _rowWidth = width;
+    _data._width = width;
 
     return S_OK;
 }
@@ -85,7 +87,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - <none>
 void ROW::ClearColumn(const size_t column)
 {
-    THROW_HR_IF(E_INVALIDARG, column >= _rowWidth);
+    THROW_HR_IF(E_INVALIDARG, column >= _data._width);
     WriteGlyphAtMeasured(column, 1, L" ");
 }
 
@@ -100,11 +102,11 @@ void ROW::ClearColumn(const size_t column)
 // - iterator to first cell that was not written to this row.
 OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap, std::optional<size_t> limitRight)
 {
-    THROW_HR_IF(E_INVALIDARG, index >= _rowWidth);
-    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _rowWidth);
+    THROW_HR_IF(E_INVALIDARG, index >= _data._width);
+    THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _data._width);
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
-    const auto finalColumnInRow = limitRight.value_or(_rowWidth - 1);
+    const auto finalColumnInRow = limitRight.value_or(_data._width - 1);
 
     auto currentColor = it->TextAttr();
     uint16_t colorUses = 0;
@@ -126,7 +128,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             {
                 // Otherwise, commit this color into the run and save off the new one.
                 // Now commit the new color runs into the attr row.
-                _attrRow.Replace(colorStarts, currentIndex, currentColor);
+                _data._attrRow.Replace(colorStarts, currentIndex, currentColor);
                 currentColor = it->TextAttr();
                 colorUses = 1;
                 colorStarts = currentIndex;
@@ -196,7 +198,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
     // Now commit the final color into the attr row
     if (colorUses)
     {
-        _attrRow.Replace(colorStarts, currentIndex, currentColor);
+        _data._attrRow.Replace(colorStarts, currentIndex, currentColor);
     }
 
     return it;
