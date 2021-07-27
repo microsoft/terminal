@@ -707,15 +707,15 @@ try
         WI_SetFlag(framebufferDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
         RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_framebuffer));
 
-        if (_HasTerminalEffects())
+        // if (_HasTerminalEffects())
+        // {
+        const HRESULT hr = _SetupTerminalEffects();
+        if (FAILED(hr))
         {
-            const HRESULT hr = _SetupTerminalEffects();
-            if (FAILED(hr))
-            {
-                LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
-                _terminalEffectsEnabled = false;
-            }
+            LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
+            _terminalEffectsEnabled = false;
         }
+        // }
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
@@ -1973,7 +1973,7 @@ CATCH_RETURN()
     // Yes, this will further impact the performance of terminal effects.
     // But we're talking about running the entire display pipeline through a shader for
     // cosmetic effect, so performance isn't likely the top concern with this feature.
-    return _forceFullRepaintRendering || _HasTerminalEffects();
+    return _forceFullRepaintRendering; // || _HasTerminalEffects();
 }
 
 // Routine Description:
