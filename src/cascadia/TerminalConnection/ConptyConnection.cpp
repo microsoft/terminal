@@ -289,11 +289,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         _transitionToState(ConnectionState::Connecting);
 
+        const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
+
+        // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
+        // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE, &_inPipe, &_outPipe, &_hPC));
             THROW_IF_FAILED(_LaunchAttachedClient());
+        }
+        // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
+        // window is expecting it to be on the first layout.
+        else
+        {
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
         }
 
         _startTime = std::chrono::high_resolution_clock::now();
@@ -423,11 +432,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (!_hPC)
+        // If we haven't started connecting at all, it's still fair to update
+        // the initial rows and columns before we set things up.
+        if (!_isStateAtOrBeyond(ConnectionState::Connecting))
         {
             _initialRows = rows;
             _initialCols = columns;
         }
+        // Otherwise, we can really only dispatch a resize if we're already connected.
         else if (_isConnected())
         {
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));
