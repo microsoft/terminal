@@ -164,9 +164,8 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
         _attrIter += diff;
         _view.UpdateTextAttribute(*_attrIter);
 
-        const CharRow& charRow = _pRow->GetCharRow();
-        _view.UpdateText(charRow.GlyphAt(newX));
-        _view.UpdateDbcsAttribute(charRow.DbcsAttrAt(newX));
+        _view.UpdateText(_pRow->GlyphAt(newX));
+        _view.UpdateDbcsAttribute(_pRow->DbcsAttrAt(newX));
         _pos.X = newX;
     }
     else
