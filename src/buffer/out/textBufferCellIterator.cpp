@@ -101,26 +101,42 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     {
         // Early branching to leave the rare case to -= operator.
         // This helps reducing the instruction count within this method, which is good for instruction cache.
-        return (*this) -= (-move);
+        return *this -= -move;
     }
 
-    auto oldX = _pos.X;
-    // Note that individual integers newX and newY perform slightly better than a COORD.
-    auto newX = oldX;
-    auto newY = _pos.Y;
-    bool yChanged = false;
+    // The remaining code in this function is functionally equivalent to:
+    //   auto newPos = _pos;
+    //   while (move > 0 && !_exceeded)
+    //   {
+    //       _exceeded = !_bounds.IncrementInBounds(newPos);
+    //       move--;
+    //   }
+    //   _SetPos(newPos);
+    //
+    // _SetPos() necessitates calling _GenerateView() and thus the construction
+    // of a new OutputCellView(). This has a high performance impact (ICache spill?).
+    // The code below inlines _bounds.IncrementInBounds as well as SetPos.
+    // In the hot path (_pos.Y doesn't change) we modify the _view directly.
+
     // Hoist these integers which will be used frequently later.
     const auto boundsRightInclusive = _bounds.RightInclusive();
     const auto boundsLeft = _bounds.Left();
     const auto boundsBottomInclusive = _bounds.BottomInclusive();
     const auto boundsTop = _bounds.Top();
+    const auto oldX = _pos.X;
+    const auto oldY = _pos.Y;
+
+    // Under MSVC writing the individual members of a COORD generates worse assembly
+    // compared to having them be local variables. This causes a performance impact.
+    auto newX = oldX;
+    auto newY = oldY;
+
     while (move > 0)
     {
         if (newX == boundsRightInclusive)
         {
             newX = boundsLeft;
             newY++;
-            yChanged = true;
             if (newY > boundsBottomInclusive)
             {
                 newY = boundsTop;
@@ -139,21 +155,12 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
     if (_exceeded)
     {
         // Early return because nothing needs to be done here.
-        return (*this);
+        return *this;
     }
 
-    if (yChanged)
+    if (newY == oldY)
     {
-        // This is the cold path.
-        _pRow = s_GetRow(_buffer, { newX, newY });
-        _attrIter = _pRow->GetAttrRow().cbegin() + newX;
-        _pos.X = newX;
-        _pos.Y = newY;
-        _GenerateView();
-    }
-    else
-    {
-        // This is the hot path.
+        // hot path
         const auto diff = gsl::narrow_cast<ptrdiff_t>(newX) - gsl::narrow_cast<ptrdiff_t>(oldX);
         _attrIter += diff;
         _view.UpdateTextAttribute(*_attrIter);
@@ -163,8 +170,17 @@ TextBufferCellIterator& TextBufferCellIterator::operator+=(const ptrdiff_t& move
         _view.UpdateDbcsAttribute(charRow.DbcsAttrAt(newX));
         _pos.X = newX;
     }
+    else
+    {
+        // cold path (_GenerateView is slow)
+        _pRow = s_GetRow(_buffer, { newX, newY });
+        _attrIter = _pRow->GetAttrRow().cbegin() + newX;
+        _pos.X = newX;
+        _pos.Y = newY;
+        _GenerateView();
+    }
 
-    return (*this);
+    return *this;
 }
 
 // Routine Description:
