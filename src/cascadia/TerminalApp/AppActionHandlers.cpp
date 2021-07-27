@@ -310,7 +310,7 @@ namespace winrt::TerminalApp::implementation
                 // Mark as handled only when the move succeeded (e.g. when there
                 // is a pane to move to), otherwise mark as unhandled so the
                 // keychord can propagate to the terminal (GH#6129)
-                auto moveSucceeded = _MoveFocus(realArgs.FocusDirection());
+                const auto moveSucceeded = _MoveFocus(realArgs.FocusDirection());
                 args.Handled(moveSucceeded);
             }
         }
