@@ -1021,6 +1021,7 @@ IAction
 IApi
 IApplication
 IBase
+ICache
 icacls
 iccex
 icch
