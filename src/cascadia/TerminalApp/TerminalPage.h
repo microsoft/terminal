@@ -336,7 +336,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::TerminalSettings _originalSettings{ nullptr };
 
-        void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
+        winrt::fire_and_forget _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);

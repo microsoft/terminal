@@ -2368,8 +2368,11 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
-    void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    winrt::fire_and_forget TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
     {
+        // Handle it on a subsequent pass of the UI thread.
+        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+
         // TODO: GH 9458 will give us more context so we can try to choose a better profile.
         _OpenNewTab(nullptr, connection);
 
