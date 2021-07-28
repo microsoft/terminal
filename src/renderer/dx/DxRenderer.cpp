@@ -778,30 +778,33 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
     }
 }
 
-[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
-{
-    // If we initialize the _framebuffer second, then it renders alright.
-    RETURN_IF_FAILED(_PrepareRenderTarget(_otherbuffer, _d2dOtherBitmap));
-    RETURN_IF_FAILED(_PrepareRenderTarget(_framebuffer, _d2dBitmap));
-    // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
-    return S_OK;
-}
+// [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
+// {
+//     // If we initialize the _framebuffer second, then it renders alright.
+//     RETURN_IF_FAILED(_PrepareRenderTarget(_otherbuffer, _d2dOtherBitmap));
+//     RETURN_IF_FAILED(_PrepareRenderTarget(_framebuffer, _d2dBitmap));
+//     // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
+//     return S_OK;
+// }
 
-[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D>& buffer,
-                                                     ::Microsoft::WRL::ComPtr<ID2D1Bitmap1>& bitmap) noexcept
+[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
     try
     {
-        // Pull surface out of our frame buffer.
-        // We'll draw to this surface.
-        RETURN_IF_FAILED(buffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
-
         // Make a bitmap and bind it to the swap chain surface
         const auto bitmapProperties = D2D1::BitmapProperties1(
             D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
             D2D1::PixelFormat(_swapChainDesc.Format, _dxgiAlphaToD2d1Alpha(_swapChainDesc.AlphaMode)));
 
-        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &bitmap));
+        // Create the bitmaps for each frame buffer. We'll draw to these
+        // surfaces.
+        // Get each framebuffer as a IDXGISurface, and use
+        // CreateBitmapFromDxgiSurface to instantiate the ID2D1Bitmap
+        RETURN_IF_FAILED(_otherbuffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &_d2dOtherBitmap));
+
+        RETURN_IF_FAILED(_framebuffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &_d2dBitmap));
 
         // Assign that bitmap as the target of the D2D device context. Draw commands hit the context
         // and are backed by the bitmap which is bound to the swap chain which goes on to be presented.
@@ -809,8 +812,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         //  The leg bone connected to the knee bone,
         //  The knee bone connected to the thigh bone
         //  ... and so on)
-
-        _d2dDeviceContext->SetTarget(bitmap.Get());
+        _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
 
         // We need the AntialiasMode for non-text object to be Aliased to ensure
         //  that background boxes line up with each other and don't leave behind
@@ -1366,31 +1368,37 @@ try
             RETURN_IF_FAILED(InvalidateAll());
         }
 
-        // Huh, it's definitely the call to SetTarget that makes DX upset. If
-        // you don't do that, but still swap the buffers, then you'll flicker
-        // between the one that has the contents in it and the other one.
-        std::swap(_framebuffer, _otherbuffer);
-        std::swap(_d2dBitmap, _d2dOtherBitmap);
-        if (_d2dBitmap && _d2dOtherBitmap)
+        // Here's a bit of trickiness. Each frame, we're rendering what changed
+        // in the console into a framebuffer. But when the frame scrolls, we
+        // don't want to redraw everything we already have, we just want to
+        // shift it up/down.
+
+        // To facilitate this, we have two buffers that we render to, like a
+        // swapchain. in between frames, we'll copy the contents from the back
+        // buffer into the front buffer, using CopyFromRenderTarget. This allows
+        // us to move the contents from one buffer into the other, at a given
+        // offset,
+        if (_d2dBitmap && _d2dOtherBitmap && _invalidScroll.y() != 0)
         {
-            try
+            std::swap(_framebuffer, _otherbuffer);
+            std::swap(_d2dBitmap, _d2dOtherBitmap);
+
+            til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
+            til::point sourceOrigin{ 0, 0 };
+            if (scrollInPixels.y() < 0)
             {
-                til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
-                til::point sourceOrigin{ 0, 0 };
-                if (scrollInPixels.y() < 0)
-                {
-                    sourceOrigin = -scrollInPixels;
-                    scrollInPixels = til::point{ 0, 0 };
-                }
-                D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(), scrollInPixels.y<uint32_t>() };
-                D2D1_RECT_U srcRect{ sourceOrigin.x<uint32_t>(), sourceOrigin.y<uint32_t>(), _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
-                Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
-                RETURN_IF_FAILED(_d2dDeviceContext->QueryInterface(IID_PPV_ARGS(&otherRenderTarget)));
-                _d2dBitmap->CopyFromRenderTarget(&tgtPos, otherRenderTarget.Get(), &srcRect);
+                sourceOrigin = -scrollInPixels;
+                scrollInPixels = til::point{ 0, 0 };
             }
-            CATCH_LOG();
+            D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(), scrollInPixels.y<uint32_t>() };
+            D2D1_RECT_U srcRect{ sourceOrigin.x<uint32_t>(), sourceOrigin.y<uint32_t>(), _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
+            Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
+            RETURN_IF_FAILED(_d2dDeviceContext->QueryInterface(IID_PPV_ARGS(&otherRenderTarget)));
+            _d2dBitmap->CopyFromRenderTarget(&tgtPos, otherRenderTarget.Get(), &srcRect);
+
+            _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
         }
-        _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
+
         _d2dDeviceContext->BeginDraw();
         _isPainting = true;
 
