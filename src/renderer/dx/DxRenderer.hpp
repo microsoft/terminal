@@ -222,8 +222,8 @@ namespace Microsoft::Console::Render
         wil::unique_handle _swapChainFrameLatencyWaitableObject;
         std::unique_ptr<DrawingContext> _drawingContext;
 
-        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebuffer;
-        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _otherbuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebuffer{ nullptr };
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _otherbuffer{ nullptr };
         // Terminal effects resources.
 
         // Controls if configured terminal effects are enabled
@@ -291,8 +291,8 @@ namespace Microsoft::Console::Render
         void _ComputePixelShaderSettings() noexcept;
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
-        [[nodiscard]] HRESULT _PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D> buffer,
-                                                   ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> bitmap) noexcept;
+        [[nodiscard]] HRESULT _PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D>& buffer,
+                                                   ::Microsoft::WRL::ComPtr<ID2D1Bitmap1>& bitmap) noexcept;
 
         void _ReleaseDeviceResources() noexcept;
 

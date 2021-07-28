@@ -787,8 +787,8 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
     return S_OK;
 }
 
-[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D> buffer,
-                                                     ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> bitmap) noexcept
+[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D>& buffer,
+                                                     ::Microsoft::WRL::ComPtr<ID2D1Bitmap1>& bitmap) noexcept
 {
     try
     {
@@ -1372,7 +1372,16 @@ try
         std::swap(_framebuffer, _otherbuffer);
         std::swap(_d2dBitmap, _d2dOtherBitmap);
         // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
+        if (_d2dBitmap && _d2dOtherBitmap)
+        {
+            til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
+            D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(), scrollInPixels.y<uint32_t>() };
+            D2D1_RECT_U srcRect{ 0, 0, _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
+            Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
+            RETURN_IF_FAILED(_d2dDeviceContext->QueryInterface(IID_PPV_ARGS(&otherRenderTarget)));
+            _d2dBitmap->CopyFromRenderTarget(&tgtPos, otherRenderTarget.Get(), &srcRect);
 
+        }
         _d2dDeviceContext->BeginDraw();
         _isPainting = true;
 
