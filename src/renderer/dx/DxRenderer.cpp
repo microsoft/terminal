@@ -1376,8 +1376,14 @@ try
             try
             {
                 til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
+                til::point sourceOrigin{ 0, 0 };
+                if (scrollInPixels.y() < 0)
+                {
+                    sourceOrigin = -scrollInPixels;
+                    scrollInPixels = til::point{ 0, 0 };
+                }
                 D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(), scrollInPixels.y<uint32_t>() };
-                D2D1_RECT_U srcRect{ 0, 0, _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
+                D2D1_RECT_U srcRect{ sourceOrigin.x<uint32_t>(), sourceOrigin.y<uint32_t>(), _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
                 Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
                 RETURN_IF_FAILED(_d2dDeviceContext->QueryInterface(IID_PPV_ARGS(&otherRenderTarget)));
                 _d2dBitmap->CopyFromRenderTarget(&tgtPos, otherRenderTarget.Get(), &srcRect);
