@@ -778,15 +778,6 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
     }
 }
 
-// [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
-// {
-//     // If we initialize the _framebuffer second, then it renders alright.
-//     RETURN_IF_FAILED(_PrepareRenderTarget(_otherbuffer, _d2dOtherBitmap));
-//     RETURN_IF_FAILED(_PrepareRenderTarget(_framebuffer, _d2dBitmap));
-//     // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
-//     return S_OK;
-// }
-
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
     try
@@ -1368,34 +1359,55 @@ try
             RETURN_IF_FAILED(InvalidateAll());
         }
 
+        // GH#7147
         // Here's a bit of trickiness. Each frame, we're rendering what changed
         // in the console into a framebuffer. But when the frame scrolls, we
         // don't want to redraw everything we already have, we just want to
         // shift it up/down.
-
         // To facilitate this, we have two buffers that we render to, like a
         // swapchain. in between frames, we'll copy the contents from the back
         // buffer into the front buffer, using CopyFromRenderTarget. This allows
         // us to move the contents from one buffer into the other, at a given
         // offset,
+        // To optimize this, we only need to do this copying and swapping when
+        // there's actually a scroll delta. Otherwise, the viewport is still
+        // just in the same location, and we can just leave the contents of the
+        // current framebuffer alone.
         if (_d2dBitmap && _d2dOtherBitmap && _invalidScroll.y() != 0)
         {
+            // Swap the framebuffers
             std::swap(_framebuffer, _otherbuffer);
             std::swap(_d2dBitmap, _d2dOtherBitmap);
 
+            // Figure out how much of the screen to scroll, and where to scroll it to.
             til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
             til::point sourceOrigin{ 0, 0 };
+            // D2D_POINT_2U is an unsigned point, it won't accept negative
+            // numbers. If we want to scroll the frame contents up (s.t. delta.y
+            // < 0), we need to copy just the bottom portion of the last buffer
+            // to 0,0 in the new buffer.
             if (scrollInPixels.y() < 0)
             {
                 sourceOrigin = -scrollInPixels;
                 scrollInPixels = til::point{ 0, 0 };
             }
-            D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(), scrollInPixels.y<uint32_t>() };
-            D2D1_RECT_U srcRect{ sourceOrigin.x<uint32_t>(), sourceOrigin.y<uint32_t>(), _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
+            D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(),
+                                 scrollInPixels.y<uint32_t>() };
+            D2D1_RECT_U srcRect{ sourceOrigin.x<uint32_t>(),
+                                 sourceOrigin.y<uint32_t>(),
+                                 _displaySizePixels.width<uint32_t>(),
+                                 _displaySizePixels.height<uint32_t>() };
+
+            // Get our _d2dDeviceContext as a ID2D1RenderTarget
             Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
             RETURN_IF_FAILED(_d2dDeviceContext->QueryInterface(IID_PPV_ARGS(&otherRenderTarget)));
-            _d2dBitmap->CopyFromRenderTarget(&tgtPos, otherRenderTarget.Get(), &srcRect);
+            // Copy the contents from the old buffer (now in otherBuffer) to the
+            // current bitmap.
+            _d2dBitmap->CopyFromRenderTarget(&tgtPos, // destPoint
+                                             otherRenderTarget.Get(), // renderTarget
+                                             &srcRect); // srcRect
 
+            // make sure to tell our device that we're drawing to a different bitmap now
             _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
         }
 
