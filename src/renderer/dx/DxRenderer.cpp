@@ -780,9 +780,9 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
 
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
+    // If we initialize the _framebuffer second, then it renders alright.
+    RETURN_IF_FAILED(_PrepareRenderTarget(_otherbuffer, _d2dOtherBitmap));
     RETURN_IF_FAILED(_PrepareRenderTarget(_framebuffer, _d2dBitmap));
-    // If I uncomment these lines, then nothing shows up at all
-    // RETURN_IF_FAILED(_PrepareRenderTarget(_otherbuffer, _d2dOtherBitmap));
     // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
     return S_OK;
 }
@@ -1366,6 +1366,13 @@ try
             RETURN_IF_FAILED(InvalidateAll());
         }
 
+        // Huh, it's definitely the call to SetTarget that makes DX upset. If
+        // you don't do that, but still swap the buffers, then you'll flicker
+        // between the one that has the contents in it and the other one.
+        std::swap(_framebuffer, _otherbuffer);
+        std::swap(_d2dBitmap, _d2dOtherBitmap);
+        // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
+
         _d2dDeviceContext->BeginDraw();
         _isPainting = true;
 
@@ -1412,7 +1419,9 @@ try
         // If there's still a clip hanging around, remove it. We're all done.
         LOG_IF_FAILED(_customRenderer->EndClip(_drawingContext.get()));
 
-        hr = _d2dDeviceContext->EndDraw();
+        D2D1_TAG tag1;
+        D2D1_TAG tag2;
+        hr = _d2dDeviceContext->EndDraw(&tag1, &tag2);
 
         if (SUCCEEDED(hr))
         {
