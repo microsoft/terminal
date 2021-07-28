@@ -1230,9 +1230,7 @@ namespace winrt::TerminalApp::implementation
 
             _root->ProcessStartupActions(actions, false, cwd);
 
-            // TODO: Comments - this is the function that peasants end up calling for handling the commandline
-            // hence why SetInboundListener is here.
-            if (_appArgs.IsHandoffListener())
+            if (appArgs.IsHandoffListener())
             {
                 _root->SetInboundListener(true);
             }
