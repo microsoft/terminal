@@ -39,7 +39,9 @@ namespace Microsoft.Terminal.Control
                           UInt32 pointerUpdateKind,
                           Microsoft.Terminal.Core.ControlKeyStates modifiers,
                           Boolean focused,
-                          Microsoft.Terminal.Core.Point pixelPosition);
+                          Microsoft.Terminal.Core.Point pixelPosition,
+                          Boolean pointerPressedInBounds);
+
         void TouchMoved(Microsoft.Terminal.Core.Point newTouchPoint,
                         Boolean focused);
 
