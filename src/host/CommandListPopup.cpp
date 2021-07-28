@@ -431,10 +431,7 @@ void CommandListPopup::_drawList()
             TextAttribute inverted = _attributes;
             inverted.Invert();
 
-            const OutputCellIterator it(inverted, lStringLength);
-            const auto done = _screenInfo.Write(it, WriteCoord);
-
-            lStringLength = done.GetCellDistance(it);
+            _screenInfo.GetTextBuffer().FillWithAttribute(Microsoft::Console::Types::Viewport::FromDimensions(WriteCoord, { Width(), 1 }), inverted);
         }
 
         WriteCoord.Y += 1;
@@ -529,21 +526,13 @@ void CommandListPopup::_updateHighlight(const SHORT OldCurrentCommand, const SHO
     }
     COORD WriteCoord;
     WriteCoord.X = _region.Left + 1i16;
-    size_t lStringLength = Width();
-
     WriteCoord.Y = _region.Top + 1i16 + OldCurrentCommand - TopIndex;
 
-    const OutputCellIterator it(_attributes, lStringLength);
-    const auto done = _screenInfo.Write(it, WriteCoord);
-    lStringLength = done.GetCellDistance(it);
+    _screenInfo.GetTextBuffer().FillWithAttribute(Microsoft::Console::Types::Viewport::FromDimensions(WriteCoord, { Width(), 1 }), _attributes);
 
     // highlight new command
     WriteCoord.Y = _region.Top + 1i16 + NewCurrentCommand - TopIndex;
-
-    // inverted attributes
     TextAttribute inverted = _attributes;
     inverted.Invert();
-    const OutputCellIterator itAttr(inverted, lStringLength);
-    const auto doneAttr = _screenInfo.Write(itAttr, WriteCoord);
-    lStringLength = done.GetCellDistance(itAttr);
+    _screenInfo.GetTextBuffer().FillWithAttribute(Microsoft::Console::Types::Viewport::FromDimensions(WriteCoord, { Width(), 1 }), inverted);
 }

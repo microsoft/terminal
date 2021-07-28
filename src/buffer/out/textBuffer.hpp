@@ -196,6 +196,10 @@ public:
 
     size_t WriteStringContiguous(til::point at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements);
 
+    void FillWithAttribute(const Microsoft::Console::Types::Viewport& region, const TextAttribute& attribute);
+
+    size_t FillWithAttributeLinear(const til::point at, size_t count, const TextAttribute& attribute);
+
 private:
     void _UpdateSize();
     Microsoft::Console::Types::Viewport _size;

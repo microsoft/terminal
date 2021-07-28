@@ -2250,10 +2250,10 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     // i.e. the current background color, but with no meta attributes set.
     auto fillAttributes = GetAttributes();
     fillAttributes.SetStandardErase();
-    auto fillPosition = COORD{ 0, _viewport.Top() };
-    auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
-    auto fillData = OutputCellIterator{ fillAttributes, fillLength };
-    Write(fillData, fillPosition, false);
+    // TODO(DH): The original code moved Left to 0 and Right to Width
+    _textBuffer->FillWithAttribute(_viewport, fillAttributes);
+    // TODO(DH): THIS ALSO CLEARED THE WRAP ON ALL ROWS (!)
+    //Write(fillData, fillPosition, false);
 
     // Also reset the line rendition for the erased rows.
     _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());

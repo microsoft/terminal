@@ -90,7 +90,7 @@ void Popup::_DrawBorder()
     COORD WriteCoord;
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Top;
-    _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
+    _screenInfo.GetTextBuffer().FillWithAttribute(Viewport::FromInclusive(_region), _attributes);
 
     // draw upper left corner
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT, 1), WriteCoord);
@@ -108,9 +108,6 @@ void Popup::_DrawBorder()
         WriteCoord.Y += 1;
         WriteCoord.X = _region.Left;
 
-        // fill attributes
-        _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
-
         _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
 
         WriteCoord.X = _region.Right;
@@ -119,12 +116,10 @@ void Popup::_DrawBorder()
 
     // Draw bottom line.
     // Fill attributes of top line.
-    WriteCoord.X = _region.Left;
-    WriteCoord.Y = _region.Bottom;
-    _screenInfo.Write(OutputCellIterator(_attributes, Width() + 2), WriteCoord);
 
     // Draw bottom left corner.
     WriteCoord.X = _region.Left;
+    WriteCoord.Y = _region.Bottom;
     _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT, 1), WriteCoord);
 
     // Draw lower bar.

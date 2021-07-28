@@ -35,7 +35,6 @@ public:
     using reference = OutputCellView&;
 
     OutputCellIterator(const wchar_t& wch, const size_t fillLimit = 0) noexcept;
-    OutputCellIterator(const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const wchar_t& wch, const TextAttribute& attr, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const CHAR_INFO& charInfo, const size_t fillLimit = 0) noexcept;
     OutputCellIterator(const std::wstring_view utf16Text);

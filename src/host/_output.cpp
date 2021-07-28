@@ -216,11 +216,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
     try
     {
-        TextAttribute useThisAttr(attribute);
-        const OutputCellIterator it(useThisAttr, lengthToWrite);
-        const auto done = screenBuffer.Write(it, startingCoordinate);
-
-        cellsModified = done.GetCellDistance(it);
+        cellsModified = screenBuffer.GetTextBuffer().FillWithAttributeLinear(startingCoordinate, lengthToWrite, TextAttribute{ attribute });
 
         if (screenBuffer.HasAccessibilityEventing())
         {

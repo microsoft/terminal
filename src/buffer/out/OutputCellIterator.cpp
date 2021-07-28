@@ -30,22 +30,6 @@ OutputCellIterator::OutputCellIterator(const wchar_t& wch, const size_t fillLimi
 }
 
 // Routine Description:
-// - This is a fill-mode iterator for one particular color. It will repeat forever if fillLimit is 0.
-// Arguments:
-// - attr - The color attribute to use for filling
-// - fillLimit - How many times to allow this value to be viewed/filled. Infinite if 0.
-OutputCellIterator::OutputCellIterator(const TextAttribute& attr, const size_t fillLimit) noexcept :
-    _mode(Mode::Fill),
-    _currentView(s_GenerateView(attr)),
-    _run(),
-    _attr(InvalidTextAttribute),
-    _pos(0),
-    _distance(0),
-    _fillLimit(fillLimit)
-{
-}
-
-// Routine Description:
 // - This is a fill-mode iterator for one particular character and color. It will repeat forever if fillLimit is 0.
 // Arguments:
 // - wch - The character to use for filling

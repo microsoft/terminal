@@ -388,25 +388,7 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute att
     // Read selection rectangle, assumed already clipped to buffer.
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
-    COORD coordTargetSize;
-    coordTargetSize.X = CalcWindowSizeX(srRect);
-    coordTargetSize.Y = CalcWindowSizeY(srRect);
-
-    COORD coordTarget;
-    coordTarget.X = srRect.Left;
-    coordTarget.Y = srRect.Top;
-
-    // Now color the selection a line at a time.
-    for (; (coordTarget.Y < srRect.Top + coordTargetSize.Y); ++coordTarget.Y)
-    {
-        const size_t cchWrite = gsl::narrow<size_t>(coordTargetSize.X);
-
-        try
-        {
-            screenInfo.Write(OutputCellIterator(attr, cchWrite), coordTarget);
-        }
-        CATCH_LOG();
-    }
+    screenInfo.GetTextBuffer().FillWithAttribute(Viewport::FromInclusive(srRect), attr);
 }
 
 // Routine Description:

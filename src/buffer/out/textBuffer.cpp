@@ -2319,6 +2319,38 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     return result;
 }
 
+void TextBuffer::FillWithAttribute(const Viewport& region, const TextAttribute& attribute)
+{
+    for (auto y{ region.Top() }; y < region.BottomExclusive(); ++y)
+    {
+        auto& row = GetRowByOffset(y);
+        row.GetAttrRow().Replace(region.Left(), region.RightExclusive(), attribute);
+    }
+
+    // Rectangular region optimization: notify all at once
+    _NotifyPaint(region);
+}
+
+size_t TextBuffer::FillWithAttributeLinear(til::point at, size_t count, const TextAttribute& attribute)
+{
+    const auto initial{ count };
+    while (count && _size.IsInBounds(at))
+    {
+        // narrowing count to short here is fine; it will always be less than width
+        const auto w{ std::min<uint16_t>(_size.Width() - at.x<uint16_t>(), gsl::narrow_cast<uint16_t>(count)) };
+
+        auto& row = GetRowByOffset(at.y());
+        row.GetAttrRow().Replace(at.x<uint16_t>(), w + 1 /* exclusive */, attribute);
+
+        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(w), 1 });
+        _NotifyPaint(paint);
+
+        at = { 0, at.y() + 1 };
+        count -= w;
+    }
+    return initial - count;
+}
+
 #include "../types/inc/Utf16Parser.hpp"
 
 size_t TextBuffer::WriteStringContiguous(til::point at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements)
