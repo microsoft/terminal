@@ -31,7 +31,7 @@ try
     ComPtr<IUnknown> unk;
     RETURN_IF_FAILED(classFactory.As(&unk));
 
-    RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CTerminalHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE, &g_cTerminalHandoffRegistration));
+    RETURN_IF_FAILED(CoRegisterClassObject(__uuidof(CTerminalHandoff), unk.Get(), CLSCTX_LOCAL_SERVER, REGCLS_SINGLEUSE, &g_cTerminalHandoffRegistration));
 
     _pfnHandoff = pfnHandoff;
 

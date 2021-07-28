@@ -657,8 +657,13 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
 {
     _setupGlobalHotkeys();
 
+    // Originally, the monarch is THE listener for inbound connections, but
+    // now the model has changed where the monarch will first decide whether
+    // the monarch or one of its peasants should be the listener to receive
+    // the new tab event.
+    // 
     // The monarch is just going to be THE listener for inbound connections.
-    _listenForInboundConnections();
+    //_listenForInboundConnections();
 }
 
 void AppHost::_listenForInboundConnections()

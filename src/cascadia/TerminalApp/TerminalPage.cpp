@@ -378,7 +378,12 @@ namespace winrt::TerminalApp::implementation
                 // tasks decide to clean up.
                 if (_isEmbeddingInboundListener)
                 {
-                    FAIL_FAST_CAUGHT_EXCEPTION();
+                    // Commenting out the fail fast because peasants will now become com servers
+                    // through receiving the -Embedded argument from the Monarch, and so we don't
+                    // want any peasants and all their tabs to die.
+                    // TODO: Get rid of the whole variable and just Log.
+                    /*FAIL_FAST_CAUGHT_EXCEPTION();*/
+                    LOG_CAUGHT_EXCEPTION();
                 }
                 else
                 {
