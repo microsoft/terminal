@@ -95,9 +95,7 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
 {
     // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
     // COM does not automatically clean that up for us. We must do it.
-    auto cleanup = wil::scope_exit([] {
-        s_StopListening();
-    });
+    s_StopListening();
 
     // Report an error if no one registered a handoff function before calling this.
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
