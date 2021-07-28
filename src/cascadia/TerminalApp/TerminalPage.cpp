@@ -356,39 +356,12 @@ namespace winrt::TerminalApp::implementation
                 winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
             }
             // If we failed to start the listener, it will throw.
-            // We should fail fast here or the Terminal will be in a very strange state.
-            // We only start the listener if the Terminal was started with the COM server
-            // `-Embedding` flag and we make no tabs as a result.
-            // Therefore, if the listener cannot start itself up to make that tab with
-            // the inbound connection that caused the COM activation in the first place...
-            // we would be left with an empty terminal frame with no tabs.
-            // Instead, crash out so COM sees the server die and things unwind
-            // without a weird empty frame window.
+            // We don't want to fail fast here because if a peasant has some trouble with
+            // starting the listener, we don't want it to crash and take all its tabs down
+            // with it.
             catch (...)
             {
-                // However, we cannot always fail fast because of MSFT:33501832. Sometimes the COM catalog
-                // tears the state between old and new versions and fails here for that reason.
-                // As we're always becoming an inbound server in the monarch, even when COM didn't strictly
-                // ask us yet...we might just crash always.
-                // Instead... we're going to differentiate. If COM started us... we will fail fast
-                // so it sees the process die and falls back.
-                // If we were just starting normally as a Monarch and opportunistically listening for
-                // inbound connections... then we'll just log the failure and move on assuming
-                // the version state is torn and will fix itself whenever the packaging upgrade
-                // tasks decide to clean up.
-                //if (_isEmbeddingInboundListener)
-                //{
-                //    // Commenting out the fail fast because peasants will now become com servers
-                //    // through receiving the -Embedded argument from the Monarch, and so we don't
-                //    // want any peasants and all their tabs to die.
-                //    // TODO: Get rid of the whole variable and just Log.
-                //    /*FAIL_FAST_CAUGHT_EXCEPTION();*/
-                //    LOG_CAUGHT_EXCEPTION();
-                //}
-                //else
-                //{
-                    LOG_CAUGHT_EXCEPTION();
-                //}
+                LOG_CAUGHT_EXCEPTION();
             }
         }
     }
