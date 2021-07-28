@@ -1381,7 +1381,8 @@ try
             std::swap(_d2dBitmap, _d2dOtherBitmap);
 
             // Figure out how much of the screen to scroll, and where to scroll it to.
-            til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
+            til::size glyphSize{ _fontRenderData->GlyphCell() };
+            til::point scrollInPixels = _invalidScroll * glyphSize;
             til::point sourceOrigin{ 0, 0 };
             // D2D_POINT_2U is an unsigned point, it won't accept negative
             // numbers. If we want to scroll the frame contents up (s.t. delta.y
@@ -1394,10 +1395,19 @@ try
             }
             D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(),
                                  scrollInPixels.y<uint32_t>() };
-            D2D1_RECT_U srcRect{ sourceOrigin.x<uint32_t>(),
-                                 sourceOrigin.y<uint32_t>(),
-                                 _displaySizePixels.width<uint32_t>(),
-                                 _displaySizePixels.height<uint32_t>() };
+
+            // auto heightOffset = std::max(sourceOrigin.y<uint32_t>(), scrollInPixels.y<uint32_t>());
+            auto heightOffset = sourceOrigin.y<uint32_t>();
+            til::size realBufferSize{ _lastBufferSize * glyphSize };
+            til::size srcDimensions{ realBufferSize.width() - sourceOrigin.x(),
+                                     realBufferSize.height() - heightOffset };
+            til::rectangle source{ sourceOrigin, srcDimensions };
+            D2D1_RECT_U srcRect{
+                source.left<uint32_t>(),
+                source.top<uint32_t>(),
+                source.right<uint32_t>(),
+                source.bottom<uint32_t>(),
+            };
 
             // Get our _d2dDeviceContext as a ID2D1RenderTarget
             Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
