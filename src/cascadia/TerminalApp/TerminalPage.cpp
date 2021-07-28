@@ -376,19 +376,19 @@ namespace winrt::TerminalApp::implementation
                 // inbound connections... then we'll just log the failure and move on assuming
                 // the version state is torn and will fix itself whenever the packaging upgrade
                 // tasks decide to clean up.
-                if (_isEmbeddingInboundListener)
-                {
-                    // Commenting out the fail fast because peasants will now become com servers
-                    // through receiving the -Embedded argument from the Monarch, and so we don't
-                    // want any peasants and all their tabs to die.
-                    // TODO: Get rid of the whole variable and just Log.
-                    /*FAIL_FAST_CAUGHT_EXCEPTION();*/
+                //if (_isEmbeddingInboundListener)
+                //{
+                //    // Commenting out the fail fast because peasants will now become com servers
+                //    // through receiving the -Embedded argument from the Monarch, and so we don't
+                //    // want any peasants and all their tabs to die.
+                //    // TODO: Get rid of the whole variable and just Log.
+                //    /*FAIL_FAST_CAUGHT_EXCEPTION();*/
+                //    LOG_CAUGHT_EXCEPTION();
+                //}
+                //else
+                //{
                     LOG_CAUGHT_EXCEPTION();
-                }
-                else
-                {
-                    LOG_CAUGHT_EXCEPTION();
-                }
+                //}
             }
         }
     }
