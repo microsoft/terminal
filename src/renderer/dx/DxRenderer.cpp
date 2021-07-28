@@ -1371,17 +1371,20 @@ try
         // between the one that has the contents in it and the other one.
         std::swap(_framebuffer, _otherbuffer);
         std::swap(_d2dBitmap, _d2dOtherBitmap);
-        // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
         if (_d2dBitmap && _d2dOtherBitmap)
         {
-            til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
-            D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(), scrollInPixels.y<uint32_t>() };
-            D2D1_RECT_U srcRect{ 0, 0, _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
-            Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
-            RETURN_IF_FAILED(_d2dDeviceContext->QueryInterface(IID_PPV_ARGS(&otherRenderTarget)));
-            _d2dBitmap->CopyFromRenderTarget(&tgtPos, otherRenderTarget.Get(), &srcRect);
-
+            try
+            {
+                til::point scrollInPixels = _invalidScroll * _fontRenderData->GlyphCell();
+                D2D_POINT_2U tgtPos{ scrollInPixels.x<uint32_t>(), scrollInPixels.y<uint32_t>() };
+                D2D1_RECT_U srcRect{ 0, 0, _displaySizePixels.width<uint32_t>(), _displaySizePixels.height<uint32_t>() };
+                Microsoft::WRL::ComPtr<ID2D1RenderTarget> otherRenderTarget;
+                RETURN_IF_FAILED(_d2dDeviceContext->QueryInterface(IID_PPV_ARGS(&otherRenderTarget)));
+                _d2dBitmap->CopyFromRenderTarget(&tgtPos, otherRenderTarget.Get(), &srcRect);
+            }
+            CATCH_LOG();
         }
+        _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
         _d2dDeviceContext->BeginDraw();
         _isPainting = true;
 
