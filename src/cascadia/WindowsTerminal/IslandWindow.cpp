@@ -892,10 +892,13 @@ void IslandWindow::_RestoreFullscreenPosition(const RECT rcWork)
     // We want to make sure the window is restored within the bounds of the
     // monitor we're on, but it's totally fine if the invisible borders are
     // outside the monitor.
-    rcWorkAdjusted.left -= ncSize.width<long>() / 2;
-    rcWorkAdjusted.right += ncSize.width<long>() / 2;
-    rcWorkAdjusted.top -= ncSize.height<long>() / 2;
-    rcWorkAdjusted.bottom += ncSize.height<long>() / 2;
+    const auto halfWidth{ ncSize.width<long>() / 2 };
+    const auto halfHeight{ ncSize.height<long>() / 2 };
+
+    rcWorkAdjusted.left -= halfWidth;
+    rcWorkAdjusted.right += halfWidth;
+    rcWorkAdjusted.top -= halfHeight;
+    rcWorkAdjusted.bottom += halfHeight;
 
     // Enforce that our position is entirely within the bounds of our work area.
     // Prefer the top-left be on-screen rather than bottom-right (right before left, bottom before top).
