@@ -237,7 +237,7 @@ OutputCellIterator& OutputCellIterator::operator++()
     return (*this);
 }
 
-void OutputCellIterator::_MoveOthers() noexcept
+void OutputCellIterator::_MoveSlowPath() noexcept
 {
     switch (_mode)
     {
