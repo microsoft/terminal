@@ -210,7 +210,7 @@ OutputCellIterator& OutputCellIterator::operator++()
     {
         size_t pos = _pos;
         pos += _currentView.Chars().size();
-        const std::wstring_view& run = std::get<std::wstring_view>(_run);
+        const std::wstring_view run = std::get<std::wstring_view>(_run);
         if (pos < run.length())
         {
             const wchar_t wch = run.at(pos);
@@ -233,11 +233,12 @@ OutputCellIterator& OutputCellIterator::operator++()
     {
         _MoveSlowPath();
     }
-    
+
     return (*this);
 }
 
 void OutputCellIterator::_MoveSlowPath() noexcept
+try
 {
     switch (_mode)
     {
@@ -326,6 +327,7 @@ void OutputCellIterator::_MoveSlowPath() noexcept
         FAIL_FAST_HR(E_NOTIMPL);
     }
 }
+CATCH_FAIL_FAST();
 
 // Routine Description:
 // - Advances the iterator one position over the underlying data source.
