@@ -66,6 +66,37 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 }
 
 // Method Description:
+// - Writes a fill of characters to our file handle (repeat of same character over and over)
+[[nodiscard]] HRESULT VtEngine::_WriteFill(const size_t n, const char c) noexcept
+try
+{
+    _trace.TraceStringFill(n, c);
+#ifdef UNIT_TESTING
+    if (_usingTestCallback)
+    {
+        const std::string str(n, c);
+        // Try to get the last error. If that wasn't set, then the test probably
+        // doesn't set last error. No matter. We'll just return with E_FAIL
+        // then. This is a unit test, we don't particularly care.
+        const auto succeeded = _pfnTestCallback(str.data(), str.size());
+        auto hr = E_FAIL;
+        if (!succeeded)
+        {
+            const auto err = ::GetLastError();
+            // If there wasn't an error in GLE, just use E_FAIL
+            hr = SUCCEEDED_WIN32(err) ? hr : HRESULT_FROM_WIN32(err);
+        }
+        return succeeded ? S_OK : hr;
+    }
+#endif
+
+    // TODO: Replace me with REP
+    _buffer.append(n, c);
+    return S_OK;
+}
+CATCH_RETURN();
+
+// Method Description:
 // - Writes the characters to our file handle. If we're building the unit tests,
 //      we can instead write to the test callback, in order to avoid needing to
 //      set up pipes and threads for unit tests.

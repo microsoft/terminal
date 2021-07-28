@@ -8,6 +8,16 @@
 
 using namespace Microsoft::Console::Interactivity;
 
+static constexpr CHAR_INFO s_readBackUnicode{
+    { UNICODE_REPLACEMENT },
+    FOREGROUND_INTENSITY | FOREGROUND_RED | BACKGROUND_GREEN
+};
+
+static constexpr CHAR_INFO s_readBackAscii{
+    { L'?' },
+    FOREGROUND_INTENSITY | FOREGROUND_RED | BACKGROUND_GREEN
+};
+
 VtApiRoutines::VtApiRoutines() :
     m_inputCodepage(ServiceLocator::LocateGlobals().getConsoleInformation().CP),
     m_outputCodepage(ServiceLocator::LocateGlobals().getConsoleInformation().OutputCP),
@@ -64,8 +74,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
 [[nodiscard]] HRESULT VtApiRoutines::GetNumberOfConsoleInputEventsImpl(const InputBuffer& context,
                                                                        ULONG& events) noexcept
 {
-    events = 0; // one per character that we have ready to return... or 0.
-    return S_OK;
+    return m_pUsualRoutines->GetNumberOfConsoleInputEventsImpl(context, events);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::PeekConsoleInputAImpl(IConsoleInputObject& context,
@@ -74,7 +83,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return S_OK;
+    return m_pUsualRoutines->PeekConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
@@ -83,7 +92,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return S_OK;
+    return m_pUsualRoutines->PeekConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
@@ -92,7 +101,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return S_OK;
+    return m_pUsualRoutines->ReadConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
@@ -101,7 +110,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return S_OK;
+    return m_pUsualRoutines->ReadConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
@@ -141,7 +150,6 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
     if (CP_UTF8 == m_outputCodepage)
     {
         (void)m_pVtEngine->WriteTerminalUtf8(buffer);
-
     }
     else
     {
@@ -176,6 +184,12 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                                     const COORD startingCoordinate,
                                                                     size_t& cellsModified) noexcept
 {
+    (void)m_pVtEngine->_CursorPosition(startingCoordinate);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute, true);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute >> 4, false);
+    (void)m_pVtEngine->_WriteFill(lengthToWrite, s_readBackAscii.Char.AsciiChar);
+    (void)m_pVtEngine->_Flush();
+    cellsModified = lengthToWrite;
     return S_OK;
 }
 
@@ -185,7 +199,22 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                                      const COORD startingCoordinate,
                                                                      size_t& cellsModified) noexcept
 {
-    return S_OK;
+    // I mean... if you get your jollies by using UTF8 for single byte codepoints...
+    // we may as well skip a lot of conversion work and just write it out.
+    // TODO: emitting anything >0x7F is probably insanity for a utf-8 fill.
+    if (m_outputCodepage == CP_UTF8)
+    {
+        (void)m_pVtEngine->_CursorPosition(startingCoordinate);
+        (void)m_pVtEngine->_WriteFill(lengthToWrite, character);
+        (void)m_pVtEngine->_Flush();
+        cellsModified = lengthToWrite;
+        return S_OK;
+    }
+    else
+    {
+        const auto wstr = ConvertToW(m_outputCodepage, std::string_view{ &character, 1 });
+        return FillConsoleOutputCharacterWImpl(OutContext, wstr.front(), lengthToWrite, startingCoordinate, cellsModified);
+    }
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::FillConsoleOutputCharacterWImpl(IConsoleOutputObject& OutContext,
@@ -195,6 +224,18 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                                      size_t& cellsModified,
                                                                      const bool enablePowershellShim) noexcept
 {
+    (void)m_pVtEngine->_CursorPosition(startingCoordinate);
+    const std::wstring_view sv{ &character, 1 };
+
+    // TODO: horrible. it'll WC2MB over and over...we should do that once then emit... and then rep...
+    // TODO: there's probably an optimization for if ((character & 0x7F) == character) --> call the UTF8 one.
+    for (size_t i = 0; i < lengthToWrite; ++i)
+    {
+        (void)m_pVtEngine->WriteTerminalW(sv);
+    }
+
+    (void)m_pVtEngine->_Flush();
+    cellsModified = lengthToWrite;
     return S_OK;
 }
 
@@ -209,7 +250,7 @@ void VtApiRoutines::SetConsoleActiveScreenBufferImpl(SCREEN_INFORMATION& newCont
 
 void VtApiRoutines::FlushConsoleInputBuffer(InputBuffer& context) noexcept
 {
-    return;
+    m_pUsualRoutines->FlushConsoleInputBuffer(context);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleInputCodePageImpl(const ULONG codepage) noexcept
@@ -228,6 +269,8 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
                                              ULONG& size,
                                              bool& isVisible) noexcept
 {
+    // TODO: good luck capturing this out of the input buffer when it comes back in. yeesh.
+    //m_pVtEngine->RequestCursor();
     return;
 }
 
@@ -235,6 +278,7 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
                                                               const ULONG size,
                                                               const bool isVisible) noexcept
 {
+    isVisible ? (void)m_pVtEngine->_ShowCursor() : (void)m_pVtEngine->_HideCursor();
     return S_OK;
 }
 
@@ -242,30 +286,43 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
 void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& context,
                                                      CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
+    // TODO: this is technically full of potentially incorrect data. do we care? should we store it in here with set?
     return m_pUsualRoutines->GetConsoleScreenBufferInfoExImpl(context, data);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleScreenBufferInfoExImpl(SCREEN_INFORMATION& context,
                                                                       const CONSOLE_SCREEN_BUFFER_INFOEX& data) noexcept
 {
+    (void)m_pVtEngine->_ResizeWindow(data.srWindow.Right - data.srWindow.Left, data.srWindow.Bottom - data.srWindow.Top);
+    (void)m_pVtEngine->_CursorPosition(data.dwCursorPosition);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(data.wAttributes, true);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(data.wAttributes >> 4, false);
+    //color table?
+    // popup attributes... hold internally?
+    // TODO: popups are gonna erase the stuff behind them... deal with that somehow.
+    (void)m_pVtEngine->_Flush();
     return S_OK;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleScreenBufferSizeImpl(SCREEN_INFORMATION& context,
                                                                     const COORD size) noexcept
 {
+    // Don't transmit. The terminal figures out its own buffer size.
     return S_OK;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
                                                                   const COORD position) noexcept
 {
+    (void)m_pVtEngine->_CursorPosition(position);
+    (void)m_pVtEngine->_Flush();
     return S_OK;
 }
 
 void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& context,
                                                     COORD& size) noexcept
 {
+    m_pUsualRoutines->GetLargestConsoleWindowSizeImpl(context, size); // This is likely super weird but not weirder than existing ConPTY answers.
     return;
 }
 
@@ -276,6 +333,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                     const char fillCharacter,
                                                                     const WORD fillAttribute) noexcept
 {
+    // Use DECCRA
     return S_OK;
 }
 
@@ -287,12 +345,16 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                     const WORD fillAttribute,
                                                                     const bool enableCmdShim) noexcept
 {
+    // Use DECCRA
     return S_OK;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                                  const WORD attribute) noexcept
 {
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute, true);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute >> 4, false);
+    (void)m_pVtEngine->_Flush();
     return S_OK;
 }
 
@@ -300,6 +362,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                               const bool isAbsolute,
                                                               const SMALL_RECT& windowRect) noexcept
 {
+    (void)m_pVtEngine->_ResizeWindow(windowRect.Right - windowRect.Left, windowRect.Bottom - windowRect.Top);
+    (void)m_pVtEngine->_Flush();
     return S_OK;
 }
 
@@ -308,6 +372,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                     gsl::span<WORD> buffer,
                                                                     size_t& written) noexcept
 {
+    std::fill_n(buffer.data(), buffer.size(), s_readBackUnicode.Attributes); // should be same as the ascii one.
+    written = buffer.size();
     return S_OK;
 }
 
@@ -316,6 +382,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                      gsl::span<char> buffer,
                                                                      size_t& written) noexcept
 {
+    std::fill_n(buffer.data(), buffer.size(), s_readBackAscii.Char.AsciiChar);
+    written = buffer.size();
     return S_OK;
 }
 
@@ -324,6 +392,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                      gsl::span<wchar_t> buffer,
                                                                      size_t& written) noexcept
 {
+    std::fill_n(buffer.data(), buffer.size(), s_readBackUnicode.Char.UnicodeChar);
+    written = buffer.size();
     return S_OK;
 }
 
@@ -332,7 +402,7 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                             size_t& written,
                                                             const bool append) noexcept
 {
-    return S_OK;
+    return m_pUsualRoutines->WriteConsoleInputAImpl(context, buffer, written, append);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleInputWImpl(InputBuffer& context,
@@ -340,15 +410,23 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                             size_t& written,
                                                             const bool append) noexcept
 {
-    return S_OK;
+    return m_pUsualRoutines->WriteConsoleInputWImpl(context, buffer, written, append);
 }
+
+extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
+                                                     gsl::span<CHAR_INFO> buffer,
+                                                     const Viewport& rectangle) noexcept;
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
                                                              gsl::span<CHAR_INFO> buffer,
                                                              const Microsoft::Console::Types::Viewport& requestRectangle,
                                                              Microsoft::Console::Types::Viewport& writtenRectangle) noexcept
 {
-    return S_OK;
+    // No UTF8 optimization because the entire `CHAR_INFO` grid system doesn't make sense for UTF-8
+    // with up to 4 bytes per cell...or more!
+
+    RETURN_IF_FAILED(_ConvertCellsToWInplace(m_outputCodepage, buffer, requestRectangle));
+    return WriteConsoleOutputWImpl(context, buffer, requestRectangle, writtenRectangle);
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputWImpl(SCREEN_INFORMATION& context,
@@ -356,6 +434,32 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                              const Microsoft::Console::Types::Viewport& requestRectangle,
                                                              Microsoft::Console::Types::Viewport& writtenRectangle) noexcept
 {
+    COORD cursor{ requestRectangle.Left(), requestRectangle.Top() };
+
+    const size_t width = requestRectangle.Width();
+    size_t pos = 0;
+
+    while (pos < buffer.size())
+    {
+        (void)m_pVtEngine->_CursorPosition(cursor);
+
+        const auto subspan = buffer.subspan(pos, width);
+
+        for (const auto& ci : subspan)
+        {
+            (void)m_pVtEngine->_SetGraphicsRendition16Color(ci.Attributes, true);
+            (void)m_pVtEngine->_SetGraphicsRendition16Color(ci.Attributes >> 4, false);
+            (void)m_pVtEngine->WriteTerminalW(std::wstring_view{ &ci.Char.UnicodeChar, 1 });
+        }
+
+        ++cursor.Y;
+        pos += width;
+    }
+
+    (void)m_pVtEngine->_Flush();
+
+    //TODO: trim to buffer size?
+    writtenRectangle = requestRectangle;
     return S_OK;
 }
 
@@ -364,6 +468,35 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                                      const COORD target,
                                                                      size_t& used) noexcept
 {
+    (void)m_pVtEngine->_CursorPosition(target);
+
+    for (const auto& attr : attrs)
+    {
+        (void)m_pVtEngine->_SetGraphicsRendition16Color(attr, true);
+        (void)m_pVtEngine->_SetGraphicsRendition16Color(attr >> 4, false);
+        (void)m_pVtEngine->WriteTerminalUtf8(std::string_view{ &s_readBackAscii.Char.AsciiChar, 1 });
+    }
+
+#if 0 // discarded compression algorithm
+    const std::basic_string_view<decltype(attrs)::element_type> sv{ attrs.data(), attrs.size() };
+
+    for (size_t i = 0; i < attrs.size();)
+    {
+        const auto first = attrs[i];
+        // TODO: lhecker... inverse memchr()
+        const auto until = sv.find_first_not_of(first, i);
+        auto dist = until - first;
+        (void)m_pVtEngine->_SetGraphicsRendition16Color(first, true);
+        (void)m_pVtEngine->_SetGraphicsRendition16Color(first >> 4, false);
+        (void)m_pVtEngine->_WriteFill(dist, s_readBackAscii.Char.AsciiChar);
+        dist = dist ? dist : 1; // likely unnecessary but my brain has screwed up and made inf loops like this before...
+        i += dist;
+    }
+#endif
+
+    (void)m_pVtEngine->_Flush();
+
+    used = attrs.size();
     return S_OK;
 }
 
@@ -401,12 +534,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                             const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
-    CHAR_INFO fill;
-    fill.Attributes = FOREGROUND_INTENSITY | FOREGROUND_RED | BACKGROUND_GREEN;
-    fill.Char.AsciiChar = '?';
-
-    std::fill(buffer.begin(), buffer.end(), fill);
-
+    std::fill_n(buffer.data(), buffer.size(), s_readBackAscii);
+    // TODO: do we need to constrict readRectangle to within the known buffer size... probably.
     return S_OK;
 }
 
@@ -415,12 +544,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
                                                             const Microsoft::Console::Types::Viewport& sourceRectangle,
                                                             Microsoft::Console::Types::Viewport& readRectangle) noexcept
 {
-    CHAR_INFO fill;
-    fill.Attributes = FOREGROUND_INTENSITY | FOREGROUND_RED | BACKGROUND_GREEN;
-    fill.Char.UnicodeChar = UNICODE_REPLACEMENT;
-
-    std::fill(buffer.begin(), buffer.end(), fill);
-
+    std::fill_n(buffer.data(), buffer.size(), s_readBackUnicode);
+    // TODO: do we need to constrict readRectangle to within the known buffer size... probably.
     return S_OK;
 }
 

@@ -128,6 +128,7 @@ namespace Microsoft::Console::Render
         bool _resizeQuirk{ false };
         std::optional<TextColor> _newBottomLineBG{ std::nullopt };
 
+        [[nodiscard]] HRESULT _WriteFill(const size_t n, const char c) noexcept;
         [[nodiscard]] HRESULT _Write(std::string_view const str) noexcept;
         [[nodiscard]] HRESULT _Flush() noexcept;
 
