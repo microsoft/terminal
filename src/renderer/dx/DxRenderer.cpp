@@ -712,15 +712,17 @@ try
         D3D11_TEXTURE2D_DESC framebufferDesc{};
         swapBuffer->GetDesc(&framebufferDesc);
         WI_SetFlag(framebufferDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
-        RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_frontBuffer));
-        RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_backBuffer));
+        RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_framebuffer));
 
+        // if (_HasTerminalEffects())
+        // {
         const HRESULT hr = _SetupTerminalEffects();
         if (FAILED(hr))
         {
             LOG_HR_MSG(hr, "Failed to setup terminal effects. Disabling.");
             _terminalEffectsEnabled = false;
         }
+        // }
 
         // With a new swap chain, mark the entire thing as invalid.
         RETURN_IF_FAILED(InvalidateAll());
@@ -777,26 +779,18 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
 
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
-    RETURN_IF_FAILED(_PrepareRenderTarget(_frontBuffer, _d2dFrontBitmap));
-    RETURN_IF_FAILED(_PrepareRenderTarget(_backBuffer, _d2dBackBitmap));
-    return S_OK;
-}
-
-[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D> framebuffer,
-                                                     ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> bitmap) noexcept
-{
     try
     {
         // Pull surface out of our frame buffer.
         // We'll draw to this surface.
-        RETURN_IF_FAILED(framebuffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
+        RETURN_IF_FAILED(_framebuffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
 
         // Make a bitmap and bind it to the swap chain surface
         const auto bitmapProperties = D2D1::BitmapProperties1(
             D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
             D2D1::PixelFormat(_swapChainDesc.Format, _dxgiAlphaToD2d1Alpha(_swapChainDesc.AlphaMode)));
 
-        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &bitmap));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &_d2dBitmap));
 
         // Assign that bitmap as the target of the D2D device context. Draw commands hit the context
         // and are backed by the bitmap which is bound to the swap chain which goes on to be presented.
@@ -805,7 +799,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         //  The knee bone connected to the thigh bone
         //  ... and so on)
 
-        _d2dDeviceContext->SetTarget(bitmap.Get());
+        _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
 
         // We need the AntialiasMode for non-text object to be Aliased to ensure
         //  that background boxes line up with each other and don't leave behind
@@ -890,16 +884,14 @@ void DxEngine::_ReleaseDeviceResources() noexcept
         _d2dBrushForeground.Reset();
         _d2dBrushBackground.Reset();
 
-        _d2dFrontBitmap.Reset();
-        _d2dBackBitmap.Reset();
+        _d2dBitmap.Reset();
 
         if (nullptr != _d2dDeviceContext.Get() && _isPainting)
         {
             _d2dDeviceContext->EndDraw();
         }
 
-        _frontBuffer.Reset();
-        _backBuffer.Reset();
+        _framebuffer.Reset();
 
         _d2dDeviceContext.Reset();
 
@@ -1347,8 +1339,7 @@ try
             // Now let go of a few of the device resources that get in the way of resizing buffers in the swap chain
             _dxgiSurface.Reset();
             _d2dDeviceContext->SetTarget(nullptr);
-            _d2dFrontBitmap.Reset();
-            _d2dBackBitmap.Reset();
+            _d2dBitmap.Reset();
 
             // Change the buffer size and recreate the render target (and surface)
             RETURN_IF_FAILED(_dxgiSwapChain->ResizeBuffers(2, clientSize.width<UINT>(), clientSize.height<UINT>(), _swapChainDesc.Format, _swapChainDesc.Flags));
@@ -1363,32 +1354,6 @@ try
             _invalidMap.resize(clientSize / _fontRenderData->GlyphCell());
             RETURN_IF_FAILED(InvalidateAll());
         }
-
-        WRL::ComPtr<ID3D10Device> d3d10Device;
-        RETURN_IF_FAILED(_d3dDevice->QueryInterface(IID_PPV_ARGS(&d3d10Device)));
-
-        WRL::ComPtr<ID3D10Resource> back;
-        WRL::ComPtr<ID3D10Resource> front;
-        RETURN_IF_FAILED(_backBuffer->QueryInterface(IID_PPV_ARGS(&back)));
-        RETURN_IF_FAILED(_frontBuffer->QueryInterface(IID_PPV_ARGS(&front)));
-        d3d10Device->CopySubresourceRegion(
-            back.Get(), //ID3D10Resource  *pDstResource,
-            0, //UINT            DstSubresource,
-            _invalidScroll.x<unsigned int>(), //UINT            DstX,
-            _invalidScroll.y<unsigned int>(), //UINT            DstY,
-            0, //UINT            DstZ,
-            front.Get(), //ID3D10Resource  *pSrcResource,
-            0, //UINT            SrcSubresource,
-            nullptr //const D3D10_BOX *pSrcBox
-        );
-
-        auto tmp = _backBuffer;
-        _frontBuffer = _backBuffer;
-        _backBuffer = tmp;
-        auto tmpBitmap = _d2dBackBitmap;
-        _d2dFrontBitmap = _d2dBackBitmap;
-        _d2dBackBitmap = tmpBitmap;
-        _d2dDeviceContext->SetTarget(_d2dBackBitmap.Get());
 
         _d2dDeviceContext->BeginDraw();
         _isPainting = true;
@@ -1553,10 +1518,10 @@ void DxEngine::WaitUntilCanRender() noexcept
 try
 {
     // Should have been initialized.
-    RETURN_HR_IF(E_NOT_VALID_STATE, !_backBuffer);
+    RETURN_HR_IF(E_NOT_VALID_STATE, !_framebuffer);
 
     D3D11_TEXTURE2D_DESC desc;
-    _backBuffer->GetDesc(&desc);
+    _framebuffer->GetDesc(&desc);
 
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
@@ -1565,7 +1530,7 @@ try
     srvDesc.Format = desc.Format;
 
     ::Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> shaderResource;
-    RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_backBuffer.Get(), &srvDesc, &shaderResource));
+    RETURN_IF_FAILED(_d3dDevice->CreateShaderResourceView(_framebuffer.Get(), &srvDesc, &shaderResource));
 
     // Render the screen quad with shader effects.
     const UINT stride = sizeof(ShaderInput);
@@ -1604,7 +1569,6 @@ CATCH_RETURN()
 
             // Renders framebuffer texture + potential pixel shader effects
             LOG_IF_FAILED(_RenderToSwapChain());
-
 
             bool recreate = false;
             HRESULT hr = S_OK;
