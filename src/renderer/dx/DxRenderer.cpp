@@ -713,6 +713,7 @@ try
         swapBuffer->GetDesc(&framebufferDesc);
         WI_SetFlag(framebufferDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
         RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_framebuffer));
+        RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_otherbuffer));
 
         // if (_HasTerminalEffects())
         // {
@@ -779,18 +780,28 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
 
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
+    RETURN_IF_FAILED(_PrepareRenderTarget(_framebuffer, _d2dBitmap));
+    // If I uncomment these lines, then nothing shows up at all
+    // RETURN_IF_FAILED(_PrepareRenderTarget(_otherbuffer, _d2dOtherBitmap));
+    // _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
+    return S_OK;
+}
+
+[[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D> buffer,
+                                                     ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> bitmap) noexcept
+{
     try
     {
         // Pull surface out of our frame buffer.
         // We'll draw to this surface.
-        RETURN_IF_FAILED(_framebuffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
+        RETURN_IF_FAILED(buffer->QueryInterface(IID_PPV_ARGS(&_dxgiSurface)));
 
         // Make a bitmap and bind it to the swap chain surface
         const auto bitmapProperties = D2D1::BitmapProperties1(
             D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
             D2D1::PixelFormat(_swapChainDesc.Format, _dxgiAlphaToD2d1Alpha(_swapChainDesc.AlphaMode)));
 
-        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &_d2dBitmap));
+        RETURN_IF_FAILED(_d2dDeviceContext->CreateBitmapFromDxgiSurface(_dxgiSurface.Get(), bitmapProperties, &bitmap));
 
         // Assign that bitmap as the target of the D2D device context. Draw commands hit the context
         // and are backed by the bitmap which is bound to the swap chain which goes on to be presented.
@@ -799,7 +810,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
         //  The knee bone connected to the thigh bone
         //  ... and so on)
 
-        _d2dDeviceContext->SetTarget(_d2dBitmap.Get());
+        _d2dDeviceContext->SetTarget(bitmap.Get());
 
         // We need the AntialiasMode for non-text object to be Aliased to ensure
         //  that background boxes line up with each other and don't leave behind

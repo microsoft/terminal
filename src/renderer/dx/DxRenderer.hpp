@@ -208,6 +208,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1Device> _d2dDevice;
         ::Microsoft::WRL::ComPtr<ID2D1DeviceContext> _d2dDeviceContext;
         ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> _d2dBitmap;
+        ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> _d2dOtherBitmap;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushForeground;
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
 
@@ -222,6 +223,7 @@ namespace Microsoft::Console::Render
         std::unique_ptr<DrawingContext> _drawingContext;
 
         ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _framebuffer;
+        ::Microsoft::WRL::ComPtr<ID3D11Texture2D> _otherbuffer;
         // Terminal effects resources.
 
         // Controls if configured terminal effects are enabled
@@ -289,6 +291,8 @@ namespace Microsoft::Console::Render
         void _ComputePixelShaderSettings() noexcept;
 
         [[nodiscard]] HRESULT _PrepareRenderTarget() noexcept;
+        [[nodiscard]] HRESULT _PrepareRenderTarget(::Microsoft::WRL::ComPtr<ID3D11Texture2D> buffer,
+                                                   ::Microsoft::WRL::ComPtr<ID2D1Bitmap1> bitmap) noexcept;
 
         void _ReleaseDeviceResources() noexcept;
 
