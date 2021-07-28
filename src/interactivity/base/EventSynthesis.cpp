@@ -181,7 +181,6 @@ std::deque<std::unique_ptr<KeyEvent>> Microsoft::Console::Interactivity::Synthes
                                                    UNICODE_NULL,
                                                    LEFT_ALT_PRESSED));
 
-    const int radix = 10;
     std::wstring wstr{ wch };
     const auto convertedChars = ConvertToA(codepage, wstr);
     if (convertedChars.size() == 1)

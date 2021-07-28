@@ -14,6 +14,8 @@ namespace winrt::TerminalApp::implementation
         TabRowControl();
 
         void OnNewTabButtonClick(Windows::Foundation::IInspectable const& sender, Microsoft::UI::Xaml::Controls::SplitButtonClickEventArgs const& args);
+        void OnNewTabButtonDrop(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::DragEventArgs const& e);
+        void OnNewTabButtonDragOver(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::DragEventArgs const& e);
     };
 }
 

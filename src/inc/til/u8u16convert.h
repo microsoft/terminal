@@ -55,6 +55,14 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 RETURN_HR_IF(E_ABORT, !base::CheckAdd(in.length(), _partialsLen).AssignIfValid(&capacity));
 
                 _buffer.clear();
+
+                // If we were previously called with a huge buffer we have an equally large _buffer.
+                // We shouldn't just keep this huge buffer around, if no one needs it anymore.
+                if (_buffer.capacity() > 16 * 1024 && (_buffer.capacity() >> 1) > capacity)
+                {
+                    _buffer.shrink_to_fit();
+                }
+
                 _buffer.reserve(capacity);
 
                 // copy UTF-8 code units that were remaining from the previous call (if any)

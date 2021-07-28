@@ -22,6 +22,12 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class TabTests;
+};
+
 enum class Borders : int
 {
     None = 0x0,
@@ -56,6 +62,8 @@ public:
     void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    bool MovePane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    bool SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second);
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                   const float splitSize,
@@ -79,6 +87,7 @@ public:
     std::optional<uint32_t> Id() noexcept;
     void Id(uint32_t id) noexcept;
     bool FocusPane(const uint32_t id);
+    std::shared_ptr<Pane> FindPane(const uint32_t id);
 
     bool ContainsReadOnly() const;
 
@@ -88,6 +97,8 @@ public:
     DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
 
 private:
+    struct PanePoint;
+    struct FocusNeighborSearch;
     struct SnapSizeResult;
     struct SnapChildrenSizeResult;
     struct LayoutSizeNode;
@@ -137,7 +148,15 @@ private:
     void _UpdateBorders();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
-    bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+
+    std::shared_ptr<Pane> _FindParentOfPane(const std::shared_ptr<Pane> pane);
+    bool _IsAdjacent(const std::shared_ptr<Pane> first, const PanePoint firstOffset, const std::shared_ptr<Pane> second, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;
+    FocusNeighborSearch _FindNeighborForPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                             FocusNeighborSearch searchResult,
+                                             const bool focusIsSecondSide,
+                                             const PanePoint offset);
+    FocusNeighborSearch _FindFocusAndNeighbor(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                              const PanePoint offset);
 
     void _CloseChild(const bool closeFirst);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
@@ -200,6 +219,19 @@ private:
 
     static void _SetupResources();
 
+    struct PanePoint
+    {
+        float x;
+        float y;
+    };
+
+    struct FocusNeighborSearch
+    {
+        std::shared_ptr<Pane> focus;
+        std::shared_ptr<Pane> neighbor;
+        PanePoint focusOffset;
+    };
+
     struct SnapSizeResult
     {
         float lower;
@@ -236,4 +268,6 @@ private:
     private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
+
+    friend class ::TerminalAppLocalTests::TabTests;
 };

@@ -1,10 +1,13 @@
-Apc
 apc
+calt
+ccmp
+Apc
 clickable
+clig
 copyable
 dalet
-Dcs
 dcs
+Dcs
 dialytika
 dje
 downside
@@ -14,6 +17,7 @@ dzhe
 Enum'd
 formattings
 ftp
+fvar
 geeksforgeeks
 ghe
 gje
@@ -27,7 +31,9 @@ It'd
 kje
 liga
 lje
+locl
 maxed
+mkmk
 mru
 nje
 ogonek
@@ -37,10 +43,12 @@ postmodern
 ptys
 qof
 qps
+rclt
 reimplementation
 reserialization
 reserialize
 reserializes
+rlig
 runtimes
 shcha
 slnt
@@ -52,6 +60,7 @@ tonos
 tshe
 UIs
 und
+unregister
 versioned
 We'd
 wildcards

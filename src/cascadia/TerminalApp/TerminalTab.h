@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        void MovePane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
         void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
