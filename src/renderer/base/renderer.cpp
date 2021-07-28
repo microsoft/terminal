@@ -278,12 +278,11 @@ void Renderer::TriggerRedrawCursor(const COORD* const pcoord)
         const SMALL_RECT cursorRect = { pcoord->X, pcoord->Y, pcoord->X + cursorWidth - 1, pcoord->Y };
         Viewport cursorView = Viewport::FromInclusive(BufferToScreenLine(cursorRect, lineRendition));
 
-        // The region is clamped within the viewport boundaries and we only
-        // trigger a redraw if the region is not empty.
         Viewport view = _pData->GetViewport();
         if (view.IsInBounds(cursorView))
-        // if (cursorView.IsValid())
         {
+            // The region is clamped within the viewport boundaries and we only
+            // trigger a redraw if the region is not empty.
             cursorView = view.Clamp(cursorView);
             const SMALL_RECT updateRect = view.ConvertToOrigin(cursorView).ToExclusive();
             for (IRenderEngine* pEngine : _rgpEngines)
