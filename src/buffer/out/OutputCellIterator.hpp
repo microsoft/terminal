@@ -100,6 +100,8 @@ private:
 
     bool _TryMoveTrailing() noexcept;
 
+    _declspec(noinline) void _MoveSlowPath() noexcept;
+
     static OutputCellView s_GenerateView(const std::wstring_view view);
 
     static OutputCellView s_GenerateView(const std::wstring_view view,

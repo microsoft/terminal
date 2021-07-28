@@ -206,6 +206,39 @@ OutputCellIterator& OutputCellIterator::operator++()
     // Keep track of total distance moved (cells filled)
     _distance++;
 
+    if (_mode == Mode::Loose && _currentView.DbcsAttr().IsSingle())
+    {
+        size_t pos = _pos;
+        pos += _currentView.Chars().size();
+        const std::wstring_view& run = std::get<std::wstring_view>(_run);
+        if (pos < run.length())
+        {
+            const wchar_t wch = run.at(pos);
+            if (0x20 <= wch && wch <= 0x7e)
+            {
+                _currentView.UpdateText(run.substr(pos, 1));
+                _pos = pos;
+            }
+            else
+            {
+                _MoveSlowPath();
+            }
+        }
+        else
+        {
+            _pos = pos;
+        }
+    }
+    else
+    {
+        _MoveSlowPath();
+    }
+    
+    return (*this);
+}
+
+void OutputCellIterator::_MoveOthers() noexcept
+{
     switch (_mode)
     {
     case Mode::Loose:
@@ -292,8 +325,6 @@ OutputCellIterator& OutputCellIterator::operator++()
     default:
         FAIL_FAST_HR(E_NOTIMPL);
     }
-
-    return (*this);
 }
 
 // Routine Description:
