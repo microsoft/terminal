@@ -2318,3 +2318,31 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     PointTree result(std::move(intervals));
     return result;
 }
+
+#include "../types/inc/Utf16Parser.hpp"
+
+size_t TextBuffer::WriteStringContiguous(til::point at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements)
+{
+    THROW_HR_IF(E_BOUNDS, !_size.IsInBounds(at));
+    uint16_t colCount = std::accumulate(
+        measurements.runs().cbegin(),
+        measurements.runs().cend(),
+        uint16_t{},
+        [](auto&& v, auto&& r) -> uint16_t { return v + (r.value * r.length); });
+    size_t totalConsumedCols{};
+    while (!string.empty() && _size.IsInBounds(at))
+    {
+        auto& row = GetRowByOffset(at.y());
+        auto [consumedWchar, consumedDestCols, consumedSourceCols] = row.WriteStringContiguous(at.x<uint16_t>(), colCount, string, measurements);
+        row.GetAttrRow().Replace(at.x<uint16_t>(), at.x<uint16_t>() + consumedDestCols, _currentAttributes);
+        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(consumedDestCols), 1 });
+        _NotifyPaint(paint);
+        at = til::point{ 0, at.y() + 1 };
+        colCount -= consumedSourceCols;
+        totalConsumedCols += consumedDestCols;
+
+        string = string.substr(consumedWchar);
+        measurements = measurements.slice(gsl::narrow_cast<uint16_t>(consumedWchar), measurements.size());
+    }
+    return totalConsumedCols;
+}

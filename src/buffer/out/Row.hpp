@@ -77,6 +77,73 @@ public:
         uint16_t lastColumnExclusive;
     };
 
+    template<typename TRuns>
+    static DamageRanges DamageRangesForColumnInMeasurementBuffer(const TRuns& cwid, size_t col)
+    {
+        size_t currentCol{ 0 };
+        size_t currentWchar{ 0 };
+        auto it{ cwid.runs().cbegin() };
+        while (it != cwid.runs().cend())
+        {
+            // Each compressed pair tells us how many columns x N wchar_t
+            const auto colsCoveredByRun{ it->value * it->length };
+            if (currentCol + colsCoveredByRun > col)
+            {
+                // We want to break out of the loop to manually handle this run, because
+                // we've determined that it is the run that covers the column of interest.
+                break;
+            }
+            currentCol += colsCoveredByRun;
+            currentWchar += it->length;
+            it++;
+        }
+
+        if (it == cwid.runs().cend())
+        {
+            // this is an interesting case- somebody requested a column we cannot answer for.
+            // The string might actually have data, and the caller might be interested in where that data is.
+            // Ideally, we would return the index of the first char out-of-bounds, and the length of the remaining data as a single unit.
+            // We can't answer for how much space it takes up, though.
+            __debugbreak();
+            return { 0, 0, 0u, 0u };
+            //return { currentWchar, _data.size() - currentWchar, 0u, 0u };
+        }
+        // currentWchar is how many wchar_t we are into the string before processing this run
+        // currentCol is how many columns we've covered before processing this run
+
+        // We are *guaranteed* that the hit is in this run -- no need to check it->length
+        // col-currentCol is how many columns are left unaccounted for (how far into this run we need to go)
+        const auto colsLeftToCountInCurrentRun{ col - currentCol };
+        currentWchar += colsLeftToCountInCurrentRun / it->value; // one wch per column unit -- rounds down (correct behavior)
+
+        size_t lenInWchars{ 1 }; // the first hit takes up one wchar
+
+        // We use this to determine if we have exhausted every column this run can cough up.
+        // colsLeftToCountInCurrentRun is 0-indexed, but colsConsumedByRun is 1-indexed (index 0 consumes N columns, etc.)
+        // therefore, we reindex colsLeftToCountInCurrentRun and compare it to colsConsumedByRun
+        const auto colsConsumedFromRun{ colsLeftToCountInCurrentRun + it->value };
+        const auto colsCoveredByRun{ it->value * it->length };
+        // If we *have* consumed every column this run can provide, we must check the run after it:
+        // if it contributes "0" columns, it is actually a set of trailing code units.
+        if (colsConsumedFromRun >= colsCoveredByRun && it != cwid.runs().cend())
+        {
+            const auto nextRunIt{ it + 1 };
+            if (nextRunIt != cwid.runs().cend() && nextRunIt->value == 0)
+            {
+                // we were at the boundary of a column run, so if the next one is 0 it tells us that each
+                // wchar after it is a trailer
+                lenInWchars += nextRunIt->length;
+            }
+        }
+
+        return {
+            currentWchar, // wchar start
+            lenInWchars, // wchar size
+            gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value)), // Column damage to the left (where we overlapped the right of a wide glyph)
+            gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value) + it->value), // Column damage to the right (where we overlapped the left of a wide glyph)
+        };
+    }
+
     struct RowData
     {
         std::wstring _data;
@@ -86,66 +153,7 @@ public:
 
         DamageRanges _damageForColumn(size_t col) const
         {
-            size_t currentCol{ 0 };
-            size_t currentWchar{ 0 };
-            auto it{ _cwid.runs().cbegin() };
-            while (it != _cwid.runs().cend())
-            {
-                // Each compressed pair tells us how many columns x N wchar_t
-                const auto colsCoveredByRun{ it->value * it->length };
-                if (currentCol + colsCoveredByRun > col)
-                {
-                    // We want to break out of the loop to manually handle this run, because
-                    // we've determined that it is the run that covers the column of interest.
-                    break;
-                }
-                currentCol += colsCoveredByRun;
-                currentWchar += it->length;
-                it++;
-            }
-
-            if (it == _cwid.runs().cend())
-            {
-                // this is an interesting case- somebody requested a column we cannot answer for.
-                // The string might actually have data, and the caller might be interested in where that data is.
-                // Ideally, we would return the index of the first char out-of-bounds, and the length of the remaining data as a single unit.
-                // We can't answer for how much space it takes up, though.
-                return { currentWchar, _data.size() - currentWchar, 0u, 0u };
-            }
-            // currentWchar is how many wchar_t we are into the string before processing this run
-            // currentCol is how many columns we've covered before processing this run
-
-            // We are *guaranteed* that the hit is in this run -- no need to check it->length
-            // col-currentCol is how many columns are left unaccounted for (how far into this run we need to go)
-            const auto colsLeftToCountInCurrentRun{ col - currentCol };
-            currentWchar += colsLeftToCountInCurrentRun / it->value; // one wch per column unit -- rounds down (correct behavior)
-
-            size_t lenInWchars{ 1 }; // the first hit takes up one wchar
-
-            // We use this to determine if we have exhausted every column this run can cough up.
-            // colsLeftToCountInCurrentRun is 0-indexed, but colsConsumedByRun is 1-indexed (index 0 consumes N columns, etc.)
-            // therefore, we reindex colsLeftToCountInCurrentRun and compare it to colsConsumedByRun
-            const auto colsConsumedFromRun{ colsLeftToCountInCurrentRun + it->value };
-            const auto colsCoveredByRun{ it->value * it->length };
-            // If we *have* consumed every column this run can provide, we must check the run after it:
-            // if it contributes "0" columns, it is actually a set of trailing code units.
-            if (colsConsumedFromRun >= colsCoveredByRun && it != _cwid.runs().cend())
-            {
-                const auto nextRunIt{ it + 1 };
-                if (nextRunIt != _cwid.runs().cend() && nextRunIt->value == 0)
-                {
-                    // we were at the boundary of a column run, so if the next one is 0 it tells us that each
-                    // wchar after it is a trailer
-                    lenInWchars += nextRunIt->length;
-                }
-            }
-
-            return {
-                currentWchar, // wchar start
-                lenInWchars, // wchar size
-                gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value)), // Column damage to the left (where we overlapped the right of a wide glyph)
-                gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value) + it->value), // Column damage to the right (where we overlapped the left of a wide glyph)
-            };
+            return DamageRangesForColumnInMeasurementBuffer(_cwid, col);
         }
 
         DamageRanges _damageForColumns(size_t col, size_t ncols) const
@@ -165,16 +173,13 @@ public:
             // or single-width characters that are collateral damage from stomping
             // them with a double-width character.
             auto damage{ _damageForColumn(col) };
+            const auto lastDamage{ _damageForColumn(col + ncols - 1 /*inclusive*/) };
 
-            while (damage.lastColumnExclusive < col + ncols)
-            {
-                auto nextDamage{ _damageForColumn(damage.lastColumnExclusive) };
-                // *INVARIANT* the beginning of the next column range must have a different beginning byte
-                // This column began at a different data index, so we have to delete its data too.
-                // Since it's contiguous, just increment len.
-                damage.dataLength += nextDamage.dataLength;
-                damage.lastColumnExclusive = nextDamage.lastColumnExclusive;
-            }
+            // *INVARIANT* the beginning of the next column range must have a different beginning byte
+            // This column began at a different data index, so we have to delete its data too.
+            // Since it's contiguous, just increment len.
+            damage.dataLength = lastDamage.dataOffset + lastDamage.dataLength - damage.dataOffset;
+            damage.lastColumnExclusive = lastDamage.lastColumnExclusive;
 
             return damage;
         }
@@ -275,6 +280,88 @@ public:
             // The glyph under this column is >1 col wide, and we're at the head
             return DbcsAttribute{ DbcsAttribute::Attribute::Leading };
         }
+    }
+
+    std::tuple<size_t, uint16_t, uint16_t> WriteStringContiguous(uint16_t col, uint16_t colCount, std::wstring_view string, const til::small_rle<uint8_t, uint16_t, 3>& measurements)
+    {
+        size_t incomingLastColumn{ std::min<size_t>(_data._width - col, colCount) };
+        auto incomingLastColumnOffsets{ DamageRangesForColumnInMeasurementBuffer(measurements, incomingLastColumn - 1 /*inclusive*/) };
+
+        auto codeUnitsToConsume{ incomingLastColumnOffsets.dataOffset };
+        auto columnsToConsume{ incomingLastColumn };
+
+        const auto [begin, len, minDamageColumn, maxDamageColumnExclusive]{ _data._damageForColumns(col, incomingLastColumn) };
+
+        // If these don't match, we are cutting a multi-cell glyph.
+        if (incomingLastColumnOffsets.lastColumnExclusive == incomingLastColumn)
+        {
+            // Since they *do* match, we should consume this part of the string too.
+            codeUnitsToConsume += incomingLastColumnOffsets.dataLength;
+        }
+        else
+        {
+            // Only consume up to the final cell (the one we cut in half)
+            columnsToConsume = incomingLastColumnOffsets.firstColumn;
+            // **INVARIANT** we only get here if we had to cut off the incoming text, and that only
+            // happens because we had to clamp the read buffer against our width. This means that the
+            // incoming text definitely had a wide glyph that would not fit against the end of our
+            // buffer.
+            // THEREFORE: col+incomingLastColumn was our final column (exclusive)
+            // which means that maxDamageColumnExclusive can be upgraded to be our width.
+            // OPTIMIZATION: If we mark our last column as damaged, it will automatically get stomped
+            // with spaces.
+            // NO NO NO NO NO NO NO NO NO NO TODO(DH)
+            // We can't do this without changing the damaged buffer region to delete the character
+            // from _data at the same time. Use the non-optimial path.
+            ClearColumn(_data._width-1);
+            SetDoubleBytePadded(true);
+            // NO - we already marked this column when we calculated damage above
+            //++columnsWrittenAfterInsertionPoint;
+        }
+
+        auto mss = measurements.slice(0, gsl::narrow_cast<uint16_t>(codeUnitsToConsume));
+        if (minDamageColumn == col && maxDamageColumnExclusive == col + incomingLastColumn)
+        {
+            // We are only damaging as many columns as we are introducing -- no spillover (!)
+            // We can replace the code units in the data directly, and we can replace the
+            // column counts with [col, 0, 0...] (with as many zeroes as we need to account
+            // for any code units past the first.)
+            _data._data.replace(begin, len, &*string.cbegin(), codeUnitsToConsume);
+            _data._cwid.replace(gsl::narrow_cast<uint16_t>(begin), gsl::narrow_cast<uint16_t>(begin + len), mss.runs());
+        }
+        else
+        {
+            // We are damaging multiple columns -- oops. We need to insert replacement characters
+            // to get us from the leftmost side of the damaged glyph up to the leftmost side of
+            // our newly-inserted region. We also need to insert replacement characters from the
+            // rightmost side of our glyph to the rightmost side of the glyph that was once in
+            // that column.
+            // Left side count : col - minDamageColumn
+            // Right side count: maxDamageColumn - (col + ncols)
+            const auto replacementCodeUnits{ (col - minDamageColumn) + codeUnitsToConsume + (maxDamageColumnExclusive - (col + incomingLastColumn)) };
+            std::wstring replacement(replacementCodeUnits, UNICODE_SPACE);
+            replacement.replace(col - minDamageColumn, codeUnitsToConsume, &*string.cbegin(), codeUnitsToConsume);
+
+            // New advances:
+            //             Our glyph and all its trailers
+            //             v-----v
+            // [1, ..., 1, X, 0, 0, 1, ..., 1]
+            //  ^-------^           ^-------^
+            //  Each replacement space char
+            //  is one column wide. We have
+            //  to insert [1]s for each
+            //  damaged column.
+            mss.replace(0, 0, { uint8_t{ 1 }, gsl::narrow_cast<uint16_t>(col - minDamageColumn) });
+            mss.replace(mss.size(), mss.size(), { uint8_t{ 1 }, gsl::narrow_cast<uint16_t>(maxDamageColumnExclusive - (col + incomingLastColumn)) });
+            _data._data.replace(begin, len, replacement);
+            _data._cwid.replace(gsl::narrow_cast<uint16_t>(begin), gsl::narrow_cast<uint16_t>(begin + len), mss.runs()); //gsl::make_span(newRuns));
+        }
+
+        return {
+            codeUnitsToConsume,
+            gsl::narrow_cast<uint16_t>(maxDamageColumnExclusive - col),
+            gsl::narrow_cast<uint16_t>(columnsToConsume)
+        };
     }
 
     // Method Description:

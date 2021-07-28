@@ -2334,6 +2334,11 @@ OutputCellRect SCREEN_INFORMATION::ReadRect(const Viewport viewport) const
     return result;
 }
 
+size_t SCREEN_INFORMATION::WriteStringContiguous(std::wstring_view string, const til::small_rle<uint8_t, uint16_t, 3>& measurements)
+{
+    return _textBuffer->WriteStringContiguous(_textBuffer->GetCursor().GetPosition(), string, measurements);
+}
+
 // Routine Description:
 // - Writes cells to the output buffer at the cursor position.
 // Arguments:

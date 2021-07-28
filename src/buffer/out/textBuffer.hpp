@@ -194,6 +194,8 @@ public:
     void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const size_t firstRow, const size_t lastRow) const;
 
+    size_t WriteStringContiguous(til::point at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements);
+
 private:
     void _UpdateSize();
     Microsoft::Console::Types::Viewport _size;

@@ -342,6 +342,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     SHORT XPosition;
     std::wstring local;
     local.reserve(LOCAL_BUFFER_SIZE);
+    til::small_rle<uint8_t, uint16_t, 3> measurements{ gsl::narrow_cast<uint16_t>(LOCAL_BUFFER_SIZE), 1u };
     size_t TempNumSpaces = 0;
     const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
     const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
@@ -399,19 +400,21 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // WCL-NOTE: is initialized from pwchRealUnicode.
             const wchar_t RealUnicodeChar = *pwchRealUnicode;
             const auto cbuf{ Utf16Parser::ParseNext(std::wstring_view{ pwchRealUnicode, (BufferSize / sizeof(WCHAR)) - static_cast<size_t>(pwchRealUnicode - base) }) };
+            uint16_t lo{ gsl::narrow_cast<uint16_t>(local.size()) };
             if (IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
                 // WCL-NOTE: This operates on a single code unit instead of a whole codepoint. It will mis-measure surrogate pairs.
                 if (IsGlyphFullWidth(cbuf))
                 {
-                    if (i < (LOCAL_BUFFER_SIZE - 1) && XPosition < (coordScreenBufferSize.X - 1))
+                    if (XPosition < (coordScreenBufferSize.X - 1))
                     {
                         local.append(cbuf);
+                        measurements.replace(lo, lo + 1, { uint8_t{ 2u }, 1u });
 
                         // cursor adjusted by 2 because the char is double width
                         XPosition += 2;
                         i += cbuf.size();
-                        pwchBuffer++;
+                        pwchBuffer += cbuf.size();
                     }
                     else
                     {
@@ -421,9 +424,14 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 else
                 {
                     local.append(cbuf);
+                    measurements.replace(lo, lo + 1, { uint8_t{ 1u }, 1u });
                     XPosition++;
-                    i++;
-                    pwchBuffer++;
+                    i += cbuf.size();
+                    pwchBuffer += cbuf.size();
+                }
+                if (cbuf.size() > 1)
+                {
+                    measurements.replace(lo + 1, gsl::narrow_cast<uint16_t>(lo + 1 + cbuf.size() - 1), typename decltype(measurements)::rle_type{ uint8_t{ 0u }, gsl::narrow_cast<uint16_t>(cbuf.size() - 1) });
                 }
             }
             else
@@ -461,10 +469,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                         goto EndWhile;
                     }
 
-                    for (ULONG j = 0; j < TabSize && i < LOCAL_BUFFER_SIZE; j++, i++)
-                    {
-                        local.append(1, UNICODE_SPACE);
-                    }
+                    local.append(TabSize, UNICODE_SPACE);
 
                     pwchBuffer++;
                     break;
@@ -478,7 +483,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     if ((dwFlags & WC_PRINTABLE_CONTROL_CHARS) && (IS_CONTROL_CHAR(RealUnicodeChar)))
                     {
                     CtrlChar:
-                        if (i < (LOCAL_BUFFER_SIZE - 1))
+                        //if (i < (LOCAL_BUFFER_SIZE - 1))
                         {
                             // WCL-NOTE: We do not properly measure that there is space for two characters
                             // WCL-NOTE: left on the screen.
@@ -492,10 +497,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                             pwchBuffer++;
                         }
-                        else
-                        {
-                            goto EndWhile;
-                        }
+                        //else
+                        //{
+                        //goto EndWhile;
+                        //}
                     }
                     else
                     {
@@ -538,7 +543,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             }
             lpString += cbuf.size();
             pwchRealUnicode += cbuf.size();
-            *pcb += sizeof(WCHAR);
+            *pcb += cbuf.size() * sizeof(WCHAR);
         }
     EndWhile:
         if (i != 0)
@@ -553,9 +558,12 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             }
 
             // line was wrapped if we're writing up to the end of the current row
-            OutputCellIterator it(std::wstring_view{ local }, Attributes);
-            const auto itEnd = screenInfo.Write(it);
+            //OutputCellIterator it(std::wstring_view{ local }, Attributes);
+            //const auto itEnd = screenInfo.Write(it);
+            measurements.resize_trailing_extent(gsl::narrow_cast<uint16_t>(local.size()));
+            auto vcolsTaken = screenInfo.WriteStringContiguous(local, measurements);
             local.clear();
+            measurements.resize_trailing_extent(0);
 
             // Notify accessibility
             if (screenInfo.HasAccessibilityEventing())
@@ -565,7 +573,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
             // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
             // when/if we need to erase the command line.
-            TempNumSpaces += itEnd.GetCellDistance(it);
+            TempNumSpaces += vcolsTaken; //itEnd.GetCellDistance(it);
             // WCL-NOTE: We are using the "estimated" X position delta instead of the actual delta from
             // WCL-NOTE: the iterator. It is not clear why. If they differ, the cursor ends up in the
             // WCL-NOTE: wrong place (typically inside another character).
