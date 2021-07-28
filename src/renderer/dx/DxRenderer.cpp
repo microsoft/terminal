@@ -1189,6 +1189,7 @@ try
             _invalidMap.translate(deltaCells, true);
             _invalidScroll += deltaCells;
             _allInvalid = _IsAllInvalid();
+            _lastCursor += deltaCells;
         }
     }
 

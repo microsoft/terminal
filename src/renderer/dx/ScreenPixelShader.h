@@ -91,7 +91,7 @@ float4 main(float4 pos : SV_POSITION, float2 tex : TEXCOORD) : SV_TARGET
 #endif
 
 constexpr std::string_view nopPixelShaderString{ R"(
-// Nop shader used for normal operations
+// No-op shader used for normal operations
 Texture2D shaderTexture;
 SamplerState samplerState;
 cbuffer PixelShaderSettings {
