@@ -374,7 +374,7 @@ void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const 
     // buttons, which will make them clickable. It's perhaps not the right fix,
     // but it works.
     // _GetTopBorderHeight() returns 0 when we're maximized.
-    const short topBorderHeight = (originalTopHeight == 0) ? -1 : originalTopHeight;
+    const short topBorderHeight = ::base::saturated_cast<short>((originalTopHeight == 0) ? -1 : originalTopHeight);
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
