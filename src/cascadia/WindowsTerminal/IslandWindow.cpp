@@ -884,23 +884,39 @@ void IslandWindow::_RestoreFullscreenPosition(const RECT rcWork)
                rcWork.left - _rcWorkBeforeFullscreen.left,
                rcWork.top - _rcWorkBeforeFullscreen.top);
 
+    const til::size ncSize{ GetTotalNonClientExclusiveSize(dpiWindow) };
+
+    RECT rcWorkAdjusted = rcWork;
+
+    // GH#10199 - adjust the size of the "work" rect by the size of our borders.
+    // We want to make sure the window is restored within the bounds of the
+    // monitor we're on, but it's totally fine if the invisible borders are
+    // outside the monitor.
+    const auto halfWidth{ ncSize.width<long>() / 2 };
+    const auto halfHeight{ ncSize.height<long>() / 2 };
+
+    rcWorkAdjusted.left -= halfWidth;
+    rcWorkAdjusted.right += halfWidth;
+    rcWorkAdjusted.top -= halfHeight;
+    rcWorkAdjusted.bottom += halfHeight;
+
     // Enforce that our position is entirely within the bounds of our work area.
     // Prefer the top-left be on-screen rather than bottom-right (right before left, bottom before top).
-    if (rcRestore.right > rcWork.right)
+    if (rcRestore.right > rcWorkAdjusted.right)
     {
-        OffsetRect(&rcRestore, rcWork.right - rcRestore.right, 0);
+        OffsetRect(&rcRestore, rcWorkAdjusted.right - rcRestore.right, 0);
     }
-    if (rcRestore.left < rcWork.left)
+    if (rcRestore.left < rcWorkAdjusted.left)
     {
-        OffsetRect(&rcRestore, rcWork.left - rcRestore.left, 0);
+        OffsetRect(&rcRestore, rcWorkAdjusted.left - rcRestore.left, 0);
     }
-    if (rcRestore.bottom > rcWork.bottom)
+    if (rcRestore.bottom > rcWorkAdjusted.bottom)
     {
-        OffsetRect(&rcRestore, 0, rcWork.bottom - rcRestore.bottom);
+        OffsetRect(&rcRestore, 0, rcWorkAdjusted.bottom - rcRestore.bottom);
     }
-    if (rcRestore.top < rcWork.top)
+    if (rcRestore.top < rcWorkAdjusted.top)
     {
-        OffsetRect(&rcRestore, 0, rcWork.top - rcRestore.top);
+        OffsetRect(&rcRestore, 0, rcWorkAdjusted.top - rcRestore.top);
     }
 
     // Show the window at the computed position.
