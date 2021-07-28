@@ -712,7 +712,7 @@ try
         D3D11_TEXTURE2D_DESC framebufferDesc{};
         swapBuffer->GetDesc(&framebufferDesc);
         WI_SetFlag(framebufferDesc.BindFlags, D3D11_BIND_SHADER_RESOURCE);
-        // RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_frontBuffer));
+        RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_frontBuffer));
         RETURN_IF_FAILED(_d3dDevice->CreateTexture2D(&framebufferDesc, nullptr, &_backBuffer));
 
         const HRESULT hr = _SetupTerminalEffects();
@@ -777,7 +777,7 @@ static constexpr D2D1_ALPHA_MODE _dxgiAlphaToD2d1Alpha(DXGI_ALPHA_MODE mode) noe
 
 [[nodiscard]] HRESULT DxEngine::_PrepareRenderTarget() noexcept
 {
-    // RETURN_IF_FAILED(_PrepareRenderTarget(_frontBuffer, _d2dFrontBitmap));
+    RETURN_IF_FAILED(_PrepareRenderTarget(_frontBuffer, _d2dFrontBitmap));
     RETURN_IF_FAILED(_PrepareRenderTarget(_backBuffer, _d2dBackBitmap));
     return S_OK;
 }
@@ -898,7 +898,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
             _d2dDeviceContext->EndDraw();
         }
 
-        // _frontBuffer.Reset();
+        _frontBuffer.Reset();
         _backBuffer.Reset();
 
         _d2dDeviceContext.Reset();
@@ -1368,21 +1368,28 @@ try
         RETURN_IF_FAILED(_d3dDevice->QueryInterface(IID_PPV_ARGS(&d3d10Device)));
 
         WRL::ComPtr<ID3D10Resource> back;
-        // WRL::ComPtr<ID3D10Resource> front;
+        WRL::ComPtr<ID3D10Resource> front;
         RETURN_IF_FAILED(_backBuffer->QueryInterface(IID_PPV_ARGS(&back)));
-        // RETURN_IF_FAILED(_frontBuffer->QueryInterface(IID_PPV_ARGS(&front)));
-        // d3d10Device->CopySubresourceRegion(
-        //     back.Get(), //ID3D10Resource  *pDstResource,
-        //     0, //UINT            DstSubresource,
-        //     _invalidScroll.x<unsigned int>(), //UINT            DstX,
-        //     _invalidScroll.y<unsigned int>(), //UINT            DstY,
-        //     0, //UINT            DstZ,
-        //     front.Get(), //ID3D10Resource  *pSrcResource,
-        //     0, //UINT            SrcSubresource,
-        //     nullptr //const D3D10_BOX *pSrcBox
-        // );
+        RETURN_IF_FAILED(_frontBuffer->QueryInterface(IID_PPV_ARGS(&front)));
+        d3d10Device->CopySubresourceRegion(
+            back.Get(), //ID3D10Resource  *pDstResource,
+            0, //UINT            DstSubresource,
+            _invalidScroll.x<unsigned int>(), //UINT            DstX,
+            _invalidScroll.y<unsigned int>(), //UINT            DstY,
+            0, //UINT            DstZ,
+            front.Get(), //ID3D10Resource  *pSrcResource,
+            0, //UINT            SrcSubresource,
+            nullptr //const D3D10_BOX *pSrcBox
+        );
 
+        auto tmp = _backBuffer;
+        _frontBuffer = _backBuffer;
+        _backBuffer = tmp;
+        auto tmpBitmap = _d2dBackBitmap;
+        _d2dFrontBitmap = _d2dBackBitmap;
+        _d2dBackBitmap = tmpBitmap;
         _d2dDeviceContext->SetTarget(_d2dBackBitmap.Get());
+
         _d2dDeviceContext->BeginDraw();
         _isPainting = true;
 
@@ -1598,6 +1605,7 @@ CATCH_RETURN()
             // Renders framebuffer texture + potential pixel shader effects
             LOG_IF_FAILED(_RenderToSwapChain());
 
+
             bool recreate = false;
             HRESULT hr = S_OK;
 
@@ -1664,13 +1672,6 @@ CATCH_RETURN()
                     FAIL_FAST_HR(hr);
                 }
             }
-
-            // auto tmp = _backBuffer;
-            // _frontBuffer = _backBuffer;
-            // _backBuffer = tmp;
-            // auto tmpBitmap = _d2dBackBitmap;
-            // _d2dFrontBitmap = _d2dBackBitmap;
-            // _d2dBackBitmap = tmpBitmap;
 
             _presentReady = false;
 
