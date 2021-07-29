@@ -64,10 +64,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void CursorLight::ChangeLocation(float xCoord, float yCoord)
     {
-        if (CompositionLight())
+        if (const auto light = CompositionLight())
         {
-            const auto ay = CompositionLight().as<Windows::UI::Composition::SpotLight>();
-            ay.Offset({ xCoord, yCoord, 100 });
+            if (const auto cursorLight = light.try_as<Windows::UI::Composition::SpotLight>())
+            {
+                cursorLight.Offset({ xCoord, yCoord, 100 });
+            }
         }
         else
         {
