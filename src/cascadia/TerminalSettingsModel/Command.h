@@ -37,6 +37,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Command : CommandT<Command>
     {
         Command();
+        Command(winrt::hstring name, Model::ActionAndArgs aaa) :
+            _ActionAndArgs{ aaa },
+            _name{ name } {};
         com_ptr<Command> Copy() const;
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
