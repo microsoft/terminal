@@ -1414,4 +1414,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ReceivedOutputHandlers(*this, nullptr);
     }
 
+    void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
+    {
+        if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
+        {
+            _terminal->EraseInDisplay(::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType::Scrollback);
+        }
+
+        if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
+        {
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                conpty.ClearBuffer();
+            }
+        }
+    }
+
 }

@@ -33,6 +33,7 @@
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
+#include "ClearBufferArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -661,5 +662,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"FocusPaneCommandKey")),
                         Id())
         };
+    }
+    winrt::hstring ClearBufferArgs::GenerateName() const
+    {
+        // TODO!
+        return winrt::hstring{ L"Clear buffer" };
     }
 }

@@ -63,6 +63,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point GetFontSize() const;
 
         void SendInput(const winrt::hstring& input);
+        void ClearBuffer(Control::ClearBufferType clearType);
+
         void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);

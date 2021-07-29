@@ -414,7 +414,7 @@ extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
     HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
     if (SUCCEEDED(hr))
     {
-        hr = _ClearPseudoConsole(pPty, size);
+        hr = _ClearPseudoConsole(pPty);
     }
     return hr;
 }

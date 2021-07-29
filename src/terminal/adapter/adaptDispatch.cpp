@@ -502,43 +502,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
                                            const DispatchTypes::EraseType eraseType,
                                            const size_t lineId) const
 {
-    COORD coordStartPosition = { 0 };
-    if (FAILED(SizeTToShort(lineId, &coordStartPosition.Y)))
-    {
-        return false;
-    }
-
-    // determine start position from the erase type
-    // remember that erases are inclusive of the current cursor position.
-    switch (eraseType)
-    {
-    case DispatchTypes::EraseType::FromBeginning:
-    case DispatchTypes::EraseType::All:
-        coordStartPosition.X = 0; // from beginning and the whole line start from the left most edge of the buffer.
-        break;
-    case DispatchTypes::EraseType::ToEnd:
-        coordStartPosition.X = csbiex.dwCursorPosition.X; // from the current cursor position (including it)
-        break;
-    }
-
-    DWORD nLength = 0;
-
-    // determine length of erase from erase type
-    switch (eraseType)
-    {
-    case DispatchTypes::EraseType::FromBeginning:
-        // +1 because if cursor were at the left edge, the length would be 0 and we want to paint at least the 1 character the cursor is on.
-        nLength = csbiex.dwCursorPosition.X + 1;
-        break;
-    case DispatchTypes::EraseType::ToEnd:
-    case DispatchTypes::EraseType::All:
-        // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = _pConApi->PrivateGetLineWidth(lineId) - coordStartPosition.X;
-        break;
-    }
-
-    // Note that the region is filled with the standard erase attributes.
-    return _pConApi->PrivateFillRegion(coordStartPosition, nLength, L' ', true);
+    return DispatchCommon::s_EraseSingleLineHelper(*_pConApi, csbiex, eraseType, lineId);
 }
 
 // Routine Description:
@@ -1892,62 +1856,7 @@ bool AdaptDispatch::ScreenAlignmentPattern()
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseScrollback()
 {
-    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
-    csbiex.cbSize = sizeof(csbiex);
-    // Make sure to reset the viewport (with MoveToBottom )to where it was
-    //      before the user scrolled the console output
-    bool success = (_pConApi->GetConsoleScreenBufferInfoEx(csbiex) && _pConApi->MoveToBottom());
-    if (success)
-    {
-        const SMALL_RECT screen = csbiex.srWindow;
-        const SHORT height = screen.Bottom - screen.Top;
-        FAIL_FAST_IF(!(height > 0));
-        const COORD cursor = csbiex.dwCursorPosition;
-
-        // Rectangle to cut out of the existing buffer
-        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
-        SMALL_RECT scroll = screen;
-        scroll.Left = 0;
-        scroll.Right = SHORT_MAX;
-        // Paste coordinate for cut text above
-        COORD destination;
-        destination.X = 0;
-        destination.Y = 0;
-
-        // Typically a scroll operation should fill with standard erase attributes, but in
-        // this case we need to use the default attributes, hence standardFillAttrs is false.
-        success = _pConApi->PrivateScrollRegion(scroll, std::nullopt, destination, false);
-        if (success)
-        {
-            // Clear everything after the viewport.
-            const DWORD totalAreaBelow = csbiex.dwSize.X * (csbiex.dwSize.Y - height);
-            const COORD coordBelowStartPosition = { 0, height };
-            // Again we need to use the default attributes, hence standardFillAttrs is false.
-            success = _pConApi->PrivateFillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
-            // Also reset the line rendition for all of the cleared rows.
-            success = success && _pConApi->PrivateResetLineRenditionRange(height, csbiex.dwSize.Y);
-
-            if (success)
-            {
-                // Move the viewport (CAN'T be done in one call with SetConsolescreenBufferInfoEx, because legacy)
-                SMALL_RECT newViewport;
-                newViewport.Left = screen.Left;
-                newViewport.Top = 0;
-                // SetConsoleWindowInfo uses an inclusive rect, while GetConsolescreenBufferInfo is exclusive
-                newViewport.Right = screen.Right - 1;
-                newViewport.Bottom = height - 1;
-                success = _pConApi->SetConsoleWindowInfo(true, newViewport);
-
-                if (success)
-                {
-                    // Move the cursor to the same relative location.
-                    const COORD newcursor = { cursor.X, cursor.Y - screen.Top };
-                    success = _pConApi->SetConsoleCursorPosition(newcursor);
-                }
-            }
-        }
-    }
-    return success;
+    return DispatchCommon::s_EraseScrollback(*_pConApi);
 }
 
 //Routine Description:
@@ -1963,7 +1872,7 @@ bool AdaptDispatch::_EraseScrollback()
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::_EraseAll()
 {
-    return _pConApi->PrivateEraseAll();
+    return DispatchCommon::s_EraseAll(*_pConApi);
 }
 
 // Routine Description:
