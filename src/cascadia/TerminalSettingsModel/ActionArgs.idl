@@ -322,4 +322,10 @@ namespace Microsoft.Terminal.Settings.Model
         MultipleActionsArgs();
         Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     };
+
+    [default_interface] runtimeclass UpdateSelectionArgs : IActionArgs
+    {
+        Microsoft.Terminal.Core.SelectionDirection Direction { get; };
+        Microsoft.Terminal.Core.SelectionExpansion Mode { get; };
+    };
 }

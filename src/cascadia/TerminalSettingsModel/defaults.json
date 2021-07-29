@@ -376,6 +376,20 @@
         { "command": "paste", "keys": "ctrl+shift+v" },
         { "command": "paste", "keys": "shift+insert" },
 
+        // Keyboard Selection
+        { "command": {"action": "updateSelection", "direction": "left", "mode": "cell" }, "keys": "shift+left" },
+        { "command": {"action": "updateSelection", "direction": "right", "mode": "cell" }, "keys": "shift+right" },
+        { "command": {"action": "updateSelection", "direction": "up", "mode": "cell" }, "keys": "shift+up" },
+        { "command": {"action": "updateSelection", "direction": "down", "mode": "cell" }, "keys": "shift+down" },
+        { "command": {"action": "updateSelection", "direction": "left", "mode": "word" }, "keys": "ctrl+shift+left" },
+        { "command": {"action": "updateSelection", "direction": "right", "mode": "word" }, "keys": "ctrl+shift+right" },
+        { "command": {"action": "updateSelection", "direction": "left", "mode": "view" }, "keys": "shift+home" },
+        { "command": {"action": "updateSelection", "direction": "right", "mode": "view" }, "keys": "shift+end" },
+        { "command": {"action": "updateSelection", "direction": "up", "mode": "view" }, "keys": "shift+pgup" },
+        { "command": {"action": "updateSelection", "direction": "down", "mode": "view" }, "keys": "shift+pgdn" },
+        { "command": {"action": "updateSelection", "direction": "up", "mode": "buffer" }, "keys": "ctrl+shift+home" },
+        { "command": {"action": "updateSelection", "direction": "down", "mode": "buffer" }, "keys": "ctrl+shift+end" },
+
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },
         { "command": "scrollDownPage", "keys": "ctrl+shift+pgdn" },

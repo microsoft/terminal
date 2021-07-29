@@ -286,7 +286,7 @@ void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
     if (unit == TextUnit_Character)
     {
         _start = buffer.GetGlyphStart(_start);
-        _end = buffer.GetGlyphEnd(_start);
+        _end = buffer.GetGlyphEnd(_start, true);
     }
     else if (unit <= TextUnit_Word)
     {

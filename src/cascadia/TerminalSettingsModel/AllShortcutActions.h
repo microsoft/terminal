@@ -80,7 +80,8 @@
     ON_ALL_ACTIONS(QuakeMode)              \
     ON_ALL_ACTIONS(FocusPane)              \
     ON_ALL_ACTIONS(ClearBuffer)            \
-    ON_ALL_ACTIONS(MultipleActions)
+    ON_ALL_ACTIONS(MultipleActions)        \
+    ON_ALL_ACTIONS(UpdateSelection)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
@@ -113,4 +114,5 @@
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \
     ON_ALL_ACTIONS_WITH_ARGS(FocusPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
-    ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)
+    ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)      \
+    ON_ALL_ACTIONS_WITH_ARGS(UpdateSelection)

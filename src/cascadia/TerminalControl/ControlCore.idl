@@ -80,6 +80,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
+        Boolean UpdateSelection(Microsoft.Terminal.Core.SelectionDirection direction, Microsoft.Terminal.Core.SelectionExpansion mode);
 
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };

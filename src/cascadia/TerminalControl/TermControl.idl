@@ -45,6 +45,7 @@ namespace Microsoft.Terminal.Control
         // We expose this and ConnectionState here so that it might eventually be data bound.
         event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
 
+        Boolean UpdateSelection(Microsoft.Terminal.Core.SelectionDirection direction, Microsoft.Terminal.Core.SelectionExpansion mode);
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
         void ClearBuffer(ClearBufferType clearType);

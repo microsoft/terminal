@@ -5,7 +5,10 @@
 #include "Terminal.hpp"
 #include "unicode.hpp"
 
+#include <winrt/Microsoft.Terminal.Core.h>
+
 using namespace Microsoft::Terminal::Core;
+using namespace winrt::Microsoft::Terminal::Core;
 
 /* Selection Pivot Description:
  *   The pivot helps properly update the selection when a user moves a selection over itself
@@ -100,8 +103,8 @@ const bool Terminal::IsBlockSelection() const noexcept
 // - Perform a multi-click selection at viewportPos expanding according to the expansionMode
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
-// - expansionMode: the SelectionExpansionMode to dictate the boundaries of the selection anchors
-void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode)
+// - expansionMode: the SelectionExpansion to dictate the boundaries of the selection anchors
+void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode)
 {
     // set the selection pivot to expand the selection using SetSelectionEnd()
     _selection = SelectionAnchors{};
@@ -124,7 +127,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
-    _multiClickSelectionMode = SelectionExpansionMode::Cell;
+    _multiClickSelectionMode = SelectionExpansion::Cell;
     SetSelectionEnd(viewportPos);
 
     _selection->start = _selection->pivot;
@@ -136,7 +139,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
-void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansionMode> newExpansionMode)
+void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansion> newExpansionMode)
 {
     if (!_selection.has_value())
     {
@@ -151,8 +154,9 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
     // Otherwise, we may accidentally expand during other selection-based actions
     _multiClickSelectionMode = newExpansionMode.has_value() ? *newExpansionMode : _multiClickSelectionMode;
 
-    bool targetStart = false;
-    const auto anchors = _PivotSelection(textBufferPos, targetStart);
+    std::pair<COORD, COORD> anchors;
+    bool targetStart;
+    std::tie(anchors.first, anchors.second, targetStart) = _PivotSelection(textBufferPos);
     const auto expandedAnchors = _ExpandSelectionAnchors(anchors);
 
     if (newExpansionMode.has_value())
@@ -177,22 +181,24 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - This ensures start < end when compared
 // Arguments:
 // - targetPos: the (x,y) coordinate we are moving to on the text buffer
-// - targetStart: if true, target will be the new start. Otherwise, target will be the new end.
 // Return Value:
-// - the new start/end for a selection
-std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& targetStart) const
+// - COORD: the new start for a selection
+// - COORD: the new end for a selection
+// - bool: if true, target will be the new start. Otherwise, target will be the new end.
+std::tuple<COORD, COORD, bool> Terminal::_PivotSelection(const COORD targetPos) const
 {
-    if (targetStart = _buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
+    const bool targetStart{ _buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0 };
+    if (targetStart)
     {
         // target is before pivot
         // treat target as start
-        return std::make_pair(targetPos, _selection->pivot);
+        return { targetPos, _selection->pivot, targetStart };
     }
     else
     {
         // target is after pivot
         // treat pivot as start
-        return std::make_pair(_selection->pivot, targetPos);
+        return { _selection->pivot, targetPos, targetStart };
     }
 }
 
@@ -210,15 +216,15 @@ std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD
     const auto bufferSize = _buffer->GetSize();
     switch (_multiClickSelectionMode)
     {
-    case SelectionExpansionMode::Line:
+    case SelectionExpansion::Line:
         start = { bufferSize.Left(), start.Y };
         end = { bufferSize.RightInclusive(), end.Y };
         break;
-    case SelectionExpansionMode::Word:
+    case SelectionExpansion::Word:
         start = _buffer->GetWordStart(start, _wordDelimiters);
         end = _buffer->GetWordEnd(end, _wordDelimiters);
         break;
-    case SelectionExpansionMode::Cell:
+    case SelectionExpansion::Cell:
     default:
         // no expansion is necessary
         break;
@@ -233,6 +239,185 @@ std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD
 void Terminal::SetBlockSelection(const bool isEnabled) noexcept
 {
     _blockSelection = isEnabled;
+}
+
+bool Terminal::MovingStart() const noexcept
+{
+    // true --> we're moving start endpoint ("higher")
+    // false --> we're moving end endpoint ("lower")
+    return _selection->start == _selection->pivot ? false : true;
+}
+
+void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode)
+{
+    // 1. Figure out which endpoint to update
+    // One of the endpoints is the pivot, signifying that the other endpoint is the one we want to move.
+    auto targetPos{ _selection->start == _selection->pivot ? _selection->end : _selection->start };
+
+    // 2. Perform the movement
+    switch (mode)
+    {
+    case SelectionExpansion::Cell:
+        _MoveByChar(direction, targetPos);
+        break;
+    case SelectionExpansion::Word:
+        _MoveByWord(direction, targetPos);
+        break;
+    case SelectionExpansion::Viewport:
+        _MoveByViewport(direction, targetPos);
+        break;
+    case SelectionExpansion::Buffer:
+        _MoveByBuffer(direction, targetPos);
+        break;
+    }
+
+    // 3. Actually modify the selection
+    std::tie(_selection->start, _selection->end, std::ignore) = _PivotSelection(targetPos);
+
+    // 4. Scroll (if necessary)
+    if (const auto viewport = _GetVisibleViewport(); !viewport.IsInBounds(targetPos))
+    {
+        if (const auto amtAboveView = viewport.Top() - targetPos.Y; amtAboveView > 0)
+        {
+            // anchor is above visible viewport, scroll by that amount
+            _scrollOffset += amtAboveView;
+        }
+        else
+        {
+            // anchor is below visible viewport, scroll by that amount
+            const auto amtBelowView = targetPos.Y - viewport.BottomInclusive();
+            _scrollOffset -= amtBelowView;
+        }
+        _NotifyScrollEvent();
+    }
+}
+
+void Terminal::_MoveByChar(SelectionDirection direction, COORD& pos)
+{
+    switch (direction)
+    {
+    case SelectionDirection::Left:
+        _buffer->GetSize().DecrementInBounds(pos);
+        pos = _buffer->GetGlyphStart(pos);
+        break;
+    case SelectionDirection::Right:
+        _buffer->GetSize().IncrementInBounds(pos);
+        pos = _buffer->GetGlyphEnd(pos);
+        break;
+    case SelectionDirection::Up:
+    {
+        const auto bufferSize{ _buffer->GetSize() };
+        pos = { pos.X, std::clamp(base::ClampSub<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
+        break;
+    }
+    case SelectionDirection::Down:
+    {
+        const auto bufferSize{ _buffer->GetSize() };
+        pos = { pos.X, std::clamp(base::ClampAdd<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
+        break;
+    }
+    }
+}
+
+void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
+{
+    switch (direction)
+    {
+    case SelectionDirection::Left:
+        const auto wordStartPos{ _buffer->GetWordStart(pos, _wordDelimiters) };
+        if (_buffer->GetSize().CompareInBounds(_selection->pivot, pos) < 0)
+        {
+            // If we're moving towards the pivot, move one more cell
+            pos = wordStartPos;
+            _buffer->GetSize().DecrementInBounds(pos);
+        }
+        else if (wordStartPos == pos)
+        {
+            // already at the beginning of the current word,
+            // move to the beginning of the previous word
+            _buffer->GetSize().DecrementInBounds(pos);
+            pos = _buffer->GetWordStart(pos, _wordDelimiters);
+        }
+        else
+        {
+            // move to the beginning of the current word
+            pos = wordStartPos;
+        }
+        break;
+    case SelectionDirection::Right:
+        const auto wordEndPos{ _buffer->GetWordEnd(pos, _wordDelimiters) };
+        if (_buffer->GetSize().CompareInBounds(pos, _selection->pivot) < 0)
+        {
+            // If we're moving towards the pivot, move one more cell
+            pos = _buffer->GetWordEnd(pos, _wordDelimiters);
+            _buffer->GetSize().IncrementInBounds(pos);
+        }
+        else if (wordEndPos == pos)
+        {
+            // already at the end of the current word,
+            // move to the end of the next word
+            _buffer->GetSize().IncrementInBounds(pos);
+            pos = _buffer->GetWordEnd(pos, _wordDelimiters);
+        }
+        else
+        {
+            // move to the end of the current word
+            pos = wordEndPos;
+        }
+        break;
+    case SelectionDirection::Up:
+        _MoveByChar(direction, pos);
+        pos = _buffer->GetWordStart(pos, _wordDelimiters);
+        break;
+    case SelectionDirection::Down:
+        _MoveByChar(direction, pos);
+        pos = _buffer->GetWordEnd(pos, _wordDelimiters);
+        break;
+    }
+}
+
+void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
+{
+    const auto bufferSize{ _buffer->GetSize() };
+    switch (direction)
+    {
+    case SelectionDirection::Left:
+        pos = { bufferSize.Left(), pos.Y };
+        break;
+    case SelectionDirection::Right:
+        pos = { bufferSize.RightInclusive(), pos.Y };
+        break;
+    case SelectionDirection::Up:
+    {
+        const auto viewportHeight{ _mutableViewport.Height() };
+        const auto newY{ base::ClampSub<short, short>(pos.Y, viewportHeight) };
+        pos = newY < bufferSize.Top() ? bufferSize.Origin() : COORD{ pos.X, newY };
+        break;
+    }
+    case SelectionDirection::Down:
+    {
+        const auto viewportHeight{ _mutableViewport.Height() };
+        const auto newY{ base::ClampAdd<short, short>(pos.Y, viewportHeight) };
+        pos = newY > bufferSize.BottomInclusive() ? COORD{ bufferSize.RightInclusive(), bufferSize.BottomInclusive() } : COORD{ pos.X, newY };
+        break;
+    }
+    }
+}
+
+void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
+{
+    const auto bufferSize{ _buffer->GetSize() };
+    switch (direction)
+    {
+    case SelectionDirection::Left:
+    case SelectionDirection::Up:
+        pos = bufferSize.Origin();
+        break;
+    case SelectionDirection::Right:
+    case SelectionDirection::Down:
+        pos = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+        break;
+    }
 }
 
 // Method Description:

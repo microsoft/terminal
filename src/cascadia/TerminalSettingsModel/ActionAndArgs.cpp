@@ -67,6 +67,7 @@ static constexpr std::string_view QuakeModeKey{ "quakeMode" };
 static constexpr std::string_view FocusPaneKey{ "focusPane" };
 static constexpr std::string_view ClearBufferKey{ "clearBuffer" };
 static constexpr std::string_view MultipleActionsKey{ "multipleActions" };
+static constexpr std::string_view UpdateSelectionKey{ "updateSelection" };
 
 static constexpr std::string_view ActionKey{ "action" };
 

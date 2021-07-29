@@ -130,6 +130,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         void SetSelectionAnchor(til::point const& position);
         void SetEndSelectionPoint(til::point const& position);
+        bool UpdateSelection(Core::SelectionDirection direction, Core::SelectionExpansion mode);
 
         void Search(const winrt::hstring& text,
                     const bool goForward,
