@@ -139,6 +139,29 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
     MSG message;
 
+    DebugBreak();
+
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn)
+    {
+        std::array<char, 4096> _buffer{};
+
+        DWORD read{};
+
+        const auto readFail{ !ReadFile(hIn, _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+        if (readFail) // reading failed (we must check this first, because read will also be 0.)
+        {
+            const auto lastError = GetLastError();
+            // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
+            DebugBreak();
+        }
+        DebugBreak();
+    }
+    else
+    {
+        DebugBreak();
+    }
+
     while (GetMessage(&message, nullptr, 0, 0))
     {
         // GH#638 (Pressing F7 brings up both the history AND a caret browsing message)
