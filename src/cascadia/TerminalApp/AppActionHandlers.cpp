@@ -836,11 +836,16 @@ namespace winrt::TerminalApp::implementation
                     aaa.Action(ShortcutAction::SendInput);
                     SendInputArgs args{ fmt::format(L"{} {}", prefix.c_str(), opt.c_str()) };
                     aaa.Args(args);
-                    Command cmd{opt, aaa};
+                    Command cmd{ opt, aaa };
                     actions.Append(cmd);
                 }
 
                 CommandPalette().SetCommands(actions);
+                // EnableCommandPaletteMode will make sure to trigger
+                // _updateFilteredActions, which we need to update the command
+                // list.
+                CommandPalette().EnableCommandPaletteMode(CommandPaletteLaunchMode::Action);
+                CommandPalette().Visibility(Visibility::Visible);
             }
         }
     }

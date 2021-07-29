@@ -500,6 +500,10 @@ void AppCommandlineArgs::_buildSelectListParser()
     // _newTabShort.subcommand = _app.add_subcommand("nt", RS_A(L"CmdNTDesc"));
 
     auto setupSubcommand = [this](auto& subcommand) {
+        subcommand->add_option("--prefix",
+                               _selectListPrefix,
+                               "prefix to append to the input");
+
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
         // that `this` will still be safe - this function just lets us know this
@@ -528,7 +532,7 @@ void AppCommandlineArgs::_buildSelectListParser()
             //     lines.push_back(winrt::to_hstring{ line });
             // }
             auto hstringLines = winrt::single_threaded_vector<winrt::hstring>(std::move(lines));
-            SelectListArgs args{ L"Foo", hstringLines };
+            SelectListArgs args{ winrt::to_hstring(_selectListPrefix), hstringLines };
             aaa.Args(args);
             _startupActions.push_back(aaa);
         });

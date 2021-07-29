@@ -163,19 +163,25 @@ winrt::hstring _getStdin()
     HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
     if (hIn)
     {
-        std::array<char, 4096> _buffer{};
-
+        std::stringstream ss;
         DWORD read{};
-
-        const auto readFail{ !ReadFile(hIn, _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
-        if (readFail) // reading failed (we must check this first, because read will also be 0.)
+        do
         {
-            const auto lastError = GetLastError();
-            // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
-            return winrt::hstring{};
-        }
+            std::array<char, 4096> _buffer{};
+            const auto readFail{ !ReadFile(hIn, _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+            // reading failed (we must check this first, because read will also be 0.)
+            if (readFail)
+            {
+                const auto lastError = GetLastError();
+                return winrt::hstring{};
+            }
+            ss << std::string_view{ _buffer.data(), read };
 
-        return winrt::to_hstring(std::string_view{ _buffer.data(), read });
+        } while (read == 4096);
+        // keep reading until we don't read enough to fill the buffer. The
+        // subsequent read will return ERROR_BROKEN_PIPE.
+
+        return winrt::to_hstring(ss.str());
     }
 
     return winrt::hstring{};
