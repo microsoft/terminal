@@ -2251,7 +2251,7 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     auto fillAttributes = GetAttributes();
     fillAttributes.SetStandardErase();
     // TODO(DH): The original code moved Left to 0 and Right to Width
-    _textBuffer->FillWithAttribute(_viewport, fillAttributes);
+    _textBuffer->FillWithAttributeRectangular(til::rectangle{ _viewport.Origin(), til::size{ _viewport.Dimensions() } }, fillAttributes);
     // TODO(DH): THIS ALSO CLEARED THE WRAP ON ALL ROWS (!)
     //Write(fillData, fillPosition, false);
 

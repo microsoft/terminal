@@ -446,7 +446,7 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     // Apply the fill data to each of the viewports we're given here.
     for (const auto& view : remaining)
     {
-        screenInfo.GetTextBuffer().FillWithCharacterAndAttribute(til::rectangle{ view.Origin(), til::size{ view.Dimensions() } }, fillChar, fillAttrs);
+        screenInfo.GetTextBuffer().FillWithCharacterAndAttributeRectangular(til::rectangle{ view.Origin(), til::size{ view.Dimensions() } }, fillChar, fillAttrs);
 
         // If we're scrolling an area that encompasses the full buffer width,
         // then the filled rows should also have their line rendition reset.

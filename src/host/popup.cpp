@@ -90,7 +90,7 @@ void Popup::_DrawBorder()
     COORD WriteCoord;
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Top;
-    _screenInfo.GetTextBuffer().FillWithAttribute(Viewport::FromInclusive(_region), _attributes);
+    _screenInfo.GetTextBuffer().FillWithAttributeRectangular(_region, _attributes);
 
     // draw upper left corner
     _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT);

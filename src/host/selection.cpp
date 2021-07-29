@@ -388,7 +388,7 @@ void Selection::ColorSelection(const SMALL_RECT& srRect, const TextAttribute att
     // Read selection rectangle, assumed already clipped to buffer.
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
 
-    screenInfo.GetTextBuffer().FillWithAttribute(Viewport::FromInclusive(srRect), attr);
+    screenInfo.GetTextBuffer().FillWithAttributeRectangular(srRect, attr);
 }
 
 // Routine Description:

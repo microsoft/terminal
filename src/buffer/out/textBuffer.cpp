@@ -8,6 +8,7 @@
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
+#include "../types/inc/Utf16Parser.hpp"
 
 #pragma hdrstop
 
@@ -624,13 +625,11 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
         // And if it's no longer single width, the right half of the row should be erased.
         if (lineRendition != LineRendition::SingleWidth)
         {
-            const auto fillChar = L' ';
             auto fillAttrs = GetCurrentAttributes();
             fillAttrs.SetStandardErase();
             const size_t fillOffset = GetLineWidth(rowIndex);
             const size_t fillLength = GetSize().Width() - fillOffset;
-            const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
-            row.WriteCells(fillData, fillOffset, false);
+            FillWithCharacterAndAttributeLinear(til::point{fillOffset, ::base::saturated_cast<size_t>(cursorPosition.Y)}, fillLength, UNICODE_SPACE, fillAttrs);
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
@@ -2319,39 +2318,35 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     return result;
 }
 
-void TextBuffer::FillWithAttribute(const Viewport& region, const TextAttribute& attribute)
+void TextBuffer::FillWithAttributeRectangular(const til::rectangle& region, const TextAttribute& attribute)
 {
-    for (auto y{ region.Top() }; y < region.BottomExclusive(); ++y)
-    {
-        auto& row = GetRowByOffset(y);
-        row.GetAttrRow().Replace(region.Left(), region.RightExclusive(), attribute);
-    }
-
-    // Rectangular region optimization: notify all at once
-    _NotifyPaint(region);
+    _WriteRectangular(
+        region,
+        [&](WriteResult&, auto&& at, auto&& size) {
+            auto& row = GetRowByOffset(at.y());
+            row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), size), attribute);
+        });
 }
 
 size_t TextBuffer::FillWithAttributeLinear(til::point at, size_t count, const TextAttribute& attribute)
 {
-    const auto initial{ count };
-    while (count && _size.IsInBounds(at))
-    {
-        // narrowing count to short here is fine; it will always be less than width
-        const auto w{ std::min<uint16_t>(_size.Width() - at.x<uint16_t>(), gsl::narrow_cast<uint16_t>(count)) };
+    auto out = _WriteLinear(
+        at,
+        [&](WriteResult& result, auto&& at, auto&& size) -> bool {
+            const auto w{ ::base::ClampMin(::base::saturated_cast<uint16_t>(size), count) };
 
-        auto& row = GetRowByOffset(at.y());
-        row.GetAttrRow().Replace(at.x<uint16_t>(), at.x<uint16_t>() + w + 1 /* exclusive */, attribute);
+            auto& row = GetRowByOffset(at.y());
+            row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), size), attribute);
 
-        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(w), 1 });
-        _NotifyPaint(paint);
+            result.colsConsumed += w.RawValue();
 
-        at = { 0, at.y() + 1 };
-        count -= w;
-    }
-    return initial - count;
+            const Viewport paint = Viewport::FromDimensions(at, { w.Cast<SHORT>(), 1 });
+            _NotifyPaint(paint);
+
+            return (count -= w.RawValue()) > 0; // keep going if data remains
+        });
+    return out.colsConsumed;
 }
-
-#include "../types/inc/Utf16Parser.hpp"
 
 // TODO(DH): make this a member so that IsGlyphFullWidth can be a member ref
 static std::tuple<til::small_rle<uint8_t, uint16_t, 3>, uint16_t> _MeasureStringAndCountColumns(std::wstring_view string) //const noexcept
@@ -2374,135 +2369,148 @@ static std::tuple<til::small_rle<uint8_t, uint16_t, 3>, uint16_t> _MeasureString
     return { std::move(measurements), colCount };
 }
 
-size_t TextBuffer::WriteMeasuredStringLinear(til::point at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements)
+struct no_attributes
 {
-    THROW_HR_IF(E_BOUNDS, !_size.IsInBounds(at));
+};
+
+template<typename T>
+size_t TextBuffer::_WriteMeasuredStringLinearWithAttributes(const til::point& at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements, [[maybe_unused]] const T& attributes)
+{
     uint16_t colCount = std::accumulate(
         measurements.runs().cbegin(),
         measurements.runs().cend(),
         uint16_t{},
         [](auto&& v, auto&& r) -> uint16_t { return v + (r.value * r.length); });
-    size_t totalConsumedCols{};
-    while (!string.empty() && _size.IsInBounds(at))
-    {
-        auto& row = GetRowByOffset(at.y());
-        auto [consumedWchar, consumedDestCols, consumedSourceCols] = row.WriteStringAtMeasured(at.x<uint16_t>(), colCount, string, measurements);
-        row.GetAttrRow().Replace(at.x<uint16_t>(), at.x<uint16_t>() + consumedDestCols, _currentAttributes);
-        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(consumedDestCols), 1 });
-        _NotifyPaint(paint);
-        at = til::point{ 0, at.y() + 1 };
-        colCount -= consumedSourceCols;
-        totalConsumedCols += consumedDestCols;
+    const auto out = _WriteLinear(
+        at,
+        [&](WriteResult& result, auto&& at, auto&& /* size */) {
+            auto& row = GetRowByOffset(at.y());
+            const auto [consumedWchar, consumedDestCols, consumedSourceCols] = row.WriteStringAtMeasured(at.x<uint16_t>(), colCount, string, measurements);
 
-        string = string.substr(consumedWchar);
-        measurements = measurements.slice(gsl::narrow_cast<uint16_t>(consumedWchar), measurements.size());
-    }
-    return totalConsumedCols;
+            if constexpr (std::is_same<T, TextAttribute>::value)
+            {
+                row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), consumedDestCols), attributes);
+            }
+
+            const Viewport paint = Viewport::FromDimensions(at, { ::base::saturated_cast<SHORT>(consumedDestCols), 1 });
+            _NotifyPaint(paint);
+            colCount -= consumedSourceCols;
+
+            result.charsConsumed += consumedWchar;
+            result.colsConsumed += consumedDestCols;
+
+            string = string.substr(consumedWchar);
+            measurements = measurements.slice(gsl::narrow_cast<uint16_t>(consumedWchar), measurements.size());
+
+            return !string.empty();
+        });
+    return out.colsConsumed;
 }
 
-size_t TextBuffer::WriteStringLinearWithAttributes(til::point at, std::wstring_view string, const TextAttribute& attr)
+size_t TextBuffer::WriteMeasuredStringLinear(const til::point& at, const std::wstring_view& string, til::small_rle<uint8_t, uint16_t, 3> measurements)
 {
-    THROW_HR_IF(E_BOUNDS, !_size.IsInBounds(at));
+    return _WriteMeasuredStringLinearWithAttributes(at, string, std::move(measurements), _currentAttributes);
+}
+
+size_t TextBuffer::WriteStringLinearWithAttributes(const til::point &at, const std::wstring_view& string, const TextAttribute& attr)
+{
     auto [measurements, colCount] = _MeasureStringAndCountColumns(string);
-    size_t totalConsumedCols{};
-    while (!string.empty() && _size.IsInBounds(at))
-    {
-        auto& row = GetRowByOffset(at.y());
-        auto [consumedWchar, consumedDestCols, consumedSourceCols] = row.WriteStringAtMeasured(at.x<uint16_t>(), colCount, string, measurements);
-        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(consumedDestCols), 1 });
-        row.GetAttrRow().Replace(at.x<uint16_t>(), at.x<uint16_t>() + consumedDestCols, attr);
-        _NotifyPaint(paint);
-        at = til::point{ 0, at.y() + 1 };
-        colCount -= consumedSourceCols;
-        totalConsumedCols += consumedDestCols;
-
-        string = string.substr(consumedWchar);
-        measurements = measurements.slice(gsl::narrow_cast<uint16_t>(consumedWchar), measurements.size());
-    }
-    return totalConsumedCols;
+    return _WriteMeasuredStringLinearWithAttributes(at, string, std::move(measurements), attr);
 }
 
-size_t TextBuffer::WriteStringLinearKeepAttributes(til::point at, std::wstring_view string)
+size_t TextBuffer::WriteStringLinearKeepAttributes(const til::point &at, const std::wstring_view& string)
 {
-    THROW_HR_IF(E_BOUNDS, !_size.IsInBounds(at));
     auto [measurements, colCount] = _MeasureStringAndCountColumns(string);
-    size_t totalConsumedCols{};
-    while (!string.empty() && _size.IsInBounds(at))
-    {
-        auto& row = GetRowByOffset(at.y());
-        auto [consumedWchar, consumedDestCols, consumedSourceCols] = row.WriteStringAtMeasured(at.x<uint16_t>(), colCount, string, measurements);
-        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(consumedDestCols), 1 });
-        _NotifyPaint(paint);
-        at = til::point{ 0, at.y() + 1 };
-        colCount -= consumedSourceCols;
-        totalConsumedCols += consumedDestCols;
-
-        string = string.substr(consumedWchar);
-        measurements = measurements.slice(gsl::narrow_cast<uint16_t>(consumedWchar), measurements.size());
-    }
-    return totalConsumedCols;
+    return _WriteMeasuredStringLinearWithAttributes(at, string, std::move(measurements), no_attributes{});
 }
 
-size_t TextBuffer::FillWithCharacter(const til::rectangle region, std::wstring_view character)
-{
-    UNREFERENCED_PARAMETER(region);
-    UNREFERENCED_PARAMETER(character);
-    return region.size().area<size_t>();
-}
-
-size_t TextBuffer::FillWithCharacterLinear(til::point at, size_t count, const wchar_t character)
-{
-    THROW_HR_IF(E_BOUNDS, !_size.IsInBounds(at));
-
-    const auto initial{ count };
-    const uint8_t width{ IsGlyphFullWidth(character) ? uint8_t{ 2u } : uint8_t{ 1u } };
-    while (count && _size.IsInBounds(at))
-    {
-        // narrowing count to short here is fine; it will always be less than width
-        const auto columns{ std::min<uint16_t>(_size.Width() - at.x<uint16_t>(), gsl::narrow_cast<uint16_t>(count * width)) };
-
-        auto& row = GetRowByOffset(at.y());
-        count -= row.Fill(at.x(), count, character, width);
-
-        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(columns), 1 });
-        _NotifyPaint(paint);
-
-        at = { 0, at.y() + 1 };
-    }
-    return initial - count;
-}
-
-void TextBuffer::FillWithCharacterAndAttribute(const til::rectangle& region, const wchar_t character, const TextAttribute& attr)
+template<typename T>
+TextBuffer::WriteResult TextBuffer::_FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, [[maybe_unused]] const T& attr)
 {
     const uint8_t width{ IsGlyphFullWidth(character) ? uint8_t{ 2u } : uint8_t{ 1u } };
-    for (auto y{ region.top() }; y < region.bottom(); ++y)
-    {
-        auto& row = GetRowByOffset(y);
-        row.Fill(region.left(), region.width() / width, character, width);
-        row.GetAttrRow().Replace(region.left<uint16_t>(), gsl::narrow_cast<uint16_t>(region.right() + 1) /* exclusive */, attr);
-    }
+    auto out = _WriteRectangular(
+        region,
+        [&](WriteResult& /* result */, auto&& at, auto&& size) {
+            auto& row = GetRowByOffset(at.y());
+            row.Fill(region.left(), size / width, character, width);
+            if constexpr (std::is_same<T, TextAttribute>::value)
+            {
+                row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), size), attr);
+            }
+        });
+
+    return out;
 }
 
-size_t TextBuffer::FillWithCharacterAndAttributeLinear(til::point at, size_t count, const wchar_t character, const TextAttribute& attr)
+template<typename T>
+TextBuffer::WriteResult TextBuffer::_FillWithCharacterAndAttributeLinear(const til::point &at, size_t count, const wchar_t character, [[maybe_unused]] const T& attr)
 {
-    THROW_HR_IF(E_BOUNDS, !_size.IsInBounds(at));
-
-    const auto initial{ count };
     const uint8_t width{ IsGlyphFullWidth(character) ? uint8_t{ 2u } : uint8_t{ 1u } };
-    while (count && _size.IsInBounds(at))
-    {
-        // narrowing count to short here is fine; it will always be less than width
-        const auto columns{ std::min<uint16_t>(_size.Width() - at.x<uint16_t>(), gsl::narrow_cast<uint16_t>(count * width)) };
+    return _WriteLinear(
+        at,
+        [&](WriteResult& result, auto&& at, auto&& size) -> bool {
+            // size is how many *columns* we have left to fill, k?
+            const auto w{ ::base::ClampMin(::base::saturated_cast<uint16_t>(size), count * width) };
 
-        auto& row = GetRowByOffset(at.y());
-        count -= row.Fill(at.x(), count, character, width);
-        row.GetAttrRow().Replace(at.x<uint16_t>(), at.x<uint16_t>() + columns + 1 /* exclusive */, attr);
+            auto& row = GetRowByOffset(at.y());
+            const auto consumedWchars = row.Fill(at.x(), count, character, width);
+            if constexpr (std::is_same<T, TextAttribute>::value)
+            {
+                row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), w), attr);
+            }
 
-        const Viewport paint = Viewport::FromDimensions(at, { gsl::narrow<SHORT>(columns), 1 });
-        _NotifyPaint(paint);
+            result.charsConsumed += consumedWchars;
+            result.colsConsumed += w.RawValue();
 
-        at = { 0, at.y() + 1 };
-    }
-    return initial - count;
+            const Viewport paint = Viewport::FromDimensions(at, { w.Cast<SHORT>(), 1 });
+            _NotifyPaint(paint);
+
+            return (count -= consumedWchars) > 0; // keep going if data remains
+        });
 }
 
+size_t TextBuffer::FillWithCharacterRectangular(const til::rectangle& region, const wchar_t character)
+{
+    return _FillWithCharacterAndAttributeRectangular(region, character, no_attributes{}).colsConsumed;
+}
+
+void TextBuffer::FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, const TextAttribute& attr)
+{
+    _FillWithCharacterAndAttributeRectangular(region, character, attr);
+}
+
+size_t TextBuffer::FillWithCharacterLinear(const til::point& at, size_t count, const wchar_t character)
+{
+    const auto out = _FillWithCharacterAndAttributeLinear(at, count, character, no_attributes{});
+    return out.charsConsumed;
+}
+
+size_t TextBuffer::FillWithCharacterAndAttributeLinear(const til::point &at, size_t count, const wchar_t character, const TextAttribute& attr)
+{
+    const auto out = _FillWithCharacterAndAttributeLinear(at, count, character, attr);
+    return out.charsConsumed;
+}
+
+template<typename TLambda>
+TextBuffer::WriteResult TextBuffer::_WriteRectangular(const til::rectangle& rect, TLambda&& thing)
+{
+    WriteResult out{};
+    for (auto y{ rect.top() }; y < rect.bottom(); ++y)
+    {
+        thing(out, til::point{ rect.left(), y }, rect.width());
+    }
+    _NotifyPaint(Viewport::FromDimensions(rect.origin(), rect.size()));
+    return out;
+}
+
+template<typename TLambda>
+TextBuffer::WriteResult TextBuffer::_WriteLinear(const til::point& start, TLambda&& thing)
+{
+    auto point{ start };
+    WriteResult out{};
+    while (_size.IsInBounds(point) && thing(out, point, _size.Width() - point.x()))
+    {
+        point = { 0, point.y() };
+    };
+    return out;
+}

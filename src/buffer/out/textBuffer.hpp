@@ -194,20 +194,24 @@ public:
     void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const size_t firstRow, const size_t lastRow) const;
 
-    size_t WriteMeasuredStringLinear(til::point at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements);
+    struct WriteResult
+    {
+        size_t charsConsumed;
+        size_t colsConsumed;
+    };
 
-    size_t WriteStringLinearWithAttributes(til::point at, std::wstring_view string, const TextAttribute& attr);
+    size_t WriteMeasuredStringLinear(const til::point& at, const std::wstring_view& string, til::small_rle<uint8_t, uint16_t, 3> measurements);
 
-    size_t WriteStringLinearKeepAttributes(til::point at, std::wstring_view string);
+    size_t WriteStringLinearWithAttributes(const til::point& at, const std::wstring_view& string, const TextAttribute& attr);
+    size_t WriteStringLinearKeepAttributes(const til::point& at, const std::wstring_view& string);
 
-    size_t FillWithCharacter(const til::rectangle region, std::wstring_view character);
+    size_t FillWithCharacterRectangular(const til::rectangle& region, const wchar_t character);
+    size_t FillWithCharacterLinear(const til::point& at, size_t count, const wchar_t character);
 
-    size_t FillWithCharacterLinear(til::point at, size_t count, const wchar_t character);
-    void FillWithCharacterAndAttribute(const til::rectangle& region, const wchar_t character, const TextAttribute& attr);
-    size_t FillWithCharacterAndAttributeLinear(til::point at, size_t count, const wchar_t character, const TextAttribute& attr);
+    void FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, const TextAttribute& attr);
+    size_t FillWithCharacterAndAttributeLinear(const til::point& at, size_t count, const wchar_t character, const TextAttribute& attr);
 
-    void FillWithAttribute(const Microsoft::Console::Types::Viewport& region, const TextAttribute& attribute);
-
+    void FillWithAttributeRectangular(const til::rectangle& region, const TextAttribute& attribute);
     size_t FillWithAttributeLinear(const til::point at, size_t count, const TextAttribute& attribute);
 
 private:
@@ -248,6 +252,21 @@ private:
     const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
     void _PruneHyperlinks();
+
+    template<typename TLambda>
+    WriteResult _WriteRectangular(const til::rectangle& rect, TLambda&& thing);
+
+    template<typename TLambda>
+    WriteResult _WriteLinear(const til::point& start, TLambda&& thing);
+
+    template<typename T>
+    WriteResult _FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, const T& attr);
+
+    template<typename T>
+    WriteResult _FillWithCharacterAndAttributeLinear(const til::point& at, size_t count, const wchar_t character, const T& attr);
+
+    template<typename T>
+    size_t _WriteMeasuredStringLinearWithAttributes(const til::point& at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements, const T& attributes);
 
     std::unordered_map<size_t, std::wstring> _idsAndPatterns;
     size_t _currentPatternId;
