@@ -7,10 +7,11 @@ namespace Microsoft.Terminal.Remoting
     runtimeclass CommandlineArgs
     {
         CommandlineArgs();
-        CommandlineArgs(String[] args, String cwd);
+        CommandlineArgs(String[] args, String cwd, String stdInput);
 
         String[] Commandline { get; set; };
         String CurrentDirectory();
+        String StdInput{ get; };
     };
 
     runtimeclass RenameRequestArgs

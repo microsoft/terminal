@@ -15,13 +15,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
 
         CommandlineArgs(const winrt::array_view<const winrt::hstring>& args,
-                        winrt::hstring currentDirectory) :
+                        winrt::hstring currentDirectory,
+                        winrt::hstring stdInput) :
             _args{ args.begin(), args.end() },
-            _cwd{ currentDirectory }
+            _cwd{ currentDirectory },
+            _stdInput{ stdInput }
         {
         }
 
         winrt::hstring CurrentDirectory() { return _cwd; };
+        winrt::hstring StdInput() { return _stdInput; };
 
         void Commandline(winrt::array_view<const winrt::hstring> const& value);
         winrt::com_array<winrt::hstring> Commandline();
@@ -29,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     private:
         winrt::com_array<winrt::hstring> _args;
         winrt::hstring _cwd;
+        winrt::hstring _stdInput;
     };
 
 }

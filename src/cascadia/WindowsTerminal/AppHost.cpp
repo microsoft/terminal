@@ -158,6 +158,29 @@ void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
     }
 }
 
+winrt::hstring _getStdin()
+{
+    HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
+    if (hIn)
+    {
+        std::array<char, 4096> _buffer{};
+
+        DWORD read{};
+
+        const auto readFail{ !ReadFile(hIn, _buffer.data(), gsl::narrow_cast<DWORD>(_buffer.size()), &read, nullptr) };
+        if (readFail) // reading failed (we must check this first, because read will also be 0.)
+        {
+            const auto lastError = GetLastError();
+            // else we call convertUTF8ChunkToUTF16 with an empty string_view to convert possible remaining partials to U+FFFD
+            return winrt::hstring{};
+        }
+
+        return winrt::to_hstring( std::string_view{ _buffer.data(), read } );
+    }
+
+    return winrt::hstring{};
+}
+
 // Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
 //   the WindowManager, to ask if we should become a window process.
@@ -181,7 +204,11 @@ void AppHost::_HandleCommandlineArgs()
     _buildArgsFromCommandline(args);
     std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
-    Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
+    DebugBreak();
+    auto stdIn{ _getStdin() };
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, stdIn };
+
     _windowManager.ProposeCommandline(eventArgs);
 
     _shouldCreateWindow = _windowManager.ShouldCreateWindow();
