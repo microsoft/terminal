@@ -1609,6 +1609,12 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
     return screenInfo.GetActiveBuffer().VtEraseAll();
 }
 
+// TODO!
+[[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo)
+{
+    return screenInfo.GetActiveBuffer().ClearBuffer();
+}
+
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType)
 {
