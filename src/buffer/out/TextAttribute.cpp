@@ -11,6 +11,8 @@ static_assert(sizeof(TextAttribute) == 14);
 static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
+// Assert that the use of memcmp() for comparisons is safe.
+static_assert(std::has_unique_object_representations_v<TextAttribute>);
 
 BYTE TextAttribute::s_legacyDefaultForeground = 7;
 BYTE TextAttribute::s_legacyDefaultBackground = 0;
