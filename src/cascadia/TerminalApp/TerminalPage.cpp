@@ -980,10 +980,8 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
-    //    * the TitleChanged event, for changing the text of the tab
     // Arguments:
     // - term: The newly created TermControl to connect the events for
-    // - hostingTab: The Tab that's hosting this TermControl instance
     void TerminalPage::_RegisterTerminalEvents(TermControl term)
     {
         term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
@@ -1005,13 +1003,11 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Connects event handlers to the TermControl for events that we want to
+    // - Connects event handlers to the TerminalTab for events that we want to
     //   handle. This includes:
-    //    * the Copy and Paste events, for setting and retrieving clipboard data
-    //      on the right thread
     //    * the TitleChanged event, for changing the text of the tab
+    //    * the Color{Selected,Cleared} events to change the color of a tab.
     // Arguments:
-    // - term: The newly created TermControl to connect the events for
     // - hostingTab: The Tab that's hosting this TermControl instance
     void TerminalPage::_RegisterTabEvents(TerminalTab& hostingTab)
     {
@@ -1188,19 +1184,19 @@ namespace winrt::TerminalApp::implementation
     //   is the last remaining pane on a tab, that tab will be closed upon moving.
     // Arguments:
     // - tabIdx: The target tab index.
-    void TerminalPage::_MovePaneToTab(const uint32_t tabIdx)
+    bool TerminalPage::_MovePaneToTab(const uint32_t tabIdx)
     {
         auto focusedTab{ _GetFocusedTabImpl() };
 
         if (!focusedTab)
         {
-            return;
+            return false;
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
         if (_GetFocusedTabIndex() == tabIdx)
         {
-            return;
+            return false;
         }
 
         // Moving the pane from the current tab might close it, so get the next
@@ -1217,6 +1213,8 @@ namespace winrt::TerminalApp::implementation
             auto pane = focusedTab->DetachPane();
             _CreateNewTabFromPane(pane);
         }
+
+        return true;
     }
 
     // Method Description:

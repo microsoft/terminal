@@ -152,8 +152,8 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneToTabArgs>())
         {
-            _MovePaneToTab(realArgs.TabIndex());
-            args.Handled(true);
+            auto moved = _MovePaneToTab(realArgs.TabIndex());
+            args.Handled(moved);
         }
     }
 
