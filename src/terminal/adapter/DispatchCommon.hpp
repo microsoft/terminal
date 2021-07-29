@@ -16,7 +16,6 @@ Author(s):
 #pragma once
 
 #include "conGetSet.hpp"
-#include "DispatchTypes.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -30,13 +29,5 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_RefreshWindow(ConGetSet& conApi);
 
         static bool s_SuppressResizeRepaint(ConGetSet& conApi);
-
-        static bool s_EraseInDisplay(ConGetSet& conApi, const DispatchTypes::EraseType eraseType);
-        static bool s_EraseAll(ConGetSet& conApi);
-        static bool s_EraseScrollback(ConGetSet& conApi);
-        static bool s_EraseSingleLineHelper(ConGetSet& conApi,
-                                            const CONSOLE_SCREEN_BUFFER_INFOEX& csbiex,
-                                            const DispatchTypes::EraseType eraseType,
-                                            const size_t lineId);
     };
 }
