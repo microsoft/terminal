@@ -2262,16 +2262,12 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     return S_OK;
 }
 
+// TODO!
 [[nodiscard]] HRESULT SCREEN_INFORMATION::ClearBuffer()
 {
     const COORD oldCursorPos = _textBuffer->GetCursor().GetPosition();
     short sNewTop = oldCursorPos.Y;
     const Viewport oldViewport = _viewport;
-    // Stash away the current position of the cursor within the viewport.
-    // We'll need to restore the cursor to that same relative position, after
-    //      we move the viewport.
-    // COORD relativeCursor = oldCursorPos;
-    // oldViewport.ConvertToOrigin(&relativeCursor);
 
     short delta = (sNewTop + _viewport.Height()) - (GetBufferSize().Height());
     for (auto i = 0; i < delta; i++)
@@ -2282,18 +2278,24 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
 
     const COORD coordNewOrigin = { 0, sNewTop };
     RETURN_IF_FAILED(SetViewportOrigin(true, coordNewOrigin, true));
-    // // Restore the relative cursor position
-    // _viewport.ConvertFromOrigin(&relativeCursor);
+
+    // Place the cursor at the same x coord, on the row that's now the top
     RETURN_IF_FAILED(SetCursorPosition(COORD{ oldCursorPos.X, sNewTop }, false));
 
     // Update all the rows in the current viewport with the standard erase attributes,
     // i.e. the current background color, but with no meta attributes set.
     auto fillAttributes = GetAttributes();
     fillAttributes.SetStandardErase();
-    auto fillPosition = COORD{ 0, _viewport.Top() };
+
+    // +1 on the y coord because we don't want to clear the attributes of the
+    // cursor row, the one we saved.
+    auto fillPosition = COORD{ 0, _viewport.Top() + 1 };
     auto fillLength = gsl::narrow_cast<size_t>(_viewport.Height() * GetBufferSize().Width());
     auto fillData = OutputCellIterator{ fillAttributes, fillLength };
     Write(fillData, fillPosition, false);
+
+    // TODO! don't invalidate all you donkey
+    _textBuffer->GetRenderTarget().TriggerRedrawAll();
 
     // Also reset the line rendition for the erased rows.
     _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
