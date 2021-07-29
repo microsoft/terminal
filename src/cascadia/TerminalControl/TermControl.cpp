@@ -2577,4 +2577,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         return _core.ReadEntireBuffer();
     }
+
+    bool TermControl::UpdateSelection(Core::SelectionDirection direction, Core::SelectionExpansion mode)
+    {
+        return _core.UpdateSelection(direction, mode);
+    }
 }

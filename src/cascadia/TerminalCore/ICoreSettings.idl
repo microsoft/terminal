@@ -5,6 +5,24 @@ import "..\ICoreAppearance.idl";
 
 namespace Microsoft.Terminal.Core
 {
+    enum SelectionDirection
+    {
+        None = 0,
+        Left,
+        Right,
+        Up,
+        Down,
+    };
+
+    enum SelectionExpansion
+    {
+        Cell,
+        Word,
+        Line, // Mouse selection only! Not a setting!
+        Viewport,
+        Buffer
+    };
+
     interface ICoreSettings requires ICoreAppearance
     {
         // TODO:MSFT:20642297 - define a sentinel for Infinite Scrollback

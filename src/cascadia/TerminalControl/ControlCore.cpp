@@ -927,6 +927,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderer->TriggerSelection();
     }
 
+    bool ControlCore::UpdateSelection(Core::SelectionDirection direction, Core::SelectionExpansion mode)
+    {
+        // - SelectionDirection cannot be none
+        // - A selection must be active for us to update it
+        if (direction == Core::SelectionDirection::None || !HasSelection())
+        {
+            return false;
+        }
+
+        auto lock = _terminal->LockForWriting();
+        _terminal->UpdateSelection(direction, mode);
+        _renderer->TriggerSelection();
+        return true;
+    }
+
     // Called when the Terminal wants to set something to the clipboard, i.e.
     // when an OSC 52 is emitted.
     void ControlCore::_terminalCopyToClipboard(std::wstring_view wstr)
@@ -1422,18 +1437,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+        Core::SelectionExpansion mode = Core::SelectionExpansion::Cell;
         if (numberOfClicks == 1)
         {
-            mode = ::Terminal::SelectionExpansionMode::Cell;
+            mode = Core::SelectionExpansion::Cell;
         }
         else if (numberOfClicks == 2)
         {
-            mode = ::Terminal::SelectionExpansionMode::Word;
+            mode = Core::SelectionExpansion::Word;
         }
         else if (numberOfClicks == 3)
         {
-            mode = ::Terminal::SelectionExpansionMode::Line;
+            mode = Core::SelectionExpansion::Line;
         }
 
         // Update the selection appropriately
@@ -1458,7 +1473,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (mode != ::Terminal::SelectionExpansionMode::Cell || shiftEnabled)
+        else if (mode != Core::SelectionExpansion::Cell || shiftEnabled)
         {
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode

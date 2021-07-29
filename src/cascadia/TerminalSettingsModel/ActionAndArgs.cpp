@@ -69,6 +69,7 @@ static constexpr std::string_view OpenSystemMenuKey{ "openSystemMenu" };
 static constexpr std::string_view ClearBufferKey{ "clearBuffer" };
 static constexpr std::string_view MultipleActionsKey{ "multipleActions" };
 static constexpr std::string_view QuitKey{ "quit" };
+static constexpr std::string_view UpdateSelectionKey{ "updateSelection" };
 
 static constexpr std::string_view ActionKey{ "action" };
 

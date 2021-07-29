@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring GetProfileName() const;
 
+        bool UpdateSelection(Core::SelectionDirection direction, Core::SelectionExpansion mode);
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);
         void PasteTextFromClipboard();
         void Close();

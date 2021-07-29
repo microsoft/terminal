@@ -921,4 +921,19 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
+    void TerminalPage::_HandleUpdateSelection(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<UpdateSelectionArgs>())
+            {
+                if (const auto termControl{ _GetActiveControl() })
+                {
+                    args.Handled(termControl.UpdateSelection(realArgs.Direction(), realArgs.Mode()));
+                }
+            }
+        }
+    }
 }

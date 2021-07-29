@@ -36,6 +36,7 @@
 #include "FocusPaneArgs.g.cpp"
 #include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
+#include "UpdateSelectionArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -715,6 +716,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     winrt::hstring MultipleActionsArgs::GenerateName() const
+    {
+        return L"";
+    }
+
+    winrt::hstring UpdateSelectionArgs::GenerateName() const
     {
         return L"";
     }

@@ -512,3 +512,23 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
         pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::SelectionDirection)
+{
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "left", ValueType::Left },
+        pair_type{ "right", ValueType::Right },
+        pair_type{ "up", ValueType::Up },
+        pair_type{ "down", ValueType::Down }
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::SelectionExpansion)
+{
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "cell", ValueType::Cell },
+        pair_type{ "word", ValueType::Word },
+        pair_type{ "view", ValueType::Viewport },
+        pair_type{ "buffer", ValueType::Buffer }
+    };
+};

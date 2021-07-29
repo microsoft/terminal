@@ -38,6 +38,7 @@
 #include "FocusPaneArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
+#include "UpdateSelectionArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -1859,6 +1860,67 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Actions);
         }
     };
+
+    struct UpdateSelectionArgs : public UpdateSelectionArgsT<UpdateSelectionArgs>
+    {
+        UpdateSelectionArgs() = default;
+        ACTION_ARG(Core::SelectionDirection, Direction, Core::SelectionDirection::None);
+        ACTION_ARG(Core::SelectionExpansion, Mode, Core::SelectionExpansion::Cell);
+        static constexpr std::string_view DirectionKey{ "direction" };
+        static constexpr std::string_view ModeKey{ "mode" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<UpdateSelectionArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction && otherAsUs->_Mode == _Mode;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<UpdateSelectionArgs>();
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            JsonUtils::GetValueForKey(json, ModeKey, args->_Mode);
+            if (args->Direction() == Core::SelectionDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<UpdateSelectionArgs>(val) };
+            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
+            JsonUtils::SetValueForKey(json, ModeKey, args->_Mode);
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<UpdateSelectionArgs>() };
+            copy->_Direction = _Direction;
+            copy->_Mode = _Mode;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Direction, _Mode);
+        }
+    };
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
