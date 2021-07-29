@@ -171,6 +171,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SendInputArgs : IActionArgs
     {
+        SendInputArgs(String input);
         String Input { get; };
     };
 
@@ -279,6 +280,13 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass RenameWindowArgs : IActionArgs
     {
         String Name { get; };
+    };
+
+    [default_interface] runtimeclass SelectListArgs : IActionArgs
+    {
+        SelectListArgs(String Prefix, IVector<String> Options);
+        String Prefix { get; };
+        IVector<String> Options { get; };
     };
 
     [default_interface] runtimeclass GlobalSummonArgs : IActionArgs

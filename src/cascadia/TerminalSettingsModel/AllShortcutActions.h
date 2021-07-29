@@ -74,6 +74,7 @@
     ON_ALL_ACTIONS(IdentifyWindows)      \
     ON_ALL_ACTIONS(RenameWindow)         \
     ON_ALL_ACTIONS(OpenWindowRenamer)    \
+    ON_ALL_ACTIONS(SelectList)           \
     ON_ALL_ACTIONS(GlobalSummon)         \
     ON_ALL_ACTIONS(QuakeMode)            \
     ON_ALL_ACTIONS(FocusPane)
@@ -100,6 +101,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(ResizePane)           \
     ON_ALL_ACTIONS_WITH_ARGS(ScrollDown)           \
     ON_ALL_ACTIONS_WITH_ARGS(ScrollUp)             \
+    ON_ALL_ACTIONS_WITH_ARGS(SelectList)           \
     ON_ALL_ACTIONS_WITH_ARGS(SendInput)            \
     ON_ALL_ACTIONS_WITH_ARGS(SetColorScheme)       \
     ON_ALL_ACTIONS_WITH_ARGS(SetTabColor)          \

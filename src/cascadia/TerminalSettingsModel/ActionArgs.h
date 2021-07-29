@@ -33,6 +33,7 @@
 #include "PrevTabArgs.g.h"
 #include "NextTabArgs.g.h"
 #include "RenameWindowArgs.g.h"
+#include "SelectListArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
 
@@ -563,6 +564,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SendInputArgs : public SendInputArgsT<SendInputArgs>
     {
         SendInputArgs() = default;
+        SendInputArgs(winrt::hstring input) :
+            _Input{ input } {};
         ACTION_ARG(winrt::hstring, Input, L"");
 
         static constexpr std::string_view InputKey{ "input" };
@@ -1564,6 +1567,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
+    struct SelectListArgs : public SelectListArgsT<SelectListArgs>
+    {
+        SelectListArgs() = default;
+        using OptionsType = winrt::Windows::Foundation::Collections::IVector<winrt::hstring>;
+        SelectListArgs(winrt::hstring prefix, OptionsType options) :
+            _Prefix{ prefix },
+            _Options{ options } {};
+        ACTION_ARG(winrt::hstring, Prefix);
+        ACTION_ARG(OptionsType, Options);
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& /*other*/)
+        {
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& /*json*/)
+        {
+            return { nullptr, { /*TODO! add a warning here? or just do nothing*/ } };
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::Value::null };
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<SelectListArgs>() };
+            copy->_Prefix = _Prefix;
+            copy->_Options = _Options;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            // TODO
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Prefix());
+        }
+    };
+
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
     {
         GlobalSummonArgs() = default;
@@ -1709,6 +1756,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(MovePaneArgs);
     BASIC_FACTORY(SplitPaneArgs);
+    BASIC_FACTORY(SendInputArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);
@@ -1718,5 +1766,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(OpenSettingsArgs);
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
+    BASIC_FACTORY(SelectListArgs);
     BASIC_FACTORY(FocusPaneArgs);
 }

@@ -1220,9 +1220,11 @@ namespace winrt::TerminalApp::implementation
     // - the result of the first command who's parsing returned a non-zero code,
     //   or 0. (see AppLogic::_ParseArgs)
     int32_t AppLogic::ExecuteCommandline(array_view<const winrt::hstring> args,
-                                         const winrt::hstring& cwd)
+                                         const winrt::hstring& cwd,
+                                         const winrt::hstring& stdInput)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
+        appArgs.SetStdInput(stdInput);
         auto result = appArgs.ParseArgs(args);
         if (result == 0)
         {

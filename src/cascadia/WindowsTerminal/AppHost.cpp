@@ -175,7 +175,7 @@ winrt::hstring _getStdin()
             return winrt::hstring{};
         }
 
-        return winrt::to_hstring( std::string_view{ _buffer.data(), read } );
+        return winrt::to_hstring(std::string_view{ _buffer.data(), read });
     }
 
     return winrt::hstring{};
@@ -204,7 +204,6 @@ void AppHost::_HandleCommandlineArgs()
     _buildArgsFromCommandline(args);
     std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
 
-    DebugBreak();
     auto stdIn{ _getStdin() };
 
     Remoting::CommandlineArgs eventArgs{ { args }, { cwd }, stdIn };
@@ -639,7 +638,7 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
     // Summon the window whenever we dispatch a commandline to it. This will
     // make it obvious when a new tab/pane is created in a window.
     _HandleSummon(sender, summonArgs);
-    _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
+    _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory(), args.StdInput());
 }
 
 // Method Description:

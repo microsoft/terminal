@@ -35,7 +35,7 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Int32 SetStartupCommandline(String[] commands);
-        Int32 ExecuteCommandline(String[] commands, String cwd);
+        Int32 ExecuteCommandline(String[] commands, String cwd, String stdInput);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 

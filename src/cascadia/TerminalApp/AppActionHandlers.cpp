@@ -819,6 +819,29 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSelectList(const IInspectable& /*sender*/,
+                                         const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<SelectListArgs>())
+            {
+                const auto& prefix{ realArgs.Prefix() };
+                const auto& options{ realArgs.Options() };
+
+                auto actions = winrt::single_threaded_vector<ActionAndArgs>();
+                DebugBreak();
+                for (const auto& opt : options)
+                {
+                    ActionAndArgs aaa{};
+                    aaa.Action(ShortcutAction::SendInput);
+                    SendInputArgs args{ fmt::format(L"{} {}", prefix.c_str(), opt.c_str()) };
+                    aaa.Args(args);
+                    actions.Append(aaa);
+                }
+            }
+        }
+    }
     void TerminalPage::_HandleGlobalSummon(const IInspectable& /*sender*/,
                                            const ActionEventArgs& args)
     {

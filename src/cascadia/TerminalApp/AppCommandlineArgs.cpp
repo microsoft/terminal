@@ -194,6 +194,7 @@ void AppCommandlineArgs::_buildParser()
     _buildMoveFocusParser();
     _buildMovePaneParser();
     _buildFocusPaneParser();
+    _buildSelectListParser();
 }
 
 // Method Description:
@@ -487,6 +488,56 @@ void AppCommandlineArgs::_buildFocusPaneParser()
 }
 
 // Method Description:
+// - Adds the `new-tab` subcommand and related options to the commandline parser.
+// - Additionally adds the `nt` subcommand, which is just a shortened version of `new-tab`
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildSelectListParser()
+{
+    _selectListCommand = _app.add_subcommand("select-list", "select-list TODO");
+    // _newTabShort.subcommand = _app.add_subcommand("nt", RS_A(L"CmdNTDesc"));
+
+    auto setupSubcommand = [this](auto& subcommand) {
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the action from the values we've parsed on the commandline.
+            ActionAndArgs aaa{};
+            aaa.Action(ShortcutAction::SelectList);
+
+            std::vector<winrt::hstring> lines{};
+            std::string_view view{ _stdInput };
+            std::string delim = "\n";
+            size_t start = 0u;
+            auto end = view.find(delim);
+            while (end != std::string::npos)
+            {
+                // std::cout << s.substr(start, end - start) << std::endl;
+                lines.push_back(winrt::to_hstring(view.substr(start, end - start)));
+                start = end + delim.length();
+                end = view.find(delim, start);
+            }
+            // std::stringstream stream{ _stdInput };
+            // std::string line;
+            // while (std::getline(stream, line, L'\n'))
+            // {
+            //     lines.push_back(winrt::to_hstring{ line });
+            // }
+            auto hstringLines = winrt::single_threaded_vector<winrt::hstring>(std::move(lines));
+            SelectListArgs args{ L"Foo", hstringLines };
+            aaa.Args(args);
+            _startupActions.push_back(aaa);
+        });
+    };
+
+    setupSubcommand(_selectListCommand);
+}
+
+// Method Description:
 // - Add the `NewTerminalArgs` parameters to the given subcommand. This enables
 //   that subcommand to support all the properties in a NewTerminalArgs.
 // Arguments:
@@ -627,6 +678,7 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_movePaneShort ||
              *_focusPaneCommand ||
              *_focusPaneShort ||
+             *_selectListCommand ||
              *_newPaneShort.subcommand ||
              *_newPaneCommand.subcommand);
 }
@@ -983,6 +1035,11 @@ int AppCommandlineArgs::ParseArgs(const winrt::Microsoft::Terminal::Settings::Mo
     return 0;
 }
 
+void AppCommandlineArgs::SetStdInput(const winrt::hstring& stdInput)
+{
+    _stdInput = winrt::to_string(stdInput);
+}
+
 // Method Description:
 // - Allows disabling addition of help-related info in the exit message
 // Arguments:
@@ -1013,6 +1070,8 @@ void AppCommandlineArgs::FullResetState()
     _isHandoffListener = false;
 
     _windowTarget = {};
+
+    _stdInput = "";
 }
 
 std::string_view AppCommandlineArgs::GetTargetWindow() const noexcept

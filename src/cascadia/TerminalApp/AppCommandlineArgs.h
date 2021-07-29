@@ -29,6 +29,7 @@ public:
 
     int ParseCommand(const Commandline& command);
     int ParseArgs(winrt::array_view<const winrt::hstring>& args);
+    void SetStdInput(const winrt::hstring& stdInput);
 
     static std::vector<Commandline> BuildCommands(const std::vector<const wchar_t*>& args);
     static std::vector<Commandline> BuildCommands(winrt::array_view<const winrt::hstring>& args);
@@ -86,6 +87,7 @@ private:
     CLI::App* _movePaneShort;
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
+    CLI::App* _selectListCommand;
 
     // Are you adding a new sub-command? Make sure to update _noCommandsProvided!
 
@@ -112,6 +114,8 @@ private:
     bool _focusPrevTab{ false };
 
     int _focusPaneTarget{ -1 };
+
+    std::string _selectListPrefix{};
     // Are you adding more args here? Make sure to reset them in _resetStateToDefault
 
     const Commandline* _currentCommandline{ nullptr };
@@ -122,6 +126,8 @@ private:
     bool _shouldExitEarly{ false };
 
     std::string _windowTarget{};
+
+    std::string _stdInput{};
     // Are you adding more args or attributes here? If they are not reset in _resetStateToDefault, make sure to reset them in FullResetState
 
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs _getNewTerminalArgs(NewTerminalSubcommand& subcommand);
@@ -133,6 +139,7 @@ private:
     void _buildMoveFocusParser();
     void _buildMovePaneParser();
     void _buildFocusPaneParser();
+    void _buildSelectListParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();
     int _handleExit(const CLI::App& command, const CLI::Error& e);

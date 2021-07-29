@@ -31,6 +31,7 @@
 #include "PrevTabArgs.g.cpp"
 #include "NextTabArgs.g.cpp"
 #include "RenameWindowArgs.g.cpp"
+#include "SelectListArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
 
@@ -629,6 +630,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             };
         }
         return RS_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring SelectListArgs::GenerateName() const
+    {
+        // TODO!
+        return winrt::hstring{};
     }
 
     winrt::hstring GlobalSummonArgs::GenerateName() const
