@@ -745,7 +745,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            this->_OpenNewTab(newTerminalArgs);
+            LOG_IF_FAILED(this->_OpenNewTab(newTerminalArgs));
         }
     }
 
@@ -2341,16 +2341,28 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
-    winrt::fire_and_forget TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    HRESULT TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
     {
-        // Handle it on a subsequent pass of the UI thread.
-        co_await winrt::resume_foreground(Dispatcher(), CoreDispatcherPriority::Normal);
+        std::optional<HRESULT> finalVal{};
+        std::mutex mtx;
+        std::condition_variable cv;
+        auto waitOnBackground = [&]() -> winrt::fire_and_forget {
+            co_await winrt::resume_background();
 
-        // TODO: GH 9458 will give us more context so we can try to choose a better profile.
-        _OpenNewTab(nullptr, connection);
+            // TODO: GH 9458 will give us more context so we can try to choose a better profile.
+            auto hr = _OpenNewTab(nullptr, connection);
 
-        // Request a summon of this window to the foreground
-        _SummonWindowRequestedHandlers(*this, nullptr);
+            // Request a summon of this window to the foreground
+            _SummonWindowRequestedHandlers(*this, nullptr);
+
+            std::unique_lock<std::mutex> lock{ mtx };
+            finalVal.emplace(std::move(hr));
+            cv.notify_all();
+        };
+        std::unique_lock<std::mutex> lock{ mtx };
+        waitOnBackground();
+        cv.wait(lock, [&]() { return finalVal.has_value(); });
+        return *finalVal;
     }
 
     // Method Description:
