@@ -30,42 +30,11 @@ namespace winrt::TerminalApp::implementation
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
         _rootPane->Id(_nextPaneId);
+        _activePane = _rootPane;
         _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
         ++_nextPaneId;
 
-        _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
-            _ClosedHandlers(nullptr, nullptr);
-        });
-
-        _activePane = _rootPane;
-        Content(_rootPane->GetRootElement());
-
-        _MakeTabViewItem();
-        _CreateContextMenu();
-
-        _headerControl.TabStatus(_tabStatus);
-
-        // Add an event handler for the header control to tell us when they want their title to change
-        _headerControl.TitleChangeRequested([weakThis = get_weak()](auto&& title) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->SetTabText(title);
-            }
-        });
-
-        // GH#9162 - when the header is done renaming, ask for focus to be
-        // tossed back to the control, rather into ourselves.
-        _headerControl.RenameEnded([weakThis = get_weak()](auto&&, auto&&) {
-            if (auto tab{ weakThis.get() })
-            {
-                tab->_RequestFocusActiveControlHandlers();
-            }
-        });
-
-        _UpdateHeaderControlMaxWidth();
-
-        // Use our header control as the TabViewItem's header
-        TabViewItem().Header(_headerControl);
+        _Setup();
     }
 
     TerminalTab::TerminalTab(std::shared_ptr<Pane> rootPane)
@@ -91,6 +60,8 @@ namespace winrt::TerminalApp::implementation
             return false;
         });
 
+        // In case none of the panes were already marked as the focus, just
+        // focus the first one.
         if (_activePane == nullptr)
         {
             _rootPane->FocusPane(firstId);
@@ -98,6 +69,21 @@ namespace winrt::TerminalApp::implementation
         }
         // Set the active control
         _mruPanes.insert(_mruPanes.begin(), _activePane->Id().value());
+
+        _Setup();
+    }
+
+    // Method Description:
+    // - Shared setup for the constructors. Assumed that _rootPane has been set.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalTab::_Setup()
+    {
+        _rootClosedToken = _rootPane->Closed([=](auto&& /*s*/, auto&& /*e*/) {
+            _ClosedHandlers(nullptr, nullptr);
+        });
 
         Content(_rootPane->GetRootElement());
 
@@ -513,13 +499,18 @@ namespace winrt::TerminalApp::implementation
         // and close this tab
         if (_rootPane == _activePane)
         {
+            // remove the closed event handler since we are closing the tab
+            // manually.
+            _rootPane->Closed(_rootClosedToken);
             auto p = _rootPane;
             p->_PaneDetachedHandlers(p);
+
+            // Clean up references and close the tab
             _rootPane = nullptr;
             _activePane = nullptr;
-
             Content(nullptr);
             _ClosedHandlers(nullptr, nullptr);
+
             return p;
         }
 
@@ -559,8 +550,23 @@ namespace winrt::TerminalApp::implementation
             }
             return false;
         });
+
+        // pass the old id to the new child
+        auto previousId = _activePane->Id();
+
         // Add the new pane as an automatic split on the active pane.
         auto first = _activePane->AttachPane(pane);
+
+        // under current assumptions this condition should always be true.
+        if (previousId)
+        {
+            first->Id(previousId.value());
+        }
+        else
+        {
+            first->Id(_nextPaneId);
+            ++_nextPaneId;
+        }
 
         // Update with event handlers on the new child.
         _activePane = first;
@@ -694,7 +700,8 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Removes any event handlers set by the tab on the given pane's control.
     //   The pane's ID is the most stable identifier for a given control, because
-    //   the control itself doesn't have a particular ID and its pointer is //   unstable since it is moved when panes split.
+    //   the control itself doesn't have a particular ID and its pointer is
+    //   unstable since it is moved when panes split.
     // Arguments:
     // - paneId: The ID of the pane that contains the given control.
     // - control: the control to remove events from.

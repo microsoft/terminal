@@ -119,8 +119,9 @@ namespace winrt::TerminalApp::implementation
             winrt::event_token readOnlyToken;
             winrt::event_token focusToken;
         };
-
         std::unordered_map<uint32_t, ControlEventTokens> _controlEvents;
+
+        winrt::event_token _rootClosedToken{};
 
         std::vector<uint32_t> _mruPanes;
         uint32_t _nextPaneId{ 0 };
@@ -133,6 +134,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::UI::Xaml::Controls::TextBox::LayoutUpdated_revoker _tabRenameBoxLayoutUpdatedRevoker;
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
+
+        void _Setup();
 
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
         void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
