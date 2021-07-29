@@ -135,7 +135,7 @@ public:
     TextBufferTextIterator GetTextLineDataAt(const COORD at) const;
     TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
 
-    size_t WriteStringContiguous(std::wstring_view string, const til::small_rle<uint8_t, uint16_t, 3>& measurements);
+    size_t WriteMeasuredStringLinear(std::wstring_view string, const til::small_rle<uint8_t, uint16_t, 3>& measurements);
     OutputCellIterator Write(const OutputCellIterator it);
 
     OutputCellIterator Write(const OutputCellIterator it,

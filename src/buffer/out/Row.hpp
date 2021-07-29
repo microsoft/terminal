@@ -183,6 +183,19 @@ public:
 
             return damage;
         }
+
+        void _strikeDamageAndAdjust(size_t col, size_t ncols, DamageRanges& range)
+        {
+            const bool damaged{ range.firstColumn < col || col + ncols < range.lastColumnExclusive };
+            if (damaged)
+            {
+                const auto damagedColumns{ range.lastColumnExclusive - range.firstColumn };
+                _data.replace(range.dataOffset, range.dataLength, damagedColumns, UNICODE_SPACE);
+                _cwid.replace(range.dataOffset, range.dataOffset + range.dataLength, { uint8_t{ 1 }, gsl::narrow_cast<uint16_t>(damagedColumns) });
+                // We may have replaced surrogate pairs/etc with fewer/more code units.
+                range.dataLength = damagedColumns;
+            }
+        }
     };
 
 private:
@@ -282,7 +295,7 @@ public:
         }
     }
 
-    std::tuple<size_t, uint16_t, uint16_t> WriteStringContiguous(uint16_t col, uint16_t colCount, std::wstring_view string, const til::small_rle<uint8_t, uint16_t, 3>& measurements)
+    std::tuple<size_t, uint16_t, uint16_t> WriteStringAtMeasured(uint16_t col, uint16_t colCount, const std::wstring_view& string, const til::small_rle<uint8_t, uint16_t, 3>& measurements)
     {
         size_t incomingLastColumn{ std::min<size_t>(_data._width - col, colCount) };
         auto incomingLastColumnOffsets{ DamageRangesForColumnInMeasurementBuffer(measurements, incomingLastColumn - 1 /*inclusive*/) };
@@ -313,7 +326,7 @@ public:
             // NO NO NO NO NO NO NO NO NO NO TODO(DH)
             // We can't do this without changing the damaged buffer region to delete the character
             // from _data at the same time. Use the non-optimial path.
-            ClearColumn(_data._width-1);
+            ClearColumn(_data._width - 1);
             SetDoubleBytePadded(true);
             // NO - we already marked this column when we calculated damage above
             //++columnsWrittenAfterInsertionPoint;
@@ -362,6 +375,42 @@ public:
             gsl::narrow_cast<uint16_t>(maxDamageColumnExclusive - col),
             gsl::narrow_cast<uint16_t>(columnsToConsume)
         };
+    }
+
+    size_t Fill(size_t col, size_t count, wchar_t ch, uint8_t w)
+    {
+        const auto charsFitOrRemain = std::min((_data._width - col) / w, count);
+
+        const auto columnsRequired{ charsFitOrRemain * w };
+        auto damage = _data._damageForColumns(col, columnsRequired);
+        // If we are filling over the left/right halves of a character
+        // This is a bit wasteful since it can grow/shrink the buffers and we're about
+        // to do it again, but I was trying to be expedient.
+        _data._strikeDamageAndAdjust(col, columnsRequired, damage);
+
+        const auto [begin, len, min, max] = damage;
+        _data._data.replace(begin, len, charsFitOrRemain, ch);
+        _data._cwid.replace(begin, begin + len, { w, gsl::narrow_cast<uint16_t>(charsFitOrRemain) });
+        const auto doubleBytePadded{
+            w > 1 // We had a wide glyph...
+            && max != _data._width // ...and didn't reach the edge
+            && count > charsFitOrRemain // ...but we had spare characters, so we wanted to
+        };
+        if (doubleBytePadded)
+        {
+            const uint16_t remaining{ gsl::narrow_cast<uint16_t>(_data._width - max) };
+            // overflow: add spaces
+            _data._data.replace(begin + charsFitOrRemain, _data._data.size() - begin + charsFitOrRemain, remaining, UNICODE_SPACE);
+            _data._cwid.replace(begin + charsFitOrRemain, _data._cwid.size(), { uint8_t{ 1u }, gsl::narrow_cast<uint16_t>(remaining) });
+        }
+        if (max == _data._width || doubleBytePadded)
+        {
+            // TODO(DH): Evaluate the above condition
+            // We only want to do this if we touched or near-touched the lat col
+            SetDoubleBytePadded(doubleBytePadded);
+            SetWrapForced(false);
+        }
+        return charsFitOrRemain;
     }
 
     // Method Description:

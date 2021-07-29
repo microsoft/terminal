@@ -63,21 +63,6 @@ OutputCellIterator::OutputCellIterator(const CHAR_INFO& charInfo, const size_t f
 }
 
 // Routine Description:
-// - This is an iterator over a range of text only. No color data will be modified as the text is inserted.
-// Arguments:
-// - utf16Text - UTF-16 text range
-OutputCellIterator::OutputCellIterator(const std::wstring_view utf16Text) :
-    _mode(Mode::LooseTextOnly),
-    _currentView(s_GenerateView(utf16Text)),
-    _run(utf16Text),
-    _attr(InvalidTextAttribute),
-    _pos(0),
-    _distance(0),
-    _fillLimit(0)
-{
-}
-
-// Routine Description:
 // - This is an iterator over a range text that will apply the same color to every position.
 // Arguments:
 // - utf16Text - UTF-16 text range

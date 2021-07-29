@@ -93,25 +93,26 @@ void Popup::_DrawBorder()
     _screenInfo.GetTextBuffer().FillWithAttribute(Viewport::FromInclusive(_region), _attributes);
 
     // draw upper left corner
-    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT, 1), WriteCoord);
+    _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT);
+    _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_DOWN_AND_RIGHT);
 
     // draw upper bar
     WriteCoord.X += 1;
-    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
+    _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, Width(), UNICODE_BOX_DRAW_LIGHT_HORIZONTAL);
 
     // draw upper right corner
     WriteCoord.X = _region.Right;
-    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT, 1), WriteCoord);
+    _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_DOWN_AND_LEFT);
 
     for (SHORT i = 0; i < Height(); i++)
     {
         WriteCoord.Y += 1;
         WriteCoord.X = _region.Left;
 
-        _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
+        _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_VERTICAL);
 
         WriteCoord.X = _region.Right;
-        _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_VERTICAL, 1), WriteCoord);
+        _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_VERTICAL);
     }
 
     // Draw bottom line.
@@ -120,15 +121,15 @@ void Popup::_DrawBorder()
     // Draw bottom left corner.
     WriteCoord.X = _region.Left;
     WriteCoord.Y = _region.Bottom;
-    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT, 1), WriteCoord);
+    _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_UP_AND_RIGHT);
 
     // Draw lower bar.
     WriteCoord.X += 1;
-    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_HORIZONTAL, Width()), WriteCoord);
+    _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, Width(), UNICODE_BOX_DRAW_LIGHT_HORIZONTAL);
 
     // draw lower right corner
     WriteCoord.X = _region.Right;
-    _screenInfo.Write(OutputCellIterator(UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT, 1), WriteCoord);
+    _screenInfo.GetTextBuffer().FillWithCharacterLinear(WriteCoord, 1, UNICODE_BOX_DRAW_LIGHT_UP_AND_LEFT);
 }
 
 // Routine Description:
@@ -146,9 +147,7 @@ void Popup::_DrawPrompt(const UINT id)
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); i++)
     {
-        const OutputCellIterator it(UNICODE_SPACE, _attributes, lStringLength);
-        const auto done = _screenInfo.Write(it, WriteCoord);
-        lStringLength = done.GetCellDistance(it);
+        _screenInfo.GetTextBuffer().FillWithCharacterAndAttributeLinear(WriteCoord, lStringLength, UNICODE_SPACE, _attributes);
 
         WriteCoord.Y += 1;
     }

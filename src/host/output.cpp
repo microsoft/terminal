@@ -339,8 +339,8 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
                   const SMALL_RECT scrollRectGiven,
                   const std::optional<SMALL_RECT> clipRectGiven,
                   const COORD destinationOriginGiven,
-                  const wchar_t fillCharGiven,
-                  const TextAttribute fillAttrsGiven)
+                  wchar_t fillChar,
+                  TextAttribute fillAttrs)
 {
     // ------ 1. PREP SOURCE ------
     // Set up the source viewport.
@@ -380,15 +380,12 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
         return;
     }
 
-    // Determine the cell we will use to fill in any revealed/uncovered space.
-    // We generally use exactly what was given to us.
-    OutputCellIterator fillData(fillCharGiven, fillAttrsGiven);
-
     // However, if the character is null and we were given a null attribute (represented as legacy 0),
     // then we'll just fill with spaces and whatever the buffer's default colors are.
-    if (fillCharGiven == UNICODE_NULL && fillAttrsGiven == TextAttribute{ 0 })
+    if (fillChar == UNICODE_NULL && fillAttrs == TextAttribute{ 0 })
     {
-        fillData = OutputCellIterator(UNICODE_SPACE, screenInfo.GetAttributes());
+        fillChar = UNICODE_SPACE;
+        fillAttrs = screenInfo.GetAttributes();
     }
 
     // ------ 4. PREP TARGET ------
@@ -447,10 +444,9 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     const auto remaining = Viewport::Subtract(fill, target);
 
     // Apply the fill data to each of the viewports we're given here.
-    for (size_t i = 0; i < remaining.size(); i++)
+    for (const auto& view : remaining)
     {
-        const auto& view = remaining.at(i);
-        screenInfo.WriteRect(fillData, view);
+        screenInfo.GetTextBuffer().FillWithCharacterAndAttribute(til::rectangle{ view.Origin(), til::size{ view.Dimensions() } }, fillChar, fillAttrs);
 
         // If we're scrolling an area that encompasses the full buffer width,
         // then the filled rows should also have their line rendition reset.

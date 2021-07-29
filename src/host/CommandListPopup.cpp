@@ -336,9 +336,7 @@ void CommandListPopup::_drawList()
     size_t lStringLength = Width();
     for (SHORT i = 0; i < Height(); ++i)
     {
-        const OutputCellIterator spaces(UNICODE_SPACE, _attributes, lStringLength);
-        const auto result = _screenInfo.Write(spaces, WriteCoord);
-        lStringLength = result.GetCellDistance(spaces);
+        _screenInfo.GetTextBuffer().FillWithCharacterAndAttributeLinear(WriteCoord, Width(), UNICODE_SPACE, _attributes);
         WriteCoord.Y += 1i16;
     }
 

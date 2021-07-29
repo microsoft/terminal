@@ -561,7 +561,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             //OutputCellIterator it(std::wstring_view{ local }, Attributes);
             //const auto itEnd = screenInfo.Write(it);
             measurements.resize_trailing_extent(gsl::narrow_cast<uint16_t>(local.size()));
-            auto vcolsTaken = screenInfo.WriteStringContiguous(local, measurements);
+            auto vcolsTaken = screenInfo.WriteMeasuredStringLinear(local, measurements);
             local.clear();
             measurements.resize_trailing_extent(0);
 

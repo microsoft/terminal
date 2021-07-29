@@ -131,9 +131,7 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
     try
     {
-        OutputCellIterator it(chars);
-        const auto finished = screenInfo.Write(it, target);
-        used = finished.GetInputDistance(it);
+        used = screenInfo.GetTextBuffer().WriteStringLinearKeepAttributes(target, chars);
     }
     CATCH_RETURN();
 

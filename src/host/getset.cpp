@@ -2206,8 +2206,9 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
             fillAttrs.SetStandardErase();
         }
 
-        const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
-        screenInfo.Write(fillData, startPosition, false);
+        //const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
+        //screenInfo.Write(fillData, startPosition, false);
+        screenInfo.GetTextBuffer().FillWithCharacterAndAttributeLinear(startPosition, fillLength, fillChar, fillAttrs);
 
         // Notify accessibility
         if (screenInfo.HasAccessibilityEventing())

@@ -228,7 +228,7 @@ void DeleteCommandLine(COOKED_READ_DATA& cookedReadData, const bool fUpdateField
 
     try
     {
-        cookedReadData.ScreenInfo().Write(OutputCellIterator(UNICODE_SPACE, CharsToWrite), coordOriginalCursor);
+        cookedReadData.ScreenInfo().GetTextBuffer().FillWithCharacterLinear(coordOriginalCursor, CharsToWrite, UNICODE_SPACE);
     }
     CATCH_LOG();
 
