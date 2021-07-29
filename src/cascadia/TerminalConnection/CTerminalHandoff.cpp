@@ -93,12 +93,15 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 //   from the registered handler event function.
 HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
 {
+    // Stash a local copy of _pfnHandoff before we stop listening.
+    auto localPfnHandoff = _pfnHandoff;
+
     // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
     // COM does not automatically clean that up for us. We must do it.
     s_StopListening();
 
     // Report an error if no one registered a handoff function before calling this.
-    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
+    RETURN_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
 
     // Duplicate the handles from what we received.
     // The contract with COM specifies that any HANDLEs we receive from the caller belong
@@ -112,5 +115,5 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
     RETURN_IF_FAILED(_duplicateHandle(client, client));
 
     // Call registered handler from when we started listening.
-    return _pfnHandoff(in, out, signal, ref, server, client);
+    return localPfnHandoff(in, out, signal, ref, server, client);
 }

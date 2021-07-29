@@ -2343,26 +2343,41 @@ namespace winrt::TerminalApp::implementation
 
     HRESULT TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
     {
-        std::optional<HRESULT> finalVal{};
-        std::mutex mtx;
-        std::condition_variable cv;
-        auto waitOnBackground = [&]() -> winrt::fire_and_forget {
-            co_await winrt::resume_background();
-
+        // We need to be on the UI thread in order for _OpenNewTab to run successfully.
+        // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
+        // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
+        // and wait on it hence the locking mechanism.
+        if (Dispatcher().HasThreadAccess())
+        {
             // TODO: GH 9458 will give us more context so we can try to choose a better profile.
             auto hr = _OpenNewTab(nullptr, connection);
 
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);
 
+            return hr;
+        }
+        else
+        {
+            std::optional<HRESULT> finalVal;
+            std::mutex mtx;
+            std::condition_variable cv;
+
             std::unique_lock<std::mutex> lock{ mtx };
-            finalVal.emplace(std::move(hr));
-            cv.notify_all();
-        };
-        std::unique_lock<std::mutex> lock{ mtx };
-        waitOnBackground();
-        cv.wait(lock, [&]() { return finalVal.has_value(); });
-        return *finalVal;
+
+            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
+                auto hr = _OpenNewTab(nullptr, connection);
+
+                _SummonWindowRequestedHandlers(*this, nullptr);
+
+                std::unique_lock<std::mutex> lock{ mtx };
+                finalVal.emplace(std::move(hr));
+                cv.notify_all();
+            });
+
+            cv.wait(lock, [&]() { return finalVal.has_value(); });
+            return *finalVal;
+        }
     }
 
     // Method Description:
