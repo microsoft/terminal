@@ -100,6 +100,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void BellLightOn();
 
+        void HighlightCursor();
+
         bool ReadOnly() const noexcept;
         void ToggleReadOnly();
 

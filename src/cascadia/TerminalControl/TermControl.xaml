@@ -35,6 +35,7 @@
     <Grid x:Name="RootGrid">
         <Grid.Lights>
             <local:VisualBellLight x:Name="BellLight" />
+            <local:CursorLight x:Name="CursorLight" />
         </Grid.Lights>
         <Image x:Name="BackgroundImage"
                AutomationProperties.AccessibilityView="Raw" />
