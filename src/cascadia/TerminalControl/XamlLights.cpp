@@ -76,7 +76,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto spotLight{ Window::Current().Compositor().CreateSpotLight() };
             spotLight.InnerConeColor(Windows::UI::Colors::White());
             spotLight.InnerConeAngleInDegrees(10);
-            spotLight.OuterConeAngleInDegrees(10);
+            spotLight.OuterConeAngleInDegrees(25);
             spotLight.Offset({ xCoord, yCoord, 100 });
             CompositionLight(spotLight);
         }
@@ -93,7 +93,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             auto spotLight{ Window::Current().Compositor().CreateSpotLight() };
             spotLight.InnerConeColor(Windows::UI::Colors::White());
-            spotLight.OuterConeColor(Windows::UI::Colors::White());
             spotLight.InnerConeAngleInDegrees(10);
             spotLight.OuterConeAngleInDegrees(25);
             CompositionLight(spotLight);
