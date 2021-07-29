@@ -446,6 +446,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    void ConptyConnection::ClearBuffer()
+    {
+        // If we haven't started connecting at all, it's still fair to update
+        // the initial rows and columns before we set things up.
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyClearPseudoConsole(_hPC.get()));
+        }
+    }
+
     void ConptyConnection::Close() noexcept
     try
     {

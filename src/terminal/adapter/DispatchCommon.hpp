@@ -29,5 +29,6 @@ namespace Microsoft::Console::VirtualTerminal
         static bool s_RefreshWindow(ConGetSet& conApi);
 
         static bool s_SuppressResizeRepaint(ConGetSet& conApi);
+        static bool s_EraseInDisplay(ConGetSet& conApi, const DispatchTypes::EraseType eraseType);
     };
 }
