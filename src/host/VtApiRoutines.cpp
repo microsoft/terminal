@@ -264,8 +264,7 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
 {
     // I mean... if you get your jollies by using UTF8 for single byte codepoints...
     // we may as well skip a lot of conversion work and just write it out.
-    // TODO: emitting anything >0x7F is probably insanity for a utf-8 fill.
-    if (m_outputCodepage == CP_UTF8)
+    if (m_outputCodepage == CP_UTF8 && character <= 0x7F)
     {
         (void)m_pVtEngine->_CursorPosition(startingCoordinate);
         (void)m_pVtEngine->_WriteFill(lengthToWrite, character);
