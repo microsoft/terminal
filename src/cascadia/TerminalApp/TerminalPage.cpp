@@ -1392,7 +1392,7 @@ namespace winrt::TerminalApp::implementation
 
             auto newControl = _InitControl(controlSettings, controlConnection);
 
-            auto *currTab = &tab;
+            auto* currTab = &tab;
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl, *currTab);

@@ -929,7 +929,7 @@ namespace winrt::TerminalApp::implementation
             // "Split Tab"
             Controls::FontIcon splitTabSymbol;
             splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
-            splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard         
+            splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
 
             splitTabMenuItem.Click([weakThis](auto&&, auto&&) {
                 if (auto tab{ weakThis.get() })
