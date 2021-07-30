@@ -1073,16 +1073,6 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
-        /*hostingTab.SplitTabRequested([weakTab, weakThis]() {
-            auto page{ weakThis.get() };
-            auto tab{ weakTab.get() };
-
-            if (page && tab)
-            {
-                page->_SplitTab();
-            }
-        });*/
-
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
@@ -1218,26 +1208,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-   /* void TerminalPage::_SplitFocusedTab()
-    {
-        if (const auto terminalTab{ _GetFocusedTabImpl() })
-        {
-            _UnZoomIfNeeded();
-            _SplitTab();
-        }
-    }*/
-
-    /*void TerminalPage::_SplitTab()
-    {
-        try
-        {
-            _UnZoomIfNeeded();
-            NewTerminalArgs newTerminalArgs{};
-            _SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, newTerminalArgs);
-        }
-        CATCH_LOG();
-    }*/
-
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
@@ -1338,6 +1308,18 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
+    // Method Description:
+    // - Split the focused pane of the given tab, either horizontally or vertically, and place the
+    //   given TermControl into the newly created pane.
+    // - If splitType == SplitState::None, this method does nothing.
+    // Arguments:
+    // - tab: The tab that is going to be split.
+    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
+    //   new pane should be split from its parent.
+    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPaneAnyTab(TerminalTab& tab,
                                         const SplitState splitType,
                                         const SplitType splitMode,
@@ -1349,14 +1331,6 @@ namespace winrt::TerminalApp::implementation
         {
             return;
         }
-
-        const auto focusedTab{ _GetFocusedTabImpl() };
-
-        // Do nothing if no TerminalTab is focused
-        /*if (!focusedTab)
-        {
-            return;
-        }*/
 
         try
         {

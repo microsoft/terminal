@@ -367,14 +367,10 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
-    void TerminalPage::_SplitFocusedTab()
-    {
-        if (auto terminalTab{ _GetFocusedTabImpl() })
-        {
-            _SplitTab(*terminalTab);
-        }
-    }
-
+    // Method Description:
+    // - Sets the specified tab as the focused tab and splits its active pane
+    // Arguments:
+    // - tab: tab to split
     void TerminalPage::_SplitTab(TerminalTab& tab)
     {
         try

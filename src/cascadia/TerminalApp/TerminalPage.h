@@ -219,7 +219,6 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateFocusedTab();
         void _DuplicateTab(const TerminalTab& tab);
 
-        void _SplitFocusedTab();
         void _SplitTab(TerminalTab& tab);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);

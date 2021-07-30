@@ -584,21 +584,6 @@ namespace winrt::TerminalApp::implementation
         _headerControl.BeginRename();
     }
 
-    void TerminalTab::SplitTab()
-    {
-        auto control = GetActiveTerminalControl();
-        const GUID & profileGuid = GetFocusedProfile().value();
-
-        auto weakThis{ get_weak() };
-
-        //co_await winrt::resume_foreground(MenuFlyoutItem().Dispatcher());
-
-        if (auto tab{ weakThis.get() })
-        {
-            tab->SplitPane(SplitState::Automatic, 1, profileGuid, control);
-        }
-    }
-
     // Method Description:
     // - Register any event handlers that we may need with the given TermControl.
     //   This should be called on each and every TermControl that we add to the tree

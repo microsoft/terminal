@@ -66,8 +66,6 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring GetTabText() const;
         void ResetTabText();
         void ActivateTabRenamer();
-        void SplitTab();
-        void _SplitTab();
 
         std::optional<winrt::Windows::UI::Color> GetTabColor();
 
