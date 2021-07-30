@@ -192,6 +192,16 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->SplitTabRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_SplitTab(*tab);
+            }
+        });
+
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
 
@@ -353,6 +363,26 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             }
+        }
+        CATCH_LOG();
+    }
+
+    void TerminalPage::_SplitFocusedTab()
+    {
+        if (auto terminalTab{ _GetFocusedTabImpl() })
+        {
+            _SplitTab(*terminalTab);
+        }
+    }
+
+    void TerminalPage::_SplitTab(TerminalTab& tab)
+    {
+        try
+        {
+            _SetFocusedTab(tab);
+            _UnZoomIfNeeded();
+            NewTerminalArgs newTerminalArgs{};
+            _SplitPaneAnyTab(tab, SplitState::Automatic, SplitType::Duplicate, 0.5f, newTerminalArgs);
         }
         CATCH_LOG();
     }

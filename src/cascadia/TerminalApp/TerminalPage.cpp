@@ -1073,6 +1073,16 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        /*hostingTab.SplitTabRequested([weakTab, weakThis]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_SplitTab();
+            }
+        });*/
+
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
@@ -1208,6 +1218,26 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+   /* void TerminalPage::_SplitFocusedTab()
+    {
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        {
+            _UnZoomIfNeeded();
+            _SplitTab();
+        }
+    }*/
+
+    /*void TerminalPage::_SplitTab()
+    {
+        try
+        {
+            _UnZoomIfNeeded();
+            NewTerminalArgs newTerminalArgs{};
+            _SplitPane(SplitState::Automatic, SplitType::Duplicate, 0.5f, newTerminalArgs);
+        }
+        CATCH_LOG();
+    }*/
+
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
@@ -1304,6 +1334,98 @@ namespace winrt::TerminalApp::implementation
             _UnZoomIfNeeded();
 
             focusedTab->SplitPane(realSplitType, splitSize, realGuid, newControl);
+        }
+        CATCH_LOG();
+    }
+
+    void TerminalPage::_SplitPaneAnyTab(TerminalTab& tab,
+                                        const SplitState splitType,
+                                        const SplitType splitMode,
+                                        const float splitSize,
+                                        const NewTerminalArgs& newTerminalArgs)
+    {
+        // Do nothing if we're requesting no split.
+        if (splitType == SplitState::None)
+        {
+            return;
+        }
+
+        const auto focusedTab{ _GetFocusedTabImpl() };
+
+        // Do nothing if no TerminalTab is focused
+        /*if (!focusedTab)
+        {
+            return;
+        }*/
+
+        try
+        {
+            TerminalSettingsCreateResult controlSettings{ nullptr };
+            GUID realGuid;
+            bool profileFound = false;
+
+            if (splitMode == SplitType::Duplicate)
+            {
+                std::optional<GUID> current_guid = tab.GetFocusedProfile();
+                if (current_guid)
+                {
+                    profileFound = true;
+                    controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
+                    const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                    }
+                    realGuid = current_guid.value();
+                }
+                // TODO: GH#5047 - In the future, we should get the Profile of
+                // the focused pane, and use that to build a new instance of the
+                // settings so we can duplicate this tab/pane.
+                //
+                // Currently, if the profile doesn't exist anymore in our
+                // settings, we'll silently do nothing.
+                //
+                // In the future, it will be preferable to just duplicate the
+                // current control's settings, but we can't do that currently,
+                // because we won't be able to create a new instance of the
+                // connection without keeping an instance of the original Profile
+                // object around.
+            }
+            if (!profileFound)
+            {
+                realGuid = _settings.GetProfileForArgs(newTerminalArgs);
+                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+            }
+
+            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
+
+            const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+            const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+            const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
+
+            auto realSplitType = splitType;
+            if (realSplitType == SplitState::Automatic)
+            {
+                realSplitType = tab.PreCalculateAutoSplit(availableSpace);
+            }
+
+            const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
+            if (!canSplit)
+            {
+                return;
+            }
+
+            auto newControl = _InitControl(controlSettings, controlConnection);
+
+            auto *currTab = &tab;
+
+            // Hookup our event handlers to the new terminal
+            _RegisterTerminalEvents(newControl, *currTab);
+
+            _UnZoomIfNeeded();
+
+            tab.SplitPane(realSplitType, splitSize, realGuid, newControl);
         }
         CATCH_LOG();
     }
