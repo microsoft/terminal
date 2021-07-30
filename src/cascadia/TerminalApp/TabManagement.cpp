@@ -376,7 +376,6 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(tab);
-            _UnZoomIfNeeded();
             NewTerminalArgs newTerminalArgs{};
             _SplitPaneAnyTab(tab, SplitState::Automatic, SplitType::Duplicate, 0.5f, newTerminalArgs);
         }
