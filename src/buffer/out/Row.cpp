@@ -91,6 +91,8 @@ void ROW::ClearColumn(const size_t column)
     WriteGlyphAtMeasured(column, 1, L" ");
 }
 
+#if 0
+TODO (DH)
 // Routine Description:
 // - writes cell data to the row
 // Arguments:
@@ -203,3 +205,4 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
     return it;
 }
+#endif

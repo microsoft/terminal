@@ -2334,42 +2334,8 @@ OutputCellRect SCREEN_INFORMATION::ReadRect(const Viewport viewport) const
     return result;
 }
 
-size_t SCREEN_INFORMATION::WriteMeasuredStringLinear(std::wstring_view string, const til::small_rle<uint8_t, uint16_t, 3>& measurements)
-{
-    return _textBuffer->WriteMeasuredStringLinear(_textBuffer->GetCursor().GetPosition(), string, measurements);
-}
-
-// Routine Description:
-// - Writes cells to the output buffer at the cursor position.
-// Arguments:
-// - it - Iterator representing output cell data to write.
-// Return Value:
-// - the iterator at its final position
-// Note:
-// - will throw exception on error.
-OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it)
-{
-    return _textBuffer->Write(it);
-}
-
-// Routine Description:
-// - Writes cells to the output buffer.
-// Arguments:
-// - it - Iterator representing output cell data to write.
-// - target - The position to start writing at
-// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data
-// Return Value:
-// - the iterator at its final position
-// Note:
-// - will throw exception on error.
-OutputCellIterator SCREEN_INFORMATION::Write(const OutputCellIterator it,
-                                             const COORD target,
-                                             const std::optional<bool> wrap)
-{
-    // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
-    return _textBuffer->Write(it, target, wrap);
-}
-
+#if 0
+TODO(DH)
 // Routine Description:
 // - This routine writes a rectangular region into the screen buffer.
 // Arguments:
@@ -2393,6 +2359,7 @@ OutputCellIterator SCREEN_INFORMATION::WriteRect(const OutputCellIterator it,
 
     return iter;
 }
+#endif
 
 // Routine Description:
 // - This routine writes a rectangular region into the screen buffer.
@@ -2406,6 +2373,10 @@ OutputCellIterator SCREEN_INFORMATION::WriteRect(const OutputCellIterator it,
 void SCREEN_INFORMATION::WriteRect(const OutputCellRect& data,
                                    const COORD location)
 {
+    (void)data;
+    (void)location;
+    __debugbreak();
+#if 0
     for (size_t i = 0; i < data.Height(); i++)
     {
         const auto iter = data.GetRowIter(i);
@@ -2414,8 +2385,10 @@ void SCREEN_INFORMATION::WriteRect(const OutputCellRect& data,
         point.X = location.X;
         point.Y = location.Y + static_cast<short>(i);
 
-        _textBuffer->WriteLine(iter, point);
+        __debugbreak();
+        //_textBuffer->WriteLine(iter, point);
     }
+#endif
 }
 
 // Routine Description:

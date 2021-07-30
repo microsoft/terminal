@@ -429,7 +429,7 @@ void CommandListPopup::_drawList()
             TextAttribute inverted = _attributes;
             inverted.Invert();
 
-            _screenInfo.GetTextBuffer().FillWithAttributeRectangular(til::rectangle{WriteCoord, til::size{ Width(), 1 }}, inverted);
+            _screenInfo.GetTextBuffer().FillWithAttributeRectangular(til::rectangle{ WriteCoord, til::size{ Width(), 1 } }, inverted);
         }
 
         WriteCoord.Y += 1;
@@ -526,11 +526,11 @@ void CommandListPopup::_updateHighlight(const SHORT OldCurrentCommand, const SHO
     WriteCoord.X = _region.Left + 1i16;
     WriteCoord.Y = _region.Top + 1i16 + OldCurrentCommand - TopIndex;
 
-    _screenInfo.GetTextBuffer().FillWithAttributeRectangular(til::rectangle{WriteCoord, til::size{ Width(), 1 }}, _attributes);
+    _screenInfo.GetTextBuffer().FillWithAttributeRectangular(til::rectangle{ WriteCoord, til::size{ Width(), 1 } }, _attributes);
 
     // highlight new command
     WriteCoord.Y = _region.Top + 1i16 + NewCurrentCommand - TopIndex;
     TextAttribute inverted = _attributes;
     inverted.Invert();
-    _screenInfo.GetTextBuffer().FillWithAttributeRectangular(til::rectangle{WriteCoord, til::size{ Width(), 1 }}, inverted);
+    _screenInfo.GetTextBuffer().FillWithAttributeRectangular(til::rectangle{ WriteCoord, til::size{ Width(), 1 } }, inverted);
 }

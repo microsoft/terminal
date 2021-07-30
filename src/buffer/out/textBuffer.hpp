@@ -85,17 +85,6 @@ public:
     TextBufferTextIterator GetTextDataAt(const COORD at, const Microsoft::Console::Types::Viewport limit) const;
 
     // Text insertion functions
-    OutputCellIterator Write(const OutputCellIterator givenIt);
-
-    OutputCellIterator Write(const OutputCellIterator givenIt,
-                             const COORD target,
-                             const std::optional<bool> wrap = true);
-
-    OutputCellIterator WriteLine(const OutputCellIterator givenIt,
-                                 const COORD target,
-                                 const std::optional<bool> setWrap = std::nullopt,
-                                 const std::optional<size_t> limitRight = std::nullopt);
-
     bool IncrementCursor();
     bool NewlineCursor();
 
@@ -196,23 +185,27 @@ public:
 
     struct WriteResult
     {
-        size_t charsConsumed;
-        size_t colsConsumed;
+        size_t charactersWritten;
+        size_t charactersRead;
+        size_t columnsWritten;
+        size_t columnsRead;
     };
 
-    size_t WriteMeasuredStringLinear(const til::point& at, const std::wstring_view& string, til::small_rle<uint8_t, uint16_t, 3> measurements);
+    WriteResult WriteMeasuredStringLinear(const til::point& at, const std::wstring_view& string, RowMeasurementBuffer measurements);
 
-    size_t WriteStringLinearWithAttributes(const til::point& at, const std::wstring_view& string, const TextAttribute& attr);
-    size_t WriteStringLinearKeepAttributes(const til::point& at, const std::wstring_view& string);
+    WriteResult WriteStringLinearWithAttributes(const til::point& at, const std::wstring_view& string, const TextAttribute& attr);
+    WriteResult WriteStringLinearKeepAttributes(const til::point& at, const std::wstring_view& string);
 
-    size_t FillWithCharacterRectangular(const til::rectangle& region, const wchar_t character);
-    size_t FillWithCharacterLinear(const til::point& at, size_t count, const wchar_t character);
+    WriteResult FillWithCharacterRectangular(const til::rectangle& region, const wchar_t character);
+    WriteResult FillWithCharacterLinear(const til::point& at, size_t count, const wchar_t character);
 
-    void FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, const TextAttribute& attr);
-    size_t FillWithCharacterAndAttributeLinear(const til::point& at, size_t count, const wchar_t character, const TextAttribute& attr);
+    WriteResult FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, const TextAttribute& attr);
+    WriteResult FillWithCharacterAndAttributeLinear(const til::point& at, size_t count, const wchar_t character, const TextAttribute& attr);
 
-    void FillWithAttributeRectangular(const til::rectangle& region, const TextAttribute& attribute);
-    size_t FillWithAttributeLinear(const til::point at, size_t count, const TextAttribute& attribute);
+    WriteResult FillWithAttributeRectangular(const til::rectangle& region, const TextAttribute& attribute);
+    WriteResult FillWithAttributeLinear(const til::point at, size_t count, const TextAttribute& attribute);
+
+    WriteResult WriteRowImage(const til::point at, const RowImage& ri);
 
 private:
     void _UpdateSize();
@@ -266,7 +259,7 @@ private:
     WriteResult _FillWithCharacterAndAttributeLinear(const til::point& at, size_t count, const wchar_t character, const T& attr);
 
     template<typename T>
-    size_t _WriteMeasuredStringLinearWithAttributes(const til::point& at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements, const T& attributes);
+    WriteResult _WriteMeasuredStringLinearWithAttributes(const til::point& at, std::wstring_view string, RowMeasurementBuffer measurements, const T& attributes);
 
     std::unordered_map<size_t, std::wstring> _idsAndPatterns;
     size_t _currentPatternId;

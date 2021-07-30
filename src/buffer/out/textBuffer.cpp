@@ -183,90 +183,6 @@ TextBufferCellIterator TextBuffer::GetCellDataAt(const COORD at, const Viewport 
     return TextBufferCellIterator(*this, at, limit);
 }
 
-// Routine Description:
-// - Writes cells to the output buffer. Writes at the cursor.
-// Arguments:
-// - givenIt - Iterator representing output cell data to write
-// Return Value:
-// - The final position of the iterator
-OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt)
-{
-    const auto& cursor = GetCursor();
-    const auto target = cursor.GetPosition();
-
-    const auto finalIt = Write(givenIt, target);
-
-    return finalIt;
-}
-
-// Routine Description:
-// - Writes cells to the output buffer.
-// Arguments:
-// - givenIt - Iterator representing output cell data to write
-// - target - the row/column to start writing the text to
-// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data
-// Return Value:
-// - The final position of the iterator
-OutputCellIterator TextBuffer::Write(const OutputCellIterator givenIt,
-                                     const COORD target,
-                                     const std::optional<bool> wrap)
-{
-    // Make mutable copy so we can walk.
-    auto it = givenIt;
-
-    // Make mutable target so we can walk down lines.
-    auto lineTarget = target;
-
-    // Get size of the text buffer so we can stay in bounds.
-    const auto size = GetSize();
-
-    // While there's still data in the iterator and we're still targeting in bounds...
-    while (it && size.IsInBounds(lineTarget))
-    {
-        // Attempt to write as much data as possible onto this line.
-        // NOTE: if wrap = true/false, we want to set the line's wrap to true/false (respectively) if we reach the end of the line
-        it = WriteLine(it, lineTarget, wrap);
-
-        // Move to the next line down.
-        lineTarget.X = 0;
-        ++lineTarget.Y;
-    }
-
-    return it;
-}
-
-// Routine Description:
-// - Writes one line of text to the output buffer.
-// Arguments:
-// - givenIt - The iterator that will dereference into cell data to insert
-// - target - Coordinate targeted within output buffer
-// - wrap - change the wrap flag if we hit the end of the row while writing and there's still more data in the iterator.
-// - limitRight - Optionally restrict the right boundary for writing (e.g. stop writing earlier than the end of line)
-// Return Value:
-// - The iterator, but advanced to where we stopped writing. Use to find input consumed length or cells written length.
-OutputCellIterator TextBuffer::WriteLine(const OutputCellIterator givenIt,
-                                         const COORD target,
-                                         const std::optional<bool> wrap,
-                                         std::optional<size_t> limitRight)
-{
-    // If we're not in bounds, exit early.
-    if (!GetSize().IsInBounds(target))
-    {
-        return givenIt;
-    }
-
-    //  Get the row and write the cells
-    ROW& row = GetRowByOffset(target.Y);
-    const auto newIt = row.WriteCells(givenIt, target.X, wrap, limitRight);
-
-    // Take the cell distance written and notify that it needs to be repainted.
-    const auto written = newIt.GetCellDistance(givenIt);
-    const Viewport paint = Viewport::FromDimensions(target, { gsl::narrow<SHORT>(written), 1 });
-    _NotifyPaint(paint);
-
-    return newIt;
-}
-
 //Routine Description:
 // - Finds the current row in the buffer (as indicated by the cursor position)
 //   and specifies that we have forced a line wrap on that row
@@ -629,7 +545,7 @@ void TextBuffer::SetCurrentLineRendition(const LineRendition lineRendition)
             fillAttrs.SetStandardErase();
             const size_t fillOffset = GetLineWidth(rowIndex);
             const size_t fillLength = GetSize().Width() - fillOffset;
-            FillWithCharacterAndAttributeLinear(til::point{fillOffset, ::base::saturated_cast<size_t>(cursorPosition.Y)}, fillLength, UNICODE_SPACE, fillAttrs);
+            FillWithCharacterAndAttributeLinear(til::point{ fillOffset, ::base::saturated_cast<size_t>(cursorPosition.Y) }, fillLength, UNICODE_SPACE, fillAttrs);
             // We also need to make sure the cursor is clamped within the new width.
             GetCursor().SetPosition(ClampPositionWithinLine(cursorPosition));
         }
@@ -1939,10 +1855,14 @@ HRESULT TextBuffer::Reflow(TextBuffer& oldBuffer,
             }
         }
 
+#if 0
         OutputCellIterator it{ oldBuffer.GetCellDataAt({ 0, iOldRow }, Viewport::FromDimensions({ 0, iOldRow }, iRight, 1)) };
         auto preCurPos{ newBuffer.GetCursor().GetPosition() };
         const auto last = newBuffer.Write(it, preCurPos, true); // true - wrap if we don't fit!
         const auto distance = last.GetCellDistance(it);
+#endif
+        auto preCurPos{ newBuffer.GetCursor().GetPosition() };
+        const auto distance = 5;
 
         if (iOldRow == cOldCursorPos.Y)
         {
@@ -2318,17 +2238,18 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
     return result;
 }
 
-void TextBuffer::FillWithAttributeRectangular(const til::rectangle& region, const TextAttribute& attribute)
+TextBuffer::WriteResult TextBuffer::FillWithAttributeRectangular(const til::rectangle& region, const TextAttribute& attribute)
 {
-    _WriteRectangular(
+    return _WriteRectangular(
         region,
-        [&](WriteResult&, auto&& at, auto&& size) {
+        [&](WriteResult& result, auto&& at, auto&& size) {
             auto& row = GetRowByOffset(at.y());
             row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), size), attribute);
+            result.columnsWritten += size;
         });
 }
 
-size_t TextBuffer::FillWithAttributeLinear(til::point at, size_t count, const TextAttribute& attribute)
+TextBuffer::WriteResult TextBuffer::FillWithAttributeLinear(til::point at, size_t count, const TextAttribute& attribute)
 {
     auto out = _WriteLinear(
         at,
@@ -2338,20 +2259,20 @@ size_t TextBuffer::FillWithAttributeLinear(til::point at, size_t count, const Te
             auto& row = GetRowByOffset(at.y());
             row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), size), attribute);
 
-            result.colsConsumed += w.RawValue();
+            result.columnsWritten += w.RawValue();
 
             const Viewport paint = Viewport::FromDimensions(at, { w.Cast<SHORT>(), 1 });
             _NotifyPaint(paint);
 
             return (count -= w.RawValue()) > 0; // keep going if data remains
         });
-    return out.colsConsumed;
+    return out;
 }
 
 // TODO(DH): make this a member so that IsGlyphFullWidth can be a member ref
-static std::tuple<til::small_rle<uint8_t, uint16_t, 3>, uint16_t> _MeasureStringAndCountColumns(std::wstring_view string) //const noexcept
+static std::tuple<RowMeasurementBuffer, uint16_t> _MeasureStringAndCountColumns(std::wstring_view string) //const noexcept
 {
-    til::small_rle<uint8_t, uint16_t, 3> measurements;
+    RowMeasurementBuffer measurements;
     uint16_t colCount{};
     while (!string.empty())
     {
@@ -2374,7 +2295,7 @@ struct no_attributes
 };
 
 template<typename T>
-size_t TextBuffer::_WriteMeasuredStringLinearWithAttributes(const til::point& at, std::wstring_view string, til::small_rle<uint8_t, uint16_t, 3> measurements, [[maybe_unused]] const T& attributes)
+TextBuffer::WriteResult TextBuffer::_WriteMeasuredStringLinearWithAttributes(const til::point& at, std::wstring_view string, RowMeasurementBuffer measurements, [[maybe_unused]] const T& attributes)
 {
     uint16_t colCount = std::accumulate(
         measurements.runs().cbegin(),
@@ -2391,34 +2312,52 @@ size_t TextBuffer::_WriteMeasuredStringLinearWithAttributes(const til::point& at
             {
                 row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), consumedDestCols), attributes);
             }
+#if 0
+            else if constexpr (std::is_same<T, ATTR_ROW::rle_vector>::value)
+            {
+                // user has passed us a packed representation of attributes
+                // It is a programming error to pass one whose total length does
+                // not match the measurement buffer
+                const auto attrRunSlice{ attributes.slice(0, consumedSourceCols) };
+                attrRunSlice.resize_trailing_extent(consumedDestCols); // this may be very wrong. TODO(DH)
+                // intent: I believe that this will take the attribute from the cell before the one we had to cut off
+                // and then extend it to cover our empty column?
+                row.GetAttrRow()._data.replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), consumedSourceCols), attrRunSlice.runs());
+            }
+#endif
 
             const Viewport paint = Viewport::FromDimensions(at, { ::base::saturated_cast<SHORT>(consumedDestCols), 1 });
             _NotifyPaint(paint);
             colCount -= consumedSourceCols;
 
-            result.charsConsumed += consumedWchar;
-            result.colsConsumed += consumedDestCols;
+            result.charactersRead += consumedWchar;
+            result.charactersWritten += consumedWchar;
+            result.columnsWritten += consumedDestCols;
+            result.columnsRead += consumedSourceCols;
 
+            // unchecked substr
+            //string = std::wstring_view{ &*string.begin() + consumedWchar, string.size() - consumedWchar };
+            //string = til::unchecked_substr(string, consumedWchar);
             string = string.substr(consumedWchar);
             measurements = measurements.slice(gsl::narrow_cast<uint16_t>(consumedWchar), measurements.size());
 
             return !string.empty();
         });
-    return out.colsConsumed;
+    return out;
 }
 
-size_t TextBuffer::WriteMeasuredStringLinear(const til::point& at, const std::wstring_view& string, til::small_rle<uint8_t, uint16_t, 3> measurements)
+TextBuffer::WriteResult TextBuffer::WriteMeasuredStringLinear(const til::point& at, const std::wstring_view& string, RowMeasurementBuffer measurements)
 {
     return _WriteMeasuredStringLinearWithAttributes(at, string, std::move(measurements), _currentAttributes);
 }
 
-size_t TextBuffer::WriteStringLinearWithAttributes(const til::point &at, const std::wstring_view& string, const TextAttribute& attr)
+TextBuffer::WriteResult TextBuffer::WriteStringLinearWithAttributes(const til::point& at, const std::wstring_view& string, const TextAttribute& attr)
 {
     auto [measurements, colCount] = _MeasureStringAndCountColumns(string);
     return _WriteMeasuredStringLinearWithAttributes(at, string, std::move(measurements), attr);
 }
 
-size_t TextBuffer::WriteStringLinearKeepAttributes(const til::point &at, const std::wstring_view& string)
+TextBuffer::WriteResult TextBuffer::WriteStringLinearKeepAttributes(const til::point& at, const std::wstring_view& string)
 {
     auto [measurements, colCount] = _MeasureStringAndCountColumns(string);
     return _WriteMeasuredStringLinearWithAttributes(at, string, std::move(measurements), no_attributes{});
@@ -2443,7 +2382,7 @@ TextBuffer::WriteResult TextBuffer::_FillWithCharacterAndAttributeRectangular(co
 }
 
 template<typename T>
-TextBuffer::WriteResult TextBuffer::_FillWithCharacterAndAttributeLinear(const til::point &at, size_t count, const wchar_t character, [[maybe_unused]] const T& attr)
+TextBuffer::WriteResult TextBuffer::_FillWithCharacterAndAttributeLinear(const til::point& at, size_t count, const wchar_t character, [[maybe_unused]] const T& attr)
 {
     const uint8_t width{ IsGlyphFullWidth(character) ? uint8_t{ 2u } : uint8_t{ 1u } };
     return _WriteLinear(
@@ -2459,8 +2398,8 @@ TextBuffer::WriteResult TextBuffer::_FillWithCharacterAndAttributeLinear(const t
                 row.GetAttrRow().Replace(::base::saturated_cast<uint16_t>(at.x()), ::base::ClampAdd<uint16_t>(::base::saturated_cast<uint16_t>(at.x()), w), attr);
             }
 
-            result.charsConsumed += consumedWchars;
-            result.colsConsumed += w.RawValue();
+            result.charactersWritten += consumedWchars;
+            result.columnsWritten += w.RawValue();
 
             const Viewport paint = Viewport::FromDimensions(at, { w.Cast<SHORT>(), 1 });
             _NotifyPaint(paint);
@@ -2469,26 +2408,31 @@ TextBuffer::WriteResult TextBuffer::_FillWithCharacterAndAttributeLinear(const t
         });
 }
 
-size_t TextBuffer::FillWithCharacterRectangular(const til::rectangle& region, const wchar_t character)
+TextBuffer::WriteResult TextBuffer::FillWithCharacterRectangular(const til::rectangle& region, const wchar_t character)
 {
-    return _FillWithCharacterAndAttributeRectangular(region, character, no_attributes{}).colsConsumed;
+    return _FillWithCharacterAndAttributeRectangular(region, character, no_attributes{});
 }
 
-void TextBuffer::FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, const TextAttribute& attr)
+TextBuffer::WriteResult TextBuffer::FillWithCharacterAndAttributeRectangular(const til::rectangle& region, const wchar_t character, const TextAttribute& attr)
 {
-    _FillWithCharacterAndAttributeRectangular(region, character, attr);
+    return _FillWithCharacterAndAttributeRectangular(region, character, attr);
 }
 
-size_t TextBuffer::FillWithCharacterLinear(const til::point& at, size_t count, const wchar_t character)
+TextBuffer::WriteResult TextBuffer::FillWithCharacterLinear(const til::point& at, size_t count, const wchar_t character)
 {
-    const auto out = _FillWithCharacterAndAttributeLinear(at, count, character, no_attributes{});
-    return out.charsConsumed;
+    return _FillWithCharacterAndAttributeLinear(at, count, character, no_attributes{});
 }
 
-size_t TextBuffer::FillWithCharacterAndAttributeLinear(const til::point &at, size_t count, const wchar_t character, const TextAttribute& attr)
+TextBuffer::WriteResult TextBuffer::FillWithCharacterAndAttributeLinear(const til::point& at, size_t count, const wchar_t character, const TextAttribute& attr)
 {
-    const auto out = _FillWithCharacterAndAttributeLinear(at, count, character, attr);
-    return out.charsConsumed;
+    return _FillWithCharacterAndAttributeLinear(at, count, character, attr);
+}
+
+TextBuffer::WriteResult TextBuffer::WriteRowImage(const til::point at, const RowImage& ri)
+{
+    auto& row{ GetRowByOffset(at.y()) };
+    row.Reinsert(at.x<uint16_t>(), ri);
+    return {};
 }
 
 template<typename TLambda>

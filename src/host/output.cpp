@@ -104,8 +104,9 @@ static void _CopyRectangle(SCREEN_INFORMATION& screenInfo,
 
         do
         {
-            const auto data = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
-            screenInfo.Write(OutputCellIterator({ &data, 1 }), targetPos);
+            __debugbreak();
+            //const auto data = OutputCell(*screenInfo.GetCellDataAt(sourcePos));
+            //screenInfo.Write(OutputCellIterator({ &data, 1 }), targetPos);
 
             source.WalkInBounds(sourcePos, walkDirection);
         } while (target.WalkInBounds(targetPos, walkDirection));

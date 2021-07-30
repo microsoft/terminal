@@ -342,7 +342,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     SHORT XPosition;
     std::wstring local;
     local.reserve(LOCAL_BUFFER_SIZE);
-    til::small_rle<uint8_t, uint16_t, 3> measurements{ gsl::narrow_cast<uint16_t>(LOCAL_BUFFER_SIZE), 1u };
+    RowMeasurementBuffer measurements;
     size_t TempNumSpaces = 0;
     const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
     const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
@@ -400,7 +400,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             // WCL-NOTE: is initialized from pwchRealUnicode.
             const wchar_t RealUnicodeChar = *pwchRealUnicode;
             const auto cbuf{ Utf16Parser::ParseNext(std::wstring_view{ pwchRealUnicode, (BufferSize / sizeof(WCHAR)) - static_cast<size_t>(pwchRealUnicode - base) }) };
-            uint16_t lo{ gsl::narrow_cast<uint16_t>(local.size()) };
             if (IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
                 // WCL-NOTE: This operates on a single code unit instead of a whole codepoint. It will mis-measure surrogate pairs.
@@ -409,7 +408,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     if (XPosition < (coordScreenBufferSize.X - 1))
                     {
                         local.append(cbuf);
-                        measurements.replace(lo, lo + 1, { uint8_t{ 2u }, 1u });
+                        measurements.append(uint8_t{ 2u });
 
                         // cursor adjusted by 2 because the char is double width
                         XPosition += 2;
@@ -424,14 +423,14 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 else
                 {
                     local.append(cbuf);
-                    measurements.replace(lo, lo + 1, { uint8_t{ 1u }, 1u });
+                    measurements.append(uint8_t{ 1u });
                     XPosition++;
                     i += cbuf.size();
                     pwchBuffer += cbuf.size();
                 }
-                if (cbuf.size() > 1)
+                for (auto z = cbuf.size(); z > 1; --z)
                 {
-                    measurements.replace(lo + 1, gsl::narrow_cast<uint16_t>(lo + 1 + cbuf.size() - 1), typename decltype(measurements)::rle_type{ uint8_t{ 0u }, gsl::narrow_cast<uint16_t>(cbuf.size() - 1) });
+                    measurements.append(uint8_t{ 0 });
                 }
             }
             else
@@ -561,7 +560,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             //OutputCellIterator it(std::wstring_view{ local }, Attributes);
             //const auto itEnd = screenInfo.Write(it);
             measurements.resize_trailing_extent(gsl::narrow_cast<uint16_t>(local.size()));
-            auto vcolsTaken = screenInfo.WriteMeasuredStringLinear(local, measurements);
+            auto result = screenInfo.GetTextBuffer().WriteMeasuredStringLinear(CursorPosition, local, measurements);
             local.clear();
             measurements.resize_trailing_extent(0);
 
@@ -573,7 +572,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
             // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
             // when/if we need to erase the command line.
-            TempNumSpaces += vcolsTaken; //itEnd.GetCellDistance(it);
+            TempNumSpaces += result.columnsWritten; //itEnd.GetCellDistance(it);
             // WCL-NOTE: We are using the "estimated" X position delta instead of the actual delta from
             // WCL-NOTE: the iterator. It is not clear why. If they differ, the cursor ends up in the
             // WCL-NOTE: wrong place (typically inside another character).
@@ -711,7 +710,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     {
                         try
                         {
-                            screenInfo.Write(OutputCellIterator(UNICODE_SPACE, Attributes, 1), CursorPosition);
+                            screenInfo.GetTextBuffer().FillWithCharacterAndAttributeLinear(CursorPosition, 1, UNICODE_SPACE, Attributes);
                             Status = STATUS_SUCCESS;
                         }
                         CATCH_LOG();
@@ -729,7 +728,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     {
                         try
                         {
-                            screenInfo.Write(OutputCellIterator(UNICODE_SPACE, Attributes, 1), CursorPosition);
+                            screenInfo.GetTextBuffer().FillWithCharacterAndAttributeLinear(CursorPosition, 1, UNICODE_SPACE, Attributes);
                             Status = STATUS_SUCCESS;
                         }
                         CATCH_LOG();
@@ -751,7 +750,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             {
                 try
                 {
-                    screenInfo.Write(OutputCellIterator(UNICODE_SPACE, Attributes, 1), cursor.GetPosition());
+                    screenInfo.GetTextBuffer().FillWithCharacterAndAttributeLinear(cursor.GetPosition(), 1, UNICODE_SPACE, Attributes);
                 }
                 CATCH_LOG();
             }
@@ -806,9 +805,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
             try
             {
-                const OutputCellIterator it(UNICODE_SPACE, Attributes, NumChars);
-                const auto done = screenInfo.Write(it, cursor.GetPosition());
-                NumChars = done.GetCellDistance(it);
+                const auto result = screenInfo.GetTextBuffer().FillWithCharacterAndAttributeLinear(cursor.GetPosition(), NumChars, UNICODE_SPACE, Attributes);
+                NumChars = result.columnsWritten;
             }
             CATCH_LOG();
 
@@ -865,15 +863,12 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                     // If we're on top of a trailing cell, clear it and the previous cell.
                     if (Row.DbcsAttrAt(TargetPoint.X).IsTrailing())
                     {
-                        // Space to clear for 2 cells.
-                        OutputCellIterator it(UNICODE_SPACE, 2);
-
                         // Back target point up one.
                         auto writeTarget = TargetPoint;
                         writeTarget.X--;
 
                         // Write 2 clear cells.
-                        screenInfo.Write(it, writeTarget);
+                        screenInfo.GetTextBuffer().FillWithCharacterLinear(writeTarget, 2, UNICODE_SPACE);
                     }
                 }
                 catch (...)

@@ -89,10 +89,48 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
         return E_INVALIDARG;
     }
 
-    const OutputCellIterator it(attrs);
-    const auto done = screenInfo.Write(it, target);
+    //const OutputCellIterator it(attrs);
+    //const auto done = screenInfo.Write(it, target);
+    __debugbreak();
+// TODO(DH) restore writing runs of attributes
+////////////////
+#if 0
+    static rle_container rle_encode(const basic_container_view& from)
+    {
+        if (from.empty())
+        {
+            return {};
+        }
 
-    used = done.GetCellDistance(it);
+        rle_container to;
+        value_type value = from.front();
+        size_type length = 0;
+
+        for (auto v : from)
+        {
+            if (v != value)
+            {
+                to.emplace_back(value, length);
+                value = v;
+                length = 0;
+            }
+
+            length++;
+        }
+
+        if (length)
+        {
+            to.emplace_back(value, length);
+        }
+
+        return to;
+    }
+#endif
+
+    ////////////////
+
+    used = 0;
+    //used = done.GetCellDistance(it);
 
     return S_OK;
 }
@@ -131,7 +169,8 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
     try
     {
-        used = screenInfo.GetTextBuffer().WriteStringLinearKeepAttributes(target, chars);
+        const auto result = screenInfo.GetTextBuffer().WriteStringLinearKeepAttributes(target, chars);
+        used = result.charactersWritten;
     }
     CATCH_RETURN();
 
@@ -214,7 +253,8 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
 
     try
     {
-        cellsModified = screenBuffer.GetTextBuffer().FillWithAttributeLinear(startingCoordinate, lengthToWrite, TextAttribute{ attribute });
+        const auto result = screenBuffer.GetTextBuffer().FillWithAttributeLinear(startingCoordinate, lengthToWrite, TextAttribute{ attribute });
+        cellsModified = result.columnsWritten;
 
         if (screenBuffer.HasAccessibilityEventing())
         {
@@ -271,12 +311,11 @@ void WriteToScreen(SCREEN_INFORMATION& screenInfo, const Viewport& region)
     HRESULT hr = S_OK;
     try
     {
-        const OutputCellIterator it(character, lengthToWrite);
-
         // when writing to the buffer, specifically unset wrap if we get to the last column.
         // a fill operation should UNSET wrap in that scenario. See GH #1126 for more details.
-        const auto done = screenInfo.Write(it, startingCoordinate, false);
-        cellsModified = done.GetInputDistance(it);
+        // TODO(DH) maintain above fix to clear wrap ^^^
+        const auto result = screenInfo.GetTextBuffer().FillWithCharacterLinear(startingCoordinate, lengthToWrite, character);
+        cellsModified = result.columnsWritten;
 
         // Notify accessibility
         if (screenInfo.HasAccessibilityEventing())

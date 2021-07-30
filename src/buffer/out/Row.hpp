@@ -23,12 +23,143 @@ Revision History:
 #include "AttrRow.hpp"
 #include "LineRendition.hpp"
 #include "OutputCell.hpp"
-#include "OutputCellIterator.hpp"
 #include "unicode.hpp"
 
 #pragma warning(push)
 #pragma warning(disable : 4267)
 class TextBuffer;
+
+using RowMeasurementBuffer = til::small_rle<uint8_t, uint16_t, 3>;
+
+struct DamageRanges
+{
+    size_t dataOffset;
+    size_t dataLength;
+    uint16_t firstColumn;
+    uint16_t lastColumnExclusive;
+};
+
+template<typename TRuns>
+static DamageRanges DamageRangesForColumnInMeasurementBuffer(const TRuns& cwid, size_t col)
+{
+    size_t currentCol{ 0 };
+    size_t currentWchar{ 0 };
+    auto it{ cwid.runs().cbegin() };
+    while (it != cwid.runs().cend())
+    {
+        // Each compressed pair tells us how many columns x N wchar_t
+        const auto colsCoveredByRun{ it->value * it->length };
+        if (currentCol + colsCoveredByRun > col)
+        {
+            // We want to break out of the loop to manually handle this run, because
+            // we've determined that it is the run that covers the column of interest.
+            break;
+        }
+        currentCol += colsCoveredByRun;
+        currentWchar += it->length;
+        it++;
+    }
+
+    if (it == cwid.runs().cend())
+    {
+        // this is an interesting case- somebody requested a column we cannot answer for.
+        // The string might actually have data, and the caller might be interested in where that data is.
+        // Ideally, we would return the index of the first char out-of-bounds, and the length of the remaining data as a single unit.
+        // We can't answer for how much space it takes up, though.
+        __debugbreak();
+        return { 0, 0, 0u, 0u };
+        //return { currentWchar, _data.size() - currentWchar, 0u, 0u };
+    }
+    // currentWchar is how many wchar_t we are into the string before processing this run
+    // currentCol is how many columns we've covered before processing this run
+
+    // We are *guaranteed* that the hit is in this run -- no need to check it->length
+    // col-currentCol is how many columns are left unaccounted for (how far into this run we need to go)
+    const auto colsLeftToCountInCurrentRun{ col - currentCol };
+    currentWchar += colsLeftToCountInCurrentRun / it->value; // one wch per column unit -- rounds down (correct behavior)
+
+    size_t lenInWchars{ 1 }; // the first hit takes up one wchar
+
+    // We use this to determine if we have exhausted every column this run can cough up.
+    // colsLeftToCountInCurrentRun is 0-indexed, but colsConsumedByRun is 1-indexed (index 0 consumes N columns, etc.)
+    // therefore, we reindex colsLeftToCountInCurrentRun and compare it to colsConsumedByRun
+    const auto colsConsumedFromRun{ colsLeftToCountInCurrentRun + it->value };
+    const auto colsCoveredByRun{ it->value * it->length };
+    // If we *have* consumed every column this run can provide, we must check the run after it:
+    // if it contributes "0" columns, it is actually a set of trailing code units.
+    if (colsConsumedFromRun >= colsCoveredByRun && it != cwid.runs().cend())
+    {
+        const auto nextRunIt{ it + 1 };
+        if (nextRunIt != cwid.runs().cend() && nextRunIt->value == 0)
+        {
+            // we were at the boundary of a column run, so if the next one is 0 it tells us that each
+            // wchar after it is a trailer
+            lenInWchars += nextRunIt->length;
+        }
+    }
+
+    return {
+        currentWchar, // wchar start
+        lenInWchars, // wchar size
+        gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value)), // Column damage to the left (where we overlapped the right of a wide glyph)
+        gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value) + it->value), // Column damage to the right (where we overlapped the left of a wide glyph)
+    };
+}
+
+class ROW;
+struct RowImage
+{
+    std::wstring _data;
+    RowMeasurementBuffer _cwid;
+    ATTR_ROW _attrRow;
+    uint16_t _width;
+    friend class ROW;
+    friend class TextBuffer;
+    RowImage() :
+        _data{}, _cwid{}, _attrRow{ {} }, _width{ 0 } {}
+    RowImage(const std::wstring& data, const RowMeasurementBuffer& cwid, ATTR_ROW attrRow, uint16_t width):
+        _data{data}, _cwid{cwid}, _attrRow{std::move(attrRow)}, _width{width} {}
+
+    // exclusive
+    std::tuple<RowImage, RowImage> split(uint16_t col) const
+    {
+        if (col >= _width)
+        {
+            return { *this, RowImage{} };
+        }
+        else if (col == 0)
+        {
+            return { RowImage{}, *this };
+        }
+        auto yes_more_fucking_damage_ranges = DamageRangesForColumnInMeasurementBuffer(_cwid, col);
+        // here's a dumb decision: when you split along a wide char, you get spaces over its damage on the left side.
+        // X X XX X X X
+        //     ^ split
+        // X X S        <- left
+        //     XX X X X <- right
+        auto chopped_off = col == yes_more_fucking_damage_ranges.lastColumnExclusive ? 0 : /*didn't get whole thing*/ yes_more_fucking_damage_ranges.lastColumnExclusive - col;
+        auto chopped_on = col == yes_more_fucking_damage_ranges.lastColumnExclusive ? yes_more_fucking_damage_ranges.dataLength : 0;
+        auto lwid = _cwid.slice(0, yes_more_fucking_damage_ranges.dataOffset + chopped_on);
+        for (auto z{ chopped_off }; z > 0; --z)
+        {
+            lwid.append(1);
+        }
+        RowImage left{
+            _data.substr(0, yes_more_fucking_damage_ranges.dataOffset + chopped_on) + std::wstring(chopped_off, UNICODE_SPACE),
+            lwid,
+            _attrRow._data.slice(0, yes_more_fucking_damage_ranges.lastColumnExclusive),
+            col
+        };
+        RowImage right{
+            _data.substr(yes_more_fucking_damage_ranges.dataOffset + chopped_on),
+            _cwid.slice(yes_more_fucking_damage_ranges.dataOffset + chopped_on, _data.length()),
+            // we use first col here to catch the overlap
+            _attrRow._data.slice(yes_more_fucking_damage_ranges.firstColumn, _width),
+            ::base::ClampSub(_width, col),
+        };
+        return { left, right };
+    }
+};
 
 enum class DelimiterClass
 {
@@ -62,92 +193,15 @@ public:
     void ClearColumn(const size_t column);
     std::wstring GetText() const { return _data._data; }
 
-    OutputCellIterator WriteCells(OutputCellIterator it, const size_t index, const std::optional<bool> wrap = std::nullopt, std::optional<size_t> limitRight = std::nullopt);
-
 #ifdef UNIT_TESTING
     friend constexpr bool operator==(const ROW& a, const ROW& b) noexcept;
     friend class RowTests;
 #endif
 
-    struct DamageRanges
-    {
-        size_t dataOffset;
-        size_t dataLength;
-        uint16_t firstColumn;
-        uint16_t lastColumnExclusive;
-    };
-
-    template<typename TRuns>
-    static DamageRanges DamageRangesForColumnInMeasurementBuffer(const TRuns& cwid, size_t col)
-    {
-        size_t currentCol{ 0 };
-        size_t currentWchar{ 0 };
-        auto it{ cwid.runs().cbegin() };
-        while (it != cwid.runs().cend())
-        {
-            // Each compressed pair tells us how many columns x N wchar_t
-            const auto colsCoveredByRun{ it->value * it->length };
-            if (currentCol + colsCoveredByRun > col)
-            {
-                // We want to break out of the loop to manually handle this run, because
-                // we've determined that it is the run that covers the column of interest.
-                break;
-            }
-            currentCol += colsCoveredByRun;
-            currentWchar += it->length;
-            it++;
-        }
-
-        if (it == cwid.runs().cend())
-        {
-            // this is an interesting case- somebody requested a column we cannot answer for.
-            // The string might actually have data, and the caller might be interested in where that data is.
-            // Ideally, we would return the index of the first char out-of-bounds, and the length of the remaining data as a single unit.
-            // We can't answer for how much space it takes up, though.
-            __debugbreak();
-            return { 0, 0, 0u, 0u };
-            //return { currentWchar, _data.size() - currentWchar, 0u, 0u };
-        }
-        // currentWchar is how many wchar_t we are into the string before processing this run
-        // currentCol is how many columns we've covered before processing this run
-
-        // We are *guaranteed* that the hit is in this run -- no need to check it->length
-        // col-currentCol is how many columns are left unaccounted for (how far into this run we need to go)
-        const auto colsLeftToCountInCurrentRun{ col - currentCol };
-        currentWchar += colsLeftToCountInCurrentRun / it->value; // one wch per column unit -- rounds down (correct behavior)
-
-        size_t lenInWchars{ 1 }; // the first hit takes up one wchar
-
-        // We use this to determine if we have exhausted every column this run can cough up.
-        // colsLeftToCountInCurrentRun is 0-indexed, but colsConsumedByRun is 1-indexed (index 0 consumes N columns, etc.)
-        // therefore, we reindex colsLeftToCountInCurrentRun and compare it to colsConsumedByRun
-        const auto colsConsumedFromRun{ colsLeftToCountInCurrentRun + it->value };
-        const auto colsCoveredByRun{ it->value * it->length };
-        // If we *have* consumed every column this run can provide, we must check the run after it:
-        // if it contributes "0" columns, it is actually a set of trailing code units.
-        if (colsConsumedFromRun >= colsCoveredByRun && it != cwid.runs().cend())
-        {
-            const auto nextRunIt{ it + 1 };
-            if (nextRunIt != cwid.runs().cend() && nextRunIt->value == 0)
-            {
-                // we were at the boundary of a column run, so if the next one is 0 it tells us that each
-                // wchar after it is a trailer
-                lenInWchars += nextRunIt->length;
-            }
-        }
-
-        return {
-            currentWchar, // wchar start
-            lenInWchars, // wchar size
-            gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value)), // Column damage to the left (where we overlapped the right of a wide glyph)
-            gsl::narrow_cast<uint16_t>(col - (colsLeftToCountInCurrentRun % it->value) + it->value), // Column damage to the right (where we overlapped the left of a wide glyph)
-        };
-    }
-
     struct RowData
     {
         std::wstring _data;
-        til::small_rle<uint8_t, uint16_t, 3> _cwid;
+        RowMeasurementBuffer _cwid;
         ATTR_ROW _attrRow;
         unsigned short _width;
 
@@ -184,8 +238,9 @@ public:
             return damage;
         }
 
-        void _strikeDamageAndAdjust(size_t col, size_t ncols, DamageRanges& range)
+        void _strikeDamageAndAdjust(size_t col, size_t ncols, size_t incomingCodeUnitCount, DamageRanges& range)
         {
+            (void)incomingCodeUnitCount;
             const bool damaged{ range.firstColumn < col || col + ncols < range.lastColumnExclusive };
             if (damaged)
             {
@@ -295,7 +350,7 @@ public:
         }
     }
 
-    std::tuple<size_t, uint16_t, uint16_t> WriteStringAtMeasured(uint16_t col, uint16_t colCount, const std::wstring_view& string, const til::small_rle<uint8_t, uint16_t, 3>& measurements)
+    std::tuple<size_t, uint16_t, uint16_t> WriteStringAtMeasured(uint16_t col, uint16_t colCount, const std::wstring_view& string, const RowMeasurementBuffer& measurements)
     {
         size_t incomingLastColumn{ std::min<size_t>(_data._width - col, colCount) };
         auto incomingLastColumnOffsets{ DamageRangesForColumnInMeasurementBuffer(measurements, incomingLastColumn - 1 /*inclusive*/) };
@@ -386,7 +441,7 @@ public:
         // If we are filling over the left/right halves of a character
         // This is a bit wasteful since it can grow/shrink the buffers and we're about
         // to do it again, but I was trying to be expedient.
-        _data._strikeDamageAndAdjust(col, columnsRequired, damage);
+        _data._strikeDamageAndAdjust(col, columnsRequired, charsFitOrRemain, damage);
 
         const auto [begin, len, min, max] = damage;
         _data._data.replace(begin, len, charsFitOrRemain, ch);
@@ -438,6 +493,26 @@ public:
         {
             return DelimiterClass::RegularChar;
         }
+    }
+
+    RowImage Dump(uint16_t left, uint16_t size)
+    {
+        auto [begin, len, min, max] = _data._damageForColumns(left, size);
+        return RowImage{
+            _data._data.substr(begin, len),
+            _data._cwid.slice(begin, begin + len),
+            ATTR_ROW{ _data._attrRow._data.slice(min, max) },
+            ::base::MakeClampedNum(max) - min
+        };
+    }
+
+    void Reinsert(uint16_t left, const RowImage& ri)
+    {
+        auto damage{ _data._damageForColumns(left, ri._width) };
+        _data._strikeDamageAndAdjust(left, ri._width, ri._data.size(), damage);
+        _data._data.replace(damage.dataOffset, damage.dataLength, ri._data);
+        _data._cwid.replace(damage.dataOffset, damage.dataOffset + damage.dataLength, ri._cwid.runs());
+        _data._attrRow._data.replace(damage.firstColumn, damage.lastColumnExclusive, ri._attrRow._data.runs());
     }
 
     uint16_t _maxc{};

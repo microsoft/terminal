@@ -43,19 +43,6 @@ gsl::span<OutputCell> OutputCellRect::GetRow(const size_t row)
 }
 
 // Routine Description:
-// - Gets a read-only iterator view over a single row of the rectangle.
-// Arguments:
-// - row - The Y position or row index in the buffer.
-// Return Value:
-// - Read-only iterator of OutputCells
-OutputCellIterator OutputCellRect::GetRowIter(const size_t row) const
-{
-    const gsl::span<const OutputCell> view(_FindRowOffset(row), _cols);
-
-    return OutputCellIterator(view);
-}
-
-// Routine Description:
 // - Internal helper to find the pointer to the specific row offset in the giant
 //   contiguous block of memory allocated for this rectangle.
 // Arguments:

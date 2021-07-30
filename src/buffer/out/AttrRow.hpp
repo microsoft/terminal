@@ -31,6 +31,8 @@ public:
     using const_iterator = rle_vector::const_iterator;
 
     ATTR_ROW(uint16_t width, TextAttribute attr);
+    ATTR_ROW(rle_vector&& v) :
+        _data(std::move(v)) {}
 
     ~ATTR_ROW() = default;
 
@@ -57,10 +59,10 @@ public:
     friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
     friend class ROW;
 
+    rle_vector _data;
+
 private:
     void Reset(const TextAttribute attr);
-
-    rle_vector _data;
 
 #ifdef UNIT_TESTING
     friend class CommonState;

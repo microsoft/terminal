@@ -61,7 +61,7 @@ public:
     void SetWindowInfo(const SMALL_RECT view) noexcept;
     void Paint() const noexcept;
 
-    void WriteText(const std::vector<OutputCell>& text, const SHORT column);
+    void WriteText(const RowImage& text, const SHORT column);
     void SetAttributes(const TextAttribute& attr);
 
     const TextBuffer& GetTextBuffer() const noexcept;

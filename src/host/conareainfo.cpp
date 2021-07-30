@@ -109,11 +109,10 @@ void ConversionAreaInfo::SetAttributes(const TextAttribute& attr)
 // Arguments:
 // - text - Text to insert into the conversion area buffer
 // - column - Column to start at (X position)
-void ConversionAreaInfo::WriteText(const std::vector<OutputCell>& text,
+void ConversionAreaInfo::WriteText(const RowImage& text,
                                    const SHORT column)
 {
-    gsl::span<const OutputCell> view(text.data(), text.size());
-    _screenBuffer->Write(view, { column, 0 });
+    _screenBuffer->GetTextBuffer().WriteRowImage(til::point{ column, 0 }, text);
 }
 
 // Routine Description:

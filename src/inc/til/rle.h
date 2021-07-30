@@ -520,6 +520,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             _total_length = new_size;
         }
 
+        void append(const value_type& value)
+        {
+            ++_total_length;
+            if (!_runs.empty())
+            {
+                auto& back{ _runs.back() };
+                if (back.value == value)
+                {
+                    ++back.length;
+                    return;
+                }
+            }
+            // Either runs was empty, or we have to append a new run.
+            _runs.emplace_back(value, S{ 1 });
+        }
+
         constexpr bool operator==(const basic_rle& other) const noexcept
         {
             return _total_length == other._total_length && _runs == other._runs;

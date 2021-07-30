@@ -217,76 +217,60 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
 // - colorArray - Array of color values provided by the IME.
 // Return Value:
 // - Vector of OutputCells where each one represents one cell of the output buffer.
-std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view text,
-                                                         const gsl::span<const BYTE> attributes,
-                                                         const gsl::span<const WORD> colorArray)
+RowImage ConsoleImeInfo::s_ConvertToCells(std::wstring_view text,
+                                          const gsl::span<const BYTE> attributes,
+                                          const gsl::span<const WORD> colorArray)
 {
+    RowImage e;
     std::vector<OutputCell> cells;
 
-    // - Convert incoming wchar_t stream into UTF-16 units.
-    const auto glyphs = Utf16Parser::Parse(text);
-
-    // - Walk through all of the grouped up text, match up the correct attribute to it, and make a new cell.
-    size_t attributesUsed = 0;
-    for (const auto& parsedGlyph : glyphs)
+    size_t attributesUsed{};
+    while (!text.empty())
     {
-        const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
-        // Collect up attributes that apply to this glyph range.
-        auto drawingAttr = s_RetrieveAttributeAt(attributesUsed, attributes, colorArray);
-        attributesUsed++;
+        const auto glyph{ Utf16Parser::ParseNext(text) };
+        text = text.substr(glyph.size());
+        const uint8_t width{ gsl::narrow_cast<uint8_t>(IsGlyphFullWidth(glyph) ? 2u : 1u) };
 
-        // The IME gave us an attribute for every glyph position in a surrogate pair.
-        // But the only important information will be the cursor position.
-        // Check all additional attributes to see if the cursor resides on top of them.
-        for (size_t i = 1; i < glyph.size(); i++)
-        {
-            TextAttribute additionalAttr = s_RetrieveAttributeAt(attributesUsed, attributes, colorArray);
-            attributesUsed++;
-            if (additionalAttr.IsLeftVerticalDisplayed())
-            {
-                drawingAttr.SetLeftVerticalDisplayed(true);
-            }
-            if (additionalAttr.IsRightVerticalDisplayed())
-            {
-                drawingAttr.SetRightVerticalDisplayed(true);
-            }
+        // add glyph
+        e._data.append(glyph);
+
+        // register its width
+        e._cwid.append(width);
+        for (auto z{ glyph.size() }; z > 1; --z)
+        { // add a trailing 0-width for every surrogate pair trail
+            e._cwid.append(0);
         }
 
-        // We have to determine if the glyph range is 1 column or two.
-        // If it's full width, it's two, and we need to make sure we don't draw the cursor
-        // right down the middle of the character.
-        // Otherwise it's one column and we'll push it in with the default empty DbcsAttribute.
-        DbcsAttribute dbcsAttr;
-        if (IsGlyphFullWidth(glyph))
+        auto drawingAttr = s_RetrieveAttributeAt(attributesUsed++, attributes, colorArray);
+        if (width == 1 || !(drawingAttr.IsLeftVerticalDisplayed() || drawingAttr.IsRightVerticalDisplayed()))
         {
-            auto leftHalfAttr = drawingAttr;
-            auto rightHalfAttr = drawingAttr;
-
-            // Don't draw lines in the middle of full width glyphs.
-            // If we need a right vertical, don't apply it to the left side of the character
-            if (leftHalfAttr.IsRightVerticalDisplayed())
+            for (auto z{ width }; z > 0; --z) // add an attribute for each cell covered
             {
-                leftHalfAttr.SetRightVerticalDisplayed(false);
+                e._attrRow._data.append(drawingAttr);
             }
-
-            dbcsAttr.SetLeading();
-            cells.emplace_back(glyph, dbcsAttr, leftHalfAttr);
-            dbcsAttr.SetTrailing();
-
-            // If we need a left vertical, don't apply it to the right side of the character
-            if (rightHalfAttr.IsLeftVerticalDisplayed())
-            {
-                rightHalfAttr.SetLeftVerticalDisplayed(false);
-            }
-            cells.emplace_back(glyph, dbcsAttr, rightHalfAttr);
         }
         else
         {
-            cells.emplace_back(glyph, dbcsAttr, drawingAttr);
-        }
-    }
+            // the width was >1 and the attribute contained the left or the right cursor indicator; split them into [ ___ ] (left, middle, right)
+            auto first = drawingAttr;
+            first.SetRightVerticalDisplayed(false);
+            auto middle = drawingAttr;
+            middle.SetLeftVerticalDisplayed(false);
+            middle.SetRightVerticalDisplayed(false);
+            auto last = drawingAttr;
+            last.SetLeftVerticalDisplayed(false);
 
-    return cells;
+            e._attrRow._data.append(first);
+            for (auto z{ width }; z > 2; --z)
+            {
+                e._attrRow._data.append(middle);
+            }
+            e._attrRow._data.append(last);
+        }
+
+        e._width += width;
+    }
+    return e;
 }
 
 // Routine Description:
@@ -308,81 +292,55 @@ std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view
 //   However, if text couldn't fit in our line (full-width character starting at the very last cell)
 //   then we will give back the same begin and update the position for the next call to try again.
 //   If the viewport is deemed too small, we'll skip past it and advance begin past the entire full-width character.
-std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
-                                                                             const std::vector<OutputCell>::const_iterator end,
-                                                                             COORD& pos,
-                                                                             const Microsoft::Console::Types::Viewport view,
-                                                                             SCREEN_INFORMATION& screenInfo)
+void ConsoleImeInfo::_WriteConversionArea(const RowImage& cells,
+                                          COORD pos,
+                                          const Microsoft::Console::Types::Viewport view,
+                                          SCREEN_INFORMATION& screenInfo)
 {
-    // The position in the viewport where we will start inserting cells for this conversion area
-    // NOTE: We might exit early if there's not enough space to fit here, so we take a copy of
-    //       the original and increment it up front.
-    const auto insertionPos = pos;
-
-    // Advance the cursor position to set up the next call for success (insert the next conversion area
-    // at the beginning of the following line)
-    pos.X = view.Left();
-    pos.Y++;
-
     // The index of the last column in the viewport. (view is inclusive)
     const auto finalViewColumn = view.RightInclusive();
 
-    // The maximum number of cells we can insert into a line.
-    const auto lineWidth = finalViewColumn - insertionPos.X + 1; // +1 because view was inclusive
-
-    // The iterator to the beginning position to form our line
-    const auto lineBegin = begin;
-
-    // The total number of cells we could insert.
-    const auto size = end - begin;
-    FAIL_FAST_IF(size <= 0); // It's a programming error to have <= 0 cells to insert.
-
-    // The end is the smaller of the remaining number of cells or the amount of line cells we can write before
-    // hitting the right edge of the viewport
-    auto lineEnd = lineBegin + std::min(size, (ptrdiff_t)lineWidth);
-
-    // We must attempt to compensate for ending on a leading byte. We can't split a full-width character across lines.
-    // As such, if the last item is a leading byte, back the end up by one.
-    FAIL_FAST_IF(lineEnd <= lineBegin); // We should have at least 1 space we can back up.
-
-    // Get the last cell in the run and if it's a leading byte, move the end position back one so we don't
-    // try to insert it.
-    const auto lastCell = lineEnd - 1;
-    if (lastCell->DbcsAttr().IsLeading())
+    auto remain{ cells };
+    do
     {
-        lineEnd--;
-    }
+        // The maximum number of cells we can insert into a line.
+        const auto lineWidth = finalViewColumn - pos.X + 1; // +1 because view was inclusive
 
-    // Copy out the substring into a vector.
-    const std::vector<OutputCell> lineVec(lineBegin, lineEnd);
+        auto [draw, left] = cells.split(::base::saturated_cast<uint16_t>(lineWidth));
 
-    // Add a conversion area to the internal state to hold this line.
-    THROW_IF_FAILED(_AddConversionArea());
+        // Add a conversion area to the internal state to hold this line.
+        THROW_IF_FAILED(_AddConversionArea());
 
-    // Get the added conversion area.
-    auto& area = ConvAreaCompStr.back();
+        // Get the added conversion area.
+        auto& area = ConvAreaCompStr.back();
 
-    // Write our text into the conversion area.
-    area.WriteText(lineVec, insertionPos.X);
+        area.WriteText(draw, pos.X);
 
-    // Set the viewport and positioning parameters for the conversion area to describe to the renderer
-    // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
-    const SMALL_RECT region{ insertionPos.X, 0, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), 0 };
-    area.SetWindowInfo(region);
-    area.SetViewPos({ 0 - view.Left(), insertionPos.Y - view.Top() });
+        // Set the viewport and positioning parameters for the conversion area to describe to the renderer
+        // the appropriate location to overlay this conversion area on top of the main screen buffer inside the viewport.
+        const SMALL_RECT region{ pos.X, 0, gsl::narrow<SHORT>(pos.X + draw._width - 1), 0 };
+        area.SetWindowInfo(region);
+        area.SetViewPos({ 0 - view.Left(), pos.Y - view.Top() });
 
-    // Make it visible and paint it.
-    area.SetHidden(false);
-    area.Paint();
+        // Make it visible and paint it.
+        area.SetHidden(false);
+        area.Paint();
 
-    // Notify accessibility that we have updated the text in this display region within the viewport.
-    if (screenInfo.HasAccessibilityEventing())
-    {
-        screenInfo.NotifyAccessibilityEventing(insertionPos.X, insertionPos.Y, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), insertionPos.Y);
-    }
+        // Notify accessibility that we have updated the text in this display region within the viewport.
+        if (screenInfo.HasAccessibilityEventing())
+        {
+            screenInfo.NotifyAccessibilityEventing(pos.X, pos.Y, gsl::narrow<SHORT>(pos.X + draw._width - 1), pos.Y);
+        }
 
-    // Hand back the iterator representing the end of what we used to be fed into the beginning of the next call.
-    return lineEnd;
+        if (remain._data.empty())
+            break;
+
+        // Advance the cursor position to set up the next call for success (insert the next conversion area
+        // at the beginning of the following line)
+        pos.X = view.Left();
+        pos.Y++;
+        remain = std::move(left);
+    } while (true);
 }
 
 // Routine Description:
@@ -432,17 +390,7 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
     const auto view = screenInfo.GetViewport();
     // Set cursor position relative to viewport
 
-    // Set up our iterators. We will walk through the entire set of cells from beginning to end.
-    // The first time, we will give the iterators as the whole span and the begin
-    // will be moved forward by the conversion area write to set up the next call.
-    auto begin = cells.cbegin();
-    const auto end = cells.cend();
-
-    // Write over and over updating the beginning iterator until we reach the end.
-    do
-    {
-        begin = _WriteConversionArea(begin, end, pos, view, screenInfo);
-    } while (begin < end);
+    _WriteConversionArea(cells, pos, view, screenInfo);
 }
 
 // Routine Description:

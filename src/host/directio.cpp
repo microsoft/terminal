@@ -1010,8 +1010,9 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
             const auto charInfos = gsl::span<const CHAR_INFO>(subspan.data(), subspan.size());
 
             // Make the iterator and write to the target position.
-            OutputCellIterator it(charInfos);
-            storageBuffer.Write(it, target);
+            __debugbreak();
+            //OutputCellIterator it(charInfos);
+            //storageBuffer.Write(it, target);
         }
 
         // Since we've managed to write part of the request, return the clamped part that we actually used.

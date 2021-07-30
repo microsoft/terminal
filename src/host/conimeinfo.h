@@ -22,6 +22,7 @@ Revision History:
 #include "../buffer/out/OutputCell.hpp"
 #include "../buffer/out/TextAttribute.hpp"
 #include "../renderer/inc/FontInfo.hpp"
+#include "../buffer/out/Row.hpp"
 #include "../types/inc/viewport.hpp"
 
 #include "conareainfo.h"
@@ -73,15 +74,14 @@ private:
                                                const gsl::span<const BYTE> attributes,
                                                const gsl::span<const WORD> colorArray);
 
-    static std::vector<OutputCell> s_ConvertToCells(const std::wstring_view text,
-                                                    const gsl::span<const BYTE> attributes,
-                                                    const gsl::span<const WORD> colorArray);
+    static RowImage s_ConvertToCells(std::wstring_view text,
+                                     const gsl::span<const BYTE> attributes,
+                                     const gsl::span<const WORD> colorArray);
 
-    std::vector<OutputCell>::const_iterator _WriteConversionArea(const std::vector<OutputCell>::const_iterator begin,
-                                                                 const std::vector<OutputCell>::const_iterator end,
-                                                                 COORD& pos,
-                                                                 const Microsoft::Console::Types::Viewport view,
-                                                                 SCREEN_INFORMATION& screenInfo);
+    void _WriteConversionArea(const RowImage& cells,
+                              COORD pos,
+                              const Microsoft::Console::Types::Viewport view,
+                              SCREEN_INFORMATION& screenInfo);
 
     bool _isSavedCursorVisible;
 

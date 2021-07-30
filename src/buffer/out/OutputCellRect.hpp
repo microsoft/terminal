@@ -21,10 +21,8 @@ Revision History:
 
 #pragma once
 
-#include "DbcsAttribute.hpp"
 #include "TextAttribute.hpp"
 #include "OutputCell.hpp"
-#include "OutputCellIterator.hpp"
 
 class OutputCellRect final
 {
@@ -33,7 +31,6 @@ public:
     OutputCellRect(const size_t rows, const size_t cols);
 
     gsl::span<OutputCell> GetRow(const size_t row);
-    OutputCellIterator GetRowIter(const size_t row) const;
 
     size_t Height() const noexcept;
     size_t Width() const noexcept;
