@@ -82,6 +82,24 @@ const COORD Terminal::GetSelectionEnd() const noexcept
     return _selection->end;
 }
 
+til::point Terminal::SelectionStartForRendering() const
+{
+    auto pos{ _selection->start };
+    const auto bufferSize{ GetTextBuffer().GetSize() };
+    bufferSize.DecrementInBounds(pos);
+    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    return til::point{ pos };
+}
+
+til::point Terminal::SelectionEndForRendering() const
+{
+    auto pos{ _selection->end };
+    const auto bufferSize{ GetTextBuffer().GetSize() };
+    bufferSize.IncrementInBounds(pos);
+    pos.Y = base::ClampSub(pos.Y, _VisibleStartIndex());
+    return til::point{ pos };
+}
+
 // Method Description:
 // - Checks if selection is active
 // Return Value:
@@ -309,6 +327,13 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
     return std::nullopt;
 }
 
+bool Terminal::MovingStart() const noexcept
+{
+    // true --> we're moving start endpoint ("higher")
+    // false --> we're moving end endpoint ("lower")
+    return _selection->start == _selection->pivot ? false : true;
+}
+
 // Method Description:
 // - updates the selection endpoints based on a direction and expansion mode. Primarily used for keyboard selection.
 // Arguments:
@@ -318,10 +343,9 @@ Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode, ControlKeyStates mods)
 {
     // 1. Figure out which endpoint to update
-    // If we're in mark mode, shift dictates whether you are moving the end or not.
-    // Otherwise, we're updating an existing selection, so one of the endpoints is the pivot,
-    //   signifying that the other endpoint is the one we want to move.
-    const auto movingEnd{ _markMode ? mods.IsShiftPressed() : _selection->start == _selection->pivot };
+    // One of the endpoints is the pivot,
+    // signifying that the other endpoint is the one we want to move.
+    const auto movingEnd{ _selection->start == _selection->pivot };
     auto targetPos{ movingEnd ? _selection->end : _selection->start };
 
     // 2. Perform the movement
@@ -346,12 +370,17 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     if (_markMode)
     {
         // [Mark Mode]
-        // - moveSelectionEnd  --> just move end (i.e. shift + arrow keys)
-        // - !moveSelectionEnd --> move all three (i.e. just use arrow keys)
-        _selection->end = targetPos;
-        if (!movingEnd)
+        // - shift --> updating a standard selection
+        // - !shift --> move all three (i.e. just use arrow keys)
+        if (mods.IsShiftPressed())
+        {
+            auto targetStart = false;
+            std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
+        }
+        else
         {
             _selection->start = targetPos;
+            _selection->end = targetPos;
             _selection->pivot = targetPos;
         }
     }

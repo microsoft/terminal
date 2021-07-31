@@ -13,6 +13,8 @@
 #include "TransparencyChangedEventArgs.g.h"
 #include "FoundResultsArgs.g.h"
 #include "ShowWindowArgs.g.h"
+#include "UpdateSelectionMarkersEventArgs.g.h"
+#include "cppwinrt_utils.h" // TODO CARLOS: maybe we can remove this include?
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -156,5 +158,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(bool, ShowOrHide);
+    };
+
+    struct UpdateSelectionMarkersEventArgs : public UpdateSelectionMarkersEventArgsT<UpdateSelectionMarkersEventArgs>
+    {
+    public:
+        UpdateSelectionMarkersEventArgs(const bool clearMarkers) :
+            _ClearMarkers(clearMarkers)
+        {
+        }
+
+        WINRT_PROPERTY(bool, ClearMarkers, false);
     };
 }
