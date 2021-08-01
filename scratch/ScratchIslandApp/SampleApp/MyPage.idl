@@ -1,0 +1,10 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace SampleApp
+{
+    [default_interface] runtimeclass MyPage : Windows.UI.Xaml.Controls.Page
+    {
+        MyPage();
+    }
+}

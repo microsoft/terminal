@@ -32,6 +32,8 @@ jobs:
     dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
     condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
     testSuite: 'DevTestSuite'
+    platform: ${{ parameters.platform }}
+    configuration: ${{ parameters.configuration }}
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
 - template: helix-processtestresults-job.yml

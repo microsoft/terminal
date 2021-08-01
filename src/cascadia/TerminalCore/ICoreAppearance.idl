@@ -24,11 +24,38 @@ namespace Microsoft.Terminal.Core
         UInt8 A;
     };
 
+    // TerminalCore declares its own Color struct to avoid depending on
+    // Windows.UI. Windows.Foundation.Point also exists, but it's composed of
+    // floating-point coordinates, when we almost always need integer coordinates.
+    // It is supported by til::point for conversions in and out of WinRT land.
+    struct Point
+    {
+        Int32 X;
+        Int32 Y;
+    };
+
+    // Same thing here, but with padding. Can't use Windows.UI.Thickness, so
+    // we'll declare our own.
+    struct Padding {
+        Double Left;
+        Double Top;
+        Double Right;
+        Double Bottom;
+    };
+
+    // This is a projection of Microsoft::Terminal::Core::ControlKeyStates,
+    // for conversions in and out of WinRT land.
+    struct ControlKeyStates
+    {
+        UInt32 Value;
+    };
+
     declare
     {
         // Forward declare this parameterized specialization so that it lives
         // in TerminalCore instead of being flung to the winds of all IDL dependents.
         interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>;
+        interface Windows.Foundation.IReference<Microsoft.Terminal.Core.Point>;
     }
 
     interface ICoreAppearance

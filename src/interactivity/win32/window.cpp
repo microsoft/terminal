@@ -29,11 +29,8 @@
 #include "../../renderer/base/renderer.hpp"
 #include "../../renderer/gdi/gdirenderer.hpp"
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
-#else
-// Forward-declare this so we don't blow up later.
-struct DxEngine;
 #endif
 
 #include "../inc/ServiceLocator.hpp"
@@ -214,10 +211,12 @@ void Window::_UpdateSystemMetrics() const
 
     const bool useDx = pSettings->GetUseDx();
     GdiEngine* pGdiEngine = nullptr;
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     [[maybe_unused]] DxEngine* pDxEngine = nullptr;
+#endif
     try
     {
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
         if (useDx)
         {
             pDxEngine = new DxEngine();
@@ -324,7 +323,7 @@ void Window::_UpdateSystemMetrics() const
         {
             _hWnd = hWnd;
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
             if (useDx)
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));

@@ -62,13 +62,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
     //   one for when the terminal is focused and the other for when the terminal is unfocused
-    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const IKeyBindings& keybindings)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
         settings->_KeyBindings = keybindings;
-
-        const auto profile = appSettings.FindProfile(profileGuid);
-        THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
@@ -84,6 +81,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return winrt::make<TerminalSettingsCreateResult>(*settings, child);
+    }
+
+    // Method Description:
+    // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
+    //   use the guid to look up the profile that should be used to
+    //   create these TerminalSettings. Then, we'll apply settings contained in the
+    //   global and profile settings to the instance.
+    // Arguments:
+    // - appSettings: the set of settings being used to construct the new terminal
+    // - profileGuid: the unique identifier (guid) of the profile
+    // - keybindings: the keybinding handler
+    // Return Value:
+    // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
+    //   one for when the terminal is focused and the other for when the terminal is unfocused
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
+    {
+        const auto profile = appSettings.FindProfile(profileGuid);
+        THROW_HR_IF_NULL(E_INVALIDARG, profile);
+        return CreateWithProfile(appSettings, profile, keybindings);
     }
 
     // Method Description:
@@ -260,9 +276,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _UseAcrylic = profile.UseAcrylic();
         _TintOpacity = profile.AcrylicOpacity();
 
-        _FontFace = profile.FontFace();
-        _FontSize = profile.FontSize();
-        _FontWeight = profile.FontWeight();
+        _FontFace = profile.FontInfo().FontFace();
+        _FontSize = profile.FontInfo().FontSize();
+        _FontWeight = profile.FontInfo().FontWeight();
+        _FontFeatures = profile.FontInfo().FontFeatures();
+        _FontAxes = profile.FontInfo().FontAxes();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();

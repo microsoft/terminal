@@ -105,6 +105,14 @@ namespace winrt::TerminalApp::implementation
         // Create a connection based on the values in our settings object if we weren't given one.
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings.DefaultSettings());
 
+        // If we had an `existingConnection`, then this is an inbound handoff from somewhere else.
+        // We need to tell it about our size information so it can match the dimensions of what
+        // we are about to present.
+        if (existingConnection)
+        {
+            connection.Resize(settings.DefaultSettings().InitialRows(), settings.DefaultSettings().InitialCols());
+        }
+
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
         {
@@ -497,24 +505,25 @@ namespace winrt::TerminalApp::implementation
     //   TerminalPage::_OnTabSelectionChanged
     // Return Value:
     // true iff we were able to select that tab index, false otherwise
-    bool TerminalPage::_SelectTab(const uint32_t tabIndex)
+    bool TerminalPage::_SelectTab(uint32_t tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _tabs.Size())
-        {
-            auto tab{ _tabs.GetAt(tabIndex) };
-            if (_startupState == StartupState::InStartup)
-            {
-                _tabView.SelectedItem(tab.TabViewItem());
-                _UpdatedSelectedTab(tab);
-            }
-            else
-            {
-                _SetFocusedTab(tab);
-            }
+        // GH#9369 - if the argument is out of range, then clamp to the number
+        // of available tabs. Previously, we'd just silently do nothing if the
+        // value was greater than the number of tabs.
+        tabIndex = std::clamp(tabIndex, 0u, _tabs.Size() - 1);
 
-            return true;
+        auto tab{ _tabs.GetAt(tabIndex) };
+        if (_startupState == StartupState::InStartup)
+        {
+            _tabView.SelectedItem(tab.TabViewItem());
+            _UpdatedSelectedTab(tab);
         }
-        return false;
+        else
+        {
+            _SetFocusedTab(tab);
+        }
+
+        return true;
     }
 
     // Method Description:
@@ -618,17 +627,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Close the currently focused tab. Focus will move to the left, if possible.
-    void TerminalPage::_CloseFocusedTab()
-    {
-        if (auto index{ _GetFocusedTabIndex() })
-        {
-            auto tab{ _tabs.GetAt(*index) };
-            _HandleCloseTabRequested(tab);
-        }
-    }
-
-    // Method Description:
     // - Close the currently focused pane. If the pane is the last pane in the
     //   tab, the tab will also be closed. This will happen when we handle the
     //   tab's Closed event.
@@ -672,6 +670,20 @@ namespace winrt::TerminalApp::implementation
             {
                 _HandleCloseTabRequested(tab);
             }
+        }
+    }
+
+    // Method Description:
+    // - Close the tab at the given index.
+    void TerminalPage::_CloseTabAtIndex(uint32_t index)
+    {
+        if (index >= _tabs.Size())
+        {
+            return;
+        }
+        if (auto tab{ _tabs.GetAt(index) })
+        {
+            _HandleCloseTabRequested(tab);
         }
     }
 

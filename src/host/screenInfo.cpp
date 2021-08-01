@@ -106,8 +106,9 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
         IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        THROW_HR_IF_NULL(E_FAIL, pNotifier);
-
+        // It is possible for pNotifier to be null and that's OK.
+        // For instance, the PTY doesn't need to send events. Just pass it along
+        // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
         SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
 
         // Set up viewport
@@ -564,6 +565,19 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
     }
 }
 
+// Routine Description:
+// - Informs clients whether we have accessibility eventing so they can
+//   save themselves the work of performing math or lookups before calling
+//   `NotifyAccessibilityEventing`.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if we have an accessibility listener. False otherwise.
+bool SCREEN_INFORMATION::HasAccessibilityEventing() const noexcept
+{
+    return _pAccessibilityNotifier;
+}
+
 // NOTE: This method was historically used to notify accessibility apps AND
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
@@ -573,6 +587,11 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
                                                      const short sEndX,
                                                      const short sEndY)
 {
+    if (!_pAccessibilityNotifier)
+    {
+        return;
+    }
+
     // Fire off a winevent to let accessibility apps know what changed.
     if (IsActiveScreenBuffer())
     {
@@ -674,7 +693,10 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     }
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    if (_pAccessibilityNotifier)
+    {
+        _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    }
 
     ResizingWindow--;
 }
@@ -1520,7 +1542,10 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (NT_SUCCESS(status))
     {
-        NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        if (HasAccessibilityEventing())
+        {
+            NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        }
 
         if ((!ConvScreenInfo))
         {
@@ -1532,7 +1557,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         }
 
         // Fire off an event to let accessibility apps know the layout has changed.
-        if (IsActiveScreenBuffer())
+        if (_pAccessibilityNotifier && IsActiveScreenBuffer())
         {
             _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
         }

@@ -158,6 +158,12 @@ namespace Microsoft.Terminal.Settings.Model
         FocusDirection FocusDirection { get; };
     };
 
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    {
+        MovePaneArgs(FocusDirection direction);
+        FocusDirection Direction { get; };
+    };
+
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
         Int32 Delta { get; };
@@ -218,6 +224,12 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
     {
         CloseTabsAfterArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabArgs : IActionArgs
+    {
+        CloseTabArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 

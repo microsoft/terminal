@@ -38,8 +38,8 @@ public:
     void FlashTaskbar();
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
-    void UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
-    void SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList);
+    void UnregisterHotKey(const int index) noexcept;
+    void RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
 
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
@@ -51,6 +51,8 @@ public:
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
+    WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
 
 protected:
     void ForceResize()
@@ -63,8 +65,8 @@ protected:
     HWND _interopWindowHandle;
 
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
-
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
+    wil::com_ptr<ITaskbarList3> _taskbar;
 
     std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> _pfnCreateCallback;
     std::function<float(bool, float)> _pfnSnapDimensionCallback;
@@ -77,9 +79,9 @@ protected:
     bool _alwaysOnTop{ false };
     bool _fullscreen{ false };
     bool _fWasMaximizedBeforeFullscreen{ false };
-    RECT _rcWindowBeforeFullscreen;
-    RECT _rcWorkBeforeFullscreen;
-    UINT _dpiBeforeFullscreen;
+    RECT _rcWindowBeforeFullscreen{};
+    RECT _rcWorkBeforeFullscreen{};
+    UINT _dpiBeforeFullscreen{ 96 };
 
     virtual void _SetIsBorderless(const bool borderlessEnabled);
     virtual void _SetIsFullscreen(const bool fullscreenEnabled);
@@ -87,8 +89,6 @@ protected:
     void _SetFullscreenPosition(const RECT rcMonitor, const RECT rcWork);
 
     LONG _getDesiredWindowStyle() const;
-
-    wil::com_ptr<ITaskbarList3> _taskbar;
 
     void _OnGetMinMaxInfo(const WPARAM wParam, const LPARAM lParam);
     long _calculateTotalSize(const bool isWidth, const long clientSize, const long nonClientSize);

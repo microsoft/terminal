@@ -10,6 +10,7 @@
 #include "LegacyProfileGeneratorNamespaces.h"
 #include "TerminalSettingsSerializationHelpers.h"
 #include "AppearanceConfig.h"
+#include "FontConfig.h"
 
 #include "Profile.g.cpp"
 
@@ -34,9 +35,7 @@ static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
 
 static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
-static constexpr std::string_view FontFaceKey{ "fontFace" };
-static constexpr std::string_view FontSizeKey{ "fontSize" };
-static constexpr std::string_view FontWeightKey{ "fontWeight" };
+static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
@@ -60,6 +59,27 @@ Profile::Profile(guid guid) :
 {
 }
 
+void Profile::CreateUnfocusedAppearance()
+{
+    if (!_UnfocusedAppearance)
+    {
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+
+        // If an unfocused appearance is defined in this profile, any undefined parameters are
+        // taken from this profile's default appearance, so add it as a parent
+        com_ptr<AppearanceConfig> parentCom;
+        parentCom.copy_from(winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance));
+        unfocusedAppearance->InsertParent(parentCom);
+
+        _UnfocusedAppearance = *unfocusedAppearance;
+    }
+}
+
+void Profile::DeleteUnfocusedAppearance()
+{
+    _UnfocusedAppearance = std::nullopt;
+}
+
 winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };
@@ -76,9 +96,6 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_UseAcrylic = source->_UseAcrylic;
     profile->_AcrylicOpacity = source->_AcrylicOpacity;
     profile->_ScrollState = source->_ScrollState;
-    profile->_FontFace = source->_FontFace;
-    profile->_FontSize = source->_FontSize;
-    profile->_FontWeight = source->_FontWeight;
     profile->_Padding = source->_Padding;
     profile->_Commandline = source->_Commandline;
     profile->_StartingDirectory = source->_StartingDirectory;
@@ -92,8 +109,14 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_ConnectionType = source->_ConnectionType;
     profile->_Origin = source->_Origin;
 
-    // Copy over the appearance
+    // Copy over the font info
     const auto weakRefToProfile = weak_ref<Model::Profile>(*profile);
+    winrt::com_ptr<FontConfig> sourceFontInfoImpl;
+    sourceFontInfoImpl.copy_from(winrt::get_self<FontConfig>(source->_FontInfo));
+    auto copiedFontInfo = FontConfig::CopyFontInfo(sourceFontInfoImpl, weakRefToProfile);
+    profile->_FontInfo = *copiedFontInfo;
+
+    // Copy over the appearance
     winrt::com_ptr<AppearanceConfig> sourceDefaultAppearanceImpl;
     sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_DefaultAppearance));
     auto copiedDefaultAppearance = AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl, weakRefToProfile);
@@ -214,8 +237,6 @@ Json::Value Profile::GenerateStub() const
         stub[JsonKey(SourceKey)] = winrt::to_string(source);
     }
 
-    stub[JsonKey(HiddenKey)] = Hidden();
-
     return stub;
 }
 
@@ -315,6 +336,10 @@ void Profile::LayerJson(const Json::Value& json)
     auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance);
     defaultAppearanceImpl->LayerJson(json);
 
+    // Font Settings
+    auto fontInfoImpl = winrt::get_self<implementation::FontConfig>(_FontInfo);
+    fontInfoImpl->LayerJson(json);
+
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
@@ -328,11 +353,8 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
-    JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
     JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::GetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
@@ -392,11 +414,29 @@ void Profile::_FinalizeInheritance()
             }
         }
     }
+    if (auto fontInfoImpl = get_self<FontConfig>(_FontInfo))
+    {
+        // Clear any existing parents first, we don't want duplicates from any previous
+        // calls to this function
+        fontInfoImpl->ClearParents();
+        for (auto& parent : _parents)
+        {
+            if (auto parentFontInfoImpl = parent->_FontInfo.try_as<FontConfig>())
+            {
+                fontInfoImpl->InsertParent(parentFontInfoImpl);
+            }
+        }
+    }
 }
 
 winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig Profile::DefaultAppearance()
 {
     return _DefaultAppearance;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::FontConfig Profile::FontInfo()
+{
+    return _FontInfo;
 }
 
 // Method Description:
@@ -510,11 +550,8 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
-    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
     JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
@@ -529,6 +566,13 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+
+    // Font settings
+    const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
+    if (fontInfoImpl->HasAnyOptionSet())
+    {
+        json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+    }
 
     if (_UnfocusedAppearance)
     {

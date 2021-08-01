@@ -99,6 +99,7 @@ public:
 
     [[nodiscard]] NTSTATUS ResizeScreenBuffer(const COORD coordNewScreenSize, const bool fDoScrollBarUpdate);
 
+    bool HasAccessibilityEventing() const noexcept;
     void NotifyAccessibilityEventing(const short sStartX, const short sStartY, const short sEndX, const short sEndY);
 
     void UpdateScrollBars();

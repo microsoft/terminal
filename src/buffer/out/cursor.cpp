@@ -315,6 +315,11 @@ void Cursor::StartDeferDrawing() noexcept
     _fDeferCursorRedraw = true;
 }
 
+bool Cursor::IsDeferDrawing() noexcept
+{
+    return _fDeferCursorRedraw;
+}
+
 void Cursor::EndDeferDrawing() noexcept
 {
     if (_fHaveDeferredCursorRedraw)

@@ -15,8 +15,8 @@
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="DefaultTerminal.h" >
-        <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    <ClInclude Include="DefaultTerminal.h">
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
@@ -32,6 +32,9 @@
       <DependentUpon>ActionMap.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="AzureCloudShellGenerator.h" />
+    <ClInclude Include="ApplicationState.h">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClInclude>
@@ -42,6 +45,7 @@
       <DependentUpon>Command.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="DefaultProfileUtils.h" />
+    <ClInclude Include="FileUtils.h" />
     <ClInclude Include="GlobalAppSettings.h">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
@@ -59,6 +63,9 @@
     <ClInclude Include="AppearanceConfig.h">
       <DependentUpon>AppearanceConfig.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="FontConfig.h">
+      <DependentUpon>FontConfig.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumMappings.h">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
@@ -75,8 +82,8 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="DefaultTerminal.cpp">
-        <DependentUpon>DefaultTerminal.idl</DependentUpon>
-      </ClCompile>
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="IconPathConverter.cpp">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
@@ -97,6 +104,9 @@
       <DependentUpon>ActionMap.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
+    <ClCompile Include="ApplicationState.cpp">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
@@ -110,6 +120,7 @@
       <DependentUpon>Command.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="DefaultProfileUtils.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
@@ -122,6 +133,9 @@
     </ClCompile>
     <ClCompile Include="AppearanceConfig.cpp">
       <DependentUpon>AppearanceConfig.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FontConfig.cpp">
+      <DependentUpon>FontConfig.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalSettings.cpp">
       <DependentUpon>TerminalSettings.idl</DependentUpon>
@@ -141,6 +155,7 @@
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
     <Midl Include="ActionMap.idl" />
+    <Midl Include="ApplicationState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
@@ -154,6 +169,7 @@
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="AppearanceConfig.idl" />
     <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="FontConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>

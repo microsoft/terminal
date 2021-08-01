@@ -4,13 +4,13 @@
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?<modifier>(?<mod1>ctrl|alt|shift|win)(?:\\+(?<mod2>ctrl|alt|shift|win)(?<!\\k<mod1>))?(?:\\+(?<mod3>ctrl|alt|shift|win)(?<!\\k<mod1>|\\k<mod2>))?(?:\\+(?<mod4>ctrl|alt|shift|win)(?<!\\k<mod1>|\\k<mod2>|\\k<mod3>))?\\+)?(?<key>[^\\s+]|app|menu|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
+      "pattern": "^(?:(?:ctrl|alt|shift|win)\\+)*(?:app|backspace|browser_(?:back|forward|refresh|stop|search|favorites|home)|comma|delete|down|end|enter|esc|escape|home|insert|left|menu|minus|pagedown|pageup|period|pgdn|pgup|plus|right|space|tab|up|f(?:1\\d?|2[0-4]?|[3-9])|numpad\\d|numpad_(?:\\d|add|decimal|divide|minus|multiply|period|plus|subtract)|(?:vk|sc)\\((?:[1-9]|1?\\d{2}|2[0-4]\\d|25[0-5])\\)|[^\\s+])(?:\\+(?:ctrl|alt|shift|win))*$",
       "type": "string",
-      "description": "The string should fit the format \"[ctrl+][alt+][shift+][win+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\napp, menu\tMENU key\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
+      "description": "The string should fit the format \"[ctrl+][alt+][shift+][win+]<KeyName>\", where each modifier is optional. KeyName is either any single key character, an explicit virtual key or scan code in the form vk(nnn) and sc(nnn) respectively, or one of the special names listed at https://docs.microsoft.com/en-us/windows/terminal/customize-settings/actions#accepted-modifiers-and-keys"
     },
     "Color": {
       "default": "#",
-      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "pattern": "^#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3})?$",
       "type": "string",
       "format": "color"
     },
@@ -165,6 +165,49 @@
       },
       "type": "object"
     },
+    "FontConfig": {
+      "properties": {
+        "face": {
+          "default": "Cascadia Mono",
+          "description": "Name of the font face used in the profile.",
+          "type": "string"
+        },
+        "size": {
+          "default": 12,
+          "description": "Size of the font in points.",
+          "minimum": 1,
+          "type": "integer"
+        },
+        "weight": {
+          "default": "normal",
+          "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\"\n or the corresponding numeric representation of OpenType font weight.",
+          "oneOf": [
+            {
+              "enum": [
+                "thin",
+                "extra-light",
+                "light",
+                "semi-light",
+                "normal",
+                "medium",
+                "semi-bold",
+                "bold",
+                "extra-bold",
+                "black",
+                "extra-black"
+              ],
+              "type": "string"
+            },
+            {
+              "maximum": 990,
+              "minimum": 100,
+              "type": "integer"
+            }
+          ]
+        }
+      },
+      "type": "object"
+    },
     "ProfileGuid": {
       "default": "{}",
       "pattern": "^\\{[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}\\}$",
@@ -191,9 +234,11 @@
         "find",
         "findMatch",
         "focusPane",
+        "globalSummon",
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
+        "movePane",
         "moveTab",
         "newTab",
         "newWindow",
@@ -206,6 +251,7 @@
         "prevTab",
         "renameTab",
         "openTabRenamer",
+        "quakeMode",
         "resetFontSize",
         "resizePane",
         "renameWindow",
@@ -469,6 +515,23 @@
       ],
       "required": [ "direction" ]
     },
+    "MovePaneAction": {
+      "description": "Arguments corresponding to a Move Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "movePane" },
+            "direction": {
+              "$ref": "#/definitions/FocusDirection",
+              "default": "left",
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane."
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
     "ResizePaneAction": {
       "description": "Arguments corresponding to a Resize Pane Action",
       "allOf": [
@@ -544,12 +607,14 @@
             "action": { "type": "string", "pattern": "openSettings" },
             "target": {
               "type": "string",
-              "default": "settingsFile",
-              "description": "The settings file to open.",
+              "default": "settingsUI",
+              "description": "Opens Settings UI or settings file.",
               "enum": [
                 "settingsFile",
                 "defaultsFile",
-                "allFiles"
+                "allFiles",
+                "settingsUI"
+
               ]
             }
           }
@@ -639,6 +704,25 @@
               ],
               "default": null,
               "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
+            }
+          }
+        }
+      ]
+    },
+    "CloseTabAction": {
+      "description": "Arguments for a closeTab action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "closeTab" },
+            "index": {
+              "oneOf": [
+                { "type": "integer" },
+                { "type": "null" }
+              ],
+              "default": null,
+              "description": "Close the tab at this index. If no index is provided, use the focused tab's index."
             }
           }
         }
@@ -817,6 +901,63 @@
         }
       ]
     },
+    "GlobalSummonAction": {
+      "description": "This is a special action that works globally in the OS, rather than only in the context of the terminal window. When pressed, this action will summon the terminal window.",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "globalSummon" },
+            "desktop": {
+              "type": "string",
+              "default": "toCurrent",
+              "description": "This controls how the terminal should interact with virtual desktops.\n- \"any\": Leave the window on whichever desktop it's already on - will switch to that desktop as the window is activated.\n- \"toCurrent\" (default): Move the window to the current virtual desktop.\n- \"onCurrent\": Only summon the window if it's already on the current virtual desktop. ",
+              "enum": [
+                "any",
+                "toCurrent",
+                "onCurrent"
+              ]
+            },
+            "monitor": {
+              "type": "string",
+              "default": "toMouse",
+              "description": "This controls the monitor that the window will be summoned from/to.\n- \"any\": Summon the most recently used window, regardless of which monitor it's currently on.\n- \"toCurrent\": Summon the most recently used window to the monitor with the current foreground window.\n- \"toMouse\" (default): Summon the most recently used window to the monitor where the mouse cursor is.",
+              "enum": [
+                "any",
+                "toCurrent",
+                "toMouse"
+              ]
+            },
+            "name": {
+              "type": "string",
+              "description": "When provided, summon the window whose name or ID matches the given name value. If no such window exists, then create a new window with that name."
+            },
+            "dropdownDuration": {
+              "type": "number",
+              "minimum": 0,
+              "default": 0,
+              "description": "When provided with a positive number, \"slide\" the window in from the top of the screen using an animation that lasts dropdownDuration milliseconds."
+            },
+            "toggleVisibility": {
+              "type": "boolean",
+              "default": true,
+              "description": "When true, pressing the assigned keys for this action will dismiss (minimize) the window when the window is currently the foreground window."
+            }
+          }
+        }
+      ]
+    },
+    "QuakeModeAction": {
+      "description": "This action is a special variation of the globalSummon action. It specifically summons a window called \"_quake\". If you would like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry.",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "quakeMode" }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -829,6 +970,7 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
+              { "$ref": "#/definitions/MovePaneAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
@@ -838,6 +980,7 @@
               { "$ref": "#/definitions/WtAction" },
               { "$ref": "#/definitions/CloseOtherTabsAction" },
               { "$ref": "#/definitions/CloseTabsAfterAction" },
+              { "$ref": "#/definitions/CloseTabAction" },
               { "$ref": "#/definitions/ScrollUpAction" },
               { "$ref": "#/definitions/ScrollDownAction" },
               { "$ref": "#/definitions/MoveTabAction" },
@@ -848,6 +991,8 @@
               { "$ref": "#/definitions/RenameTabAction" },
               { "$ref": "#/definitions/RenameWindowAction" },
               { "$ref": "#/definitions/FocusPaneAction" },
+              { "$ref": "#/definitions/GlobalSummonAction" },
+              { "$ref": "#/definitions/QuakeModeAction" },
               { "type": "null" }
             ]
         },
@@ -868,16 +1013,38 @@
         },
         "icon": { "$ref": "#/definitions/Icon" },
         "name": {
-          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.",
+          "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
+          "properties": {
+            "key": {
+              "type": "string"
+            }
+          },
           "type": [
             "string",
+            "object",
             "null"
           ]
+        },
+        "iterateOn": {
+          "type": "string",
+          "description": "Used to create iterable commands based on other objects in your settings. Possible values:\n- \"profiles\" \n- \"schemes\"",
+          "enum": [
+            "profiles",
+            "schemes"
+          ]
+        },
+        "commands": {
+          "description": "List of commands to execute",
+          "items": {
+            "$ref": "#/definitions/Keybinding/properties/command"
+          },
+          "minItems": 1,
+          "type": "array"
         }
       },
-      "required": [
-        "command",
-        "keys"
+      "anyOf": [
+        {"required": ["name","commands"]},
+        {"required": ["command"]}
       ],
       "type": "object"
     },
@@ -968,6 +1135,10 @@
           "description": "When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one.",
           "type": "boolean"
         },
+        "experimental.input.forceVT": {
+          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
+          "type": "boolean"
+        },
         "initialCols": {
           "default": 120,
           "description": "The number of columns displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
@@ -1011,12 +1182,25 @@
           "type": [ "integer", "string" ],
           "deprecated": true
         },
+		"actions": {
+			"description": "Properties are specific to each custom action.",
+			"items": {
+			  "$ref": "#/definitions/Keybinding"
+			},
+			"type": "array"
+		  },
         "keybindings": {
-          "description": "Properties are specific to each custom key binding.",
+          "description": "[deprecated] Use actions instead.",
+          "deprecated": true,
           "items": {
             "$ref": "#/definitions/Keybinding"
           },
           "type": "array"
+        },
+        "language": {
+          "default": "",
+          "description": "Sets an override for the app's preferred language, expressed as a BCP-47 language tag like en-US.",
+          "type": "string"
         },
         "theme": {
           "default": "system",
@@ -1146,6 +1330,11 @@
           "description": "Sets the appearance of the terminal when it is unfocused.",
           "type": ["object", "null"]
         },
+        "font": {
+          "$ref": "#/definitions/FontConfig",
+          "description": "Sets the font options of the terminal.",
+          "type": ["object", "null"]
+        },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
           "oneOf": [
@@ -1262,18 +1451,20 @@
         },
         "fontFace": {
           "default": "Cascadia Mono",
-          "description": "Name of the font face used in the profile.",
-          "type": "string"
+          "description": "[deprecated] Define 'face' within the 'font' object instead.",
+          "type": "string",
+          "deprecated": true
         },
         "fontSize": {
           "default": 12,
-          "description": "Size of the font in points.",
+          "description": "[deprecated] Define 'size' within the 'font' object instead.",
           "minimum": 1,
-          "type": "integer"
+          "type": "integer",
+          "deprecated": true
         },
         "fontWeight": {
           "default": "normal",
-          "description": "Sets the weight (lightness or heaviness of the strokes) for the given font. Possible values:\n -\"thin\"\n -\"extra-light\"\n -\"light\"\n -\"semi-light\"\n -\"normal\" (default)\n -\"medium\"\n -\"semi-bold\"\n -\"bold\"\n -\"extra-bold\"\n -\"black\"\n -\"extra-black\"\n or the corresponding numeric representation of OpenType font weight.",
+          "description": "[deprecated] Define 'weight' within the 'font' object instead.",
           "oneOf": [
             {
               "enum": [
@@ -1296,7 +1487,8 @@
               "minimum": 100,
               "type": "integer"
             }
-          ]
+          ],
+          "deprecated": true
         },
         "foreground": {
           "$ref": "#/definitions/Color",

@@ -88,6 +88,15 @@
 
             <muxc:NavigationViewItemHeader x:Uid="Nav_Profiles" />
 
+            <muxc:NavigationViewItem x:Name="BaseLayerMenuItem"
+                                     x:Uid="Nav_ProfileDefaults"
+                                     Tag="GlobalProfile_Nav"
+                                     Visibility="{x:Bind ShowBaseLayerMenuItem}">
+                <muxc:NavigationViewItem.Icon>
+                    <FontIcon Glyph="&#xE81E;" />
+                </muxc:NavigationViewItem.Icon>
+            </muxc:NavigationViewItem>
+
         </muxc:NavigationView.MenuItems>
 
         <muxc:NavigationView.PaneFooter>
@@ -109,8 +118,10 @@
             </Grid.RowDefinitions>
             <Frame x:Name="contentFrame"
                    Grid.Row="0" />
+            <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"
                   Height="100"
+                  Background="{ThemeResource SystemAltHighColor}"
                   BorderBrush="{ThemeResource SystemBaseLowColor}"
                   BorderThickness="0,1,0,0">
                 <Grid.ColumnDefinitions>

@@ -28,7 +28,7 @@ Below is the schedule for when milestones will be included in release builds of 
 | 2021-01-31 | [1.6] in Windows Terminal Preview<br>[1.5] in Windows Terminal | [Windows Terminal Preview 1.6 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-6-release/) |
 | 2021-03-01 | [1.7] in Windows Terminal Preview<br>[1.6] in Windows Terminal | [Windows Terminal Preview 1.7 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-7-release/) |
 | 2021-04-14 | [1.8] in Windows Terminal Preview<br>[1.7] in Windows Terminal | [Windows Terminal Preview 1.8 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-8-release/) |
-| 2021-05-31 | [1.9] in Windows Terminal Preview<br>[1.8] in Windows Terminal | |
+| 2021-05-31 | [1.9] in Windows Terminal Preview<br>[1.8] in Windows Terminal | [Windows Terminal Preview 1.9 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-9-release/) |
 | 2021-07-31 | 1.10 in Windows Terminal Preview<br>[1.9] in Windows Terminal | |
 | 2021-08-30 | 1.11 in Windows Terminal Preview<br>1.10 in Windows Terminal | |
 | 2021-10-31 | 1.12 in Windows Terminal Preview<br>1.11 in Windows Terminal | |

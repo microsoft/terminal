@@ -70,7 +70,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     auto& buffer = ScreenInfo.GetTextBuffer();
     auto& cursor = buffer.GetCursor();
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto* const _pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
 
     if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
@@ -78,7 +78,8 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     }
 
     // Update the cursor pos in USER so accessibility will work.
-    if (cursor.HasMoved())
+    // Don't do all this work or send events if we don't have a notifier target.
+    if (pAccessibilityNotifier && cursor.HasMoved())
     {
         // Convert the buffer position to the equivalent screen coordinates
         // required by the notifier, taking line rendition into account.
@@ -93,7 +94,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
         rc.right = rc.left + fontSize.X;
         rc.bottom = rc.top + fontSize.Y;
 
-        _pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
+        pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
 
         // Send accessibility information
         {
@@ -109,7 +110,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(position.X, position.Y));
+            pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(position.X, position.Y));
         }
     }
 

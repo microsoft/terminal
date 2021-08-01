@@ -28,10 +28,13 @@ LKG
 mfcribbon
 microsoft
 microsoftonline
+MSAA
 msixbundle
+MSVC
 muxc
 netcore
 osgvsowi
+PFILETIME
 pgc
 pgo
 pgosweep
@@ -39,10 +42,13 @@ powerrename
 powershell
 propkey
 pscustomobject
+QWORD
 robocopy
 SACLs
+sdkddkver
 Shobjidl
 Skype
+SRW
 sxs
 Sysinternals
 sysnative
@@ -57,6 +63,7 @@ Virtualization
 visualstudio
 vscode
 VSTHRD
+winsdkver
 wlk
 wslpath
 wtl

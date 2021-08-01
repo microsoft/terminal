@@ -16,6 +16,7 @@ using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
+using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 namespace SettingsModelLocalTests
 {
@@ -1970,9 +1971,9 @@ namespace SettingsModelLocalTests
         auto settings = implementation::CascadiaSettings::FromJson(settingsObject);
 
         VERIFY_ARE_EQUAL(3u, settings->_globals->_actionMap->_KeyMap.size());
-        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('a') }));
-        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('b') }));
-        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ KeyModifiers::Ctrl, static_cast<int32_t>('c') }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('A'), 0 }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('B'), 0 }));
+        VERIFY_IS_NULL(settings->_globals->_actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
 
         for (const auto& warning : settings->_globals->_keybindingsWarnings)
         {
@@ -2123,7 +2124,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('A'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2140,7 +2141,7 @@ namespace SettingsModelLocalTests
         Log::Comment(L"Note that we're skipping ctrl+B, since that doesn't have `keys` set.");
 
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('C'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2154,7 +2155,7 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('D'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2168,7 +2169,7 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2182,7 +2183,7 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
         }
         {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
+            KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
             auto actionAndArgs = ::TestUtils::GetActionAndArgs(*actionMap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -2840,7 +2841,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->_warnings.Size());
         VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
-        const KeyChord expectedKeyChord{ true, false, true, static_cast<int>('W') };
+        const KeyChord expectedKeyChord{ true, false, true, false, static_cast<int>('W'), 0 };
         {
             // Verify NameMap returns correct value
             const auto& cmd{ nameMap.TryLookup(L"foo") };

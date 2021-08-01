@@ -481,19 +481,53 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the focus in.
     // Return Value:
-    // - <none>
-    void TerminalTab::NavigateFocus(const FocusDirection& direction)
+    // - Whether changing the focus succeeded. This allows a keychord to propagate
+    //   to the terminal when no other panes are present (GH#6219)
+    bool TerminalTab::NavigateFocus(const FocusDirection& direction)
     {
         if (direction == FocusDirection::Previous)
         {
+            if (_mruPanes.size() < 2)
+            {
+                return false;
+            }
             // To get to the previous pane, get the id of the previous pane and focus to that
-            _rootPane->FocusPane(_mruPanes.at(1));
+            return _rootPane->FocusPane(_mruPanes.at(1));
         }
         else
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            _rootPane->NavigateFocus(direction);
+            return _rootPane->NavigateFocus(direction);
+        }
+    }
+
+    // Method Description:
+    // - Attempts to swap the location of the focused pane with another pane
+    //   according to direction. When there are multiple adjacent panes it will
+    //   select the first one (top-left-most).
+    // Arguments:
+    // - direction: The direction to move the pane in.
+    // Return Value:
+    // - <none>
+    void TerminalTab::MovePane(const FocusDirection& direction)
+    {
+        if (direction == FocusDirection::Previous)
+        {
+            if (_mruPanes.size() < 2)
+            {
+                return;
+            }
+            if (auto lastPane = _rootPane->FindPane(_mruPanes.at(1)))
+            {
+                _rootPane->SwapPanes(_activePane, lastPane);
+            }
+        }
+        else
+        {
+            // NOTE: This _must_ be called on the root pane, so that it can propagate
+            // throughout the entire tree.
+            _rootPane->MovePane(direction);
         }
     }
 

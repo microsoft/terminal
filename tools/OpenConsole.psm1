@@ -193,14 +193,14 @@ function Invoke-OpenConsoleTests()
         return
     }
     $OpenConsolePlatform = $Platform
-    $TestHostAppPath = "$root\$OpenConsolePlatform\$Configuration\TestHostApp"
+    $TestHostAppPath = "$root\bin\$OpenConsolePlatform\$Configuration\TestHostApp"
     if ($Platform -eq 'x86')
     {
         $OpenConsolePlatform = 'Win32'
         $TestHostAppPath = "$root\$Configuration\TestHostApp"
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
-    $TaefExePath = "$root\packages\Microsoft.Taef.10.58.210305002\build\Binaries\$Platform\te.exe"
+    $TaefExePath = "$root\packages\Microsoft.Taef.10.60.210621002\build\Binaries\$Platform\te.exe"
     $BinDir = "$root\bin\$OpenConsolePlatform\$Configuration"
 
     [xml]$TestConfig = Get-Content "$root\tools\tests.xml"
@@ -240,8 +240,10 @@ function Invoke-OpenConsoleTests()
             {
                 & $TaefExePath "$TestHostAppPath\$($t.binary)" $TaefArgs
             }
-
-            & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
+            else
+            {
+                & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
+            }
         }
         elseif ($t.type -eq "ft")
         {
@@ -393,10 +395,10 @@ function Invoke-XamlFormat() {
     dotnet tool run xstyler -- -c "$root\XamlStyler.json" -f "$xamlsForStyler"
 
     # Strip BOMs from all the .xaml files
-    $xamls = (git ls-files "$root/**/*.xaml")
-    foreach ($file in $xamls ) {
-        $content = Get-Content $file
-        [IO.File]::WriteAllLines("$file", $content)
+    $xamls = (git ls-files --full-name "$root/**/*.xaml")
+    foreach ($file in $xamls) {
+        $content = Get-Content "$root/$file"
+        [IO.File]::WriteAllLines("$root/$file", $content)
     }
 }
 

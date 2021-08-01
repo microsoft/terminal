@@ -23,7 +23,6 @@
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
-#include "ThrottledFunc.h"
 
 namespace ControlUnitTests
 {
@@ -49,15 +48,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateAppearance(const IControlAppearance& newAppearance);
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
-        HANDLE GetSwapChainHandle() const;
+        uint64_t SwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
         FontInfo GetFont() const;
         til::size FontSizeInDips() const;
 
+        winrt::Windows::Foundation::Size FontSize() const noexcept;
+        winrt::hstring FontFaceName() const noexcept;
+        uint16_t FontWeight() const noexcept;
+
         til::color BackgroundColor() const;
-        void SetBackgroundOpacity(const float opacity);
+        void SetBackgroundOpacity(const double opacity);
 
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);
@@ -68,10 +71,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResumeRendering();
 
         void UpdatePatternLocations();
-        void UpdateHoveredCell(const std::optional<til::point>& terminalPosition);
+        void SetHoveredCell(Core::Point terminalPosition);
+        void ClearHoveredCell();
         winrt::hstring GetHyperlink(const til::point position) const;
-        winrt::hstring GetHoveredUriText() const;
-        std::optional<til::point> GetHoveredCell() const;
+        winrt::hstring HoveredUriText() const;
+        Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
@@ -120,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool HasSelection() const;
         bool CopyOnSelect() const;
-        std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
+        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         void SetSelectionAnchor(til::point const& position);
         void SetEndSelectionPoint(til::point const& position);
 
@@ -233,6 +237,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _raiseReadOnlyWarning();
         void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
         void _connectionOutputHandler(const hstring& hstr);
+        void _updateHoveredCell(const std::optional<til::point> terminalPosition);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

@@ -52,7 +52,9 @@
     <ClInclude Include="TermControlAutomationPeer.h">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ThrottledFunc.h" />
+    <ClInclude Include="InteractivityAutomationPeer.h">
+      <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TSFInputControl.h">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
@@ -92,6 +94,9 @@
     <ClCompile Include="TermControlAutomationPeer.cpp">
       <DependentUpon>TermControlAutomationPeer.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="InteractivityAutomationPeer.cpp">
+      <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="XamlUiaTextRange.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
@@ -113,6 +118,7 @@
       <DependentUpon>TermControl.xaml</DependentUpon>
     </Midl>
     <Midl Include="TermControlAutomationPeer.idl" />
+    <Midl Include="InteractivityAutomationPeer.idl" />
     <Midl Include="IMouseWheelListener.idl" />
     <Midl Include="TSFInputControl.idl">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
