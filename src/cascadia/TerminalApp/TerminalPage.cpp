@@ -255,10 +255,10 @@ namespace winrt::TerminalApp::implementation
 
             std::wstring pathText = path.wstring();
 
-            // Handle edge case of "C:\\", seems like the "StartingDirectory" doesn't like path which ends with '\'
+            // Handle edge case of "C:\" - add a '.' to the end
             if (pathText.back() == L'\\')
             {
-                pathText.erase(std::prev(pathText.end()));
+                pathText.push_back(L'.');
             }
 
             NewTerminalArgs args;
