@@ -31,9 +31,6 @@
 
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
-#else
-// Forward-declare this so we don't blow up later.
-struct DxEngine;
 #endif
 
 #include "../inc/ServiceLocator.hpp"
@@ -214,7 +211,9 @@ void Window::_UpdateSystemMetrics() const
 
     const bool useDx = pSettings->GetUseDx();
     GdiEngine* pGdiEngine = nullptr;
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     [[maybe_unused]] DxEngine* pDxEngine = nullptr;
+#endif
     try
     {
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED

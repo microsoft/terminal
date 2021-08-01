@@ -1021,6 +1021,7 @@ IAction
 IApi
 IApplication
 IBase
+ICache
 icacls
 iccex
 icch
@@ -1502,6 +1503,7 @@ nfe
 nlength
 Nls
 NLSMODE
+nnn
 NOACTIVATE
 NOAPPLYNOW
 NOCLIP
@@ -1582,6 +1584,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nullability
 nullness
 nullonfailure
 nullopt

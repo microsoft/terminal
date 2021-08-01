@@ -73,6 +73,77 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         return ends_with<>(str, prefix);
     }
 
+    inline constexpr unsigned long from_wchars_error = ULONG_MAX;
+
+    // Just like std::wcstoul, but without annoying locales and null-terminating strings.
+    // It has been fuzz-tested against clang's strtoul implementation.
+    _TIL_INLINEPREFIX unsigned long from_wchars(const std::wstring_view& str) noexcept
+    {
+        static constexpr unsigned long maximumValue = ULONG_MAX / 16;
+
+        // We don't have to test ptr for nullability, as we only access it under either condition:
+        // * str.length() > 0, for determining the base
+        // * ptr != end, when parsing the characters; if ptr is null, length will be 0 and thus end == ptr
+#pragma warning(push)
+#pragma warning(disable : 26429) // Symbol 'ptr' is never tested for nullness, it can be marked as not_null
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead
+        auto ptr = str.data();
+        const auto end = ptr + str.length();
+        unsigned long base = 10;
+        unsigned long accumulator = 0;
+        unsigned long value = ULONG_MAX;
+
+        if (str.length() > 1 && *ptr == L'0')
+        {
+            base = 8;
+            ptr++;
+
+            if (str.length() > 2 && (*ptr == L'x' || *ptr == L'X'))
+            {
+                base = 16;
+                ptr++;
+            }
+        }
+
+        if (ptr == end)
+        {
+            return from_wchars_error;
+        }
+
+        for (;; accumulator *= base)
+        {
+            value = ULONG_MAX;
+            if (*ptr >= L'0' && *ptr <= L'9')
+            {
+                value = *ptr - L'0';
+            }
+            else if (*ptr >= L'A' && *ptr <= L'F')
+            {
+                value = *ptr - L'A' + 10;
+            }
+            else if (*ptr >= L'a' && *ptr <= L'f')
+            {
+                value = *ptr - L'a' + 10;
+            }
+            else
+            {
+                return from_wchars_error;
+            }
+
+            accumulator += value;
+            if (accumulator >= maximumValue)
+            {
+                return from_wchars_error;
+            }
+
+            if (++ptr == end)
+            {
+                return accumulator;
+            }
+        }
+#pragma warning(pop)
+    }
+
     // Just like std::tolower, but without annoying locales.
     template<typename T>
     constexpr T tolower_ascii(T c)

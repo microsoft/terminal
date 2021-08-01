@@ -84,6 +84,8 @@ private:
     CLI::App* _focusTabShort;
     CLI::App* _moveFocusCommand;
     CLI::App* _moveFocusShort;
+    CLI::App* _movePaneCommand;
+    CLI::App* _movePaneShort;
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
 
@@ -97,6 +99,7 @@ private:
     bool _suppressApplicationTitle{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
+    winrt::Microsoft::Terminal::Settings::Model::FocusDirection _movePaneDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
@@ -132,6 +135,7 @@ private:
     void _buildSplitPaneParser();
     void _buildFocusTabParser();
     void _buildMoveFocusParser();
+    void _buildMovePaneParser();
     void _buildFocusPaneParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();

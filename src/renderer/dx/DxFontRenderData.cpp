@@ -12,6 +12,7 @@
 static constexpr float POINTS_PER_INCH = 72.0f;
 static constexpr std::wstring_view FALLBACK_FONT_FACES[] = { L"Consolas", L"Lucida Console", L"Courier New" };
 static constexpr std::wstring_view FALLBACK_LOCALE = L"en-us";
+static constexpr size_t TAG_LENGTH = 4;
 
 using namespace Microsoft::Console::Render;
 
@@ -91,6 +92,11 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 [[nodiscard]] DWRITE_FONT_STRETCH DxFontRenderData::DefaultFontStretch() noexcept
 {
     return _defaultFontInfo.GetStretch();
+}
+
+[[nodiscard]] const std::vector<DWRITE_FONT_FEATURE>& DxFontRenderData::DefaultFontFeatures() const noexcept
+{
+    return _featureVector;
 }
 
 [[nodiscard]] Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::DefaultTextFormat()
@@ -178,7 +184,7 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
 // - dpi - The DPI of the screen
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& desired, FontInfo& actual, const int dpi) noexcept
+[[nodiscard]] HRESULT DxFontRenderData::UpdateFont(const FontInfoDesired& desired, FontInfo& actual, const int dpi, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 {
     try
     {
@@ -192,6 +198,9 @@ DxFontRenderData::DxFontRenderData(::Microsoft::WRL::ComPtr<IDWriteFactory1> dwr
                                       desired.GetWeight(),
                                       DWRITE_FONT_STYLE_NORMAL,
                                       DWRITE_FONT_STRETCH_NORMAL);
+
+        _SetFeatures(features);
+        _SetAxes(axes);
 
         _BuildFontRenderData(desired, actual, dpi);
     }
@@ -442,6 +451,188 @@ try
 CATCH_RETURN()
 
 // Routine Description:
+// - Returns whether the user set or updated any of the font features to be applied
+bool DxFontRenderData::DidUserSetFeatures() const noexcept
+{
+    return _didUserSetFeatures;
+}
+
+// Routine Description:
+// - Updates our internal map of font features with the given features
+// - NOTE TO CALLER: Make sure to call _BuildFontRenderData after calling this for the feature changes
+//   to take place
+// Arguments:
+// - features - the features to update our map with
+void DxFontRenderData::_SetFeatures(const std::unordered_map<std::wstring_view, uint32_t>& features)
+{
+    // Populate the feature map with the standard list first
+    std::unordered_map<DWRITE_FONT_FEATURE_TAG, uint32_t> featureMap{
+        { DWRITE_MAKE_FONT_FEATURE_TAG('c', 'a', 'l', 't'), 1 }, // Contextual Alternates
+        { DWRITE_MAKE_FONT_FEATURE_TAG('l', 'i', 'g', 'a'), 1 }, // Standard Ligatures
+        { DWRITE_MAKE_FONT_FEATURE_TAG('c', 'l', 'i', 'g'), 1 }, // Contextual Ligatures
+        { DWRITE_MAKE_FONT_FEATURE_TAG('k', 'e', 'r', 'n'), 1 } // Kerning
+    };
+
+    // Update our feature map with the provided features
+    if (!features.empty())
+    {
+        for (const auto [tag, param] : features)
+        {
+            if (tag.length() == TAG_LENGTH)
+            {
+                featureMap.insert_or_assign(DWRITE_MAKE_FONT_FEATURE_TAG(til::at(tag, 0), til::at(tag, 1), til::at(tag, 2), til::at(tag, 3)), param);
+            }
+        }
+        _didUserSetFeatures = true;
+    }
+    else
+    {
+        _didUserSetFeatures = false;
+    }
+
+    // Convert the data to DWRITE_FONT_FEATURE and store it in a vector for CustomTextLayout
+    _featureVector.clear();
+    for (const auto [tag, param] : featureMap)
+    {
+        _featureVector.push_back(DWRITE_FONT_FEATURE{ tag, param });
+    }
+}
+
+// Routine Description:
+// - Updates our internal map of font axes with the given axes
+// - NOTE TO CALLER: Make sure to call _BuildFontRenderData after calling this for the axes changes
+//   to take place
+// Arguments:
+// - axes - the axes to update our map with
+void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, float>& axes)
+{
+    _axesVector.clear();
+
+    // Update our axis map with the provided axes
+#pragma warning(suppress : 26445) // the analyzer doesn't like reference to string_view
+    for (const auto& [axis, value] : axes)
+    {
+        if (axis.length() == TAG_LENGTH)
+        {
+            const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(til::at(axis, 0), til::at(axis, 1), til::at(axis, 2), til::at(axis, 3));
+            _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, value });
+        }
+    }
+}
+
+// Method Description:
+// - Converts a DWRITE_FONT_STRETCH enum into the corresponding float value to
+//   create a DWRITE_FONT_AXIS_VALUE with
+// Arguments:
+// - fontStretch: the old DWRITE_FONT_STRETCH enum to be converted into an axis value
+// Return value:
+// - The float value corresponding to the passed in fontStretch
+float DxFontRenderData::_FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept
+{
+    // 10 elements from DWRITE_FONT_STRETCH_UNDEFINED (0) to DWRITE_FONT_STRETCH_ULTRA_EXPANDED (9)
+    static constexpr auto fontStretchEnumToVal = std::array{ 100.0f, 50.0f, 62.5f, 75.0f, 87.5f, 100.0f, 112.5f, 125.0f, 150.0f, 200.0f };
+
+    if (gsl::narrow_cast<size_t>(fontStretch) > fontStretchEnumToVal.size())
+    {
+        fontStretch = DWRITE_FONT_STRETCH_NORMAL;
+    }
+
+    return til::at(fontStretchEnumToVal, fontStretch);
+}
+
+// Method Description:
+// - Converts a DWRITE_FONT_STYLE enum into the corresponding float value to
+//   create a DWRITE_FONT_AXIS_VALUE with
+// Arguments:
+// - fontStyle: the old DWRITE_FONT_STYLE enum to be converted into an axis value
+// Return value:
+// - The float value corresponding to the passed in fontStyle
+float DxFontRenderData::_FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept
+{
+    // DWRITE_FONT_STYLE_NORMAL (0), DWRITE_FONT_STYLE_OBLIQUE (1), DWRITE_FONT_STYLE_ITALIC (2)
+    static constexpr auto fontStyleEnumToVal = std::array{ 0.0f, -20.0f, -12.0f };
+
+    // Both DWRITE_FONT_STYLE_OBLIQUE and DWRITE_FONT_STYLE_ITALIC default to having slant.
+    // Though an italic font technically need not have slant (there exist upright ones), the
+    // vast majority of italic fonts are also slanted. Ideally the slant comes from the
+    // 'slnt' value in the STAT or fvar table, or the post table italic angle.
+
+    if (gsl::narrow_cast<size_t>(fontStyle) > fontStyleEnumToVal.size())
+    {
+        fontStyle = DWRITE_FONT_STYLE_NORMAL;
+    }
+
+    return til::at(fontStyleEnumToVal, fontStyle);
+}
+
+// Method Description:
+// - Fill any missing axis values that might be known but were unspecified, such as omitting
+//   the 'wght' axis tag but specifying the old DWRITE_FONT_WEIGHT enum
+// - This function will only be called with a valid IDWriteTextFormat3
+//   (on platforms where IDWriteTextFormat3 is supported)
+// Arguments:
+// - fontWeight: the old DWRITE_FONT_WEIGHT enum to be converted into an axis value
+// - fontStretch: the old DWRITE_FONT_STRETCH enum to be converted into an axis value
+// - fontStyle: the old DWRITE_FONT_STYLE enum to be converted into an axis value
+// - fontSize: the number to convert into an axis value
+// - format: the IDWriteTextFormat3 to get the defined axes from
+// Return value:
+// - The fully formed axes vector
+#pragma warning(suppress : 26429) // the analyzer doesn't detect that our FAIL_FAST_IF_NULL macro \
+    // checks format for nullness
+std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
+                                                                    const DWRITE_FONT_STRETCH fontStretch,
+                                                                    const DWRITE_FONT_STYLE fontStyle,
+                                                                    IDWriteTextFormat3* format)
+{
+    FAIL_FAST_IF_NULL(format);
+
+    const auto axesCount = format->GetFontAxisValueCount();
+    std::vector<DWRITE_FONT_AXIS_VALUE> axesVector;
+    axesVector.resize(axesCount);
+    format->GetFontAxisValues(axesVector.data(), axesCount);
+
+    auto axisTagPresence = AxisTagPresence::None;
+    for (const auto& fontAxisValue : axesVector)
+    {
+        switch (fontAxisValue.axisTag)
+        {
+        case DWRITE_FONT_AXIS_TAG_WEIGHT:
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Weight);
+            break;
+        case DWRITE_FONT_AXIS_TAG_WIDTH:
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Width);
+            break;
+        case DWRITE_FONT_AXIS_TAG_ITALIC:
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Italic);
+            break;
+        case DWRITE_FONT_AXIS_TAG_SLANT:
+            WI_SetFlag(axisTagPresence, AxisTagPresence::Slant);
+            break;
+        }
+    }
+
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Weight))
+    {
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, gsl::narrow<float>(fontWeight) });
+    }
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Width))
+    {
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WIDTH, _FontStretchToWidthAxisValue(fontStretch) });
+    }
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Italic))
+    {
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, (fontStyle == DWRITE_FONT_STYLE_ITALIC ? 1.0f : 0.0f) });
+    }
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Slant))
+    {
+        axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, _FontStyleToSlantFixedAxisValue(fontStyle) });
+    }
+
+    return axesVector;
+}
+
+// Routine Description:
 // - Build the needed data for rendering according to the font used
 // Arguments:
 // - desired - Information specifying the font that is requested
@@ -649,5 +840,14 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
                                                      _fontSize,
                                                      localeName.data(),
                                                      &format));
+
+    // If the OS supports IDWriteTextFormat3, set the font axes
+    ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
+    if (!_axesVector.empty() && !FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))))
+    {
+        DWRITE_FONT_AXIS_VALUE const* axesList = _axesVector.data();
+        format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(_axesVector.size()));
+    }
+
     return format;
 }

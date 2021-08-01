@@ -163,8 +163,6 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 // - S_OK or suitable HRESULT error from writing pipe.
 [[nodiscard]] HRESULT VtEngine::_WriteTerminalAscii(const std::wstring_view wstr) noexcept
 {
-    const size_t cchActual = wstr.length();
-
     std::string needed;
     needed.reserve(wstr.size());
 

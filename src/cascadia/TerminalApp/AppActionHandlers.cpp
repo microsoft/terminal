@@ -321,7 +321,28 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MoveFocus(realArgs.FocusDirection());
+                // Mark as handled only when the move succeeded (e.g. when there
+                // is a pane to move to), otherwise mark as unhandled so the
+                // keychord can propagate to the terminal (GH#6129)
+                const auto moveSucceeded = _MoveFocus(realArgs.FocusDirection());
+                args.Handled(moveSucceeded);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        {
+            if (realArgs.Direction() == FocusDirection::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                _MovePane(realArgs.Direction());
                 args.Handled(true);
             }
         }
