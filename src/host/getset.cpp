@@ -1935,9 +1935,10 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         sanitized.reserve(title.size());
         for (size_t i = 0; i < title.size(); i++)
         {
-            if (title.at(i) >= UNICODE_SPACE)
+            const auto ch = title.at(i);
+            if ((ch >= UNICODE_SPACE && ch <= UNICODE_DEL) || ch >= UNICODE_NBSP)
             {
-                sanitized.push_back(title.at(i));
+                sanitized.push_back(ch);
             }
         }
 
