@@ -23,6 +23,10 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Boolean IsDefault;
 
+        void SetFontWeightFromDouble(Double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(Double percentageValue);
+        void SetBackgroundImagePath(String path);
+
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 

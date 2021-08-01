@@ -20,9 +20,8 @@ namespace Microsoft.Terminal.Settings.Editor
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
         void SetAcrylicOpacityPercentageValue(Double value);
-        void SetBackgroundImageOpacity(Double value);
-        void SetBackgroundImagePath(String value);
         void SetPadding(Double value);
+
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
         Boolean UseParentProcessDirectory;
@@ -110,14 +109,6 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
 
-        IInspectable CurrentFontWeight;
-        Boolean IsCustomFontWeight { get; };
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
-
-        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
-
-        IInspectable CurrentFontFace { get; };
         Windows.UI.Xaml.Controls.Slider AcrylicOpacitySlider { get; };
     }
 }

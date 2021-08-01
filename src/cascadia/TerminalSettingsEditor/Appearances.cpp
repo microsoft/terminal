@@ -139,11 +139,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         bool result{ false };
         const auto currentFont{ Appearance().FontFace() };
-        for (const auto& font : SourceProfile().MonospaceFontList())
+        if (!SourceProfile())
         {
-            if (font.LocalizedName() == currentFont)
+            for (const auto& font : SourceProfile().MonospaceFontList())
             {
-                result = true;
+                if (font.LocalizedName() == currentFont)
+                {
+                    result = true;
+                }
             }
         }
         return result;

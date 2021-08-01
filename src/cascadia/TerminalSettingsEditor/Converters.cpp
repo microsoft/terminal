@@ -100,6 +100,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return expected != actual;
     }
+    winrt::Windows::UI::Xaml::Visibility Converters::StringNotEmptyToVisibility(winrt::hstring value)
+    {
+        return value.empty() ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
+    }
     winrt::hstring Converters::StringFallBackToEmptyString(winrt::hstring expected, winrt::hstring actual)
     {
         return expected == actual ? expected : L"";

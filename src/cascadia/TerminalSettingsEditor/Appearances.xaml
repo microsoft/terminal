@@ -207,7 +207,7 @@
                     <StackPanel Orientation="Horizontal">
                         <TextBox IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                  Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind local:Converters.StringFallBackToEmptyString('desktopWallpaper',Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=State.Profile.SetBackgroundImagePath}" />
+                                 Text="{x:Bind local:Converters.StringFallBackToEmptyString('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                         <Button x:Uid="Profile_BackgroundImageBrowse"
                                 Click="BackgroundImage_Click"
                                 IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
@@ -421,7 +421,7 @@
                     </Grid.ColumnDefinitions>
                     <Slider x:Name="BIOpacitySlider"
                             Grid.Column="0"
-                            Value="{x:Bind local:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacity, Mode=TwoWay}" />
+                            Value="{x:Bind local:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
                                Style="{StaticResource SliderValueLabelStyle}"
                                Text="{x:Bind local:Converters.AppendPercentageSign(BIOpacitySlider.Value),Mode=OneWay}" />

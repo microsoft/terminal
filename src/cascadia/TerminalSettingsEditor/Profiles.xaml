@@ -322,7 +322,7 @@
                                         Margin="32,0,0,0"
                                         Click="CreateUnfocusedAppearance_Click"
                                         Style="{StaticResource BaseButtonStyle}"
-                                        Visibility="{x:Bind State.Profile.HasUnfocusedAppearance, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}">
+                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.HasUnfocusedAppearance), Mode=OneWay}">
                                     <Button.Content>
                                         <FontIcon FontSize="{StaticResource StandardIconSize}"
                                                   Glyph="&#xE710;" />
