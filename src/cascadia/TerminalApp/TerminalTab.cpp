@@ -992,17 +992,16 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        // box the event token so that we can give a reference to it in the
+        // event handler.
+        auto detachedToken = std::make_shared<winrt::event_token>();
         // Add a Detached event handler to the Pane to clean up tab state
         // and other event handlers when a pane is removed from this tab.
-        pane->Detached([weakThis, weakPane, gotFocusToken, lostFocusToken, closedToken, bellToken, alreadyDetached = false](std::shared_ptr<Pane> /*sender*/) mutable {
+        *detachedToken = pane->Detached([weakThis, weakPane, gotFocusToken, lostFocusToken, closedToken, bellToken, detachedToken](std::shared_ptr<Pane> /*sender*/) {
             // Make sure we do this at most once
-            if (alreadyDetached)
-            {
-                return;
-            }
             if (auto pane{ weakPane.lock() })
             {
-                alreadyDetached = true;
+                pane->Detached(*detachedToken);
                 pane->GotFocus(gotFocusToken);
                 pane->LostFocus(lostFocusToken);
                 pane->Closed(closedToken);
