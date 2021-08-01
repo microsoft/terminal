@@ -1904,11 +1904,13 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        // Update the alt buffer's cursor style and position to match our own.
+        // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
         auto* const createdBuffer = *ppsiNewScreenBuffer;
         auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
         altCursor.SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        altCursor.SetIsVisible(myCursor.IsVisible());
+        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
         // The new position should match the viewport-relative position of the main buffer.
         auto altCursorPos = myCursor.GetPosition();
         altCursorPos.Y -= GetVirtualViewport().Top();
