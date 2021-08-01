@@ -41,6 +41,23 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::TerminalSettings TermSettings() const;
 
+        void SetAcrylicOpacityPercentageValue(double value)
+        {
+            AcrylicOpacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+        };
+        void SetBackgroundImageOpacity(double value)
+        {
+            BackgroundImageOpacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+        }
+        void SetBackgroundImagePath(winrt::hstring value)
+        {
+            BackgroundImagePath(value);
+        }
+        void SetPadding(double value)
+        {
+            Padding(winrt::Microsoft::Terminal::Settings::Editor::Converters::DoubleToString(value));
+        }
+
         // background image
         bool UseDesktopBGImage();
         void UseDesktopBGImage(const bool useDesktop);

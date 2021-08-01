@@ -24,6 +24,10 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
+        void SetAcrylicOpacityPercentageValue(Double value);
+        void SetBackgroundImageOpacity(Double value);
+        void SetBackgroundImagePath(String value);
+        void SetPadding(Double value);
         Boolean CanDeleteProfile { get; };
         Boolean UsingMonospaceFont { get; };
         Boolean IsBaseLayer;
@@ -131,5 +135,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
 
         IInspectable CurrentFontFace { get; };
+        Windows.UI.Xaml.Controls.Slider BIOpacitySlider { get; };
+        Windows.UI.Xaml.Controls.Slider AcrylicOpacitySlider { get; };
     }
 }
