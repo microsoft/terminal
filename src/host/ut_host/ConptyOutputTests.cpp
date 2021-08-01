@@ -390,7 +390,7 @@ void ConptyOutputTests::SetConsoleTitleWithControlChars()
     expectedOutput.push_back("\x1b[m");
     expectedOutput.push_back("\x1b[H");
 
-    // The title change is propogated as an OSC 0 sequence.
+    // The title change is propagated as an OSC 0 sequence.
     // Control characters are stripped, so it's always "Hello World".
     expectedOutput.push_back("\x1b]0;Hello World!\a");
 
