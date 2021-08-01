@@ -4948,6 +4948,9 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
+        // Set the position to home, otherwise it's inherited from the main buffer.
+        VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }, true));
+
         WriteText(altBuffer.GetTextBuffer());
         VerifyText(altBuffer.GetTextBuffer());
 
