@@ -19,7 +19,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     winrt::Windows::UI::Text::FontWeight Converters::DoubleToFontWeight(double value)
     {
-        return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value)};
+        return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
     }
 
     winrt::hstring Converters::DoubleToString(double value)
