@@ -786,62 +786,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             (void)_TrySendKeyEvent(VK_MENU, scanCode, modifiers, false);
             handled = true;
         }
-        else if (vkey == VK_F7 && down)
+        else if ((vkey == VK_F7 || vkey == VK_SPACE) && down)
         {
             // Manually generate an F7 event into the key bindings or terminal.
             //   This is required as part of GH#638.
+            // Or do so for alt+space; only send to terminal when explicitly unbound
+            //  That is part of #GH7125
             auto bindings{ _settings.KeyBindings() };
+            bool isUnbound = false;
+            const KeyChord kc = {
+                modifiers.IsCtrlPressed(),
+                modifiers.IsAltPressed(),
+                modifiers.IsShiftPressed(),
+                modifiers.IsWinPressed(),
+                gsl::narrow_cast<WORD>(vkey),
+                0
+            };
 
             if (bindings)
             {
-                handled = bindings.TryKeyChord({
-                    modifiers.IsCtrlPressed(),
-                    modifiers.IsAltPressed(),
-                    modifiers.IsShiftPressed(),
-                    modifiers.IsWinPressed(),
-                    VK_F7,
-                    0,
-                });
+                handled = bindings.TryKeyChord(kc);
+
+                if (!handled)
+                {
+                    isUnbound = bindings.IsKeyChordExplicitlyUnbound(kc);
+                }
             }
 
-            if (!handled)
+            const bool sendToTerminal = vkey == VK_F7 || (vkey == VK_SPACE && isUnbound);
+
+            if (!handled && sendToTerminal)
             {
                 // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(VK_F7, scanCode, modifiers, true);
+                (void)_TrySendKeyEvent(gsl::narrow_cast<WORD>(vkey), scanCode, modifiers, true);
                 // GH#6438: Note that we're _not_ sending the key up here - that'll
                 // get passed through XAML to our KeyUp handler normally.
                 handled = true;
-            }
-        }
-        else if (vkey == VK_SPACE && down)
-        {
-            // Manually generate an alt+space event into the key bindings
-            // When explicitly unbound, send to terminal
-            //   This is required as part of #GH7125
-            auto bindings{ _settings.KeyBindings() };
-
-            if (bindings)
-            {
-                // Try to perform the normal keychord binding first
-                const KeyChord kc = {
-                    modifiers.IsCtrlPressed(),
-                    modifiers.IsAltPressed(),
-                    modifiers.IsShiftPressed(),
-                    modifiers.IsWinPressed(),
-                    VK_SPACE,
-                    0
-                };
-
-                handled = bindings.TryKeyChord(kc);
-
-                // If it is explicitly unbound, we send it to the terminal
-                if (!handled && bindings.IsKeyChordExplicitlyUnbound(kc))
-                {
-                    (void)_TrySendKeyEvent(VK_SPACE, scanCode, modifiers, true);
-                    // If sent to the terminal, we mark it handled so that it does not
-                    // get processed by the normal XAML handlers
-                    handled = true;
-                }
             }
         }
         return handled;
