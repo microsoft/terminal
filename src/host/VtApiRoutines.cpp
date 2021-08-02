@@ -341,6 +341,7 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
                                                               const bool isVisible) noexcept
 {
     isVisible ? (void)m_pVtEngine->_ShowCursor() : (void)m_pVtEngine->_HideCursor();
+    (void)m_pVtEngine->_Flush();
     return S_OK;
 }
 
