@@ -10,7 +10,6 @@ namespace Microsoft.Terminal.Settings.Editor
 
         static String AppendPercentageSign(Double value);
         static Windows.UI.Text.FontWeight DoubleToFontWeight(Double value);
-        static String DoubleToString(Double value);
         static Windows.UI.Xaml.Media.SolidColorBrush ColorToBrush(Windows.UI.Color color);
         static Double FontWeightToDouble(Windows.UI.Text.FontWeight fontWeight);
         static Boolean InvertBoolean(Boolean value);

@@ -22,11 +22,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::Windows::UI::Text::FontWeight{ base::ClampedNumeric<uint16_t>(value) };
     }
 
-    winrt::hstring Converters::DoubleToString(double value)
-    {
-        return winrt::to_hstring(value);
-    }
-
     double Converters::FontWeightToDouble(winrt::Windows::UI::Text::FontWeight fontWeight)
     {
         return fontWeight.Weight;
