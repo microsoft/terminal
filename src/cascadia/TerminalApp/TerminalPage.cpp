@@ -253,16 +253,8 @@ namespace winrt::TerminalApp::implementation
                 path = path.parent_path();
             }
 
-            std::wstring pathText = path.wstring();
-
-            // Handle edge case of "C:\" - add a '.' to the end
-            if (pathText.back() == L'\\')
-            {
-                pathText.push_back(L'.');
-            }
-
             NewTerminalArgs args;
-            args.StartingDirectory(winrt::hstring{ pathText });
+            args.StartingDirectory(winrt::hstring{ path.wstring() });
             this->_OpenNewTerminal(args);
 
             TraceLoggingWrite(
