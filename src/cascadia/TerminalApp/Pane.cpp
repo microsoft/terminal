@@ -1017,10 +1017,10 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
 // - pane: the new pane to add
 // Return Value:
 // - the new reference to the child created from the current pane.
-std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane)
+std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState splitType)
 {
     // Splice the new pane into the tree
-    auto [first, _] = _Split(SplitState::Automatic, .5, pane);
+    auto [first, _] = _Split(splitType, .5, pane);
 
     // If the new pane has a child that was the focus, re-focus it
     // to steal focus from the currently focused pane.
@@ -1201,17 +1201,8 @@ void Pane::_CloseChild(const bool closeFirst)
     }
     else
     {
-        // Determine which border flag we gave to the child when we first split
-        // it, so that we can take just that flag away from them.
-        Borders clearBorderFlag = Borders::None;
-        if (_splitState == SplitState::Horizontal)
-        {
-            clearBorderFlag = closeFirst ? Borders::Top : Borders::Bottom;
-        }
-        else if (_splitState == SplitState::Vertical)
-        {
-            clearBorderFlag = closeFirst ? Borders::Left : Borders::Right;
-        }
+        // Find what borders need to persist after we close the child
+        auto remainingBorders = _GetCommonBorders();
 
         // First stash away references to the old panes and their tokens
         const auto oldFirstToken = _firstClosedToken;
@@ -1268,13 +1259,9 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_secondChild->GetRootElement());
 
-        // Take the flag away from the children that they inherited from their
-        // parent, and update their borders to visually match
-        WI_ClearAllFlags(_firstChild->_borders, clearBorderFlag);
-        WI_ClearAllFlags(_secondChild->_borders, clearBorderFlag);
-        _UpdateBorders();
-        _firstChild->_UpdateBorders();
-        _secondChild->_UpdateBorders();
+        // Propogate the new borders down to the children.
+        _borders = remainingBorders;
+        _ApplySplitDefinitions();
 
         // If the closed child was focused, transfer the focus to it's first sibling.
         if (closedChild->_lastActive)

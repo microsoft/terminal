@@ -555,7 +555,7 @@ namespace winrt::TerminalApp::implementation
         auto previousId = _activePane->Id();
 
         // Add the new pane as an automatic split on the active pane.
-        auto first = _activePane->AttachPane(pane);
+        auto first = _activePane->AttachPane(pane, SplitState::Automatic);
 
         // under current assumptions this condition should always be true.
         if (previousId)
@@ -988,7 +988,7 @@ namespace winrt::TerminalApp::implementation
         // Add a Closed event handler to the Pane. If the pane closes out from
         // underneath us, and it's zoomed, we want to be able to make sure to
         // update our state accordingly to un-zoom that pane. See GH#7252.
-        auto closedToken = pane->Closed([weakThis, &weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
+        auto closedToken = pane->Closed([weakThis, weakPane](auto&& /*s*/, auto && /*e*/) -> winrt::fire_and_forget {
             if (auto tab{ weakThis.get() })
             {
                 if (tab->_zoomedPane)
