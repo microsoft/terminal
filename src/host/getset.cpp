@@ -1933,8 +1933,9 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     {
         std::wstring sanitized{ title };
         sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](auto ch) {
-            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
-        }), sanitized.end());
+                            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                        }),
+                        sanitized.end());
 
         gci.SetTitle({ sanitized });
     }
