@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetPadding(double value)
         {
-            Padding(winrt::Microsoft::Terminal::Settings::Editor::Converters::DoubleToString(value));
+            Padding(to_hstring(value));
         }
 
         // starting directory
