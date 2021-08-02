@@ -839,7 +839,7 @@ namespace winrt::TerminalApp::implementation
             // restored the CWD to it's original value.
             winrt::hstring newWorkingDirectory{ settings.StartingDirectory() };
             if (newWorkingDirectory.size() <= 1 ||
-                !(til::at(newWorkingDirectory, 0) == L'~' || til::at(newWorkingDirectory, 0) == L'/'))
+                !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
             { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
                 std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
                 std::filesystem::path cwd{ cwdString };
