@@ -1259,7 +1259,7 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_secondChild->GetRootElement());
 
-        // Propogate the new borders down to the children.
+        // Propagate the new borders down to the children.
         _borders = remainingBorders;
         _ApplySplitDefinitions();
 
