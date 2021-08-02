@@ -134,7 +134,7 @@
                                 Minimum="0"
                                 TickFrequency="50"
                                 TickPlacement="Outside"
-                                Value="{x:Bind local:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
+                                Value="{x:Bind Appearance.FontWeight.Weight, BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
                         <TextBlock Grid.Column="1"
                                    Margin="10,0,0,0"
                                    Style="{StaticResource SliderValueLabelStyle}"
