@@ -519,47 +519,47 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
 
             // We only need to apply restrictions if the position is changing.
             // The SWP_ flags are confusing to read. This is
-            // "if we're not NOT moving the window"
-            if (WI_IsFlagClear(lpwpos->flags, SWP_NOMOVE))
+            // "if we're not moving the window, do nothing."
+            if (WI_IsFlagSet(lpwpos->flags, SWP_NOMOVE))
             {
-                // Figure out the suggested dimensions and position.
-                RECT rcSuggested;
-                rcSuggested.left = lpwpos->x;
-                rcSuggested.top = lpwpos->y;
-                rcSuggested.right = rcSuggested.left + lpwpos->cx;
-                rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
+                break;
+            }
+            // Figure out the suggested dimensions and position.
+            RECT rcSuggested;
+            rcSuggested.left = lpwpos->x;
+            rcSuggested.top = lpwpos->y;
+            rcSuggested.right = rcSuggested.left + lpwpos->cx;
+            rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
 
-                // Find the bounds of the current monitor, and the monitor that
-                // we're suggested to be on.
+            // Find the bounds of the current monitor, and the monitor that
+            // we're suggested to be on.
 
-                RECT windowRect = GetWindowRect();
-                HMONITOR current = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
-                MONITORINFO currentInfo;
-                currentInfo.cbSize = sizeof(MONITORINFO);
-                GetMonitorInfo(current, &currentInfo);
+            HMONITOR current = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
+            MONITORINFO currentInfo;
+            currentInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfo(current, &currentInfo);
 
-                HMONITOR proposed = MonitorFromRect(&rcSuggested, MONITOR_DEFAULTTONEAREST);
-                MONITORINFO proposedInfo;
-                proposedInfo.cbSize = sizeof(MONITORINFO);
-                GetMonitorInfo(proposed, &proposedInfo);
+            HMONITOR proposed = MonitorFromRect(&rcSuggested, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO proposedInfo;
+            proposedInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfo(proposed, &proposedInfo);
 
-                // If the monitor changed...
-                if (til::rectangle{ proposedInfo.rcMonitor } !=
-                    til::rectangle{ currentInfo.rcMonitor })
-                {
-                    til::rectangle newWindowRect{ _getQuakeModeSize(proposed) };
+            // If the monitor changed...
+            if (til::rectangle{ proposedInfo.rcMonitor } !=
+                til::rectangle{ currentInfo.rcMonitor })
+            {
+                const auto newWindowRect{ _getQuakeModeSize(proposed) };
 
-                    // Inform User32 that we want to be placed at the position
-                    // and dimensions that _getQuakeModeSize returned. When we
-                    // snap across monitor boundaries, this will re-evaluate our
-                    // size for the new monitor.
-                    lpwpos->x = newWindowRect.left<int>();
-                    lpwpos->y = newWindowRect.top<int>();
-                    lpwpos->cx = newWindowRect.width<int>();
-                    lpwpos->cy = newWindowRect.height<int>();
+                // Inform User32 that we want to be placed at the position
+                // and dimensions that _getQuakeModeSize returned. When we
+                // snap across monitor boundaries, this will re-evaluate our
+                // size for the new monitor.
+                lpwpos->x = newWindowRect.left<int>();
+                lpwpos->y = newWindowRect.top<int>();
+                lpwpos->cx = newWindowRect.width<int>();
+                lpwpos->cy = newWindowRect.height<int>();
 
-                    return 0;
-                }
+                return 0;
             }
         }
     }
