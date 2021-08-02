@@ -74,11 +74,9 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
-  - task: PkgESSetupBuild@10
+  - task: PkgESSetupBuild@12
     displayName: Package ES - Setup Build
     inputs:
-      useDfs: false
-      productName: OpenConsole
       disableOutputRedirect: true
   - task: PowerShell@2
     displayName: Rationalize Build Platform
