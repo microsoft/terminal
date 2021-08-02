@@ -6,7 +6,7 @@ Module Name:
 - OutputCellView.hpp
 
 Abstract:
-- Read-only view into a single cell of data that someone is attempting to write into the output buffer.
+- Read view into a single cell of data that someone is attempting to write into the output buffer.
 - This is done for performance reasons (avoid heap allocs and copies).
 
 Author:
@@ -35,6 +35,21 @@ public:
     DbcsAttribute DbcsAttr() const noexcept;
     TextAttribute TextAttr() const noexcept;
     TextAttributeBehavior TextAttrBehavior() const noexcept;
+
+    void UpdateText(const std::wstring_view& view) noexcept
+    {
+        _view = view;
+    };
+
+    void UpdateDbcsAttribute(const DbcsAttribute& dbcsAttr) noexcept
+    {
+        _dbcsAttr = dbcsAttr;
+    }
+
+    void UpdateTextAttribute(const TextAttribute& textAttr) noexcept
+    {
+        _textAttr = textAttr;
+    }
 
     bool operator==(const OutputCellView& view) const noexcept;
     bool operator!=(const OutputCellView& view) const noexcept;

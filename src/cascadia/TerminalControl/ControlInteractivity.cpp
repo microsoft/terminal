@@ -279,7 +279,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                             const unsigned int pointerUpdateKind,
                                             const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                             const bool focused,
-                                            const til::point pixelPosition)
+                                            const til::point pixelPosition,
+                                            const bool pointerPressedInBounds)
     {
         const til::point terminalPosition = _getTerminalPosition(pixelPosition);
 
@@ -288,7 +289,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, toInternalMouseState(buttonState));
         }
-        else if (focused && WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
+        // GH#4603 - don't modify the selection if the pointer press didn't
+        // actually start _in_ the control bounds. Case in point - someone drags
+        // a file into the bounds of the control. That shouldn't send the
+        // selection into space.
+        else if (focused && pointerPressedInBounds && WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown))
         {
             if (_singleClickTouchdownPos)
             {
