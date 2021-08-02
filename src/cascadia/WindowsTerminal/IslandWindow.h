@@ -109,7 +109,9 @@ protected:
     void _moveToMonitor(const MONITORINFO activeMonitor);
 
     bool _isQuakeWindow{ false };
+
     void _enterQuakeMode();
+    til::rectangle _getQuakeModeSize(HMONITOR hmon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
