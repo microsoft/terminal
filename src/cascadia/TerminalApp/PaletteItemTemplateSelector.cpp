@@ -30,6 +30,13 @@ namespace winrt::TerminalApp::implementation
             {
                 return TabItemTemplate();
             }
+            else if (const auto actionPaletteItem{ filteredCommand.Item().try_as<winrt::TerminalApp::ActionPaletteItem>() })
+            {
+                if (actionPaletteItem.Command().HasNestedCommands())
+                {
+                    return NestedItemTemplate();
+                }
+            }
         }
 
         return GeneralItemTemplate();

@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
-    <ProjectGuid>{E437B604-3E98-4F40-A927-E173E818EA4B}</ProjectGuid>
+    <ProjectGuid>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>openconsoleproxy</RootNamespace>
     <ProjectName>OpenConsoleProxy</ProjectName>
     <TargetName>OpenConsoleProxy</TargetName>
-    <ConfigurationType>Utility</ConfigurationType>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
-  <ItemGroup>
-    <ClInclude Include="$(IntDir)\IConsoleHandoff.h" />
-  </ItemGroup>
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl">
       <!-- 
@@ -25,12 +22,49 @@
       <MinimumTargetSystem>NT100</MinimumTargetSystem>
       <OutputDirectory>$(IntDir)</OutputDirectory>
     </Midl>
+    <Midl Include="ITerminalHandoff.idl">
+      <HeaderFileName>ITerminalHandoff.h</HeaderFileName>
+      <MinimumTargetSystem>NT100</MinimumTargetSystem>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+    </Midl>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="$(IntDir)\IConsoleHandoff.h" />
+    <ClInclude Include="$(IntDir)\ITerminalHandoff.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="$(IntDir)\dlldata.c" />
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_i.c" />
+    <ClCompile Include="$(IntDir)\IConsoleHandoff_p.c" />
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_i.c" />
+    <ClCompile Include="$(IntDir)\ITerminalHandoff_p.c" />
+  </ItemGroup>
+  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>PROXY_CLSID_IS={0x3171DE52,0x6EFA,0x4AEF,{0x8A,0x9F,0xD0,0x2B,0xD6,0x7E,0x7A,0x4F}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
+    <ClCompile>
+      <PreprocessorDefinitions>PROXY_CLSID_IS={0x1833E661,0xCC81,0x4DD0,{0x87,0xC6,0xC2,0xF7,0x4B,0xD3,0x9E,0xFA}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(WindowsTerminalBranding)'==''">
+    <ClCompile>
+      <PreprocessorDefinitions>PROXY_CLSID_IS={0xDEC4804D,0x56D1,0x4F73,{0x9F,0xBE,0x68,0x28,0xE7,0xC8,0x5C,0x56}};%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CallingConvention>StdCall</CallingConvention>
+      <!-- Must be Stdcall on all platforms to resolve _ObjectStublessClient3 -->
+      <PreprocessorDefinitions>REGISTER_PROXY_DLL;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <Link>
+      <ModuleDefinitionFile>OpenConsoleProxy.def</ModuleDefinitionFile>
+    </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
   <Import Project="$(SolutionDir)src\common.build.post.props" />

@@ -1,0 +1,18 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+    object,
+    uuid(59D55CCE-FC8A-48B4-ACE8-0A9286C6557F)
+] interface ITerminalHandoff : IUnknown
+{
+    HRESULT EstablishPtyHandoff([in, system_handle(sh_pipe)] HANDLE in,
+                                [in, system_handle(sh_pipe)] HANDLE out,
+                                [in, system_handle(sh_pipe)] HANDLE signal,
+                                [in, system_handle(sh_file)] HANDLE ref,
+                                [in, system_handle(sh_process)] HANDLE server,
+                                [in, system_handle(sh_process)] HANDLE client);
+};

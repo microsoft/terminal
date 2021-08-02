@@ -61,7 +61,6 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
-    _invalidateFullRows{ true },
     _pool{ til::pmr::get_default_resource() },
     _invalidMap{ &_pool },
     _invalidScroll{},
@@ -79,6 +78,7 @@ DxEngine::DxEngine() :
     _backgroundColor{ 0 },
     _selectionBackground{},
     _haveDeviceResources{ false },
+    _swapChainHandle{ INVALID_HANDLE_VALUE },
     _swapChainDesc{ 0 },
     _swapChainFrameLatencyWaitableObject{ INVALID_HANDLE_VALUE },
     _recreateDeviceRequested{ false },
@@ -193,7 +193,7 @@ _CompileShader(
     std::string target,
     std::string entry = "main")
 {
-#ifdef __INSIDE_WINDOWS
+#if !TIL_FEATURE_DXENGINESHADERSUPPORT_ENABLED
     THROW_HR(E_UNEXPECTED);
     return 0;
 #else
@@ -478,6 +478,29 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
     }
 }
 
+// Method Description:
+// - Use DCompositionCreateSurfaceHandle to create a swapchain handle. This API
+//   is only present in Windows 8.1+, so we need to delay-load it to make sure
+//   we can still load on Windows 7.
+// - We can't actually hit this on Windows 7, because only the WPF control uses
+//   us on Windows 7, and they're using the ForHwnd path, which doesn't hit this
+//   at all.
+// Arguments:
+// - <none>
+// Return Value:
+// - An HRESULT for failing to load dcomp.dll, or failing to find the API, or an
+//   actual failure from the API itself.
+[[nodiscard]] HRESULT DxEngine::_CreateSurfaceHandle() noexcept
+{
+    wil::unique_hmodule hDComp{ LoadLibraryEx(L"Dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
+    RETURN_LAST_ERROR_IF(hDComp.get() == nullptr);
+
+    auto fn = GetProcAddressByFunctionDeclaration(hDComp.get(), DCompositionCreateSurfaceHandle);
+    RETURN_LAST_ERROR_IF(fn == nullptr);
+
+    return fn(GENERIC_ALL, nullptr, &_swapChainHandle);
+}
+
 // Routine Description;
 // - Creates device-specific resources required for drawing
 //   which generally means those that are represented on the GPU and can
@@ -559,6 +582,9 @@ try
 
     _displaySizePixels = _GetClientSize();
 
+    _invalidMap.resize(_displaySizePixels / _fontRenderData->GlyphCell());
+    RETURN_IF_FAILED(InvalidateAll());
+
     // Get the other device types so we have deeper access to more functionality
     // in our pipeline than by just walking straight from the D3D device.
 
@@ -618,6 +644,13 @@ try
         }
         case SwapChainMode::ForComposition:
         {
+            if (!_swapChainHandle)
+            {
+                RETURN_IF_FAILED(_CreateSurfaceHandle());
+            }
+
+            RETURN_IF_FAILED(_dxgiFactory2.As(&_dxgiFactoryMedia));
+
             // Use the given target size for compositions.
             _swapChainDesc.Width = _displaySizePixels.width<UINT>();
             _swapChainDesc.Height = _displaySizePixels.height<UINT>();
@@ -627,10 +660,11 @@ try
             // It's 100% required to use scaling mode stretch for composition. There is no other choice.
             _swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
-            RETURN_IF_FAILED(_dxgiFactory2->CreateSwapChainForComposition(_d3dDevice.Get(),
-                                                                          &_swapChainDesc,
-                                                                          nullptr,
-                                                                          &_dxgiSwapChain));
+            RETURN_IF_FAILED(_dxgiFactoryMedia->CreateSwapChainForCompositionSurfaceHandle(_d3dDevice.Get(),
+                                                                                           _swapChainHandle.get(),
+                                                                                           &_swapChainDesc,
+                                                                                           nullptr,
+                                                                                           &_dxgiSwapChain));
             break;
         }
         default:
@@ -931,8 +965,6 @@ CATCH_RETURN()
 try
 {
     _sizeTarget = Pixels;
-
-    _invalidMap.resize(_sizeTarget / _fontRenderData->GlyphCell(), true);
     return S_OK;
 }
 CATCH_RETURN();
@@ -1003,26 +1035,22 @@ try
 }
 CATCH_LOG()
 
-Microsoft::WRL::ComPtr<IDXGISwapChain1> DxEngine::GetSwapChain()
+HANDLE DxEngine::GetSwapChainHandle()
 {
-    if (_dxgiSwapChain.Get() == nullptr)
+    if (!_swapChainHandle)
     {
         THROW_IF_FAILED(_CreateDeviceResources(true));
     }
 
-    return _dxgiSwapChain;
+    return _swapChainHandle.get();
 }
 
 void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
 {
-    auto invalidate = rc;
-
-    if (_invalidateFullRows)
-    {
-        invalidate = til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
-    }
-
-    _invalidMap.set(invalidate);
+    const auto size = _invalidMap.size();
+    const auto topLeft = til::point{ 0, std::min(size.height(), rc.top()) };
+    const auto bottomRight = til::point{ size.width(), std::min(size.height(), rc.bottom()) };
+    _invalidMap.set({ topLeft, bottomRight });
 }
 
 bool DxEngine::_IsAllInvalid() const noexcept
@@ -1241,10 +1269,10 @@ try
     // so the entire frame is repainted.
     if (_FullRepaintNeeded())
     {
-        _invalidMap.set_all();
+        RETURN_IF_FAILED(InvalidateAll());
     }
 
-    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, 0))
+    if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
     {
         const auto invalidatedStr = _invalidMap.to_string();
         const auto invalidated = invalidatedStr.c_str();
@@ -1253,7 +1281,8 @@ try
         TraceLoggingWrite(g_hDxRenderProvider,
                           "Invalid",
                           TraceLoggingWideString(invalidated),
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE));
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     if (_isEnabled)
@@ -1289,8 +1318,8 @@ try
             // And persist the new size.
             _displaySizePixels = clientSize;
 
-            // Mark this as the first frame on the new target. We can't use incremental drawing on the first frame.
-            _firstFrame = true;
+            _invalidMap.resize(clientSize / _fontRenderData->GlyphCell());
+            RETURN_IF_FAILED(InvalidateAll());
         }
 
         _d2dDeviceContext->BeginDraw();
@@ -1928,6 +1957,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->useBoldFont = textAttributes.IsBold();
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
@@ -1944,15 +1974,30 @@ CATCH_RETURN()
 
 // Routine Description:
 // - Updates the font used for drawing
+// - This is the version that complies with the IRenderEngine interface
 // Arguments:
 // - pfiFontInfoDesired - Information specifying the font that is requested
 // - fiFontInfo - Filled with the nearest font actually chosen for drawing
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
+{
+    return UpdateFont(pfiFontInfoDesired, fiFontInfo, {}, {});
+}
+
+// Routine Description:
+// - Updates the font used for drawing
+// Arguments:
+// - pfiFontInfoDesired - Information specifying the font that is requested
+// - fiFontInfo - Filled with the nearest font actually chosen for drawing
+// - features - The map of font features to use
+// - axes - The map of font axes to use
+// Return Value:
+// - S_OK or relevant DirectX error
+[[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
-    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi));
+    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi, features, axes));
 
     // Prepare the text layout.
     _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());
@@ -2166,6 +2211,7 @@ try
     if (_antialiasingMode != antialiasingMode)
     {
         _antialiasingMode = antialiasingMode;
+        _recreateDeviceRequested = true;
         LOG_IF_FAILED(InvalidateAll());
     }
 }

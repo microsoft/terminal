@@ -8,16 +8,15 @@
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::TerminalApp::implementation
 {
     bool AppKeyBindings::TryKeyChord(const KeyChord& kc)
     {
-        const auto actionAndArgs = _keymap.TryLookup(kc);
-        if (actionAndArgs)
+        if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
         {
-            return _dispatch.DoAction(actionAndArgs);
+            return _dispatch.DoAction(cmd.ActionAndArgs());
         }
         return false;
     }
@@ -27,8 +26,8 @@ namespace winrt::TerminalApp::implementation
         _dispatch = dispatch;
     }
 
-    void AppKeyBindings::SetKeyMapping(const winrt::Microsoft::Terminal::Settings::Model::KeyMapping& keymap)
+    void AppKeyBindings::SetActionMap(const winrt::Microsoft::Terminal::Settings::Model::IActionMapView& actionMap)
     {
-        _keymap = keymap;
+        _actionMap = actionMap;
     }
 }

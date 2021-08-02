@@ -70,7 +70,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::GlobalAppSettings GlobalSettings() const;
         Windows::Foundation::Collections::IObservableVector<Model::Profile> AllProfiles() const noexcept;
         Windows::Foundation::Collections::IObservableVector<Model::Profile> ActiveProfiles() const noexcept;
-        Model::KeyMapping KeyMap() const noexcept;
+        Model::ActionMap ActionMap() const noexcept;
 
         static com_ptr<CascadiaSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
@@ -98,6 +98,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::guid GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
 
+        Model::Profile DuplicateProfile(const Model::Profile& source);
+        void RefreshDefaultTerminals();
+
+        static bool IsDefaultTerminalAvailable() noexcept;
+        Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const noexcept;
+        Model::DefaultTerminal CurrentDefaultTerminal() const noexcept;
+        void CurrentDefaultTerminal(Model::DefaultTerminal terminal);
+
     private:
         com_ptr<GlobalAppSettings> _globals;
         Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles;
@@ -105,6 +113,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings;
         Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
         hstring _deserializationErrorMessage;
+
+        Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals;
+        Model::DefaultTerminal _currentDefaultTerminal;
 
         std::vector<std::unique_ptr<::Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator>> _profileGenerators;
 
@@ -136,10 +147,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_set<std::string> _AccumulateJsonFilesInDirectory(const std::wstring_view directory);
         void _ParseAndLayerFragmentFiles(const std::unordered_set<std::string> files, const winrt::hstring source);
 
-        static bool _IsPackaged();
-        static void _WriteSettings(std::string_view content, const hstring filepath);
+        static const std::filesystem::path& _SettingsPath();
         static std::optional<std::string> _ReadUserSettings();
-        static std::optional<std::string> _ReadFile(HANDLE hFile);
 
         std::optional<guid> _GetProfileGuidByName(const hstring) const;
         std::optional<guid> _GetProfileGuidByIndex(std::optional<int> index) const;

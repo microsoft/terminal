@@ -43,7 +43,7 @@ If no existing item describes your issue/feature, great - please file a new issu
 * Have a question that you don't see answered in docs, videos, etc.? File an issue
 * Want to know if we're planning on building a particular feature? File an issue
 * Got a great idea for a new feature? File an issue/request/idea
-* Don't understand how to do something? File an issue/Community Guidance Request
+* Don't understand how to do something? File an issue
 * Found an existing issue that describes yours? Great - upvote and add additional commentary / info / repro-steps / etc.
 
 When you hit "New Issue", select the type of issue closest to what you want to report/ask/request:
@@ -111,13 +111,13 @@ However, some issues/features will require careful thought & formal design befor
 
 Specs help collaborators discuss different approaches to solve a problem, describe how the feature will behave, how the feature will impact the user, what happens if something goes wrong, etc. Driving towards agreement in a spec, before any code is written, often results in simpler code, and less wasted effort in the long run.
 
-Specs will be managed in a very similar manner as code contributions so please follow the "Fork, Branch and Create your PR" below.
+Specs will be managed in a very similar manner as code contributions so please follow the "[Fork, Branch and Create your PR](CONTRIBUTING.md#fork-clone-branch-and-create-your-pr)" section below.
 
 ### Writing / Contributing-to a Spec
 
 To write/contribute to a spec: fork, branch and commit via PRs, as you would with any code changes.
 
-Specs are written in markdown, stored under the `\doc\spec` folder and named `[issue id] - [spec description].md`.
+Specs are written in markdown, stored under the [`\doc\specs`](./doc/specs) folder and named `[issue id] - [spec description].md`.
 
 👉 **It is important to follow the spec templates and complete the requested information**. The available spec templates will help ensure that specs contain the minimum information & decisions necessary to permit development to begin. In particular, specs require you to confirm that you've already discussed the issue/idea with the team in an issue and that you provide the issue ID for reference.
 

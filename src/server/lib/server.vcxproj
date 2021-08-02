@@ -59,7 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\host\proxy\Host.Proxy.vcxproj">
-      <Project>{e437b604-3e98-4f40-a927-e173e818ea4b}</Project>
+      <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemDefinitionGroup>

@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "Profiles.h"
+#include "PreviewConnection.h"
 #include "Profiles.g.cpp"
 #include "EnumEntry.h"
 
@@ -15,9 +16,6 @@ using namespace winrt::Windows::UI::Xaml::Data;
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::Storage;
-using namespace winrt::Windows::Storage::AccessCache;
-using namespace winrt::Windows::Storage::Pickers;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 static const std::array<winrt::guid, 2> InBoxProfileGuids{
@@ -27,48 +25,198 @@ static const std::array<winrt::guid, 2> InBoxProfileGuids{
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    ProfileViewModel::ProfileViewModel(const Model::Profile& profile) :
-        _profile{ profile }
+    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
+    Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_FontList{ nullptr };
+
+    ProfileViewModel::ProfileViewModel(const Model::Profile& profile, const Model::CascadiaSettings& appSettings) :
+        _profile{ profile },
+        _defaultAppearanceViewModel{ winrt::make<implementation::AppearanceViewModel>(profile.DefaultAppearance().try_as<AppearanceConfig>()) },
+        _originalProfileGuid{ profile.Guid() },
+        _appSettings{ appSettings },
+        _unfocusedAppearanceViewModel{ nullptr }
     {
         // Add a property changed handler to our own property changed event.
-        // When the BackgroundImagePath changes, we _also_ need to change the
-        // value of UseDesktopBGImage.
-        //
-        // We need to do this so if someone manually types "desktopWallpaper"
-        // into the path TextBox, we properly update the checkbox and stored
-        // _lastBgImagePath. Without this, then we'll permanently hide the text
-        // box, prevent it from ever being changed again.
-        //
-        // We do the same for the starting directory path
+        // This propagates changes from the settings model to anybody listening to our
+        //  unique view model members.
         PropertyChanged([this](auto&&, const PropertyChangedEventArgs& args) {
             const auto viewModelProperty{ args.PropertyName() };
-            if (viewModelProperty == L"BackgroundImagePath")
+            if (viewModelProperty == L"IsBaseLayer")
             {
-                _NotifyChanges(L"UseDesktopBGImage", L"BackgroundImageSettingsVisible");
-            }
-            else if (viewModelProperty == L"IsBaseLayer")
-            {
+                // we _always_ want to show the background image settings in base layer
                 _NotifyChanges(L"BackgroundImageSettingsVisible");
             }
             else if (viewModelProperty == L"StartingDirectory")
             {
+                // notify listener that all starting directory related values might have changed
+                // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
             }
         });
-
-        // Cache the original BG image path. If the user clicks "Use desktop
-        // wallpaper", then un-checks it, this is the string we'll restore to
-        // them.
-        if (BackgroundImagePath() != L"desktopWallpaper")
-        {
-            _lastBgImagePath = BackgroundImagePath();
-        }
 
         // Do the same for the starting directory
         if (!StartingDirectory().empty())
         {
             _lastStartingDirectoryPath = StartingDirectory();
         }
+
+        // generate the font list, if we don't have one
+        if (!_FontList || !_MonospaceFontList)
+        {
+            UpdateFontList();
+        }
+
+        if (profile.HasUnfocusedAppearance())
+        {
+            _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(profile.UnfocusedAppearance().try_as<AppearanceConfig>());
+        }
+
+        _defaultAppearanceViewModel.IsDefault(true);
+    }
+
+    Model::TerminalSettings ProfileViewModel::TermSettings() const
+    {
+        return Model::TerminalSettings::CreateWithProfile(_appSettings, _profile, nullptr).DefaultSettings();
+    }
+
+    // Method Description:
+    // - Updates the lists of fonts and sorts them alphabetically
+    void ProfileViewModel::UpdateFontList() noexcept
+    try
+    {
+        // initialize font list
+        std::vector<Editor::Font> fontList;
+        std::vector<Editor::Font> monospaceFontList;
+
+        // get a DWriteFactory
+        com_ptr<IDWriteFactory> factory;
+        THROW_IF_FAILED(DWriteCreateFactory(
+            DWRITE_FACTORY_TYPE_SHARED,
+            __uuidof(IDWriteFactory),
+            reinterpret_cast<::IUnknown**>(factory.put())));
+
+        // get the font collection; subscribe to updates
+        com_ptr<IDWriteFontCollection> fontCollection;
+        THROW_IF_FAILED(factory->GetSystemFontCollection(fontCollection.put(), TRUE));
+
+        for (UINT32 i = 0; i < fontCollection->GetFontFamilyCount(); ++i)
+        {
+            try
+            {
+                // get the font family
+                com_ptr<IDWriteFontFamily> fontFamily;
+                THROW_IF_FAILED(fontCollection->GetFontFamily(i, fontFamily.put()));
+
+                // get the font's localized names
+                com_ptr<IDWriteLocalizedStrings> localizedFamilyNames;
+                THROW_IF_FAILED(fontFamily->GetFamilyNames(localizedFamilyNames.put()));
+
+                // construct a font entry for tracking
+                if (const auto fontEntry{ _GetFont(localizedFamilyNames) })
+                {
+                    // check if the font is monospaced
+                    try
+                    {
+                        com_ptr<IDWriteFont> font;
+                        THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL,
+                                                                         DWRITE_FONT_STRETCH::DWRITE_FONT_STRETCH_NORMAL,
+                                                                         DWRITE_FONT_STYLE::DWRITE_FONT_STYLE_NORMAL,
+                                                                         font.put()));
+
+                        // add the font name to our list of monospace fonts
+                        const auto castedFont{ font.try_as<IDWriteFont1>() };
+                        if (castedFont && castedFont->IsMonospacedFont())
+                        {
+                            monospaceFontList.emplace_back(fontEntry);
+                        }
+                    }
+                    CATCH_LOG();
+
+                    // add the font name to our list of all fonts
+                    fontList.emplace_back(std::move(fontEntry));
+                }
+            }
+            CATCH_LOG();
+        }
+
+        // sort and save the lists
+        std::sort(begin(fontList), end(fontList), FontComparator());
+        _FontList = single_threaded_observable_vector<Editor::Font>(std::move(fontList));
+
+        std::sort(begin(monospaceFontList), end(monospaceFontList), FontComparator());
+        _MonospaceFontList = single_threaded_observable_vector<Editor::Font>(std::move(monospaceFontList));
+    }
+    CATCH_LOG();
+
+    Editor::Font ProfileViewModel::_GetFont(com_ptr<IDWriteLocalizedStrings> localizedFamilyNames)
+    {
+        // used for the font's name as an identifier (i.e. text block's font family property)
+        std::wstring nameID;
+        UINT32 nameIDIndex;
+
+        // used for the font's localized name
+        std::wstring localizedName;
+        UINT32 localizedNameIndex;
+
+        // use our current locale to find the localized name
+        BOOL exists{ FALSE };
+        HRESULT hr;
+        wchar_t localeName[LOCALE_NAME_MAX_LENGTH];
+        if (GetUserDefaultLocaleName(localeName, LOCALE_NAME_MAX_LENGTH))
+        {
+            hr = localizedFamilyNames->FindLocaleName(localeName, &localizedNameIndex, &exists);
+        }
+        if (SUCCEEDED(hr) && !exists)
+        {
+            // if we can't find the font for our locale, fallback to the en-us one
+            // Source: https://docs.microsoft.com/en-us/windows/win32/api/dwrite/nf-dwrite-idwritelocalizedstrings-findlocalename
+            hr = localizedFamilyNames->FindLocaleName(L"en-us", &localizedNameIndex, &exists);
+        }
+        if (!exists)
+        {
+            // failed to find the correct locale, using the first one
+            localizedNameIndex = 0;
+        }
+
+        // get the localized name
+        UINT32 nameLength;
+        THROW_IF_FAILED(localizedFamilyNames->GetStringLength(localizedNameIndex, &nameLength));
+
+        localizedName.resize(nameLength);
+        THROW_IF_FAILED(localizedFamilyNames->GetString(localizedNameIndex, localizedName.data(), nameLength + 1));
+
+        // now get the nameID
+        hr = localizedFamilyNames->FindLocaleName(L"en-us", &nameIDIndex, &exists);
+        if (FAILED(hr) || !exists)
+        {
+            // failed to find it, using the first one
+            nameIDIndex = 0;
+        }
+
+        // get the nameID
+        THROW_IF_FAILED(localizedFamilyNames->GetStringLength(nameIDIndex, &nameLength));
+        nameID.resize(nameLength);
+        THROW_IF_FAILED(localizedFamilyNames->GetString(nameIDIndex, nameID.data(), nameLength + 1));
+
+        if (!nameID.empty() && !localizedName.empty())
+        {
+            return make<Font>(nameID, localizedName);
+        }
+        return nullptr;
+    }
+
+    IObservableVector<Editor::Font> ProfileViewModel::CompleteFontList() const noexcept
+    {
+        return _FontList;
+    }
+
+    IObservableVector<Editor::Font> ProfileViewModel::MonospaceFontList() const noexcept
+    {
+        return _MonospaceFontList;
+    }
+
+    winrt::guid ProfileViewModel::OriginalProfileGuid() const noexcept
+    {
+        return _originalProfileGuid;
     }
 
     bool ProfileViewModel::CanDeleteProfile() const
@@ -94,33 +242,54 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool ProfileViewModel::UseDesktopBGImage()
+    Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
     {
-        return BackgroundImagePath() == L"desktopWallpaper";
+        return _defaultAppearanceViewModel;
     }
 
-    void ProfileViewModel::UseDesktopBGImage(const bool useDesktop)
+    bool ProfileViewModel::HasUnfocusedAppearance()
     {
-        if (useDesktop)
+        return _profile.HasUnfocusedAppearance();
+    }
+
+    bool ProfileViewModel::EditableUnfocusedAppearance()
+    {
+        if constexpr (Feature_EditableUnfocusedAppearance::IsEnabled())
         {
-            // Stash the current value of BackgroundImagePath. If the user
-            // checks and un-checks the "Use desktop wallpaper" button, we want
-            // the path that we display in the text box to remain unchanged.
-            //
-            // Only stash this value if it's not the special "desktopWallpaper"
-            // value.
-            if (BackgroundImagePath() != L"desktopWallpaper")
-            {
-                _lastBgImagePath = BackgroundImagePath();
-            }
-            BackgroundImagePath(L"desktopWallpaper");
+            return true;
         }
-        else if (HasBackgroundImagePath())
-        {
-            // Restore the path we had previously cached. This might be the
-            // empty string.
-            BackgroundImagePath(_lastBgImagePath);
-        }
+        return false;
+    }
+
+    bool ProfileViewModel::ShowUnfocusedAppearance()
+    {
+        return EditableUnfocusedAppearance() && HasUnfocusedAppearance();
+    }
+
+    void ProfileViewModel::CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
+                                                     const IHostedInWindow& windowRoot)
+    {
+        _profile.CreateUnfocusedAppearance();
+
+        _unfocusedAppearanceViewModel = winrt::make<implementation::AppearanceViewModel>(_profile.UnfocusedAppearance().try_as<AppearanceConfig>());
+        _unfocusedAppearanceViewModel.Schemes(schemes);
+        _unfocusedAppearanceViewModel.WindowRoot(windowRoot);
+
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
+    }
+
+    void ProfileViewModel::DeleteUnfocusedAppearance()
+    {
+        _profile.DeleteUnfocusedAppearance();
+
+        _unfocusedAppearanceViewModel = nullptr;
+
+        _NotifyChanges(L"UnfocusedAppearance", L"HasUnfocusedAppearance", L"ShowUnfocusedAppearance");
+    }
+
+    Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
+    {
+        return _unfocusedAppearanceViewModel;
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()
@@ -152,7 +321,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             StartingDirectory(L"");
         }
-        else if (HasStartingDirectory())
+        else
         {
             // Restore the path we had previously cached as long as it wasn't empty
             // If it was empty, set the starting directory to %USERPROFILE%
@@ -169,75 +338,49 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool ProfileViewModel::BackgroundImageSettingsVisible()
-    {
-        return IsBaseLayer() || BackgroundImagePath() != L"";
-    }
-
     void ProfilePageNavigationState::DeleteProfile()
     {
         auto deleteProfileArgs{ winrt::make_self<DeleteProfileEventArgs>(_Profile.Guid()) };
         _DeleteProfileHandlers(*this, *deleteProfileArgs);
     }
 
+    void ProfilePageNavigationState::CreateUnfocusedAppearance()
+    {
+        _Profile.CreateUnfocusedAppearance(_Schemes, _WindowRoot);
+    }
+
+    void ProfilePageNavigationState::DeleteUnfocusedAppearance()
+    {
+        _Profile.DeleteUnfocusedAppearance();
+    }
+
     Profiles::Profiles() :
-        _ColorSchemeList{ single_threaded_observable_vector<ColorScheme>() }
+        _previewControl{ Control::TermControl(Model::TerminalSettings{}, make<PreviewConnection>()) }
     {
         InitializeComponent();
 
-        INITIALIZE_BINDABLE_ENUM_SETTING(CursorShape, CursorStyle, winrt::Microsoft::Terminal::TerminalControl::CursorStyle, L"Profile_CursorShape", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BackgroundImageStretchMode, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch, L"Profile_BackgroundImageStretchMode", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
+        INITIALIZE_BINDABLE_ENUM_SETTING(AntiAliasingMode, TextAntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode, L"Profile_AntialiasingMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(CloseOnExitMode, CloseOnExitMode, winrt::Microsoft::Terminal::Settings::Model::CloseOnExitMode, L"Profile_CloseOnExit", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING_REVERSE_ORDER(BellStyle, BellStyle, winrt::Microsoft::Terminal::Settings::Model::BellStyle, L"Profile_BellStyle", L"Content");
-        INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::TerminalControl::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
-
-        // manually add Custom FontWeight option. Don't add it to the Map
-        INITIALIZE_BINDABLE_ENUM_SETTING(FontWeight, FontWeight, uint16_t, L"Profile_FontWeight", L"Content");
-        _CustomFontWeight = winrt::make<EnumEntry>(RS_(L"Profile_FontWeightCustom/Content"), winrt::box_value<uint16_t>(0u));
-        _FontWeightList.Append(_CustomFontWeight);
-
-        // manually keep track of all the Background Image Alignment buttons
-        _BIAlignmentButtons.at(0) = BIAlign_TopLeft();
-        _BIAlignmentButtons.at(1) = BIAlign_Top();
-        _BIAlignmentButtons.at(2) = BIAlign_TopRight();
-        _BIAlignmentButtons.at(3) = BIAlign_Left();
-        _BIAlignmentButtons.at(4) = BIAlign_Center();
-        _BIAlignmentButtons.at(5) = BIAlign_Right();
-        _BIAlignmentButtons.at(6) = BIAlign_BottomLeft();
-        _BIAlignmentButtons.at(7) = BIAlign_Bottom();
-        _BIAlignmentButtons.at(8) = BIAlign_BottomRight();
-
-        // apply automation properties to more complex setting controls
-        for (const auto& biButton : _BIAlignmentButtons)
-        {
-            const auto tooltip{ ToolTipService::GetToolTip(biButton) };
-            Automation::AutomationProperties::SetName(biButton, unbox_value<hstring>(tooltip));
-        }
+        INITIALIZE_BINDABLE_ENUM_SETTING(ScrollState, ScrollbarState, winrt::Microsoft::Terminal::Control::ScrollbarState, L"Profile_ScrollbarVisibility", L"Content");
 
         const auto startingDirCheckboxTooltip{ ToolTipService::GetToolTip(StartingDirectoryUseParentCheckbox()) };
         Automation::AutomationProperties::SetFullDescription(StartingDirectoryUseParentCheckbox(), unbox_value<hstring>(startingDirCheckboxTooltip));
 
-        const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
-        Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
-
         Automation::AutomationProperties::SetName(DeleteButton(), RS_(L"Profile_DeleteButton/Text"));
+
+        _previewControl.IsEnabled(false);
+        _previewControl.AllowFocusWhenDisabled(false);
+        ControlPreview().Child(_previewControl);
     }
 
     void Profiles::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
 
-        const auto& colorSchemeMap{ _State.Schemes() };
-        for (const auto& pair : colorSchemeMap)
+        // generate the font list, if we don't have one
+        if (!_State.Profile().CompleteFontList() || !_State.Profile().MonospaceFontList())
         {
-            _ColorSchemeList.Append(pair.Value());
-        }
-
-        const auto& biAlignmentVal{ static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()) };
-        for (const auto& biButton : _BIAlignmentButtons)
-        {
-            biButton.IsChecked(biButton.Tag().as<int32_t>() == biAlignmentVal);
+            ProfileViewModel::UpdateFontList();
         }
 
         // Set the text disclaimer for the text box
@@ -266,16 +409,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // and propagate those changes to the UI
         _ViewModelChangedRevoker = _State.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
-            if (settingName == L"CursorShape")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentCursorShape" });
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsVintageCursor" });
-            }
-            else if (settingName == L"BackgroundImageStretchMode")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBackgroundImageStretchMode" });
-            }
-            else if (settingName == L"AntialiasingMode")
+            if (settingName == L"AntialiasingMode")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentAntiAliasingMode" });
             }
@@ -285,54 +419,65 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (settingName == L"BellStyle")
             {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentBellStyle" });
+                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsBellStyleFlagSet" });
             }
             else if (settingName == L"ScrollState")
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
             }
-            else if (settingName == L"FontWeight")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontWeight" });
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
-            }
-            else if (settingName == L"ColorSchemeName")
-            {
-                _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentColorScheme" });
-            }
-            else if (settingName == L"BackgroundImageAlignment")
-            {
-                _UpdateBIAlignmentControl(static_cast<int32_t>(_State.Profile().BackgroundImageAlignment()));
-            }
+            _previewControl.Settings(_State.Profile().TermSettings());
+            _previewControl.UpdateSettings();
+        });
+
+        // The Appearances object handles updating the values in the settings UI, but
+        // we still need to listen to the changes here just to update the preview control
+        _AppearanceViewModelChangedRevoker = _State.Profile().DefaultAppearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
+            _previewControl.Settings(_State.Profile().TermSettings());
+            _previewControl.UpdateSettings();
         });
 
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
+
+        _previewControl.Settings(_State.Profile().TermSettings());
+        // There is a possibility that the control has not fully initialized yet,
+        // so wait for it to initialize before updating the settings (so we know
+        // that the renderer is set up)
+        _previewControl.Initialized([&](auto&& /*s*/, auto&& /*e*/) {
+            _previewControl.UpdateSettings();
+        });
     }
 
     void Profiles::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
     {
         _ViewModelChangedRevoker.revoke();
+        _AppearanceViewModelChangedRevoker.revoke();
     }
 
-    ColorScheme Profiles::CurrentColorScheme()
+    bool Profiles::IsBellStyleFlagSet(const uint32_t flag)
     {
-        const auto schemeName{ _State.Profile().ColorSchemeName() };
-        if (const auto scheme{ _State.Schemes().TryLookup(schemeName) })
-        {
-            return scheme;
-        }
-        else
-        {
-            // This Profile points to a color scheme that was renamed or deleted.
-            // Fallback to Campbell.
-            return _State.Schemes().TryLookup(L"Campbell");
-        }
+        return (WI_EnumValue(_State.Profile().BellStyle()) & flag) == flag;
     }
 
-    void Profiles::CurrentColorScheme(const ColorScheme& val)
+    void Profiles::SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on)
     {
-        _State.Profile().ColorSchemeName(val.Name());
+        auto currentStyle = State().Profile().BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Audible, winrt::unbox_value<bool>(on));
+        State().Profile().BellStyle(currentStyle);
+    }
+
+    void Profiles::SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = State().Profile().BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Window, winrt::unbox_value<bool>(on));
+        State().Profile().BellStyle(currentStyle);
+    }
+
+    void Profiles::SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on)
+    {
+        auto currentStyle = State().Profile().BellStyle();
+        WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
+        State().Profile().BellStyle(currentStyle);
     }
 
     void Profiles::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
@@ -341,45 +486,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         state->DeleteProfile();
     }
 
-    fire_and_forget Profiles::BackgroundImage_Click(IInspectable const&, RoutedEventArgs const&)
+    void Profiles::CreateUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        auto lifetime = get_strong();
+        _State.CreateUnfocusedAppearance();
+    }
 
-        FileOpenPicker picker;
-
-        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
-        picker.ViewMode(PickerViewMode::Thumbnail);
-        picker.SuggestedStartLocation(PickerLocationId::PicturesLibrary);
-
-        // Converted into a BitmapImage. This list of supported image file formats is from BitmapImage documentation
-        // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Xaml.Media.Imaging.BitmapImage?view=winrt-19041#remarks
-        picker.FileTypeFilter().ReplaceAll({ L".jpg", L".jpeg", L".png", L".bmp", L".gif", L".tiff", L".ico" });
-
-        StorageFile file = co_await picker.PickSingleFileAsync();
-        if (file != nullptr)
-        {
-            _State.Profile().BackgroundImagePath(file.Path());
-        }
+    void Profiles::DeleteUnfocusedAppearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
+    {
+        _State.DeleteUnfocusedAppearance();
     }
 
     fire_and_forget Profiles::Icon_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
 
-        FileOpenPicker picker;
-
-        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
-        picker.ViewMode(PickerViewMode::Thumbnail);
-        picker.SuggestedStartLocation(PickerLocationId::PicturesLibrary);
-
-        // Converted into a BitmapIconSource. This list of supported image file formats is from BitmapImage documentation
-        // https://docs.microsoft.com/en-us/uwp/api/Windows.UI.Xaml.Media.Imaging.BitmapImage?view=winrt-19041#remarks
-        picker.FileTypeFilter().ReplaceAll({ L".jpg", L".jpeg", L".png", L".bmp", L".gif", L".tiff", L".ico" });
-
-        StorageFile file = co_await picker.PickSingleFileAsync();
-        if (file != nullptr)
+        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        auto file = co_await OpenImagePicker(parentHwnd);
+        if (!file.empty())
         {
-            _State.Profile().Icon(file.Path());
+            _State.Profile().Icon(file);
         }
     }
 
@@ -387,99 +512,55 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto lifetime = get_strong();
 
-        FileOpenPicker picker;
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Executable Files (*.exe, *.cmd, *.bat)", L"*.exe;*.cmd;*.bat" },
+            { L"All Files (*.*)", L"*.*" }
+        };
 
-        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
-        picker.ViewMode(PickerViewMode::Thumbnail);
-        picker.SuggestedStartLocation(PickerLocationId::ComputerFolder);
-        picker.FileTypeFilter().ReplaceAll({ L".bat", L".exe", L".cmd" });
+        static constexpr winrt::guid clientGuidExecutables{ 0x2E7E4331, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
+        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
+            THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExecutables));
+            try
+            {
+                auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, nullptr) };
+                dialog->SetDefaultFolder(folderShellItem.get());
+            }
+            CATCH_LOG(); // non-fatal
+            THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+            THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+            THROW_IF_FAILED(dialog->SetDefaultExtension(L"exe;cmd;bat"));
+        });
 
-        StorageFile file = co_await picker.PickSingleFileAsync();
-        if (file != nullptr)
+        if (!path.empty())
         {
-            _State.Profile().Commandline(file.Path());
+            _State.Profile().Commandline(path);
         }
     }
 
     fire_and_forget Profiles::StartingDirectory_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
-        FolderPicker picker;
-        _State.WindowRoot().TryPropagateHostingWindow(picker); // if we don't do this, there's no HWND for it to attach to
-        picker.SuggestedStartLocation(PickerLocationId::DocumentsLibrary);
-        picker.FileTypeFilter().ReplaceAll({ L"*" });
-        StorageFolder folder = co_await picker.PickSingleFolderAsync();
-        if (folder != nullptr)
-        {
-            StorageApplicationPermissions::FutureAccessList().AddOrReplace(L"PickedFolderToken", folder);
-            _State.Profile().StartingDirectory(folder.Path());
-        }
-    }
-
-    IInspectable Profiles::CurrentFontWeight() const
-    {
-        // if no value was found, we have a custom value
-        const auto maybeEnumEntry{ _FontWeightMap.TryLookup(_State.Profile().FontWeight().Weight) };
-        return maybeEnumEntry ? maybeEnumEntry : _CustomFontWeight;
-    }
-
-    void Profiles::CurrentFontWeight(const IInspectable& enumEntry)
-    {
-        if (auto ee = enumEntry.try_as<Editor::EnumEntry>())
-        {
-            if (ee != _CustomFontWeight)
+        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        auto folder = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
+            static constexpr winrt::guid clientGuidFolderPicker{ 0xAADAA433, 0xB04D, 0x4BAE, { 0xB1, 0xEA, 0x1E, 0x6C, 0xD1, 0xCD, 0xA6, 0x8B } };
+            THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolderPicker));
+            try
             {
-                const auto weight{ winrt::unbox_value<uint16_t>(ee.EnumValue()) };
-                const Windows::UI::Text::FontWeight setting{ weight };
-                _State.Profile().FontWeight(setting);
-
-                // Profile does not have observable properties
-                // So the TwoWay binding doesn't update on the State --> Slider direction
-                FontWeightSlider().Value(weight);
+                auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_ComputerFolder, KF_FLAG_DEFAULT, nullptr) };
+                dialog->SetDefaultFolder(folderShellItem.get());
             }
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IsCustomFontWeight" });
-        }
-    }
+            CATCH_LOG(); // non-fatal
 
-    bool Profiles::IsCustomFontWeight()
-    {
-        // Use SelectedItem instead of CurrentFontWeight.
-        // CurrentFontWeight converts the Profile's value to the appropriate enum entry,
-        // whereas SelectedItem identifies which one was selected by the user.
-        return FontWeightComboBox().SelectedItem() == _CustomFontWeight;
-    }
+            DWORD flags{};
+            THROW_IF_FAILED(dialog->GetOptions(&flags));
+            THROW_IF_FAILED(dialog->SetOptions(flags | FOS_PICKFOLDERS)); // folders only
+        });
 
-    void Profiles::BIAlignment_Click(IInspectable const& sender, RoutedEventArgs const& /*e*/)
-    {
-        if (const auto& button{ sender.try_as<Primitives::ToggleButton>() })
+        if (!folder.empty())
         {
-            if (const auto& tag{ button.Tag().try_as<int32_t>() })
-            {
-                // Update the Profile's value and the control
-                _State.Profile().BackgroundImageAlignment(static_cast<ConvergedAlignment>(*tag));
-                _UpdateBIAlignmentControl(*tag);
-            }
+            _State.Profile().StartingDirectory(folder);
         }
-    }
-
-    // Method Description:
-    // - Resets all of the buttons to unchecked, and checks the one with the provided tag
-    // Arguments:
-    // - val - the background image alignment (ConvergedAlignment) that we want to represent in the control
-    void Profiles::_UpdateBIAlignmentControl(const int32_t val)
-    {
-        for (const auto& biButton : _BIAlignmentButtons)
-        {
-            if (const auto& biButtonAlignment{ biButton.Tag().try_as<int32_t>() })
-            {
-                biButton.IsChecked(biButtonAlignment == val);
-            }
-        }
-    }
-
-    bool Profiles::IsVintageCursor() const
-    {
-        return _State.Profile().CursorShape() == TerminalControl::CursorStyle::Vintage;
     }
 
     void Profiles::Pivot_SelectionChanged(Windows::Foundation::IInspectable const& /*sender*/,
@@ -487,5 +568,4 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _State.LastActivePivot(static_cast<Editor::ProfilesPivots>(ProfilesPivot().SelectedIndex()));
     }
-
 }

@@ -707,8 +707,6 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
             return STATUS_BUFFER_TOO_SMALL;
         }
 
-        const size_t OutputBufferSize = buffer.size_bytes();
-
         if (readHandleState.IsInputPending())
         {
             return _ReadPendingInput(inputBuffer,

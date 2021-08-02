@@ -15,7 +15,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         InteractionPageNavigationState(const Model::GlobalAppSettings& settings) :
             _Globals{ settings } {}
 
-        GETSET_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
+        WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
     };
 
     struct Interaction : InteractionT<Interaction>
@@ -24,10 +24,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        GETSET_PROPERTY(Editor::InteractionPageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Editor::InteractionPageNavigationState, State, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(TabSwitcherMode, Model::TabSwitcherMode, State().Globals, TabSwitcherMode);
-        GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::TerminalControl::CopyFormat, State().Globals, CopyFormatting);
+        GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, State().Globals, CopyFormatting);
     };
 }
 

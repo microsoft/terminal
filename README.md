@@ -1,3 +1,5 @@
+![terminal-logos](https://user-images.githubusercontent.com/48369326/115790869-4c852b00-a37c-11eb-97f1-f61972c7800c.png)
+
 # Welcome to the Windows Terminal, Console and Command-Line repo
 
 This repository contains the source code for:
@@ -33,9 +35,22 @@ This is our preferred method.
 
 #### Via GitHub
 
-For users who are unable to install Terminal from the Microsoft Store, Terminal
-builds can be manually downloaded from this repository's [Releases
+For users who are unable to install Windows Terminal from the Microsoft Store,
+released builds can be manually downloaded from this repository's [Releases
 page](https://github.com/microsoft/terminal/releases).
+
+Download the `Microsoft.WindowsTerminal_<versionNumber>.msixbundle` file from
+the **Assets** section. To install the app, you can simply double-click on the
+`.msixbundle` file, and the app installer should automatically run. If that
+fails for any reason, you can try the following command at a PowerShell prompt:
+
+```powershell
+# NOTE: If you are using PowerShell 7+, please run
+# Import-Module Appx -UseWindowsPowerShell
+# before using Add-AppxPackage.
+
+Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
+```
 
 > 🔴 Note: If you install Terminal manually:
 >
@@ -228,7 +243,7 @@ Visual Studio.
 
 ## Documentation
 
-All project documentation is located at aka.ms/terminal-docs. If you would like
+All project documentation is located at [aka.ms/terminal-docs](https://aka.ms/terminal-docs). If you would like
 to contribute to the documentation, please submit a pull request on the [Windows
 Terminal Documentation repo](https://github.com/MicrosoftDocs/terminal).
 
@@ -263,6 +278,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
 * Leon Liang, Developer: [@leonmsft](https://twitter.com/leonmsft)
 * Pankaj Bhojwani, Developer
+* Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)
 
 ## Developer Guidance
 

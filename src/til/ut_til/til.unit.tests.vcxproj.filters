@@ -4,19 +4,25 @@
     <Natvis Include="$(SolutionDir)tools\ConsoleTypes.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="..\precomp.cpp" />
-    <ClCompile Include="u8u16convertTests.cpp" />
-    <ClCompile Include="SizeTests.cpp" />
-    <ClCompile Include="ColorTests.cpp" />
-    <ClCompile Include="PointTests.cpp" />
-    <ClCompile Include="StaticMapTests.cpp" />
-    <ClCompile Include="RectangleTests.cpp" />
-    <ClCompile Include="BitmapTests.cpp" />
-    <ClCompile Include="OperatorTests.cpp" />
-    <ClCompile Include="MathTests.cpp" />
     <ClCompile Include="BaseTests.cpp" />
+    <ClCompile Include="BitmapTests.cpp" />
+    <ClCompile Include="CoalesceTests.cpp" />
+    <ClCompile Include="ColorTests.cpp" />
+    <ClCompile Include="MathTests.cpp" />
+    <ClCompile Include="mutex.cpp" />
+    <ClCompile Include="OperatorTests.cpp" />
+    <ClCompile Include="PointTests.cpp" />
+    <ClCompile Include="RectangleTests.cpp" />
+    <ClCompile Include="ReplaceTests.cpp" />
+    <ClCompile Include="RunLengthEncodingTests.cpp" />
+    <ClCompile Include="SizeTests.cpp" />
+    <ClCompile Include="SomeTests.cpp" />
     <ClCompile Include="SPSCTests.cpp" />
+    <ClCompile Include="StaticMapTests.cpp" />
+    <ClCompile Include="string.cpp" />
+    <ClCompile Include="throttled_func.cpp" />
+    <ClCompile Include="u8u16convertTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h" />

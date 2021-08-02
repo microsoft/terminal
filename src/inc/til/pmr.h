@@ -21,7 +21,7 @@ namespace til::pmr
     // get_default_resource below forces it to be included by the compiler.
     // I *believe* that if the VC++ Runtime is updated to include the PMR source,
     // this will safely no-op (since it's an ALTERNATENAME).
-#if defined(_M_AMD64) || defined(_M_ARM64)
+#if defined(_M_AMD64) || defined(_M_ARM64) || defined(_M_ARM)
 #pragma comment(linker, "/ALTERNATENAME:_Aligned_get_default_resource=TIL_PMR_Aligned_get_default_resource")
 #else
 #pragma comment(linker, "/ALTERNATENAME:__Aligned_get_default_resource=_TIL_PMR_Aligned_get_default_resource")

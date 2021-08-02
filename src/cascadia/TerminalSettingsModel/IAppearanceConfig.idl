@@ -1,0 +1,46 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Profile.idl";
+#include "IInheritable.idl.h"
+
+#define INHERITABLE_APPEARANCE_SETTING(Type, Name) \
+    _BASE_INHERITABLE_SETTING(Type, Name);      \
+    Microsoft.Terminal.Settings.Model.IAppearanceConfig Name##OverrideSource { get; }
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [flags] enum ConvergedAlignment {
+        // low 4 bits are the horizontal
+        Horizontal_Center = 0x00,
+        Horizontal_Left = 0x01,
+        Horizontal_Right = 0x02,
+
+        // high 4 bits are the vertical
+        Vertical_Center = 0x00,
+        Vertical_Top = 0x10,
+        Vertical_Bottom = 0x20
+    };
+
+    interface IAppearanceConfig
+    {
+        Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
+        INHERITABLE_APPEARANCE_SETTING(String, ColorSchemeName);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
+        INHERITABLE_APPEARANCE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
+        INHERITABLE_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
+        INHERITABLE_APPEARANCE_SETTING(UInt32, CursorHeight);
+
+        INHERITABLE_APPEARANCE_SETTING(String, BackgroundImagePath);
+        String ExpandedBackgroundImagePath { get; };
+
+        INHERITABLE_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        INHERITABLE_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        INHERITABLE_APPEARANCE_SETTING(ConvergedAlignment, BackgroundImageAlignment);
+
+        INHERITABLE_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
+        INHERITABLE_APPEARANCE_SETTING(String, PixelShaderPath);
+    };
+}

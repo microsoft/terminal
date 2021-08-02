@@ -6,34 +6,40 @@
 
 #include "KeyChord.g.cpp"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
+
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    KeyChord::KeyChord() noexcept :
-        _modifiers{ 0 },
-        _vkey{ 0 }
+    static VirtualKeyModifiers modifiersFromBooleans(bool ctrl, bool alt, bool shift, bool win)
+    {
+        VirtualKeyModifiers modifiers = VirtualKeyModifiers::None;
+        WI_SetFlagIf(modifiers, VirtualKeyModifiers::Control, ctrl);
+        WI_SetFlagIf(modifiers, VirtualKeyModifiers::Menu, alt);
+        WI_SetFlagIf(modifiers, VirtualKeyModifiers::Shift, shift);
+        WI_SetFlagIf(modifiers, VirtualKeyModifiers::Windows, win);
+        return modifiers;
+    }
+
+    KeyChord::KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey, int32_t scanCode) noexcept :
+        _modifiers{ modifiersFromBooleans(ctrl, alt, shift, win) },
+        _vkey{ vkey },
+        _scanCode{ scanCode }
     {
     }
 
-    KeyChord::KeyChord(bool ctrl, bool alt, bool shift, int32_t vkey) noexcept :
-        _modifiers{ (ctrl ? TerminalControl::KeyModifiers::Ctrl : TerminalControl::KeyModifiers::None) |
-                    (alt ? TerminalControl::KeyModifiers::Alt : TerminalControl::KeyModifiers::None) |
-                    (shift ? TerminalControl::KeyModifiers::Shift : TerminalControl::KeyModifiers::None) },
-        _vkey{ vkey }
-    {
-    }
-
-    KeyChord::KeyChord(TerminalControl::KeyModifiers const& modifiers, int32_t vkey) noexcept :
+    KeyChord::KeyChord(const VirtualKeyModifiers modifiers, int32_t vkey, int32_t scanCode) noexcept :
         _modifiers{ modifiers },
-        _vkey{ vkey }
+        _vkey{ vkey },
+        _scanCode{ scanCode }
     {
     }
 
-    TerminalControl::KeyModifiers KeyChord::Modifiers() noexcept
+    VirtualKeyModifiers KeyChord::Modifiers() noexcept
     {
         return _modifiers;
     }
 
-    void KeyChord::Modifiers(TerminalControl::KeyModifiers const& value) noexcept
+    void KeyChord::Modifiers(VirtualKeyModifiers const& value) noexcept
     {
         _modifiers = value;
     }
@@ -46,5 +52,15 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     void KeyChord::Vkey(int32_t value) noexcept
     {
         _vkey = value;
+    }
+
+    int32_t KeyChord::ScanCode() noexcept
+    {
+        return _scanCode;
+    }
+
+    void KeyChord::ScanCode(int32_t value) noexcept
+    {
+        _scanCode = value;
     }
 }

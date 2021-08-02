@@ -70,7 +70,7 @@ namespace Microsoft::Console::Render
 
         void SetSoftwareRendering(bool enable) noexcept;
 
-        ::Microsoft::WRL::ComPtr<IDXGISwapChain1> GetSwapChain();
+        HANDLE GetSwapChainHandle();
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -109,6 +109,7 @@ namespace Microsoft::Console::Render
                                                    const gsl::not_null<IRenderData*> pData,
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
@@ -168,7 +169,6 @@ namespace Microsoft::Console::Render
         uint16_t _hyperlinkHoveredId;
 
         bool _firstFrame;
-        bool _invalidateFullRows;
         std::pmr::unsynchronized_pool_resource _pool;
         til::pmr::bitmap _invalidMap;
         til::point _invalidScroll;
@@ -181,6 +181,8 @@ namespace Microsoft::Console::Render
         DXGI_PRESENT_PARAMETERS _presentParams;
 
         static std::atomic<size_t> _tracelogCount;
+
+        wil::unique_handle _swapChainHandle;
 
         // Device-Independent Resources
         ::Microsoft::WRL::ComPtr<ID2D1Factory1> _d2dFactory;
@@ -210,6 +212,7 @@ namespace Microsoft::Console::Render
         ::Microsoft::WRL::ComPtr<ID2D1SolidColorBrush> _d2dBrushBackground;
 
         ::Microsoft::WRL::ComPtr<IDXGIFactory2> _dxgiFactory2;
+        ::Microsoft::WRL::ComPtr<IDXGIFactoryMedia> _dxgiFactoryMedia;
         ::Microsoft::WRL::ComPtr<IDXGIDevice> _dxgiDevice;
         ::Microsoft::WRL::ComPtr<IDXGISurface> _dxgiSurface;
 
@@ -268,6 +271,8 @@ namespace Microsoft::Console::Render
         } _pixelShaderSettings;
 
         [[nodiscard]] HRESULT _CreateDeviceResources(const bool createSwapChain) noexcept;
+        [[nodiscard]] HRESULT _CreateSurfaceHandle() noexcept;
+
         bool _HasTerminalEffects() const noexcept;
         std::string _LoadPixelShaderFile() const;
         HRESULT _SetupTerminalEffects();

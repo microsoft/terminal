@@ -1,136 +1,150 @@
-<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
-the MIT License. See LICENSE in the project root for license information. -->
-<Page
-    x:Class="TerminalApp.TerminalPage"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:TerminalApp"
-    xmlns:mux="using:Microsoft.UI.Xaml.Controls"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+<!--
+    Copyright (c) Microsoft Corporation. All rights reserved. Licensed under
+    the MIT License. See LICENSE in the project root for license information.
+-->
+<Page x:Class="TerminalApp.TerminalPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+      xmlns:local="using:TerminalApp"
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+      mc:Ignorable="d">
 
-    <Grid x:Name="Root" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid x:Name="Root"
+          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <local:TabRowControl x:Name="TabRow" Grid.Row="0" />
+        <local:TabRowControl x:Name="TabRow"
+                             Grid.Row="0" />
 
-        <Grid x:Name="TabContent" Grid.Row="1" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" />
+        <Grid x:Name="TabContent"
+              Grid.Row="1"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Stretch" />
 
-        <ContentDialog
-            x:Load="False"
-            x:Name="AboutDialog"
-            x:Uid="AboutDialog"
-            DefaultButton="Close">
+        <ContentDialog x:Name="AboutDialog"
+                       x:Uid="AboutDialog"
+                       x:Load="False"
+                       DefaultButton="Close">
             <StackPanel Orientation="Vertical">
                 <TextBlock IsTextSelectionEnabled="True">
                     <Run Text="{x:Bind ApplicationDisplayName}" /> <LineBreak />
                     <Run x:Uid="AboutDialog_VersionLabel" />
                     <Run Text="{x:Bind ApplicationVersion}" />
                 </TextBlock>
-                <HyperlinkButton
-                    x:Uid="AboutDialog_DocumentationLink"
-                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
-                <HyperlinkButton
-                    x:Uid="AboutDialog_ReleaseNotesLink"
-                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
-                <HyperlinkButton
-                    x:Uid="AboutDialog_PrivacyPolicyLink"
-                    NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
-                <HyperlinkButton
-                    x:Uid="AboutDialog_ThirdPartyNoticesLink"
-                    Click="_ThirdPartyNoticesOnClick" />
+                <HyperlinkButton x:Uid="AboutDialog_DocumentationLink"
+                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125416" />
+                <HyperlinkButton x:Uid="AboutDialog_ReleaseNotesLink"
+                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125417" />
+                <HyperlinkButton x:Uid="AboutDialog_PrivacyPolicyLink"
+                                 NavigateUri="https://go.microsoft.com/fwlink/?linkid=2125418" />
+                <HyperlinkButton x:Uid="AboutDialog_ThirdPartyNoticesLink"
+                                 Click="_ThirdPartyNoticesOnClick" />
             </StackPanel>
         </ContentDialog>
 
-        <ContentDialog
-            x:Load="False"
-            x:Name="CloseAllDialog"
-            x:Uid="CloseAllDialog"
-            DefaultButton="Primary">
-        </ContentDialog>
+        <ContentDialog x:Name="CloseAllDialog"
+                       x:Uid="CloseAllDialog"
+                       x:Load="False"
+                       DefaultButton="Primary" />
 
-        <ContentDialog
-            x:Load="False"
-            x:Name="CloseReadOnlyDialog"
-            x:Uid="CloseReadOnlyDialog"
-            DefaultButton="Primary">
-        </ContentDialog>
+        <ContentDialog x:Name="CloseReadOnlyDialog"
+                       x:Uid="CloseReadOnlyDialog"
+                       x:Load="False"
+                       DefaultButton="Close" />
 
-        <ContentDialog
-            x:Load="False"
-            x:Name="MultiLinePasteDialog"
-            x:Uid="MultiLinePasteDialog"
-            DefaultButton="Primary">
+        <ContentDialog x:Name="MultiLinePasteDialog"
+                       x:Uid="MultiLinePasteDialog"
+                       x:Load="False"
+                       DefaultButton="Primary">
             <StackPanel>
-                <TextBlock
-                    x:Uid="MultiLineWarningText"
-                    TextWrapping="Wrap">
-                </TextBlock>
-                <TextBlock
-                    x:Uid="ClipboardTextHeader"
-                    Margin="0,16,0,0">
-                </TextBlock>
-                <ScrollViewer
-                    Margin="0,8,0,0"
-                    x:Name="ClipboardContentScrollViewer"
-                    MaxHeight="100">
-                    <TextBlock
-                        x:Name="ClipboardText"
-                        TextWrapping="Wrap"
-                        FontFamily="Cascadia Mono">
-                    </TextBlock>
+                <TextBlock x:Uid="MultiLineWarningText"
+                           TextWrapping="Wrap" />
+                <TextBlock x:Uid="ClipboardTextHeader"
+                           Margin="0,16,0,0" />
+                <ScrollViewer x:Name="ClipboardContentScrollViewer"
+                              MaxHeight="100"
+                              Margin="0,8,0,0">
+                    <TextBlock x:Name="ClipboardText"
+                               FontFamily="Cascadia Mono"
+                               TextWrapping="Wrap" />
                 </ScrollViewer>
             </StackPanel>
         </ContentDialog>
 
-        <ContentDialog
-            x:Load="False"
-            x:Name="LargePasteDialog"
-            x:Uid="LargePasteDialog"
-            DefaultButton="Primary">
-        </ContentDialog>
+        <ContentDialog x:Name="LargePasteDialog"
+                       x:Uid="LargePasteDialog"
+                       x:Load="False"
+                       DefaultButton="Primary" />
 
-        <ContentDialog
-            x:Load="False"
-            x:Name="ControlNoticeDialog"
-            x:Uid="ControlNoticeDialog"
-            DefaultButton="Primary">
-            <TextBlock IsTextSelectionEnabled="True" TextWrapping="WrapWholeWords">
-                <Run x:Name="NoticeMessage"/>
+        <ContentDialog x:Name="ControlNoticeDialog"
+                       x:Uid="ControlNoticeDialog"
+                       x:Load="False"
+                       DefaultButton="Primary">
+            <TextBlock IsTextSelectionEnabled="True"
+                       TextWrapping="WrapWholeWords">
+                <Run x:Name="NoticeMessage" />
             </TextBlock>
         </ContentDialog>
 
-        <ContentDialog
-            x:Load="False"
-            x:Name="CouldNotOpenUriDialog"
-            x:Uid="CouldNotOpenUriDialog"
-            DefaultButton="Primary">
-            <TextBlock IsTextSelectionEnabled="True" TextWrapping="WrapWholeWords">
+        <ContentDialog x:Name="CouldNotOpenUriDialog"
+                       x:Uid="CouldNotOpenUriDialog"
+                       x:Load="False"
+                       DefaultButton="Primary">
+            <TextBlock IsTextSelectionEnabled="True"
+                       TextWrapping="WrapWholeWords">
                 <Run x:Name="CouldNotOpenUriReason" /> <LineBreak />
-                <Run
-                    x:Name="UnopenedUri"
-                    FontFamily="Cascadia Mono">
-                </Run>
+                <Run x:Name="UnopenedUri"
+                     FontFamily="Cascadia Mono" />
             </TextBlock>
         </ContentDialog>
 
-        <local:CommandPalette
-            x:Name="CommandPalette"
-            Grid.Row="1"
-            Visibility="Collapsed"
-            PreviewKeyDown ="_KeyDownHandler"
-            VerticalAlignment="Stretch" />
+        <local:CommandPalette x:Name="CommandPalette"
+                              Grid.Row="1"
+                              VerticalAlignment="Stretch"
+                              PreviewKeyDown="_KeyDownHandler"
+                              Visibility="Collapsed" />
 
         <mux:InfoBar x:Name="KeyboardWarningInfoBar"
                      x:Load="False"
                      IsClosable="True"
                      IsIconVisible="True"
                      IsOpen="False"
-                     Severity="Warning"
-                     Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"/>
+                     Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
+                     Severity="Warning" />
+
+        <!--
+            A TeachingTip with IsLightDismissEnabled="True" will immediately
+            dismiss itself if the window is unfocused (In Xaml Islands). This is
+            tracked by MUX#4382
+        -->
+        <mux:TeachingTip x:Name="WindowIdToast"
+                         Title="{x:Bind WindowIdForDisplay}"
+                         x:Load="False"
+                         IsLightDismissEnabled="True"
+                         Subtitle="{x:Bind WindowNameForDisplay, Mode=OneWay}" />
+
+        <mux:TeachingTip x:Name="RenameFailedToast"
+                         x:Uid="RenameFailedToast"
+                         x:Load="False"
+                         IsLightDismissEnabled="True" />
+
+        <mux:TeachingTip x:Name="WindowRenamer"
+                         x:Uid="WindowRenamer"
+                         Title="{x:Bind WindowIdForDisplay}"
+                         x:Load="False"
+                         ActionButtonClick="_WindowRenamerActionClick"
+                         ActionButtonStyle="{ThemeResource AccentButtonStyle}"
+                         IsLightDismissEnabled="True">
+            <mux:TeachingTip.Content>
+                <TextBox x:Name="WindowRenamerTextBox"
+                         KeyUp="_WindowRenamerKeyUp"
+                         Text="{x:Bind WindowName, Mode=OneWay}" />
+            </mux:TeachingTip.Content>
+        </mux:TeachingTip>
     </Grid>
 </Page>

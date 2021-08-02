@@ -98,32 +98,6 @@ public:
         return _setConsoleCursorPositionResult;
     }
 
-    bool GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const override
-    {
-        Log::Comment(L"GetConsoleCursorInfo MOCK called...");
-
-        if (_getConsoleCursorInfoResult)
-        {
-            cursorInfo.dwSize = _cursorSize;
-            cursorInfo.bVisible = _cursorVisible;
-        }
-
-        return _getConsoleCursorInfoResult;
-    }
-
-    bool SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& cursorInfo) override
-    {
-        Log::Comment(L"SetConsoleCursorInfo MOCK called...");
-
-        if (_setConsoleCursorInfoResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedCursorSize, cursorInfo.dwSize);
-            VERIFY_ARE_EQUAL(_expectedCursorVisible, !!cursorInfo.bVisible);
-        }
-
-        return _setConsoleCursorInfoResult;
-    }
-
     bool SetConsoleWindowInfo(const bool absolute, const SMALL_RECT& window) override
     {
         Log::Comment(L"SetConsoleWindowInfo MOCK called...");
@@ -624,8 +598,6 @@ public:
         // APIs succeed by default
         _setConsoleCursorPositionResult = TRUE;
         _getConsoleScreenBufferInfoExResult = TRUE;
-        _getConsoleCursorInfoResult = TRUE;
-        _setConsoleCursorInfoResult = TRUE;
         _privateGetTextAttributesResult = TRUE;
         _privateSetTextAttributesResult = TRUE;
         _privateWriteConsoleInputWResult = TRUE;
@@ -645,11 +617,7 @@ public:
         // Call cursor positions separately
         PrepCursor(xact, yact);
 
-        _cursorSize = 33;
-        _expectedCursorSize = _cursorSize;
-
         _cursorVisible = TRUE;
-        _expectedCursorVisible = _cursorVisible;
 
         // Attribute default is gray on black.
         _attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
@@ -775,12 +743,9 @@ public:
     COORD _cursorPos = { 0, 0 };
     SMALL_RECT _expectedScrollRegion = { 0, 0, 0, 0 };
 
-    DWORD _cursorSize = 0;
     bool _cursorVisible = false;
 
     COORD _expectedCursorPos = { 0, 0 };
-    DWORD _expectedCursorSize = 0;
-    bool _expectedCursorVisible = false;
 
     TextAttribute _attribute = {};
     TextAttribute _expectedAttribute = {};
@@ -792,8 +757,6 @@ public:
 
     bool _getConsoleScreenBufferInfoExResult = false;
     bool _setConsoleCursorPositionResult = false;
-    bool _getConsoleCursorInfoResult = false;
-    bool _setConsoleCursorInfoResult = false;
     bool _privateGetTextAttributesResult = false;
     bool _privateSetTextAttributesResult = false;
     bool _privateWriteConsoleInputWResult = false;

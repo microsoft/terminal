@@ -1922,6 +1922,10 @@ bool AdaptDispatch::HardReset()
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;
 
+    // Reset the mouse mode
+    success = EnableSGRExtendedMouseMode(false) && success;
+    success = EnableAnyEventMouseMode(false) && success;
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
 

@@ -76,8 +76,15 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
 {
     size_t dwNumBytes = string.size() * sizeof(wchar_t);
 
-    _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
+    Cursor& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    if (!cursor.IsOn())
+    {
+        cursor.SetIsOn(true);
+    }
 
+    // Defer the cursor drawing while we are iterating the string, for a better performance.
+    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
+    cursor.StartDeferDrawing();
     _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
                                  string.data(),
                                  string.data(),
@@ -87,6 +94,7 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
                                  WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                  nullptr);
+    cursor.EndDeferDrawing();
 }
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
@@ -128,35 +136,6 @@ bool ConhostInternalGetSet::SetConsoleCursorPosition(const COORD position)
     auto& info = _io.GetActiveOutputBuffer();
     const auto clampedPosition = info.GetTextBuffer().ClampPositionWithinLine(position);
     return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorPositionImpl(info, clampedPosition));
-}
-
-// Routine Description:
-// - Connects the GetConsoleCursorInfo API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - cursorInfo - Structure to receive console cursor rendering info
-// Return Value:
-// - true if successful (see DoSrvGetConsoleCursorInfo). false otherwise.
-bool ConhostInternalGetSet::GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const
-{
-    bool visible;
-    DWORD size;
-
-    ServiceLocator::LocateGlobals().api.GetConsoleCursorInfoImpl(_io.GetActiveOutputBuffer(), size, visible);
-    cursorInfo.bVisible = visible;
-    cursorInfo.dwSize = size;
-    return true;
-}
-
-// Routine Description:
-// - Connects the SetConsoleCursorInfo API call directly into our Driver Message servicing call inside Conhost.exe
-// Arguments:
-// - cursorInfo - Updated size/visibility information to modify the cursor rendering behavior.
-// Return Value:
-// - true if successful (see DoSrvSetConsoleCursorInfo). false otherwise.
-bool ConhostInternalGetSet::SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& cursorInfo)
-{
-    const bool visible = !!cursorInfo.bVisible;
-    return SUCCEEDED(ServiceLocator::LocateGlobals().api.SetConsoleCursorInfoImpl(_io.GetActiveOutputBuffer(), cursorInfo.dwSize, visible));
 }
 
 // Method Description:
@@ -365,7 +344,16 @@ bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
 bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 {
     DoSrvPrivateAllowCursorBlinking(_io.GetActiveOutputBuffer(), fEnable);
-    return true;
+
+    bool isPty;
+    DoSrvIsConsolePty(isPty);
+    // If we are connected to a pty, return that we could not handle this
+    // so that the VT sequence gets flushed to terminal.
+    // Note: we technically don't need to handle it ourselves at all if
+    // we are connected to a pty (i.e. we could have just returned false
+    // immediately without needing to call DoSrvPrivateAllowCursorBlinking),
+    // but we call it anyway for consistency, just in case.
+    return !isPty;
 }
 
 // Routine Description:

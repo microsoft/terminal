@@ -20,7 +20,8 @@ FontInfo::FontInfo(const std::wstring_view faceName,
                    const bool fSetDefaultRasterFont /* = false */) :
     FontInfoBase(faceName, family, weight, fSetDefaultRasterFont, codePage),
     _coordSize(coordSize),
-    _coordSizeUnscaled(coordSize)
+    _coordSizeUnscaled(coordSize),
+    _didFallback(false)
 {
     ValidateFont();
 }
@@ -58,6 +59,16 @@ void FontInfo::SetFromEngine(const std::wstring_view faceName,
     _coordSizeUnscaled = coordSizeUnscaled;
 
     _ValidateCoordSize();
+}
+
+bool FontInfo::GetFallback() const noexcept
+{
+    return _didFallback;
+}
+
+void FontInfo::SetFallback(const bool didFallback) noexcept
+{
+    _didFallback = didFallback;
 }
 
 void FontInfo::ValidateFont()

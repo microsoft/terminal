@@ -16,6 +16,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean HasSettingValue;
         static Windows.UI.Xaml.DependencyProperty HasSettingValueProperty { get; };
 
+        IInspectable SettingOverrideSource;
+        static Windows.UI.Xaml.DependencyProperty SettingOverrideSourceProperty { get; };
+
         event Windows.Foundation.TypedEventHandler<SettingContainer, Object> ClearSettingValue;
     };
 }

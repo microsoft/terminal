@@ -48,10 +48,17 @@
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 #include <winrt/Windows.Storage.h>
 
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Core.h>
+
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #include <TraceLoggingProvider.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <telemetry/ProjectTelemetry.h>
 
+#include <WinUser.h>
+
 #include "til.h"
+
+#include "ThrottledFunc.h"

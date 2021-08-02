@@ -19,6 +19,8 @@ Revision History:
 
 #include "precomp.h"
 
+#include "conint.h"
+
 #pragma hdrstop
 
 UINT gnCurrentPage;
@@ -92,6 +94,11 @@ void SaveConsoleSettingsIfNeeded(const HWND hwnd)
             gpStateInfo->FontSize.Y = 0;
             gpStateInfo->FontWeight = 0;
             gpStateInfo->FaceName[0] = TEXT('\0');
+        }
+
+        if (g_defAppEnabled)
+        {
+            LOG_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(g_selectedPackage));
         }
 
         if (gpStateInfo->LinkTitle != nullptr)
@@ -545,7 +552,14 @@ BOOL PopulatePropSheetPageArray(_Out_writes_(cPsps) PROPSHEETPAGE* pPsp, const s
         {
             pTerminalPage->dwSize = sizeof(PROPSHEETPAGE);
             pTerminalPage->hInstance = ghInstance;
-            pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL);
+            if (g_defAppEnabled)
+            {
+                pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL_WITH_DEFTERM);
+            }
+            else
+            {
+                pTerminalPage->pszTemplate = MAKEINTRESOURCE(DID_TERMINAL);
+            }
             pTerminalPage->pfnDlgProc = TerminalDlgProc;
             pTerminalPage->lParam = TERMINAL_PAGE_INDEX;
             pTerminalPage->dwFlags = PSP_DEFAULT;
@@ -610,6 +624,15 @@ INT_PTR ConsolePropertySheet(__in HWND hWnd, __in PCONSOLE_STATE_INFO pStateInfo
 
     // since we just triggered font enumeration, recreate our font handles to adapt for DPI
     RecreateFontHandles(hWnd);
+
+    //
+    // Find the available default console/terminal packages
+    //
+
+    if (SUCCEEDED(Microsoft::Console::Internal::DefaultApp::CheckDefaultAppPolicy(g_defAppEnabled)) && g_defAppEnabled)
+    {
+        LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(g_availablePackages, g_selectedPackage));
+    }
 
     //
     // Get the current page number

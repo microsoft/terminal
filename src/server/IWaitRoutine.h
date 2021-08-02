@@ -39,6 +39,8 @@ public:
     {
     }
 
+    virtual void MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer) = 0;
+
     virtual bool Notify(const WaitTerminationReason TerminationReason,
                         const bool fIsUnicode,
                         _Out_ NTSTATUS* const pReplyStatus,

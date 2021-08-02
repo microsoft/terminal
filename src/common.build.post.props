@@ -33,6 +33,10 @@
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
+  <!-- PGO -->
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(PGOBuildMode)' == 'Optimize'" Project="$(SolutionDir)packages\$(PGODatabaseId).$(PGODatabaseVersion)\build\PGO.targets" />
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(PGOBuildMode)' == 'Instrument'" Project="$(SolutionDir)\src\common.pgo.runtime.props" />
+
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
        set after we've imported Microsoft.Cpp.targets -->
   <PropertyGroup>
@@ -60,4 +64,21 @@
     <Touch Files="@(_PCHFileToCleanWithTimestamp)" Time="%(LastWriteTime)" AlwaysCreate="true" />
     <Message Text="PCH and Precomp object @(_PCHFileToCleanWithTimestamp) has been deleted for $(ProjectName)." />
   </Target>
+
+  <PropertyGroup>
+    <BuildDependsOn>
+      OCCallFeatureFlagGenerator;
+      $(BuildDependsOn)
+    </BuildDependsOn>
+  </PropertyGroup>
+
+  <Target Name="OCCallFeatureFlagGenerator">
+    <MSBuild Projects="$(SolutionDir)\build\rules\GenerateFeatureFlags.proj" />
+  </Target>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <ForcedIncludeFiles>$(SolutionDir)\bin\$(Configuration)\inc\TilFeatureStaging.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
 </Project>

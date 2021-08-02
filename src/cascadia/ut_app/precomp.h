@@ -45,6 +45,8 @@ Author(s):
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Text.h>
 
+#include <winrt/Microsoft.Terminal.Core.h>
+
 #include "winrtTaefTemplates.hpp"
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers

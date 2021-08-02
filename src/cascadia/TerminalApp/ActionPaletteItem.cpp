@@ -23,7 +23,7 @@ namespace winrt::TerminalApp::implementation
     {
         Name(command.Name());
         KeyChordText(command.KeyChordText());
-        Icon(command.Icon());
+        Icon(command.IconPath());
 
         _commandChangedRevoker = command.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
@@ -40,9 +40,9 @@ namespace winrt::TerminalApp::implementation
                 {
                     item->KeyChordText(senderCommand.KeyChordText());
                 }
-                else if (changedProperty == L"Icon")
+                else if (changedProperty == L"IconPath")
                 {
-                    item->Icon(senderCommand.Icon());
+                    item->Icon(senderCommand.IconPath());
                 }
             }
         });

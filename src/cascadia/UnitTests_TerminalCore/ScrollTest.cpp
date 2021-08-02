@@ -16,7 +16,7 @@
 #include "consoletaeftemplates.hpp"
 #include "TestUtils.h"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::Types;
 
@@ -45,7 +45,7 @@ namespace
         virtual void TriggerRedraw(const COORD* const){};
         virtual void TriggerRedrawCursor(const COORD* const){};
         virtual void TriggerRedrawAll(){};
-        virtual void TriggerTeardown(){};
+        virtual void TriggerTeardown() noexcept {};
         virtual void TriggerSelection(){};
         virtual void TriggerScroll(){};
         virtual void TriggerScroll(const COORD* const delta)

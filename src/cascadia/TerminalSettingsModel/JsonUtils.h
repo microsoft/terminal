@@ -77,6 +77,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         static constexpr std::optional<T> EmptyV() { return std::nullopt; }
         static constexpr bool HasValue(const std::optional<T>& o) { return o.has_value(); }
+        // We can return a reference here because the original value is stored inside an std::optional
         static constexpr auto&& Value(const std::optional<T>& o) { return *o; }
     };
 
@@ -85,7 +86,8 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         static constexpr ::winrt::Windows::Foundation::IReference<T> EmptyV() { return nullptr; }
         static constexpr bool HasValue(const ::winrt::Windows::Foundation::IReference<T>& o) { return static_cast<bool>(o); }
-        static constexpr auto&& Value(const ::winrt::Windows::Foundation::IReference<T>& o) { return o.Value(); }
+        // We CANNOT return a reference here because IReference does NOT return a reference to its internal memory
+        static constexpr auto Value(const ::winrt::Windows::Foundation::IReference<T>& o) { return o.Value(); }
     };
 
     class SerializationError : public std::runtime_error
@@ -175,6 +177,58 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         }
     };
 
+    template<typename T>
+    struct ConversionTrait<std::unordered_map<std::string, T>>
+    {
+        std::unordered_map<std::string, T> FromJson(const Json::Value& json) const
+        {
+            std::unordered_map<std::string, T> val;
+            val.reserve(json.size());
+
+            ConversionTrait<T> trait;
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
+            {
+                GetValue(*it, val[it.name()], trait);
+            }
+
+            return val;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            if (!json.isObject())
+            {
+                return false;
+            }
+            ConversionTrait<T> trait;
+            for (const auto& v : json)
+            {
+                if (!trait.CanConvert(v))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Json::Value ToJson(const std::unordered_map<std::string, T>& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            for (const auto& [k, v] : val)
+            {
+                SetValueForKey(json, k, v);
+            }
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return fmt::format("map (string, {})", ConversionTrait<T>{}.TypeDescription());
+        }
+    };
+
 #ifdef WINRT_BASE_H
     template<>
     struct ConversionTrait<winrt::hstring> : public ConversionTrait<std::wstring>
@@ -202,6 +256,58 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             // hstring has a specific behavior for null, so it can convert it
             return ConversionTrait<std::wstring>::CanConvert(json) || json.isNull();
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T>>
+    {
+        winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T> FromJson(const Json::Value& json) const
+        {
+            std::unordered_map<winrt::hstring, T> val;
+            val.reserve(json.size());
+
+            ConversionTrait<T> trait;
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
+            {
+                GetValue(*it, val[winrt::to_hstring(it.name())], trait);
+            }
+
+            return winrt::single_threaded_map<winrt::hstring, T>(std::move(val));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            if (!json.isObject())
+            {
+                return false;
+            }
+            ConversionTrait<T> trait;
+            for (const auto& v : json)
+            {
+                if (!trait.CanConvert(v))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IMap<winrt::hstring, T>& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            for (const auto& [k, v] : val)
+            {
+                SetValueForKey(json, til::u16u8(k), v);
+            }
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return fmt::format("map (string, {})", ConversionTrait<T>{}.TypeDescription());
         }
     };
 #endif
@@ -438,6 +544,32 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 #endif
 
+#ifdef WINRT_Microsoft_Terminal_Core_H
+    template<>
+    struct ConversionTrait<winrt::Microsoft::Terminal::Core::Color>
+    {
+        winrt::Microsoft::Terminal::Core::Color FromJson(const Json::Value& json) const
+        {
+            return static_cast<winrt::Microsoft::Terminal::Core::Color>(ConversionTrait<til::color>{}.FromJson(json));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            return ConversionTrait<til::color>{}.CanConvert(json);
+        }
+
+        Json::Value ToJson(const winrt::Microsoft::Terminal::Core::Color& val)
+        {
+            return ConversionTrait<til::color>{}.ToJson(val);
+        }
+
+        std::string TypeDescription() const
+        {
+            return ConversionTrait<til::color>{}.TypeDescription();
+        }
+    };
+#endif
+
     template<typename T, typename TDelegatedConverter = ConversionTrait<typename std::decay<T>::type>, typename TOpt = std::optional<typename std::decay<T>::type>>
     struct OptionalConverter
     {
@@ -604,7 +736,8 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
                 for (const auto& pair : TBase::mappings)
                 {
                     if (pair.second != AllClear &&
-                        (val & pair.second) == pair.second)
+                        (val & pair.second) == pair.second &&
+                        WI_IsSingleFlagSet(pair.second))
                     {
                         json.append(BaseEnumMapper::ToJson(pair.second));
                     }

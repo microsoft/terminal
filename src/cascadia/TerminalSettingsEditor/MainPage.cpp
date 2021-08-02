@@ -7,9 +7,12 @@
 #include "Launch.h"
 #include "Interaction.h"
 #include "Rendering.h"
+#include "Actions.h"
+#include "ReadOnlyActions.h"
 #include "Profiles.h"
 #include "GlobalAppearance.h"
 #include "ColorSchemes.h"
+#include "AddProfile.h"
 #include "..\types\inc\utils.hpp"
 
 #include <LibraryResources.h>
@@ -30,6 +33,7 @@ using namespace winrt::Windows::UI::Xaml::Controls;
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
 static const std::wstring_view renderingTag{ L"Rendering_Nav" };
+static const std::wstring_view actionsTag{ L"Actions_Nav" };
 static const std::wstring_view globalProfileTag{ L"GlobalProfile_Nav" };
 static const std::wstring_view addProfileTag{ L"AddProfile" };
 static const std::wstring_view colorSchemesTag{ L"ColorSchemes_Nav" };
@@ -37,9 +41,9 @@ static const std::wstring_view globalAppearanceTag{ L"GlobalAppearance_Nav" };
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
-    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile)
+    static Editor::ProfileViewModel _viewModelForProfile(const Model::Profile& profile, const Model::CascadiaSettings& appSettings)
     {
-        return winrt::make<implementation::ProfileViewModel>(profile);
+        return winrt::make<implementation::ProfileViewModel>(profile, appSettings);
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -63,12 +67,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     // - settings - the new settings source
     // Return value:
     // - <none>
-    fire_and_forget MainPage::UpdateSettings(Model::CascadiaSettings settings)
+    void MainPage::UpdateSettings(const Model::CascadiaSettings& settings)
     {
         _settingsSource = settings;
         _settingsClone = settings.Copy();
-
-        co_await winrt::resume_foreground(Dispatcher());
 
         // Deduce information about the currently selected item
         IInspectable selectedItemTag;
@@ -81,34 +83,43 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // remove all profile-related NavViewItems by populating a std::vector
-        // with the ones we want to keep.
-        // NOTE: menuItems.Remove() causes an out-of-bounds crash. Using ReplaceAll()
-        //       gets around this crash.
-        std::vector<IInspectable> menuItemsSTL;
-        for (const auto& item : menuItems)
-        {
-            if (const auto& navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
-            {
-                if (const auto& tag{ navViewItem.Tag() })
-                {
-                    if (tag.try_as<Editor::ProfileViewModel>())
+        // We'll remove a bunch of items and iterate over it twice.
+        // --> Copy it into an STL vector to simplify our code and reduce COM overhead.
+        std::vector<IInspectable> menuItemsSTL(menuItems.Size(), nullptr);
+        menuItems.GetMany(0, menuItemsSTL);
+
+        // We want to refresh the list of profiles in the NavigationView.
+        // In order to add profiles we can use _InitializeProfilesList();
+        // But before we can do that we have to remove existing profiles first of course.
+        // This "erase-remove" idiom will achieve just that.
+        menuItemsSTL.erase(
+            std::remove_if(
+                menuItemsSTL.begin(),
+                menuItemsSTL.end(),
+                [](const auto& item) -> bool {
+                    if (const auto& navViewItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
                     {
-                        // don't add NavViewItem pointing to a Profile
-                        continue;
-                    }
-                    else if (const auto& stringTag{ tag.try_as<hstring>() })
-                    {
-                        if (stringTag == addProfileTag)
+                        if (const auto& tag{ navViewItem.Tag() })
                         {
-                            // don't add the "Add Profile" item
-                            continue;
+                            if (tag.try_as<Editor::ProfileViewModel>())
+                            {
+                                // remove NavViewItem pointing to a Profile
+                                return true;
+                            }
+                            if (const auto& stringTag{ tag.try_as<hstring>() })
+                            {
+                                if (stringTag == addProfileTag)
+                                {
+                                    // remove the "Add Profile" item
+                                    return true;
+                                }
+                            }
                         }
                     }
-                }
-            }
-            menuItemsSTL.emplace_back(item);
-        }
+                    return false;
+                }),
+            menuItemsSTL.end());
+
         menuItems.ReplaceAll(menuItemsSTL);
 
         // Repopulate profile-related menu items
@@ -121,8 +132,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // refresh the current page using the SelectedItem data we collected before the refresh
         if (selectedItemTag)
         {
-            const auto& selectedItemStringTag{ selectedItemTag.try_as<hstring>() };
-            const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() };
             for (const auto& item : menuItems)
             {
                 if (const auto& menuItem{ item.try_as<MUX::Controls::NavigationViewItem>() })
@@ -131,22 +140,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     {
                         if (const auto& stringTag{ tag.try_as<hstring>() })
                         {
-                            if (stringTag == selectedItemStringTag)
+                            if (const auto& selectedItemStringTag{ selectedItemTag.try_as<hstring>() })
                             {
-                                // found the one that was selected before the refresh
-                                SettingsNav().SelectedItem(item);
-                                _Navigate(*stringTag);
-                                co_return;
+                                if (stringTag == selectedItemStringTag)
+                                {
+                                    // found the one that was selected before the refresh
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(*stringTag);
+                                    return;
+                                }
                             }
                         }
                         else if (const auto& profileTag{ tag.try_as<ProfileViewModel>() })
                         {
-                            if (profileTag->Guid() == selectedItemProfileTag->Guid())
+                            if (const auto& selectedItemProfileTag{ selectedItemTag.try_as<ProfileViewModel>() })
                             {
-                                // found the one that was selected before the refresh
-                                SettingsNav().SelectedItem(item);
-                                _Navigate(*profileTag);
-                                co_return;
+                                if (profileTag->OriginalProfileGuid() == selectedItemProfileTag->OriginalProfileGuid())
+                                {
+                                    // found the one that was selected before the refresh
+                                    SettingsNav().SelectedItem(item);
+                                    _Navigate(*profileTag);
+                                    return;
+                                }
                             }
                         }
                     }
@@ -154,14 +169,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
 
-        // couldn't find the selected item,
-        // fallback to first menu item
-        const auto& firstItem{ menuItems.GetAt(0) };
+        // Couldn't find the selected item, fallback to first menu item
+        // This happens when the selected item was a profile which doesn't exist in the new configuration
+        // We can use menuItemsSTL here because the only things they miss are profile entries.
+        const auto& firstItem{ menuItemsSTL.at(0).as<MUX::Controls::NavigationViewItem>() };
         SettingsNav().SelectedItem(firstItem);
-        if (const auto& tag{ SettingsNav().SelectedItem().try_as<MUX::Controls::NavigationViewItem>().Tag() })
-        {
-            _Navigate(unbox_value<hstring>(tag));
-        }
+        _Navigate(unbox_value<hstring>(firstItem.Tag()));
     }
 
     void MainPage::SetHostingWindow(uint64_t hostingWindow) noexcept
@@ -179,6 +192,39 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
         }
         return false;
+    }
+
+    // Method Description:
+    // - Creates a new profile and navigates to it in the Settings UI
+    // Arguments:
+    // - profileGuid: the guid of the profile we want to duplicate,
+    //                can be empty to indicate that we should create a fresh profile
+    void MainPage::_AddProfileHandler(winrt::guid profileGuid)
+    {
+        uint32_t insertIndex;
+        auto selectedItem{ SettingsNav().SelectedItem() };
+        auto menuItems{ SettingsNav().MenuItems() };
+        menuItems.IndexOf(selectedItem, insertIndex);
+        if (profileGuid != winrt::guid{})
+        {
+            // if we were given a non-empty guid, we want to duplicate the corresponding profile
+            const auto profile = _settingsClone.FindProfile(profileGuid);
+            if (profile)
+            {
+                const auto duplicated = _settingsClone.DuplicateProfile(profile);
+                _CreateAndNavigateToNewProfile(insertIndex, duplicated);
+            }
+        }
+        else
+        {
+            // we were given an empty guid, create a new profile
+            _CreateAndNavigateToNewProfile(insertIndex, nullptr);
+        }
+    }
+
+    uint64_t MainPage::GetHostingWindow() const noexcept
+    {
+        return reinterpret_cast<uint64_t>(_hostingHwnd.value_or(nullptr));
     }
 
     // Function Description:
@@ -221,18 +267,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
             if (const auto navString = clickedItemContainer.Tag().try_as<hstring>())
             {
-                if (navString == addProfileTag)
-                {
-                    // "AddProfile" needs to create a new profile before we can navigate to it
-                    uint32_t insertIndex;
-                    SettingsNav().MenuItems().IndexOf(clickedItemContainer, insertIndex);
-                    _CreateAndNavigateToNewProfile(insertIndex);
-                }
-                else
-                {
-                    // Otherwise, navigate to the page
-                    _Navigate(*navString);
-                }
+                _Navigate(*navString);
             }
             else if (const auto profile = clickedItemContainer.Tag().try_as<Editor::ProfileViewModel>())
             {
@@ -256,9 +291,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
         }
+        else if (clickedItemTag == actionsTag)
+        {
+            if constexpr (Feature_EditableActionsPage::IsEnabled())
+            {
+                contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            }
+            else
+            {
+                auto actionsState{ winrt::make<ReadOnlyActionsPageNavigationState>(_settingsClone) };
+                actionsState.OpenJson([weakThis = get_weak()](auto&&, auto&& arg) {
+                    if (auto self{ weakThis.get() })
+                    {
+                        self->_OpenJsonHandlers(nullptr, arg);
+                    }
+                });
+                contentFrame().Navigate(xaml_typename<Editor::ReadOnlyActions>(), actionsState);
+            }
+        }
         else if (clickedItemTag == globalProfileTag)
         {
-            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults()) };
+            auto profileVM{ _viewModelForProfile(_settingsClone.ProfileDefaults(), _settingsClone) };
             profileVM.IsBaseLayer(true);
             _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profileVM,
                                                                             _settingsClone.GlobalSettings().ColorSchemes(),
@@ -275,8 +328,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
         }
+        else if (clickedItemTag == addProfileTag)
+        {
+            auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
+            addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
+            contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
+        }
     }
 
+    // Method Description:
+    // - updates the content frame to present a view of the profile page
+    // - NOTE: this does not update the selected item.
+    // Arguments:
+    // - profile - the profile object we are getting a view of
     void MainPage::_Navigate(const Editor::ProfileViewModel& profile)
     {
         _lastProfilesNavState = winrt::make<ProfilePageNavigationState>(profile,
@@ -329,7 +393,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // profile changes.
         for (const auto& profile : _settingsClone.AllProfiles())
         {
-            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile));
+            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile, _settingsClone));
             SettingsNav().MenuItems().Append(navItem);
         }
 
@@ -337,7 +401,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MUX::Controls::NavigationViewItem addProfileItem;
         addProfileItem.Content(box_value(RS_(L"Nav_AddNewProfile/Content")));
         addProfileItem.Tag(box_value(addProfileTag));
-        addProfileItem.SelectsOnInvoked(false);
 
         FontIcon icon;
         // This is the "Add" symbol
@@ -347,10 +410,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         SettingsNav().MenuItems().Append(addProfileItem);
     }
 
-    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index)
+    void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)
     {
-        const auto newProfile{ _settingsClone.CreateNewProfile() };
-        const auto profileViewModel{ _viewModelForProfile(newProfile) };
+        const auto newProfile{ profile ? profile : _settingsClone.CreateNewProfile() };
+        const auto profileViewModel{ _viewModelForProfile(newProfile, _settingsClone) };
         const auto navItem{ _CreateProfileNavViewItem(profileViewModel) };
         SettingsNav().MenuItems().InsertAt(index, navItem);
 
@@ -417,5 +480,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto newSelectedItem{ menuItems.GetAt(index < menuItems.Size() - 1 ? index : index - 1) };
         SettingsNav().SelectedItem(newSelectedItem);
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>());
+    }
+
+    bool MainPage::ShowBaseLayerMenuItem() const noexcept
+    {
+        return Feature_ShowProfileDefaultsInSettings::IsEnabled();
     }
 }

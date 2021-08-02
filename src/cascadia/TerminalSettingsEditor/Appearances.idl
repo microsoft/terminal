@@ -1,0 +1,72 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "EnumEntry.idl";
+import "MainPage.idl";
+import "Profiles.idl";
+
+#include "ViewModelHelpers.idl.h"
+
+#define OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Type, Name) \
+    OBSERVABLE_PROJECTED_SETTING(Type, Name);               \
+    Object Name##OverrideSource { get; }
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass Font : Windows.Foundation.IStringable
+    {
+        String Name { get; };
+        String LocalizedName { get; };
+    }
+
+    runtimeclass AppearanceViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Boolean IsDefault;
+
+        Boolean UseDesktopBGImage;
+        Boolean BackgroundImageSettingsVisible { get; };
+
+        Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes;
+        IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
+
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, FontFace);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Int32, FontSize);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, ColorSchemeName);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Core.CursorStyle, CursorShape);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(UInt32, CursorHeight);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(String, BackgroundImagePath);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
+    }
+
+    [default_interface] runtimeclass Appearances : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Appearances();
+        AppearanceViewModel Appearance;
+        ProfileViewModel SourceProfile;
+        static Windows.UI.Xaml.DependencyProperty AppearanceProperty { get; };
+
+        Boolean UsingMonospaceFont { get; };
+        Boolean ShowAllFonts;
+
+        IInspectable CurrentCursorShape;
+        Boolean IsVintageCursor { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CursorShapeList { get; };
+
+        Microsoft.Terminal.Settings.Model.ColorScheme CurrentColorScheme;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Model.ColorScheme> ColorSchemeList { get; };
+
+        IInspectable CurrentBackgroundImageStretchMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> BackgroundImageStretchModeList { get; };
+
+        IInspectable CurrentFontWeight;
+        Boolean IsCustomFontWeight { get; };
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
+
+        IInspectable CurrentFontFace { get; };
+    }
+}

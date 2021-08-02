@@ -10,6 +10,9 @@
 #include "MinMaxCloseControl.h"
 
 #include "MinMaxCloseControl.g.cpp"
+
+#include <LibraryResources.h>
+
 using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
@@ -24,18 +27,18 @@ namespace winrt::TerminalApp::implementation
     void MinMaxCloseControl::_MinimizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             RoutedEventArgs const& e)
     {
-        _minimizeClickHandlers(*this, e);
+        _MinimizeClickHandlers(*this, e);
     }
 
     void MinMaxCloseControl::_MaximizeClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                             RoutedEventArgs const& e)
     {
-        _maximizeClickHandlers(*this, e);
+        _MaximizeClickHandlers(*this, e);
     }
     void MinMaxCloseControl::_CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                          RoutedEventArgs const& e)
     {
-        _closeClickHandlers(*this, e);
+        _CloseClickHandlers(*this, e);
     }
 
     void MinMaxCloseControl::SetWindowVisualState(WindowVisualState visualState)
@@ -77,6 +80,7 @@ namespace winrt::TerminalApp::implementation
             MinimizeButton().Height(maximizedHeight);
             MaximizeButton().Height(maximizedHeight);
             CloseButton().Height(maximizedHeight);
+            MaximizeToolTip().Text(RS_(L"WindowRestoreDownButtonToolTip"));
             break;
 
         case WindowVisualState::WindowVisualStateNormal:
@@ -87,12 +91,8 @@ namespace winrt::TerminalApp::implementation
             MinimizeButton().Height(windowedHeight);
             MaximizeButton().Height(windowedHeight);
             CloseButton().Height(windowedHeight);
+            MaximizeToolTip().Text(RS_(L"WindowMaximizeButtonToolTip"));
             break;
         }
     }
-
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MinimizeClick, _minimizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, MaximizeClick, _maximizeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
-    DEFINE_EVENT_WITH_TYPED_EVENT_HANDLER(MinMaxCloseControl, CloseClick, _closeClickHandlers, TerminalApp::MinMaxCloseControl, RoutedEventArgs);
-
 }

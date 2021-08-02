@@ -281,9 +281,9 @@ bool TextBuffer::_AssertValidDoubleByteSequence(const DbcsAttribute dbcsAttribut
 // - false otherwise (out of memory)
 bool TextBuffer::_PrepareForDoubleByteSequence(const DbcsAttribute dbcsAttribute)
 {
-    // Assert the buffer state is ready for this character
-    // This function corrects most errors. If this is false, we had an uncorrectable one.
-    FAIL_FAST_IF(!(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
+    // This function corrects most errors. If this is false, we had an uncorrectable one which
+    // older versions of conhost simply let pass by unflinching.
+    LOG_HR_IF(E_NOT_VALID_STATE, !(_AssertValidDoubleByteSequence(dbcsAttribute))); // Shouldn't be uncorrectable sequences unless something is very wrong.
 
     bool fSuccess = true;
     // Now compensate if we don't have enough space for the upcoming double byte sequence
@@ -418,7 +418,6 @@ bool TextBuffer::InsertCharacter(const std::wstring_view chars,
 
         // Store character and double byte data
         CharRow& charRow = Row.GetCharRow();
-        short const cBufferWidth = GetSize().Width();
 
         try
         {
@@ -850,7 +849,7 @@ bool TextBuffer::IsDoubleWidthLine(const size_t row) const
 SHORT TextBuffer::GetLineWidth(const size_t row) const
 {
     // Use shift right to quickly divide the width by 2 for double width lines.
-    const auto scale = IsDoubleWidthLine(row) ? 1 : 0;
+    const SHORT scale = IsDoubleWidthLine(row) ? 1 : 0;
     return GetSize().Width() >> scale;
 }
 
@@ -863,14 +862,14 @@ COORD TextBuffer::ClampPositionWithinLine(const COORD position) const
 COORD TextBuffer::ScreenToBufferPosition(const COORD position) const
 {
     // Use shift right to quickly divide the X pos by 2 for double width lines.
-    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    const SHORT scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X >> scale, position.Y };
 }
 
 COORD TextBuffer::BufferToScreenPosition(const COORD position) const
 {
     // Use shift left to quickly multiply the X pos by 2 for double width lines.
-    const auto scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
+    const SHORT scale = IsDoubleWidthLine(position.Y) ? 1 : 0;
     return { position.X << scale, position.Y };
 }
 
@@ -1650,13 +1649,14 @@ const TextBuffer::TextAndColor TextBuffer::GetText(const bool includeCRLF,
 
             if (!cell.DbcsAttr().IsTrailing())
             {
-                selectionText.append(cell.Chars());
+                const auto chars = cell.Chars();
+                selectionText.append(chars);
 
                 if (copyTextColor)
                 {
                     const auto cellData = cell.TextAttr();
                     const auto [CellFgAttr, CellBkAttr] = GetAttributeColors(cellData);
-                    for (const wchar_t wch : cell.Chars())
+                    for (size_t j = 0; j < chars.size(); ++j)
                     {
                         selectionFgAttr.push_back(CellFgAttr);
                         selectionBkAttr.push_back(CellBkAttr);
@@ -2475,6 +2475,14 @@ const size_t TextBuffer::AddPatternRecognizer(const std::wstring_view regexStrin
     ++_currentPatternId;
     _idsAndPatterns.emplace(std::make_pair(_currentPatternId, regexString));
     return _currentPatternId;
+}
+
+// Method Description:
+// - Clears the patterns we know of and resets the pattern ID counter
+void TextBuffer::ClearPatternRecognizers() noexcept
+{
+    _idsAndPatterns.clear();
+    _currentPatternId = 0;
 }
 
 // Method Description:

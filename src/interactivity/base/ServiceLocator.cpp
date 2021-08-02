@@ -100,9 +100,45 @@ void ServiceLocator::RundownAndExit(const HRESULT hr)
     return status;
 }
 
+[[nodiscard]] HRESULT ServiceLocator::CreateAccessibilityNotifier()
+{
+    // Can't create if we've already created.
+    if (s_accessibilityNotifier)
+    {
+        return E_UNEXPECTED;
+    }
+
+    if (!s_interactivityFactory)
+    {
+        RETURN_IF_NTSTATUS_FAILED(ServiceLocator::LoadInteractivityFactory());
+    }
+
+    RETURN_IF_NTSTATUS_FAILED(s_interactivityFactory->CreateAccessibilityNotifier(s_accessibilityNotifier));
+
+    return S_OK;
+}
+
 #pragma endregion
 
 #pragma region Set Methods
+
+[[nodiscard]] NTSTATUS ServiceLocator::SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control)
+{
+    if (s_consoleControl)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_HANDLE);
+    }
+    else if (!control)
+    {
+        NT_RETURN_NTSTATUS(STATUS_INVALID_PARAMETER);
+    }
+    else
+    {
+        s_consoleControl = std::move(control);
+    }
+
+    return STATUS_SUCCESS;
+}
 
 [[nodiscard]] NTSTATUS ServiceLocator::SetConsoleWindowInstance(_In_ IConsoleWindow* window)
 {
@@ -206,23 +242,6 @@ IWindowMetrics* ServiceLocator::LocateWindowMetrics()
 
 IAccessibilityNotifier* ServiceLocator::LocateAccessibilityNotifier()
 {
-    NTSTATUS status = STATUS_SUCCESS;
-
-    if (!s_accessibilityNotifier)
-    {
-        if (s_interactivityFactory.get() == nullptr)
-        {
-            status = ServiceLocator::LoadInteractivityFactory();
-        }
-
-        if (NT_SUCCESS(status))
-        {
-            status = s_interactivityFactory->CreateAccessibilityNotifier(s_accessibilityNotifier);
-        }
-    }
-
-    LOG_IF_NTSTATUS_FAILED(status);
-
     return s_accessibilityNotifier.get();
 }
 

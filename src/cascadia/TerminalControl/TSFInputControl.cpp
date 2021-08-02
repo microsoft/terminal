@@ -14,7 +14,7 @@ using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Text::Core;
 using namespace winrt::Windows::UI::Xaml;
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TSFInputControl::TSFInputControl() :
         _editContext{ nullptr },
@@ -134,8 +134,9 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     // Return Value:
     // - <none>
     void TSFInputControl::TryRedrawCanvas()
+    try
     {
-        if (!_focused)
+        if (!_focused || !Canvas())
         {
             return;
         }
@@ -164,6 +165,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
 
         _RedrawCanvas();
     }
+    CATCH_LOG()
 
     // Method Description:
     // - Redraw the Canvas and update the current Text Bounds and Control Bounds for
@@ -469,5 +471,5 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     {
     }
 
-    DEFINE_EVENT(TSFInputControl, CompositionCompleted, _compositionCompletedHandlers, TerminalControl::CompositionCompletedEventArgs);
+    DEFINE_EVENT(TSFInputControl, CompositionCompleted, _compositionCompletedHandlers, Control::CompositionCompletedEventArgs);
 }

@@ -126,7 +126,7 @@ namespace Microsoft::Console::Render
         void _OrderRuns();
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeFontFallback(IDWriteTextAnalysisSource* const source, UINT32 textPosition, UINT32 textLength);
-        [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFont(UINT32 textPosition, UINT32 textLength, IDWriteFont* const font, FLOAT const scale);
+        [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetMappedFontFace(UINT32 textPosition, UINT32 textLength, const ::Microsoft::WRL::ComPtr<IDWriteFontFace>& fontFace, FLOAT const scale);
 
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _AnalyzeBoxDrawing(gsl::not_null<IDWriteTextAnalysisSource*> const source, UINT32 textPosition, UINT32 textLength);
         [[nodiscard]] HRESULT STDMETHODCALLTYPE _SetBoxEffect(UINT32 textPosition, UINT32 textLength);
