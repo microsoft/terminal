@@ -703,7 +703,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
 
-        // Ouput enough text for the selection to get pushed off the buffer
+        // Output enough text for the selection to get pushed off the buffer
         for (int i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
         {
             conn->WriteInput(L"Foo\r\n");
