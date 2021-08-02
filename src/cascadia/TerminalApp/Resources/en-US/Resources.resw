@@ -662,4 +662,7 @@
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Open a new tab in given starting directory</value>
   </data>
+  <data name="FindText" xml:space="preserve">
+    <value>Find...</value>
+  </data>
 </root>
