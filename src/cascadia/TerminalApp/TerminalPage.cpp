@@ -1317,6 +1317,21 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Switches the split orientation of the currently focused pane.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_ToggleSplitOrientation()
+    {
+        if (const auto terminalTab{ _GetFocusedTabImpl() })
+        {
+            _UnZoomIfNeeded();
+            terminalTab->ToggleSplitOrientation();
+        }
+    }
+
+    // Method Description:
     // - Attempt to move a separator between panes, as to resize each child on
     //   either size of the separator. See Pane::ResizePane for details.
     // - Moves a separator on the currently focused tab.
