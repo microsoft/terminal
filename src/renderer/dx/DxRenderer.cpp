@@ -1315,12 +1315,9 @@ try
 
             // And persist the new size.
             _displaySizePixels = clientSize;
-
-            _invalidMap.resize(clientSize / glyphCellSize);
-            RETURN_IF_FAILED(InvalidateAll());
         }
 
-        if (auto size = clientSize / glyphCellSize; size != _invalidMap.size())
+        if (const auto size = clientSize / glyphCellSize; size != _invalidMap.size())
         {
             _invalidMap.resize(size);
             RETURN_IF_FAILED(InvalidateAll());
