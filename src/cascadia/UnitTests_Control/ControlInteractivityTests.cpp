@@ -645,8 +645,6 @@ namespace ControlUnitTests
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
         _standardInit(core, interactivity);
 
-        interactivity->_rowsToScroll = 1;
-
         Log::Comment(L"Fill up the history buffer");
         // Output lines equal to history size + viewport height to make sure we're
         // at the point where outputting more lines causes circular incrementing
@@ -697,12 +695,20 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
 
         Log::Comment(L"Output a line of text");
-        conn->WriteInput(L"foo\r\n");
+        conn->WriteInput(L"Foo\r\n");
 
         Log::Comment(L"Verify the location of the selection");
         // The selection should now be 1 row lower
         expectedAnchor.Y -= 1;
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+
+        // Ouput enough text for the selection to get pushed off the buffer
+        for (int i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        // Verify that the selection got reset
+        VERIFY_IS_FALSE(core->HasSelection());
     }
 }
