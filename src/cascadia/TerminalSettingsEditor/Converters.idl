@@ -5,9 +5,8 @@ namespace Microsoft.Terminal.Settings.Editor
 {
 
     [bindable]
-    [default_interface] runtimeclass Converters
+    [default_interface] static runtimeclass Converters
     {
-        Converters();
 
         static String AppendPercentageSign(Double value);
         static Windows.UI.Text.FontWeight DoubleToFontWeight(Double value);
