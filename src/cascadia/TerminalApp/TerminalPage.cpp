@@ -837,13 +837,19 @@ namespace winrt::TerminalApp::implementation
             // construction, because the connection might not spawn the child
             // process until later, on another thread, after we've already
             // restored the CWD to it's original value.
-            std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
-            std::filesystem::path cwd{ cwdString };
-            cwd /= settings.StartingDirectory().c_str();
+            winrt::hstring newWorkingDirectory{ settings.StartingDirectory() };
+            if (newWorkingDirectory.size() <= 1 ||
+                !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
+            { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
+                std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
+                std::filesystem::path cwd{ cwdString };
+                cwd /= settings.StartingDirectory().c_str();
+                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
+            }
 
             auto conhostConn = TerminalConnection::ConptyConnection();
             conhostConn.Initialize(TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
-                                                                                        winrt::hstring{ cwd.wstring() },
+                                                                                        newWorkingDirectory,
                                                                                         settings.StartingTitle(),
                                                                                         envMap.GetView(),
                                                                                         ::base::saturated_cast<uint32_t>(settings.InitialRows()),
