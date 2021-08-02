@@ -57,7 +57,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return S_OK;
     }
 
-    // Function Descrption:
+    // Function Description:
     // - Promotes a starting directory provided to a WSL invocation to a commandline argument.
     //   This is necessary because WSL has some modicum of support for linux-side directories (!) which
     //   CreateProcess never will.
