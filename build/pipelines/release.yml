@@ -3,10 +3,10 @@ trigger: none
 pr: none
 
 pool: 
-  ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/microsoft/') }}:
-    name: WinDevPool-L
-  ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/microsoft/') }}:
+  ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
     name: WinDevPoolOSS-L
+  ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+    name: WinDevPool-L
   demands: ImageOverride -equals WinDevVS16-latest
 
 parameters:
