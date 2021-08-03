@@ -665,4 +665,10 @@
   <data name="FindText" xml:space="preserve">
     <value>Find...</value>
   </data>
+  <data name="DropPathTabNewWindow.Text" xml:space="preserve">
+    <value>Open a new window with given starting directory</value>
+  </data>
+  <data name="DropPathTabSplit.Text" xml:space="preserve">
+    <value>Split the window and start in given directory</value>
+  </data>
 </root>
