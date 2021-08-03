@@ -448,11 +448,6 @@ winrt::Microsoft::Terminal::Settings::Model::FontConfig Profile::FontInfo()
 // - the function returns an evaluated version of %userprofile% to avoid blocking the session from starting.
 std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 {
-    // First expand path
-    DWORD numCharsInput = ExpandEnvironmentStrings(directory.c_str(), nullptr, 0);
-    std::unique_ptr<wchar_t[]> evaluatedPath = std::make_unique<wchar_t[]>(numCharsInput);
-    THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(directory.c_str(), evaluatedPath.get(), numCharsInput));
-
     // Prior to GH#9541, we'd validate that the user's startingDirectory existed
     // here. If it was invalid, we'd gracefully fall back to %USERPROFILE%.
     //
@@ -463,7 +458,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
     //
     // If the path is eventually invalid, we'll display warning in the
     // ConptyConnection when the process fails to launch.
-    return std::wstring(evaluatedPath.get(), numCharsInput);
+    return wil::ExpandEnvironmentStringsW<std::wstring>(directory.c_str());
 }
 
 // Function Description:
