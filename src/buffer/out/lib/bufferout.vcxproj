@@ -44,7 +44,7 @@
     <ClInclude Include="..\Row.hpp" />
     <ClInclude Include="..\search.h" />
     <ClInclude Include="..\TextColor.h" />
-    <ClInclude Include="..\TextAttribute.h" />
+    <ClInclude Include="..\TextAttribute.hpp" />
     <ClInclude Include="..\textBuffer.hpp" />
     <ClInclude Include="..\textBufferCellIterator.hpp" />
     <ClInclude Include="..\textBufferTextIterator.hpp" />
