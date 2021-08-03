@@ -57,6 +57,11 @@
                 <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Show Acrylic in Tab Row  -->
+            <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.UseAcrylicInTabRow, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Show Title in Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}" />

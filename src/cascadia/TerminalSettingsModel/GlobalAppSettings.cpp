@@ -29,6 +29,7 @@ static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTi
 static constexpr std::string_view LanguageKey{ "language" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
+static constexpr std::string_view UseAcrylicInTabRowKey{ "useAcrylicInTabRow" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view InputServiceWarningKey{ "inputServiceWarning" };
@@ -105,6 +106,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_Language = _Language;
     globals->_Theme = _Theme;
     globals->_TabWidthMode = _TabWidthMode;
+    globals->_UseAcrylicInTabRow = _UseAcrylicInTabRow;
     globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
     globals->_WordDelimiters = _WordDelimiters;
     globals->_InputServiceWarning = _InputServiceWarning;
@@ -287,6 +289,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
 
+    JsonUtils::GetValueForKey(json, UseAcrylicInTabRowKey, _UseAcrylicInTabRow);
+
     JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
     // GetValueForKey will only override the current value if the key exists
@@ -400,6 +404,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, LanguageKey,                    _Language);
     JsonUtils::SetValueForKey(json, ThemeKey,                       _Theme);
     JsonUtils::SetValueForKey(json, TabWidthModeKey,                _TabWidthMode);
+    JsonUtils::SetValueForKey(json, UseAcrylicInTabRowKey,          _UseAcrylicInTabRow);
     JsonUtils::SetValueForKey(json, SnapToGridOnResizeKey,          _SnapToGridOnResize);
     JsonUtils::SetValueForKey(json, DebugFeaturesKey,               _DebugFeaturesEnabled);
     JsonUtils::SetValueForKey(json, ForceFullRepaintRenderingKey,   _ForceFullRepaintRendering);
