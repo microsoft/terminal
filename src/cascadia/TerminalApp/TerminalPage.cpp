@@ -1238,74 +1238,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        try
-        {
-            TerminalSettingsCreateResult controlSettings{ nullptr };
-            GUID realGuid;
-            bool profileFound = false;
-
-            if (splitMode == SplitType::Duplicate)
-            {
-                std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
-                if (current_guid)
-                {
-                    profileFound = true;
-                    controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
-                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
-                    const auto validWorkingDirectory = !workingDirectory.empty();
-                    if (validWorkingDirectory)
-                    {
-                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
-                    }
-                    realGuid = current_guid.value();
-                }
-                // TODO: GH#5047 - In the future, we should get the Profile of
-                // the focused pane, and use that to build a new instance of the
-                // settings so we can duplicate this tab/pane.
-                //
-                // Currently, if the profile doesn't exist anymore in our
-                // settings, we'll silently do nothing.
-                //
-                // In the future, it will be preferable to just duplicate the
-                // current control's settings, but we can't do that currently,
-                // because we won't be able to create a new instance of the
-                // connection without keeping an instance of the original Profile
-                // object around.
-            }
-            if (!profileFound)
-            {
-                realGuid = _settings.GetProfileForArgs(newTerminalArgs);
-                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-            }
-
-            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
-
-            const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
-            const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
-            const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
-
-            auto realSplitType = splitType;
-            if (realSplitType == SplitState::Automatic)
-            {
-                realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
-            }
-
-            const auto canSplit = focusedTab->PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
-            if (!canSplit)
-            {
-                return;
-            }
-
-            auto newControl = _InitControl(controlSettings, controlConnection);
-
-            // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl, *focusedTab);
-
-            _UnZoomIfNeeded();
-
-            focusedTab->SplitPane(realSplitType, splitSize, realGuid, newControl);
-        }
-        CATCH_LOG();
+        _SplitPane(*focusedTab, splitType, splitMode, splitSize, newTerminalArgs);
     }
 
     // Method Description:
@@ -1320,7 +1253,7 @@ namespace winrt::TerminalApp::implementation
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
-    void TerminalPage::_SplitPaneAnyTab(TerminalTab& tab,
+    void TerminalPage::_SplitPane(TerminalTab& tab,
                                         const SplitState splitType,
                                         const SplitType splitMode,
                                         const float splitSize,
