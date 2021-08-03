@@ -42,41 +42,9 @@
     <ClInclude Include="AddProfile.h">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="ColorToBrushConverter.h">
+    <ClInclude Include="Converters.h">
       <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ColorLightenConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="ColorToHexConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="FontWeightConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="InvertedBooleanConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="KeyChordListener.h">
-      <DependentUpon>KeyChordListener.xaml</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="PercentageSignConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="StringIsEmptyConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="PaddingConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="StringIsNotDesktopConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="PercentageConverter.h">
-      <DependentUpon>Converters.idl</DependentUpon>
+      <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="EnumEntry.h">
       <DependentUpon>EnumEntry.idl</DependentUpon>
@@ -90,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="Interaction.h">
       <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="KeyChordListener.h">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Launch.h">
       <DependentUpon>Launch.xaml</DependentUpon>
@@ -171,41 +142,9 @@
     <ClCompile Include="AddProfile.cpp">
       <DependentUpon>AddProfile.xaml</DependentUpon>
     </ClCompile>
-    <ClCompile Include="ColorToBrushConverter.cpp">
+    <ClCompile Include="Converters.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ColorLightenConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="ColorToHexConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="FontWeightConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="InvertedBooleanConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeyChordListener.cpp">
-      <DependentUpon>KeyChordListener.xaml</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="PercentageSignConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="StringIsEmptyConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="PaddingConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="StringIsNotDesktopConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="PercentageConverter.cpp">
-      <DependentUpon>Converters.idl</DependentUpon>
+      <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
@@ -216,6 +155,9 @@
     </ClCompile>
     <ClCompile Include="Interaction.cpp">
       <DependentUpon>Interaction.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="KeyChordListener.cpp">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="Launch.cpp">
       <DependentUpon>Launch.xaml</DependentUpon>
@@ -339,7 +281,6 @@
       <Private>true</Private>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj">
       <Private>false</Private>
     </ProjectReference>
