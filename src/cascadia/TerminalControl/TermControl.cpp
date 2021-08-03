@@ -86,6 +86,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
         _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
         _core.HoveredHyperlinkChanged({ this, &TermControl::_hoveredHyperlinkChanged });
+        _core.UpdateSelectionMarkers({ this, &TermControl::_updateSelectionMarkers });
         _interactivity.OpenHyperlink({ this, &TermControl::_HyperlinkHandler });
         _interactivity.ScrollPositionChanged({ this, &TermControl::_ScrollPositionChanged });
 
@@ -357,6 +358,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Update our control settings
         const auto bg = newAppearance.DefaultBackground();
         _changeBackgroundColor(bg);
+
+        // Update selection markers
+        Windows::UI::Xaml::Media::SolidColorBrush selectionBackgroundBrush{ til::color{ newAppearance.SelectionBackground() } };
+        SelectionStartIcon().Foreground(selectionBackgroundBrush);
+        SelectionEndIcon().Foreground(selectionBackgroundBrush);
 
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
@@ -1651,6 +1657,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _updateScrollBar->Run(update);
         _updatePatternLocations->Run();
+        _updateSelectionMarkers(nullptr, winrt::make<UpdateSelectionMarkersEventArgs>(false));
     }
 
     // Method Description:
@@ -2446,8 +2453,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _core.ClearHoveredCell();
     }
 
-    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable sender,
-                                                                 IInspectable args)
+    winrt::fire_and_forget TermControl::_hoveredHyperlinkChanged(IInspectable /*sender*/,
+                                                                 IInspectable /*args*/)
     {
         auto weakThis{ get_weak() };
         co_await resume_foreground(Dispatcher());
@@ -2470,12 +2477,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     HyperlinkTooltipBorder().BorderThickness(newThickness);
 
                     // Compute the location of the top left corner of the cell in DIPS
-                    const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
-                    const til::point startPos{ lastHoveredCell.Value() };
-                    const til::size fontSize{ til::math::rounding, _core.FontSize() };
-                    const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
-                    const til::point locationInDIPs{ posInDIPs + marginsInDips };
+                    const til::point locationInDIPs{ _toPosInDips(lastHoveredCell.Value()) };
 
                     // Move the border to the top left corner of the cell
                     OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
@@ -2487,10 +2489,71 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    winrt::fire_and_forget TermControl::_updateSelectionMarkers(IInspectable /*sender*/, Control::UpdateSelectionMarkersEventArgs args)
+    {
+        auto weakThis{ get_weak() };
+        co_await resume_foreground(Dispatcher());
+        if (weakThis.get() && args)
+        {
+            if (_core.HasSelection() && !args.ClearMarkers())
+            {
+                // show/update selection markers
+                // figure out which endpoint to move, get it and the relevant icon (hide the other icon)
+                const auto movingStart{ _core.MovingStart() };
+                const auto selectionAnchor{ movingStart ? _core.SelectionAnchor() : _core.SelectionEnd() };
+                const auto& icon{ movingStart ? SelectionStartIcon() : SelectionEndIcon() };
+                const auto& otherIcon{ movingStart ? SelectionEndIcon() : SelectionStartIcon() };
+                icon.Opacity(1);
+                otherIcon.Opacity(0);
+
+                // Compute the location of the top left corner of the cell in DIPS
+                const til::point locationInDIPs{ _toPosInDips(selectionAnchor) };
+
+                // Move the icon to the top left corner of the cell
+                SelectionCanvas().SetLeft(icon,
+                                          (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
+                SelectionCanvas().SetTop(icon,
+                                         (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+            }
+            else
+            {
+                // hide selection markers
+                SelectionStartIcon().Opacity(0);
+                SelectionEndIcon().Opacity(0);
+            }
+        }
+    }
+
+    til::point TermControl::_toPosInDips(const til::point terminalCellPos)
+    {
+        const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+        const til::size fontSize{ til::math::rounding, _core.FontSize() };
+        const til::point posInPixels{ terminalCellPos * fontSize };
+        const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+        return posInDIPs + marginsInDips;
+    }
+
     void TermControl::_coreFontSizeChanged(const int fontWidth,
                                            const int fontHeight,
                                            const bool isInitialChange)
     {
+        // scale the selection markers to be the size of a cell
+        auto scaleIconMarker = [fontWidth, fontHeight](Windows::UI::Xaml::Controls::FontIcon icon) {
+            const auto size{ icon.DesiredSize() };
+            const auto scaleX = fontWidth / size.Width;
+            const auto scaleY = fontHeight / size.Height;
+
+            Windows::UI::Xaml::Media::ScaleTransform transform{};
+            transform.ScaleX(transform.ScaleX() * scaleX);
+            transform.ScaleY(transform.ScaleY() * scaleY);
+            icon.RenderTransform(transform);
+
+            // now hide the icon
+            icon.Opacity(0);
+        };
+        scaleIconMarker(SelectionStartIcon());
+        scaleIconMarker(SelectionEndIcon());
+
         // Don't try to inspect the core here. The Core is raising this while
         // it's holding its write lock. If the handlers calls back to some
         // method on the TermControl on the same thread, and that _method_ calls

@@ -85,6 +85,24 @@ const COORD Terminal::GetSelectionEnd() const noexcept
     return _selection->end;
 }
 
+til::point Terminal::SelectionStartForRendering() const
+{
+    auto pos{ _selection->start };
+    const auto bufferSize{ _buffer->GetSize() };
+    bufferSize.DecrementInBounds(pos);
+    pos.Y = std::clamp<short>(base::ClampSub(pos.Y, _VisibleStartIndex()), bufferSize.Top(), bufferSize.BottomInclusive());
+    return pos;
+}
+
+til::point Terminal::SelectionEndForRendering() const
+{
+    auto pos{ _selection->end };
+    const auto bufferSize{ _buffer->GetSize() };
+    bufferSize.IncrementInBounds(pos);
+    pos.Y = std::clamp<short>(base::ClampSub(pos.Y, _VisibleStartIndex()), bufferSize.Top(), bufferSize.BottomInclusive());
+    return pos;
+}
+
 // Method Description:
 // - Checks if selection is active
 // Return Value:

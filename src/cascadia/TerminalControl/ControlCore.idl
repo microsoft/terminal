@@ -72,6 +72,9 @@ namespace Microsoft.Terminal.Control
         Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
         Boolean UpdateSelection(Microsoft.Terminal.Core.SelectionDirection direction, Microsoft.Terminal.Core.SelectionExpansion mode);
+        Microsoft.Terminal.Core.Point SelectionAnchor { get; };
+        Microsoft.Terminal.Core.Point SelectionEnd { get; };
+        Boolean MovingStart { get; };
 
         String HoveredUriText { get; };
         Windows.Foundation.IReference<Microsoft.Terminal.Core.Point> HoveredCell { get; };
@@ -100,6 +103,7 @@ namespace Microsoft.Terminal.Control
         event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
         event Windows.Foundation.TypedEventHandler<Object, TransparencyChangedEventArgs> TransparencyChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> ReceivedOutput;
+        event Windows.Foundation.TypedEventHandler<Object, UpdateSelectionMarkersEventArgs> UpdateSelectionMarkers;
 
     };
 }

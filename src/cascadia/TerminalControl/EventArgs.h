@@ -11,6 +11,7 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
+#include "UpdateSelectionMarkersEventArgs.g.h"
 #include "cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -130,5 +131,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         WINRT_PROPERTY(double, Opacity);
+    };
+
+    struct UpdateSelectionMarkersEventArgs : public UpdateSelectionMarkersEventArgsT<UpdateSelectionMarkersEventArgs>
+    {
+    public:
+        UpdateSelectionMarkersEventArgs(const bool clearMarkers) :
+            _ClearMarkers(clearMarkers)
+        {
+        }
+
+        WINRT_PROPERTY(bool, ClearMarkers, false);
     };
 }

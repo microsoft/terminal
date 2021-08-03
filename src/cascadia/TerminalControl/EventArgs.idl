@@ -67,4 +67,9 @@ namespace Microsoft.Terminal.Control
     {
         Double Opacity { get; };
     }
+
+    runtimeclass UpdateSelectionMarkersEventArgs
+    {
+        Boolean ClearMarkers { get; };
+    }
 }

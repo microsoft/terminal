@@ -232,6 +232,9 @@ public:
     void SetSelectionEnd(const COORD position, std::optional<winrt::Microsoft::Terminal::Core::SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(winrt::Microsoft::Terminal::Core::SelectionDirection direction, winrt::Microsoft::Terminal::Core::SelectionExpansion mode);
+    bool MovingStart() const noexcept;
+    til::point SelectionStartForRendering() const;
+    til::point SelectionEndForRendering() const;
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion

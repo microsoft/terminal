@@ -308,6 +308,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 _terminal->ClearSelection();
                 _renderer->TriggerSelection();
+                _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
             }
 
             if (vkey == VK_ESCAPE)
@@ -817,6 +818,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _terminal->SetSelectionAnchor(position);
     }
 
+    Core::Point ControlCore::SelectionAnchor() const
+    {
+        auto lock = _terminal->LockForReading();
+        return til::point{ _terminal->SelectionStartForRendering() };
+    }
+
+    Core::Point ControlCore::SelectionEnd() const
+    {
+        auto lock = _terminal->LockForReading();
+        return til::point{ _terminal->SelectionEndForRendering() };
+    }
+
+    bool ControlCore::MovingStart() const
+    {
+        auto lock = _terminal->LockForReading();
+        return _terminal->MovingStart();
+    }
+
     // Method Description:
     // - Sets selection's end position to match supplied cursor position, e.g. while mouse dragging.
     // Arguments:
@@ -843,6 +862,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // save location (for rendering) + render
         _terminal->SetSelectionEnd(terminalPosition);
         _renderer->TriggerSelection();
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
     }
 
     bool ControlCore::UpdateSelection(Core::SelectionDirection direction, Core::SelectionExpansion mode)
@@ -857,6 +877,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
         _terminal->UpdateSelection(direction, mode);
         _renderer->TriggerSelection();
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(false));
         return true;
     }
 
@@ -918,6 +939,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
+            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }
 
         // send data up for clipboard
@@ -1196,6 +1218,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetBlockSelection(false);
             search.Select();
             _renderer->TriggerSelection();
+            _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
         }
     }
 
@@ -1386,6 +1409,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         _renderer->TriggerSelection();
+        _UpdateSelectionMarkersHandlers(*this, winrt::make<implementation::UpdateSelectionMarkersEventArgs>(true));
     }
 
     void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
