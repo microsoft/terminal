@@ -1254,10 +1254,10 @@ namespace winrt::TerminalApp::implementation
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(TerminalTab& tab,
-                                        const SplitState splitType,
-                                        const SplitType splitMode,
-                                        const float splitSize,
-                                        const NewTerminalArgs& newTerminalArgs)
+                                  const SplitState splitType,
+                                  const SplitType splitMode,
+                                  const float splitSize,
+                                  const NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
         if (splitType == SplitState::None)
