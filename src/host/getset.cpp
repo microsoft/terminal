@@ -1931,15 +1931,11 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     //      to embed control characters in that string.
     if (gci.IsInVtIoMode())
     {
-        std::wstring sanitized;
-        sanitized.reserve(title.size());
-        for (size_t i = 0; i < title.size(); i++)
-        {
-            if (title.at(i) >= UNICODE_SPACE)
-            {
-                sanitized.push_back(title.at(i));
-            }
-        }
+        std::wstring sanitized{ title };
+        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](auto ch) {
+                            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                        }),
+                        sanitized.end());
 
         gci.SetTitle({ sanitized });
     }

@@ -350,6 +350,7 @@
         { "command": { "action": "movePane", "direction": "up" } },
         { "command": { "action": "movePane", "direction": "previous"} },
         { "command": "togglePaneZoom" },
+        { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
 
         // Clipboard Integration

@@ -15,6 +15,7 @@ downsides
 dze
 dzhe
 Enum'd
+Fitt
 formattings
 ftp
 fvar

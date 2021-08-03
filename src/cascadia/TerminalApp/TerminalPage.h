@@ -234,7 +234,7 @@ namespace winrt::TerminalApp::implementation
 
         void _SelectNextTab(const bool bMoveRight, const Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::TabSwitcherMode>& customTabSwitcherMode);
         bool _SelectTab(uint32_t tabIndex);
-        void _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         void _MovePane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
         winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
@@ -255,6 +255,7 @@ namespace winrt::TerminalApp::implementation
                         const float splitSize = 0.5f,
                         const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
+        void _ToggleSplitOrientation();
 
         void _ScrollPage(ScrollDirection scrollDirection);
         void _ScrollToBufferEdge(ScrollDirection scrollDirection);

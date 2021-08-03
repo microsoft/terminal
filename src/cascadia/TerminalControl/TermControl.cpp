@@ -1052,6 +1052,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             Focus(FocusState::Pointer);
         }
 
+        // Mark that this pointer event actually started within our bounds.
+        // We'll need this later, for PointerMoved events.
+        _pointerPressedInBounds = true;
+
         if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
             const auto contactRect = point.Properties().ContactRect();
@@ -1104,10 +1108,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         TermControl::GetPointerUpdateKind(point),
                                         ControlKeyStates(args.KeyModifiers()),
                                         _focused,
-                                        pixelPosition);
+                                        pixelPosition,
+                                        _pointerPressedInBounds);
 
-            if (_focused && point.Properties().IsLeftButtonPressed())
+            // GH#9109 - Only start an auto-scroll when the drag actually
+            // started within our bounds. Otherwise, someone could start a drag
+            // outside the terminal control, drag into the padding, and trick us
+            // into starting to scroll.
+            if (_focused && _pointerPressedInBounds && point.Properties().IsLeftButtonPressed())
             {
+                // We want to find the distance relative to the bounds of the
+                // SwapChainPanel, not the entire control. If they drag out of
+                // the bounds of the text, into the padding, we still what that
+                // to auto-scroll
                 const double cursorBelowBottomDist = cursorPosition.Y - SwapChainPanel().Margin().Top - SwapChainPanel().ActualHeight();
                 const double cursorAboveTopDist = -1 * cursorPosition.Y + SwapChainPanel().Margin().Top;
 
@@ -1156,6 +1169,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
+
+        _pointerPressedInBounds = false;
 
         const auto ptr = args.Pointer();
         const auto point = args.GetCurrentPoint(*this);

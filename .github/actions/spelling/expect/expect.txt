@@ -105,6 +105,7 @@ autoscrolling
 Autowrap
 AVerify
 AVI
+AVX
 awch
 azuredevopspodcast
 azzle
@@ -190,6 +191,7 @@ CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
 cassert
+castsi
 catid
 cazamor
 CBash
@@ -270,6 +272,7 @@ Cmdlet
 cmdline
 CMOUSEBUTTONS
 cmp
+cmpeq
 cmt
 cmyk
 CNL
@@ -1021,6 +1024,7 @@ IAction
 IApi
 IApplication
 IBase
+ICache
 icacls
 iccex
 icch
@@ -1260,6 +1264,7 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
+loadu
 LOBYTE
 localappdata
 localhost
@@ -1420,6 +1425,7 @@ MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
 mousewheel
+movemask
 MOVESTART
 msb
 msbuild
@@ -2530,6 +2536,7 @@ vcvarsall
 vcxitems
 vcxproj
 vec
+vectorized
 VERCTRL
 versioning
 VERTBAR
