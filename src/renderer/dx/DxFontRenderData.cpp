@@ -458,6 +458,13 @@ bool DxFontRenderData::DidUserSetFeatures() const noexcept
 }
 
 // Routine Description:
+// - Returns whether the user set or updated any of the font axes to be applied
+bool DxFontRenderData::DidUserSetAxes() const noexcept
+{
+    return _didUserSetAxes;
+}
+
+// Routine Description:
 // - Updates our internal map of font features with the given features
 // - NOTE TO CALLER: Make sure to call _BuildFontRenderData after calling this for the feature changes
 //   to take place
@@ -510,13 +517,17 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
 
     // Update our axis map with the provided axes
 #pragma warning(suppress : 26445) // the analyzer doesn't like reference to string_view
-    for (const auto& [axis, value] : axes)
+    if (!axes.empty())
     {
-        if (axis.length() == TAG_LENGTH)
+        for (const auto& [axis, value] : axes)
         {
-            const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(til::at(axis, 0), til::at(axis, 1), til::at(axis, 2), til::at(axis, 3));
-            _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, value });
+            if (axis.length() == TAG_LENGTH)
+            {
+                const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(til::at(axis, 0), til::at(axis, 1), til::at(axis, 2), til::at(axis, 3));
+                _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, value });
+            }
         }
+        _didUserSetAxes = true;
     }
 }
 
@@ -612,7 +623,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
         }
     }
 
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Weight))
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Weight) || fontWeight != DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL)
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, gsl::narrow<float>(fontWeight) });
     }

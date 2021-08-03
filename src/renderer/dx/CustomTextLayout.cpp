@@ -236,7 +236,7 @@ CATCH_RETURN()
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        if (!_isEntireTextSimple)
+        if (!_isEntireTextSimple || _fontRenderData->DidUserSetAxes())
         {
             // Call each of the analyzers in sequence, recording their results.
             RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, 0, textLength, this));
