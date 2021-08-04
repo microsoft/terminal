@@ -19,6 +19,8 @@
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "../inc/WindowingBehavior.h"
 
+#include <til/latch.h>
+
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
@@ -2359,23 +2361,20 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            std::optional<HRESULT> finalVal;
-            std::mutex mtx;
-            std::condition_variable cv;
-
-            std::unique_lock<std::mutex> lock{ mtx };
+            til::latch latch{ 1 };
+            std::optional<HRESULT> finalVal{};
 
             Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
                 auto hr = _OpenNewTab(nullptr, connection);
 
                 _SummonWindowRequestedHandlers(*this, nullptr);
 
-                std::unique_lock<std::mutex> lock{ mtx };
                 finalVal.emplace(std::move(hr));
-                cv.notify_all();
+
+                latch.count_down();
             });
 
-            cv.wait(lock, [&]() { return finalVal.has_value(); });
+            latch.wait();
             return *finalVal;
         }
     }

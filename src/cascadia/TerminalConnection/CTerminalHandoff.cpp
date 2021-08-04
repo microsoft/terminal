@@ -11,6 +11,8 @@ using namespace Microsoft::WRL;
 static NewHandoffFunction _pfnHandoff = nullptr;
 // The registration ID of the class object for clean up later
 static DWORD g_cTerminalHandoffRegistration = 0;
+// Mutex so we only do start/stop/establish one at a time.
+static std::mutex _mtx{};
 
 // Routine Description:
 // - Starts listening for TerminalHandoff requests by registering
@@ -22,6 +24,8 @@ static DWORD g_cTerminalHandoffRegistration = 0;
 HRESULT CTerminalHandoff::s_StartListening(NewHandoffFunction pfnHandoff) noexcept
 try
 {
+    std::unique_lock<std::mutex> lock{ _mtx };
+
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
 
     const auto classFactory = Make<SimpleClassFactory<CTerminalHandoff>>();
@@ -48,6 +52,8 @@ CATCH_RETURN()
 // - S_OK, E_NOT_VALID_STATE (stop called when not started), or relevant COM class revoke error
 HRESULT CTerminalHandoff::s_StopListening() noexcept
 {
+    std::unique_lock<std::mutex> lock{ _mtx };
+
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
     _pfnHandoff = nullptr;
@@ -99,6 +105,8 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
     // Because we are REGCLS_SINGLEUSE... we need to `CoRevokeClassObject` after we handle this ONE call.
     // COM does not automatically clean that up for us. We must do it.
     s_StopListening();
+
+    std::unique_lock<std::mutex> lock{ _mtx };
 
     // Report an error if no one registered a handoff function before calling this.
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
