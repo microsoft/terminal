@@ -4,7 +4,9 @@ pr: none
 
 pool: 
   name: WinDevPool-L
-  demands: ImageOverride -equals WinDevVS16-latest
+  demands: 
+   - ImageOverride -equals WinDevVS16-latest
+   - ImageVersionOverride -equals 2.0.0
 
 parameters:
   - name: branding

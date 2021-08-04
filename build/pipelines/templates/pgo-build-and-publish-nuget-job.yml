@@ -58,5 +58,8 @@ jobs:
     displayName: 'NuGet push'
     inputs:
       command: push
-      publishVstsFeed: Terminal/TerminalDependencies
+      nuGetFeedType: external
       packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
+      publishFeedCredentials: 'Terminal Public Artifact Feed'
+      feedsToUse: config
+      nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.config'
