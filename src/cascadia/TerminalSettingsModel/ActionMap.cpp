@@ -604,7 +604,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Handle collisions
-        const auto oldKeyPair{ _KeyMap.find(keys) };
+        auto oldKeyPair{ _KeyMap.find(keys) }; // pair<Control::KeyChord, InternalActionID>
+        // If we didn't find the key, then try again, but with the scan code
+        if (oldKeyPair == _KeyMap.end() && keys.ScanCode())
+        {
+            oldKeyPair = _KeyMap.find(Control::KeyChord{ keys.Modifiers(), 0, keys.ScanCode() });
+        }
+
         if (oldKeyPair != _KeyMap.end())
         {
             // Collision: The key chord was already in use.
