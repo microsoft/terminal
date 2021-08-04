@@ -120,6 +120,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
+        bool IsCursorOffScreen() const;
         til::point CursorPosition() const;
 
         bool HasSelection() const;

@@ -213,6 +213,7 @@ public:
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
+    bool IsCursorOffScreen() noexcept;
 
     void UpdatePatternsUnderLock() noexcept;
     void ClearPatternTree() noexcept;

@@ -80,6 +80,7 @@ namespace Microsoft.Terminal.Control
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;
         void EnablePainting();
+        Boolean IsCursorOffScreen();
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

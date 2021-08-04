@@ -1208,6 +1208,19 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
     return cursor.IsBlinkingAllowed();
 }
 
+bool Terminal::IsCursorOffScreen() noexcept
+{
+    const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
+    const auto viewport = _GetMutableViewport();
+    const auto ht = viewport.Height();
+    const auto wt = viewport.Width();
+    const auto orHt = viewport.Origin().Y;
+    const auto orWt = viewport.Origin().X;
+    const auto scrollOffset = GetScrollOffset();
+    const auto bufHt = GetBufferHeight();
+    return absoluteCursorPos.Y > viewport.Height() + viewport.Origin().Y - 1 || absoluteCursorPos.X > viewport.Width() + viewport.Origin().X - 1;
+}
+
 // Method Description:
 // - Update our internal knowledge about where regex patterns are on the screen
 // - This is called by TerminalControl (through a throttled function) when the visible

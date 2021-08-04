@@ -2392,13 +2392,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto charSizeInPixels = CharacterDimensions();
             const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
             const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
-
             const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
             const til::size fontSize{ til::math::rounding, _core.FontSize() };
             const til::point cursorPos = _core.CursorPosition();
             const til::point cursorPosInPixels{ cursorPos * fontSize };
             const til::point cursorPosInDIPs{ cursorPosInPixels / SwapChainPanel().CompositionScaleX() };
             const til::point cursorLocationInDIPs{ cursorPosInDIPs + marginsInDips };
+            const auto ay = _core.IsCursorOffScreen();
             CursorLight().ChangeLocation(gsl::narrow_cast<float>(cursorLocationInDIPs.x()) + wtInDips / 2,
                                          gsl::narrow_cast<float>(cursorLocationInDIPs.y()) + htInDips / 2);
             CursorLight::SetIsTarget(RootGrid(), true);
