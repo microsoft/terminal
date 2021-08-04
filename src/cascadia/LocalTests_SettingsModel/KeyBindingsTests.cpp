@@ -97,13 +97,13 @@ namespace SettingsModelLocalTests
                 VirtualKeyModifiers::Control | VirtualKeyModifiers::Menu | VirtualKeyModifiers::Shift | VirtualKeyModifiers::Windows,
                 255,
                 0,
-                L"ctrl+shift+alt+win+vk(255)",
+                L"win+ctrl+alt+shift+vk(255)",
             },
             testCase{
-                VirtualKeyModifiers::Windows,
+                VirtualKeyModifiers::Control | VirtualKeyModifiers::Menu | VirtualKeyModifiers::Shift | VirtualKeyModifiers::Windows,
                 0,
                 123,
-                L"ctrl+shift+alt+win+sc(123)",
+                L"win+ctrl+alt+shift+sc(123)",
             },
         };
 
