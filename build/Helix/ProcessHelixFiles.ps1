@@ -81,7 +81,8 @@ foreach ($testRun in $testRuns.value)
         if (-not $workItems.Contains($workItem))
         {
             $workItems.Add($workItem)
-            $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files?access_token=$HelixAccessToken"
+            $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files"
+            $filesQueryUri = Append-HelixAccessToken $filesQueryUri $helixAccessToken
             $files = Invoke-RestMethodWithRetries $filesQueryUri
 
             $screenShots = $files | where { $_.Name.EndsWith(".jpg") }
