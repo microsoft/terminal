@@ -37,6 +37,8 @@ namespace SettingsModelLocalTests
         END_TEST_CLASS()
 
         TEST_METHOD(KeyChords);
+        TEST_METHOD(VkeyAndScanCodeTests);
+
         TEST_METHOD(ManyKeysSameAction);
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(UnbindKeybindings);
@@ -126,6 +128,58 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(hash(expectedKeyChord), hash(actualKeyChord));
             VERIFY_IS_TRUE(equals(expectedKeyChord, actualKeyChord));
         }
+    }
+
+    void KeyBindingsTests::VkeyAndScanCodeTests()
+    {
+        Log::Comment(L"In this test, we're going to construct two KeyChords, "
+                     L"one with a vkey, and one with a scancode. We'll use "
+                     L"MapVirtualKeyW to make sure these are the same key. They"
+                     L" should compare as the same key, but they should "
+                     L"roundtrip as they were initially serialized.");
+
+        struct testCase
+        {
+            VirtualKeyModifiers modifiers;
+            int32_t vkey;
+            int32_t scanCode;
+            std::wstring expected;
+        };
+
+        int32_t vsc = 123;
+        int32_t vk = MapVirtualKeyW(vsc, MAPVK_VSC_TO_VK);
+        static const std::array testCases{
+            testCase{
+                VirtualKeyModifiers::Control,
+                vk,
+                0,
+                fmt::format(L"ctrl+vk({})", vk) },
+            testCase{
+                VirtualKeyModifiers::Control,
+                0,
+                vsc,
+                fmt::format(L"ctrl+sc({})", vsc) }
+        };
+        implementation::KeyChordHash hash;
+        implementation::KeyChordEquality equals;
+        for (const auto& tc : testCases)
+        {
+            Log::Comment(fmt::format(L"Testing case:\"{}\"", tc.expected).c_str());
+
+            KeyChord expectedKeyChord{ tc.modifiers, tc.vkey, tc.scanCode };
+            const auto actualString = KeyChordSerialization::ToString(expectedKeyChord);
+            VERIFY_ARE_EQUAL(tc.expected, actualString);
+
+            const auto actualKeyChord = KeyChordSerialization::FromString(actualString);
+            VERIFY_ARE_EQUAL(hash(expectedKeyChord), hash(actualKeyChord));
+            VERIFY_IS_TRUE(equals(expectedKeyChord, actualKeyChord));
+        }
+
+        KeyChord vkChord{ testCases[0].modifiers, testCases[0].vkey, testCases[0].scanCode };
+        KeyChord scChord{ testCases[1].modifiers, testCases[1].vkey, testCases[1].scanCode };
+
+        VERIFY_ARE_EQUAL(hash(vkChord), hash(scChord));
+        VERIFY_IS_TRUE(equals(vkChord, scChord));
     }
 
     void KeyBindingsTests::ManyKeysSameAction()
