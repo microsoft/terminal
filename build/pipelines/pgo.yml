@@ -20,7 +20,7 @@ stages:
   #         platform: x64
   - stage: Publish_PGO_Databases
     displayName: Publish PGO databases
-    dependsOn: ['Build_x64']
+    # dependsOn: ['Build_x64']
     jobs:
       - template: ./templates/pgo-build-and-publish-nuget-job.yml
         parameters:
