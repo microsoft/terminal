@@ -758,7 +758,8 @@ namespace ControlUnitTests
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
                                     true, // focused,
-                                    cursorPosition1);
+                                    cursorPosition1,
+                                    true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
