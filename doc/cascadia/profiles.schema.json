@@ -990,6 +990,7 @@
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/MovePaneAction" },
+              { "$ref": "#/definitions/MovePaneToTabAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
