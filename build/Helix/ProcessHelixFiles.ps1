@@ -81,8 +81,12 @@ foreach ($testRun in $testRuns.value)
         if (-not $workItems.Contains($workItem))
         {
             $workItems.Add($workItem)
+<<<<<<< HEAD
             $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files"
             $filesQueryUri = Append-HelixAccessTokenToUrl $filesQueryUri $helixAccessToken
+=======
+            $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files?access_token=$HelixAccessToken"
+>>>>>>> cdc0e240f (re-sprinkle helix access tokens)
             $files = Invoke-RestMethodWithRetries $filesQueryUri
 
             $screenShots = $files | where { $_.Name.EndsWith(".jpg") }
@@ -121,7 +125,11 @@ foreach ($testRun in $testRuns.value)
 
                     Write-Host "Downloading $link to $destination"
 
+<<<<<<< HEAD
                     $link = Append-HelixAccessTokenToUrl $link $HelixAccessToken
+=======
+                    $link = Append-HelixAccessToken $link $HelixAccessToken
+>>>>>>> cdc0e240f (re-sprinkle helix access tokens)
                     Download-FileWithRetries $link $destination
                 }
             }
