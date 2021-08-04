@@ -499,23 +499,11 @@ namespace winrt::TerminalApp::implementation
         // and close this tab
         if (_rootPane == _activePane)
         {
-            // remove the closed event handler since we are closing the tab
-            // manually.
-            _rootPane->Closed(_rootClosedToken);
-            auto p = _rootPane;
-            p->_PaneDetachedHandlers(p);
-
-            // Clean up references and close the tab
-            _rootPane = nullptr;
-            _activePane = nullptr;
-            Content(nullptr);
-            _ClosedHandlers(nullptr, nullptr);
-
-            return p;
+            return DetachRoot();
         }
 
         // Attempt to remove the active pane from the tree
-        if (auto pane = _rootPane->DetachPane(_activePane->Id().value()))
+        if (auto pane = _rootPane->DetachPane(_activePane))
         {
             // Just make sure that the remaining pane is marked active
             _UpdateActivePane(_rootPane->GetActivePane());
@@ -524,6 +512,32 @@ namespace winrt::TerminalApp::implementation
         }
 
         return nullptr;
+    }
+
+    // Method Description:
+    // - Closes this tab and returns the root pane to be used elsewhere.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The root pane.
+    std::shared_ptr<Pane> TerminalTab::DetachRoot()
+    {
+        // remove the closed event handler since we are closing the tab
+        // manually.
+        _rootPane->Closed(_rootClosedToken);
+        auto p = _rootPane;
+        p->WalkTree([](auto pane) {
+            pane->_PaneDetachedHandlers(pane);
+            return false;
+        });
+
+        // Clean up references and close the tab
+        _rootPane = nullptr;
+        _activePane = nullptr;
+        Content(nullptr);
+        _ClosedHandlers(nullptr, nullptr);
+
+        return p;
     }
 
     // Method Description:

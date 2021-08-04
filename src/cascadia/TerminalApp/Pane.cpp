@@ -1048,18 +1048,18 @@ std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState sp
 // - The id of the pane to close
 // Return Value:
 // - The removed pane, if found.
-std::shared_ptr<Pane> Pane::DetachPane(uint32_t id)
+std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 {
     // We can't remove a pane if we only have a reference to a leaf, even if we
-    // match the id.
+    // are the pane.
     if (_IsLeaf())
     {
         return nullptr;
     }
 
     // Check if either of our children matches the search
-    auto isFirstChild = _firstChild->_IsLeaf() && _firstChild->_id == id;
-    auto isSecondChild = _secondChild->_IsLeaf() && _secondChild->_id == id;
+    auto isFirstChild = _firstChild == pane;
+    auto isSecondChild = _secondChild == pane;
 
     if (isFirstChild || isSecondChild)
     {
@@ -1081,12 +1081,12 @@ std::shared_ptr<Pane> Pane::DetachPane(uint32_t id)
         return detached;
     }
 
-    if (auto detached = !_firstChild->_IsLeaf() ? _firstChild->DetachPane(id) : nullptr)
+    if (auto detached = _firstChild->DetachPane(pane))
     {
         return detached;
     }
 
-    return !_secondChild->_IsLeaf() ? _secondChild->DetachPane(id) : nullptr;
+    return _secondChild->DetachPane(pane);
 }
 
 // Method Description:

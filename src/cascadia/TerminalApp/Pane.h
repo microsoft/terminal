@@ -87,7 +87,7 @@ public:
 
     std::shared_ptr<Pane> AttachPane(std::shared_ptr<Pane> pane,
                                      winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
-    std::shared_ptr<Pane> DetachPane(uint32_t id);
+    std::shared_ptr<Pane> DetachPane(std::shared_ptr<Pane> pane);
 
     int GetLeafPaneCount() const noexcept;
 

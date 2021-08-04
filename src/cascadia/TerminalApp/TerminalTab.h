@@ -34,6 +34,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget Scroll(const int delta);
 
+        std::shared_ptr<Pane> DetachRoot();
         std::shared_ptr<Pane> DetachPane();
         void AttachPane(std::shared_ptr<Pane> pane);
 
