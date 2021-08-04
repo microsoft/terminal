@@ -250,7 +250,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_dispatcher)
             {
                 // _closing isn't atomic and may only be accessed from the main thread.
-                assert(_dispatcher.HasThreadAccess());
+                assert(_inUnitTests || _dispatcher.HasThreadAccess());
             }
 #endif
             return _closing;
@@ -258,6 +258,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
+        bool _inUnitTests{ false };
     };
 }
 
