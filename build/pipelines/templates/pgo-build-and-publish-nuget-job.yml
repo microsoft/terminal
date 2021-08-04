@@ -20,11 +20,6 @@ jobs:
     inputs:
       artifactName: ${{ parameters.pgoArtifact }}
       downloadPath: $(artifactsPath)
-      buildType: 'specific'
-      project: $(System.TeamProjectId)
-      pipeline: 71496
-      buildVersionToDownload: 'specific'
-      buildId: 37530159
 
   - task: NuGetAuthenticate@0
     inputs:
@@ -69,6 +64,9 @@ jobs:
       command: push
       nuGetFeedType: external
       packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
+      # The actual URL and PAT for this feed is configured at
+      # https://microsoft.visualstudio.com/Dart/_settings/adminservices
+      # This is the name of that connection
       publishFeedCredentials: 'Terminal Public Artifact Feed'
       feedsToUse: config
       nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.config'
