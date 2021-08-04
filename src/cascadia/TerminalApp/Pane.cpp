@@ -1450,7 +1450,25 @@ void Pane::_UpdateBorders()
 }
 
 // Method Description:
+// - Find the borders for the leaf pane, or the shared borders for child panes.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+Borders Pane::_GetCommonBorders()
+{
+    if (_IsLeaf())
+    {
+        return _borders;
+    }
+
+    return _firstChild->_GetCommonBorders() & _secondChild->_GetCommonBorders();
+}
+
+// Method Description:
 // - Sets the row/column of our child UI elements, to match our current split type.
+// - In case the split definition or parent borders were changed, this recursively
+//   updates the children as well.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1466,9 +1484,8 @@ void Pane::_ApplySplitDefinitions()
         _secondChild->_borders = _borders | Borders::Left;
         _borders = Borders::None;
 
-        _UpdateBorders();
-        _firstChild->_UpdateBorders();
-        _secondChild->_UpdateBorders();
+        _firstChild->_ApplySplitDefinitions();
+        _secondChild->_ApplySplitDefinitions();
     }
     else if (_splitState == SplitState::Horizontal)
     {
@@ -1479,10 +1496,10 @@ void Pane::_ApplySplitDefinitions()
         _secondChild->_borders = _borders | Borders::Top;
         _borders = Borders::None;
 
-        _UpdateBorders();
-        _firstChild->_UpdateBorders();
-        _secondChild->_UpdateBorders();
+        _firstChild->_ApplySplitDefinitions();
+        _secondChild->_ApplySplitDefinitions();
     }
+    _UpdateBorders();
 }
 
 // Method Description:
@@ -1741,6 +1758,43 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
     }
 
     return _Split(splitType, splitSize, profile, control);
+}
+
+// Method Description:
+// - Toggle the split orientation of the currently focused pane
+// Arguments:
+// - <none>
+// Return Value:
+// - true if a split was changed
+bool Pane::ToggleSplitOrientation()
+{
+    // If we are a leaf there is no split to toggle.
+    if (_IsLeaf())
+    {
+        return false;
+    }
+
+    // Check if either our first or second child is the currently focused leaf.
+    // If they are then switch the split orientation on the current pane.
+    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
+    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
+    if (firstIsFocused || secondIsFocused)
+    {
+        // Switch the split orientation
+        _splitState = _splitState == SplitState::Horizontal ? SplitState::Vertical : SplitState::Horizontal;
+
+        // then update the borders and positioning on ourselves and our children.
+        _borders = _GetCommonBorders();
+        // Since we changed if we are using rows/columns, make sure we remove the old definitions
+        _root.ColumnDefinitions().Clear();
+        _root.RowDefinitions().Clear();
+        _CreateRowColDefinitions();
+        _ApplySplitDefinitions();
+
+        return true;
+    }
+
+    return _firstChild->ToggleSplitOrientation() || _secondChild->ToggleSplitOrientation();
 }
 
 // Method Description:

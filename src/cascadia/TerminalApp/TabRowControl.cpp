@@ -61,8 +61,19 @@ namespace winrt::TerminalApp::implementation
         // Make sure to set the AcceptedOperation, so that we can later receive the path in the Drop event
         e.AcceptedOperation(DataPackageOperation::Copy);
 
-        // Sets custom UI text
-        e.DragUIOverride().Caption(RS_(L"DropPathTabRun/Text"));
+        const auto modifiers = static_cast<uint32_t>(e.Modifiers());
+        if (WI_IsFlagSet(modifiers, static_cast<uint32_t>(DragDrop::DragDropModifiers::Alt)))
+        {
+            e.DragUIOverride().Caption(RS_(L"DropPathTabSplit/Text"));
+        }
+        else if (WI_IsFlagSet(modifiers, static_cast<uint32_t>(DragDrop::DragDropModifiers::Shift)))
+        {
+            e.DragUIOverride().Caption(RS_(L"DropPathTabNewWindow/Text"));
+        }
+        else
+        {
+            e.DragUIOverride().Caption(RS_(L"DropPathTabRun/Text"));
+        }
 
         // Sets if the caption is visible
         e.DragUIOverride().IsCaptionVisible(true);

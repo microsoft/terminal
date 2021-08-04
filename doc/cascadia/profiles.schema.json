@@ -4,7 +4,7 @@
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?:(?:ctrl|alt|shift|win)\\+)*(?:app|backspace|comma|delete|down|end|enter|esc|escape|home|insert|left|menu|minus|pagedown|pageup|period|pgdn|pgup|plus|right|space|tab|up|f(?:1\\d?|2[0-4]?|[3-9])|numpad\\d|numpad_(?:\\d|add|decimal|divide|minus|multiply|period|plus|subtract)|(?:vk|sc)\\((?:[1-9]|1?\\d{2}|2[0-4]\\d|25[0-5])\\)|[^\\s+])(?:\\+(?:ctrl|alt|shift|win))*$",
+      "pattern": "^(?:(?:ctrl|alt|shift|win)\\+)*(?:app|backspace|browser_(?:back|forward|refresh|stop|search|favorites|home)|comma|delete|down|end|enter|esc|escape|home|insert|left|menu|minus|pagedown|pageup|period|pgdn|pgup|plus|right|space|tab|up|f(?:1\\d?|2[0-4]?|[3-9])|numpad\\d|numpad_(?:\\d|add|decimal|divide|minus|multiply|period|plus|subtract)|(?:vk|sc)\\((?:[1-9]|1?\\d{2}|2[0-4]\\d|25[0-5])\\)|[^\\s+])(?:\\+(?:ctrl|alt|shift|win))*$",
       "type": "string",
       "description": "The string should fit the format \"[ctrl+][alt+][shift+][win+]<KeyName>\", where each modifier is optional. KeyName is either any single key character, an explicit virtual key or scan code in the form vk(nnn) and sc(nnn) respectively, or one of the special names listed at https://docs.microsoft.com/en-us/windows/terminal/customize-settings/actions#accepted-modifiers-and-keys"
     },
@@ -271,6 +271,7 @@
         "toggleFocusMode",
         "toggleFullscreen",
         "togglePaneZoom",
+        "toggleSplitOrientation",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",

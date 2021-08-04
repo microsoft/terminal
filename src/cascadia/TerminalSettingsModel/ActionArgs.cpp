@@ -118,7 +118,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!StartingDirectory().empty())
         {
-            ss << fmt::format(L"--startingDirectory \"{}\" ", StartingDirectory());
+            // If the directory ends in a '\', we need to add another one on so that the enclosing quote added
+            // afterwards isn't escaped
+            const auto trailingBackslashEscape = StartingDirectory().back() == L'\\' ? L"\\" : L"";
+            ss << fmt::format(L"--startingDirectory \"{}{}\" ", StartingDirectory(), trailingBackslashEscape);
         }
 
         if (!TabTitle().empty())

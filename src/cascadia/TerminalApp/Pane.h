@@ -69,6 +69,7 @@ public:
                                                                   const float splitSize,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
+    bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
                                                                                                  const winrt::Windows::Foundation::Size parentSize) const;
@@ -146,6 +147,7 @@ private:
     void _ApplySplitDefinitions();
     void _SetupEntranceAnimation();
     void _UpdateBorders();
+    Borders _GetCommonBorders();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
 

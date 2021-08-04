@@ -582,9 +582,6 @@ try
 
     _displaySizePixels = _GetClientSize();
 
-    _invalidMap.resize(_displaySizePixels / _fontRenderData->GlyphCell());
-    RETURN_IF_FAILED(InvalidateAll());
-
     // Get the other device types so we have deeper access to more functionality
     // in our pipeline than by just walking straight from the D3D device.
 
@@ -1288,6 +1285,7 @@ try
     if (_isEnabled)
     {
         const auto clientSize = _GetClientSize();
+        const auto glyphCellSize = _fontRenderData->GlyphCell();
 
         // If we don't have device resources or if someone has requested that we
         // recreate the device... then make new resources. (Create will dump the old ones.)
@@ -1317,8 +1315,11 @@ try
 
             // And persist the new size.
             _displaySizePixels = clientSize;
+        }
 
-            _invalidMap.resize(clientSize / _fontRenderData->GlyphCell());
+        if (const auto size = clientSize / glyphCellSize; size != _invalidMap.size())
+        {
+            _invalidMap.resize(size);
             RETURN_IF_FAILED(InvalidateAll());
         }
 
@@ -1337,7 +1338,7 @@ try
                                                                _ShouldForceGrayscaleAA(),
                                                                _dwriteFactory.Get(),
                                                                spacing,
-                                                               _fontRenderData->GlyphCell(),
+                                                               glyphCellSize,
                                                                _d2dDeviceContext->GetSize(),
                                                                std::nullopt,
                                                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
