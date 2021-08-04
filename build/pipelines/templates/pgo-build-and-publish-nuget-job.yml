@@ -20,11 +20,20 @@ jobs:
     inputs:
       artifactName: ${{ parameters.pgoArtifact }}
       downloadPath: $(artifactsPath)
-  
-  - task: NuGetToolInstaller@0
-    displayName: 'Use NuGet 5.2.0'
+      buildType: 'specific'
+      project: $(System.TeamProjectId)
+      pipeline: 71496
+      buildVersionToDownload: 'specific'
+      buildId: 37530159
+
+  - task: NuGetAuthenticate@0
     inputs:
-      versionSpec: 5.2.0
+      nuGetServiceConnections: 'Terminal Public Artifact Feed'
+
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 5.8.0'
+    inputs:
+      versionSpec: 5.8.0
 
   - task: CopyFiles@2
     displayName: 'Copy pgd files to NuGet build directory'
