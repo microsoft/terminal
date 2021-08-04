@@ -264,6 +264,39 @@ jobs:
       SearchPattern: '**/*.pdb'
       IndexSources: false
       SymbolServerType: TeamServices
+  # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
+  - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
+    displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
+  - task: PkgESSecComp@10
+    displayName: 'Security and Compliance tasks'
+    inputs:
+      fileNewBugs: false
+      areaPath: 'OS\WDX\DXP\WinDev\Terminal'
+      teamProject: 'OS'
+      iterationPath: 'OS\Future'
+      bugTags: 'TerminalReleaseCompliance'
+      scanAll: true
+      errOnBugs: false
+      failOnStdErr: true
+      taskLogVerbosity: Diagnostic
+      secCompConfigFromTask: |
+        # Overrides default build sources directory
+        sourceTargetOverrideAll: d:\ba\s\ 
+        # Overrides default build binaries directory when "Scan all" option is specified
+        binariesTargetOverrideAll: d:\ba\b\ 
+  
+        # Set the tools to false if they should not run in the build
+        tools:
+            - toolName: CheckCFlags
+              enable: true
+            - toolName: CFGCheck
+              enable: true
+            - toolName: Policheck
+              enable: false
+            - toolName: CredScan
+              enable: false
+            - toolName: XFGCheck
+              enable: false
 
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
