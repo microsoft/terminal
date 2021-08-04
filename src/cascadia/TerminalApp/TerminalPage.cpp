@@ -174,7 +174,7 @@ namespace winrt::TerminalApp::implementation
 
                         themeDictionary.Insert(tabViewBackgroundKey, acrylicBrush);
                     }
-                }      
+                }
             }
         }
 

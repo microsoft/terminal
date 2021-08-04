@@ -786,7 +786,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         const auto backgroundAcrylicBrush = backgroundBrush.try_as<Media::AcrylicBrush>();
 
         til::color backgroundColor = Colors::Black();
-
         if (backgroundSolidBrush)
         {
             backgroundColor = backgroundSolidBrush.Color();
@@ -795,7 +794,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         {
             backgroundColor = backgroundAcrylicBrush.FallbackColor();
         }
-
 
         if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
         {
