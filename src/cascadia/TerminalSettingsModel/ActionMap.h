@@ -36,8 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::size_t operator()(const Control::KeyChord& key) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(key.Modifiers(),
-                                                                                   key.Vkey() == 0 ? MapVirtualKeyW(key.ScanCode(), MAPVK_VSC_TO_VK) : key.Vkey());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(key.Modifiers(), key.Vkey(), key.ScanCode());
         }
     };
 
@@ -45,9 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
         {
-            const auto leftVkey = lhs.Vkey() == 0 ? MapVirtualKeyW(lhs.ScanCode(), MAPVK_VSC_TO_VK) : lhs.Vkey();
-            const auto rightVkey = rhs.Vkey() == 0 ? MapVirtualKeyW(rhs.ScanCode(), MAPVK_VSC_TO_VK) : rhs.Vkey();
-            return lhs.Modifiers() == rhs.Modifiers() && leftVkey == rightVkey;
+            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey() && lhs.ScanCode() == rhs.ScanCode();
         }
     };
 
