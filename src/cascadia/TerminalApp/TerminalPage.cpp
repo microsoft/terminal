@@ -1334,7 +1334,7 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl, *&tab);
+            _RegisterTerminalEvents(newControl, tab);
 
             _UnZoomIfNeeded();
 
