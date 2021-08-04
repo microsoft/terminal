@@ -41,6 +41,8 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(UnbindKeybindings);
 
+        TEST_METHOD(LayerScancodeKeybindings);
+
         TEST_METHOD(TestArbitraryArgs);
         TEST_METHOD(TestSplitPaneArgs);
 
@@ -105,13 +107,24 @@ namespace SettingsModelLocalTests
             },
         };
 
+        // Use the KeyChordHash and KeyChordEquality to compare if two
+        // KeyChord's are the same. If you try to just directly compare them
+        // with VERIFY_ARE_EQUAL, that will always fail. It'll revert to the
+        // default winrt equality operator, which will compare if they point to
+        // literally the same object (they won't).
+        implementation::KeyChordHash hash;
+        implementation::KeyChordEquality equals;
         for (const auto& tc : testCases)
         {
+            Log::Comment(NoThrowString().Format(L"Testing case:\"%s\"", tc.expected.data()));
+
             KeyChord expectedKeyChord{ tc.modifiers, tc.vkey, tc.scanCode };
             const auto actualString = KeyChordSerialization::ToString(expectedKeyChord);
             VERIFY_ARE_EQUAL(tc.expected, actualString);
+
             const auto actualKeyChord = KeyChordSerialization::FromString(actualString);
-            VERIFY_ARE_EQUAL(expectedKeyChord, actualKeyChord);
+            VERIFY_ARE_EQUAL(hash(expectedKeyChord), hash(actualKeyChord));
+            VERIFY_IS_TRUE(equals(expectedKeyChord, actualKeyChord));
         }
     }
 
@@ -721,5 +734,32 @@ namespace SettingsModelLocalTests
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control | VirtualKeyModifiers::Shift, static_cast<int32_t>('P'), 0 }, kbd);
         }
+    }
+
+    void KeyBindingsTests::LayerScancodeKeybindings()
+    {
+        Log::Comment(L"Layering a keybinding with a character literal on top of"
+                     L" an equivalent sc() key should replace it.");
+
+        // Wrap the first one in `R"!(...)!"` because it has `()` internally.
+        const std::string bindings0String{ R"!([ { "command": "quakeMode", "keys":"win+sc(41)" } ])!" };
+        const std::string bindings1String{ R"([ { "keys": "win+`", "command": { "action": "globalSummon", "monitor": "any" } } ])" };
+        const std::string bindings2String{ R"([ { "keys": "ctrl+shift+`", "command": { "action": "quakeMode" } } ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+        const auto bindings1Json = VerifyParseSucceeded(bindings1String);
+        const auto bindings2Json = VerifyParseSucceeded(bindings2String);
+
+        auto actionMap = winrt::make_self<implementation::ActionMap>();
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+
+        actionMap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+
+        actionMap->LayerJson(bindings1Json);
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size(), L"Layering the second action should replace the first one.");
+
+        actionMap->LayerJson(bindings2Json);
+        VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
     }
 }
