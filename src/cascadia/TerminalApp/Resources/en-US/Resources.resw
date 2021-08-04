@@ -226,7 +226,8 @@
     <value>Warnings were found while parsing your keybindings:</value>
   </data>
   <data name="TooManyKeysForChord" xml:space="preserve">
-    <value>&amp;#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
+    <value>&#x2022; Found a keybinding with too many strings for the "keys" array. There should only be one string value in the "keys" array.</value>
+
     <comment>{Locked="\"keys\"","&amp;#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
   <data name="FailedToParseSubCommands" xml:space="preserve">
