@@ -230,15 +230,9 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
-
-    const auto oldTop = _mutableViewport.Top();
-
     const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
     COORD bufferSize{ viewportSize.X, newBufferHeight };
-
-    // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
@@ -1070,7 +1064,12 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
-    _NotifyTerminalCursorPositionChanged();
+    // Firing the CursorPositionChanged event is very expensive so we try not to do that when
+    // the cursor does not need to be redrawn.
+    if (!cursor.IsDeferDrawing())
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

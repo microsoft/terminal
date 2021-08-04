@@ -259,11 +259,12 @@ COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
     _blinkingState.RecordBlinkingUsage(attr);
-    return attr.CalculateRgbColors(Get256ColorTable(),
-                                   GetDefaultForeground(),
-                                   GetDefaultBackground(),
-                                   IsScreenReversed(),
-                                   _blinkingState.IsBlinkingFaint());
+    return attr.CalculateRgbColors(
+        GetColorTable(),
+        GetDefaultForeground(),
+        GetDefaultBackground(),
+        IsScreenReversed(),
+        _blinkingState.IsBlinkingFaint());
 }
 
 // Method Description:

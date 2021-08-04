@@ -18,6 +18,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty KeyChordListener::_KeysProperty{ nullptr };
 
+    // The ModifierKeys have been sorted by value.
+    // Not just binary search, but also your CPU likes sorted data.
     static constexpr std::array ModifierKeys{
         VirtualKey::Shift,
         VirtualKey::Control,
@@ -129,7 +131,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         // Permitted key events are used to update _Keys
-        Keys({ modifiers, static_cast<int32_t>(key) });
+        Keys({ modifiers, static_cast<int32_t>(key), 0 });
         e.Handled(true);
     }
 }

@@ -12,6 +12,7 @@
 #include "SwitchToTabArgs.g.h"
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
+#include "MovePaneArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 #include "SendInputArgs.g.h"
 #include "SplitPaneArgs.g.h"
@@ -448,6 +449,65 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         size_t Hash() const
         {
             return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(FocusDirection());
+        }
+    };
+
+    struct MovePaneArgs : public MovePaneArgsT<MovePaneArgs>
+    {
+        MovePaneArgs() = default;
+        MovePaneArgs(Model::FocusDirection direction) :
+            _Direction{ direction } {};
+
+        ACTION_ARG(Model::FocusDirection, Direction, FocusDirection::None);
+
+        static constexpr std::string_view DirectionKey{ "direction" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<MovePaneArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Direction == _Direction;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<MovePaneArgs>();
+            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            if (args->Direction() == FocusDirection::None)
+            {
+                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+            }
+            else
+            {
+                return { *args, {} };
+            }
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<MovePaneArgs>(val) };
+            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<MovePaneArgs>() };
+            copy->_Direction = _Direction;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Direction());
         }
     };
 
@@ -1647,6 +1707,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(NewTerminalArgs);
     BASIC_FACTORY(NewTabArgs);
     BASIC_FACTORY(MoveFocusArgs);
+    BASIC_FACTORY(MovePaneArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);

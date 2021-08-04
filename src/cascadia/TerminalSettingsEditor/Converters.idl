@@ -4,63 +4,22 @@
 namespace Microsoft.Terminal.Settings.Editor
 {
 
-    runtimeclass ColorLightenConverter : [default] Windows.UI.Xaml.Data.IValueConverter
+    [bindable]
+    [default_interface] static runtimeclass Converters
     {
-        ColorLightenConverter();
-    };
 
-    runtimeclass FontWeightConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        FontWeightConverter();
-    };
-
-    runtimeclass InvertedBooleanConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        InvertedBooleanConverter();
-    };
-
-    runtimeclass InvertedBooleanToVisibilityConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        InvertedBooleanToVisibilityConverter();
-    };
-
-    runtimeclass ColorToBrushConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        ColorToBrushConverter();
-    };
-
-    runtimeclass ColorToHexConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        ColorToHexConverter();
-    };
-
-    runtimeclass PercentageConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        PercentageConverter();
-    };
-
-    runtimeclass PercentageSignConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        PercentageSignConverter();
-    };
-
-    runtimeclass StringIsEmptyConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        StringIsEmptyConverter();
-    };
-
-    runtimeclass PaddingConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        PaddingConverter();
-    };
-
-    runtimeclass StringIsNotDesktopConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        StringIsNotDesktopConverter();
-    };
-
-    runtimeclass DesktopWallpaperToEmptyStringConverter : [default] Windows.UI.Xaml.Data.IValueConverter
-    {
-        DesktopWallpaperToEmptyStringConverter();
-    };
+        static String AppendPercentageSign(Double value);
+        static Windows.UI.Text.FontWeight DoubleToFontWeight(Double value);
+        static Windows.UI.Xaml.Media.SolidColorBrush ColorToBrush(Windows.UI.Color color);
+        static Double FontWeightToDouble(Windows.UI.Text.FontWeight fontWeight);
+        static Boolean InvertBoolean(Boolean value);
+        static Windows.UI.Xaml.Visibility InvertedBooleanToVisibility(Boolean value);
+        static Windows.UI.Color LightenColor(Windows.UI.Color color);
+        static Double MaxValueFromPaddingString(String paddingString);
+        static Int32 PercentageToPercentageValue(Double value);
+        static Double PercentageValueToPercentage(Double value);
+        static Boolean StringsAreNotEqual(String expected, String actual);
+        static Windows.UI.Xaml.Visibility StringNotEmptyToVisibility(String value);
+        static String StringFallBackToEmptyString(String expected, String actual);
+    }
 }

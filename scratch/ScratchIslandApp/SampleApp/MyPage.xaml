@@ -19,10 +19,15 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Button x:Name="TabRow"
-                Grid.Row="0">
-            &quot;Tabs&quot;
-        </Button>
+        <StackPanel Orientation="Horizontal">
+            <TextBox x:Name="GuidInput"
+                     Width="400"
+                     PlaceholderText="{}{guid here}" />
+            <Button Grid.Row="0">
+                Create
+            </Button>
+
+        </StackPanel>
 
         <Grid x:Name="TabContent"
               Grid.Row="1"
