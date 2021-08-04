@@ -153,7 +153,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool _focused{ false };
         bool _initializedTerminal{ false };
 
-        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
         std::shared_ptr<ThrottledFuncLeading> _playWarningBell;
 
         struct ScrollBarUpdate
