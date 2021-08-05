@@ -104,9 +104,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TermControl::Dispatcher().
         auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
 
-        // These three throttled functions are triggered by terminal output and interact with the UI.
+        // These four throttled functions are triggered by terminal output and interact with the UI.
         // Since Close() is the point after which we are removed from the UI, but before the
         // destructor has run, we MUST check control->_IsClosing() before actually doing anything.
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
+            dispatcher,
+            TsfRedrawInterval,
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                {
+                    control->TSFInputControl().TryRedrawCanvas();
+                }
+            });
 
         _playWarningBell = std::make_shared<ThrottledFuncLeading>(
             dispatcher,
@@ -1631,14 +1640,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
                                              const IInspectable& /*args*/)
     {
-        // Prior to GH#10187, this fired a trailing throttled func to update the
-        // TSF canvas only every 100ms. Now, the throttling occurs on the
-        // ControlCore side. If we're told to update the cursor position, we can
-        // just go ahead and do it.
-        if (!_IsClosing())
-        {
-            TSFInputControl().TryRedrawCanvas();
-        }
+        _tsfTryRedrawCanvas->Run();
     }
 
     hstring TermControl::Title()
