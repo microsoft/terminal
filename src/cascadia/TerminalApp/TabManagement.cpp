@@ -56,7 +56,7 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
+    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
     try
     {
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
@@ -89,8 +89,10 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        return S_OK;
     }
-    CATCH_LOG();
+    CATCH_RETURN();
 
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
