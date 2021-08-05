@@ -188,7 +188,7 @@ namespace winrt::TerminalApp::implementation
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
-        void _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromSettings(GUID profileGuid, const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(GUID profileGuid, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
@@ -344,7 +344,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::TerminalSettings _originalSettings{ nullptr };
 
-        void _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
+        HRESULT _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
 
         void _WindowRenamerActionClick(const IInspectable& sender, const IInspectable& eventArgs);

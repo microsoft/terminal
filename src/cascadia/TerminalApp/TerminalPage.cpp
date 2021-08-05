@@ -19,6 +19,8 @@
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "../inc/WindowingBehavior.h"
 
+#include <til/latch.h>
+
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
@@ -348,34 +350,12 @@ namespace winrt::TerminalApp::implementation
                 winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
             }
             // If we failed to start the listener, it will throw.
-            // We should fail fast here or the Terminal will be in a very strange state.
-            // We only start the listener if the Terminal was started with the COM server
-            // `-Embedding` flag and we make no tabs as a result.
-            // Therefore, if the listener cannot start itself up to make that tab with
-            // the inbound connection that caused the COM activation in the first place...
-            // we would be left with an empty terminal frame with no tabs.
-            // Instead, crash out so COM sees the server die and things unwind
-            // without a weird empty frame window.
+            // We don't want to fail fast here because if a peasant has some trouble with
+            // starting the listener, we don't want it to crash and take all its tabs down
+            // with it.
             catch (...)
             {
-                // However, we cannot always fail fast because of MSFT:33501832. Sometimes the COM catalog
-                // tears the state between old and new versions and fails here for that reason.
-                // As we're always becoming an inbound server in the monarch, even when COM didn't strictly
-                // ask us yet...we might just crash always.
-                // Instead... we're going to differentiate. If COM started us... we will fail fast
-                // so it sees the process die and falls back.
-                // If we were just starting normally as a Monarch and opportunistically listening for
-                // inbound connections... then we'll just log the failure and move on assuming
-                // the version state is torn and will fix itself whenever the packaging upgrade
-                // tasks decide to clean up.
-                if (_isEmbeddingInboundListener)
-                {
-                    FAIL_FAST_CAUGHT_EXCEPTION();
-                }
-                else
-                {
-                    LOG_CAUGHT_EXCEPTION();
-                }
+                LOG_CAUGHT_EXCEPTION();
             }
         }
     }
@@ -759,7 +739,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            this->_OpenNewTab(newTerminalArgs);
+            LOG_IF_FAILED(this->_OpenNewTab(newTerminalArgs));
         }
     }
 
@@ -2405,13 +2385,38 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
-    void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    HRESULT TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
     {
-        // TODO: GH 9458 will give us more context so we can try to choose a better profile.
-        _OpenNewTab(nullptr, connection);
+        // We need to be on the UI thread in order for _OpenNewTab to run successfully.
+        // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
+        // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
+        // and wait on it hence the locking mechanism.
+        if (Dispatcher().HasThreadAccess())
+        {
+            // TODO: GH 9458 will give us more context so we can try to choose a better profile.
+            auto hr = _OpenNewTab(nullptr, connection);
 
-        // Request a summon of this window to the foreground
-        _SummonWindowRequestedHandlers(*this, nullptr);
+            // Request a summon of this window to the foreground
+            _SummonWindowRequestedHandlers(*this, nullptr);
+
+            return hr;
+        }
+        else
+        {
+            til::latch latch{ 1 };
+            HRESULT finalVal = S_OK;
+
+            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
+                finalVal = _OpenNewTab(nullptr, connection);
+
+                _SummonWindowRequestedHandlers(*this, nullptr);
+
+                latch.count_down();
+            });
+
+            latch.wait();
+            return finalVal;
+        }
     }
 
     // Method Description:
