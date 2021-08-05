@@ -525,7 +525,7 @@ void FontBuffer::_fillUnusedCharacters()
     }
 }
 
-auto FontBuffer::_generateErrorGlyph() -> std::array<uint16_t, MAX_HEIGHT>
+std::array<uint16_t, FontBuffer::MAX_HEIGHT> FontBuffer::_generateErrorGlyph()
 {
     // We start with a bit pattern for a reverse question mark covering the
     // maximum font resolution that we might need.
