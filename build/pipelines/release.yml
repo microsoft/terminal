@@ -280,15 +280,15 @@ jobs:
     submodules: true
     persistCredentials: True
   - task: DownloadBuildArtifacts@0
-      displayName: Download Build Artifacts
-      inputs:
-        artifactName: appx-x64-Release
-        downloadPath: $(artifactsPath)
-        buildType: 'specific'
-        project: $(System.TeamProjectId)
-        pipeline: 70913
-        buildVersionToDownload: 'specific'
-        buildId: 37520569
+    displayName: Download Build Artifacts
+    inputs:
+      artifactName: appx-x64-Release
+      downloadPath: $(artifactsPath)
+      buildType: 'specific'
+      project: $(System.TeamProjectId)
+      pipeline: 70913
+      buildVersionToDownload: 'specific'
+      buildId: 37520569
   - task: PowerShell@2
     displayName: Rename and packages to unzip
     inputs:
