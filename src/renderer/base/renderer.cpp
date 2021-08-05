@@ -550,9 +550,9 @@ void Renderer::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern, const 
     TriggerRedrawAll();
 }
 
-bool Renderer::_IsSoftFontChar(const std::wstring_view v) const
+bool Renderer::s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar)
 {
-    return v.size() == 1 && v.front() >= _firstSoftFontChar && v.front() <= _lastSoftFontChar;
+    return v.size() == 1 && v.front() >= firstSoftFontChar && v.front() <= lastSoftFontChar;
 }
 
 // Routine Description:
@@ -770,7 +770,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
         // Retrieve the first pattern id
         auto patternIds = _pData->GetPatternId(target);
         // Determine whether we're using a soft font.
-        auto usingSoftFont = _IsSoftFontChar(it->Chars());
+        auto usingSoftFont = s_IsSoftFontChar(it->Chars(), _firstSoftFontChar, _lastSoftFontChar);
 
         // And hold the point where we should start drawing.
         auto screenPoint = target;
@@ -817,7 +817,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
             {
                 COORD thisPoint{ screenPoint.X + gsl::narrow<SHORT>(cols), screenPoint.Y };
                 const auto thisPointPatterns = _pData->GetPatternId(thisPoint);
-                const auto thisUsingSoftFont = _IsSoftFontChar(it->Chars());
+                const auto thisUsingSoftFont = s_IsSoftFontChar(it->Chars(), _firstSoftFontChar, _lastSoftFontChar);
                 const auto changedPatternOrFont = patternIds != thisPointPatterns || usingSoftFont != thisUsingSoftFont;
                 if (color != it->TextAttr() || changedPatternOrFont)
                 {

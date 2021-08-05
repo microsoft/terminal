@@ -147,7 +147,7 @@ namespace Microsoft::Console::Render
 
         const size_t _firstSoftFontChar = 0xEF20;
         size_t _lastSoftFontChar = 0;
-        bool _IsSoftFontChar(const std::wstring_view v) const;
+        static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
