@@ -299,7 +299,7 @@ jobs:
       workingDirectory: $(System.ArtifactsDirectory)\appx-x64-Release
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: '**/*.zip'
+      archiveFilePatterns: '$(System.ArtifactsDirectory)\appx-x64-Release\*.zip'
       cleanDestinationFolder: true
       overwriteExistingFiles: true
       destinationFolder: $(Build.BinariesDirectory)
