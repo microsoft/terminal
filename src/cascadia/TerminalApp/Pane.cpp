@@ -1015,6 +1015,7 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
 // - Attempts to add the provided pane as a split of the current pane.
 // Arguments:
 // - pane: the new pane to add
+// - splitType: How the pane should be attached
 // Return Value:
 // - the new reference to the child created from the current pane.
 std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState splitType)
@@ -1040,12 +1041,12 @@ std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState sp
 }
 
 // Method Description:
-// - Attempts to find one of our children matching `id,` if found remove the
-//   pane from the tree and return it.
+// - Attempts to find the parent of the target pane,
+//   if found remove the pane from the tree and return it.
 // - If the removed pane was (or contained the focus) the first sibling will
-//   gain focus
+//   gain focus.
 // Arguments:
-// - The id of the pane to close
+// - pane: the pane to detach
 // Return Value:
 // - The removed pane, if found.
 std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
