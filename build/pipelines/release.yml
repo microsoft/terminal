@@ -19,7 +19,7 @@ parameters:
   - name: buildTerminal
     displayName: "Build Windows Terminal MSIX"
     type: boolean
-    default: true
+    default: false
   - name: buildTerminalVPack
     displayName: "Build Windows Terminal VPack"
     type: boolean
@@ -31,7 +31,7 @@ parameters:
   - name: pgoBuildMode
     displayName: "PGO Build Mode"
     type: string
-    default: Optimize
+    default: None
     values:
       - Optimize
       - Instrument
@@ -45,8 +45,8 @@ parameters:
     type: object
     default:
       - x64
-      - x86
-      - arm64
+      # - x86
+      # - arm64
 
 variables:
   TerminalInternalPackageVersion: "0.0.7"
