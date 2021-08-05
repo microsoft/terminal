@@ -300,7 +300,13 @@ jobs:
       workingDirectory: $(System.ArtifactsDirectory)\appx-x64-Release
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\appx-x64-Release\*.zip'
+      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\*.zip'
+      cleanDestinationFolder: true
+      overwriteExistingFiles: true
+      destinationFolder: $(Build.BinariesDirectory)
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\*.msix'
       cleanDestinationFolder: true
       overwriteExistingFiles: true
       destinationFolder: $(Build.BinariesDirectory)
