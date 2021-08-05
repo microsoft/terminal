@@ -164,6 +164,10 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::TestScrollWithMouse()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         auto [settings, conn] = _createSettingsAndConnection();
@@ -258,6 +262,10 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::CreateSubsequentSelectionWithDragging()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         // This is a test for GH#9725
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
