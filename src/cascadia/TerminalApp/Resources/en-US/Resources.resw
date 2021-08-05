@@ -662,6 +662,9 @@
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Open a new tab in given starting directory</value>
   </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Split Tab</value>
+  </data>
   <data name="DropPathTabNewWindow.Text" xml:space="preserve">
     <value>Open a new window with given starting directory</value>
   </data>

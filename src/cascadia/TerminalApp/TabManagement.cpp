@@ -192,6 +192,16 @@ namespace winrt::TerminalApp::implementation
             }
         });
 
+        newTabImpl->SplitTabRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_SplitTab(*tab);
+            }
+        });
+
         auto tabViewItem = newTabImpl->TabViewItem();
         _tabView.TabItems().Append(tabViewItem);
 
@@ -353,6 +363,20 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             }
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
+    // - Sets the specified tab as the focused tab and splits its active pane
+    // Arguments:
+    // - tab: tab to split
+    void TerminalPage::_SplitTab(TerminalTab& tab)
+    {
+        try
+        {
+            _SetFocusedTab(tab);
+            _SplitPane(tab, SplitState::Automatic, SplitType::Duplicate);
         }
         CATCH_LOG();
     }

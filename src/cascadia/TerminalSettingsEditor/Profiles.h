@@ -20,6 +20,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         Model::TerminalSettings TermSettings() const;
 
+        void SetAcrylicOpacityPercentageValue(double value)
+        {
+            AcrylicOpacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+        };
+
+        void SetPadding(double value)
+        {
+            Padding(to_hstring(value));
+        }
+
         // starting directory
         bool UseParentProcessDirectory();
         void UseParentProcessDirectory(const bool useParent);

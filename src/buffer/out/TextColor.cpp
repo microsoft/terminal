@@ -192,21 +192,24 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const 
             unsigned long index;
             return _BitScanForward(&index, mask) ? til::at(colorTable, static_cast<size_t>(index) + 8) : defaultColor; // 5.
 #elif _M_AMD64
-            // If you look closely this SSE2 algorithm is the exact same as the AVX one.
+            // If you look closely this SSE2 algorithm is the same as the AVX one.
             // The two differences are that we need to:
             // * do everything twice, because SSE is limited to 128 bits and not 256.
             // * use _mm_packs_epi32 to merge two 128 bits vectors into one in step 3.5.
             //   _mm_packs_epi32 takes two SSE registers and truncates all 8 DWORDs into 8 WORDs,
             //   the latter of which fits into a single register (which is then used in the identical step 4).
+            // * since the result are now 8 WORDs, we need to use _mm_movemask_epi8 (there's no 16-bit variant),
+            //   which unlike AVX's step 4 results in in something like 0b0000110000000000.
+            //   --> the index returned by _BitScanForward must be divided by 2.
             const auto haystack1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 0));
             const auto haystack2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 4));
             const auto needle = _mm_set1_epi32(__builtin_bit_cast(int, defaultColor));
             const auto result1 = _mm_cmpeq_epi32(haystack1, needle);
             const auto result2 = _mm_cmpeq_epi32(haystack2, needle);
             const auto result = _mm_packs_epi32(result1, result2); // 3.5
-            const auto mask = _mm_movemask_ps(_mm_castsi128_ps(result));
+            const auto mask = _mm_movemask_epi8(result);
             unsigned long index;
-            return _BitScanForward(&index, mask) ? til::at(colorTable, static_cast<size_t>(index) + 8) : defaultColor;
+            return _BitScanForward(&index, mask) ? til::at(colorTable, static_cast<size_t>(index / 2) + 8) : defaultColor;
 #else
             for (size_t i = 0; i < 8; i++)
             {
