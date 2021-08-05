@@ -283,7 +283,7 @@ jobs:
     displayName: Download Build Artifacts
     inputs:
       artifactName: appx-x64-Release
-      downloadPath: $(artifactsPath)
+      downloadPath: $(System.ArtifactsDirectory)
       buildType: 'specific'
       project: $(System.TeamProjectId)
       pipeline: 70913
