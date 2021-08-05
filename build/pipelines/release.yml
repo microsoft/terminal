@@ -296,6 +296,7 @@ jobs:
       script: >-
         # Rename to known/fixed name
         Get-ChildItem CascadiaPackage*.msix | Rename-Item -NewName { $_.name -replace '.msix','.zip' }
+        Get-ChildItem -Recurse
       workingDirectory: $(System.ArtifactsDirectory)\appx-x64-Release
   - task: ExtractFiles@1
     inputs:
