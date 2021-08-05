@@ -209,6 +209,10 @@ namespace winrt::TerminalApp::implementation
                 self->_ReloadSettings();
             }
         });
+
+        _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
+            _reloadSettings->Run();
+        });
     }
 
     // Method Description:
