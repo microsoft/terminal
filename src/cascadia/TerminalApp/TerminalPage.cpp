@@ -2362,20 +2362,18 @@ namespace winrt::TerminalApp::implementation
         else
         {
             til::latch latch{ 1 };
-            std::optional<HRESULT> finalVal{};
+            HRESULT finalVal = S_OK;
 
             Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-                auto hr = _OpenNewTab(nullptr, connection);
+                finalVal = _OpenNewTab(nullptr, connection);
 
                 _SummonWindowRequestedHandlers(*this, nullptr);
-
-                finalVal.emplace(std::move(hr));
 
                 latch.count_down();
             });
 
             latch.wait();
-            return *finalVal;
+            return finalVal;
         }
     }
 

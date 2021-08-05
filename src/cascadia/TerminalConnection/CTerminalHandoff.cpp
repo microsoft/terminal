@@ -12,7 +12,7 @@ static NewHandoffFunction _pfnHandoff = nullptr;
 // The registration ID of the class object for clean up later
 static DWORD g_cTerminalHandoffRegistration = 0;
 // Mutex so we only do start/stop/establish one at a time.
-static std::mutex _mtx{};
+static std::shared_mutex _mtx;
 
 // Routine Description:
 // - Starts listening for TerminalHandoff requests by registering
@@ -21,10 +21,10 @@ static std::mutex _mtx{};
 // - pfnHandoff - Function to callback when a handoff is received
 // Return Value:
 // - S_OK, E_NOT_VALID_STATE (start called when already started) or relevant COM registration error.
-HRESULT CTerminalHandoff::s_StartListening(NewHandoffFunction pfnHandoff) noexcept
+HRESULT CTerminalHandoff::s_StartListening(NewHandoffFunction pfnHandoff)
 try
 {
-    std::unique_lock<std::mutex> lock{ _mtx };
+    std::unique_lock lock{ _mtx };
 
     RETURN_HR_IF(E_NOT_VALID_STATE, _pfnHandoff != nullptr);
 
@@ -50,9 +50,9 @@ CATCH_RETURN()
 // - <none>
 // Return Value:
 // - S_OK, E_NOT_VALID_STATE (stop called when not started), or relevant COM class revoke error
-HRESULT CTerminalHandoff::s_StopListening() noexcept
+HRESULT CTerminalHandoff::s_StopListening()
 {
-    std::unique_lock<std::mutex> lock{ _mtx };
+    std::unique_lock lock{ _mtx };
 
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, _pfnHandoff);
 
@@ -97,7 +97,7 @@ static HRESULT _duplicateHandle(const HANDLE in, HANDLE& out) noexcept
 // - E_NOT_VALID_STATE if a event handler is not registered before calling. `::DuplicateHandle`
 //   error codes if we cannot manage to make our own copy of handles to retain. Or S_OK/error
 //   from the registered handler event function.
-HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
+HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client)
 {
     // Stash a local copy of _pfnHandoff before we stop listening.
     auto localPfnHandoff = _pfnHandoff;
@@ -106,7 +106,7 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
     // COM does not automatically clean that up for us. We must do it.
     s_StopListening();
 
-    std::unique_lock<std::mutex> lock{ _mtx };
+    std::unique_lock lock{ _mtx };
 
     // Report an error if no one registered a handoff function before calling this.
     RETURN_HR_IF_NULL(E_NOT_VALID_STATE, localPfnHandoff);
