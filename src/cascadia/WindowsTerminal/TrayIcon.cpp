@@ -73,7 +73,7 @@ void TrayIcon::CreateTrayIcon()
 void TrayIcon::ShowTrayContextMenu(const til::point coord,
                                    IMapView<uint64_t, winrt::hstring> peasants)
 {
-    if (auto hmenu = _CreateTrayContextMenu(peasants))
+    if (const auto hMenu = _CreateTrayContextMenu(peasants))
     {
         // We'll need to set our window to the foreground before calling
         // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
@@ -93,7 +93,7 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
             uFlags |= TPM_LEFTALIGN;
         }
 
-        TrackPopupMenuEx(hmenu, uFlags, gsl::narrow<int>(coord.x()), gsl::narrow<int>(coord.y()), _owningHwnd, NULL);
+        TrackPopupMenuEx(hMenu, uFlags, gsl::narrow<int>(coord.x()), gsl::narrow<int>(coord.y()), _owningHwnd, NULL);
     }
 }
 
@@ -105,19 +105,19 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
 // - The handle to the newly created context menu.
 HMENU TrayIcon::_CreateTrayContextMenu(IMapView<uint64_t, winrt::hstring> peasants)
 {
-    auto hmenu = CreatePopupMenu();
-    if (hmenu)
+    auto hMenu = CreatePopupMenu();
+    if (hMenu)
     {
         MENUINFO mi{};
         mi.cbSize = sizeof(MENUINFO);
         mi.fMask = MIM_STYLE | MIM_APPLYTOSUBMENUS | MIM_MENUDATA;
         mi.dwStyle = MNS_NOTIFYBYPOS;
         mi.dwMenuData = NULL;
-        SetMenuInfo(hmenu, &mi);
+        SetMenuInfo(hMenu, &mi);
 
         // Focus Current Terminal Window
-        AppendMenu(hmenu, MF_STRING, gsl::narrow<UINT_PTR>(TrayMenuItemAction::FocusTerminal), RS_(L"TrayIconFocusTerminal").c_str());
-        AppendMenu(hmenu, MF_SEPARATOR, 0, L"");
+        AppendMenu(hMenu, MF_STRING, gsl::narrow<UINT_PTR>(TrayMenuItemAction::FocusTerminal), RS_(L"TrayIconFocusTerminal").c_str());
+        AppendMenu(hMenu, MF_SEPARATOR, 0, L"");
 
         // Submenu for Windows
         if (auto submenu = CreatePopupMenu())
@@ -142,10 +142,10 @@ HMENU TrayIcon::_CreateTrayContextMenu(IMapView<uint64_t, winrt::hstring> peasan
             submenuInfo.dwMenuData = (UINT_PTR)TrayMenuItemAction::SummonWindow;
             SetMenuInfo(submenu, &submenuInfo);
 
-            AppendMenu(hmenu, MF_POPUP, (UINT_PTR)submenu, RS_(L"TrayIconWindowSubmenu").c_str());
+            AppendMenu(hMenu, MF_POPUP, (UINT_PTR)submenu, RS_(L"TrayIconWindowSubmenu").c_str());
         }
     }
-    return hmenu;
+    return hMenu;
 }
 
 // Method Description:
