@@ -1238,6 +1238,33 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        _SplitPane(*focusedTab, splitType, splitMode, splitSize, newTerminalArgs);
+    }
+
+    // Method Description:
+    // - Split the focused pane of the given tab, either horizontally or vertically, and place the
+    //   given TermControl into the newly created pane.
+    // - If splitType == SplitState::None, this method does nothing.
+    // Arguments:
+    // - tab: The tab that is going to be split.
+    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
+    //   new pane should be split from its parent.
+    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    void TerminalPage::_SplitPane(TerminalTab& tab,
+                                  const SplitState splitType,
+                                  const SplitType splitMode,
+                                  const float splitSize,
+                                  const NewTerminalArgs& newTerminalArgs)
+    {
+        // Do nothing if we're requesting no split.
+        if (splitType == SplitState::None)
+        {
+            return;
+        }
+
         try
         {
             TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -1246,12 +1273,12 @@ namespace winrt::TerminalApp::implementation
 
             if (splitMode == SplitType::Duplicate)
             {
-                std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
+                std::optional<GUID> current_guid = tab.GetFocusedProfile();
                 if (current_guid)
                 {
                     profileFound = true;
                     controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
-                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
@@ -1287,10 +1314,10 @@ namespace winrt::TerminalApp::implementation
             auto realSplitType = splitType;
             if (realSplitType == SplitState::Automatic)
             {
-                realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
+                realSplitType = tab.PreCalculateAutoSplit(availableSpace);
             }
 
-            const auto canSplit = focusedTab->PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
+            const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
             if (!canSplit)
             {
                 return;
@@ -1299,11 +1326,11 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl, *focusedTab);
+            _RegisterTerminalEvents(newControl, tab);
 
             _UnZoomIfNeeded();
 
-            focusedTab->SplitPane(realSplitType, splitSize, realGuid, newControl);
+            tab.SplitPane(realSplitType, splitSize, realGuid, newControl);
         }
         CATCH_LOG();
     }
