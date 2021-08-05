@@ -33,7 +33,8 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
 
 // The minimum delay between updating the TSF input control.
-constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
+// This is already throttled primarily in the ControlCore, with a timeout of 100ms. We're adding another smaller one here, as the (potentially x-proc) call will come in off the UI thread
+constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(8);
 
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
@@ -104,19 +105,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TermControl::Dispatcher().
         auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
 
-        // These four throttled functions are triggered by terminal output and interact with the UI.
+        // These three throttled functions are triggered by terminal output and interact with the UI.
         // Since Close() is the point after which we are removed from the UI, but before the
         // destructor has run, we MUST check control->_IsClosing() before actually doing anything.
-        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
-            dispatcher,
-            TsfRedrawInterval,
-            [weakThis = get_weak()]() {
-                if (auto control{ weakThis.get() }; !control->_IsClosing())
-                {
-                    control->TSFInputControl().TryRedrawCanvas();
-                }
-            });
-
         _playWarningBell = std::make_shared<ThrottledFuncLeading>(
             dispatcher,
             TerminalWarningBellInterval,
@@ -1637,10 +1628,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   to be where the current cursor position is.
     // Arguments:
     // - N/A
-    void TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
-                                             const IInspectable& /*args*/)
+    winrt::fire_and_forget TermControl::_CursorPositionChanged(const IInspectable& /*sender*/,
+                                                               const IInspectable& /*args*/)
     {
-        _tsfTryRedrawCanvas->Run();
+        // Prior to GH#10187, this fired a trailing throttled func to update the
+        // TSF canvas only every 100ms. Now, the throttling occurs on the
+        // ControlCore side. If we're told to update the cursor position, we can
+        // just go ahead and do it.
+        // This can come in off the COM thread - hop back to the UI thread.
+        auto weakThis{ get_weak() };
+        co_await resume_foreground(Dispatcher());
+        if (auto control{ weakThis.get() }; !control->_IsClosing())
+        {
+            control->TSFInputControl().TryRedrawCanvas();
+        }
     }
 
     hstring TermControl::Title()
