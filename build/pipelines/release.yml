@@ -270,12 +270,8 @@ jobs:
 
 - job: ComplianceTasks
   displayName: Validate security and compliance
-  # pool:
-  #   vmImage: 'windows-2019'
-  pool: 
-    name: WinDevPool-L
-    demands: 
-    - ImageOverride -equals MMS2019
+  pool:
+     vmImage: 'windows-2019'
   #dependsOn: Build
   steps:
   - checkout: self
