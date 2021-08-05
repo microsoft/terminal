@@ -306,7 +306,7 @@ jobs:
    # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
   - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
     displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
-  - task: PkgESSecComp@12
+  - task: PkgESSecComp@10
     displayName: 'Security and Compliance tasks'
     inputs:
       fileNewBugs: false
