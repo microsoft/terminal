@@ -68,6 +68,7 @@ jobs:
             BuildPlatform: ${{ platform }}
   displayName: Build
   cancelTimeoutInMinutes: 1
+  condition: false
   steps:
   - checkout: self
     clean: true
@@ -266,10 +267,40 @@ jobs:
       SearchPattern: '**/*.pdb'
       IndexSources: false
       SymbolServerType: TeamServices
-  # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
+
+- job: ComplianceTasks
+  displayName: Validate security and compliance
+  pool:
+    vmImage: 'windows-2019'
+  dependsOn: Build
+  - task: DownloadBuildArtifacts@0
+      displayName: Download Build Artifacts
+      inputs:
+        artifactName: appx-x64-Release
+        downloadPath: $(artifactsPath)
+        buildType: 'specific'
+        project: $(System.TeamProjectId)
+        pipeline: 70913
+        buildVersionToDownload: 'specific'
+        buildId: 37520569
+  - task: PowerShell@2
+    displayName: Rename and packages to unzip
+    inputs:
+      targetType: inline
+      script: >-
+        # Rename to known/fixed name
+        Get-ChildItem CascadiaPackage*.msix | Rename-Item -NewName { $_.name -replace '.msix','.zip' }
+      workingDirectory: $(System.ArtifactsDirectory)\appx-x64-Release
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: '**/*.zip'
+      cleanDestinationFolder: true
+      overwriteExistingFiles: true
+      destinationFolder: $(Build.BinariesDirectory)
+   # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
   - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
     displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
-  - task: PkgESSecComp@10
+  - task: PkgESSecComp@12
     displayName: 'Security and Compliance tasks'
     inputs:
       fileNewBugs: false
