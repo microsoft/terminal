@@ -250,6 +250,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_dispatcher)
             {
                 // _closing isn't atomic and may only be accessed from the main thread.
+                //
+                // Though, the unit tests don't actually run in TAEF's main
+                // thread, so we don't care when we're running in tests.
                 assert(_inUnitTests || _dispatcher.HasThreadAccess());
             }
 #endif
