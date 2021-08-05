@@ -875,9 +875,21 @@ namespace winrt::TerminalApp::implementation
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
-            [this, settingsBasename = settingsPath.filename(), stateBasename = statePath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
-                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
+            [this, settingsBasename = settingsPath.filename(), stateBasename = statePath.filename()](wil::FolderChangeEvent event, PCWSTR fileModified) {
+                // Filter events down to just what we need.
+                // Specifically we don't need RenameOldName events (we only need NewName),
+                // as well as Removed (in case someone accidentally deletes settings.json).
+                switch (event)
+                {
+                case wil::FolderChangeEvent::Added:
+                case wil::FolderChangeEvent::Modified:
+                case wil::FolderChangeEvent::RenameNewName:
+                    break;
+                default:
+                    return;
+                }
 
+                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
