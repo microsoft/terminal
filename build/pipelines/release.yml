@@ -270,8 +270,12 @@ jobs:
 
 - job: ComplianceTasks
   displayName: Validate security and compliance
-  pool:
-    vmImage: 'windows-2019'
+  # pool:
+  #   vmImage: 'windows-2019'
+  pool: 
+    name: WinDevPool-L
+    demands: 
+    - ImageOverride -equals MMS2019
   #dependsOn: Build
   steps:
   - checkout: self
@@ -289,21 +293,6 @@ jobs:
       pipeline: 70913
       buildVersionToDownload: 'specific'
       buildId: 37520569
-  - task: PowerShell@2
-    displayName: Rename and packages to unzip
-    inputs:
-      targetType: inline
-      script: >-
-        # Rename to known/fixed name
-        Get-ChildItem CascadiaPackage*.msix | Rename-Item -NewName { $_.name -replace '.msix','.zip' }
-        Get-ChildItem -Recurse $(System.ArtifactsDirectory) | Write-Host
-      workingDirectory: $(System.ArtifactsDirectory)\appx-x64-Release
-  - task: ExtractFiles@1
-    inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\*.zip'
-      cleanDestinationFolder: true
-      overwriteExistingFiles: true
-      destinationFolder: $(Build.BinariesDirectory)
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: '$(System.ArtifactsDirectory)\**\*.msix'
@@ -327,9 +316,9 @@ jobs:
       taskLogVerbosity: Diagnostic
       secCompConfigFromTask: |
         # Overrides default build sources directory
-        sourceTargetOverrideAll: d:\ba\s\ 
+        sourceTargetOverrideAll: $(Build.SourcesDirectory)
         # Overrides default build binaries directory when "Scan all" option is specified
-        binariesTargetOverrideAll: d:\ba\b\ 
+        binariesTargetOverrideAll: $(Build.BinariesDirectory)
   
         # Set the tools to false if they should not run in the build
         tools:
