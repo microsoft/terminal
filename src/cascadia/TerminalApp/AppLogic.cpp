@@ -1229,6 +1229,11 @@ namespace winrt::TerminalApp::implementation
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
 
             _root->ProcessStartupActions(actions, false, cwd);
+
+            if (appArgs.IsHandoffListener())
+            {
+                _root->SetInboundListener(true);
+            }
         }
         // Return the result of parsing with commandline, though it may or may not be used.
         return result;

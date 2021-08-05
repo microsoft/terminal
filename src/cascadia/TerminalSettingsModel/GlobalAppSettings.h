@@ -60,6 +60,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void UnparsedDefaultProfile(const hstring& value);
         void ClearUnparsedDefaultProfile();
 
+        // TODO GH#9207: Remove this once we have a GlobalAppSettingsViewModel in TerminalSettingsEditor
+        void SetInvertedDisableAnimationsValue(bool invertedDisableAnimationsValue)
+        {
+            DisableAnimations(!invertedDisableAnimationsValue);
+        }
+
         INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialRows, DEFAULT_ROWS);
         INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialCols, DEFAULT_COLS);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTabs, true);
