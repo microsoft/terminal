@@ -2002,8 +2002,6 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
 
         SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
-        s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
-        // deleting the alt buffer will give the GetSet back to its main
 
         // Copy the alt buffer's cursor style and visibility back to the main buffer.
         const auto& altCursor = psiAlt->GetTextBuffer().GetCursor();
@@ -2011,6 +2009,9 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetColor(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
         mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
+        s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
+        // deleting the alt buffer will give the GetSet back to its main
 
         // Tell the VT MouseInput handler that we're in the main buffer now
         gci.GetActiveInputBuffer()->GetTerminalInput().UseMainScreenBuffer();
