@@ -410,6 +410,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
     const til::size nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+    const til::rectangle nonClientFrame = _window->GetNonClientFrame(dpix);
     adjustedWidth = islandWidth + nonClientSize.width<long>();
     adjustedHeight = islandHeight + nonClientSize.height<long>();
 
@@ -425,14 +426,18 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
                                        gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
-    til::point origin{ (proposedRect.left),
+    // GH#10583 - Adjust the position of the rectangle to account for the size
+    // of the invisible borders on the left/right. We DON'T want to adjust this
+    // for the top here - the IslandWindow includes the titlebar in
+    // nonClientFrame.top, so adjusting for that would actually place the
+    // titlebar _off_ the monitor.
+    til::point origin{ (proposedRect.left + nonClientFrame.left<LONG>()),
                        (proposedRect.top) };
 
     if (_logic.IsQuakeWindow())
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
-        const til::size ncSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
         const til::size availableSpace = desktopDimensions + nonClientSize;
 
         origin = til::point{
