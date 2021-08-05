@@ -516,9 +516,9 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
     _axesVector.clear();
 
     // Update our axis map with the provided axes
-#pragma warning(suppress : 26445) // the analyzer doesn't like reference to string_view
     if (!axes.empty())
     {
+#pragma warning(suppress : 26445) // the analyzer doesn't like reference to string_view
         for (const auto& [axis, value] : axes)
         {
             if (axis.length() == TAG_LENGTH)
