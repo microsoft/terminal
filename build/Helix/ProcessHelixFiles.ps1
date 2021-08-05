@@ -84,7 +84,6 @@ foreach ($testRun in $testRuns.value)
 
             $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files"
             $filesQueryUri = Append-HelixAccessTokenToUrl $filesQueryUri $helixAccessToken
-
             $files = Invoke-RestMethodWithRetries $filesQueryUri
 
             $screenShots = $files | where { $_.Name.EndsWith(".jpg") }
@@ -124,7 +123,6 @@ foreach ($testRun in $testRuns.value)
                     Write-Host "Downloading $link to $destination"
 
                     $link = Append-HelixAccessTokenToUrl $link $HelixAccessToken
-
                     Download-FileWithRetries $link $destination
                 }
             }
