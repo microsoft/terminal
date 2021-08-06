@@ -26,14 +26,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                          const HANDLE hServerProcess,
                          const HANDLE hClientProcess);
 
-        ConptyConnection(
-            const hstring& cmdline,
-            const hstring& startingDirectory,
-            const hstring& startingTitle,
-            const Windows::Foundation::Collections::IMapView<hstring, hstring>& environment,
-            const uint32_t rows,
-            const uint32_t cols,
-            const guid& guid);
+        ConptyConnection() noexcept = default;
+        void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
+
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
@@ -49,6 +44,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::event_token NewConnection(NewConnectionHandler const& handler);
         static void NewConnection(winrt::event_token const& token);
 
+        static Windows::Foundation::Collections::ValueSet CreateSettings(const winrt::hstring& cmdline,
+                                                                         const winrt::hstring& startingDirectory,
+                                                                         const winrt::hstring& startingTitle,
+                                                                         Windows::Foundation::Collections::IMapView<hstring, hstring> const& environment,
+                                                                         uint32_t rows,
+                                                                         uint32_t columns,
+                                                                         winrt::guid const& guid);
+
         WINRT_CALLBACK(TerminalOutput, TerminalOutputHandler);
 
     private:
@@ -60,10 +63,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
         uint32_t _initialRows{};
         uint32_t _initialCols{};
-        hstring _commandline;
-        hstring _startingDirectory;
-        hstring _startingTitle;
-        Windows::Foundation::Collections::IMapView<hstring, hstring> _environment;
+        hstring _commandline{};
+        hstring _startingDirectory{};
+        hstring _startingTitle{};
+        Windows::Foundation::Collections::ValueSet _environment{ nullptr };
         guid _guid{}; // A unique session identifier for connected client
         hstring _clientName{}; // The name of the process hosted by this ConPTY connection (as of launch).
 
@@ -77,9 +80,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         wil::unique_static_pseudoconsole_handle _hPC;
         wil::unique_threadpool_wait _clientExitWait;
 
-        til::u8state _u8State;
-        std::wstring _u16Str;
-        std::array<char, 4096> _buffer;
+        til::u8state _u8State{};
+        std::wstring _u16Str{};
+        std::array<char, 4096> _buffer{};
 
         DWORD _OutputThread();
     };

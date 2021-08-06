@@ -58,7 +58,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                           const unsigned int pointerUpdateKind,
                           const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                           const bool focused,
-                          const til::point pixelPosition);
+                          const til::point pixelPosition,
+                          const bool pointerPressedInBounds);
         void TouchMoved(const til::point newTouchPoint,
                         const bool focused);
 

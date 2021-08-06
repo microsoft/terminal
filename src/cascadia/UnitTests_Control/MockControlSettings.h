@@ -8,6 +8,9 @@ Licensed under the MIT license.
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
+using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+
 namespace ControlUnitTests
 {
     class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Control::IControlAppearance>
@@ -79,6 +82,9 @@ namespace ControlUnitTests
         WINRT_PROPERTY(bool, ForceVTInput, false);
 
         WINRT_PROPERTY(winrt::hstring, PixelShaderPath);
+
+        WINRT_PROPERTY(IFontFeatureMap, FontFeatures);
+        WINRT_PROPERTY(IFontAxesMap, FontAxes);
 
     private:
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;

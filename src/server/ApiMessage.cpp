@@ -104,7 +104,14 @@ try
     {
         RETURN_HR_IF(E_FAIL, State.ReadOffset > Descriptor.InputSize);
 
-        ULONG const cbReadSize = Descriptor.InputSize - State.ReadOffset;
+        const ULONG cbReadSize = Descriptor.InputSize - State.ReadOffset;
+
+        // If we were previously called with a huge buffer we have an equally large _inputBuffer.
+        // We shouldn't just keep this huge buffer around, if no one needs it anymore.
+        if (_inputBuffer.capacity() > 16 * 1024 && (_inputBuffer.capacity() >> 1) > cbReadSize)
+        {
+            _inputBuffer.shrink_to_fit();
+        }
 
         _inputBuffer.resize(cbReadSize);
 
@@ -145,10 +152,17 @@ try
         ULONG cbWriteSize = Descriptor.OutputSize - State.WriteOffset;
         RETURN_IF_FAILED(ULongMult(cbWriteSize, cbFactor, &cbWriteSize));
 
+        // If we were previously called with a huge buffer we have an equally large _outputBuffer.
+        // We shouldn't just keep this huge buffer around, if no one needs it anymore.
+        if (_outputBuffer.capacity() > 16 * 1024 && (_outputBuffer.capacity() >> 1) > cbWriteSize)
+        {
+            _outputBuffer.shrink_to_fit();
+        }
+
         _outputBuffer.resize(cbWriteSize);
 
         // 0 it out.
-        std::fill(_outputBuffer.begin(), _outputBuffer.end(), (BYTE)0);
+        std::fill_n(_outputBuffer.data(), _outputBuffer.size(), BYTE(0));
 
         State.OutputBuffer = _outputBuffer.data();
         State.OutputBufferSize = cbWriteSize;

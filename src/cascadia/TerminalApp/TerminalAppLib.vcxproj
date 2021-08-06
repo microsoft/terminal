@@ -53,7 +53,7 @@
     <Page Include="TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-        <Page Include="TabHeaderControl.xaml">
+    <Page Include="TabHeaderControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="HighlightedTextControl.xaml">
@@ -74,6 +74,7 @@
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="CommandLinePaletteItem.h" />
     <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClInclude>
@@ -112,7 +113,7 @@
     <ClInclude Include="HighlightedTextControl.h">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClInclude>
-	<ClInclude Include="HighlightedText.h" />
+    <ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
@@ -139,7 +140,7 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="Toast.h"/>
+    <ClInclude Include="Toast.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -149,6 +150,7 @@
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
     <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
     </ClCompile>
@@ -195,7 +197,7 @@
     <ClCompile Include="HighlightedTextControl.cpp">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClCompile>
-	<ClCompile Include="HighlightedText.cpp" />
+    <ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
@@ -280,7 +282,7 @@
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-	<Midl Include="HighlightedText.idl" />
+    <Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>

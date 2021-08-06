@@ -65,6 +65,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isspace
 IStorage
 istream
 IStringable
@@ -139,6 +140,7 @@ STDCPP
 STDMETHOD
 strchr
 streambuf
+strtoul
 Stubless
 Subheader
 Subpage
@@ -158,6 +160,7 @@ userenv
 wcsstr
 wcstoui
 winmain
+wmemcmp
 wpc
 wsregex
 wwinmain
