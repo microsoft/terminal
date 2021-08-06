@@ -1250,6 +1250,12 @@ namespace winrt::TerminalApp::implementation
         if (_tabs.Size() > tabIdx)
         {
             auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(tabIdx));
+            // if the selected tab is not a host of terminals (e.g. settings)
+            // don't attempt to add a pane to it.
+            if (!targetTab)
+            {
+                return false;
+            }
             auto pane = focusedTab->DetachPane();
             targetTab->AttachPane(pane);
             _SetFocusedTab(*targetTab);
