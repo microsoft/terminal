@@ -75,8 +75,7 @@
     ON_ALL_ACTIONS(OpenWindowRenamer)    \
     ON_ALL_ACTIONS(GlobalSummon)         \
     ON_ALL_ACTIONS(QuakeMode)            \
-    ON_ALL_ACTIONS(FocusPane)            \
-    ON_ALL_ACTIONS(MinimizeToTray)
+    ON_ALL_ACTIONS(FocusPane)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
