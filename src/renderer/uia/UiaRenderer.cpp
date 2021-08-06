@@ -364,11 +364,13 @@ CATCH_RETURN();
 // Arguments:
 // - textAttributes - <unused>
 // - pData - <unused>
+// - usingSoftFont - <unused>
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
                                                       const gsl::not_null<IRenderData*> /*pData*/,
+                                                      const bool /*usingSoftFont*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;

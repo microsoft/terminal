@@ -307,6 +307,7 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                           const gsl::not_null<IRenderData*> /*pData*/,
+                                                          const bool /*usingSoftFont*/,
                                                           bool const /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
