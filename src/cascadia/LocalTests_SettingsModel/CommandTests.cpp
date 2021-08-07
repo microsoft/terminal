@@ -397,6 +397,10 @@ namespace SettingsModelLocalTests
                 "name":"action6",
                 "command": { "action": "newWindow", "startingDirectory":"C:\\foo", "commandline": "bar.exe" }
             },
+            {
+                "name":"action7_startingDirectoryWithTrailingSlash",
+                "command": { "action": "newWindow", "startingDirectory":"C:\\", "commandline": "bar.exe" }
+            },
         ])" };
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
@@ -405,7 +409,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(7u, commands.Size());
+        VERIFY_ARE_EQUAL(8u, commands.Size());
 
         {
             auto command = commands.Lookup(L"action0");
@@ -502,6 +506,21 @@ namespace SettingsModelLocalTests
             Log::Comment(NoThrowString().Format(
                 L"cmdline: \"%s\"", cmdline.c_str()));
             VERIFY_ARE_EQUAL(L"--startingDirectory \"C:\\foo\" -- \"bar.exe\"", terminalArgs.ToCommandline());
+        }
+
+        {
+            auto command = commands.Lookup(L"action7_startingDirectoryWithTrailingSlash");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::NewWindow, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<NewWindowArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            const auto& terminalArgs = realArgs.TerminalArgs();
+            VERIFY_IS_NOT_NULL(terminalArgs);
+            auto cmdline = terminalArgs.ToCommandline();
+            Log::Comment(NoThrowString().Format(
+                L"cmdline: \"%s\"", cmdline.c_str()));
+            VERIFY_ARE_EQUAL(L"--startingDirectory \"C:\\\\\" -- \"bar.exe\"", terminalArgs.ToCommandline());
         }
     }
 }

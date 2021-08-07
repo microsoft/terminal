@@ -134,6 +134,7 @@ SRWLOCK
 STDCPP
 STDMETHOD
 strchr
+strcpy
 streambuf
 strtoul
 Stubless

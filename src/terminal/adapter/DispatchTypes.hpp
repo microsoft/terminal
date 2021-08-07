@@ -434,6 +434,46 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         DependsOnMode
     };
 
+    enum class DrcsEraseControl : size_t
+    {
+        AllChars = 0,
+        ReloadedChars = 1,
+        AllRenditions = 2
+    };
+
+    enum class DrcsCellMatrix : size_t
+    {
+        Default = 0,
+        Invalid = 1,
+        Size5x10 = 2,
+        Size6x10 = 3,
+        Size7x10 = 4
+    };
+
+    enum class DrcsFontSet : size_t
+    {
+        Default = 0,
+        Size80x24 = 1,
+        Size132x24 = 2,
+        Size80x36 = 11,
+        Size132x36 = 12,
+        Size80x48 = 21,
+        Size132x48 = 22
+    };
+
+    enum class DrcsFontUsage : size_t
+    {
+        Default = 0,
+        Text = 1,
+        FullCell = 2
+    };
+
+    enum class DrcsCharsetSize : size_t
+    {
+        Size94 = 0,
+        Size96 = 1
+    };
+
     constexpr short s_sDECCOLMSetColumns = 132;
     constexpr short s_sDECCOLMResetColumns = 80;
 

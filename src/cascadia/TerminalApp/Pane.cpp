@@ -1892,8 +1892,8 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
 //   creates a new Pane to host the control, registers event handlers.
 // Arguments:
 // - splitType: what type of split we should create.
-// - profile: The profile GUID to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
+// - splitSize: what fraction of the pane the new pane should get
+// - newPane: the pane to add as a child
 // Return Value:
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
