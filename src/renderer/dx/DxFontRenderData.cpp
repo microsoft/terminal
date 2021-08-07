@@ -464,6 +464,11 @@ bool DxFontRenderData::DidUserSetAxes() const noexcept
     return _didUserSetAxes;
 }
 
+void DxFontRenderData::UseUserWeight(bool useUserWeight) noexcept
+{
+    _useUserWeight = useUserWeight;
+}
+
 // Routine Description:
 // - Updates our internal map of font features with the given features
 // - NOTE TO CALLER: Make sure to call _BuildFontRenderData after calling this for the feature changes
@@ -623,7 +628,7 @@ std::vector<DWRITE_FONT_AXIS_VALUE> DxFontRenderData::GetAxisVector(const DWRITE
         }
     }
 
-    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Weight) || fontWeight != DWRITE_FONT_WEIGHT::DWRITE_FONT_WEIGHT_NORMAL)
+    if (WI_IsFlagClear(axisTagPresence, AxisTagPresence::Weight))
     {
         axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, gsl::narrow<float>(fontWeight) });
     }
@@ -856,8 +861,29 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
     ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
     if (!_axesVector.empty() && !FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))))
     {
+        std::optional<float> oldWeight;
+        if (!_useUserWeight)
+        {
+            // Remove the user set weight if we were told not to use it
+            // This is quite awkward, we don't want to permanently delete the weight axis from our _axesVector,
+            // we only want to delete it from the list we are about to pass into the text format
+            for (auto iter = _axesVector.begin(); iter != _axesVector.end(); ++iter)
+            {
+                if (iter->axisTag == DWRITE_FONT_AXIS_TAG_WEIGHT)
+                {
+                    oldWeight = iter->value;
+                    _axesVector.erase(iter);
+                    break;
+                }
+            }
+        }
         DWRITE_FONT_AXIS_VALUE const* axesList = _axesVector.data();
         format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(_axesVector.size()));
+        // If we removed the user weight, make sure to put it back
+        if (oldWeight)
+        {
+            _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, oldWeight.value() });
+        }
     }
 
     return format;

@@ -145,6 +145,13 @@ try
     {
         // TODO: "relative" bold?
         weight = DWRITE_FONT_WEIGHT_BOLD;
+        // Since we are setting the font weight according to the text attribute,
+        // make sure to tell the text format to ignore the user set font weight
+        _fontRenderData->UseUserWeight(false);
+    }
+    else
+    {
+        _fontRenderData->UseUserWeight(true);
     }
 
     if (drawingContext->useItalicFont)
