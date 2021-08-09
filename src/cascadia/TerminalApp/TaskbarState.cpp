@@ -2,17 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <LibraryResources.h>
 #include "TaskbarState.h"
 #include "TaskbarState.g.cpp"
-
-using namespace winrt;
-
-namespace winrt
-{
-    namespace MUX = Microsoft::UI::Xaml;
-    namespace WUX = Windows::UI::Xaml;
-}
 
 namespace winrt::TerminalApp::implementation
 {

@@ -690,8 +690,8 @@ namespace winrt::TerminalApp::implementation
     {
         std::vector<winrt::TerminalApp::TaskbarState> states;
         _rootPane->CollectTaskbarStates(states);
-        std::sort(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
-        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() : states[0];
+        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() :
+                                *std::min_element(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
     }
 
     // Method Description:

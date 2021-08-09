@@ -2090,20 +2090,22 @@ namespace winrt::TerminalApp::implementation
     //   progress percentage of all our tabs.
     winrt::TerminalApp::TaskbarState TerminalPage::TaskbarState() const
     {
-        std::vector<winrt::TerminalApp::TaskbarState> states;
+        auto state{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>() };
 
         for (const auto& tab : _tabs)
         {
             if (auto tabImpl{ _GetTerminalTabImpl(tab) })
             {
                 auto tabState{ tabImpl->GetCombinedTaskbarState() };
-                states.push_back(tabState);
+                // lowest priority wins
+                if (tabState.Priority() < state.Priority())
+                {
+                    state = tabState;
+                }
             }
         }
 
-        std::sort(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
-
-        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() : states[0];
+        return state;
     }
 
     // Method Description:
