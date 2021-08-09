@@ -41,29 +41,41 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
 
     wil::unique_handle readPipe;
     wil::unique_handle writePipe;
-    SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
+    SECURITY_ATTRIBUTES sa{};
+    sa.nLength = sizeof(sa);
+    sa.bInheritHandle = true;
     THROW_IF_WIN32_BOOL_FALSE(CreatePipe(&readPipe, &writePipe, &sa, 0));
-    STARTUPINFO si{ 0 };
+    THROW_IF_WIN32_BOOL_FALSE(SetHandleInformation(readPipe.get(), HANDLE_FLAG_INHERIT, 0));
+
+    STARTUPINFO si{};
     si.cb = sizeof(si);
     si.dwFlags = STARTF_USESTDHANDLES;
     si.hStdOutput = writePipe.get();
     si.hStdError = writePipe.get();
-    wil::unique_process_information pi;
-    wil::unique_cotaskmem_string systemPath;
-    THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
-    std::wstring command(systemPath.get());
-    command += L"\\wsl.exe --list";
 
-    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-                                             const_cast<LPWSTR>(command.c_str()),
-                                             nullptr,
-                                             nullptr,
-                                             TRUE,
-                                             CREATE_NO_WINDOW,
-                                             nullptr,
-                                             nullptr,
-                                             &si,
-                                             &pi));
+    wil::unique_process_information pi;
+
+    std::wstring applicationName;
+    THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(applicationName));
+    applicationName.append(L"\\wsl.exe");
+
+    std::wstring commandLine;
+    commandLine.reserve(256);
+    commandLine.push_back(L'"');
+    commandLine.append(applicationName);
+    commandLine.append(L"\" --list --quiet");
+
+    THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(
+        applicationName.data(),
+        commandLine.data(),
+        nullptr,
+        nullptr,
+        TRUE,
+        CREATE_NO_WINDOW,
+        nullptr,
+        nullptr,
+        &si,
+        &pi));
     switch (WaitForSingleObject(pi.hProcess, 2000))
     {
     case WAIT_OBJECT_0:
@@ -76,6 +88,7 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
     default:
         THROW_HR(ERROR_UNHANDLED_EXCEPTION);
     }
+
     DWORD exitCode;
     if (!GetExitCodeProcess(pi.hProcess, &exitCode))
     {
@@ -85,6 +98,7 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
     {
         return profiles;
     }
+
     DWORD bytesAvailable;
     THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
     // "The _open_osfhandle call transfers ownership of the Win32 file handle to the file descriptor."
@@ -99,39 +113,32 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
 
     std::wfstream pipe{ stdioPipeHandle };
 
-    std::wstring wline;
-    std::getline(pipe, wline); // remove the header from the output.
+    std::wstring distName;
     while (pipe.tellp() < bytesAvailable)
     {
-        std::getline(pipe, wline);
-        std::wstringstream wlinestream(wline);
-        if (wlinestream)
+        std::getline(pipe, distName);
+        if (distName.empty())
         {
-            std::wstring distName;
-            std::getline(wlinestream, distName, L'\r');
-
-            if (distName.substr(0, std::min(distName.size(), DockerDistributionPrefix.size())) == DockerDistributionPrefix)
-            {
-                // Docker for Windows creates some utility distributions to handle Docker commands.
-                // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
-                continue;
-            }
-
-            const size_t firstChar = distName.find_first_of(L"( ");
-            // Some localizations don't have a space between the name and "(Default)"
-            // https://github.com/microsoft/terminal/issues/1168#issuecomment-500187109
-            if (firstChar < distName.size())
-            {
-                distName.resize(firstChar);
-            }
-            auto WSLDistro{ CreateDefaultProfile(distName) };
-
-            WSLDistro.Commandline(L"wsl.exe -d " + distName);
-            WSLDistro.DefaultAppearance().ColorSchemeName(L"Campbell");
-            WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
-            WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
-            profiles.emplace_back(WSLDistro);
+            continue;
         }
+        if (distName.back() == L'\r')
+        {
+            distName.pop_back();
+        }
+
+        if (til::starts_with(distName, DockerDistributionPrefix))
+        {
+            // Docker for Windows creates some utility distributions to handle Docker commands.
+            // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
+            continue;
+        }
+
+        auto WSLDistro{ CreateDefaultProfile(distName) };
+        WSLDistro.Commandline(L"wsl.exe -d " + distName);
+        WSLDistro.DefaultAppearance().ColorSchemeName(L"Campbell");
+        WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+        profiles.emplace_back(std::move(WSLDistro));
     }
 
     return profiles;
