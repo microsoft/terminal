@@ -1210,15 +1210,11 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 
 bool Terminal::IsCursorOffScreen() noexcept
 {
-    const auto absoluteCursorPos = _buffer->GetCursor().GetPosition();
+    const auto absoluteCursorPosY = _buffer->GetCursor().GetPosition().Y;
     const auto viewport = _GetMutableViewport();
-    const auto ht = viewport.Height();
-    const auto wt = viewport.Width();
-    const auto orHt = viewport.Origin().Y;
-    const auto orWt = viewport.Origin().X;
+    const auto viewHeight = viewport.Height();
     const auto scrollOffset = GetScrollOffset();
-    const auto bufHt = GetBufferHeight();
-    return absoluteCursorPos.Y > viewport.Height() + viewport.Origin().Y - 1 || absoluteCursorPos.X > viewport.Width() + viewport.Origin().X - 1;
+    return absoluteCursorPosY < scrollOffset || absoluteCursorPosY >= (scrollOffset + viewHeight);
 }
 
 // Method Description:

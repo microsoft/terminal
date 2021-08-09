@@ -2387,7 +2387,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             CursorLight::SetIsTarget(RootGrid(), false);
         }
-        else
+        else if (!_core.IsCursorOffScreen())
         {
             const auto charSizeInPixels = CharacterDimensions();
             const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
@@ -2398,7 +2398,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const til::point cursorPosInPixels{ cursorPos * fontSize };
             const til::point cursorPosInDIPs{ cursorPosInPixels / SwapChainPanel().CompositionScaleX() };
             const til::point cursorLocationInDIPs{ cursorPosInDIPs + marginsInDips };
-            const auto ay = _core.IsCursorOffScreen();
             CursorLight().ChangeLocation(gsl::narrow_cast<float>(cursorLocationInDIPs.x()) + wtInDips / 2,
                                          gsl::narrow_cast<float>(cursorLocationInDIPs.y()) + htInDips / 2);
             CursorLight::SetIsTarget(RootGrid(), true);
