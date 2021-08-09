@@ -8,9 +8,12 @@ jobs:
   variables:
     BuildConfiguration: AuditMode
     BuildPlatform: ${{ parameters.platform }}
-  pool: "windevbuildagents"
-  # The public pool is also an option!
-  # pool: { vmImage: windows-2019 }
+  pool: 
+    ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPoolOSS-L
+    ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPool-L
+    demands: ImageOverride -equals WinDevVS16-latest
 
   steps:
   - checkout: self

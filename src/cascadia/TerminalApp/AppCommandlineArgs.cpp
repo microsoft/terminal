@@ -192,6 +192,7 @@ void AppCommandlineArgs::_buildParser()
     _buildSplitPaneParser();
     _buildFocusTabParser();
     _buildMoveFocusParser();
+    _buildMovePaneParser();
     _buildFocusPaneParser();
 }
 
@@ -399,6 +400,54 @@ void AppCommandlineArgs::_buildMoveFocusParser()
 }
 
 // Method Description:
+// - Adds the `move-pane` subcommand and related options to the commandline parser.
+// - Additionally adds the `mp` subcommand, which is just a shortened version of `move-pane`
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildMovePaneParser()
+{
+    _movePaneCommand = _app.add_subcommand("move-pane", RS_A(L"CmdMovePaneDesc"));
+    _movePaneShort = _app.add_subcommand("mp", RS_A(L"CmdMPDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        std::map<std::string, FocusDirection> map = {
+            { "left", FocusDirection::Left },
+            { "right", FocusDirection::Right },
+            { "up", FocusDirection::Up },
+            { "down", FocusDirection::Down }
+        };
+
+        auto* directionOpt = subcommand->add_option("direction",
+                                                    _movePaneDirection,
+                                                    RS_A(L"CmdMovePaneDirectionArgDesc"));
+
+        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->required();
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            if (_movePaneDirection != FocusDirection::None)
+            {
+                MovePaneArgs args{ _movePaneDirection };
+
+                ActionAndArgs actionAndArgs{};
+                actionAndArgs.Action(ShortcutAction::MovePane);
+                actionAndArgs.Args(args);
+
+                _startupActions.push_back(std::move(actionAndArgs));
+            }
+        });
+    };
+
+    setupSubcommand(_movePaneCommand);
+    setupSubcommand(_movePaneShort);
+}
+
+// Method Description:
 // - Adds the `focus-pane` subcommand and related options to the commandline parser.
 // - Additionally adds the `fp` subcommand, which is just a shortened version of `focus-pane`
 // Arguments:
@@ -574,6 +623,8 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusTabShort ||
              *_moveFocusCommand ||
              *_moveFocusShort ||
+             *_movePaneCommand ||
+             *_movePaneShort ||
              *_focusPaneCommand ||
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
@@ -607,6 +658,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _focusPrevTab = false;
 
     _moveFocusDirection = FocusDirection::None;
+    _movePaneDirection = FocusDirection::None;
 
     _focusPaneTarget = -1;
 

@@ -1884,6 +1884,7 @@ bool AdaptDispatch::SoftReset()
 //   - Performs a communications line disconnect.
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
+//      * The soft font is reset in the renderer and the font buffer is deleted.
 //   - Clears the screen.
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
@@ -1928,6 +1929,10 @@ bool AdaptDispatch::HardReset()
 
     // Delete all current tab stops and reapply
     _ResetTabStops();
+
+    // Clear the soft font in the renderer and delete the font buffer.
+    success = _pConApi->PrivateUpdateSoftFont({}, {}, false) && success;
+    _fontBuffer = nullptr;
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
@@ -2438,6 +2443,88 @@ bool AdaptDispatch::EndHyperlink()
 bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
 {
     return false;
+}
+
+// Method Description:
+// - DECDLD - Downloads one or more characters of a dynamically redefinable
+//   character set (DRCS) with a specified pixel pattern. The pixel array is
+//   transmitted in sixel format via the returned StringHandler function.
+// Arguments:
+// - fontNumber - The buffer number into which the font will be loaded.
+// - startChar - The first character in the set that will be replaced.
+// - eraseControl - Which characters to erase before loading the new data.
+// - cellMatrix - The character cell width (sometimes also height in legacy formats).
+// - fontSet - The screen size for which the font is designed.
+// - fontUsage - Whether it is a text font or a full-cell font.
+// - cellHeight - The character cell height (if not defined by cellMatrix).
+// - charsetSize - Whether the character set is 94 or 96 characters.
+// Return Value:
+// - a function to receive the pixel data or nullptr if parameters are invalid
+ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber,
+                                                         const VTParameter startChar,
+                                                         const DispatchTypes::DrcsEraseControl eraseControl,
+                                                         const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                                         const DispatchTypes::DrcsFontSet fontSet,
+                                                         const DispatchTypes::DrcsFontUsage fontUsage,
+                                                         const VTParameter cellHeight,
+                                                         const DispatchTypes::DrcsCharsetSize charsetSize)
+{
+    // If we're a conpty, we're just going to ignore the operation for now.
+    // There's no point in trying to pass it through without also being able
+    // to pass through the character set designations.
+    if (_pConApi->IsConsolePty())
+    {
+        return nullptr;
+    }
+
+    // The font buffer is created on demand.
+    if (!_fontBuffer)
+    {
+        _fontBuffer = std::make_unique<FontBuffer>();
+    }
+
+    // Only one font buffer is supported, so only 0 (default) and 1 are valid.
+    auto success = fontNumber <= 1;
+    success = success && _fontBuffer->SetEraseControl(eraseControl);
+    success = success && _fontBuffer->SetAttributes(cellMatrix, cellHeight, fontSet, fontUsage);
+    success = success && _fontBuffer->SetStartChar(startChar, charsetSize);
+
+    // If any of the parameters are invalid, we return a null handler to let
+    // the state machine know we want to ignore the subsequent data string.
+    if (!success)
+    {
+        return nullptr;
+    }
+
+    return [=](const auto ch) {
+        // We pass the data string straight through to the font buffer class
+        // until we receive an ESC, indicating the end of the string. At that
+        // point we can finalize the buffer, and if valid, update the renderer
+        // with the constructed bit pattern.
+        if (ch != AsciiChars::ESC)
+        {
+            _fontBuffer->AddSixelData(ch);
+        }
+        else if (_fontBuffer->FinalizeSixelData())
+        {
+            // We also need to inform the character set mapper of the ID that
+            // will map to this font (we only support one font buffer so there
+            // will only ever be one active dynamic character set).
+            if (charsetSize == DispatchTypes::DrcsCharsetSize::Size96)
+            {
+                _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
+            }
+            else
+            {
+                _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
+            }
+            const auto bitPattern = _fontBuffer->GetBitPattern();
+            const auto cellSize = _fontBuffer->GetCellSize();
+            const auto centeringHint = _fontBuffer->GetTextCenteringHint();
+            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return true;
+    };
 }
 
 // Routine Description:

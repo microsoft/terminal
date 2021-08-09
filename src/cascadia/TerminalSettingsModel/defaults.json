@@ -329,7 +329,7 @@
         { "command": { "action": "switchToTab", "index": 5 }, "keys": "ctrl+alt+6" },
         { "command": { "action": "switchToTab", "index": 6 }, "keys": "ctrl+alt+7" },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": "ctrl+alt+8" },
-        { "command": { "action": "switchToTab", "index": 8 }, "keys": "ctrl+alt+9" },
+        { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
 
         // Pane Management
         { "command": "closePane", "keys": "ctrl+shift+w" },
@@ -343,8 +343,14 @@
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
-        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
+        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left"},
+        { "command": { "action": "movePane", "direction": "down" } },
+        { "command": { "action": "movePane", "direction": "left" } },
+        { "command": { "action": "movePane", "direction": "right" } },
+        { "command": { "action": "movePane", "direction": "up" } },
+        { "command": { "action": "movePane", "direction": "previous"} },
         { "command": "togglePaneZoom" },
+        { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
 
         // Clipboard Integration

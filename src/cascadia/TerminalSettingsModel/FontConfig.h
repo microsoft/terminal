@@ -23,6 +23,9 @@ Author(s):
 #include "IInheritable.h"
 #include <DefaultSettings.h>
 
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct FontConfig : FontConfigT<FontConfig>, IInheritable<FontConfig>
@@ -39,6 +42,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::FontConfig, hstring, FontFace, DEFAULT_FONT_FACE);
         INHERITABLE_SETTING(Model::FontConfig, int32_t, FontSize, DEFAULT_FONT_SIZE);
         INHERITABLE_SETTING(Model::FontConfig, Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
+        INHERITABLE_SETTING(Model::FontConfig, IFontAxesMap, FontAxes);
+        INHERITABLE_SETTING(Model::FontConfig, IFontFeatureMap, FontFeatures);
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;

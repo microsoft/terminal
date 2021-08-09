@@ -23,6 +23,10 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Boolean IsDefault;
 
+        void SetFontWeightFromDouble(Double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(Double percentageValue);
+        void SetBackgroundImagePath(String path);
+
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
@@ -68,5 +72,6 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
 
         IInspectable CurrentFontFace { get; };
+        Windows.UI.Xaml.Controls.Slider BIOpacitySlider { get; };
     }
 }

@@ -56,7 +56,7 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    void TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
+    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
     try
     {
         const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
@@ -89,8 +89,10 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        return S_OK;
     }
-    CATCH_LOG();
+    CATCH_RETURN();
 
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
@@ -104,6 +106,14 @@ namespace winrt::TerminalApp::implementation
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profileGuid, settings.DefaultSettings());
+
+        // If we had an `existingConnection`, then this is an inbound handoff from somewhere else.
+        // We need to tell it about our size information so it can match the dimensions of what
+        // we are about to present.
+        if (existingConnection)
+        {
+            connection.Resize(settings.DefaultSettings().InitialRows(), settings.DefaultSettings().InitialCols());
+        }
 
         TerminalConnection::ITerminalConnection debugConnection{ nullptr };
         if (_settings.GlobalSettings().DebugFeaturesEnabled())
@@ -181,6 +191,16 @@ namespace winrt::TerminalApp::implementation
             if (page && tab)
             {
                 page->_DuplicateTab(*tab);
+            }
+        });
+
+        newTabImpl->SplitTabRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_SplitTab(*tab);
             }
         });
 
@@ -350,6 +370,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Sets the specified tab as the focused tab and splits its active pane
+    // Arguments:
+    // - tab: tab to split
+    void TerminalPage::_SplitTab(TerminalTab& tab)
+    {
+        try
+        {
+            _SetFocusedTab(tab);
+            _SplitPane(tab, SplitState::Automatic, SplitType::Duplicate);
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
@@ -497,24 +531,25 @@ namespace winrt::TerminalApp::implementation
     //   TerminalPage::_OnTabSelectionChanged
     // Return Value:
     // true iff we were able to select that tab index, false otherwise
-    bool TerminalPage::_SelectTab(const uint32_t tabIndex)
+    bool TerminalPage::_SelectTab(uint32_t tabIndex)
     {
-        if (tabIndex >= 0 && tabIndex < _tabs.Size())
-        {
-            auto tab{ _tabs.GetAt(tabIndex) };
-            if (_startupState == StartupState::InStartup)
-            {
-                _tabView.SelectedItem(tab.TabViewItem());
-                _UpdatedSelectedTab(tab);
-            }
-            else
-            {
-                _SetFocusedTab(tab);
-            }
+        // GH#9369 - if the argument is out of range, then clamp to the number
+        // of available tabs. Previously, we'd just silently do nothing if the
+        // value was greater than the number of tabs.
+        tabIndex = std::clamp(tabIndex, 0u, _tabs.Size() - 1);
 
-            return true;
+        auto tab{ _tabs.GetAt(tabIndex) };
+        if (_startupState == StartupState::InStartup)
+        {
+            _tabView.SelectedItem(tab.TabViewItem());
+            _UpdatedSelectedTab(tab);
         }
-        return false;
+        else
+        {
+            _SetFocusedTab(tab);
+        }
+
+        return true;
     }
 
     // Method Description:

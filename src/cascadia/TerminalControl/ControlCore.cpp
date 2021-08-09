@@ -155,6 +155,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Set up the DX Engine
             auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
             _renderer->AddRenderEngine(dxEngine.get());
+            _renderEngine = std::move(dxEngine);
 
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
@@ -168,12 +169,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Then, using the font, get the number of characters that can fit.
             // Resize our terminal connection to match that size, and initialize the terminal with that size.
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
-            LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+            LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
+            _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
-            const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
+            const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
             const auto height = vp.Height();
             _connection.Resize(height, width);
@@ -188,27 +189,26 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
             // the first paint will be ignored!
-            dxEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
+            _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            dxEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
+            _renderEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
-            _updateAntiAliasingMode(dxEngine.get());
+            _updateAntiAliasingMode(_renderEngine.get());
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             if (_settings.UseAcrylic())
             {
-                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
             }
 
-            THROW_IF_FAILED(dxEngine->Enable());
-            _renderEngine = std::move(dxEngine);
+            THROW_IF_FAILED(_renderEngine->Enable());
 
             _initializedTerminal = true;
         } // scope for TerminalLock
@@ -603,9 +603,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal->SetFontInfo(_actualFont);
 
-        // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
-        //      actually fail. We need a way to gracefully fallback.
-        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+        if (_renderEngine)
+        {
+            std::unordered_map<std::wstring_view, uint32_t> featureMap;
+            if (const auto fontFeatures = _settings.FontFeatures())
+            {
+                featureMap.reserve(fontFeatures.Size());
+
+                for (const auto& [tag, param] : fontFeatures)
+                {
+                    featureMap.emplace(tag, param);
+                }
+            }
+            std::unordered_map<std::wstring_view, float> axesMap;
+            if (const auto fontAxes = _settings.FontAxes())
+            {
+                axesMap.reserve(fontAxes.Size());
+
+                for (const auto& [axis, value] : fontAxes)
+                {
+                    axesMap.emplace(axis, value);
+                }
+            }
+
+            // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
+            //      actually fail. We need a way to gracefully fallback.
+            LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
+            LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
+        }
 
         // If the actual font isn't what was requested...
         if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())

@@ -96,9 +96,13 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                            const gsl::not_null<IRenderData*> pData,
+                                                           const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                                  _Out_ FontInfo& FontInfo) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                                     const SIZE cellSize,
+                                                     const size_t centeringHint) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateDpi(const int iDpi) noexcept = 0;
         [[nodiscard]] virtual HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept = 0;
 

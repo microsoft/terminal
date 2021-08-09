@@ -43,6 +43,11 @@ namespace Microsoft::Console::VirtualTerminal
         return rhs == lhs;
     }
 
+    // Note that the 94-character sets are deliberately defined with a size of
+    // 95 to avoid having to test the lower bound. We just alway leave the first
+    // entry - which is not meant to be mapped - as a SPACE or NBSP, which is at
+    // least visually equivalent to leaving it untranslated.
+
     typedef CharSet<L'\x20', 95> AsciiBasedCharSet;
     typedef CharSet<L'\xa0', 95> Latin1BasedCharSet94;
     typedef CharSet<L'\xa0', 96> Latin1BasedCharSet96;
@@ -1050,6 +1055,12 @@ namespace Microsoft::Console::VirtualTerminal
         { L'\x7d', L'\u00e7' }, // Latin Small Letter C With Cedilla
         { L'\x7e', L'\u00fc' }, // Latin Small Letter U With Diaeresis
     };
+
+    // We're reserving 96 characters (U+EF20 to U+EF7F) from the Unicode
+    // Private Use Area for our dynamically redefinable characters sets.
+    static constexpr auto DRCS_BASE_CHAR = L'\uEF20';
+    static constexpr auto Drcs94 = CharSet<DRCS_BASE_CHAR, 95>{ { DRCS_BASE_CHAR, '\x20' } };
+    static constexpr auto Drcs96 = CharSet<DRCS_BASE_CHAR, 96>{};
 
 #pragma warning(pop)
 }

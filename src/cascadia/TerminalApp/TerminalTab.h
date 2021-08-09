@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
                        const GUID& profile,
                        winrt::Microsoft::Terminal::Control::TermControl& control);
 
+        void ToggleSplitOrientation();
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
         winrt::fire_and_forget HideIcon(const bool hide);
 
@@ -52,7 +53,8 @@ namespace winrt::TerminalApp::implementation
 
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
-        void NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        void MovePane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
         void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
@@ -93,6 +95,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
