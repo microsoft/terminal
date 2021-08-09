@@ -38,6 +38,7 @@ namespace winrt::TerminalApp::implementation
                        const GUID& profile,
                        winrt::Microsoft::Terminal::Control::TermControl& control);
 
+        void ToggleSplitOrientation();
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
         winrt::fire_and_forget HideIcon(const bool hide);
 
@@ -93,6 +94,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:

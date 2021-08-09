@@ -36,6 +36,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
+
+        void SetInvertedDisableAnimationsValue(Boolean invertedDisableAnimationsValue);
+
         INHERITABLE_SETTING(String, UnparsedDefaultProfile);
 
         INHERITABLE_SETTING(Int32, InitialRows);

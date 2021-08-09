@@ -1904,10 +1904,17 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        // Update the alt buffer's cursor style to match our own.
+        // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
         auto* const createdBuffer = *ppsiNewScreenBuffer;
-        createdBuffer->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
+        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        altCursor.SetIsVisible(myCursor.IsVisible());
+        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        // The new position should match the viewport-relative position of the main buffer.
+        auto altCursorPos = myCursor.GetPosition();
+        altCursorPos.Y -= GetVirtualViewport().Top();
+        altCursor.SetPosition(altCursorPos);
 
         s_InsertScreenBuffer(createdBuffer);
 
@@ -1995,6 +2002,14 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
 
         SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
+
+        // Copy the alt buffer's cursor style and visibility back to the main buffer.
+        const auto& altCursor = psiAlt->GetTextBuffer().GetCursor();
+        auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
+        mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetColor(), altCursor.GetType());
+        mainCursor.SetIsVisible(altCursor.IsVisible());
+        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
         // deleting the alt buffer will give the GetSet back to its main
 

@@ -441,6 +441,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Find the currently active pane, and then switch the split direction of
+    //   its parent. E.g. switch from Horizontal to Vertical.
+    // Return Value:
+
+    // - <none>
+    void TerminalTab::ToggleSplitOrientation()
+    {
+        _rootPane->ToggleSplitOrientation();
+    }
+
+    // Method Description:
     // - See Pane::CalcSnappedDimension
     float TerminalTab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
@@ -925,12 +936,30 @@ namespace winrt::TerminalApp::implementation
             duplicateTabMenuItem.Icon(duplicateTabSymbol);
         }
 
+        Controls::MenuFlyoutItem splitTabMenuItem;
+        {
+            // "Split Tab"
+            Controls::FontIcon splitTabSymbol;
+            splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
+
+            splitTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_SplitTabRequestedHandlers();
+                }
+            });
+            splitTabMenuItem.Text(RS_(L"SplitTabText"));
+            splitTabMenuItem.Icon(splitTabSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         contextMenuFlyout.Items().Append(chooseColorMenuItem);
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
+        contextMenuFlyout.Items().Append(splitTabMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
@@ -1222,6 +1251,7 @@ namespace winrt::TerminalApp::implementation
             EnterZoom();
         }
     }
+
     void TerminalTab::EnterZoom()
     {
         _zoomedPane = _activePane;
@@ -1303,4 +1333,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
 }

@@ -567,6 +567,19 @@ public:
         return TRUE;
     }
 
+    bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+                               const SIZE cellSize,
+                               const size_t /*centeringHint*/) noexcept override
+    {
+        Log::Comment(L"PrivateUpdateSoftFont MOCK called...");
+
+        Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
+        VERIFY_ARE_EQUAL(_expectedCellSize.cx, cellSize.cx);
+        VERIFY_ARE_EQUAL(_expectedCellSize.cy, cellSize.cy);
+
+        return TRUE;
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.
@@ -809,6 +822,8 @@ public:
 
     bool _privateSetDefaultBackgroundResult = false;
     COLORREF _expectedDefaultBackgroundColorValue = INVALID_COLOR;
+
+    SIZE _expectedCellSize = {};
 
 private:
     HANDLE _hCon;
@@ -2351,6 +2366,229 @@ public:
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
         VERIFY_IS_FALSE(_pDispatch.get()->SetColorTableEntry(15, testColor));
+    }
+
+    TEST_METHOD(SoftFontSizeDetection)
+    {
+        using CellMatrix = DispatchTypes::DrcsCellMatrix;
+        using FontSet = DispatchTypes::DrcsFontSet;
+        using FontUsage = DispatchTypes::DrcsFontUsage;
+
+        const auto decdld = [=](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
+            const auto ec = DispatchTypes::DrcsEraseControl::AllChars;
+            const auto css = DispatchTypes::DrcsCharsetSize::Size94;
+            const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
+            const auto stringHandler = _pDispatch.get()->DownloadDRCS(0, 0, ec, cellMatrix, ss, u, cmh, css);
+            if (stringHandler)
+            {
+                stringHandler(L'B'); // Charset identifier
+                for (auto ch : data)
+                {
+                    stringHandler(ch);
+                }
+                stringHandler(L'\033'); // String terminator
+            }
+            return stringHandler != nullptr;
+        };
+
+        // Matrix sizes at 80x24 should always use a 10x10 cell size (VT2xx).
+        Log::Comment(L"Matrix 5x10 for 80x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size5x10, 0, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Matrix 6x10 for 80x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Matrix 7x10 for 80x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 0, FontSet::Size80x24, FontUsage::Text));
+
+        // At 132x24 the cell size is typically 6x10 (VT240), but could be 10x10 (VT220)
+        Log::Comment(L"Matrix 5x10 for 132x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size5x10, 0, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Matrix 6x10 for 132x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Matrix 7x10 for 132x24 font set with text usage (VT220 only)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 0, FontSet::Size132x24, FontUsage::Text));
+
+        // Full cell usage is invalid for all matrix sizes except 6x10 at 132x24.
+        Log::Comment(L"Matrix 5x10 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size5x10, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 6x10 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size6x10, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 7x10 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size7x10, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 5x10 for 132x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size5x10, 0, FontSet::Size132x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 6x10 for 132x24 font set with full cell usage");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size132x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 7x10 for 132x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size7x10, 0, FontSet::Size132x24, FontUsage::FullCell));
+
+        // Matrix size 1 is always invalid.
+        Log::Comment(L"Matrix 1 for 80x24 font set with text usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Matrix 1 for 132x24 font set with text usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Matrix 1 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 1 for 132x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size132x24, FontUsage::FullCell));
+
+        // The height parameter has no effect when a matrix size is used.
+        Log::Comment(L"Matrix 7x10 with unused height parameter");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 20, FontSet::Size80x24, FontUsage::Text));
+
+        // Full cell fonts with explicit dimensions are accepted as their given cell size.
+        Log::Comment(L"Explicit 13x17 for 80x24 font set with full cell usage");
+        _testGetSet->_expectedCellSize = { 13, 17 };
+        VERIFY_IS_TRUE(decdld(13, 17, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Explicit 9x25 for 132x24 font set with full cell usage");
+        _testGetSet->_expectedCellSize = { 9, 25 };
+        VERIFY_IS_TRUE(decdld(9, 25, FontSet::Size132x24, FontUsage::FullCell));
+
+        // Cell sizes outside the maximum supported range (16x32) are invalid.
+        Log::Comment(L"Explicit 18x38 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(18, 38, FontSet::Size80x24, FontUsage::FullCell));
+
+        // Text fonts with explicit dimensions are interpreted as their closest matching device.
+        Log::Comment(L"Explicit 12x12 for 80x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 15, 12 };
+        VERIFY_IS_TRUE(decdld(12, 12, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 9x20 for 80x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 10, 20 };
+        VERIFY_IS_TRUE(decdld(9, 20, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 10x30 for 80x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 12, 30 };
+        VERIFY_IS_TRUE(decdld(10, 30, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 8x16 for 80x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 16 };
+        VERIFY_IS_TRUE(decdld(8, 16, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 7x12 for 132x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 9, 12 };
+        VERIFY_IS_TRUE(decdld(7, 12, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Explicit 5x20 for 132x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 6, 20 };
+        VERIFY_IS_TRUE(decdld(5, 20, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Explicit 6x30 for 132x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 7, 30 };
+        VERIFY_IS_TRUE(decdld(6, 30, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Explicit 5x16 for 132x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 16 };
+        VERIFY_IS_TRUE(decdld(5, 16, FontSet::Size132x24, FontUsage::Text));
+
+        // Font sets with more than 24 lines must be VT420/VT5xx.
+        Log::Comment(L"80x36 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x36, FontUsage::Text));
+        Log::Comment(L"80x48 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x48, FontUsage::Text));
+        Log::Comment(L"132x36 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x36, FontUsage::Text));
+        Log::Comment(L"132x48 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x48, FontUsage::Text));
+        Log::Comment(L"80x36 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x36, FontUsage::FullCell));
+        Log::Comment(L"80x48 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x48, FontUsage::FullCell));
+        Log::Comment(L"132x36 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x36, FontUsage::FullCell));
+        Log::Comment(L"132x48 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x48, FontUsage::FullCell));
+
+        // Without an explicit size, the cell size is estimated from the number of sixels
+        // used in the character bitmaps. But note that sixel heights are always a multiple
+        // of 6, so will often be larger than the cell size for which they were intended.
+        Log::Comment(L"8x12 bitmap for 80x24 font set with text usage (VT2xx)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        const auto bitmapOf8x12 = L"????????/????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf8x12));
+        Log::Comment(L"12x12 bitmap for 80x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 15, 12 };
+        const auto bitmapOf12x12 = L"????????????/????????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf12x12));
+        Log::Comment(L"9x24 bitmap for 80x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 10, 20 };
+        const auto bitmapOf9x24 = L"?????????/?????????/?????????/?????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf9x24));
+        Log::Comment(L"10x30 bitmap for 80x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 12, 30 };
+        const auto bitmapOf10x30 = L"??????????/??????????/??????????/??????????/??????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf10x30));
+        Log::Comment(L"8x18 bitmap for 80x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 16 };
+        const auto bitmapOf8x18 = L"????????/????????/????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf8x18));
+
+        Log::Comment(L"5x12 bitmap for 132x24 font set with text usage (VT240)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        const auto bitmapOf5x12 = L"?????/?????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x12));
+        Log::Comment(L"7x12 bitmap for 132x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 9, 12 };
+        const auto bitmapOf7x12 = L"???????/???????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf7x12));
+        Log::Comment(L"5x24 bitmap for 132x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 6, 20 };
+        const auto bitmapOf5x24 = L"?????/?????/?????/?????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x24));
+        Log::Comment(L"6x30 bitmap for 132x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 7, 30 };
+        const auto bitmapOf6x30 = L"??????/??????/??????/??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf6x30));
+        Log::Comment(L"5x18 bitmap for 132x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 16 };
+        const auto bitmapOf5x18 = L"?????/?????/?????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x18));
+
+        Log::Comment(L"15x12 bitmap for 80x24 font set with full cell usage (VT320)");
+        _testGetSet->_expectedCellSize = { 15, 12 };
+        const auto bitmapOf15x12 = L"???????????????/???????????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf15x12));
+        Log::Comment(L"10x24 bitmap for 80x24 font set with full cell usage (VT340)");
+        _testGetSet->_expectedCellSize = { 10, 20 };
+        const auto bitmapOf10x24 = L"??????????/??????????/??????????/??????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf10x24));
+        Log::Comment(L"12x30 bitmap for 80x24 font set with full cell usage (VT382)");
+        _testGetSet->_expectedCellSize = { 12, 30 };
+        const auto bitmapOf12x30 = L"????????????/????????????/????????????/????????????/????????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf12x30));
+        Log::Comment(L"10x18 bitmap for 80x24 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 16 };
+        const auto bitmapOf10x18 = L"??????????/??????????/??????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf10x18));
+
+        Log::Comment(L"6x12 bitmap for 132x24 font set with full cell usage (VT240)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        const auto bitmapOf6x12 = L"??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x12));
+        Log::Comment(L"9x12 bitmap for 132x24 font set with full cell usage (VT320)");
+        _testGetSet->_expectedCellSize = { 9, 12 };
+        const auto bitmapOf9x12 = L"?????????/?????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf9x12));
+        Log::Comment(L"6x24 bitmap for 132x24 font set with full cell usage (VT340)");
+        _testGetSet->_expectedCellSize = { 6, 20 };
+        const auto bitmapOf6x24 = L"??????/??????/??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x24));
+        Log::Comment(L"7x30 bitmap for 132x24 font set with full cell usage (VT382)");
+        _testGetSet->_expectedCellSize = { 7, 30 };
+        const auto bitmapOf7x30 = L"???????/???????/???????/???????/???????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf7x30));
+        Log::Comment(L"6x18 bitmap for 132x24 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 16 };
+        const auto bitmapOf6x18 = L"??????/??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x18));
     }
 
 private:

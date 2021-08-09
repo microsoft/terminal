@@ -12,6 +12,7 @@
   <ItemGroup>
     <ClCompile Include="..\adaptDispatch.cpp" />
     <ClCompile Include="..\DispatchCommon.cpp" />
+    <ClCompile Include="..\FontBuffer.cpp" />
     <ClCompile Include="..\InteractDispatch.cpp" />
     <ClCompile Include="..\adaptDispatchGraphics.cpp" />
     <ClCompile Include="..\telemetry.cpp" />
@@ -27,6 +28,7 @@
     <ClInclude Include="..\charsets.hpp" />
     <ClInclude Include="..\DispatchTypes.hpp" />
     <ClInclude Include="..\DispatchCommon.hpp" />
+    <ClInclude Include="..\FontBuffer.hpp" />
     <ClInclude Include="..\InteractDispatch.hpp" />
     <ClInclude Include="..\conGetSet.hpp" />
     <ClInclude Include="..\precomp.h" />
