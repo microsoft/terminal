@@ -616,12 +616,20 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 }
 
 // Method Description:
-// - Gets the difference between window and client area size.
+// - Get the dimensions of our non-client area, as a rect where each component
+//   represents that side.
+// - The .left will be a negative number, to represent that the actual side of
+//   the non-client area is outside the border of our window. It's roughly 8px (
+//   * DPI scaling) to the left of the visible border.
+// - The .right component will be positive, indicating that the nonclient border
+//   is in the positive-x direction from the edge of our client area.
+// - This will also include our titlebar! It's in the nonclient area for us.
 // Arguments:
-// - dpi: dpi of a monitor on which the window is placed
-// Return Value
-// - The size difference
-SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
+// - dpi: the scaling that we should use to calculate the border sizes.
+// Return Value:
+// - a RECT whose components represent the margins of the nonclient area,
+//   relative to the client area.
+RECT IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
@@ -630,7 +638,18 @@ SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
     // the error and go on. We'll use whatever the control proposed as the
     // size of our window, which will be at least close.
     LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
+    return islandFrame;
+}
 
+// Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpi: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
+{
+    const auto islandFrame{ GetNonClientFrame(dpi) };
     return {
         islandFrame.right - islandFrame.left,
         islandFrame.bottom - islandFrame.top
