@@ -91,7 +91,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Helper to initialize the propoerties of the spotlight such as the location and
+    // - Helper to initialize the properties of the spotlight such as the location and
     //   the angles of the inner and outer cones
     // Arguments:
     // - xCoord: the x-coordinate of where to put the light
