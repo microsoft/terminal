@@ -804,6 +804,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        // Convert our new dimensions to characters
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+        const auto currentVP = _terminal->GetViewport();
+
+        // Don't actually resize if viewport dimensions didn't change
+        if (vp.Height() == currentVP.Height() && vp.Width() == currentVP.Width())
+        {
+            return;
+        }
+
         _terminal->ClearSelection();
 
         // Tell the dx engine that our window is now the new size.
@@ -811,11 +823,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Invalidate everything
         _renderer->TriggerRedrawAll();
-
-        // Convert our new dimensions to characters
-        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
-        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
