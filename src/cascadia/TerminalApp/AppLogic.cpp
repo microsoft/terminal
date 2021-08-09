@@ -203,7 +203,7 @@ namespace winrt::TerminalApp::implementation
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(_root->Dispatcher(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
             {
                 self->_ReloadSettings();

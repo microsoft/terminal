@@ -24,7 +24,7 @@ public:
     //
     // After `func` was invoked the state is reset and this cycle is repeated again.
     ThrottledFunc(
-        winrt::Windows::UI::Core::CoreDispatcher dispatcher,
+        winrt::Windows::System::DispatcherQueue dispatcher,
         filetime_duration delay,
         function func) :
         _dispatcher{ std::move(dispatcher) },
@@ -81,7 +81,7 @@ private:
     {
         if constexpr (leading)
         {
-            _dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakSelf = this->weak_from_this()]() {
+            _dispatcher.TryEnqueue(winrt::Windows::System::DispatcherQueuePriority::Normal, [weakSelf = this->weak_from_this()]() {
                 if (auto self{ weakSelf.lock() })
                 {
                     try
@@ -108,7 +108,7 @@ private:
         }
         else
         {
-            _dispatcher.RunAsync(winrt::Windows::UI::Core::CoreDispatcherPriority::Normal, [weakSelf = this->weak_from_this()]() {
+            _dispatcher.TryEnqueue(winrt::Windows::System::DispatcherQueuePriority::Normal, [weakSelf = this->weak_from_this()]() {
                 if (auto self{ weakSelf.lock() })
                 {
                     try
@@ -129,7 +129,7 @@ private:
     }
 
     FILETIME _delay;
-    winrt::Windows::UI::Core::CoreDispatcher _dispatcher;
+    winrt::Windows::System::DispatcherQueue _dispatcher;
     function _func;
 
     wil::unique_threadpool_timer _timer;
