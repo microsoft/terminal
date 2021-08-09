@@ -1172,7 +1172,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
                                                             viewHeight,
                                                             bufferSize) };
-        _updateScrollBar->Run(update);
+        if (!_inUnitTests)
+        {
+            _updateScrollBar->Run(update);
+        }
+        else
+        {
+            _ScrollPositionChangedHandlers(*this, update);
+        }
 
         // Additionally, start the throttled update of where our links are.
         _updatePatternLocations->Run();
