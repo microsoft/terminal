@@ -16,7 +16,7 @@ TrayIcon::TrayIcon(const HWND owningHwnd) :
 
 TrayIcon::~TrayIcon()
 {
-    DestroyTrayIcon();
+    RemoveIconFromTray();
 }
 
 // Method Description:
@@ -221,7 +221,7 @@ void TrayIcon::ReAddTrayIcon()
 // - <none>
 // Return Value:
 // - <none>
-void TrayIcon::DestroyTrayIcon()
+void TrayIcon::RemoveIconFromTray()
 {
     Shell_NotifyIcon(NIM_DELETE, &_trayIconData);
 }

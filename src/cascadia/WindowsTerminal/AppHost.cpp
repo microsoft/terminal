@@ -1032,7 +1032,7 @@ void AppHost::_DestroyTrayIcon()
     _window->NotifyShowTrayContextMenu(_ShowTrayContextMenuToken);
     _window->NotifyTrayMenuItemSelected(_TrayMenuItemSelectedToken);
 
-    _trayIcon->DestroyTrayIcon();
+    _trayIcon->RemoveIconFromTray();
     _trayIcon = nullptr;
 #endif
 }

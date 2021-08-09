@@ -589,14 +589,16 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         return 0;
     }
-    }
-
-    // We'll want to receive this message when explorer.exe restarts
-    // so that we can re-add our icon to the tray.
-    if (message == WM_TASKBARCREATED)
-    {
-        _NotifyReAddTrayIconHandlers();
-        return 0;
+    default:
+        // We'll want to receive this message when explorer.exe restarts
+        // so that we can re-add our icon to the tray.
+        // This unfortunately isn't a switch case because we register the
+        // message at runtime.
+        if (message == WM_TASKBARCREATED)
+        {
+            _NotifyReAddTrayIconHandlers();
+            return 0;
+        }
     }
 
     // TODO: handle messages here...

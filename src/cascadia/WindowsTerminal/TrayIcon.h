@@ -20,7 +20,7 @@ public:
     ~TrayIcon();
 
     void CreateTrayIcon();
-    void DestroyTrayIcon();
+    void RemoveIconFromTray();
     void ReAddTrayIcon();
 
     void TrayIconPressed();
