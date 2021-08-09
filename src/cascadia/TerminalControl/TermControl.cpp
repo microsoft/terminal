@@ -2381,6 +2381,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.TaskbarProgress();
     }
 
+    // Method Description:
+    // - Toggles the spotlight on the cursor
+    // - If the cursor is currently off the screen, does nothing
     void TermControl::HighlightCursor()
     {
         if (CursorLight::GetIsTarget(RootGrid()))
@@ -2389,6 +2392,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (!_core.IsCursorOffScreen())
         {
+            // Compute the location of where to place the light
             const auto charSizeInPixels = CharacterDimensions();
             const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
             const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
@@ -2398,6 +2402,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const til::point cursorPosInPixels{ cursorPos * fontSize };
             const til::point cursorPosInDIPs{ cursorPosInPixels / SwapChainPanel().CompositionScaleX() };
             const til::point cursorLocationInDIPs{ cursorPosInDIPs + marginsInDips };
+
             CursorLight().ChangeLocation(gsl::narrow_cast<float>(cursorLocationInDIPs.x()) + wtInDips / 2,
                                          gsl::narrow_cast<float>(cursorLocationInDIPs.y()) + htInDips / 2);
             CursorLight::SetIsTarget(RootGrid(), true);

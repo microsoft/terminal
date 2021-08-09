@@ -73,12 +73,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            auto spotLight{ Window::Current().Compositor().CreateSpotLight() };
-            spotLight.InnerConeColor(Windows::UI::Colors::White());
-            spotLight.InnerConeAngleInDegrees(10);
-            spotLight.OuterConeAngleInDegrees(25);
-            spotLight.Offset({ xCoord, yCoord, 100 });
-            CompositionLight(spotLight);
+            _InitializeHelper(xCoord, yCoord);
         }
     }
 
@@ -91,10 +86,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         if (!CompositionLight())
         {
+            _InitializeHelper(0, 0);
+        }
+    }
+
+    // Method Description:
+    // - Helper to initialize the propoerties of the spotlight such as the location and
+    //   the angles of the inner and outer cones
+    // Arguments:
+    // - xCoord: the x-coordinate of where to put the light
+    // - yCoord: the y-coordinate of where to put the light
+    void CursorLight::_InitializeHelper(float xCoord, float yCoord)
+    {
+        if (!CompositionLight())
+        {
             auto spotLight{ Window::Current().Compositor().CreateSpotLight() };
             spotLight.InnerConeColor(Windows::UI::Colors::White());
             spotLight.InnerConeAngleInDegrees(10);
             spotLight.OuterConeAngleInDegrees(25);
+            spotLight.Offset({ xCoord, yCoord, 100 });
             CompositionLight(spotLight);
         }
     }

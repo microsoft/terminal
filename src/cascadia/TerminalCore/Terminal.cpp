@@ -1208,13 +1208,15 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
     return cursor.IsBlinkingAllowed();
 }
 
+// Method Description:
+// - Computes whether the cursor is currently off the screen
+// Return value:
+// - True if the cursor if off the screen, false otherwise
 bool Terminal::IsCursorOffScreen() noexcept
 {
     const auto absoluteCursorPosY = _buffer->GetCursor().GetPosition().Y;
-    const auto viewport = _GetMutableViewport();
-    const auto viewHeight = viewport.Height();
     const auto scrollOffset = GetScrollOffset();
-    return absoluteCursorPosY < scrollOffset || absoluteCursorPosY >= (scrollOffset + viewHeight);
+    return absoluteCursorPosY < scrollOffset || absoluteCursorPosY >= (scrollOffset + _GetMutableViewport().Height());
 }
 
 // Method Description:

@@ -107,6 +107,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         static void _InitializeProperties();
         static Windows::UI::Xaml::DependencyProperty _IsTargetProperty;
+
+        void _InitializeHelper(float xCoord, float yCoord);
     };
 }
 
