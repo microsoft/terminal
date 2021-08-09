@@ -123,7 +123,11 @@ namespace Microsoft::Terminal::Settings::Model
 
     void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view content)
     {
-        auto tmpPath = path;
+        // GH#10787: In the case of symbolic link, ensure that we modify the target rather than the link itself.
+        // We append the paths manually rather than using "canonical" method to support scenario in which link target doesn't exist
+        const auto resolvedPath = std::filesystem::is_symlink(path) ? path.parent_path() / std::filesystem::read_symlink(path) : path;
+
+        auto tmpPath = resolvedPath;
         tmpPath += L".tmp";
 
         // Writing to a file isn't atomic, but...
@@ -132,6 +136,6 @@ namespace Microsoft::Terminal::Settings::Model
         // renaming one is (supposed to be) atomic.
         // Wait... "supposed to be"!? Well it's technically not always atomic,
         // but it's pretty darn close to it, so... better than nothing.
-        std::filesystem::rename(tmpPath, path);
+        std::filesystem::rename(tmpPath, resolvedPath);
     }
 }
