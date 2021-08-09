@@ -668,7 +668,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
     winrt::hstring ClearBufferArgs::GenerateName() const
     {
-        // TODO!
-        return winrt::hstring{ L"Clear buffer" };
+        // "Clear Buffer"
+        // "Clear Viewport"
+        // "Clear Scrollback"
+        switch (Clear())
+        {
+        case Control::ClearBufferType::All:
+            return RS_(L"ClearAllCommandKey");
+        case Control::ClearBufferType::Screen:
+            return RS_(L"ClearViewportCommandKey");
+        case Control::ClearBufferType::Scrollback:
+            return RS_(L"ClearScrollbackCommandKey");
+        }
+
+        // Return the emptry string - the Clear() should be one of these values
+        return winrt::hstring{ L"" };
     }
 }

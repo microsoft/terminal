@@ -32,6 +32,10 @@ namespace ControlUnitTests
 
         TEST_METHOD(TestFontInitializedInCtor);
 
+        TEST_METHOD(TestClearScrollback);
+        TEST_METHOD(TestClearScreen);
+        TEST_METHOD(TestClearAll);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
