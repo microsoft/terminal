@@ -630,7 +630,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     return DefWindowProc(GetHandle(), WM_SETCURSOR, wParam, lParam);
 }
 // Method Description:
-// - Get the dimensions of our non-client area, as a rect where each componenet
+// - Get the dimensions of our non-client area, as a rect where each component
 //   represents that side.
 // - The .left will be a negative number, to represent that the actual side of
 //   the non-client area is outside the border of our window. It's roughly 8px (
@@ -641,7 +641,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 // Arguments:
 // - dpi: the scaling that we should use to calculate the border sizes.
 // Return Value:
-// - a RECT whos components represent the margins of the nonclient area,
+// - a RECT whose components represent the margins of the nonclient area,
 //   relative to the client area.
 RECT NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 {

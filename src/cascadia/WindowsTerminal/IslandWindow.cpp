@@ -616,7 +616,7 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 }
 
 // Method Description:
-// - Get the dimensions of our non-client area, as a rect where each componenet
+// - Get the dimensions of our non-client area, as a rect where each component
 //   represents that side.
 // - The .left will be a negative number, to represent that the actual side of
 //   the non-client area is outside the border of our window. It's roughly 8px (
@@ -627,7 +627,7 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 // Arguments:
 // - dpi: the scaling that we should use to calculate the border sizes.
 // Return Value:
-// - a RECT whos components represent the margins of the nonclient area,
+// - a RECT whose components represent the margins of the nonclient area,
 //   relative to the client area.
 RECT IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
 {
