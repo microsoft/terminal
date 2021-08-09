@@ -407,7 +407,11 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
 }
 
 // Function Description:
-// TODO!
+// - Clear the contents of the conpty buffer, leaving the cursor row at the top
+//   of the viewport.
+// - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
+//   a terminal to clear the contents of the ConPTY buffer, which is important
+//   if the user would like to be able to clear the terminal-side buffer.
 extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
 {
     const PseudoConsole* const pPty = (PseudoConsole*)hPC;

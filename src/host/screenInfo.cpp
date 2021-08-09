@@ -2277,7 +2277,16 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     return S_OK;
 }
 
-// TODO!
+// Method Description:
+// - Clear the entire contents of the viewport, except for the cursor's row,
+//   which is moved to the top line of the viewport.
+// - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
+//   a terminal to clear the contents of the ConPTY buffer, which is important
+//   if the user would like to be able to clear the terminal-side buffer.
+// Arguments:
+// - <none>
+// Return Value:
+// - S_OK
 [[nodiscard]] HRESULT SCREEN_INFORMATION::ClearBuffer()
 {
     const COORD oldCursorPos = _textBuffer->GetCursor().GetPosition();
@@ -2309,7 +2318,6 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     auto fillData = OutputCellIterator{ fillAttributes, fillLength };
     Write(fillData, fillPosition, false);
 
-    // TODO! don't invalidate all you donkey
     _textBuffer->GetRenderTarget().TriggerRedrawAll();
 
     // Also reset the line rendition for the erased rows.

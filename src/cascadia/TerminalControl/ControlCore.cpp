@@ -1414,6 +1414,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ReceivedOutputHandlers(*this, nullptr);
     }
 
+    // Method Description:
+    // - Clear the contents of the buffer. The region cleared is given by
+    //   clearType:
+    //   * Screen: Clear only the contents of the visible viewport, leaving the
+    //     cursor row at the top of the viewport.
+    //   * Scrollback: Clear the contents of the scrollback.
+    //   * All: Do both - clear the visible viewport and the scrollback, leaving
+    //     only the cursor row at the top of the viewport.
+    // Arguments:
+    // - clearType: The tpye of clear to perform.
+    // Return Value:
+    // - <none>
     void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
     {
         if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
@@ -1423,8 +1435,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
         {
+            // Send a signal to conpty to clear the buffer.
             if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
             {
+                // ConPTY will emit sequences to sync up our buffer with its new
+                // contents.
                 conpty.ClearBuffer();
             }
         }

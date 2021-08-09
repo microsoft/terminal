@@ -1609,7 +1609,7 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
     return screenInfo.GetActiveBuffer().VtEraseAll();
 }
 
-// TODO!
+// See SCREEN_INFORMATION::ClearBuffer's description for details.
 [[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo)
 {
     return screenInfo.GetActiveBuffer().ClearBuffer();
