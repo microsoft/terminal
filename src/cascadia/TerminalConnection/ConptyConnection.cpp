@@ -515,8 +515,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::ClearBuffer()
     {
-        // If we haven't started connecting at all, it's still fair to update
-        // the initial rows and columns before we set things up.
+        // If we haven't connected yet, then we really don't need to do
+        // anything. The connection should already start clear!
         if (_isConnected())
         {
             THROW_IF_FAILED(ConptyClearPseudoConsole(_hPC.get()));
