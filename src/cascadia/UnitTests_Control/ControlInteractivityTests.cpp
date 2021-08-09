@@ -89,10 +89,6 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
             interactivity->Initialize();
         }
-
-        void _scrollDelay()
-        { /*Sleep(16);*/
-        }
     };
 
     void ControlInteractivityTests::TestAdjustAcrylic()
@@ -203,7 +199,6 @@ namespace ControlUnitTests
             }
 
             conn->WriteInput(L"Foo\r\n");
-            _scrollDelay();
         }
         // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
         VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
@@ -221,7 +216,6 @@ namespace ControlUnitTests
                                   WHEEL_DELTA,
                                   til::point{ 0, 0 },
                                   buttonState);
-        _scrollDelay();
 
         Log::Comment(L"Scroll up 19 more times, to the top");
         for (int i = 0; i < 20; ++i)
@@ -231,7 +225,6 @@ namespace ControlUnitTests
                                       WHEEL_DELTA,
                                       til::point{ 0, 0 },
                                       buttonState);
-            _scrollDelay();
         }
         Log::Comment(L"Scrolling up more should do nothing");
         expectedTop = 0;
@@ -239,12 +232,10 @@ namespace ControlUnitTests
                                   WHEEL_DELTA,
                                   til::point{ 0, 0 },
                                   buttonState);
-        _scrollDelay();
         interactivity->MouseWheel(modifiers,
                                   WHEEL_DELTA,
                                   til::point{ 0, 0 },
                                   buttonState);
-        _scrollDelay();
 
         Log::Comment(L"Scroll down 21 more times, to the bottom");
         for (int i = 0; i < 21; ++i)
@@ -255,7 +246,6 @@ namespace ControlUnitTests
                                       -WHEEL_DELTA,
                                       til::point{ 0, 0 },
                                       buttonState);
-            _scrollDelay();
             Log::Comment(NoThrowString().Format(L"internal scrollbar pos:%f", interactivity->_internalScrollbarPosition));
         }
         Log::Comment(L"Scrolling down more should do nothing");
@@ -264,12 +254,10 @@ namespace ControlUnitTests
                                   -WHEEL_DELTA,
                                   til::point{ 0, 0 },
                                   buttonState);
-        _scrollDelay();
         interactivity->MouseWheel(modifiers,
                                   -WHEEL_DELTA,
                                   til::point{ 0, 0 },
                                   buttonState);
-        _scrollDelay();
     }
 
     void ControlInteractivityTests::CreateSubsequentSelectionWithDragging()
