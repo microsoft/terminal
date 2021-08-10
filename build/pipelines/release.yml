@@ -279,6 +279,8 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
+  - task: PkgESSetupBuild@12
+    displayName: 'Package ES - Setup Build'
   - task: DownloadBuildArtifacts@0
     displayName: Download Build Artifacts
     inputs:
