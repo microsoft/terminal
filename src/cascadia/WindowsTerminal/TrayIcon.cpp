@@ -7,6 +7,7 @@
 #include <LibraryResources.h>
 
 using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Microsoft::Terminal;
 
 TrayIcon::TrayIcon(const HWND owningHwnd) :
     _owningHwnd{ owningHwnd }
@@ -170,6 +171,8 @@ void TrayIcon::TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
             winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs args{};
             args.WindowID(GetMenuItemID(menu, menuItemIndex));
             args.SummonBehavior().ToggleVisibility(false);
+            args.SummonBehavior().MoveToCurrentDesktop(false);
+            args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
             _SummonWindowRequestedHandlers(args);
             return;
         }
@@ -183,6 +186,8 @@ void TrayIcon::TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex)
     {
         winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs args{};
         args.SummonBehavior().ToggleVisibility(false);
+        args.SummonBehavior().MoveToCurrentDesktop(false);
+        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
         _SummonWindowRequestedHandlers(args);
         break;
     }
@@ -199,6 +204,8 @@ void TrayIcon::TrayIconPressed()
 {
     // No name in the args means summon the mru window.
     winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs args{};
+    args.SummonBehavior().MoveToCurrentDesktop(false);
+    args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
     args.SummonBehavior().ToggleVisibility(false);
     _SummonWindowRequestedHandlers(args);
 }
