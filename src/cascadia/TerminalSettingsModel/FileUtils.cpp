@@ -125,7 +125,11 @@ namespace Microsoft::Terminal::Settings::Model
     {
         // GH#10787: In the case of symbolic link, ensure that we modify the target rather than the link itself.
         // We append the paths manually rather than using "canonical" method to support scenario in which link target doesn't exist
-        const auto resolvedPath = std::filesystem::is_symlink(path) ? path.parent_path() / std::filesystem::read_symlink(path) : path;
+        auto resolvedPath = path;
+        while (std::filesystem::is_symlink(resolvedPath))
+        {
+            resolvedPath = resolvedPath.parent_path() / std::filesystem::read_symlink(resolvedPath);
+        }
 
         auto tmpPath = resolvedPath;
         tmpPath += L".tmp";
