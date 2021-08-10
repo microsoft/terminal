@@ -10,6 +10,9 @@ Licensed under the MIT license.
 #include <conattrs.hpp>
 #include "MySettings.g.h"
 
+using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+
 namespace winrt::SampleApp::implementation
 {
     struct MySettings : MySettingsT<MySettings>
@@ -41,6 +44,7 @@ namespace winrt::SampleApp::implementation
         winrt::Microsoft::Terminal::Core::ICoreAppearance UnfocusedAppearance() { return {}; };
 
         WINRT_PROPERTY(bool, TrimBlockSelection, false);
+        WINRT_PROPERTY(bool, DetectURLs, true);
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);
@@ -78,7 +82,8 @@ namespace winrt::SampleApp::implementation
 
         WINRT_PROPERTY(winrt::hstring, PixelShaderPath);
 
-        WINRT_PROPERTY(bool, DetectURLs, true);
+        WINRT_PROPERTY(IFontFeatureMap, FontFeatures);
+        WINRT_PROPERTY(IFontAxesMap, FontAxes);
 
     private:
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;

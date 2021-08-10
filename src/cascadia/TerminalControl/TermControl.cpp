@@ -50,7 +50,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
                              TerminalConnection::ITerminalConnection connection) :
+        TermControl(winrt::guid{}, settings, connection) {}
+
+    TermControl::TermControl(winrt::guid contentGuid,
+                             IControlSettings settings,
+                             TerminalConnection::ITerminalConnection connection) :
+        _initializedTerminal{ false },
         _settings{ settings },
+        _closing{ false },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -62,7 +69,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        if (contentGuid != winrt::guid{})
+        {
+            _contentProc = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+            if (_contentProc != nullptr)
+            {
+                _interactivity = _contentProc.GetInteractivity();
+            }
+        }
+
+        if (_interactivity == nullptr)
+        {
+            _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        }
         _core = _interactivity.Core();
 
         // These events might all be triggered by the connection, but that

@@ -25,6 +25,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
+        TermControl(winrt::guid contentGuid, IControlSettings settings, TerminalConnection::ITerminalConnection connection);
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings();
@@ -145,6 +146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::TermControlAutomationPeer _automationPeer{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
         Control::ControlCore _core{ nullptr };
+        Control::ContentProcess _contentProc{ nullptr };
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
