@@ -19,6 +19,8 @@
 #include "RenameWindowRequestedArgs.g.cpp"
 #include "../inc/WindowingBehavior.h"
 
+#include <til/latch.h>
+
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
@@ -253,16 +255,8 @@ namespace winrt::TerminalApp::implementation
                 path = path.parent_path();
             }
 
-            std::wstring pathText = path.wstring();
-
-            // Handle edge case of "C:\\", seems like the "StartingDirectory" doesn't like path which ends with '\'
-            if (pathText.back() == L'\\')
-            {
-                pathText.erase(std::prev(pathText.end()));
-            }
-
             NewTerminalArgs args;
-            args.StartingDirectory(winrt::hstring{ pathText });
+            args.StartingDirectory(winrt::hstring{ path.wstring() });
             this->_OpenNewTerminal(args);
 
             TraceLoggingWrite(
@@ -356,34 +350,12 @@ namespace winrt::TerminalApp::implementation
                 winrt::Microsoft::Terminal::TerminalConnection::ConptyConnection::StartInboundListener();
             }
             // If we failed to start the listener, it will throw.
-            // We should fail fast here or the Terminal will be in a very strange state.
-            // We only start the listener if the Terminal was started with the COM server
-            // `-Embedding` flag and we make no tabs as a result.
-            // Therefore, if the listener cannot start itself up to make that tab with
-            // the inbound connection that caused the COM activation in the first place...
-            // we would be left with an empty terminal frame with no tabs.
-            // Instead, crash out so COM sees the server die and things unwind
-            // without a weird empty frame window.
+            // We don't want to fail fast here because if a peasant has some trouble with
+            // starting the listener, we don't want it to crash and take all its tabs down
+            // with it.
             catch (...)
             {
-                // However, we cannot always fail fast because of MSFT:33501832. Sometimes the COM catalog
-                // tears the state between old and new versions and fails here for that reason.
-                // As we're always becoming an inbound server in the monarch, even when COM didn't strictly
-                // ask us yet...we might just crash always.
-                // Instead... we're going to differentiate. If COM started us... we will fail fast
-                // so it sees the process die and falls back.
-                // If we were just starting normally as a Monarch and opportunistically listening for
-                // inbound connections... then we'll just log the failure and move on assuming
-                // the version state is torn and will fix itself whenever the packaging upgrade
-                // tasks decide to clean up.
-                if (_isEmbeddingInboundListener)
-                {
-                    FAIL_FAST_CAUGHT_EXCEPTION();
-                }
-                else
-                {
-                    LOG_CAUGHT_EXCEPTION();
-                }
+                LOG_CAUGHT_EXCEPTION();
             }
         }
     }
@@ -767,7 +739,7 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            this->_OpenNewTab(newTerminalArgs);
+            LOG_IF_FAILED(this->_OpenNewTab(newTerminalArgs));
         }
     }
 
@@ -1246,6 +1218,33 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
+        _SplitPane(*focusedTab, splitType, splitMode, splitSize, newTerminalArgs);
+    }
+
+    // Method Description:
+    // - Split the focused pane of the given tab, either horizontally or vertically, and place the
+    //   given TermControl into the newly created pane.
+    // - If splitType == SplitState::None, this method does nothing.
+    // Arguments:
+    // - tab: The tab that is going to be split.
+    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
+    //   new pane should be split from its parent.
+    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
+    // - newTerminalArgs: An object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    void TerminalPage::_SplitPane(TerminalTab& tab,
+                                  const SplitState splitType,
+                                  const SplitType splitMode,
+                                  const float splitSize,
+                                  const NewTerminalArgs& newTerminalArgs)
+    {
+        // Do nothing if we're requesting no split.
+        if (splitType == SplitState::None)
+        {
+            return;
+        }
+
         try
         {
             TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -1254,12 +1253,12 @@ namespace winrt::TerminalApp::implementation
 
             if (splitMode == SplitType::Duplicate)
             {
-                std::optional<GUID> current_guid = focusedTab->GetFocusedProfile();
+                std::optional<GUID> current_guid = tab.GetFocusedProfile();
                 if (current_guid)
                 {
                     profileFound = true;
                     controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
-                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
@@ -1295,10 +1294,10 @@ namespace winrt::TerminalApp::implementation
             auto realSplitType = splitType;
             if (realSplitType == SplitState::Automatic)
             {
-                realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
+                realSplitType = tab.PreCalculateAutoSplit(availableSpace);
             }
 
-            const auto canSplit = focusedTab->PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
+            const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
             if (!canSplit)
             {
                 return;
@@ -1307,11 +1306,11 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl, *focusedTab);
+            _RegisterTerminalEvents(newControl, tab);
 
             _UnZoomIfNeeded();
 
-            focusedTab->SplitPane(realSplitType, splitSize, realGuid, newControl);
+            tab.SplitPane(realSplitType, splitSize, realGuid, newControl);
         }
         CATCH_LOG();
     }
@@ -2078,29 +2077,35 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Gets the taskbar state value from the last active control
+    // - Get the combined taskbar state for the page. This is the combination of
+    //   all the states of all the tabs, which are themselves a combination of
+    //   all their panes. Taskbar states are given a priority based on the rules
+    //   in:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate
+    //   under "How the Taskbar Button Chooses the Progress Indicator for a Group"
+    // Arguments:
+    // - <none>
     // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarState()
+    // - A TaskbarState object representing the combined taskbar state and
+    //   progress percentage of all our tabs.
+    winrt::TerminalApp::TaskbarState TerminalPage::TaskbarState() const
     {
-        if (auto control{ _GetActiveControl() })
-        {
-            return control.TaskbarState();
-        }
-        return {};
-    }
+        auto state{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>() };
 
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarProgress()
-    {
-        if (auto control{ _GetActiveControl() })
+        for (const auto& tab : _tabs)
         {
-            return control.TaskbarProgress();
+            if (auto tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                auto tabState{ tabImpl->GetCombinedTaskbarState() };
+                // lowest priority wins
+                if (tabState.Priority() < state.Priority())
+                {
+                    state = tabState;
+                }
+            }
         }
-        return {};
+
+        return state;
     }
 
     // Method Description:
@@ -2386,13 +2391,38 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
-    void TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    HRESULT TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
     {
-        // TODO: GH 9458 will give us more context so we can try to choose a better profile.
-        _OpenNewTab(nullptr, connection);
+        // We need to be on the UI thread in order for _OpenNewTab to run successfully.
+        // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
+        // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
+        // and wait on it hence the locking mechanism.
+        if (Dispatcher().HasThreadAccess())
+        {
+            // TODO: GH 9458 will give us more context so we can try to choose a better profile.
+            auto hr = _OpenNewTab(nullptr, connection);
 
-        // Request a summon of this window to the foreground
-        _SummonWindowRequestedHandlers(*this, nullptr);
+            // Request a summon of this window to the foreground
+            _SummonWindowRequestedHandlers(*this, nullptr);
+
+            return hr;
+        }
+        else
+        {
+            til::latch latch{ 1 };
+            HRESULT finalVal = S_OK;
+
+            Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
+                finalVal = _OpenNewTab(nullptr, connection);
+
+                _SummonWindowRequestedHandlers(*this, nullptr);
+
+                latch.count_down();
+            });
+
+            latch.wait();
+            return finalVal;
+        }
     }
 
     // Method Description:

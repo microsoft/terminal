@@ -40,7 +40,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(ManyKeysSameAction);
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(UnbindKeybindings);
-
+        TEST_METHOD(TestExplicitUnbind);
         TEST_METHOD(TestArbitraryArgs);
         TEST_METHOD(TestSplitPaneArgs);
 
@@ -230,6 +230,31 @@ namespace SettingsModelLocalTests
         actionMap->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
+    }
+
+    void KeyBindingsTests::TestExplicitUnbind()
+    {
+        const std::string bindings0String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
+        const std::string bindings1String{ R"([ { "command": "unbound", "keys": ["ctrl+c"] } ])" };
+        const std::string bindings2String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+        const auto bindings1Json = VerifyParseSucceeded(bindings1String);
+        const auto bindings2Json = VerifyParseSucceeded(bindings2String);
+
+        const KeyChord keyChord{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
+
+        auto actionMap = winrt::make_self<implementation::ActionMap>();
+        VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
+
+        actionMap->LayerJson(bindings0Json);
+        VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
+
+        actionMap->LayerJson(bindings1Json);
+        VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
+
+        actionMap->LayerJson(bindings2Json);
+        VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
     }
 
     void KeyBindingsTests::TestArbitraryArgs()

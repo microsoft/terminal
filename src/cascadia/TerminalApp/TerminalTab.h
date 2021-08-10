@@ -83,6 +83,7 @@ namespace winrt::TerminalApp::implementation
 
         void TogglePaneReadOnly();
         std::shared_ptr<Pane> GetActivePane() const;
+        winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
 
         winrt::TerminalApp::TerminalTabStatus TabStatus()
         {
@@ -95,6 +96,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
         DECLARE_EVENT(FindRequested, _FindRequestedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:

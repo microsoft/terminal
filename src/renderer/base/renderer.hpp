@@ -65,6 +65,10 @@ namespace Microsoft::Console::Render
                                const FontInfoDesired& FontInfoDesired,
                                _Out_ FontInfo& FontInfo) override;
 
+        void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                            const SIZE cellSize,
+                            const size_t centeringHint) override;
+
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
                                               const FontInfoDesired& FontInfoDesired,
                                               _Out_ FontInfo& FontInfo) override;
@@ -120,7 +124,10 @@ namespace Microsoft::Console::Render
         void _PaintOverlays(_In_ IRenderEngine* const pEngine);
         void _PaintOverlay(IRenderEngine& engine, const RenderOverlay& overlay);
 
-        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine, const TextAttribute attr, const bool isSettingDefaultBrushes);
+        [[nodiscard]] HRESULT _UpdateDrawingBrushes(_In_ IRenderEngine* const pEngine,
+                                                    const TextAttribute attr,
+                                                    const bool usingSoftFont,
+                                                    const bool isSettingDefaultBrushes);
 
         [[nodiscard]] HRESULT _PerformScrolling(_In_ IRenderEngine* const pEngine);
 
@@ -137,6 +144,10 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] std::optional<CursorOptions> _GetCursorInfo();
         [[nodiscard]] HRESULT _PrepareRenderInfo(_In_ IRenderEngine* const pEngine);
+
+        const size_t _firstSoftFontChar = 0xEF20;
+        size_t _lastSoftFontChar = 0;
+        static bool s_IsSoftFontChar(const std::wstring_view& v, const size_t firstSoftFontChar, const size_t lastSoftFontChar);
 
         // Helper functions to diagnose issues with painting and layout.
         // These are only actually effective/on in Debug builds when the flag is set using an attached debugger.
