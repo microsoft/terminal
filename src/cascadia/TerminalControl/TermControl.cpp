@@ -761,28 +761,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             (void)_TrySendKeyEvent(VK_MENU, scanCode, modifiers, false);
             handled = true;
         }
-        else if (vkey == VK_F7 && down)
+        else if ((vkey == VK_F7 || vkey == VK_SPACE) && down)
         {
             // Manually generate an F7 event into the key bindings or terminal.
             //   This is required as part of GH#638.
+            // Or do so for alt+space; only send to terminal when explicitly unbound
+            //  That is part of #GH7125
             auto bindings{ _settings.KeyBindings() };
+            bool isUnbound = false;
+            const KeyChord kc = {
+                modifiers.IsCtrlPressed(),
+                modifiers.IsAltPressed(),
+                modifiers.IsShiftPressed(),
+                modifiers.IsWinPressed(),
+                gsl::narrow_cast<WORD>(vkey),
+                0
+            };
 
             if (bindings)
             {
-                handled = bindings.TryKeyChord({
-                    modifiers.IsCtrlPressed(),
-                    modifiers.IsAltPressed(),
-                    modifiers.IsShiftPressed(),
-                    modifiers.IsWinPressed(),
-                    VK_F7,
-                    0,
-                });
+                handled = bindings.TryKeyChord(kc);
+
+                if (!handled)
+                {
+                    isUnbound = bindings.IsKeyChordExplicitlyUnbound(kc);
+                }
             }
 
-            if (!handled)
+            const bool sendToTerminal = vkey == VK_F7 || (vkey == VK_SPACE && isUnbound);
+
+            if (!handled && sendToTerminal)
             {
                 // _TrySendKeyEvent pretends it didn't handle F7 for some unknown reason.
-                (void)_TrySendKeyEvent(VK_F7, scanCode, modifiers, true);
+                (void)_TrySendKeyEvent(gsl::narrow_cast<WORD>(vkey), scanCode, modifiers, true);
                 // GH#6438: Note that we're _not_ sending the key up here - that'll
                 // get passed through XAML to our KeyUp handler normally.
                 handled = true;
