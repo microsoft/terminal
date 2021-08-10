@@ -213,7 +213,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             const auto state = winrt::get_self<implementation::ApplicationState>(ApplicationState::SharedInstance());
             auto generatedProfiles = state->GeneratedProfiles();
             bool generatedProfilesChanged = false;
-            size_t hiddenProfiles = 0;
 
             for (auto profile : resultPtr->_allProfiles)
             {
@@ -224,17 +223,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
                 else if (profile.Origin() != OriginTag::User)
                 {
                     profile.Hidden(true);
-                    hiddenProfiles++;
-                }
-            }
-
-            // In case that a user removed all of their profiles, we want to default to pretend as if
-            // the user asked for a "reset" of the profile list and readd all profiles as visible.
-            if (hiddenProfiles == resultPtr->_allProfiles.Size())
-            {
-                for (auto profile : resultPtr->_allProfiles)
-                {
-                    profile.Hidden(false);
                 }
             }
 
