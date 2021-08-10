@@ -427,9 +427,6 @@
                                Text="{x:Bind local:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
                 </Grid>
             </local:SettingContainer>
-
-
-
         </StackPanel>
 
         <!--  Grouping: Text Formatting  -->

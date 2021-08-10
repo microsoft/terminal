@@ -82,27 +82,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
-    // bool AppearanceViewModel::IntenseIsBold() const
-    // {
-    //     return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
-    // }
-    // void AppearanceViewModel::IntenseIsBold(bool value)
-    // {
-    //     auto oldValue{ _appearance.IntenseTextStyle() };
-    //     WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold, value);
-    //     _appearance.IntenseTextStyle(oldValue);
-    // }
-    // bool AppearanceViewModel::IntenseIsBright() const
-    // {
-    //     return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
-    // }
-    // void AppearanceViewModel::IntenseIsBright(bool value)
-    // {
-    //     auto oldValue{ _appearance.IntenseTextStyle() };
-    //     WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright, value);
-    //     _appearance.IntenseTextStyle(oldValue);
-    // }
-
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
     Appearances::Appearances() :
@@ -279,6 +258,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
                     _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
                 }
+                else if (settingName == L"IntenseTextStyle")
+                {
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IntenseTextStyle" });
+                }
             });
 
             // make sure to send all the property changed events once here
@@ -294,6 +277,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IntenseTextStyle" });
         }
     }
 
