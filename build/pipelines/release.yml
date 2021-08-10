@@ -293,7 +293,7 @@ jobs:
       buildId: 37520569
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\*.msix'
+      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.msix;$(System.ArtifactsDirectory)\**\CascadiaPackage*.appxsym'
       cleanDestinationFolder: true
       overwriteExistingFiles: true
       destinationFolder: $(Build.BinariesDirectory)
