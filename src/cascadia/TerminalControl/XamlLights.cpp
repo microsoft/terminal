@@ -15,22 +15,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     DependencyProperty VisualBellLight::_IsTargetProperty{ nullptr };
     DependencyProperty CursorLight::_IsTargetProperty{ nullptr };
 
-    void VisualBellLight::_InitializeProperties()
-    {
-        // Initialize any dependency properties here.
-        // This performs a lazy load on these properties, instead of
-        // initializing them when the DLL loads.
-        if (!_IsTargetProperty)
-        {
-            _IsTargetProperty =
-                DependencyProperty::RegisterAttached(
-                    L"IsTarget",
-                    winrt::xaml_typename<bool>(),
-                    winrt::xaml_typename<Control::VisualBellLight>(),
-                    PropertyMetadata{ winrt::box_value(false), PropertyChangedCallback{ &VisualBellLight::OnIsTargetChanged } });
-        }
-    }
-
     // Method Description:
     // - This function is called when the first target UIElement is shown on the screen,
     //   this enables delaying composition object creation until it's actually necessary.
@@ -43,22 +27,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             auto spotLight{ Window::Current().Compositor().CreateAmbientLight() };
             spotLight.Color(Windows::UI::Colors::White());
             CompositionLight(spotLight);
-        }
-    }
-
-    void CursorLight::_InitializeProperties()
-    {
-        // Initialize any dependency properties here.
-        // This performs a lazy load on these properties, instead of
-        // initializing them when the DLL loads.
-        if (!_IsTargetProperty)
-        {
-            _IsTargetProperty =
-                DependencyProperty::RegisterAttached(
-                    L"IsTarget",
-                    winrt::xaml_typename<bool>(),
-                    winrt::xaml_typename<Control::CursorLight>(),
-                    PropertyMetadata{ winrt::box_value(false), PropertyChangedCallback{ &CursorLight::OnIsTargetChanged } });
         }
     }
 
