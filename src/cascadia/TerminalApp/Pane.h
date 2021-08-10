@@ -67,7 +67,7 @@ public:
     void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-    bool MovePane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
     bool SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second);
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,

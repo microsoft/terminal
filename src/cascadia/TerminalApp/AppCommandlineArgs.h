@@ -78,14 +78,13 @@ private:
     NewTerminalSubcommand _newTabShort;
     NewPaneSubcommand _newPaneCommand;
     NewPaneSubcommand _newPaneShort;
-    CLI::App* _movePaneToTabCommand;
-    CLI::App* _movePaneToTabShort;
     CLI::App* _focusTabCommand;
     CLI::App* _focusTabShort;
     CLI::App* _moveFocusCommand;
     CLI::App* _moveFocusShort;
     CLI::App* _movePaneCommand;
     CLI::App* _movePaneShort;
+    CLI::App* _swapPaneCommand;
     CLI::App* _focusPaneCommand;
     CLI::App* _focusPaneShort;
 
@@ -99,7 +98,7 @@ private:
     bool _suppressApplicationTitle{ false };
 
     winrt::Microsoft::Terminal::Settings::Model::FocusDirection _moveFocusDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
-    winrt::Microsoft::Terminal::Settings::Model::FocusDirection _movePaneDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
+    winrt::Microsoft::Terminal::Settings::Model::FocusDirection _swapPaneDirection{ winrt::Microsoft::Terminal::Settings::Model::FocusDirection::None };
 
     // _commandline will contain the command line with which we'll be spawning a new terminal
     std::vector<std::string> _commandline;
@@ -109,7 +108,7 @@ private:
     bool _splitDuplicate{ false };
     float _splitPaneSize{ 0.5f };
 
-    int _movePaneToTabIndex{ -1 };
+    int _movePaneTabIndex{ -1 };
     int _focusTabIndex{ -1 };
     bool _focusNextTab{ false };
     bool _focusPrevTab{ false };
@@ -131,11 +130,11 @@ private:
     void _addNewTerminalArgs(NewTerminalSubcommand& subcommand);
     void _buildParser();
     void _buildNewTabParser();
-    void _buildMovePaneToTabParser();
     void _buildSplitPaneParser();
     void _buildFocusTabParser();
     void _buildMoveFocusParser();
     void _buildMovePaneParser();
+    void _buildSwapPaneParser();
     void _buildFocusPaneParser();
     bool _noCommandsProvided();
     void _resetStateToDefault();

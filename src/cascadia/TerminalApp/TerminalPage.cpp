@@ -1122,17 +1122,17 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Attempt to swap the positions of the focused pane with another pane.
-    //   See Pane::MovePane for details.
+    //   See Pane::SwapPane for details.
     // Arguments:
     // - direction: The direction to move the focused pane in.
     // Return Value:
     // - <none>
-    void TerminalPage::_MovePane(const FocusDirection& direction)
+    void TerminalPage::_SwapPane(const FocusDirection& direction)
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->MovePane(direction);
+            terminalTab->SwapPane(direction);
         }
     }
 
@@ -1202,7 +1202,7 @@ namespace winrt::TerminalApp::implementation
     //   is the last remaining pane on a tab, that tab will be closed upon moving.
     // Arguments:
     // - tabIdx: The target tab index.
-    bool TerminalPage::_MovePaneToTab(const uint32_t tabIdx)
+    bool TerminalPage::_MovePane(const uint32_t tabIdx)
     {
         auto focusedTab{ _GetFocusedTabImpl() };
 

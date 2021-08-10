@@ -677,7 +677,7 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the pane in.
     // Return Value:
     // - <none>
-    void TerminalTab::MovePane(const FocusDirection& direction)
+    void TerminalTab::SwapPane(const FocusDirection& direction)
     {
         if (direction == FocusDirection::Previous)
         {
@@ -694,7 +694,7 @@ namespace winrt::TerminalApp::implementation
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            _rootPane->MovePane(direction);
+            _rootPane->SwapPane(direction);
         }
     }
 

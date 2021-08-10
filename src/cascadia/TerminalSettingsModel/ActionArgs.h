@@ -13,6 +13,7 @@
 #include "ResizePaneArgs.g.h"
 #include "MoveFocusArgs.g.h"
 #include "MovePaneArgs.g.h"
+#include "SwapPaneArgs.g.h"
 #include "AdjustFontSizeArgs.g.h"
 #include "SendInputArgs.g.h"
 #include "SplitPaneArgs.g.h"
@@ -26,7 +27,6 @@
 #include "CloseTabArgs.g.h"
 #include "ScrollUpArgs.g.h"
 #include "ScrollDownArgs.g.h"
-#include "MovePaneToTabArgs.g.h"
 #include "MoveTabArgs.g.h"
 #include "ToggleCommandPaletteArgs.g.h"
 #include "FindMatchArgs.g.h"
@@ -287,10 +287,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    struct MovePaneToTabArgs : public MovePaneToTabArgsT<MovePaneToTabArgs>
+    struct MovePaneArgs : public MovePaneArgsT<MovePaneArgs>
     {
-        MovePaneToTabArgs() = default;
-        MovePaneToTabArgs(uint32_t& tabIndex) :
+        MovePaneArgs() = default;
+        MovePaneArgs(uint32_t& tabIndex) :
             _TabIndex{ tabIndex } {};
         ACTION_ARG(uint32_t, TabIndex, 0);
 
@@ -301,7 +301,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool Equals(const IActionArgs& other)
         {
-            auto otherAsUs = other.try_as<MovePaneToTabArgs>();
+            auto otherAsUs = other.try_as<MovePaneArgs>();
             if (otherAsUs)
             {
                 return otherAsUs->_TabIndex == _TabIndex;
@@ -311,7 +311,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MovePaneToTabArgs>();
+            auto args = winrt::make_self<MovePaneArgs>();
             JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
             return { *args, {} };
         }
@@ -322,13 +322,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<MovePaneToTabArgs>(val) };
+            const auto args{ get_self<MovePaneArgs>(val) };
             JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
             return json;
         }
         IActionArgs Copy() const
         {
-            auto copy{ winrt::make_self<MovePaneToTabArgs>() };
+            auto copy{ winrt::make_self<MovePaneArgs>() };
             copy->_TabIndex = _TabIndex;
             return *copy;
         }
@@ -504,10 +504,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    struct MovePaneArgs : public MovePaneArgsT<MovePaneArgs>
+    struct SwapPaneArgs : public SwapPaneArgsT<SwapPaneArgs>
     {
-        MovePaneArgs() = default;
-        MovePaneArgs(Model::FocusDirection direction) :
+        SwapPaneArgs() = default;
+        SwapPaneArgs(Model::FocusDirection direction) :
             _Direction{ direction } {};
 
         ACTION_ARG(Model::FocusDirection, Direction, FocusDirection::None);
@@ -519,7 +519,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool Equals(const IActionArgs& other)
         {
-            auto otherAsUs = other.try_as<MovePaneArgs>();
+            auto otherAsUs = other.try_as<SwapPaneArgs>();
             if (otherAsUs)
             {
                 return otherAsUs->_Direction == _Direction;
@@ -529,7 +529,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static FromJsonResult FromJson(const Json::Value& json)
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MovePaneArgs>();
+            auto args = winrt::make_self<SwapPaneArgs>();
             JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
             if (args->Direction() == FocusDirection::None)
             {
@@ -547,13 +547,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<MovePaneArgs>(val) };
+            const auto args{ get_self<SwapPaneArgs>(val) };
             JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
             return json;
         }
         IActionArgs Copy() const
         {
-            auto copy{ winrt::make_self<MovePaneArgs>() };
+            auto copy{ winrt::make_self<SwapPaneArgs>() };
             copy->_Direction = _Direction;
             return *copy;
         }
@@ -1755,12 +1755,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionEventArgs);
-    BASIC_FACTORY(MovePaneToTabArgs);
     BASIC_FACTORY(SwitchToTabArgs);
     BASIC_FACTORY(NewTerminalArgs);
     BASIC_FACTORY(NewTabArgs);
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(MovePaneArgs);
+    BASIC_FACTORY(SwapPaneArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);

@@ -143,16 +143,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleMovePaneToTab(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
         if (args == nullptr)
         {
             args.Handled(false);
         }
-        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneToTabArgs>())
+        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
-            auto moved = _MovePaneToTab(realArgs.TabIndex());
+            auto moved = _MovePane(realArgs.TabIndex());
             args.Handled(moved);
         }
     }
@@ -337,10 +337,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSwapPane(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        if (const auto& realArgs = args.ActionArgs().try_as<SwapPaneArgs>())
         {
             if (realArgs.Direction() == FocusDirection::None)
             {
@@ -349,7 +349,7 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MovePane(realArgs.Direction());
+                _SwapPane(realArgs.Direction());
                 args.Handled(true);
             }
         }

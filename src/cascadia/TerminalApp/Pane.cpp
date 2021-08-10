@@ -220,7 +220,7 @@ bool Pane::ResizePane(const ResizeDirection& direction)
 //     direction, we'll return false. This will indicate to our parent that they
 //     should try and move the focus themselves. In this way, the focus can move
 //     up and down the tree to the correct pane.
-// - This method is _very_ similar to MovePane. Both are trying to find the
+// - This method is _very_ similar to SwapPane. Both are trying to find the
 //   right pane to move (focus) in a direction.
 // Arguments:
 // - direction: The direction to move the focus in.
@@ -595,7 +595,7 @@ Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& dire
 // - direction: The direction to move the focused pane in.
 // Return Value:
 // - true if we or a child handled this pane move request.
-bool Pane::MovePane(const FocusDirection& direction)
+bool Pane::SwapPane(const FocusDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly swap anything.
     if (_IsLeaf())
@@ -614,7 +614,7 @@ bool Pane::MovePane(const FocusDirection& direction)
     // and its neighbor must necessarily be contained within the same child.
     if (!DirectionMatchesSplit(direction, _splitState))
     {
-        return _firstChild->MovePane(direction) || _secondChild->MovePane(direction);
+        return _firstChild->SwapPane(direction) || _secondChild->SwapPane(direction);
     }
 
     // Since the direction is the same as our split, it is possible that we must

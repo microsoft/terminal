@@ -36,7 +36,6 @@
     ON_ALL_ACTIONS(PrevTab)                \
     ON_ALL_ACTIONS(SendInput)              \
     ON_ALL_ACTIONS(SplitPane)              \
-    ON_ALL_ACTIONS(MovePaneToTab)          \
     ON_ALL_ACTIONS(ToggleSplitOrientation) \
     ON_ALL_ACTIONS(TogglePaneZoom)         \
     ON_ALL_ACTIONS(SwitchToTab)            \
@@ -51,6 +50,7 @@
     ON_ALL_ACTIONS(ResizePane)             \
     ON_ALL_ACTIONS(MoveFocus)              \
     ON_ALL_ACTIONS(MovePane)               \
+    ON_ALL_ACTIONS(SwapPane)               \
     ON_ALL_ACTIONS(Find)                   \
     ON_ALL_ACTIONS(ToggleShaderEffects)    \
     ON_ALL_ACTIONS(ToggleFocusMode)        \
@@ -91,6 +91,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(GlobalSummon)         \
     ON_ALL_ACTIONS_WITH_ARGS(MoveFocus)            \
     ON_ALL_ACTIONS_WITH_ARGS(MovePane)             \
+    ON_ALL_ACTIONS_WITH_ARGS(SwapPane)             \
     ON_ALL_ACTIONS_WITH_ARGS(MoveTab)              \
     ON_ALL_ACTIONS_WITH_ARGS(NewTab)               \
     ON_ALL_ACTIONS_WITH_ARGS(NewWindow)            \
@@ -105,7 +106,6 @@
     ON_ALL_ACTIONS_WITH_ARGS(SendInput)            \
     ON_ALL_ACTIONS_WITH_ARGS(SetColorScheme)       \
     ON_ALL_ACTIONS_WITH_ARGS(SetTabColor)          \
-    ON_ALL_ACTIONS_WITH_ARGS(MovePaneToTab)        \
     ON_ALL_ACTIONS_WITH_ARGS(SplitPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \

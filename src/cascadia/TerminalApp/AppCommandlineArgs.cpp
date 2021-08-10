@@ -190,10 +190,10 @@ void AppCommandlineArgs::_buildParser()
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
-    _buildMovePaneToTabParser();
     _buildFocusTabParser();
     _buildMoveFocusParser();
     _buildMovePaneParser();
+    _buildSwapPaneParser();
     _buildFocusPaneParser();
 }
 
@@ -299,21 +299,21 @@ void AppCommandlineArgs::_buildSplitPaneParser()
     setupSubcommand(_newPaneShort);
 }
 // Method Description:
-// - Adds the `move-pane-to-tab` subcommand and related options to the commandline parser.
-// - Additionally adds the `mptt` subcommand, which is just a shortened version of `move-pane-to-tab`
+// - Adds the `move-pane` subcommand and related options to the commandline parser.
+// - Additionally adds the `mp` subcommand, which is just a shortened version of `move-pane`
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void AppCommandlineArgs::_buildMovePaneToTabParser()
+void AppCommandlineArgs::_buildMovePaneParser()
 {
-    _movePaneToTabCommand = _app.add_subcommand("move-pane-to-tab", RS_A(L"CmdMovePaneToTabDesc"));
-    _movePaneToTabShort = _app.add_subcommand("mptt", RS_A(L"CmdMPTTDesc"));
+    _movePaneCommand = _app.add_subcommand("move-pane", RS_A(L"CmdMovePaneDesc"));
+    _movePaneShort = _app.add_subcommand("mp", RS_A(L"CmdMPDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        subcommand->add_option("-t,--target",
-                               _movePaneToTabIndex,
-                               RS_A(L"CmdMovePaneToTabTargetArgDesc"));
+        subcommand->add_option("-t,--tab",
+                               _movePaneTabIndex,
+                               RS_A(L"CmdMovePaneTabArgDesc"));
 
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -321,19 +321,19 @@ void AppCommandlineArgs::_buildMovePaneToTabParser()
         // command was parsed.
         subcommand->callback([&, this]() {
             // Build the action from the values we've parsed on the commandline.
-            ActionAndArgs movePaneToTabAction{};
+            ActionAndArgs movePaneAction{};
 
-            if (_movePaneToTabIndex >= 0)
+            if (_movePaneTabIndex >= 0)
             {
-                movePaneToTabAction.Action(ShortcutAction::MovePaneToTab);
-                MovePaneToTabArgs args{ static_cast<unsigned int>(_movePaneToTabIndex) };
-                movePaneToTabAction.Args(args);
-                _startupActions.push_back(movePaneToTabAction);
+                movePaneAction.Action(ShortcutAction::MovePane);
+                MovePaneArgs args{ static_cast<unsigned int>(_movePaneTabIndex) };
+                movePaneAction.Args(args);
+                _startupActions.push_back(movePaneAction);
             }
         });
     };
-    setupSubcommand(_movePaneToTabCommand);
-    setupSubcommand(_movePaneToTabShort);
+    setupSubcommand(_movePaneCommand);
+    setupSubcommand(_movePaneShort);
 }
 
 // Method Description:
@@ -438,16 +438,14 @@ void AppCommandlineArgs::_buildMoveFocusParser()
 }
 
 // Method Description:
-// - Adds the `move-pane` subcommand and related options to the commandline parser.
-// - Additionally adds the `mp` subcommand, which is just a shortened version of `move-pane`
+// - Adds the `swap-pane` subcommand and related options to the commandline parser.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void AppCommandlineArgs::_buildMovePaneParser()
+void AppCommandlineArgs::_buildSwapPaneParser()
 {
-    _movePaneCommand = _app.add_subcommand("move-pane", RS_A(L"CmdMovePaneDesc"));
-    _movePaneShort = _app.add_subcommand("mp", RS_A(L"CmdMPDesc"));
+    _swapPaneCommand = _app.add_subcommand("swap-pane", RS_A(L"CmdSwapPaneDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
         std::map<std::string, FocusDirection> map = {
@@ -458,8 +456,8 @@ void AppCommandlineArgs::_buildMovePaneParser()
         };
 
         auto* directionOpt = subcommand->add_option("direction",
-                                                    _movePaneDirection,
-                                                    RS_A(L"CmdMovePaneDirectionArgDesc"));
+                                                    _swapPaneDirection,
+                                                    RS_A(L"CmdSwapPaneDirectionArgDesc"));
 
         directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
         directionOpt->required();
@@ -468,12 +466,12 @@ void AppCommandlineArgs::_buildMovePaneParser()
         // that `this` will still be safe - this function just lets us know this
         // command was parsed.
         subcommand->callback([&, this]() {
-            if (_movePaneDirection != FocusDirection::None)
+            if (_swapPaneDirection != FocusDirection::None)
             {
-                MovePaneArgs args{ _movePaneDirection };
+                SwapPaneArgs args{ _swapPaneDirection };
 
                 ActionAndArgs actionAndArgs{};
-                actionAndArgs.Action(ShortcutAction::MovePane);
+                actionAndArgs.Action(ShortcutAction::SwapPane);
                 actionAndArgs.Args(args);
 
                 _startupActions.push_back(std::move(actionAndArgs));
@@ -481,8 +479,7 @@ void AppCommandlineArgs::_buildMovePaneParser()
         });
     };
 
-    setupSubcommand(_movePaneCommand);
-    setupSubcommand(_movePaneShort);
+    setupSubcommand(_swapPaneCommand);
 }
 
 // Method Description:
@@ -657,14 +654,13 @@ bool AppCommandlineArgs::_noCommandsProvided()
 {
     return !(*_newTabCommand.subcommand ||
              *_newTabShort.subcommand ||
-             *_movePaneToTabCommand ||
-             *_movePaneToTabShort ||
              *_focusTabCommand ||
              *_focusTabShort ||
              *_moveFocusCommand ||
              *_moveFocusShort ||
              *_movePaneCommand ||
              *_movePaneShort ||
+             *_swapPaneCommand ||
              *_focusPaneCommand ||
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
@@ -693,13 +689,13 @@ void AppCommandlineArgs::_resetStateToDefault()
     _splitPaneSize = 0.5f;
     _splitDuplicate = false;
 
-    _movePaneToTabIndex = -1;
+    _movePaneTabIndex = -1;
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
 
     _moveFocusDirection = FocusDirection::None;
-    _movePaneDirection = FocusDirection::None;
+    _swapPaneDirection = FocusDirection::None;
 
     _focusPaneTarget = -1;
 

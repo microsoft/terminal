@@ -141,9 +141,9 @@ namespace Microsoft.Terminal.Settings.Model
         NewTerminalArgs TerminalArgs { get; };
     };
 
-    [default_interface] runtimeclass MovePaneToTabArgs : IActionArgs
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs
     {
-        MovePaneToTabArgs(UInt32 tabIndex);
+        MovePaneArgs(UInt32 tabIndex);
         UInt32 TabIndex;
     };
 
@@ -164,9 +164,9 @@ namespace Microsoft.Terminal.Settings.Model
         FocusDirection FocusDirection { get; };
     };
 
-    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    [default_interface] runtimeclass SwapPaneArgs : IActionArgs
     {
-        MovePaneArgs(FocusDirection direction);
+        SwapPaneArgs(FocusDirection direction);
         FocusDirection Direction { get; };
     };
 
