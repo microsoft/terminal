@@ -471,10 +471,10 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
 {
-    static constexpr std::array<pair_type, 3> mappings = {
+    static constexpr std::array<pair_type, 4> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "bold", ValueType::Bold },
-        // pair_type{ "bright", ValueType::Bright },
+        pair_type{ "bright", ValueType::Bright },
         pair_type{ "all", AllSet },
     };
 };

@@ -601,7 +601,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-        _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
 
         _updateAntiAliasingMode(_renderEngine.get());
 
@@ -632,6 +631,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
             _renderer->TriggerRedrawAll();
         }
     }

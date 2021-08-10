@@ -92,6 +92,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold, value);
         _appearance.IntenseTextStyle(oldValue);
     }
+    bool AppearanceViewModel::IntenseIsBright() const
+    {
+        return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
+    }
+    void AppearanceViewModel::IntenseIsBright(bool value)
+    {
+        auto oldValue{ _appearance.IntenseTextStyle() };
+        WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright, value);
+        _appearance.IntenseTextStyle(oldValue);
+    }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 

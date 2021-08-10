@@ -96,6 +96,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         bool IntenseIsBold() const;
         void IntenseIsBold(bool value);
+        bool IntenseIsBright() const;
+        void IntenseIsBright(bool value);
 
     private:
         Model::AppearanceConfig _appearance;

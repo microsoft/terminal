@@ -435,6 +435,13 @@
                                     SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
                 <ToggleSwitch IsOn="{x:Bind Appearance.IntenseIsBold, Mode=TwoWay}" />
             </local:SettingContainer>
+            <!--  Intense is bold  -->
+            <local:SettingContainer x:Uid="Appearance_IntenseIsBright"
+                                    ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
+                                    HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.IntenseIsBright, Mode=TwoWay}" />
+            </local:SettingContainer>
         </StackPanel>
     </StackPanel>
 </UserControl>

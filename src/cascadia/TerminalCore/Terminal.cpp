@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false }
+    _trimBlockSelection{ false },
+    _intenseIsBright{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -173,6 +174,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     til::color newBackgroundColor{ appearance.DefaultBackground() };
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
+    _intenseIsBright = appearance.IntenseIsBright();
 
     for (int i = 0; i < 16; i++)
     {

@@ -1190,4 +1190,8 @@
     <value>Render "intense" text as bold</value>
     <comment>Header for a control to toggle if text formatted as "intense" should be rendered with a bold font weight or not.</comment>
   </data>
+  <data name="Appearance_IntenseIsBright.Header" xml:space="preserve">
+    <value>Render "intense" text as bright</value>
+    <comment>Header for a control to toggle if dark text formatted as "intense" should be rendered with a bright color instead.</comment>
+  </data>
 </root>

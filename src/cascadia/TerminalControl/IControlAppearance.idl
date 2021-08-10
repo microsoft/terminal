@@ -12,7 +12,7 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
         Boolean IntenseIsBold;
-        // Boolean IntenseIsBright;
+        // IntenseIsBright is in Core Appearance
 
         // Experimental settings
         Boolean RetroTerminalEffect;
