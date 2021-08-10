@@ -29,6 +29,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     Control::IControlAppearance unfocusedAppearance,
                     TerminalConnection::ITerminalConnection connection);
 
+        TermControl(winrt::guid contentGuid,
+                    IControlSettings settings,
+                    Control::IControlAppearance unfocusedAppearance,
+                    TerminalConnection::ITerminalConnection connection);
+
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
@@ -148,6 +153,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Control::TermControlAutomationPeer _automationPeer{ nullptr };
         Control::ControlInteractivity _interactivity{ nullptr };
         Control::ControlCore _core{ nullptr };
+        Control::ContentProcess _contentProc{ nullptr };
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 

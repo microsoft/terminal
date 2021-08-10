@@ -16,6 +16,11 @@ namespace Microsoft.Terminal.Control
                                                    IMouseWheelListener,
                                                    ICoreState
     {
+        TermControl(Guid contentGuid,
+                    IControlSettings settings,
+                    IControlAppearance unfocusedAppearance,
+                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+
         TermControl(IControlSettings settings,
                     IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
