@@ -21,6 +21,7 @@
 #pragma once
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "TaskbarState.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -125,6 +126,8 @@ public:
 
         return false;
     }
+
+    void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);

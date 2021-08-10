@@ -68,8 +68,7 @@ namespace TerminalApp
         void TitlebarClicked();
         void WindowCloseButtonClicked();
 
-        UInt64 GetLastActiveControlTaskbarState();
-        UInt64 GetLastActiveControlTaskbarProgress();
+        TaskbarState TaskbarState{ get; };
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
