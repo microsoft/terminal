@@ -144,7 +144,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
-                                            const ActionEventArgs& args)
+                                       const ActionEventArgs& args)
     {
         if (args == nullptr)
         {
