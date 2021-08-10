@@ -28,9 +28,21 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        TerminalConnection::EchoConnection conn{};
         auto settings = winrt::make_self<ControlUnitTests::MockControlSettings>();
 
+        auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
+                                                                                      winrt::hstring{},
+                                                                                      L"",
+                                                                                      nullptr,
+                                                                                      32,
+                                                                                      80,
+                                                                                      winrt::guid()) };
+
+        // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
+        winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
+        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
+
+        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
         Control::TermControl control{ *settings, conn };
 
         InProcContent().Children().Append(control);
@@ -112,22 +124,44 @@ namespace winrt::SampleApp::implementation
 
         Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
 
-        TerminalConnection::ITerminalConnection conn{ nullptr };
+        // TerminalConnection::ITerminalConnection conn{ nullptr };
+        TerminalConnection::ConnectionInformation connectInfo{ nullptr };
         Control::IControlSettings settings{ nullptr };
 
         settings = *winrt::make_self<implementation::MySettings>();
 
+        // When creating a terminal for the first time, pass it a connection
+        // info
+        //
+        // otherwise, when attaching to an existing one, just pass null, because
+        // we don't need the connection info.
         if (!attached)
         {
-            conn = TerminalConnection::EchoConnection{};
-            // settings = *winrt::make_self<implementation::MySettings>();
-            content.Initialize(settings, conn);
+            auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted out-of-proc...",
+                                                                                          winrt::hstring{},
+                                                                                          L"",
+                                                                                          nullptr,
+                                                                                          32,
+                                                                                          80,
+                                                                                          winrt::guid()) };
+
+            // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
+            winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
+            connectInfo = TerminalConnection::ConnectionInformation(myClass, connectionSettings);
+
+            if (!content.Initialize(settings, connectInfo))
+            {
+                co_return;
+            }
+        }
+        else
+        {
         }
 
         // Switch back to the UI thread.
         co_await ui_thread;
 
-        Control::TermControl control{ contentGuid, settings, conn };
+        Control::TermControl control{ contentGuid, settings, nullptr };
 
         OutOfProcContent().Children().Append(control);
 
@@ -144,36 +178,36 @@ namespace winrt::SampleApp::implementation
 
     }*/
 
-    winrt::fire_and_forget MyPage::CreateOutOfProcTerminal()
-    {
-        // 1. Generate a GUID.
-        winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
+    //winrt::fire_and_forget MyPage::CreateOutOfProcTerminal()
+    //{
+    //    // 1. Generate a GUID.
+    //    winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
 
-        // Capture calling context.
-        winrt::apartment_context ui_thread;
-        co_await winrt::resume_background();
+    //    // Capture calling context.
+    //    winrt::apartment_context ui_thread;
+    //    co_await winrt::resume_background();
 
-        // 2. Spawn a Server.exe, with the guid on the commandline
-        auto piContent{ std::move(_createHostClassProcess(contentGuid)) };
+    //    // 2. Spawn a Server.exe, with the guid on the commandline
+    //    auto piContent{ std::move(_createHostClassProcess(contentGuid)) };
 
-        Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+    //    Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
 
-        TerminalConnection::EchoConnection conn{};
-        auto settings = winrt::make_self<implementation::MySettings>();
-        Control::IControlSettings s = *settings;
+    //    TerminalConnection::EchoConnection conn{};
+    //    auto settings = winrt::make_self<implementation::MySettings>();
+    //    Control::IControlSettings s = *settings;
 
-        if (s)
-        {
-            content.Initialize(s, conn);
+    //    if (s)
+    //    {
+    //        content.Initialize(s, conn);
 
-            // Switch back to the UI thread.
-            co_await ui_thread;
+    //        // Switch back to the UI thread.
+    //        co_await ui_thread;
 
-            Control::TermControl control{ contentGuid, s, conn };
+    //        Control::TermControl control{ contentGuid, s, conn };
 
-            OutOfProcContent().Children().Append(control);
-        }
-    }
+    //        OutOfProcContent().Children().Append(control);
+    //    }
+    //}
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
