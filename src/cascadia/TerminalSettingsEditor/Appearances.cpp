@@ -260,8 +260,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 }
                 else if (settingName == L"IntenseTextStyle")
                 {
-                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IntenseTextStyle" });
+                    _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
                 }
+                // YOU THERE ADDING A NEW APPEARANCE SETTING
+                // Make sure you add a block like
+                //
+                //   else if (settingName == L"MyNewSetting")
+                //   {
+                //       _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentMyNewSetting" });
+                //   }
+                //
+                // To make sure that changes to the AppearanceViewModel will
+                // propagate back up to the actual UI (in Appearances). The
+                // CurrentMyNewSetting properties are the ones that are bound in
+                // XAML. If you don't do this right (or only raise a property
+                // changed for "MyNewSetting"), then things like the reset
+                // button won't work right.
             });
 
             // make sure to send all the property changed events once here
@@ -277,7 +291,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentFontFace" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"ShowAllFonts" });
             _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"UsingMonospaceFont" });
-            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"IntenseTextStyle" });
+            _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentIntenseTextStyle" });
         }
     }
 
