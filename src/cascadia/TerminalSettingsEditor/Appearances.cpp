@@ -82,26 +82,26 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return BackgroundImagePath() != L"";
     }
 
-    bool AppearanceViewModel::IntenseIsBold() const
-    {
-        return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
-    }
-    void AppearanceViewModel::IntenseIsBold(bool value)
-    {
-        auto oldValue{ _appearance.IntenseTextStyle() };
-        WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold, value);
-        _appearance.IntenseTextStyle(oldValue);
-    }
-    bool AppearanceViewModel::IntenseIsBright() const
-    {
-        return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
-    }
-    void AppearanceViewModel::IntenseIsBright(bool value)
-    {
-        auto oldValue{ _appearance.IntenseTextStyle() };
-        WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright, value);
-        _appearance.IntenseTextStyle(oldValue);
-    }
+    // bool AppearanceViewModel::IntenseIsBold() const
+    // {
+    //     return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
+    // }
+    // void AppearanceViewModel::IntenseIsBold(bool value)
+    // {
+    //     auto oldValue{ _appearance.IntenseTextStyle() };
+    //     WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bold, value);
+    //     _appearance.IntenseTextStyle(oldValue);
+    // }
+    // bool AppearanceViewModel::IntenseIsBright() const
+    // {
+    //     return WI_IsFlagSet(_appearance.IntenseTextStyle(), winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
+    // }
+    // void AppearanceViewModel::IntenseIsBright(bool value)
+    // {
+    //     auto oldValue{ _appearance.IntenseTextStyle() };
+    //     WI_UpdateFlag(oldValue, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle::Bright, value);
+    //     _appearance.IntenseTextStyle(oldValue);
+    // }
 
     DependencyProperty Appearances::_AppearanceProperty{ nullptr };
 
@@ -152,6 +152,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         const auto backgroundImgCheckboxTooltip{ ToolTipService::GetToolTip(UseDesktopImageCheckBox()) };
         Automation::AutomationProperties::SetFullDescription(UseDesktopImageCheckBox(), unbox_value<hstring>(backgroundImgCheckboxTooltip));
+
+        INITIALIZE_BINDABLE_ENUM_SETTING(IntenseTextStyle, IntenseTextStyle, winrt::Microsoft::Terminal::Settings::Model::IntenseStyle, L"Appearance_IntenseTextStyle", L"Content");
     }
 
     // Method Description:

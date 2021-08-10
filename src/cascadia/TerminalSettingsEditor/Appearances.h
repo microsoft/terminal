@@ -94,10 +94,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
 
-        bool IntenseIsBold() const;
-        void IntenseIsBold(bool value);
-        bool IntenseIsBright() const;
-        void IntenseIsBright(bool value);
+        // bool IntenseIsBold() const;
+        // void IntenseIsBold(bool value);
+        // bool IntenseIsBright() const;
+        // void IntenseIsBright(bool value);
 
     private:
         Model::AppearanceConfig _appearance;
@@ -141,6 +141,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Editor::ProfileViewModel, SourceProfile, nullptr);
 
         GETSET_BINDABLE_ENUM_SETTING(BackgroundImageStretchMode, Windows::UI::Xaml::Media::Stretch, Appearance, BackgroundImageStretchMode);
+
+        GETSET_BINDABLE_ENUM_SETTING(IntenseTextStyle, Microsoft::Terminal::Settings::Model::IntenseStyle, Appearance, IntenseTextStyle);
 
     private:
         bool _ShowAllFonts;
