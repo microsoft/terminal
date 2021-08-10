@@ -750,7 +750,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
-    auto isInJsonObj = [](const auto& profile, const auto& json) {
+    static const auto isInJsonObj = [](const auto& profile, const auto& json) {
         for (auto profileJson : _GetProfilesJsonObject(json))
         {
             if (profileJson.isObject())
@@ -784,7 +784,15 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
     for (const auto& profile : _allProfiles)
     {
-        // Skip profiles that are in the user settings or the default settings.
+        // Skip profiles that are:
+        // * hidden
+        //   Because when a user manually removes profiles from settings.json,
+        //   we mark them as hidden in LoadAll(). Adding those profiles right
+        //   back into settings.json would feel confusing, while the
+        //   profile that was just erased is added right back.
+        // * in the user settings or the default settings
+        //   Because we don't want to add profiles which are already
+        //   in the settings.json (explicitly or implicitly).
         if (profile.Hidden() || isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
         {
             continue;
