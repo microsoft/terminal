@@ -281,6 +281,26 @@ jobs:
     persistCredentials: True
   - task: PkgESSetupBuild@12
     displayName: 'Package ES - Setup Build'
+
+  - task: NuGetAuthenticate@0
+
+  # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: Component Detection
+    
+  # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@2
+    displayName: 'Run the PREfast SDL Native Rules for MSBuild'
+    condition: succeededOrFailed()
+
+  # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
+  - task: CopyFiles@1
+    displayName: 'Copy PREfast xml files to SDLNativeRulesDir'
+    inputs:
+      SourceFolder: '$(Agent.BuildDirectory)'
+      Contents: |
+        **\*.nativecodeanalysis.xml
+      TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
   - task: DownloadBuildArtifacts@0
     displayName: Download Build Artifacts
     inputs:
