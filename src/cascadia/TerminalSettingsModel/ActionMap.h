@@ -44,7 +44,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
         {
-            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
+            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey() && lhs.ScanCode() == rhs.ScanCode();
         }
     };
 
