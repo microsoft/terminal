@@ -28,7 +28,7 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        auto settings = winrt::make_self<ControlUnitTests::MockControlSettings>();
+        auto settings = winrt::make_self<ControlUnitTests::MySettings>();
 
         auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
                                                                                       winrt::hstring{},
@@ -103,7 +103,7 @@ namespace winrt::SampleApp::implementation
         co_await winrt::resume_background();
 
         auto canConvert = guidString.size() == 38 && guidString.front() == '{' && guidString.back() == '}';
-        bool attached = false;
+        bool tryingToAttach = false;
         winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
 
         if (canConvert)
@@ -112,30 +112,32 @@ namespace winrt::SampleApp::implementation
             if (SUCCEEDED(IIDFromString(guidString.c_str(), &result)))
             {
                 contentGuid = result;
-                attached = true;
+                tryingToAttach = true;
             }
         }
 
-        if (!attached)
+        if (!tryingToAttach)
         {
-            // 2. Spawn a Server.exe, with the guid on the commandline
+            // Spawn a wt.exe, with the guid on the commandline
             auto piContent{ std::move(_createHostClassProcess(contentGuid)) };
         }
 
+        // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
+        // * If we're creating a new OOP control, _createHostClassProcess will
+        //   spawn the process that will actually host the ContentProcess
+        //   object.
+        // * If we're attaching, then that process already exists.
         Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
 
-        // TerminalConnection::ITerminalConnection conn{ nullptr };
         TerminalConnection::ConnectionInformation connectInfo{ nullptr };
-        Control::IControlSettings settings{ nullptr };
-
-        settings = *winrt::make_self<implementation::MySettings>();
+        Control::IControlSettings settings{ *winrt::make_self<implementation::MySettings>() };
 
         // When creating a terminal for the first time, pass it a connection
         // info
         //
         // otherwise, when attaching to an existing one, just pass null, because
         // we don't need the connection info.
-        if (!attached)
+        if (!tryingToAttach)
         {
             auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted out-of-proc...",
                                                                                           winrt::hstring{},
@@ -156,58 +158,24 @@ namespace winrt::SampleApp::implementation
         }
         else
         {
+            // If we're attaching, we don't really need to do anything special.
         }
 
         // Switch back to the UI thread.
         co_await ui_thread;
 
+        // Create the XAML control that will be attached to the content process.
+        // We're not passing in a connection, because the contentGuid will be used instead.
         Control::TermControl control{ contentGuid, settings, nullptr };
 
         OutOfProcContent().Children().Append(control);
 
-        if (!attached)
+        if (!tryingToAttach)
         {
             auto guidStr{ ::Microsoft::Console::Utils::GuidToString(contentGuid) };
             GuidInput().Text(guidStr);
         }
     }
-
-    /*winrt::fire_and_forget MyPage::_attachToContent(winrt::guid contentGuid)
-    {
-        Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-
-    }*/
-
-    //winrt::fire_and_forget MyPage::CreateOutOfProcTerminal()
-    //{
-    //    // 1. Generate a GUID.
-    //    winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
-
-    //    // Capture calling context.
-    //    winrt::apartment_context ui_thread;
-    //    co_await winrt::resume_background();
-
-    //    // 2. Spawn a Server.exe, with the guid on the commandline
-    //    auto piContent{ std::move(_createHostClassProcess(contentGuid)) };
-
-    //    Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
-
-    //    TerminalConnection::EchoConnection conn{};
-    //    auto settings = winrt::make_self<implementation::MySettings>();
-    //    Control::IControlSettings s = *settings;
-
-    //    if (s)
-    //    {
-    //        content.Initialize(s, conn);
-
-    //        // Switch back to the UI thread.
-    //        co_await ui_thread;
-
-    //        Control::TermControl control{ contentGuid, s, conn };
-
-    //        OutOfProcContent().Children().Append(control);
-    //    }
-    //}
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
