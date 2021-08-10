@@ -293,8 +293,14 @@ jobs:
       buildId: 37520569
   - task: ExtractFiles@1
     inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.msix;$(System.ArtifactsDirectory)\**\CascadiaPackage*.appxsym'
+      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.msix'
       cleanDestinationFolder: true
+      overwriteExistingFiles: true
+      destinationFolder: $(Build.BinariesDirectory)
+  - task: ExtractFiles@1
+    inputs:
+      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.appxsym'
+      cleanDestinationFolder: false
       overwriteExistingFiles: true
       destinationFolder: $(Build.BinariesDirectory)
    # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
