@@ -776,7 +776,12 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
             _taskbar->SetProgressValue(_window.get(), progress, 100);
             break;
         case 3:
-            // sets the progress indicator to an indeterminate state
+            // sets the progress indicator to an indeterminate state.
+            // FIRST, set the progress to "no progress". That'll clear out any
+            // progress value from the previous state. Otherwise, a transition
+            // from (error,x%) or (warning,x%) to indeterminate will leave the
+            // progress value unchanged, and not show the spinner.
+            _taskbar->SetProgressState(_window.get(), TBPF_NOPROGRESS);
             _taskbar->SetProgressState(_window.get(), TBPF_INDETERMINATE);
             break;
         case 4:

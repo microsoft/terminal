@@ -2077,29 +2077,35 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Gets the taskbar state value from the last active control
+    // - Get the combined taskbar state for the page. This is the combination of
+    //   all the states of all the tabs, which are themselves a combination of
+    //   all their panes. Taskbar states are given a priority based on the rules
+    //   in:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate
+    //   under "How the Taskbar Button Chooses the Progress Indicator for a Group"
+    // Arguments:
+    // - <none>
     // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarState()
+    // - A TaskbarState object representing the combined taskbar state and
+    //   progress percentage of all our tabs.
+    winrt::TerminalApp::TaskbarState TerminalPage::TaskbarState() const
     {
-        if (auto control{ _GetActiveControl() })
-        {
-            return control.TaskbarState();
-        }
-        return {};
-    }
+        auto state{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>() };
 
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarProgress()
-    {
-        if (auto control{ _GetActiveControl() })
+        for (const auto& tab : _tabs)
         {
-            return control.TaskbarProgress();
+            if (auto tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                auto tabState{ tabImpl->GetCombinedTaskbarState() };
+                // lowest priority wins
+                if (tabState.Priority() < state.Priority())
+                {
+                    state = tabState;
+                }
+            }
         }
-        return {};
+
+        return state;
     }
 
     // Method Description:

@@ -1129,28 +1129,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Gets the taskbar state value from the last active control
-    // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarState()
+    winrt::TerminalApp::TaskbarState AppLogic::TaskbarState()
     {
         if (_root)
         {
-            return _root->GetLastActiveControlTaskbarState();
-        }
-        return {};
-    }
-
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarProgress()
-    {
-        if (_root)
-        {
-            return _root->GetLastActiveControlTaskbarProgress();
+            return _root->TaskbarState();
         }
         return {};
     }
