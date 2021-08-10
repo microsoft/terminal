@@ -335,6 +335,8 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         DUPLICATE_SETTING_MACRO_SUB(font, target, FontFace);
         DUPLICATE_SETTING_MACRO_SUB(font, target, FontSize);
         DUPLICATE_SETTING_MACRO_SUB(font, target, FontWeight);
+        DUPLICATE_SETTING_MACRO_SUB(font, target, FontFeatures);
+        DUPLICATE_SETTING_MACRO_SUB(font, target, FontAxes);
     }
 
     {

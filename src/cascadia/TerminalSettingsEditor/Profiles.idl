@@ -19,6 +19,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
         Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
 
+        void SetAcrylicOpacityPercentageValue(Double value);
+        void SetPadding(Double value);
+
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
         Boolean UseParentProcessDirectory;
@@ -105,5 +108,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
+
+        Windows.UI.Xaml.Controls.Slider AcrylicOpacitySlider { get; };
     }
 }

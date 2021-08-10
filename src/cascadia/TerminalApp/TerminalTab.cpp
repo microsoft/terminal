@@ -177,10 +177,9 @@ namespace winrt::TerminalApp::implementation
             {
                 lastFocusedControl.Focus(_focusState);
 
-                // Update our own progress state, and fire an event signaling
+                // Update our own progress state. This will fire an event signaling
                 // that our taskbar progress changed.
                 _UpdateProgressState();
-                _TaskbarProgressChangedHandlers(lastFocusedControl, nullptr);
             }
             // When we gain focus, remove the bell indicator if it is active
             if (_tabStatus.BellIndicator())
@@ -441,6 +440,17 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Find the currently active pane, and then switch the split direction of
+    //   its parent. E.g. switch from Horizontal to Vertical.
+    // Return Value:
+
+    // - <none>
+    void TerminalTab::ToggleSplitOrientation()
+    {
+        _rootPane->ToggleSplitOrientation();
+    }
+
+    // Method Description:
     // - See Pane::CalcSnappedDimension
     float TerminalTab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
@@ -481,23 +491,24 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the focus in.
     // Return Value:
-    // - <none>
-    void TerminalTab::NavigateFocus(const FocusDirection& direction)
+    // - Whether changing the focus succeeded. This allows a keychord to propagate
+    //   to the terminal when no other panes are present (GH#6219)
+    bool TerminalTab::NavigateFocus(const FocusDirection& direction)
     {
         if (direction == FocusDirection::Previous)
         {
             if (_mruPanes.size() < 2)
             {
-                return;
+                return false;
             }
             // To get to the previous pane, get the id of the previous pane and focus to that
-            _rootPane->FocusPane(_mruPanes.at(1));
+            return _rootPane->FocusPane(_mruPanes.at(1));
         }
         else
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            _rootPane->NavigateFocus(direction);
+            return _rootPane->NavigateFocus(direction);
         }
     }
 
@@ -664,6 +675,26 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get the combined taskbar state for the tab. This is the combination of
+    //   all the states of all our panes. Taskbar states are given a priority
+    //   based on the rules in:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate
+    //   under "How the Taskbar Button Chooses the Progress Indicator for a
+    //   Group"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A TaskbarState object representing the combined taskbar state and
+    //   progress percentage of all our panes.
+    winrt::TerminalApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
+    {
+        std::vector<winrt::TerminalApp::TaskbarState> states;
+        _rootPane->CollectTaskbarStates(states);
+        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() :
+                                *std::min_element(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
+    }
+
+    // Method Description:
     // - This should be called on the UI thread. If you don't, then it might
     //   silently do nothing.
     // - Update our TabStatus to reflect the progress state of the currently
@@ -678,37 +709,39 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_UpdateProgressState()
     {
-        if (const auto& activeControl{ GetActiveTerminalControl() })
-        {
-            const auto taskbarState = activeControl.TaskbarState();
-            // The progress of the control changed, but not necessarily the progress of the tab.
-            // Set the tab's progress ring to the active pane's progress
-            if (taskbarState > 0)
-            {
-                if (taskbarState == 3)
-                {
-                    // 3 is the indeterminate state, set the progress ring as such
-                    _tabStatus.IsProgressRingIndeterminate(true);
-                }
-                else
-                {
-                    // any non-indeterminate state has a value, set the progress ring as such
-                    _tabStatus.IsProgressRingIndeterminate(false);
+        const auto state{ GetCombinedTaskbarState() };
 
-                    const auto progressValue = gsl::narrow<uint32_t>(activeControl.TaskbarProgress());
-                    _tabStatus.ProgressValue(progressValue);
-                }
-                // Hide the tab icon (the progress ring is placed over it)
-                HideIcon(true);
-                _tabStatus.IsProgressRingActive(true);
+        const auto taskbarState = state.State();
+        // The progress of the control changed, but not necessarily the progress of the tab.
+        // Set the tab's progress ring to the active pane's progress
+        if (taskbarState > 0)
+        {
+            if (taskbarState == 3)
+            {
+                // 3 is the indeterminate state, set the progress ring as such
+                _tabStatus.IsProgressRingIndeterminate(true);
             }
             else
             {
-                // Show the tab icon
-                HideIcon(false);
-                _tabStatus.IsProgressRingActive(false);
+                // any non-indeterminate state has a value, set the progress ring as such
+                _tabStatus.IsProgressRingIndeterminate(false);
+
+                const auto progressValue = gsl::narrow<uint32_t>(state.Progress());
+                _tabStatus.ProgressValue(progressValue);
             }
+            // Hide the tab icon (the progress ring is placed over it)
+            HideIcon(true);
+            _tabStatus.IsProgressRingActive(true);
         }
+        else
+        {
+            // Show the tab icon
+            HideIcon(false);
+            _tabStatus.IsProgressRingActive(false);
+        }
+
+        // fire an event signaling that our taskbar progress changed.
+        _TaskbarProgressChangedHandlers(nullptr, nullptr);
     }
 
     // Method Description:
@@ -924,12 +957,30 @@ namespace winrt::TerminalApp::implementation
             duplicateTabMenuItem.Icon(duplicateTabSymbol);
         }
 
+        Controls::MenuFlyoutItem splitTabMenuItem;
+        {
+            // "Split Tab"
+            Controls::FontIcon splitTabSymbol;
+            splitTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            splitTabSymbol.Glyph(L"\xF246"); // ViewDashboard
+
+            splitTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_SplitTabRequestedHandlers();
+                }
+            });
+            splitTabMenuItem.Text(RS_(L"SplitTabText"));
+            splitTabMenuItem.Icon(splitTabSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
         contextMenuFlyout.Items().Append(chooseColorMenuItem);
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
+        contextMenuFlyout.Items().Append(splitTabMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
@@ -1221,6 +1272,7 @@ namespace winrt::TerminalApp::implementation
             EnterZoom();
         }
     }
+
     void TerminalTab::EnterZoom()
     {
         _zoomedPane = _activePane;
@@ -1302,4 +1354,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
 }

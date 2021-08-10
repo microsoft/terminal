@@ -21,6 +21,7 @@
 #pragma once
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "TaskbarState.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -69,6 +70,7 @@ public:
                                                                   const float splitSize,
                                                                   const GUID& profile,
                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
+    bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
                                                                                                  const winrt::Windows::Foundation::Size parentSize) const;
@@ -90,6 +92,8 @@ public:
     std::shared_ptr<Pane> FindPane(const uint32_t id);
 
     bool ContainsReadOnly() const;
+
+    void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -146,9 +150,9 @@ private:
     void _ApplySplitDefinitions();
     void _SetupEntranceAnimation();
     void _UpdateBorders();
+    Borders _GetCommonBorders();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
-    bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
     std::shared_ptr<Pane> _FindParentOfPane(const std::shared_ptr<Pane> pane);
     bool _IsAdjacent(const std::shared_ptr<Pane> first, const PanePoint firstOffset, const std::shared_ptr<Pane> second, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;

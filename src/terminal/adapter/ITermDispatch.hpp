@@ -23,6 +23,8 @@ namespace Microsoft::Console::VirtualTerminal
 class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
+    using StringHandler = std::function<bool(const wchar_t)>;
+
 #pragma warning(push)
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
@@ -130,6 +132,15 @@ public:
     virtual bool EndHyperlink() = 0;
 
     virtual bool DoConEmuAction(const std::wstring_view string) = 0;
+
+    virtual StringHandler DownloadDRCS(const size_t fontNumber,
+                                       const VTParameter startChar,
+                                       const DispatchTypes::DrcsEraseControl eraseControl,
+                                       const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                       const DispatchTypes::DrcsFontSet fontSet,
+                                       const DispatchTypes::DrcsFontUsage fontUsage,
+                                       const VTParameter cellHeight,
+                                       const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)

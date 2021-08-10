@@ -58,6 +58,72 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
 
     // Function Description:
+    // - Promotes a starting directory provided to a WSL invocation to a commandline argument.
+    //   This is necessary because WSL has some modicum of support for linux-side directories (!) which
+    //   CreateProcess never will.
+    static std::tuple<std::wstring, std::wstring> _tryMangleStartingDirectoryForWSL(std::wstring_view commandLine, std::wstring_view startingDirectory)
+    {
+        do
+        {
+            if (startingDirectory.size() > 0 && commandLine.size() >= 3)
+            { // "wsl" is three characters; this is a safe bet. no point in doing it if there's no starting directory though!
+                // Find the first space, quote or the end of the string -- we'll look for wsl before that.
+                const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+                const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+                const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
+                const auto executableFilename{ executablePath.filename().wstring() };
+                if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
+                {
+                    // We've got a WSL -- let's just make sure it's the right one.
+                    if (executablePath.has_parent_path())
+                    {
+                        std::wstring systemDirectory{};
+                        if (FAILED(wil::GetSystemDirectoryW(systemDirectory)))
+                        {
+                            break; // just bail out.
+                        }
+                        if (executablePath.parent_path().wstring() != systemDirectory)
+                        {
+                            break; // it wasn't in system32!
+                        }
+                    }
+                    else
+                    {
+                        // assume that unqualified WSL is the one in system32 (minor danger)
+                    }
+
+                    const auto arguments{ terminator == std::wstring_view::npos ? std::wstring_view{} : commandLine.substr(terminator + 1) };
+                    if (arguments.find(L"--cd") != std::wstring_view::npos)
+                    {
+                        break; // they've already got a --cd!
+                    }
+
+                    const auto tilde{ arguments.find_first_of(L'~') };
+                    if (tilde != std::wstring_view::npos)
+                    {
+                        if (tilde + 1 == arguments.size() || til::at(arguments, tilde + 1) == L' ')
+                        {
+                            // We want to suppress --cd if they have added a bare ~ to their commandline (they conflict).
+                            break;
+                        }
+                        // Tilde followed by non-space should be okay (like, wsl -d Debian ~/blah.sh)
+                    }
+
+                    return {
+                        fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), startingDirectory, arguments),
+                        std::wstring{}
+                    };
+                }
+            }
+        } while (false);
+
+        return {
+            std::wstring{ commandLine },
+            std::wstring{ startingDirectory }
+        };
+    }
+
+    // Function Description:
     // - launches the client application attached to the new pseudoconsole
     HRESULT ConptyConnection::_LaunchAttachedClient() noexcept
     try
@@ -163,11 +229,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             siEx.StartupInfo.lpTitle = mutableTitle.data();
         }
 
-        const wchar_t* const startingDirectory = _startingDirectory.size() > 0 ? _startingDirectory.c_str() : nullptr;
+        auto [newCommandLine, newStartingDirectory] = _tryMangleStartingDirectoryForWSL(cmdline, _startingDirectory);
+        const wchar_t* const startingDirectory = newStartingDirectory.size() > 0 ? newStartingDirectory.c_str() : nullptr;
 
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr,
-            cmdline.data(),
+            newCommandLine.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
             false, // bInheritHandles
@@ -289,11 +356,20 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         _transitionToState(ConnectionState::Connecting);
 
+        const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
+
+        // If we do not have pipes already, then this is a fresh connection... not an inbound one that is a received
+        // handoff from an already-started PTY process.
         if (!_inPipe)
         {
-            const COORD dimensions{ gsl::narrow_cast<SHORT>(_initialCols), gsl::narrow_cast<SHORT>(_initialRows) };
             THROW_IF_FAILED(_CreatePseudoConsoleAndPipes(dimensions, PSEUDOCONSOLE_RESIZE_QUIRK | PSEUDOCONSOLE_WIN32_INPUT_MODE, &_inPipe, &_outPipe, &_hPC));
             THROW_IF_FAILED(_LaunchAttachedClient());
+        }
+        // But if it was an inbound handoff... attempt to synchronize the size of it with what our connection
+        // window is expecting it to be on the first layout.
+        else
+        {
+            THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
         }
 
         _startTime = std::chrono::high_resolution_clock::now();
@@ -423,11 +499,14 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
     void ConptyConnection::Resize(uint32_t rows, uint32_t columns)
     {
-        if (!_hPC)
+        // If we haven't started connecting at all, it's still fair to update
+        // the initial rows and columns before we set things up.
+        if (!_isStateAtOrBeyond(ConnectionState::Connecting))
         {
             _initialRows = rows;
             _initialCols = columns;
         }
+        // Otherwise, we can really only dispatch a resize if we're already connected.
         else if (_isConnected())
         {
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), { Utils::ClampToShortMax(columns, 1), Utils::ClampToShortMax(rows, 1) }));

@@ -32,6 +32,9 @@ namespace ControlUnitTests
         TEST_METHOD(ScrollWithSelection);
         TEST_METHOD(TestScrollWithTrackpad);
         TEST_METHOD(TestQuickDragOnSelect);
+
+        TEST_METHOD(TestDragSelectOutsideBounds);
+
         TEST_METHOD(PointerClickOutsideActiveRegion);
 
         TEST_CLASS_SETUP(ClassSetup)
@@ -70,6 +73,7 @@ namespace ControlUnitTests
             auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(settings, conn);
             VERIFY_IS_NOT_NULL(interactivity);
             auto core = interactivity->_core;
+            core->_inUnitTests = true;
             VERIFY_IS_NOT_NULL(core);
 
             return { core, interactivity };
@@ -160,6 +164,10 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::TestScrollWithMouse()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         auto [settings, conn] = _createSettingsAndConnection();
@@ -240,7 +248,7 @@ namespace ControlUnitTests
                                       buttonState);
             Log::Comment(NoThrowString().Format(L"internal scrollbar pos:%f", interactivity->_internalScrollbarPosition));
         }
-        Log::Comment(L"Scrolling up more should do nothing");
+        Log::Comment(L"Scrolling down more should do nothing");
         expectedTop = 21;
         interactivity->MouseWheel(modifiers,
                                   -WHEEL_DELTA,
@@ -254,6 +262,10 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::CreateSubsequentSelectionWithDragging()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         // This is a test for GH#9725
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
@@ -288,7 +300,8 @@ namespace ControlUnitTests
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
                                     true, // focused,
-                                    cursorPosition1);
+                                    cursorPosition1,
+                                    true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -300,7 +313,8 @@ namespace ControlUnitTests
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
                                     true, // focused,
-                                    cursorPosition2);
+                                    cursorPosition2,
+                                    true);
         Log::Comment(L"Verify that there's now two selections (one on each row)");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(2u, core->_terminal->GetSelectionRects().size());
@@ -333,7 +347,8 @@ namespace ControlUnitTests
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
                                     true, // focused,
-                                    cursorPosition4);
+                                    cursorPosition4,
+                                    true);
         Log::Comment(L"Verify that there's now one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -388,7 +403,8 @@ namespace ControlUnitTests
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
                                     true, // focused,
-                                    cursorPosition1);
+                                    cursorPosition1,
+                                    true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -536,7 +552,8 @@ namespace ControlUnitTests
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
                                     true, // focused,
-                                    cursorPosition1);
+                                    cursorPosition1,
+                                    true);
         Log::Comment(L"Verify that there's one selection");
         VERIFY_IS_TRUE(core->HasSelection());
         VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
@@ -544,6 +561,74 @@ namespace ControlUnitTests
         Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
         COORD expectedAnchor{ 0, 0 };
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+    }
+
+    void ControlInteractivityTests::TestDragSelectOutsideBounds()
+    {
+        // This is a test for GH#4603
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
+
+        const til::size fontSize{ 9, 21 };
+        Log::Comment(L"Click on the terminal");
+        const til::point cursorPosition0{ 6, 0 };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0);
+
+        Log::Comment(L"Verify that there's not yet a selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        VERIFY_IS_TRUE(interactivity->_singleClickTouchdownPos.has_value());
+        VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
+
+        Log::Comment(L"Drag the mouse a lot. This simulates dragging the mouse real fast.");
+        const til::point cursorPosition1{ 6 + fontSize.width<int>() * 2, 0 };
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1,
+                                    true);
+        Log::Comment(L"Verify that there's one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Verify that it started on the first cell we clicked on, not the one we dragged to");
+        COORD expectedAnchor{ 0, 0 };
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+        COORD expectedEnd{ 2, 0 };
+        VERIFY_ARE_EQUAL(expectedEnd, core->_terminal->GetSelectionEnd());
+
+        interactivity->PointerReleased(noMouseDown,
+                                       WM_LBUTTONUP,
+                                       modifiers,
+                                       cursorPosition1);
+
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedEnd, core->_terminal->GetSelectionEnd());
+
+        Log::Comment(L"Simulate dragging the mouse into the control, without first clicking into the control");
+        const til::point cursorPosition2{ fontSize.width<int>() * 10, 0 };
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition2,
+                                    false);
+
+        Log::Comment(L"The selection should be unchanged.");
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedEnd, core->_terminal->GetSelectionEnd());
     }
 
     void ControlInteractivityTests::PointerClickOutsideActiveRegion()
@@ -561,7 +646,6 @@ namespace ControlUnitTests
         const Control::MouseButtonState noMouseDown{};
 
         const til::size fontSize{ 9, 21 };
-
         interactivity->_rowsToScroll = 1;
         int expectedTop = 0;
         int expectedViewHeight = 20;
@@ -630,7 +714,8 @@ namespace ControlUnitTests
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
                                     true, // focused,
-                                    cursorPosition1);
+                                    cursorPosition1,
+                                    true);
         Log::Comment(L"Verify that there's still no selection");
         VERIFY_IS_FALSE(core->HasSelection());
     }

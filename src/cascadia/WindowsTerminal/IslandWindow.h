@@ -24,6 +24,7 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    virtual RECT GetNonClientFrame(const UINT dpi) const noexcept;
     virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
@@ -109,7 +110,9 @@ protected:
     void _moveToMonitor(const MONITORINFO activeMonitor);
 
     bool _isQuakeWindow{ false };
+
     void _enterQuakeMode();
+    til::rectangle _getQuakeModeSize(HMONITOR hmon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 

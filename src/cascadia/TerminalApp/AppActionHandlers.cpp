@@ -161,6 +161,13 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleToggleSplitOrientation(const IInspectable& /*sender*/,
+                                                     const ActionEventArgs& args)
+    {
+        _ToggleSplitOrientation();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
                                              const ActionEventArgs& args)
     {
@@ -257,12 +264,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(nullptr);
+            LOG_IF_FAILED(_OpenNewTab(nullptr));
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            _OpenNewTab(realArgs.TerminalArgs());
+            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
     }
@@ -307,8 +314,11 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MoveFocus(realArgs.FocusDirection());
-                args.Handled(true);
+                // Mark as handled only when the move succeeded (e.g. when there
+                // is a pane to move to), otherwise mark as unhandled so the
+                // keychord can propagate to the terminal (GH#6129)
+                const auto moveSucceeded = _MoveFocus(realArgs.FocusDirection());
+                args.Handled(moveSucceeded);
             }
         }
     }

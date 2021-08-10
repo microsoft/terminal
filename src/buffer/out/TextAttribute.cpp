@@ -98,7 +98,7 @@ bool TextAttribute::IsLegacy() const noexcept
 // - blinkingIsFaint: true if blinking should be interpreted as faint.
 // Return Value:
 // - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
                                                                 const COLORREF defaultFgColor,
                                                                 const COLORREF defaultBgColor,
                                                                 const bool reverseScreenMode,

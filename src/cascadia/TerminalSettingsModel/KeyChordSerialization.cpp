@@ -78,7 +78,14 @@ constexpr std::wstring_view WIN_KEY{ L"win" };
     XX(VK_OEM_PLUS, L"plus") /* '+' any country */       \
     XX(VK_OEM_COMMA, L"comma") /* ',' any country */     \
     XX(VK_OEM_MINUS, L"minus") /* '-' any country */     \
-    XX(VK_OEM_PERIOD, L"period") /* '.' any country */
+    XX(VK_OEM_PERIOD, L"period") /* '.' any country */   \
+    XX(VK_BROWSER_BACK, L"browser_back")                 \
+    XX(VK_BROWSER_FORWARD, L"browser_forward")           \
+    XX(VK_BROWSER_REFRESH, L"browser_refresh")           \
+    XX(VK_BROWSER_STOP, L"browser_stop")                 \
+    XX(VK_BROWSER_SEARCH, L"browser_search")             \
+    XX(VK_BROWSER_FAVORITES, L"browser_favorites")       \
+    XX(VK_BROWSER_HOME, L"browser_home")
 
 constexpr std::wstring_view vkeyPrefix{ L"vk(" };
 constexpr std::wstring_view scanCodePrefix{ L"sc(" };

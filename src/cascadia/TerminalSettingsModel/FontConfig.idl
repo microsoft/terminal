@@ -8,6 +8,8 @@ import "Profile.idl";
     _BASE_INHERITABLE_SETTING(Type, Name);      \
     Microsoft.Terminal.Settings.Model.FontConfig Name##OverrideSource { get; }
 
+#define COMMA ,
+
 namespace Microsoft.Terminal.Settings.Model
 {
     [default_interface] runtimeclass FontConfig {
@@ -16,5 +18,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_FONT_SETTING(String, FontFace);
         INHERITABLE_FONT_SETTING(Int32, FontSize);
         INHERITABLE_FONT_SETTING(Windows.UI.Text.FontWeight, FontWeight);
+
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA UInt32>, FontFeatures);
+        INHERITABLE_FONT_SETTING(Windows.Foundation.Collections.IMap<String COMMA Single>, FontAxes);
     }
 }

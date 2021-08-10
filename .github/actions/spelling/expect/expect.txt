@@ -105,6 +105,7 @@ autoscrolling
 Autowrap
 AVerify
 AVI
+AVX
 awch
 azuredevopspodcast
 azzle
@@ -168,6 +169,7 @@ brandings
 BRK
 Browsable
 bsearch
+Bspace
 bstr
 BTNFACE
 buf
@@ -190,6 +192,7 @@ CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
 cassert
+castsi
 catid
 cazamor
 CBash
@@ -268,9 +271,12 @@ cmder
 CMDEXT
 Cmdlet
 cmdline
+cmh
 CMOUSEBUTTONS
 cmp
+cmpeq
 cmt
+cmw
 cmyk
 CNL
 cnt
@@ -403,11 +409,13 @@ csbiex
 csharp
 CSHORT
 CSIDL
+Cspace
 csproj
 Csr
 csrmsg
 CSRSS
 csrutil
+css
 cstdarg
 cstddef
 cstdio
@@ -506,6 +514,7 @@ DECAWM
 DECCKM
 DECCOLM
 DECDHL
+DECDLD
 DECDWL
 DECEKBD
 DECID
@@ -786,6 +795,7 @@ FONTENUMPROC
 FONTFACE
 FONTFAMILY
 FONTHEIGHT
+FONTINFO
 fontlist
 FONTOK
 FONTSIZE
@@ -899,6 +909,7 @@ github
 gitlab
 gle
 globals
+GLYPHENTRY
 gmail
 GMEM
 GNUC
@@ -947,6 +958,7 @@ hdrstop
 HEIGHTSCROLL
 hfile
 hfont
+hfontresource
 hglobal
 hhh
 HHmm
@@ -1021,6 +1033,7 @@ IAction
 IApi
 IApplication
 IBase
+ICache
 icacls
 iccex
 icch
@@ -1260,6 +1273,7 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
+loadu
 LOBYTE
 localappdata
 localhost
@@ -1267,6 +1281,7 @@ locsrc
 locstudio
 Loewen
 LOGFONT
+LOGFONTA
 LOGFONTW
 logissue
 lowercased
@@ -1420,6 +1435,7 @@ MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
 mousewheel
+movemask
 MOVESTART
 msb
 msbuild
@@ -1929,6 +1945,7 @@ realloc
 reamapping
 rects
 redef
+redefinable
 Redir
 redirector
 redist
@@ -1974,6 +1991,7 @@ rfc
 rftp
 rgb
 rgba
+RGBCOLOR
 rgbi
 rgci
 rgfae
@@ -2143,6 +2161,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+sixel
 SIZEBOX
 sizeof
 SIZESCROLL
@@ -2530,6 +2549,7 @@ vcvarsall
 vcxitems
 vcxproj
 vec
+vectorized
 VERCTRL
 versioning
 VERTBAR
@@ -2747,6 +2767,7 @@ WTo
 wtof
 wtoi
 WTs
+WTSOFTFONT
 wtw
 wtypes
 Wubi

@@ -23,6 +23,16 @@ using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 
+// The minimum delay between updates to the scroll bar's values.
+// The updates are throttled to limit power usage.
+constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
+
+// The minimum delay between updating the TSF input control.
+constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
+
+// The minimum delay between updating the locations of regex patterns
+constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -94,6 +104,61 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
+        // Get our dispatcher. If we're hosted in-proc with XAML, this will get
+        // us the same dispatcher as TermControl::Dispatcher(). If we're out of
+        // proc, this'll return null. We'll need to instead make a new
+        // DispatcherQueue (on a new thread), so we can use that for throttled
+        // functions.
+        _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        if (!_dispatcher)
+        {
+            auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
+            _dispatcher = controller.DispatcherQueue();
+        }
+
+        // A few different events should be throttled, so they don't fire absolutely all the time:
+        // * _tsfTryRedrawCanvas: When the cursor position moves, we need to
+        //   inform TSF, so it can move the canvas for the composition. We
+        //   throttle this so that we're not hopping across the process boundary
+        //   every time that the cursor moves.
+        // * _updatePatternLocations: When there's new output, or we scroll the
+        //   viewport, we should re-check if there are any visible hyperlinks.
+        //   But we don't really need to do this every single time text is
+        //   output, we can limit this update to once every 500ms.
+        // * _updateScrollBar: Same idea as the TSF update - we don't _really_
+        //   need to hop across the process boundary every time text is output.
+        //   We can throttle this to once every 8ms, which will get us out of
+        //   the way of the main output & rendering threads.
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            TsfRedrawInterval,
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->_CursorPositionChangedHandlers(*core, nullptr);
+                }
+            });
+
+        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            UpdatePatternLocationsInterval,
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->UpdatePatternLocations();
+                }
+            });
+
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
+            _dispatcher,
+            ScrollBarUpdateInterval,
+            [weakThis = get_weak()](const auto& update) {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->_ScrollPositionChangedHandlers(*core, update);
+                }
+            });
+
         UpdateSettings(settings);
     }
 
@@ -155,6 +220,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Set up the DX Engine
             auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
             _renderer->AddRenderEngine(dxEngine.get());
+            _renderEngine = std::move(dxEngine);
 
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
@@ -168,12 +234,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Then, using the font, get the number of characters that can fit.
             // Resize our terminal connection to match that size, and initialize the terminal with that size.
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
-            LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+            LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
+            _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
-            const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
+            const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
             const auto height = vp.Height();
             _connection.Resize(height, width);
@@ -188,28 +254,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
             // the first paint will be ignored!
-            dxEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
+            _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            dxEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
+            _renderEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-            dxEngine->SetIntenseIsBold(_settings.IntenseIsBold());
+            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
 
-            _updateAntiAliasingMode(dxEngine.get());
+            _updateAntiAliasingMode(_renderEngine.get());
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             if (_settings.UseAcrylic())
             {
-                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
             }
 
-            THROW_IF_FAILED(dxEngine->Enable());
-            _renderEngine = std::move(dxEngine);
+            THROW_IF_FAILED(_renderEngine->Enable());
 
             _initializedTerminal = true;
         } // scope for TerminalLock
@@ -606,9 +671,34 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal->SetFontInfo(_actualFont);
 
-        // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
-        //      actually fail. We need a way to gracefully fallback.
-        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+        if (_renderEngine)
+        {
+            std::unordered_map<std::wstring_view, uint32_t> featureMap;
+            if (const auto fontFeatures = _settings.FontFeatures())
+            {
+                featureMap.reserve(fontFeatures.Size());
+
+                for (const auto& [tag, param] : fontFeatures)
+                {
+                    featureMap.emplace(tag, param);
+                }
+            }
+            std::unordered_map<std::wstring_view, float> axesMap;
+            if (const auto fontAxes = _settings.FontAxes())
+            {
+                axesMap.reserve(fontAxes.Size());
+
+                for (const auto& [axis, value] : fontAxes)
+                {
+                    axesMap.emplace(axis, value);
+                }
+            }
+
+            // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
+            //      actually fail. We need a way to gracefully fallback.
+            LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
+            LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
+        }
 
         // If the actual font isn't what was requested...
         if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
@@ -717,6 +807,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        // Convert our new dimensions to characters
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+        const auto currentVP = _terminal->GetViewport();
+
+        // Don't actually resize if viewport dimensions didn't change
+        if (vp.Height() == currentVP.Height() && vp.Width() == currentVP.Width())
+        {
+            return;
+        }
+
         _terminal->ClearSelection();
 
         // Tell the dx engine that our window is now the new size.
@@ -724,11 +826,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Invalidate everything
         _renderer->TriggerRedrawAll();
-
-        // Convert our new dimensions to characters
-        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
-        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
@@ -1081,15 +1178,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
-        _ScrollPositionChangedHandlers(*this,
-                                       winrt::make<ScrollPositionChangedArgs>(viewTop,
-                                                                              viewHeight,
-                                                                              bufferSize));
+        // Start the throttled update of our scrollbar.
+        auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
+                                                            viewHeight,
+                                                            bufferSize) };
+        if (!_inUnitTests)
+        {
+            _updateScrollBar->Run(update);
+        }
+        else
+        {
+            _ScrollPositionChangedHandlers(*this, update);
+        }
+
+        // Additionally, start the throttled update of where our links are.
+        _updatePatternLocations->Run();
     }
 
     void ControlCore::_terminalCursorPositionChanged()
     {
-        _CursorPositionChangedHandlers(*this, nullptr);
+        // When the buffer's cursor moves, start the throttled func to
+        // eventually dispatch a CursorPositionChanged event.
+        _tsfTryRedrawCanvas->Run();
     }
 
     void ControlCore::_terminalTaskbarProgressChanged()
@@ -1199,8 +1309,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::Close()
     {
-        if (!_closing.exchange(true))
+        if (!_IsClosing())
         {
+            _closing = true;
+
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
@@ -1378,18 +1490,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->Write(hstr);
 
-        // NOTE: We're raising an event here to inform the TermControl that
-        // output has been received, so it can queue up a throttled
-        // UpdatePatternLocations call. In the future, we should have the
-        // _updatePatternLocations ThrottledFunc internal to this class, and
-        // run on this object's dispatcher queue.
-        //
-        // We're not doing that quite yet, because the Core will eventually
-        // be out-of-proc from the UI thread, and won't be able to just use
-        // the UI thread as the dispatcher queue thread.
-        //
-        // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
-        _ReceivedOutputHandlers(*this, nullptr);
+        // Start the throttled update of where our hyperlinks are.
+        _updatePatternLocations->Run();
     }
 
 }
