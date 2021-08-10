@@ -1186,7 +1186,7 @@
     <value>Shortcut</value>
     <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
   </data>
-  <data name="Appearance_TextFormattingHeader.Header" xml:space="preserve">
+  <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
     <value>Text Formatting</value>
     <comment>Header for a control to how text is formatted</comment>
   </data>
