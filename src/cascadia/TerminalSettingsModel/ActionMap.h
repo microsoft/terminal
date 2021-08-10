@@ -44,14 +44,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
         {
-            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey() && lhs.ScanCode() == rhs.ScanCode();
+            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
         }
     };
 
     struct ActionMap : ActionMapT<ActionMap>, IInheritable<ActionMap>
     {
-        ActionMap();
-
         // views
         Windows::Foundation::Collections::IMapView<hstring, Model::ActionAndArgs> AvailableActions();
         Windows::Foundation::Collections::IMapView<hstring, Model::Command> NameMap();
@@ -96,8 +94,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _GlobalHotkeysCache{ nullptr };
         Windows::Foundation::Collections::IMap<Control::KeyChord, Model::Command> _KeyBindingMapCache{ nullptr };
-        Windows::Foundation::Collections::IMap<hstring, Model::Command> _NestedCommands{ nullptr };
-        Windows::Foundation::Collections::IVector<Model::Command> _IterableCommands{ nullptr };
+
+        std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
+        std::vector<Model::Command> _IterableCommands;
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 
