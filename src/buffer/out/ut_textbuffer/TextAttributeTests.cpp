@@ -22,6 +22,7 @@ class TextAttributeTests
     TEST_METHOD(TestTextAttributeColorGetters);
     TEST_METHOD(TestReverseDefaultColors);
     TEST_METHOD(TestRoundtripDefaultColors);
+    TEST_METHOD(TestBoldAsBright);
 
     std::array<COLORREF, 256> _colorTable;
     COLORREF _defaultFg = RGB(1, 2, 3);
@@ -262,4 +263,57 @@ void TextAttributeTests::TestRoundtripDefaultColors()
 
     // Reset the legacy default colors to white on black.
     TextAttribute::SetLegacyDefaultAttributes(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+}
+
+void TextAttributeTests::TestBoldAsBright()
+{
+    const COLORREF darkBlack = til::at(_colorTable, 0);
+    const COLORREF brightBlack = til::at(_colorTable, 8);
+    const COLORREF darkGreen = til::at(_colorTable, 2);
+
+    TextAttribute attr{};
+
+    // verify that calculated foreground/background are the same as the direct
+    //      values when not bold
+    VERIFY_IS_FALSE(attr.IsBold());
+
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFg));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBg));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+
+    // with bold set, calculated foreground/background values shouldn't change for the default colors.
+    attr.SetBold(true);
+    VERIFY_IS_TRUE(attr.IsBold());
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+
+    attr.SetIndexedForeground(0);
+    VERIFY_IS_TRUE(attr.IsBold());
+
+    Log::Comment(L"Foreground should be bright black when bold is bright is enabled");
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
+
+    Log::Comment(L"Foreground should be dark black when bold is bright is disabled");
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+
+    attr.SetIndexedBackground(2);
+    VERIFY_IS_TRUE(attr.IsBold());
+
+    Log::Comment(L"background should be unaffected by 'bold is bright'");
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+
+    attr.SetBold(false);
+    VERIFY_IS_FALSE(attr.IsBold());
+    Log::Comment(L"when not bold, 'bold is bright' changes nothing");
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+
+    Log::Comment(L"When set to a bright color, and bold, 'bold is bright' changes nothing");
+    attr.SetBold(true);
+    attr.SetIndexedForeground(8);
+    VERIFY_IS_TRUE(attr.IsBold());
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
 }
