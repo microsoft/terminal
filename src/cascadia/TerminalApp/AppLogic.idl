@@ -67,6 +67,7 @@ namespace TerminalApp
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+        void DismissSettingsPopups();
 
         TaskbarState TaskbarState{ get; };
 

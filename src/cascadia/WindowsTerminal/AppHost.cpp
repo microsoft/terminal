@@ -1029,13 +1029,14 @@ void AppHost::_WindowMoved()
 {
     if (_logic)
     {
-        const auto root{ _logic.GetRoot() };
+        _logic.DismissSettingsPopups();
+        // const auto root{ _logic.GetRoot() };
 
-        // This is basically DismissAllPopups
-        const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
-        for (const auto& p : popups)
-        {
-            p.IsOpen(false);
-        }
+        // // This is basically DismissAllPopups
+        // const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+        // for (const auto& p : popups)
+        // {
+        //     p.IsOpen(false);
+        // }
     }
 }
