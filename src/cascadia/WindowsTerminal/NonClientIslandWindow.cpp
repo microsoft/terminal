@@ -122,18 +122,28 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         POINT clientPt{ screenPt };
         ScreenToClient(_dragBarWindow.get(), &clientPt);
         const til::point p{ clientPt };
-        if (!rect.contains(p))
-        {
-            return HTTRANSPARENT;
-        }
+        auto contains = rect.contains(p);
+        // if (!rect.contains(p))
+        // {
+        //     return HTTRANSPARENT;
+        // }
         // else
         // {
         //     return HTCLIENT;
         // }
-        // p;
-        // rect;
+        p;
+        rect;
+        contains;
+        auto mainDefResult = DefWindowProc(_window.get(), message, wparam, lparam);
+        auto dragDefResult = DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
+        LRESULT dragDwmResult = 0;
+        LRESULT mainDwmResult = 0;
+        DwmDefWindowProc(_window.get(), message, wparam, lparam, &mainDwmResult);
+        DwmDefWindowProc(_dragBarWindow.get(), message, wparam, lparam, &dragDwmResult);
+        dragDefResult;
+        mainDefResult;
         // // break;
-        // return HTTRANSPARENT;
+        return HTTRANSPARENT;
     }
     }
 
@@ -156,6 +166,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
     }
 
     return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
+    // return DefWindowProc(_window.get(), message, wparam, lparam);
 }
 
 // Method Description:
@@ -611,6 +622,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     }
 
     return HTCAPTION;
+    // return HTTRANSPARENT;
 }
 
 // Method Description:
