@@ -73,6 +73,7 @@ namespace ControlUnitTests
             auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(settings, conn);
             VERIFY_IS_NOT_NULL(interactivity);
             auto core = interactivity->_core;
+            core->_inUnitTests = true;
             VERIFY_IS_NOT_NULL(core);
 
             return { core, interactivity };
@@ -163,6 +164,10 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::TestScrollWithMouse()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 
         auto [settings, conn] = _createSettingsAndConnection();
@@ -243,7 +248,7 @@ namespace ControlUnitTests
                                       buttonState);
             Log::Comment(NoThrowString().Format(L"internal scrollbar pos:%f", interactivity->_internalScrollbarPosition));
         }
-        Log::Comment(L"Scrolling up more should do nothing");
+        Log::Comment(L"Scrolling down more should do nothing");
         expectedTop = 21;
         interactivity->MouseWheel(modifiers,
                                   -WHEEL_DELTA,
@@ -257,6 +262,10 @@ namespace ControlUnitTests
 
     void ControlInteractivityTests::CreateSubsequentSelectionWithDragging()
     {
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"IsolationLevel", L"Method")
+        END_TEST_METHOD_PROPERTIES()
+
         // This is a test for GH#9725
         WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
 

@@ -126,13 +126,14 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 // Arguments:
 // - sender: not used
 // - args: not used
-void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     if (_logic)
     {
-        const auto state = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarState());
-        const auto progress = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarProgress());
-        _window->SetTaskbarProgress(state, progress);
+        const auto state = _logic.TaskbarState();
+        _window->SetTaskbarProgress(gsl::narrow_cast<size_t>(state.State()),
+                                    gsl::narrow_cast<size_t>(state.Progress()));
     }
 }
 
@@ -410,6 +411,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
     const til::size nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+    const til::rectangle nonClientFrame = _window->GetNonClientFrame(dpix);
     adjustedWidth = islandWidth + nonClientSize.width<long>();
     adjustedHeight = islandHeight + nonClientSize.height<long>();
 
@@ -425,14 +427,18 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
                                        gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
-    til::point origin{ (proposedRect.left),
+    // GH#10583 - Adjust the position of the rectangle to account for the size
+    // of the invisible borders on the left/right. We DON'T want to adjust this
+    // for the top here - the IslandWindow includes the titlebar in
+    // nonClientFrame.top, so adjusting for that would actually place the
+    // titlebar _off_ the monitor.
+    til::point origin{ (proposedRect.left + nonClientFrame.left<LONG>()),
                        (proposedRect.top) };
 
     if (_logic.IsQuakeWindow())
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
-        const til::size ncSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
         const til::size availableSpace = desktopDimensions + nonClientSize;
 
         origin = til::point{
@@ -656,9 +662,6 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
-
-    // The monarch is just going to be THE listener for inbound connections.
-    _listenForInboundConnections();
 }
 
 void AppHost::_listenForInboundConnections()
@@ -689,7 +692,17 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            _window->RegisterHotKey(gsl::narrow_cast<int>(_hotkeys.size()), keyChord);
+            int index = gsl::narrow_cast<int>(_hotkeys.size());
+            const bool succeeded = _window->RegisterHotKey(index, keyChord);
+
+            TraceLoggingWrite(g_hWindowsTerminalProvider,
+                              "AppHost_setupGlobalHotkey",
+                              TraceLoggingDescription("Emitted when setting a single hotkey"),
+                              TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+                              TraceLoggingWideString(cmd.Name().c_str(), "name", "the name of the command"),
+                              TraceLoggingBoolean(succeeded, "succeeded", "true if we succeeded"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             _hotkeys.emplace_back(summonArgs);
         }
     }

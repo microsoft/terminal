@@ -201,6 +201,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _clearOldMruEntries(id);
         }
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_lookupPeasantIdForName",
+                          TraceLoggingWideString(std::wstring{ name }.c_str(), "name", "the name we're looking for"),
+                          TraceLoggingUInt64(result, "peasantID", "the ID of the peasant with that name"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         return result;
     }
 
@@ -750,6 +756,27 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 targetPeasant.Summon(args.SummonBehavior());
                 args.FoundMatch(true);
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_SummonWindow_Success",
+                                  TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
+                                  TraceLoggingUInt64(windowId, "peasantID", "The id of the window we tried to summon"),
+                                  TraceLoggingBoolean(args.OnCurrentDesktop(), "OnCurrentDesktop", "true iff the window needs to be on the current virtual desktop"),
+                                  TraceLoggingBoolean(args.SummonBehavior().MoveToCurrentDesktop(), "MoveToCurrentDesktop", "if true, move the window to the current virtual desktop"),
+                                  TraceLoggingBoolean(args.SummonBehavior().ToggleVisibility(), "ToggleVisibility", "true if we should toggle the visibility of the window"),
+                                  TraceLoggingUInt32(args.SummonBehavior().DropdownDuration(), "DropdownDuration", "the duration to dropdown the window"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            }
+            else
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_SummonWindow_NoPeasant",
+                                  TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
+                                  TraceLoggingUInt64(windowId, "peasantID", "The id of the window we tried to summon"),
+                                  TraceLoggingBoolean(args.OnCurrentDesktop(), "OnCurrentDesktop", "true iff the window needs to be on the current virtual desktop"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
         }
         catch (...)

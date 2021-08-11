@@ -616,12 +616,20 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 }
 
 // Method Description:
-// - Gets the difference between window and client area size.
+// - Get the dimensions of our non-client area, as a rect where each component
+//   represents that side.
+// - The .left will be a negative number, to represent that the actual side of
+//   the non-client area is outside the border of our window. It's roughly 8px (
+//   * DPI scaling) to the left of the visible border.
+// - The .right component will be positive, indicating that the nonclient border
+//   is in the positive-x direction from the edge of our client area.
+// - This will also include our titlebar! It's in the nonclient area for us.
 // Arguments:
-// - dpi: dpi of a monitor on which the window is placed
-// Return Value
-// - The size difference
-SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
+// - dpi: the scaling that we should use to calculate the border sizes.
+// Return Value:
+// - a RECT whose components represent the margins of the nonclient area,
+//   relative to the client area.
+RECT IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
@@ -630,7 +638,18 @@ SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
     // the error and go on. We'll use whatever the control proposed as the
     // size of our window, which will be at least close.
     LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
+    return islandFrame;
+}
 
+// Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpi: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
+{
+    const auto islandFrame{ GetNonClientFrame(dpi) };
     return {
         islandFrame.right - islandFrame.left,
         islandFrame.bottom - islandFrame.top
@@ -757,7 +776,12 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
             _taskbar->SetProgressValue(_window.get(), progress, 100);
             break;
         case 3:
-            // sets the progress indicator to an indeterminate state
+            // sets the progress indicator to an indeterminate state.
+            // FIRST, set the progress to "no progress". That'll clear out any
+            // progress value from the previous state. Otherwise, a transition
+            // from (error,x%) or (warning,x%) to indeterminate will leave the
+            // progress value unchanged, and not show the spinner.
+            _taskbar->SetProgressState(_window.get(), TBPF_NOPROGRESS);
             _taskbar->SetProgressState(_window.get(), TBPF_INDETERMINATE);
             break;
         case 4:
@@ -1046,8 +1070,9 @@ void IslandWindow::UnregisterHotKey(const int index) noexcept
 {
     TraceLoggingWrite(
         g_hWindowsTerminalProvider,
-        "UnregisterAllHotKeys",
+        "UnregisterHotKey",
         TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+        TraceLoggingInt64(index, "index", "the index of the hotkey to remove"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
@@ -1064,15 +1089,8 @@ void IslandWindow::UnregisterHotKey(const int index) noexcept
 // - hotkey: The key-combination to register.
 // Return Value:
 // - <none>
-void IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
+bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
 {
-    TraceLoggingWrite(
-        g_hWindowsTerminalProvider,
-        "RegisterHotKey",
-        TraceLoggingDescription("Emitted when setting hotkeys"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
     auto vkey = hotkey.Vkey();
     if (!vkey)
     {
@@ -1080,7 +1098,7 @@ void IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
     }
     if (!vkey)
     {
-        return;
+        return false;
     }
 
     auto hotkeyFlags = MOD_NOREPEAT;
@@ -1094,7 +1112,23 @@ void IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
 
     // TODO GH#8888: We should display a warning of some kind if this fails.
     // This can fail if something else already bound this hotkey.
-    LOG_IF_WIN32_BOOL_FALSE(::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey));
+    const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
+    LOG_IF_WIN32_BOOL_FALSE(result);
+
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "RegisterHotKey",
+                      TraceLoggingDescription("Emitted when setting hotkeys"),
+                      TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+                      TraceLoggingUInt64(vkey, "vkey", "the key"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_WIN), "win", "is WIN in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_ALT), "alt", "is ALT in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_CONTROL), "control", "is CONTROL in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_SHIFT), "shift", "is SHIFT in the modifiers"),
+                      TraceLoggingBool(result, "succeeded", "true if we succeeded"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    return result;
 }
 
 // Method Description:
