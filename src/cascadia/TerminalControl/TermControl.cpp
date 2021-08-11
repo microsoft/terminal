@@ -517,7 +517,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
-                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
+                auto margins{ SwapChainPanel().Margin() };
+
+                Core::Padding padding{ margins.Left,
+                                       margins.Top,
+                                       margins.Right,
+                                       margins.Bottom };
+                _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, padding, interactivityAutoPeer);
                 return _automationPeer;
             }
         }
