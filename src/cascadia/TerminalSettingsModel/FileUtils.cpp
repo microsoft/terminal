@@ -126,7 +126,7 @@ namespace Microsoft::Terminal::Settings::Model
         // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
         // It's thus important that we first resolve them before generating temporary path.
         std::error_code ec;
-        auto resolvedPath = std::filesystem::canonical(path, ec);
+        const auto resolvedPath = std::filesystem::is_symlink(path) ? std::filesystem::canonical(path, ec) : path;
         if (ec)
         {
             if (ec.value() != ERROR_FILE_NOT_FOUND)
@@ -134,20 +134,13 @@ namespace Microsoft::Terminal::Settings::Model
                 THROW_WIN32_MSG(ec.value(), "failed to compute canonical path");
             }
 
-            // We were not able to compute the canonical path as the target does not exist.
-            if (std::filesystem::is_symlink(path))
-            {
-                // In the case the original file is a link (but the target doesn't exist), we still need to resolve it.
-                // We considered two fall-backs:
-                // * resolving the link manually (by invoking read_symlink()) which might be less accurate
-                // * writing the file directly, which ensures more accurate link resolution, but leaves the write not atomic.
-                // We have chosen the latter, as this is an edge case and our "atomic" writes are only best-effort anyways.
-                WriteUTF8File(path, content);
-                return;
-            }
-
-            // If the path is not a link, we can override it
-            resolvedPath = path;
+            // The original file is a symbolic link, but the target doesn't exist.
+            // Consider two fall-backs:
+            //   * resolve the link manually, which might be less accurate and more prone to race conditions
+            //   * write to the file directly, which lets the system resolve the symbolic link but leaves the write non-atomic
+            // The latter is chosen, as this is an edge case and our 'atomic' writes are only best-effort.
+            WriteUTF8File(path, content);
+            return;
         }
 
         auto tmpPath = resolvedPath;
