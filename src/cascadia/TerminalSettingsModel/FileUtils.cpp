@@ -123,12 +123,31 @@ namespace Microsoft::Terminal::Settings::Model
 
     void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view content)
     {
-        // GH#10787: In the case of symbolic link, ensure that we modify the target rather than the link itself.
-        // We append the paths manually rather than using "canonical" method to support scenario in which link target doesn't exist
-        auto resolvedPath = path;
-        while (std::filesystem::is_symlink(resolvedPath))
+        // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
+        // It's thus important that we first resolve them before generating temporary path.
+        std::error_code ec;
+        auto resolvedPath = std::filesystem::canonical(path, ec);
+        if (ec)
         {
-            resolvedPath = resolvedPath.parent_path() / std::filesystem::read_symlink(resolvedPath);
+            if (ec.value() != ERROR_FILE_NOT_FOUND)
+            {
+                THROW_WIN32_MSG(ec.value(), "failed to compute canonical path");
+            }
+
+            // We were not able to compute the canonical path as the target does not exist.
+            if (std::filesystem::is_symlink(path))
+            {
+                // In the case the original file is a link (but the target doesn't exist), we still need to resolve it.
+                // We considered two fall-backs:
+                // * resolving the link manually (by invoking read_symlink()) which might be less accurate
+                // * writing the file directly, which ensures more accurate link resolution, but leaves the write not atomic.
+                // We have chosen the latter, as this is an edge case and our "atomic" writes are only best-effort anyways.
+                WriteUTF8File(path, content);
+                return;
+            }
+
+            // If the path is not a link, we can override it
+            resolvedPath = path;
         }
 
         auto tmpPath = resolvedPath;
@@ -136,7 +155,6 @@ namespace Microsoft::Terminal::Settings::Model
 
         // Writing to a file isn't atomic, but...
         WriteUTF8File(tmpPath, content);
-
         // renaming one is (supposed to be) atomic.
         // Wait... "supposed to be"!? Well it's technically not always atomic,
         // but it's pretty darn close to it, so... better than nothing.
