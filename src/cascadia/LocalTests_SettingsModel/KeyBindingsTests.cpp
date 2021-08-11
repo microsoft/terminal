@@ -109,13 +109,6 @@ namespace SettingsModelLocalTests
             },
         };
 
-        // Use the KeyChordHash and KeyChordEquality to compare if two
-        // KeyChord's are the same. If you try to just directly compare them
-        // with VERIFY_ARE_EQUAL, that will always fail. It'll revert to the
-        // default winrt equality operator, which will compare if they point to
-        // literally the same object (they won't).
-        implementation::KeyChordHash hash;
-        implementation::KeyChordEquality equals;
         for (const auto& tc : testCases)
         {
             Log::Comment(NoThrowString().Format(L"Testing case:\"%s\"", tc.expected.data()));
