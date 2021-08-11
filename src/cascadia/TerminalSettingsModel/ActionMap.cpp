@@ -397,7 +397,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         actionMap->_parents.reserve(_parents.size());
         for (const auto& parent : _parents)
         {
-            actionMap->_parents.emplace_back(parent);
+            actionMap->_parents.emplace_back(parent->Copy());
         }
 
         return actionMap;
