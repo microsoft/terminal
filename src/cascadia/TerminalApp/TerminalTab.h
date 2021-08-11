@@ -83,6 +83,7 @@ namespace winrt::TerminalApp::implementation
 
         void TogglePaneReadOnly();
         std::shared_ptr<Pane> GetActivePane() const;
+        winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
 
         winrt::TerminalApp::TerminalTabStatus TabStatus()
         {

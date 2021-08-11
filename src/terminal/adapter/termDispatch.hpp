@@ -123,4 +123,13 @@ public:
     bool EndHyperlink() noexcept override { return false; }
 
     bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override { return false; }
+
+    StringHandler DownloadDRCS(const size_t /*fontNumber*/,
+                               const VTParameter /*startChar*/,
+                               const DispatchTypes::DrcsEraseControl /*eraseControl*/,
+                               const DispatchTypes::DrcsCellMatrix /*cellMatrix*/,
+                               const DispatchTypes::DrcsFontSet /*fontSet*/,
+                               const DispatchTypes::DrcsFontUsage /*fontUsage*/,
+                               const VTParameter /*cellHeight*/,
+                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) noexcept override { return nullptr; }
 };

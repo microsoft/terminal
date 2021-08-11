@@ -177,10 +177,9 @@ namespace winrt::TerminalApp::implementation
             {
                 lastFocusedControl.Focus(_focusState);
 
-                // Update our own progress state, and fire an event signaling
+                // Update our own progress state. This will fire an event signaling
                 // that our taskbar progress changed.
                 _UpdateProgressState();
-                _TaskbarProgressChangedHandlers(lastFocusedControl, nullptr);
             }
             // When we gain focus, remove the bell indicator if it is active
             if (_tabStatus.BellIndicator())
@@ -676,6 +675,26 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Get the combined taskbar state for the tab. This is the combination of
+    //   all the states of all our panes. Taskbar states are given a priority
+    //   based on the rules in:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate
+    //   under "How the Taskbar Button Chooses the Progress Indicator for a
+    //   Group"
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A TaskbarState object representing the combined taskbar state and
+    //   progress percentage of all our panes.
+    winrt::TerminalApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
+    {
+        std::vector<winrt::TerminalApp::TaskbarState> states;
+        _rootPane->CollectTaskbarStates(states);
+        return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() :
+                                *std::min_element(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
+    }
+
+    // Method Description:
     // - This should be called on the UI thread. If you don't, then it might
     //   silently do nothing.
     // - Update our TabStatus to reflect the progress state of the currently
@@ -690,37 +709,39 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_UpdateProgressState()
     {
-        if (const auto& activeControl{ GetActiveTerminalControl() })
-        {
-            const auto taskbarState = activeControl.TaskbarState();
-            // The progress of the control changed, but not necessarily the progress of the tab.
-            // Set the tab's progress ring to the active pane's progress
-            if (taskbarState > 0)
-            {
-                if (taskbarState == 3)
-                {
-                    // 3 is the indeterminate state, set the progress ring as such
-                    _tabStatus.IsProgressRingIndeterminate(true);
-                }
-                else
-                {
-                    // any non-indeterminate state has a value, set the progress ring as such
-                    _tabStatus.IsProgressRingIndeterminate(false);
+        const auto state{ GetCombinedTaskbarState() };
 
-                    const auto progressValue = gsl::narrow<uint32_t>(activeControl.TaskbarProgress());
-                    _tabStatus.ProgressValue(progressValue);
-                }
-                // Hide the tab icon (the progress ring is placed over it)
-                HideIcon(true);
-                _tabStatus.IsProgressRingActive(true);
+        const auto taskbarState = state.State();
+        // The progress of the control changed, but not necessarily the progress of the tab.
+        // Set the tab's progress ring to the active pane's progress
+        if (taskbarState > 0)
+        {
+            if (taskbarState == 3)
+            {
+                // 3 is the indeterminate state, set the progress ring as such
+                _tabStatus.IsProgressRingIndeterminate(true);
             }
             else
             {
-                // Show the tab icon
-                HideIcon(false);
-                _tabStatus.IsProgressRingActive(false);
+                // any non-indeterminate state has a value, set the progress ring as such
+                _tabStatus.IsProgressRingIndeterminate(false);
+
+                const auto progressValue = gsl::narrow<uint32_t>(state.Progress());
+                _tabStatus.ProgressValue(progressValue);
             }
+            // Hide the tab icon (the progress ring is placed over it)
+            HideIcon(true);
+            _tabStatus.IsProgressRingActive(true);
         }
+        else
+        {
+            // Show the tab icon
+            HideIcon(false);
+            _tabStatus.IsProgressRingActive(false);
+        }
+
+        // fire an event signaling that our taskbar progress changed.
+        _TaskbarProgressChangedHandlers(nullptr, nullptr);
     }
 
     // Method Description:

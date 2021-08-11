@@ -203,7 +203,7 @@ namespace winrt::TerminalApp::implementation
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(_root->Dispatcher(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
             {
                 self->_ReloadSettings();
@@ -1129,28 +1129,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Gets the taskbar state value from the last active control
-    // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarState()
+    winrt::TerminalApp::TaskbarState AppLogic::TaskbarState()
     {
         if (_root)
         {
-            return _root->GetLastActiveControlTaskbarState();
-        }
-        return {};
-    }
-
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarProgress()
-    {
-        if (_root)
-        {
-            return _root->GetLastActiveControlTaskbarProgress();
+            return _root->TaskbarState();
         }
         return {};
     }

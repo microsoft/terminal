@@ -594,14 +594,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
 
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    // (This doesn't apply to Ctrl+Alt+Space.)
-    if (isAltOnlyPressed && vkey == VK_SPACE)
-    {
-        return false;
-    }
-
     // By default Windows treats Ctrl+Alt as an alias for AltGr.
     // When the altGrAliasing setting is set to false, this behaviour should be disabled.
     //
@@ -672,13 +664,6 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
 // - false otherwise.
 bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
-    {
-        return false;
-    }
-
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
     {

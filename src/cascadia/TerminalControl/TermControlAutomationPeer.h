@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     public:
         TermControlAutomationPeer(Microsoft::Terminal::Control::implementation::TermControl* owner,
+                                  const Core::Padding padding,
                                   Control::InteractivityAutomationPeer implementation);
 
         void UpdateControlBounds();
