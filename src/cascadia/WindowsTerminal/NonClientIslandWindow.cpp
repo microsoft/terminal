@@ -51,8 +51,10 @@ static constexpr const wchar_t* dragBarClassName{ L"DRAG_BAR_WINDOW_CLASS" };
     return DefWindowProc(window, message, wparam, lparam);
 }
 
-void NonClientIslandWindow::_setupDragBar()
+void NonClientIslandWindow::MakeWindow() noexcept
 {
+    IslandWindow::MakeWindow();
+
     static ATOM dragBarWindowClass{ []() {
         WNDCLASSEX wcEx{};
         wcEx.cbSize = sizeof(wcEx);
@@ -83,11 +85,6 @@ void NonClientIslandWindow::_setupDragBar()
                                          wil::GetModuleInstanceHandle(),
                                          this));
     THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
-}
-
-void NonClientIslandWindow::MakeWindow() noexcept
-{
-    IslandWindow::MakeWindow();
 }
 
 // Function Description:
@@ -147,7 +144,6 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         mainDefResult;
         // // break;
         return HTTRANSPARENT;
-        // return HTNOWHERE;
     }
     }
 
@@ -220,8 +216,6 @@ void NonClientIslandWindow::OnAppInitialized()
 void NonClientIslandWindow::Initialize()
 {
     IslandWindow::Initialize();
-
-    _setupDragBar();
 
     _UpdateFrameMargins();
 
