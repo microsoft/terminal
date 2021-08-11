@@ -203,7 +203,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_lookupPeasantIdForName",
-                          TraceLoggingWideString(winrt::hstring{ name }.c_str(), "name", "the name we're looking for"),
+                          TraceLoggingWideString(std::wstring{ name }.c_str(), "name", "the name we're looking for"),
                           TraceLoggingUInt64(result, "peasantID", "the ID of the peasant with that name"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
