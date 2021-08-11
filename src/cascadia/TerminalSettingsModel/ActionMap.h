@@ -46,7 +46,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
         }
 
-        constexpr bool operator==(ActionMapKeyChord other) const noexcept {
+        constexpr bool operator==(ActionMapKeyChord other) const noexcept
+        {
             return value == other.value;
         }
     };
