@@ -47,12 +47,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hashedAction ^ hashedArgs;
     }
 
-    ActionMap::ActionMap() :
-        _NestedCommands{ single_threaded_map<hstring, Model::Command>() },
-        _IterableCommands{ single_threaded_vector<Model::Command>() }
-    {
-    }
-
     // Method Description:
     // - Retrieves the Command in the current layer, if it's valid
     // - We internally store invalid commands as full commands.
@@ -194,7 +188,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Update NameMap with our parents.
         // Starting with this means we're doing a top-down approach.
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateNameMapWithSpecialCommands(nameMap);
@@ -272,7 +266,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         });
 
         // Now, add the accumulated actions from our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto parentActions{ parent->_GetCumulativeActions() };
@@ -358,7 +352,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Update keyBindingsMap and unboundKeys with our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
@@ -369,35 +363,38 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto actionMap{ make_self<ActionMap>() };
 
-        // copy _KeyMap (KeyChord --> ID)
+        // KeyChord --> ID
         actionMap->_KeyMap = _KeyMap;
 
-        // copy _ActionMap (ID --> Command)
+        // ID --> Command
+        actionMap->_ActionMap.reserve(_ActionMap.size());
         for (const auto& [actionID, cmd] : _ActionMap)
         {
-            actionMap->_ActionMap.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
+            actionMap->_ActionMap.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // copy _MaskingActions (ID --> Command)
+        // ID --> Command
+        actionMap->_MaskingActions.reserve(_MaskingActions.size());
         for (const auto& [actionID, cmd] : _MaskingActions)
         {
-            actionMap->_MaskingActions.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
+            actionMap->_MaskingActions.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // copy _NestedCommands (Name --> Command)
+        // Name --> Command
+        actionMap->_NestedCommands.reserve(_NestedCommands.size());
         for (const auto& [name, cmd] : _NestedCommands)
         {
-            actionMap->_NestedCommands.Insert(name, *(get_self<Command>(cmd)->Copy()));
+            actionMap->_NestedCommands.emplace(name, *winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // copy _IterableCommands
+        actionMap->_IterableCommands.reserve(_IterableCommands.size());
         for (const auto& cmd : _IterableCommands)
         {
-            actionMap->_IterableCommands.Append(*(get_self<Command>(cmd)->Copy()));
+            actionMap->_IterableCommands.emplace_back(*winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // repeat this for each of our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
+        actionMap->_parents.reserve(_parents.size());
         for (const auto& parent : _parents)
         {
             actionMap->_parents.emplace_back(parent->Copy());
@@ -431,7 +428,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto name{ cmd.Name() };
             if (!name.empty())
             {
-                _NestedCommands.Insert(name, cmd);
+                _NestedCommands.emplace(name, cmd);
             }
             return;
         }
@@ -439,7 +436,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Handle iterable commands
         if (cmdImpl->IterateOn() != ExpandCommandType::None)
         {
-            _IterableCommands.Append(cmd);
+            _IterableCommands.emplace_back(cmd);
             return;
         }
 
@@ -582,7 +579,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Handle a collision with NestedCommands
-        _NestedCommands.TryRemove(newName);
+        _NestedCommands.erase(newName);
     }
 
     // Method Description:
@@ -750,7 +747,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // the command was not bound in this layer,
         // ask my parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal(keys) };
@@ -800,7 +797,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Check our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             if (const auto& keys{ parent->GetKeyBindingForAction(myAction, myArgs) })
