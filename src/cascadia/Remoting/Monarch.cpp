@@ -763,7 +763,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingUInt64(windowId, "peasantID", "The id of the window we tried to summon"),
                                   TraceLoggingBoolean(args.OnCurrentDesktop(), "OnCurrentDesktop", "true iff the window needs to be on the current virtual desktop"),
                                   TraceLoggingBoolean(args.SummonBehavior().MoveToCurrentDesktop(), "MoveToCurrentDesktop", "if true, move the window to the current virtual desktop"),
-                                  TraceLoggingBoolean(args.SummonBehavior().ToggleVisibility(), "ToggleVisibility", "true if we should toggle the visibity of the window"),
+                                  TraceLoggingBoolean(args.SummonBehavior().ToggleVisibility(), "ToggleVisibility", "true if we should toggle the visibility of the window"),
                                   TraceLoggingUInt32(args.SummonBehavior().DropdownDuration(), "DropdownDuration", "the duration to dropdown the window"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
