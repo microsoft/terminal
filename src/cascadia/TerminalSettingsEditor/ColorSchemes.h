@@ -20,7 +20,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(winrt::hstring, LastSelectedScheme, L"");
     };
 
-    struct ColorSchemes : ColorSchemesT<ColorSchemes>
+    struct ColorSchemes : public HasScrollViewer<ColorSchemes>, ColorSchemesT<ColorSchemes>
     {
         ColorSchemes();
 
