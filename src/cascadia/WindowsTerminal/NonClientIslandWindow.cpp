@@ -114,6 +114,27 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
     case WM_RBUTTONUP:
         nonClientMessage = WM_NCRBUTTONUP;
         break;
+    case WM_NCHITTEST:
+    {
+        const til::rectangle rect{ _GetDragAreaRect() };
+
+        const POINT screenPt{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+        POINT clientPt{ screenPt };
+        ScreenToClient(_dragBarWindow.get(), &clientPt);
+        const til::point p{ clientPt };
+        if (!rect.contains(p))
+        {
+            return HTTRANSPARENT;
+        }
+        // else
+        // {
+        //     return HTCLIENT;
+        // }
+        // p;
+        // rect;
+        // // break;
+        // return HTTRANSPARENT;
+    }
     }
 
     if (nonClientMessage.has_value())
@@ -143,13 +164,15 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
 void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
 {
     const til::rectangle rect{ _GetDragAreaRect() };
+    const til::rectangle windowRect{ GetWindowRect() };
+    int remainderOfWindow = windowRect.width<int>() - rect.left<int>();
     if (_IsTitlebarVisible() && rect.size().area() > 0)
     {
         SetWindowPos(_dragBarWindow.get(),
                      HWND_TOP,
-                     rect.left<int>(),
+                     rect.left<int>(), // 0,
                      rect.top<int>() + _GetTopBorderHeight(),
-                     rect.width<int>(),
+                     remainderOfWindow, // rect.width<int>(), // windowRect.width<int>(),
                      rect.height<int>(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
         SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
