@@ -72,19 +72,20 @@ void NonClientIslandWindow::MakeWindow() noexcept
     // right on top of the drag bar. The XAML island window "steals" our mouse
     // messages which makes it hard to implement a custom drag area. By putting
     // a window on top of it, we prevent it from "stealing" the mouse messages.
-    _dragBarWindow.reset(CreateWindowExW(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
+    _dragBarWindow.reset(CreateWindowExW(0, //WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
                                          dragBarClassName,
                                          L"",
-                                         WS_CHILD,
+                                         WS_OVERLAPPED,// 0, //WS_CHILD,
                                          0,
                                          0,
                                          0,
                                          0,
-                                         GetHandle(),
+                                         HWND_DESKTOP, // HWND_MESSAGE, //GetHandle(),
                                          nullptr,
                                          wil::GetModuleInstanceHandle(),
                                          this));
-    THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
+    THROW_LAST_ERROR_IF_NULL(_dragBarWindow);
+    // THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
 }
 
 // Function Description:
