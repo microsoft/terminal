@@ -138,3 +138,12 @@ namespace winrt::Microsoft::Terminal::Settings
     winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
 }
+
+inline void DismissAllPopups(winrt::Windows::UI::Xaml::XamlRoot const& xamlRoot)
+{
+    const auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
+    for (const auto& p : popups)
+    {
+        p.IsOpen(false);
+    }
+}
