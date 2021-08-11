@@ -161,9 +161,12 @@ template<typename T>
 struct HasScrollViewer
 {
     // When the ScrollViewer scrolls, dismiss any popups we might have.
-    void ViewChanging(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+    void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender,
                       const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
     {
-        DismissAllPopups(XamlRoot());
+        if (const auto& uielem{ sender.try_as<winrt::Windows::UI::Xaml::UIElement>() })
+        {
+            DismissAllPopups(uielem.XamlRoot());
+        }
     }
 };
