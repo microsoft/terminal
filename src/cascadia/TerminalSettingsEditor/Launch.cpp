@@ -28,6 +28,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             FindName(L"DefaultTerminalDropdown");
         }
+
+    }
+
+    void Launch::ViewChanging(winrt::Windows::Foundation::IInspectable const&, const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs&)
+    {
+        auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(XamlRoot()) };
+        for (const auto& p : popups)
+        {
+            p.IsOpen(false);
+        }
     }
 
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)

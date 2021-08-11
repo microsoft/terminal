@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Launch();
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender, const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& e);
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
