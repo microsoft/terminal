@@ -2548,6 +2548,29 @@ bool Pane::ContainsReadOnly() const
     return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
+// Method Description:
+// - If we're a parent, place the taskbar state for all our leaves into the
+//   provided vector.
+// - If we're a leaf, place our own state into the vector.
+// Arguments:
+// - states: a vector that will receive all the states of all leaves in the tree
+// Return Value:
+// - <none>
+void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
+{
+    if (_IsLeaf())
+    {
+        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_control.TaskbarState(),
+                                                                                    _control.TaskbarProgress()) };
+        states.push_back(tbState);
+    }
+    else
+    {
+        _firstChild->CollectTaskbarStates(states);
+        _secondChild->CollectTaskbarStates(states);
+    }
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
