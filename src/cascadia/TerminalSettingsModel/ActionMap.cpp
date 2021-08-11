@@ -678,6 +678,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
+    // - Determines whether the given key chord is explicitly unbound
+    // Arguments:
+    // - keys: the key chord to check
+    // Return value:
+    // - true if the keychord is explicitly unbound
+    // - false if either the keychord is bound, or not bound at all
+    bool ActionMap::IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const
+    {
+        const auto modifiers = keys.Modifiers();
+
+        // The "keys" given to us can contain both a Vkey, as well as a ScanCode.
+        // For instance our UI code fills out a KeyChord with all available information.
+        // But our _KeyMap only contains KeyChords that contain _either_ a Vkey or ScanCode.
+        // Due to this we'll have to call _GetActionByKeyChordInternal twice.
+        if (auto vkey = keys.Vkey())
+        {
+            // We use the fact that the ..Internal call returns nullptr for explicitly unbound
+            // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
+            // between unbound and lack of binding.
+            return nullptr == _GetActionByKeyChordInternal({ modifiers, vkey, 0 });
+        }
+
+        return nullptr == _GetActionByKeyChordInternal({ modifiers, 0, keys.ScanCode() });
+    }
+
+    // Method Description:
     // - Retrieves the assigned command that can be invoked with the given key chord
     // Arguments:
     // - keys: the key chord of the command to search for

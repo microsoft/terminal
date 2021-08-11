@@ -82,6 +82,10 @@ static bool _messageIsAltKeyup(const MSG& message)
 {
     return (message.message == WM_KEYUP || message.message == WM_SYSKEYUP) && message.wParam == VK_MENU;
 }
+static bool _messageIsAltSpaceKeypress(const MSG& message)
+{
+    return message.message == WM_SYSKEYDOWN && message.wParam == VK_SPACE;
+}
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 {
@@ -167,6 +171,18 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
             if (host.OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
             {
                 // The application consumed the Alt. Don't let Xaml get it.
+                continue;
+            }
+        }
+
+        // GH#7125 = System XAML will show a system dialog on Alt Space. We might want to
+        // explicitly prevent that - for example when an action is bound to it. So similar to
+        // above, we steal the event and hand it off to the host. When the host does not process
+        // it, we will still dispatch like normal.
+        if (_messageIsAltSpaceKeypress(message))
+        {
+            if (host.OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true))
+            {
                 continue;
             }
         }
