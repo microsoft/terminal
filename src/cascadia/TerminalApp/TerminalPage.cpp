@@ -2913,19 +2913,4 @@ namespace winrt::TerminalApp::implementation
     {
         return WindowName() == QuakeWindowName;
     }
-
-    void TerminalPage::DismissSettingsPopups()
-    {
-        if (_settingsTab)
-        {
-            const auto xamlRoot{ _settingsTab.Content().XamlRoot() };
-            // This is basically DismissAllPopups
-            const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
-            for (const auto& p : popups)
-            {
-                p.IsOpen(false);
-            }
-        }
-    }
-
 }

@@ -1025,18 +1025,28 @@ void AppHost::_UpdateTrayIcon()
     }
 }
 
+// Method Description:
+// - BODGY workaround for GH#9320. When the window moves, dismiss all the popups
+//   in the UI tree. Xaml Islands unfortunately doesn't do this for us, see
+//   microsoft/microsoft-ui-xaml#4554
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void AppHost::_WindowMoved()
 {
     if (_logic)
     {
-        _logic.DismissSettingsPopups();
-        // const auto root{ _logic.GetRoot() };
+        const auto root{ _logic.GetRoot() };
 
-        // // This is basically DismissAllPopups
-        // const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
-        // for (const auto& p : popups)
-        // {
-        //     p.IsOpen(false);
-        // }
+        // This is basically DismissAllPopups which is also in
+        // TerminalSettingsEditor/Utils.h
+        // There isn't a good place that's shared between these two files, but
+        // it's only 5 LOC so whatever.
+        const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+        for (const auto& p : popups)
+        {
+            p.IsOpen(false);
+        }
     }
 }

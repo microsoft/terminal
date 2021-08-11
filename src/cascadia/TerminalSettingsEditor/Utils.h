@@ -141,7 +141,7 @@ namespace winrt::Microsoft::Terminal::Settings
 
 // BODGY!
 //
-// The following are a workaround for GH#9320.
+// The following function and struct are a workaround for GH#9320.
 //
 // DismissAllPopups can be used to dismiss all popups for a particular UI
 // element. However, we've got a bunch of pages with scroll viewers that may or
@@ -169,7 +169,7 @@ struct HasScrollViewer
         // won't be able to figure it out.
         //
         // Fortunately for us, we don't need to! The sender is a UIElement, so
-        // we can just get _their_ XamlRoot(),
+        // we can just get _their_ XamlRoot().
         if (const auto& uielem{ sender.try_as<winrt::Windows::UI::Xaml::UIElement>() })
         {
             DismissAllPopups(uielem.XamlRoot());

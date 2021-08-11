@@ -1037,11 +1037,6 @@ namespace winrt::TerminalApp::implementation
         return _root.as<winrt::Windows::UI::Xaml::Controls::Control>();
     }
 
-    void AppLogic::DismissSettingsPopups() noexcept
-    {
-        return _root->DismissSettingsPopups();
-    }
-
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there
     //   isn't a control selected for any reason, returns "Windows Terminal"

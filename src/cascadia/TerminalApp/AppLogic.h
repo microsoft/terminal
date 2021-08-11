@@ -87,7 +87,6 @@ namespace winrt::TerminalApp::implementation
         hstring Title();
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
-        void DismissSettingsPopups() noexcept;
 
         void WindowCloseButtonClicked();
 

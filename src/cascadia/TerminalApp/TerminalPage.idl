@@ -35,7 +35,6 @@ namespace TerminalApp
         String WindowIdForDisplay { get; };
         void RenameFailed();
         Boolean IsQuakeWindow();
-        void DismissSettingsPopups();
 
         // We cannot use the default XAML APIs because we want to make sure
         // that there's only one application-global dialog visible at a time,
