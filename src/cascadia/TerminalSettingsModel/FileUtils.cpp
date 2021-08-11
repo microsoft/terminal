@@ -148,6 +148,7 @@ namespace Microsoft::Terminal::Settings::Model
 
         // Writing to a file isn't atomic, but...
         WriteUTF8File(tmpPath, content);
+
         // renaming one is (supposed to be) atomic.
         // Wait... "supposed to be"!? Well it's technically not always atomic,
         // but it's pretty darn close to it, so... better than nothing.
