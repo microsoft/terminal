@@ -40,7 +40,7 @@ public:
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
     void UnregisterHotKey(const int index) noexcept;
-    void RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
+    bool RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
 
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
