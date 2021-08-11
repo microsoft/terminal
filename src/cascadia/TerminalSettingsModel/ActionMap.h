@@ -60,24 +60,25 @@ struct std::hash<winrt::Microsoft::Terminal::Settings::Model::implementation::Ac
     {
         // I didn't like how std::hash uses the byte-wise FNV1a for integers.
         // So I built my own std::hash with murmurhash3.
+#if SIZE_MAX == UINT32_MAX
         size_t h = keys.value;
-        if constexpr (sizeof(size_t) == 4)
-        {
-            h ^= h >> 16;
-            h *= UINT32_C(0x85ebca6b);
-            h ^= h >> 13;
-            h *= UINT32_C(0xc2b2ae35);
-            h ^= h >> 16;
-        }
-        else
-        {
-            h ^= h >> 33;
-            h *= UINT64_C(0xff51afd7ed558ccd);
-            h ^= h >> 33;
-            h *= UINT64_C(0xc4ceb9fe1a85ec53);
-            h ^= h >> 33;
-        }
+        h ^= h >> 16;
+        h *= UINT32_C(0x85ebca6b);
+        h ^= h >> 13;
+        h *= UINT32_C(0xc2b2ae35);
+        h ^= h >> 16;
         return h;
+#elif SIZE_MAX == UINT64_MAX
+        size_t h = keys.value;
+        h ^= h >> 33;
+        h *= UINT64_C(0xff51afd7ed558ccd);
+        h ^= h >> 33;
+        h *= UINT64_C(0xc4ceb9fe1a85ec53);
+        h ^= h >> 33;
+        return h;
+#else
+        return std::hash<uint16_t>{}(keys.value);
+#endif
     }
 };
 
