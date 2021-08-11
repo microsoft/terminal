@@ -466,6 +466,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_MOVE:
     {
         _WindowMovedHandlers();
+        break;
     }
     case WM_CLOSE:
     {
