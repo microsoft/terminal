@@ -79,6 +79,7 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
@@ -1021,5 +1022,20 @@ void AppHost::_UpdateTrayIcon()
         Shell_NotifyIcon(NIM_SETVERSION, &nid);
 
         _trayIconData = nid;
+    }
+}
+
+void AppHost::_WindowMoved()
+{
+    if (_logic)
+    {
+        const auto root{ _logic.GetRoot() };
+
+        // This is basically DismissAllPopups
+        const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+        for (const auto& p : popups)
+        {
+            p.IsOpen(false);
+        }
     }
 }

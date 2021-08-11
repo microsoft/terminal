@@ -463,6 +463,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         return _OnMoving(wparam, lparam);
     }
+    case WM_MOVE:
+    {
+        _WindowMovedHandlers();
+    }
     case WM_CLOSE:
     {
         // If the user wants to close the app by clicking 'X' button,

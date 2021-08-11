@@ -164,6 +164,12 @@ struct HasScrollViewer
     void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender,
                       const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
     {
+        // Inside this stuct, we can't get at the XamlRoot() that our subclass
+        // implements. I mean, _we_ can, but when XAML does it's codegen, _XAML_
+        // won't be able to figure it out.
+        //
+        // Fortunately for us, we don't need to! The sender is a UIElement, so
+        // we can just get _their_ XamlRoot(),
         if (const auto& uielem{ sender.try_as<winrt::Windows::UI::Xaml::UIElement>() })
         {
             DismissAllPopups(uielem.XamlRoot());
