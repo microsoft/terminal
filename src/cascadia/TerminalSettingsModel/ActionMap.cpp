@@ -302,7 +302,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // populate _KeyBindingMapCache
             std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> keyBindingsMap;
-            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> unboundKeys;
+            std::unordered_set<ActionMapKeyChord> unboundKeys;
             _PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
 
             _KeyBindingMapCache = single_threaded_map<KeyChord, Model::Command>(std::move(keyBindingsMap));
@@ -317,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - keyBindingsMap: the keyBindingsMap we're populating. This maps the key chord of a command to the command itself.
     // - unboundKeys: a set of keys that are explicitly unbound
-    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const
+    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<ActionMapKeyChord>& unboundKeys) const
     {
         // Update KeyBindingsMap with our current layer
         for (const auto& [keys, actionID] : _KeyMap)
@@ -683,21 +683,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - false if either the keychord is bound, or not bound at all
     bool ActionMap::IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const
     {
-        const auto modifiers = keys.Modifiers();
-
-        // The "keys" given to us can contain both a Vkey, as well as a ScanCode.
-        // For instance our UI code fills out a KeyChord with all available information.
-        // But our _KeyMap only contains KeyChords that contain _either_ a Vkey or ScanCode.
-        // Due to this we'll have to call _GetActionByKeyChordInternal twice.
-        if (auto vkey = keys.Vkey())
-        {
-            // We use the fact that the ..Internal call returns nullptr for explicitly unbound
-            // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
-            // between unbound and lack of binding.
-            return nullptr == _GetActionByKeyChordInternal({ modifiers, vkey, 0 });
-        }
-
-        return nullptr == _GetActionByKeyChordInternal({ modifiers, 0, keys.ScanCode() });
+        // We use the fact that the ..Internal call returns nullptr for explicitly unbound
+        // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
+        // between unbound and lack of binding.
+        return _GetActionByKeyChordInternal(keys) == nullptr;
     }
 
     // Method Description:
@@ -709,21 +698,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullptr if the key chord doesn't exist
     Model::Command ActionMap::GetActionByKeyChord(Control::KeyChord const& keys) const
     {
-        const auto modifiers = keys.Modifiers();
-
-        // The "keys" given to us can contain both a Vkey, as well as a ScanCode.
-        // For instance our UI code fills out a KeyChord with all available information.
-        // But our _KeyMap only contains KeyChords that contain _either_ a Vkey or ScanCode.
-        // Due to this we'll have to call _GetActionByKeyChordInternal twice.
-        if (auto vkey = keys.Vkey())
-        {
-            if (auto command = _GetActionByKeyChordInternal({ modifiers, vkey, 0 }))
-            {
-                return *command;
-            }
-        }
-
-        return _GetActionByKeyChordInternal({ modifiers, 0, keys.ScanCode() }).value_or(nullptr);
+        return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
 
     // Method Description:
@@ -735,8 +710,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the command with the given key chord
     // - nullptr if the key chord is explicitly unbound
     // - nullopt if it was not bound in this layer
-    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(Control::KeyChord const& keys) const
+    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(const ActionMapKeyChord keys) const
     {
+        // KeyChord's constructor ensures that Modifiers() & Vkey() is a valid value at a minimum.
+        // This allows ActionMap to identify KeyChords which should "layer" (overwrite) each other.
+        // For instance win+sc(41) and win+` both specify the same KeyChord on an US keyboard layout
+        // from the perspective of a user. Either of the two should correctly overwrite the other.
+        // As such we need to pretend as if ScanCode doesn't exist.
+        assert(keys.vkey != 0);
+
         // Check the current layer
         if (const auto actionIDPair = _KeyMap.find(keys); actionIDPair != _KeyMap.end())
         {

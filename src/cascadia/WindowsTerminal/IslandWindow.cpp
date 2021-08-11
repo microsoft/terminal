@@ -1091,16 +1091,7 @@ void IslandWindow::UnregisterHotKey(const int index) noexcept
 // - <none>
 bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
 {
-    auto vkey = hotkey.Vkey();
-    if (!vkey)
-    {
-        vkey = MapVirtualKeyW(hotkey.ScanCode(), MAPVK_VSC_TO_VK);
-    }
-    if (!vkey)
-    {
-        return false;
-    }
-
+    const auto vkey = hotkey.Vkey();
     auto hotkeyFlags = MOD_NOREPEAT;
     {
         const auto modifiers = hotkey.Modifiers();

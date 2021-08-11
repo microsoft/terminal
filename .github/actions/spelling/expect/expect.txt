@@ -788,6 +788,7 @@ flyout
 fmodern
 fmtarg
 fmtid
+FNV
 FOLDERID
 FONTCHANGE
 fontdlg
@@ -1469,6 +1470,7 @@ Mul
 multiline
 munged
 munges
+murmurhash
 mutex
 mutexes
 muxes
