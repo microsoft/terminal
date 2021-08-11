@@ -31,12 +31,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    //void Launch::ViewChanging(winrt::Windows::Foundation::IInspectable const&, const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs&)
-    //{
-    //    // BODGY workaround for GH#9320. When the ScrollViewer scrolls, dismiss any popups we might have.
-    //    DismissAllPopups(XamlRoot());
-    //}
-
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::LaunchPageNavigationState>();

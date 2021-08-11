@@ -18,22 +18,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
     };
 
-    template<typename T>
-    struct HasScrollViewer
-    {
-        void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender, const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& e)
-        {
-            DismissAllPopups(XamlRoot());
-        }
-    };
-
     struct Launch : public HasScrollViewer<Launch>, LaunchT<Launch>
     {
     public:
         Launch();
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-        // void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender, const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& e);
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);

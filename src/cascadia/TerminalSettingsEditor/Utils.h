@@ -139,6 +139,15 @@ namespace winrt::Microsoft::Terminal::Settings
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
 }
 
+// BODGY!
+//
+// The following are a workaround for GH#9320.
+//
+// DismissAllPopups can be used to dismiss all popups for a particular UI
+// element. However, we've got a bunch of pages with scroll viewers that may or
+// may not have popups in them. Rather than define the same exact body for all
+// their ViewChanging events, the HasScrollViewer struct will just do it for
+// you!
 inline void DismissAllPopups(winrt::Windows::UI::Xaml::XamlRoot const& xamlRoot)
 {
     const auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
@@ -147,3 +156,14 @@ inline void DismissAllPopups(winrt::Windows::UI::Xaml::XamlRoot const& xamlRoot)
         p.IsOpen(false);
     }
 }
+
+template<typename T>
+struct HasScrollViewer
+{
+    // When the ScrollViewer scrolls, dismiss any popups we might have.
+    void ViewChanging(winrt::Windows::Foundation::IInspectable const& /*sender*/,
+                      const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
+    {
+        DismissAllPopups(XamlRoot());
+    }
+};
