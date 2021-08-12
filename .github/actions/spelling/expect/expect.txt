@@ -2269,6 +2269,7 @@ SWMR
 SWP
 swprintf
 SYMED
+symlink
 SYNCPAINT
 sys
 syscalls
