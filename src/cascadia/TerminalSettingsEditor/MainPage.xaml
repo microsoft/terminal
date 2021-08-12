@@ -117,7 +117,17 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Frame x:Name="contentFrame"
-                   Grid.Row="0" />
+                   Grid.Row="0">
+                <Frame.ContentTransitions>
+                    <TransitionCollection>
+                        <NavigationThemeTransition>
+                            <NavigationThemeTransition.DefaultNavigationTransitionInfo>
+                                <DrillInNavigationTransitionInfo />
+                            </NavigationThemeTransition.DefaultNavigationTransitionInfo>
+                        </NavigationThemeTransition>
+                    </TransitionCollection>
+                </Frame.ContentTransitions>
+            </Frame>
             <!--  Explicitly set the background color on grid to prevent the navigation animation from overflowing it  -->
             <Grid Grid.Row="1"
                   Height="100"
