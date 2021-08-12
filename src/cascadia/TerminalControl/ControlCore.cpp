@@ -1500,7 +1500,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   * All: Do both - clear the visible viewport and the scrollback, leaving
     //     only the cursor row at the top of the viewport.
     // Arguments:
-    // - clearType: The tpye of clear to perform.
+    // - clearType: The type of clear to perform.
     // Return Value:
     // - <none>
     void ControlCore::ClearBuffer(Control::ClearBufferType clearType)

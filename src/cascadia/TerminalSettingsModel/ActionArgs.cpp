@@ -681,7 +681,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"ClearScrollbackCommandKey");
         }
 
-        // Return the emptry string - the Clear() should be one of these values
+        // Return the empty string - the Clear() should be one of these values
         return winrt::hstring{ L"" };
     }
 }
