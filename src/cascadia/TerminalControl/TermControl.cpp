@@ -75,6 +75,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (_contentProc != nullptr)
             {
                 _interactivity = _contentProc.GetInteractivity();
+                _contentWaitInterrupt.create();
+                _createContentWaitThread();
             }
         }
 
@@ -165,6 +167,148 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
         _ApplyUISettings(_settings);
+    }
+
+    bool s_waitOnContentProcess(uint64_t contentPid, HANDLE contentWaitInterrupt)
+    {
+        // This is the array of HANDLEs that we're going to wait on in
+        // WaitForMultipleObjects below.
+        // * waits[0] will be the handle to the monarch process. It gets
+        //   signalled when the process exits / dies.
+        // * waits[1] is the handle to our _contentWaitInterrupt event. Another
+        //   thread can use that to manually break this loop. We'll do that when
+        //   we're getting torn down.
+        HANDLE waits[2];
+        waits[1] = contentWaitInterrupt;
+        bool displayError = true;
+        // bool exitThreadRequested = false;
+        // while (!exitThreadRequested)
+        // {
+        // At any point in all this, the current monarch might die. If it
+        // does, we'll go straight to a new election, in the "jail"
+        // try/catch below. Worst case, eventually, we'll become the new
+        // monarch.
+        try
+        {
+            // This might fail to even ask the monarch for it's PID.
+            wil::unique_handle hContent{ OpenProcess(PROCESS_ALL_ACCESS,
+                                                     FALSE,
+                                                     static_cast<DWORD>(contentPid)) };
+
+            // If we fail to open the content, then they don't exist
+            //  anymore! Go straight to an election.
+            if (hContent.get() == nullptr)
+            {
+                const auto gle = GetLastError();
+                TraceLoggingWrite(g_hTerminalControlProvider,
+                                  "TermControl_FailedToOpenContent",
+                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                  TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+                // exitThreadRequested = true;
+                // continue;
+            }
+
+            waits[0] = hContent.get();
+
+            switch (WaitForMultipleObjects(2, waits, FALSE, INFINITE))
+            {
+            case WAIT_OBJECT_0 + 0: // waits[0] was signaled, the handle to the monarch process
+
+                TraceLoggingWrite(g_hTerminalControlProvider,
+                                  "TermControl_ContentDied",
+                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                // Connect to the new monarch, which might be us!
+                // If we become the monarch, then we'll return true and exit this thread.
+                // exitThreadRequested = true;
+                break;
+
+            case WAIT_OBJECT_0 + 1: // waits[1] was signaled, our manual interrupt
+
+                TraceLoggingWrite(g_hTerminalControlProvider,
+                                  "TermControl_ContentWaitInterrupted",
+                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                // exitThreadRequested = true;
+                displayError = false;
+                break;
+
+            case WAIT_TIMEOUT:
+                // This should be impossible.
+                TraceLoggingWrite(g_hTerminalControlProvider,
+                                  "TermControl_ContentWaitTimeout",
+                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                // exitThreadRequested = true;
+                break;
+
+            default:
+            {
+                // TODO!
+                // Returning any other value is invalid. Just die.
+                const auto gle = GetLastError();
+                TraceLoggingWrite(g_hTerminalControlProvider,
+                                  "TermControl_WaitFailed",
+                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                                  TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                // exitThreadRequested = true;
+                // ExitProcess(0);
+            }
+            }
+        }
+        catch (...)
+        {
+            // Theoretically, if window[1] dies when we're trying to get
+            // it's PID we'll get here. We can probably just exit here.
+
+            TraceLoggingWrite(g_hTerminalControlProvider,
+                              "TermControl_ExceptionInWaitThread",
+                              // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            // exitThreadRequested = true;
+        }
+        // }
+
+        // if (displayError)
+        // {
+        // }
+        return displayError;
+    }
+
+    void TermControl::_createContentWaitThread()
+    {
+        _contentWaitThread = std::thread([weakThis = get_weak(), contentPid = _contentProc.GetPID(), contentWaitInterrupt=_contentWaitInterrupt.get()] {
+            if (s_waitOnContentProcess(contentPid, contentWaitInterrupt))
+            {
+                if (auto control{ weakThis.get() })
+                {
+                    control->_contentWaitThread.detach();
+                    control->_raiseContentDied();
+                }
+            }
+        });
+    }
+
+    winrt::fire_and_forget TermControl::_raiseContentDied()
+    {
+        auto weakThis{ get_weak() };
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (auto control{ weakThis.get() })
+        {
+            // dialog the thing
+            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Error, L"The content of this terminal died unexpectedly.");
+            control->_RaiseNoticeHandlers(*control, noticeArgs);
+        }
     }
 
     // Method Description:

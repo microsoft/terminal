@@ -16,6 +16,8 @@ namespace Microsoft.Terminal.Control
 
         ControlInteractivity GetInteractivity();
 
+        UInt64 GetPID();
+
         UInt64 RequestSwapChainHandle(UInt64 pid);
 
         event DestructedArgs Destructed;

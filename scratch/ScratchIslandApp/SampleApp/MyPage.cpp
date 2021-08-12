@@ -199,6 +199,16 @@ namespace winrt::SampleApp::implementation
         // Create the XAML control that will be attached to the content process.
         // We're not passing in a connection, because the contentGuid will be used instead.
         Control::TermControl control{ contentGuid, settings, nullptr };
+        control.RaiseNotice([this](auto&&, auto& args) {
+            _writeToLog(L"Content process died, probably.");
+            _writeToLog(args.Message());
+            OutOfProcContent().Children().Clear();
+            GuidInput().Text(L"");
+            if (piContentProcess.hProcess)
+            {
+                piContentProcess.reset();
+            }
+        });
 
         Log().Children().Clear();
         OutOfProcContent().Children().Append(control);
