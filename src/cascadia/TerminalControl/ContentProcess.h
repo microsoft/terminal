@@ -12,11 +12,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     {
         ContentProcess();
+        ~ContentProcess();
         bool Initialize(Control::IControlSettings settings,
                         TerminalConnection::ConnectionInformation connectionInfo);
         Control::ControlInteractivity GetInteractivity();
 
         uint64_t RequestSwapChainHandle(const uint64_t pid);
+
+        WINRT_CALLBACK(Destructed, Control::DestructedArgs);
 
     private:
         Control::ControlInteractivity _interactivity{ nullptr };
