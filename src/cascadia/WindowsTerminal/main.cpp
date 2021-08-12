@@ -143,6 +143,11 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
         if (!g_weak)
         {
             winrt::Microsoft::Terminal::Control::ContentProcess strong{}; // = winrt::make<winrt::Microsoft::Terminal::Control::ContentProcess>();
+            strong.Destructed([]() {
+                std::unique_lock<std::mutex> lk(m);
+                dtored = true;
+                cv.notify_one();
+            });
             winrt::weak_ref<winrt::Microsoft::Terminal::Control::ContentProcess> weak{ strong };
             g_weak = weak;
             return strong.as(iid, result);

@@ -21,6 +21,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return true;
     }
 
+    ContentProcess::~ContentProcess()
+    {
+        _DestructedHandlers();
+    }
+
     Control::ControlInteractivity ContentProcess::GetInteractivity()
     {
         return _interactivity;
