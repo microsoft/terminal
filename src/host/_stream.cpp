@@ -28,8 +28,6 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 // Used by WriteCharsLegacy.
 #define IS_GLYPH_CHAR(wch) (((wch) >= L' ') && ((wch) != 0x007F))
 
-constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
-
 // Routine Description:
 // - This routine updates the cursor position.  Its input is the non-special
 //   cased new location of the cursor.  For example, if the cursor were being
@@ -339,7 +337,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
     SHORT XPosition;
-    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
     size_t TempNumSpaces = 0;
     const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
     const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
@@ -359,6 +356,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     {
         coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
     }
+
+    static constexpr unsigned int LOCAL_BUFFER_SIZE = 1024;
+    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
 
     while (*pcb < BufferSize)
     {

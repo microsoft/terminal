@@ -6,6 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
 #include "icon.h"
+#include "TrayIcon.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -21,6 +22,8 @@ using namespace ::Microsoft::Console::Types;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
+
+const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
@@ -453,7 +456,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
-            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -578,9 +580,30 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             _NotifyTrayIconPressedHandlers();
             return 0;
         }
+        case WM_CONTEXTMENU:
+        {
+            const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
+            _NotifyShowTrayContextMenuHandlers(eventPoint);
+            return 0;
+        }
         }
         break;
     }
+    case WM_MENUCOMMAND:
+    {
+        _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
+        return 0;
+    }
+    default:
+        // We'll want to receive this message when explorer.exe restarts
+        // so that we can re-add our icon to the tray.
+        // This unfortunately isn't a switch case because we register the
+        // message at runtime.
+        if (message == WM_TASKBARCREATED)
+        {
+            _NotifyReAddTrayIconHandlers();
+            return 0;
+        }
     }
 
     // TODO: handle messages here...
@@ -605,6 +628,10 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 void IslandWindow::OnMinimize()
 {
     // TODO GH#1989 Stop rendering island content when the app is minimized.
+    if (_minimizeToTray)
+    {
+        HideWindow();
+    }
 }
 
 // Method Description:
@@ -1075,8 +1102,9 @@ void IslandWindow::UnregisterHotKey(const int index) noexcept
 {
     TraceLoggingWrite(
         g_hWindowsTerminalProvider,
-        "UnregisterAllHotKeys",
+        "UnregisterHotKey",
         TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+        TraceLoggingInt64(index, "index", "the index of the hotkey to remove"),
         TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
         TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
@@ -1093,25 +1121,9 @@ void IslandWindow::UnregisterHotKey(const int index) noexcept
 // - hotkey: The key-combination to register.
 // Return Value:
 // - <none>
-void IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
+bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
 {
-    TraceLoggingWrite(
-        g_hWindowsTerminalProvider,
-        "RegisterHotKey",
-        TraceLoggingDescription("Emitted when setting hotkeys"),
-        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-    auto vkey = hotkey.Vkey();
-    if (!vkey)
-    {
-        vkey = MapVirtualKeyW(hotkey.ScanCode(), MAPVK_VSC_TO_VK);
-    }
-    if (!vkey)
-    {
-        return;
-    }
-
+    const auto vkey = hotkey.Vkey();
     auto hotkeyFlags = MOD_NOREPEAT;
     {
         const auto modifiers = hotkey.Modifiers();
@@ -1123,7 +1135,23 @@ void IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Termi
 
     // TODO GH#8888: We should display a warning of some kind if this fails.
     // This can fail if something else already bound this hotkey.
-    LOG_IF_WIN32_BOOL_FALSE(::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey));
+    const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
+    LOG_IF_WIN32_BOOL_FALSE(result);
+
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "RegisterHotKey",
+                      TraceLoggingDescription("Emitted when setting hotkeys"),
+                      TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+                      TraceLoggingUInt64(vkey, "vkey", "the key"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_WIN), "win", "is WIN in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_ALT), "alt", "is ALT in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_CONTROL), "control", "is CONTROL in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_SHIFT), "shift", "is SHIFT in the modifiers"),
+                      TraceLoggingBool(result, "succeeded", "true if we succeeded"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    return result;
 }
 
 // Method Description:
@@ -1605,6 +1633,16 @@ til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
     };
 
     return til::rectangle{ origin, dimensions };
+}
+
+void IslandWindow::HideWindow()
+{
+    ShowWindow(GetHandle(), SW_HIDE);
+}
+
+void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
+{
+    _minimizeToTray = minimizeToTray;
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

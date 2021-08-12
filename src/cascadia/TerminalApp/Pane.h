@@ -29,6 +29,11 @@ namespace TerminalAppLocalTests
     class TabTests;
 };
 
+namespace winrt::TerminalApp::implementation
+{
+    struct TerminalTab;
+}
+
 enum class Borders : int
 {
     None = 0x0,
@@ -63,7 +68,7 @@ public:
     void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-    bool MovePane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
     bool SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second);
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
@@ -81,6 +86,10 @@ public:
     void Shutdown();
     void Close();
 
+    std::shared_ptr<Pane> AttachPane(std::shared_ptr<Pane> pane,
+                                     winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
+    std::shared_ptr<Pane> DetachPane(std::shared_ptr<Pane> pane);
+
     int GetLeafPaneCount() const noexcept;
 
     void Maximize(std::shared_ptr<Pane> zoomedPane);
@@ -93,12 +102,38 @@ public:
 
     bool ContainsReadOnly() const;
 
+    // Method Description:
+    // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
+    //   tree, calling a predicate on each pane in a depth-first pattern.
+    // - If the predicate returns true, recursion is stopped early.
+    // Arguments:
+    // - f: The function to be applied to each pane.
+    // Return Value:
+    // - true if the predicate returned true on any pane.
+    template<typename F>
+    //requires std::predicate<F, std::shared_ptr<Pane>>
+    bool WalkTree(F f)
+    {
+        if (f(shared_from_this()))
+        {
+            return true;
+        }
+
+        if (!_IsLeaf())
+        {
+            return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+        }
+
+        return false;
+    }
+
     void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
     DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
+    DECLARE_EVENT(Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct PanePoint;
@@ -143,8 +178,7 @@ private:
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                    const float splitSize,
-                                                                   const GUID& profile,
-                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
+                                                                   std::shared_ptr<Pane> newPane);
 
     void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
@@ -274,5 +308,6 @@ private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
 
+    friend struct winrt::TerminalApp::implementation::TerminalTab;
     friend class ::TerminalAppLocalTests::TabTests;
 };

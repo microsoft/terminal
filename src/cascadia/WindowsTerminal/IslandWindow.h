@@ -40,12 +40,16 @@ public:
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
     void UnregisterHotKey(const int index) noexcept;
-    void RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
+    bool RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
 
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
+
+    void HideWindow();
+
+    void SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept;
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
@@ -54,6 +58,10 @@ public:
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
     WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyShowTrayContextMenu, winrt::delegate<void(til::point)>);
+    WINRT_CALLBACK(NotifyTrayMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
+    WINRT_CALLBACK(NotifyReAddTrayIcon, winrt::delegate<void()>);
+    
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
 
 protected:
@@ -116,6 +124,8 @@ protected:
     til::rectangle _getQuakeModeSize(HMONITOR hmon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
+
+    bool _minimizeToTray{ false };
 
 private:
     // This minimum width allows for width the tabs fit
