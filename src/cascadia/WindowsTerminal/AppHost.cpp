@@ -692,7 +692,17 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            _window->RegisterHotKey(gsl::narrow_cast<int>(_hotkeys.size()), keyChord);
+            int index = gsl::narrow_cast<int>(_hotkeys.size());
+            const bool succeeded = _window->RegisterHotKey(index, keyChord);
+
+            TraceLoggingWrite(g_hWindowsTerminalProvider,
+                              "AppHost_setupGlobalHotkey",
+                              TraceLoggingDescription("Emitted when setting a single hotkey"),
+                              TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+                              TraceLoggingWideString(cmd.Name().c_str(), "name", "the name of the command"),
+                              TraceLoggingBoolean(succeeded, "succeeded", "true if we succeeded"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             _hotkeys.emplace_back(summonArgs);
         }
     }

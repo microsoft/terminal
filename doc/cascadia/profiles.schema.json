@@ -250,6 +250,7 @@
         "identifyWindows",
         "moveFocus",
         "movePane",
+        "swapPane",
         "moveTab",
         "newTab",
         "newWindow",
@@ -504,6 +505,23 @@
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+          }
+        }
+      }
+    ],
+    "required": [ "index" ]
+  },
+  "MovePaneAction": {
+      "description": "Arguments corresponding to a Move Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "movePane" },
+            "index": {
+              "type": "integer",
+              "default": 0,
+              "description": "Which tab to move the pane to, with the first being 0"
             }
           }
         }
@@ -527,13 +545,13 @@
       ],
       "required": [ "direction" ]
     },
-    "MovePaneAction": {
-      "description": "Arguments corresponding to a Move Pane Action",
+    "SwapPaneAction": {
+      "description": "Arguments corresponding to a Swap Pane Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "movePane" },
+            "action": { "type": "string", "pattern": "swapPane" },
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
@@ -983,6 +1001,7 @@
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/MovePaneAction" },
+              { "$ref": "#/definitions/SwapPaneAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
