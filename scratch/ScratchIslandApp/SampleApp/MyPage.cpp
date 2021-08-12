@@ -28,7 +28,7 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        auto settings = winrt::make_self<ControlUnitTests::MySettings>();
+        auto settings = winrt::make_self<MySettings>();
 
         auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
                                                                                       winrt::hstring{},
@@ -56,7 +56,22 @@ namespace winrt::SampleApp::implementation
     static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
     {
         auto guidStr{ ::Microsoft::Console::Utils::GuidToString(g) };
-        std::wstring commandline{ fmt::format(L"windowsterminal.exe --content {}", guidStr) };
+
+        // Create an event that the content process will use to signal it is
+        // ready to go. We won't need the event after this function, so the
+        // unique_event will clean up our handle when we leave this scope. The
+        // ContentProcess is responsible for cleaning up its own handle.
+        wil::unique_event ev{ CreateEvent(nullptr, true, false, L"contentProcessStarted") };
+        // Make sure to mark this handle as inheritable! Even with
+        // bInheritHandles=true, this is only inherited when it's explicitly
+        // allowed to be.
+        SetHandleInformation(ev.get(), HANDLE_FLAG_INHERIT, 1);
+
+        // god bless, fmt::format will format a HANDLE like `0xa80`
+        std::wstring commandline{
+            fmt::format(L"windowsterminal.exe --content {} --signal {}", guidStr, ev.get())
+        };
+
         STARTUPINFO siOne{ 0 };
         siOne.cb = sizeof(STARTUPINFOW);
         wil::unique_process_information piOne;
@@ -65,7 +80,7 @@ namespace winrt::SampleApp::implementation
             commandline.data(),
             nullptr, // lpProcessAttributes
             nullptr, // lpThreadAttributes
-            false, // bInheritHandles
+            true, // bInheritHandles
             CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
             nullptr, // lpEnvironment
             nullptr, // startingDirectory
@@ -73,28 +88,23 @@ namespace winrt::SampleApp::implementation
             &piOne // lpProcessInformation
         );
         THROW_IF_WIN32_BOOL_FALSE(succeeded);
-        // if (!succeeded)
-        // {
-        //     printf("Failed to create host process\n");
-        //     return;
-        // }
 
-        // Ooof this is dumb, but we need a sleep here to make the server starts.
-        // That's _sub par_. Maybe we could use the host's stdout to have them emit
-        // a byte when they're set up?
-        Sleep(2000);
-
-        // TODO MONDAY - It seems like it takes conhost too long to start up to
-        // host the ScratchWinRTServer that even a sleep 100 is too short. However,
-        // any longer, and XAML will just crash, because some frame took too long.
-        // So we _need_ to do the "have the server explicitly tell us it's ready"
-        // thing, and maybe also do it on a bg thread (and signal to the UI thread
-        // that it can attach now)
+        // Wait for the child process to signal that they're ready.
+        // TODO!: The _first_ time we run, we always fail to init the ContentProcess. What the heck?
+        WaitForSingleObject(ev.get(), INFINITE);
 
         return std::move(piOne);
     }
 
-    winrt::fire_and_forget MyPage::CreateClicked(const IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& eventArgs)
+    void MyPage::_writeToLog(std::wstring_view str)
+    {
+        winrt::WUX::Controls::TextBlock block;
+        block.Text(str);
+        Log().Children().Append(block);
+    }
+
+    winrt::fire_and_forget MyPage::CreateClicked(const IInspectable& sender,
+                                                 const WUX::Input::TappedRoutedEventArgs& eventArgs)
     {
         auto guidString = GuidInput().Text();
 
@@ -102,7 +112,9 @@ namespace winrt::SampleApp::implementation
         winrt::apartment_context ui_thread;
         co_await winrt::resume_background();
 
-        auto canConvert = guidString.size() == 38 && guidString.front() == '{' && guidString.back() == '}';
+        auto canConvert = guidString.size() == 38 &&
+                          guidString.front() == '{' &&
+                          guidString.back() == '}';
         bool tryingToAttach = false;
         winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
 
@@ -128,6 +140,13 @@ namespace winrt::SampleApp::implementation
         //   object.
         // * If we're attaching, then that process already exists.
         Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+        if (content == nullptr)
+        {
+            // Switch back to the UI thread.
+            co_await ui_thread;
+            _writeToLog(L"Failed to connect to the ContentProces object. It may not have been started fast enough.");
+            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+        }
 
         TerminalConnection::ConnectionInformation connectInfo{ nullptr };
         Control::IControlSettings settings{ *winrt::make_self<implementation::MySettings>() };
@@ -153,7 +172,10 @@ namespace winrt::SampleApp::implementation
 
             if (!content.Initialize(settings, connectInfo))
             {
-                co_return;
+                // Switch back to the UI thread.
+                co_await ui_thread;
+                _writeToLog(L"Failed to Initialize the ContentProces object.");
+                co_return; // be sure to co_return or we'll fall through to the part where we clear the log
             }
         }
         else
@@ -168,6 +190,7 @@ namespace winrt::SampleApp::implementation
         // We're not passing in a connection, because the contentGuid will be used instead.
         Control::TermControl control{ contentGuid, settings, nullptr };
 
+        Log().Children().Clear();
         OutOfProcContent().Children().Append(control);
 
         if (!tryingToAttach)

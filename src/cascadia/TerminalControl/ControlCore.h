@@ -277,6 +277,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         inline bool _IsClosing() const noexcept
         {
 #ifndef NDEBUG
+            // TODO! This may not be strictly true if the core is running out of
+            // proc with XAML. I keep hitting this assertion every time it
+            // exits, so we might need a better solution.
             if (_dispatcher)
             {
                 // _closing isn't atomic and may only be accessed from the main thread.
