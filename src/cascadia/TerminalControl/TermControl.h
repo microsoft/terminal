@@ -191,6 +191,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::Windows::UI::Xaml::Controls::SwapChainPanel::LayoutUpdated_revoker _layoutUpdatedRevoker;
 
+        wil::unique_event _contentWaitInterrupt;
+        std::thread _contentWaitThread;
+        void _createContentWaitThread();
+        // void _waitOnContentProcess();
+
         inline bool _IsClosing() const noexcept
         {
 #ifndef NDEBUG
@@ -281,7 +286,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _coreTransparencyChanged(IInspectable sender, Control::TransparencyChangedEventArgs args);
         void _coreRaisedNotice(const IInspectable& s, const Control::NoticeEventArgs& args);
         void _coreWarningBell(const IInspectable& sender, const IInspectable& args);
+
         void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
+
+        winrt::fire_and_forget _raiseContentDied();
     };
 }
 
