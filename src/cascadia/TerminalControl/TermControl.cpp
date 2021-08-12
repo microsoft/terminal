@@ -1726,8 +1726,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
-
-            _core.Close();
+            // try
+            // {
+            if (!_contentProc)
+            {
+                _core.Close();
+            }
+            // }
+            // CATCH_LOG();
         }
     }
 

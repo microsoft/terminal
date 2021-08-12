@@ -28,6 +28,11 @@
                     Tapped="CreateClicked">
                 Create
             </Button>
+            <Button x:Name="CloseOopControl"
+                    Grid.Row="0"
+                    Tapped="CloseClicked">
+                Close
+            </Button>
 
         </StackPanel>
 
@@ -48,16 +53,25 @@
                   VerticalAlignment="Stretch"
                   Background="#ff0000" />
 
-            <Grid x:Name="OutOfProcContent"
-                  Grid.Column="1"
-                  Padding="16"
+            <Grid Grid.Column="1"
                   HorizontalAlignment="Stretch"
-                  VerticalAlignment="Stretch"
-                  Background="#0000ff">
+                  VerticalAlignment="Stretch">
+
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
 
                 <StackPanel x:Name="Log"
+                            Grid.Row="0"
                             Orientation="Vertical" />
 
+                <Grid x:Name="OutOfProcContent"
+                      Grid.Row="1"
+                      Padding="16"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Stretch"
+                      Background="#0000ff" />
             </Grid>
 
         </Grid>

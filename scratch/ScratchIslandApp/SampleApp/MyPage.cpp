@@ -96,10 +96,13 @@ namespace winrt::SampleApp::implementation
         return std::move(piOne);
     }
 
-    void MyPage::_writeToLog(std::wstring_view str)
+    winrt::fire_and_forget MyPage::_writeToLog(std::wstring_view str)
     {
+        winrt::hstring copy{ str };
+        // Switch back to the UI thread.
+        co_await resume_foreground(Dispatcher());
         winrt::WUX::Controls::TextBlock block;
-        block.Text(str);
+        block.Text(copy);
         Log().Children().Append(block);
     }
 
@@ -110,7 +113,6 @@ namespace winrt::SampleApp::implementation
 
         // Capture calling context.
         winrt::apartment_context ui_thread;
-        co_await winrt::resume_background();
 
         auto canConvert = guidString.size() == 38 &&
                           guidString.front() == '{' &&
@@ -127,11 +129,13 @@ namespace winrt::SampleApp::implementation
                 tryingToAttach = true;
             }
         }
+        _writeToLog(tryingToAttach ? L"Attaching to existing content process" : L"Creating new content process");
 
+        co_await winrt::resume_background();
         if (!tryingToAttach)
         {
             // Spawn a wt.exe, with the guid on the commandline
-            auto piContent{ std::move(_createHostClassProcess(contentGuid)) };
+            piContentProcess = std::move(_createHostClassProcess(contentGuid));
         }
 
         // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
@@ -139,11 +143,21 @@ namespace winrt::SampleApp::implementation
         //   spawn the process that will actually host the ContentProcess
         //   object.
         // * If we're attaching, then that process already exists.
-        Control::ContentProcess content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+        Control::ContentProcess content;
+        try
+        {
+            content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+        }
+        catch (winrt::hresult_error hr)
+        {
+            _writeToLog(L"CreateInstance the ContentProces object");
+            _writeToLog(fmt::format(L"    HR ({}): {}", hr.code(), hr.message().c_str()));
+            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+            
+        }
+        
         if (content == nullptr)
         {
-            // Switch back to the UI thread.
-            co_await ui_thread;
             _writeToLog(L"Failed to connect to the ContentProces object. It may not have been started fast enough.");
             co_return; // be sure to co_return or we'll fall through to the part where we clear the log
         }
@@ -172,8 +186,6 @@ namespace winrt::SampleApp::implementation
 
             if (!content.Initialize(settings, connectInfo))
             {
-                // Switch back to the UI thread.
-                co_await ui_thread;
                 _writeToLog(L"Failed to Initialize the ContentProces object.");
                 co_return; // be sure to co_return or we'll fall through to the part where we clear the log
             }
@@ -197,6 +209,16 @@ namespace winrt::SampleApp::implementation
         {
             auto guidStr{ ::Microsoft::Console::Utils::GuidToString(contentGuid) };
             GuidInput().Text(guidStr);
+        }
+    }
+
+    void MyPage::CloseClicked(const IInspectable& /*sender*/,
+                                                 const WUX::Input::TappedRoutedEventArgs& /*eventArgs*/)
+    {
+        OutOfProcContent().Children().Clear();
+        if (piContentProcess.hProcess)
+        {
+            piContentProcess.reset();
         }
     }
 
