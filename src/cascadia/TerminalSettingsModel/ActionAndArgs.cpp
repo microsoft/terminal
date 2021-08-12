@@ -21,6 +21,7 @@ static constexpr std::string_view ExecuteCommandlineKey{ "wt" };
 static constexpr std::string_view FindKey{ "find" };
 static constexpr std::string_view MoveFocusKey{ "moveFocus" };
 static constexpr std::string_view MovePaneKey{ "movePane" };
+static constexpr std::string_view SwapPaneKey{ "swapPane" };
 static constexpr std::string_view NewTabKey{ "newTab" };
 static constexpr std::string_view NextTabKey{ "nextTab" };
 static constexpr std::string_view OpenNewTabDropdownKey{ "openNewTabDropdown" };
@@ -322,6 +323,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::Invalid, L"" },
                 { ShortcutAction::MoveFocus, RS_(L"MoveFocusCommandKey") },
                 { ShortcutAction::MovePane, RS_(L"MovePaneCommandKey") },
+                { ShortcutAction::SwapPane, RS_(L"SwapPaneCommandKey") },
                 { ShortcutAction::NewTab, RS_(L"NewTabCommandKey") },
                 { ShortcutAction::NextTab, RS_(L"NextTabCommandKey") },
                 { ShortcutAction::OpenNewTabDropdown, RS_(L"OpenNewTabDropdownCommandKey") },

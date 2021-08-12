@@ -220,7 +220,7 @@ bool Pane::ResizePane(const ResizeDirection& direction)
 //     direction, we'll return false. This will indicate to our parent that they
 //     should try and move the focus themselves. In this way, the focus can move
 //     up and down the tree to the correct pane.
-// - This method is _very_ similar to MovePane. Both are trying to find the
+// - This method is _very_ similar to SwapPane. Both are trying to find the
 //   right pane to move (focus) in a direction.
 // Arguments:
 // - direction: The direction to move the focus in.
@@ -595,7 +595,7 @@ Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& dire
 // - direction: The direction to move the focused pane in.
 // Return Value:
 // - true if we or a child handled this pane move request.
-bool Pane::MovePane(const FocusDirection& direction)
+bool Pane::SwapPane(const FocusDirection& direction)
 {
     // If we're a leaf, do nothing. We can't possibly swap anything.
     if (_IsLeaf())
@@ -614,7 +614,7 @@ bool Pane::MovePane(const FocusDirection& direction)
     // and its neighbor must necessarily be contained within the same child.
     if (!DirectionMatchesSplit(direction, _splitState))
     {
-        return _firstChild->MovePane(direction) || _secondChild->MovePane(direction);
+        return _firstChild->SwapPane(direction) || _secondChild->SwapPane(direction);
     }
 
     // Since the direction is the same as our split, it is possible that we must
@@ -1012,6 +1012,85 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
 }
 
 // Method Description:
+// - Attempts to add the provided pane as a split of the current pane.
+// Arguments:
+// - pane: the new pane to add
+// - splitType: How the pane should be attached
+// Return Value:
+// - the new reference to the child created from the current pane.
+std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState splitType)
+{
+    // Splice the new pane into the tree
+    const auto [first, _] = _Split(splitType, .5, pane);
+
+    // If the new pane has a child that was the focus, re-focus it
+    // to steal focus from the currently focused pane.
+    if (pane->_HasFocusedChild())
+    {
+        pane->WalkTree([](auto p) {
+            if (p->_lastActive)
+            {
+                p->_FocusFirstChild();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    return first;
+}
+
+// Method Description:
+// - Attempts to find the parent of the target pane,
+//   if found remove the pane from the tree and return it.
+// - If the removed pane was (or contained the focus) the first sibling will
+//   gain focus.
+// Arguments:
+// - pane: the pane to detach
+// Return Value:
+// - The removed pane, if found.
+std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
+{
+    // We can't remove a pane if we only have a reference to a leaf, even if we
+    // are the pane.
+    if (_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    // Check if either of our children matches the search
+    const auto isFirstChild = _firstChild == pane;
+    const auto isSecondChild = _secondChild == pane;
+
+    if (isFirstChild || isSecondChild)
+    {
+        // Keep a reference to the child we are removing
+        auto detached = isFirstChild ? _firstChild : _secondChild;
+        // Remove the child from the tree, replace the current node with the
+        // other child.
+        _CloseChild(isFirstChild);
+
+        detached->_borders = Borders::None;
+        detached->_UpdateBorders();
+
+        // Trigger the detached event on each child
+        detached->WalkTree([](auto pane) {
+            pane->_PaneDetachedHandlers(pane);
+            return false;
+        });
+
+        return detached;
+    }
+
+    if (const auto detached = _firstChild->DetachPane(pane))
+    {
+        return detached;
+    }
+
+    return _secondChild->DetachPane(pane);
+}
+
+// Method Description:
 // - Closes one of our children. In doing so, takes the control from the other
 //   child, and makes this pane a leaf node again.
 // Arguments:
@@ -1073,12 +1152,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // them.
         _lastActive = _firstChild->_lastActive || _secondChild->_lastActive;
 
-        // Remove all the ui elements of our children. This'll make sure we can
-        // re-attach the TermControl to our Grid.
-        _firstChild->_root.Children().Clear();
-        _secondChild->_root.Children().Clear();
-        _firstChild->_border.Child(nullptr);
-        _secondChild->_border.Child(nullptr);
+        // Remove all the ui elements of the remaining child. This'll make sure
+        // we can re-attach the TermControl to our Grid.
+        remainingChild->_root.Children().Clear();
+        remainingChild->_border.Child(nullptr);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1125,17 +1202,8 @@ void Pane::_CloseChild(const bool closeFirst)
     }
     else
     {
-        // Determine which border flag we gave to the child when we first split
-        // it, so that we can take just that flag away from them.
-        Borders clearBorderFlag = Borders::None;
-        if (_splitState == SplitState::Horizontal)
-        {
-            clearBorderFlag = closeFirst ? Borders::Top : Borders::Bottom;
-        }
-        else if (_splitState == SplitState::Vertical)
-        {
-            clearBorderFlag = closeFirst ? Borders::Left : Borders::Right;
-        }
+        // Find what borders need to persist after we close the child
+        auto remainingBorders = _GetCommonBorders();
 
         // First stash away references to the old panes and their tokens
         const auto oldFirstToken = _firstClosedToken;
@@ -1192,13 +1260,9 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_secondChild->GetRootElement());
 
-        // Take the flag away from the children that they inherited from their
-        // parent, and update their borders to visually match
-        WI_ClearAllFlags(_firstChild->_borders, clearBorderFlag);
-        WI_ClearAllFlags(_secondChild->_borders, clearBorderFlag);
-        _UpdateBorders();
-        _firstChild->_UpdateBorders();
-        _secondChild->_UpdateBorders();
+        // Propagate the new borders down to the children.
+        _borders = remainingBorders;
+        _ApplySplitDefinitions();
 
         // If the closed child was focused, transfer the focus to it's first sibling.
         if (closedChild->_lastActive)
@@ -1757,7 +1821,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
         return { nullptr, nullptr };
     }
 
-    return _Split(splitType, splitSize, profile, control);
+    auto newPane = std::make_shared<Pane>(profile, control);
+    return _Split(splitType, splitSize, newPane);
 }
 
 // Method Description:
@@ -1827,14 +1892,13 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
 //   creates a new Pane to host the control, registers event handlers.
 // Arguments:
 // - splitType: what type of split we should create.
-// - profile: The profile GUID to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
+// - splitSize: what fraction of the pane the new pane should get
+// - newPane: the pane to add as a child
 // Return Value:
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
                                                                      const float splitSize,
-                                                                     const GUID& profile,
-                                                                     const TermControl& control)
+                                                                     std::shared_ptr<Pane> newPane)
 {
     if (splitType == SplitState::None)
     {
@@ -1874,7 +1938,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
     _profile = std::nullopt;
     _control = { nullptr };
-    _secondChild = std::make_shared<Pane>(profile, control);
+    _secondChild = newPane;
 
     _CreateRowColDefinitions();
 
@@ -2574,3 +2638,4 @@ void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& s
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
+DEFINE_EVENT(Pane, Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
