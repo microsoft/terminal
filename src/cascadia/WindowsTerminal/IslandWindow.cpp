@@ -6,6 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
 #include "icon.h"
+#include "TrayIcon.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -21,6 +22,8 @@ using namespace ::Microsoft::Console::Types;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
+
+const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
@@ -453,7 +456,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
-            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -573,9 +575,30 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             _NotifyTrayIconPressedHandlers();
             return 0;
         }
+        case WM_CONTEXTMENU:
+        {
+            const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
+            _NotifyShowTrayContextMenuHandlers(eventPoint);
+            return 0;
+        }
         }
         break;
     }
+    case WM_MENUCOMMAND:
+    {
+        _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
+        return 0;
+    }
+    default:
+        // We'll want to receive this message when explorer.exe restarts
+        // so that we can re-add our icon to the tray.
+        // This unfortunately isn't a switch case because we register the
+        // message at runtime.
+        if (message == WM_TASKBARCREATED)
+        {
+            _NotifyReAddTrayIconHandlers();
+            return 0;
+        }
     }
 
     // TODO: handle messages here...
@@ -600,6 +623,10 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 void IslandWindow::OnMinimize()
 {
     // TODO GH#1989 Stop rendering island content when the app is minimized.
+    if (_minimizeToTray)
+    {
+        HideWindow();
+    }
 }
 
 // Method Description:
@@ -1601,6 +1628,16 @@ til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
     };
 
     return til::rectangle{ origin, dimensions };
+}
+
+void IslandWindow::HideWindow()
+{
+    ShowWindow(GetHandle(), SW_HIDE);
+}
+
+void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
+{
+    _minimizeToTray = minimizeToTray;
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

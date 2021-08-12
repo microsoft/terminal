@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-
 #include "NonClientIslandWindow.h"
+#include "TrayIcon.h"
 
 class AppHost
 {
@@ -84,8 +84,13 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
-    void _UpdateTrayIcon();
-    void _HandleTrayIconPressed();
-
-    std::optional<NOTIFYICONDATA> _trayIconData;
+    void _CreateTrayIcon();
+    void _DestroyTrayIcon();
+    winrt::fire_and_forget _ShowTrayIconRequested();
+    winrt::fire_and_forget _HideTrayIconRequested();
+    std::unique_ptr<TrayIcon> _trayIcon;
+    winrt::event_token _ReAddTrayIconToken;
+    winrt::event_token _TrayIconPressedToken;
+    winrt::event_token _ShowTrayContextMenuToken;
+    winrt::event_token _TrayMenuItemSelectedToken;
 };

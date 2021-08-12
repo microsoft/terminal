@@ -1202,6 +1202,16 @@
           "type": [ "integer", "string" ],
           "deprecated": true
         },
+        "minimizeToTray": {
+          "default": "false",
+          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the system tray through which the user can access their windows.",
+          "type": "boolean"
+        },
+        "alwaysShowTrayIcon": {
+          "default": "false",
+          "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "type": "boolean"
+        },
 		"actions": {
 			"description": "Properties are specific to each custom action.",
 			"items": {
