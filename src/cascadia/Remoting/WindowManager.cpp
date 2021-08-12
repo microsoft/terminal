@@ -513,9 +513,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::SummonAllWindows()
     {
-#if TIL_FEATURE_TRAYICON_ENABLED
-        _monarch.SummonAllWindows();
-#endif
+        if constexpr (Feature_TrayIcon::IsEnabled())
+        {
+            _monarch.SummonAllWindows();
+        }
     }
 
     Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> WindowManager::GetPeasantNames()

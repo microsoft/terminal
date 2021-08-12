@@ -1022,16 +1022,17 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
 // - <none>
 void AppHost::_CreateTrayIcon()
 {
-#if TIL_FEATURE_TRAYICON_ENABLED
-    _trayIcon = std::make_unique<TrayIcon>(_window->GetHandle());
+    if constexpr (Feature_TrayIcon::IsEnabled())
+    {
+        _trayIcon = std::make_unique<TrayIcon>(_window->GetHandle());
 
-    // Hookup the handlers, save the tokens for revoking if settings change.
-    _ReAddTrayIconToken = _window->NotifyReAddTrayIcon([this]() { _trayIcon->ReAddTrayIcon(); });
-    _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
-    _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantNames()); });
-    _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
-    _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
-#endif
+        // Hookup the handlers, save the tokens for revoking if settings change.
+        _ReAddTrayIconToken = _window->NotifyReAddTrayIcon([this]() { _trayIcon->ReAddTrayIcon(); });
+        _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
+        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantNames()); });
+        _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
+        _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
+    }
 }
 
 // Method Description:
@@ -1042,52 +1043,55 @@ void AppHost::_CreateTrayIcon()
 // - <none>
 void AppHost::_DestroyTrayIcon()
 {
-#if TIL_FEATURE_TRAYICON_ENABLED
-    _window->NotifyReAddTrayIcon(_ReAddTrayIconToken);
-    _window->NotifyTrayIconPressed(_TrayIconPressedToken);
-    _window->NotifyShowTrayContextMenu(_ShowTrayContextMenuToken);
-    _window->NotifyTrayMenuItemSelected(_TrayMenuItemSelectedToken);
+    if constexpr (Feature_TrayIcon::IsEnabled())
+    {
+        _window->NotifyReAddTrayIcon(_ReAddTrayIconToken);
+        _window->NotifyTrayIconPressed(_TrayIconPressedToken);
+        _window->NotifyShowTrayContextMenu(_ShowTrayContextMenuToken);
+        _window->NotifyTrayMenuItemSelected(_TrayMenuItemSelectedToken);
 
-    _trayIcon->RemoveIconFromTray();
-    _trayIcon = nullptr;
-#endif
+        _trayIcon->RemoveIconFromTray();
+        _trayIcon = nullptr;
+    }
 }
 
 winrt::fire_and_forget AppHost::_ShowTrayIconRequested()
 {
-#if TIL_FEATURE_TRAYICON_ENABLED
-    co_await winrt::resume_background();
-    if (_windowManager.IsMonarch())
+    if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        if (!_trayIcon)
+        co_await winrt::resume_background();
+        if (_windowManager.IsMonarch())
         {
-            _CreateTrayIcon();
+            if (!_trayIcon)
+            {
+                _CreateTrayIcon();
+            }
+        }
+        else
+        {
+            _windowManager.RequestShowTrayIcon();
         }
     }
-    else
-    {
-        _windowManager.RequestShowTrayIcon();
-    }
-#endif
 }
 
 winrt::fire_and_forget AppHost::_HideTrayIconRequested()
 {
-#if TIL_FEATURE_TRAYICON_ENABLED
-    co_await winrt::resume_background();
-    if (_windowManager.IsMonarch())
+    if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        // Destroy it only if our settings allow it
-        if (_trayIcon &&
-            !_logic.GetAlwaysShowTrayIcon() &&
-            !_logic.GetMinimizeToTray())
+        co_await winrt::resume_background();
+        if (_windowManager.IsMonarch())
         {
-            _DestroyTrayIcon();
+            // Destroy it only if our settings allow it
+            if (_trayIcon &&
+                !_logic.GetAlwaysShowTrayIcon() &&
+                !_logic.GetMinimizeToTray())
+            {
+                _DestroyTrayIcon();
+            }
+        }
+        else
+        {
+            _windowManager.RequestHideTrayIcon();
         }
     }
-    else
-    {
-        _windowManager.RequestHideTrayIcon();
-    }
-#endif
 }

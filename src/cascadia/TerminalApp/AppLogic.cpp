@@ -1444,31 +1444,37 @@ namespace winrt::TerminalApp::implementation
 
     bool AppLogic::GetMinimizeToTray()
     {
-#if TIL_FEATURE_TRAYICON_ENABLED
-        if (!_loadedInitialSettings)
+        if constexpr (Feature_TrayIcon::IsEnabled())
         {
-            // Load settings if we haven't already
-            LoadSettings();
-        }
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
 
-        return _settings.GlobalSettings().MinimizeToTray();
-#else
-        return false;
-#endif
+            return _settings.GlobalSettings().MinimizeToTray();
+        }
+        else
+        {
+            return false;
+        }
     }
 
     bool AppLogic::GetAlwaysShowTrayIcon()
     {
-#if TIL_FEATURE_TRAYICON_ENABLED
-        if (!_loadedInitialSettings)
+        if constexpr (Feature_TrayIcon::IsEnabled())
         {
-            // Load settings if we haven't already
-            LoadSettings();
-        }
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
 
-        return _settings.GlobalSettings().AlwaysShowTrayIcon();
-#else
-        return false;
-#endif
+            return _settings.GlobalSettings().AlwaysShowTrayIcon();
+        }
+        else
+        {
+            return false;
+        }
     }
 }

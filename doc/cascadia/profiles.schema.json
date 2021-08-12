@@ -237,7 +237,6 @@
         "globalSummon",
         "identifyWindow",
         "identifyWindows",
-        "minimizeToTray",
         "moveFocus",
         "movePane",
         "moveTab",

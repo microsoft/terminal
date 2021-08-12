@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #include "pch.h"
 #include "icon.h"
 #include "TrayIcon.h"
@@ -46,7 +49,7 @@ void TrayIcon::CreateTrayIcon()
 
     // AppName happens to be in CascadiaPackage's Resources.
     ScopedResourceLoader loader{ L"Resources" };
-    auto appNameLoc = loader.GetLocalizedString(L"AppName");
+    const auto appNameLoc = loader.GetLocalizedString(L"AppName");
 
     nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
     StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), appNameLoc.c_str());
@@ -94,7 +97,7 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
             uFlags |= TPM_LEFTALIGN;
         }
 
-        TrackPopupMenuEx(hMenu, uFlags, gsl::narrow<int>(coord.x()), gsl::narrow<int>(coord.y()), _owningHwnd, NULL);
+        TrackPopupMenuEx(hMenu, uFlags, gsl::narrow_cast<int>(coord.x()), gsl::narrow_cast<int>(coord.y()), _owningHwnd, NULL);
     }
 }
 
