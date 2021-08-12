@@ -92,9 +92,13 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
-    if (_window->IsQuakeWindow())
+    if (_windowManager.IsMonarch())
     {
-        _windowManager.RequestHideTrayIcon();
+        _DestroyTrayIcon();
+    }
+    else if (_window->IsQuakeWindow())
+    {
+        _HideTrayIconRequested();
     }
 
     // destruction order is important for proper teardown here
@@ -655,9 +659,6 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
-
-    // The monarch is just going to be THE listener for inbound connections.
-    _listenForInboundConnections();
 
     if (_windowManager.DoesQuakeWindowExist() ||
         _window->IsQuakeWindow() ||
