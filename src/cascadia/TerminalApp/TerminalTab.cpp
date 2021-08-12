@@ -880,7 +880,10 @@ namespace winrt::TerminalApp::implementation
     winrt::TerminalApp::TaskbarState TerminalTab::GetCombinedTaskbarState() const
     {
         std::vector<winrt::TerminalApp::TaskbarState> states;
-        _rootPane->CollectTaskbarStates(states);
+        if (_rootPane)
+        {
+            _rootPane->CollectTaskbarStates(states);
+        }
         return states.empty() ? winrt::make<winrt::TerminalApp::implementation::TaskbarState>() :
                                 *std::min_element(states.begin(), states.end(), TerminalApp::implementation::TaskbarState::ComparePriority);
     }
