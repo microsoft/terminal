@@ -6,7 +6,6 @@
 #include "Launch.g.cpp"
 #include "LaunchPageNavigationState.g.cpp"
 #include "EnumEntry.h"
-#include "Utils.h"
 
 using namespace winrt::Windows::UI::Xaml::Navigation;
 using namespace winrt::Windows::Foundation;
