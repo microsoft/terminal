@@ -3,7 +3,7 @@
 
 namespace SampleApp
 {
-    [default_interface] runtimeclass MyPage : Windows.UI.Xaml.Controls.Page
+    [default_interface] runtimeclass MyPage : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         MyPage();
     }
