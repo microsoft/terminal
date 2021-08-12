@@ -36,21 +36,59 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         ::IInspectable** raw = reinterpret_cast<::IInspectable**>(pointer);
 #pragma warning(pop)
 
-        // RoActivateInstance() will try to create an instance of the object,
-        // who's fully qualified name is the string in Name().
+        TerminalConnection::ITerminalConnection connection{ nullptr };
+
+        // A couple short-circuits, for connections that _we_ implement.
+        // Sometimes, RoActivateInstance is weird and fails with errors like the
+        // following
         //
-        // The class has to be activatable. For the Terminal, this is easy
-        // enough - we're not hosting anything that's not already in our
-        // manifest, or living as a .dll & .winmd SxS.
         //
-        // When we get to extensions (GH#4000), we may want to revisit.
-        if (LOG_IF_FAILED(RoActivateInstance(name, raw)))
+        /*
+        onecore\com\combase\inc\RegistryKey.hpp(527)\combase.dll!00007FFF75E1F855:
+        (caller: 00007FFF75D3BC29) LogHr(2) tid(83a8) 800700A1 The specified
+        path is invalid.
+            Msg:[StaticNtOpen failed with
+            path:\REGISTRY\A\{A41685A4-AD85-4C4C-BA5D-A849ADBF3C40}\ActivatableClassId
+            \REGISTRY\MACHINE\Software\Classes\ActivatableClasses]
+        ...\src\cascadia\TerminalConnection\ConnectionInformation.cpp(47)\TerminalConnection.dll!00007FFEC1381FC5:
+        (caller: 00007FFEC13810A5) LogHr(1) tid(83a8) 800700A1 The specified
+        path is invalid.
+            [...TerminalConnection::implementation::ConnectionInformation::CreateConnection(RoActivateInstance(name,
+            raw))]
+        */
+        //
+        // So to avoid those, we'll manually instantiate these
+        if (info.ClassName() == winrt::name_of<TerminalConnection::ConptyConnection>())
         {
-            return nullptr;
+            connection = TerminalConnection::ConptyConnection();
+        }
+        else if (info.ClassName() == winrt::name_of<TerminalConnection::AzureConnection>())
+        {
+            connection = TerminalConnection::AzureConnection();
+        }
+        else if (info.ClassName() == winrt::name_of<TerminalConnection::EchoConnection>())
+        {
+            connection = TerminalConnection::EchoConnection();
+        }
+        else
+        {
+            // RoActivateInstance() will try to create an instance of the object,
+            // who's fully qualified name is the string in Name().
+            //
+            // The class has to be activatable. For the Terminal, this is easy
+            // enough - we're not hosting anything that's not already in our
+            // manifest, or living as a .dll & .winmd SxS.
+            //
+            // When we get to extensions (GH#4000), we may want to revisit.
+            if (LOG_IF_FAILED(RoActivateInstance(name, raw)))
+            {
+                return nullptr;
+            }
+            connection = inspectable.try_as<TerminalConnection::ITerminalConnection>();
         }
 
         // Now that thing we made, make sure it's actually a ITerminalConnection
-        if (const auto connection{ inspectable.try_as<TerminalConnection::ITerminalConnection>() })
+        if (connection)
         {
             // Initialize it, and return it.
             connection.Initialize(info.Settings());
