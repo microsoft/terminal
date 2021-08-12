@@ -61,6 +61,17 @@ namespace ControlUnitTests
 
             return { settings, conn };
         }
+
+        winrt::com_ptr<Control::implementation::ControlCore> createCore(Control::IControlSettings settings,
+                                                                        TerminalConnection::ITerminalConnection conn)
+        {
+            Log::Comment(L"Create ControlCore object");
+
+            auto core = winrt::make_self<Control::implementation::ControlCore>(settings, conn);
+            core->_inUnitTests = true;
+            return core;
+        }
+
         void _standardInit(winrt::com_ptr<Control::implementation::ControlCore> core)
         {
             // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
@@ -84,8 +95,7 @@ namespace ControlUnitTests
     {
         auto [settings, conn] = _createSettingsAndConnection();
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
     }
 
@@ -93,8 +103,7 @@ namespace ControlUnitTests
     {
         auto [settings, conn] = _createSettingsAndConnection();
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
         VERIFY_IS_FALSE(core->_initializedTerminal);
@@ -112,8 +121,7 @@ namespace ControlUnitTests
         settings->UseAcrylic(true);
         settings->TintOpacity(0.5f);
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
         // A callback to make sure that we're raising TransparencyChanged events
@@ -180,8 +188,7 @@ namespace ControlUnitTests
         {
             auto [settings, conn] = _createSettingsAndConnection();
 
-            Log::Comment(L"Create ControlCore object");
-            auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+            auto core = createCore(*settings, *conn);
             VERIFY_IS_NOT_NULL(core);
 
             Log::Comment(L"Close the Core, like a TermControl would");
@@ -203,8 +210,7 @@ namespace ControlUnitTests
         // that you don't default to Cascadia*
         settings->FontFace(L"Impact");
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
         VERIFY_ARE_EQUAL(L"Impact", std::wstring_view{ core->_actualFont.GetFaceName() });
