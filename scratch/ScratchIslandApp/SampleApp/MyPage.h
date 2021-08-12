@@ -14,14 +14,14 @@ namespace winrt::SampleApp::implementation
         MyPage();
 
         void Create();
-
         hstring Title();
-        // winrt::fire_and_forget CreateOutOfProcTerminal();
 
         winrt::fire_and_forget CreateClicked(const IInspectable& sender, const Windows::UI::Xaml::Input::TappedRoutedEventArgs& eventArgs);
 
     private:
         friend struct MyPageT<MyPage>; // for Xaml to bind events
+
+        void _writeToLog(std::wstring_view str);
     };
 }
 

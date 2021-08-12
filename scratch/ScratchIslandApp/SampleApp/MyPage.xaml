@@ -53,7 +53,12 @@
                   Padding="16"
                   HorizontalAlignment="Stretch"
                   VerticalAlignment="Stretch"
-                  Background="#0000ff" />
+                  Background="#0000ff">
+
+                <StackPanel x:Name="Log"
+                            Orientation="Vertical" />
+
+            </Grid>
 
         </Grid>
 

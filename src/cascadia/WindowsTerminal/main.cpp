@@ -83,7 +83,7 @@ static bool _messageIsAltKeyup(const MSG& message)
     return (message.message == WM_KEYUP || message.message == WM_SYSKEYUP) && message.wParam == VK_MENU;
 }
 
-static bool checkIfContentProcess(winrt::guid& contentProcessGuid)
+static bool checkIfContentProcess(winrt::guid& contentProcessGuid, HANDLE& eventHandle)
 {
     std::vector<std::wstring> args;
 
@@ -101,7 +101,9 @@ static bool checkIfContentProcess(winrt::guid& contentProcessGuid)
             }
         }
     }
-    if (args.size() > 2 && args.at(1) == L"--content")
+    if (args.size() == 5 &&
+        args.at(1) == L"--content" &&
+        args.at(3) == L"--signal")
     {
         auto& guidString{ args.at(2) };
         auto canConvert = guidString.length() == 38 && guidString.front() == '{' && guidString.back() == '}';
@@ -110,6 +112,10 @@ static bool checkIfContentProcess(winrt::guid& contentProcessGuid)
             GUID result{};
             THROW_IF_FAILED(IIDFromString(guidString.c_str(), &result));
             contentProcessGuid = result;
+
+            eventHandle = reinterpret_cast<HANDLE>(wcstoul(args.at(4).c_str(),
+                                                           nullptr /*endptr*/,
+                                                           16 /*base*/));
             return true;
         }
     }
@@ -157,7 +163,7 @@ private:
     winrt::guid _guid;
 };
 
-static void doContentProcessThing(const winrt::guid& contentProcessGuid)
+static void doContentProcessThing(const winrt::guid& contentProcessGuid, const HANDLE& eventHandle)
 {
     // !! LOAD BEARING !! - important to be a MTA
     winrt::init_apartment();
@@ -168,6 +174,11 @@ static void doContentProcessThing(const winrt::guid& contentProcessGuid)
                                         CLSCTX_LOCAL_SERVER,
                                         REGCLS_MULTIPLEUSE,
                                         &registrationHostClass));
+
+    // Signal the event handle that was passed to us that we're now set up and
+    // ready to go.
+    SetEvent(eventHandle);
+    CloseHandle(eventHandle);
 
     std::unique_lock<std::mutex> lk(m);
     cv.wait(lk, [] { return dtored; });
@@ -197,9 +208,10 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     EnsureNativeArchitecture();
 
     winrt::guid contentProcessGuid{};
-    if (checkIfContentProcess(contentProcessGuid))
+    HANDLE eventHandle{ INVALID_HANDLE_VALUE };
+    if (checkIfContentProcess(contentProcessGuid, eventHandle))
     {
-        doContentProcessThing(contentProcessGuid);
+        doContentProcessThing(contentProcessGuid, eventHandle);
         // If we were told to not have a window, exit early. Make sure to use
         // ExitProcess to die here. If you try just `return 0`, then
         // the XAML app host will crash during teardown. ExitProcess avoids
