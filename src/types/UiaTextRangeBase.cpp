@@ -262,59 +262,71 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
 
     try
     {
-        const auto& buffer = _pData->GetTextBuffer();
-        const auto bufferSize = _getBufferSize();
-        const auto bufferEnd = bufferSize.EndExclusive();
-
-        if (unit == TextUnit_Character)
-        {
-            _start = buffer.GetGlyphStart(_start);
-            _end = buffer.GetGlyphEnd(_start);
-        }
-        else if (unit <= TextUnit_Word)
-        {
-            // expand to word
-            _start = buffer.GetWordStart(_start, _wordDelimiters, true);
-            _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
-
-            // GetWordEnd may return the actual end of the TextBuffer.
-            // If so, just set it to this value of bufferEnd
-            if (!bufferSize.IsInBounds(_end))
-            {
-                _end = bufferEnd;
-            }
-        }
-        else if (unit <= TextUnit_Line)
-        {
-            if (_start == bufferEnd)
-            {
-                // Special case: if we are at the bufferEnd,
-                //   move _start back one, instead of _end forward
-                _start.X = 0;
-                _start.Y = base::ClampSub(_start.Y, 1);
-                _end = bufferEnd;
-            }
-            else
-            {
-                // expand to line
-                _start.X = 0;
-                _end.X = 0;
-                _end.Y = base::ClampAdd(_start.Y, 1);
-            }
-        }
-        else
-        {
-            // TODO GH#6986: properly handle "end of buffer" as last character
-            // instead of last cell
-            // expand to document
-            _start = bufferSize.Origin();
-            _end = bufferSize.EndExclusive();
-        }
-
+        _expandToEnclosingUnit(unit);
         UiaTracing::TextRange::ExpandToEnclosingUnit(unit, *this);
         return S_OK;
     }
     CATCH_RETURN();
+}
+
+// Method Description:
+// - Moves _start and _end endpoints to encompass the enclosing text unit.
+//   (i.e. word --> enclosing word, line --> enclosing line)
+// - IMPORTANT: this does _not_ lock the console
+// Arguments:
+// - attributeId - the UIA text attribute identifier we're expanding by
+// Return Value:
+// - <none>
+void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
+{
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto bufferSize = _getBufferSize();
+    const auto bufferEnd = bufferSize.EndExclusive();
+
+    if (unit == TextUnit_Character)
+    {
+        _start = buffer.GetGlyphStart(_start);
+        _end = buffer.GetGlyphEnd(_start);
+    }
+    else if (unit <= TextUnit_Word)
+    {
+        // expand to word
+        _start = buffer.GetWordStart(_start, _wordDelimiters, true);
+        _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
+
+        // GetWordEnd may return the actual end of the TextBuffer.
+        // If so, just set it to this value of bufferEnd
+        if (!bufferSize.IsInBounds(_end))
+        {
+            _end = bufferEnd;
+        }
+    }
+    else if (unit <= TextUnit_Line)
+    {
+        if (_start == bufferEnd)
+        {
+            // Special case: if we are at the bufferEnd,
+            //   move _start back one, instead of _end forward
+            _start.X = 0;
+            _start.Y = base::ClampSub(_start.Y, 1);
+            _end = bufferEnd;
+        }
+        else
+        {
+            // expand to line
+            _start.X = 0;
+            _end.X = 0;
+            _end.Y = base::ClampAdd(_start.Y, 1);
+        }
+    }
+    else
+    {
+        // TODO GH#6986: properly handle "end of buffer" as last character
+        // instead of last cell
+        // expand to document
+        _start = bufferSize.Origin();
+        _end = bufferSize.EndExclusive();
+    }
 }
 
 // Method Description:
@@ -1044,7 +1056,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
         else
         {
             // then just expand to get our _end
-            ExpandToEnclosingUnit(unit);
+            _expandToEnclosingUnit(unit);
         }
     }
 
