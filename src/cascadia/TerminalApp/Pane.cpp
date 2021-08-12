@@ -1021,7 +1021,7 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
 std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState splitType)
 {
     // Splice the new pane into the tree
-    auto [first, _] = _Split(splitType, .5, pane);
+    const auto [first, _] = _Split(splitType, .5, pane);
 
     // If the new pane has a child that was the focus, re-focus it
     // to steal focus from the currently focused pane.
@@ -1059,8 +1059,8 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
     }
 
     // Check if either of our children matches the search
-    auto isFirstChild = _firstChild == pane;
-    auto isSecondChild = _secondChild == pane;
+    const auto isFirstChild = _firstChild == pane;
+    const auto isSecondChild = _secondChild == pane;
 
     if (isFirstChild || isSecondChild)
     {
@@ -1082,7 +1082,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         return detached;
     }
 
-    if (auto detached = _firstChild->DetachPane(pane))
+    if (const auto detached = _firstChild->DetachPane(pane))
     {
         return detached;
     }

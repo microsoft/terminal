@@ -502,7 +502,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Attempt to remove the active pane from the tree
-        if (auto pane = _rootPane->DetachPane(_activePane))
+        if (const auto pane = _rootPane->DetachPane(_activePane))
         {
             // Just make sure that the remaining pane is marked active
             _UpdateActivePane(_rootPane->GetActivePane());
@@ -565,7 +565,7 @@ namespace winrt::TerminalApp::implementation
         });
 
         // pass the old id to the new child
-        auto previousId = _activePane->Id();
+        const auto previousId = _activePane->Id();
 
         // Add the new pane as an automatic split on the active pane.
         auto first = _activePane->AttachPane(pane, SplitState::Automatic);

@@ -175,7 +175,7 @@ namespace winrt::TerminalApp::implementation
         _tabView.TabItems().Append(tabViewItem);
 
         // Set this tab's icon to the icon from the user's profile
-        if (auto profileGuid = newTabImpl->GetFocusedProfile())
+        if (const auto profileGuid = newTabImpl->GetFocusedProfile())
         {
             const auto profile = _settings.FindProfile(profileGuid.value());
             if (profile != nullptr && !profile.Icon().empty())
