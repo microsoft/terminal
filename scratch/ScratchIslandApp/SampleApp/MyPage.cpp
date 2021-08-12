@@ -90,7 +90,6 @@ namespace winrt::SampleApp::implementation
         THROW_IF_WIN32_BOOL_FALSE(succeeded);
 
         // Wait for the child process to signal that they're ready.
-        // TODO!: The _first_ time we run, we always fail to init the ContentProcess. What the heck?
         WaitForSingleObject(ev.get(), INFINITE);
 
         return std::move(piOne);
@@ -153,9 +152,8 @@ namespace winrt::SampleApp::implementation
             _writeToLog(L"CreateInstance the ContentProces object");
             _writeToLog(fmt::format(L"    HR ({}): {}", hr.code(), hr.message().c_str()));
             co_return; // be sure to co_return or we'll fall through to the part where we clear the log
-            
         }
-        
+
         if (content == nullptr)
         {
             _writeToLog(L"Failed to connect to the ContentProces object. It may not have been started fast enough.");
@@ -213,14 +211,26 @@ namespace winrt::SampleApp::implementation
     }
 
     void MyPage::CloseClicked(const IInspectable& /*sender*/,
-                                                 const WUX::Input::TappedRoutedEventArgs& /*eventArgs*/)
+                              const WUX::Input::TappedRoutedEventArgs& /*eventArgs*/)
     {
         OutOfProcContent().Children().Clear();
+        GuidInput().Text(L"");
         if (piContentProcess.hProcess)
         {
             piContentProcess.reset();
         }
     }
+
+    void MyPage::KillClicked(const IInspectable& /*sender*/,
+                             const WUX::Input::TappedRoutedEventArgs& /*eventArgs*/)
+    {
+        if (piContentProcess.hProcess)
+        {
+            TerminateProcess(piContentProcess.hProcess, (UINT)-1);
+            piContentProcess.reset();
+        }
+    }
+
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there

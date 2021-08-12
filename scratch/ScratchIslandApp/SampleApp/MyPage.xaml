@@ -30,8 +30,15 @@
             </Button>
             <Button x:Name="CloseOopControl"
                     Grid.Row="0"
+                    Margin="4,0,0,0"
                     Tapped="CloseClicked">
                 Close
+            </Button>
+            <Button x:Name="KillOopControl"
+                    Grid.Row="0"
+                    Margin="4,0,0,0"
+                    Tapped="KillClicked">
+                Kill
             </Button>
 
         </StackPanel>
