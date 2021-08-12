@@ -90,6 +90,7 @@ namespace Microsoft::Console::Render
         bool DidUserSetFeatures() const noexcept;
         bool DidUserSetAxes() const noexcept;
         void UseUserWeight(bool useUserWeight) noexcept;
+        bool DidUserSetItalic() const noexcept;
 
         std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
                                                           const DWRITE_FONT_STRETCH fontStretch,

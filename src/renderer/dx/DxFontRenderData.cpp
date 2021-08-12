@@ -469,6 +469,18 @@ void DxFontRenderData::UseUserWeight(bool useUserWeight) noexcept
     _useUserWeight = useUserWeight;
 }
 
+bool DxFontRenderData::DidUserSetItalic() const noexcept
+{
+    for (const auto& axisVal : _axesVector)
+    {
+        if (axisVal.axisTag == DWRITE_FONT_AXIS_TAG_ITALIC && axisVal.value == 1)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 // Routine Description:
 // - Updates our internal map of font features with the given features
 // - NOTE TO CALLER: Make sure to call _BuildFontRenderData after calling this for the feature changes

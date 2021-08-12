@@ -154,7 +154,7 @@ try
         _fontRenderData->UseUserWeight(true);
     }
 
-    if (drawingContext->useItalicFont)
+    if (drawingContext->useItalicFont || _fontRenderData->DidUserSetItalic())
     {
         style = DWRITE_FONT_STYLE_ITALIC;
     }
