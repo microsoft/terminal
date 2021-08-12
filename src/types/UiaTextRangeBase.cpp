@@ -1006,6 +1006,7 @@ std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLeng
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
                                       _Out_ int* pRetVal) noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -1023,26 +1024,22 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     constexpr auto preventBufferEnd = true;
     const auto wasDegenerate = IsDegenerate();
-    try
+    if (unit == TextUnit::TextUnit_Character)
     {
-        if (unit == TextUnit::TextUnit_Character)
-        {
-            _moveEndpointByUnitCharacter(count, endpoint, pRetVal, preventBufferEnd);
-        }
-        else if (unit <= TextUnit::TextUnit_Word)
-        {
-            _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBufferEnd);
-        }
-        else if (unit <= TextUnit::TextUnit_Line)
-        {
-            _moveEndpointByUnitLine(count, endpoint, pRetVal, preventBufferEnd);
-        }
-        else if (unit <= TextUnit::TextUnit_Document)
-        {
-            _moveEndpointByUnitDocument(count, endpoint, pRetVal, preventBufferEnd);
-        }
+        _moveEndpointByUnitCharacter(count, endpoint, pRetVal, preventBufferEnd);
     }
-    CATCH_RETURN();
+    else if (unit <= TextUnit::TextUnit_Word)
+    {
+        _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBufferEnd);
+    }
+    else if (unit <= TextUnit::TextUnit_Line)
+    {
+        _moveEndpointByUnitLine(count, endpoint, pRetVal, preventBufferEnd);
+    }
+    else if (unit <= TextUnit::TextUnit_Document)
+    {
+        _moveEndpointByUnitDocument(count, endpoint, pRetVal, preventBufferEnd);
+    }
 
     // If we actually moved...
     if (*pRetVal != 0)
@@ -1063,6 +1060,7 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     UiaTracing::TextRange::Move(unit, count, *pRetVal, *this);
     return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                                     _In_ TextUnit unit,
