@@ -349,8 +349,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _SwapPane(realArgs.Direction());
-                args.Handled(true);
+                auto swapped = _SwapPane(realArgs.Direction());
+                args.Handled(swapped);
             }
         }
     }

@@ -664,7 +664,12 @@ namespace winrt::TerminalApp::implementation
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            return _rootPane->NavigateFocus(direction);
+            if (auto newFocus = _rootPane->NavigateDirection(_activePane, direction))
+            {
+                return _rootPane->FocusPane(newFocus);
+            }
+
+            return false;
         }
     }
 
@@ -676,25 +681,32 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the pane in.
     // Return Value:
     // - <none>
-    void TerminalTab::SwapPane(const FocusDirection& direction)
+    bool TerminalTab::SwapPane(const FocusDirection& direction)
     {
         if (direction == FocusDirection::Previous)
         {
             if (_mruPanes.size() < 2)
             {
-                return;
+                return false;
             }
             if (auto lastPane = _rootPane->FindPane(_mruPanes.at(1)))
             {
-                _rootPane->SwapPanes(_activePane, lastPane);
+                return _rootPane->SwapPanes(_activePane, lastPane);
             }
         }
         else
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            _rootPane->SwapPane(direction);
+            if (auto neighbor = _rootPane->NavigateDirection(_activePane, direction))
+            {
+                return _rootPane->SwapPanes(_activePane, neighbor);
+            }
+
+            return false;
         }
+
+        return false;
     }
 
     bool TerminalTab::FocusPane(const uint32_t id)

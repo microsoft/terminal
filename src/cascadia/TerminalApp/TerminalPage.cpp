@@ -1127,13 +1127,14 @@ namespace winrt::TerminalApp::implementation
     // - direction: The direction to move the focused pane in.
     // Return Value:
     // - <none>
-    void TerminalPage::_SwapPane(const FocusDirection& direction)
+    bool TerminalPage::_SwapPane(const FocusDirection& direction)
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->SwapPane(direction);
+            return terminalTab->SwapPane(direction);
         }
+        return false;
     }
 
     TermControl TerminalPage::_GetActiveControl()
