@@ -48,6 +48,8 @@ static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
+static constexpr std::string_view AlwaysShowTrayIconKey{ "alwaysShowTrayIcon" };
+static constexpr std::string_view MinimizeToTrayKey{ "minimizeToTray" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -129,6 +131,8 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_WindowingBehavior = _WindowingBehavior;
     globals->_TrimBlockSelection = _TrimBlockSelection;
     globals->_DetectURLs = _DetectURLs;
+    globals->_MinimizeToTray = _MinimizeToTray;
+    globals->_AlwaysShowTrayIcon = _AlwaysShowTrayIcon;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
@@ -319,6 +323,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
 
+    JsonUtils::GetValueForKey(json, MinimizeToTrayKey, _MinimizeToTray);
+
+    JsonUtils::GetValueForKey(json, AlwaysShowTrayIconKey, _AlwaysShowTrayIcon);
+
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
@@ -414,6 +422,8 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
     JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
     JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
+    JsonUtils::SetValueForKey(json, MinimizeToTrayKey,              _MinimizeToTray);
+    JsonUtils::SetValueForKey(json, AlwaysShowTrayIconKey,          _AlwaysShowTrayIcon);
     // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();

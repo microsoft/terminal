@@ -73,6 +73,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);
+        INHERITABLE_SETTING(Boolean, MinimizeToTray);
+        INHERITABLE_SETTING(Boolean, AlwaysShowTrayIcon);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

@@ -98,6 +98,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, MinimizeToTray, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTrayIcon, false);
 
     private:
         guid _defaultProfile;

@@ -123,7 +123,27 @@ namespace Microsoft::Terminal::Settings::Model
 
     void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view content)
     {
-        auto tmpPath = path;
+        // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
+        // It's thus important that we first resolve them before generating temporary path.
+        std::error_code ec;
+        const auto resolvedPath = std::filesystem::is_symlink(path) ? std::filesystem::canonical(path, ec) : path;
+        if (ec)
+        {
+            if (ec.value() != ERROR_FILE_NOT_FOUND)
+            {
+                THROW_WIN32_MSG(ec.value(), "failed to compute canonical path");
+            }
+
+            // The original file is a symbolic link, but the target doesn't exist.
+            // Consider two fall-backs:
+            //   * resolve the link manually, which might be less accurate and more prone to race conditions
+            //   * write to the file directly, which lets the system resolve the symbolic link but leaves the write non-atomic
+            // The latter is chosen, as this is an edge case and our 'atomic' writes are only best-effort.
+            WriteUTF8File(path, content);
+            return;
+        }
+
+        auto tmpPath = resolvedPath;
         tmpPath += L".tmp";
 
         // Writing to a file isn't atomic, but...
@@ -132,6 +152,6 @@ namespace Microsoft::Terminal::Settings::Model
         // renaming one is (supposed to be) atomic.
         // Wait... "supposed to be"!? Well it's technically not always atomic,
         // but it's pretty darn close to it, so... better than nothing.
-        std::filesystem::rename(tmpPath, path);
+        std::filesystem::rename(tmpPath, resolvedPath);
     }
 }

@@ -448,4 +448,7 @@
   <data name="SwapPanePreviousInOrder" xml:space="preserve">
     <value>Swap panes with the previous pane in order</value>
   </data>
+  <data name="MinimizeToTrayCommandKey" xml:space="preserve">
+    <value>Minimize current window to tray</value>
+  </data>
 </root>
