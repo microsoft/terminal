@@ -232,6 +232,27 @@ HRESULT _ResizePseudoConsole(_In_ const PseudoConsole* const pPty, _In_ const CO
 }
 
 // Function Description:
+// - Clears the conpty
+// Arguments:
+// - hSignal: A signal pipe as returned by CreateConPty.
+// Return Value:
+// - S_OK if the call succeeded, else an appropriate HRESULT for failing to
+//      write the clear message to the pty.
+HRESULT _ClearPseudoConsole(_In_ const PseudoConsole* const pPty)
+{
+    if (pPty == nullptr)
+    {
+        return E_INVALIDARG;
+    }
+
+    unsigned short signalPacket[1];
+    signalPacket[0] = PTY_SIGNAL_CLEAR_WINDOW;
+
+    const BOOL fSuccess = WriteFile(pPty->hSignal, signalPacket, sizeof(signalPacket), nullptr, nullptr);
+    return fSuccess ? S_OK : HRESULT_FROM_WIN32(GetLastError());
+}
+
+// Function Description:
 // - This closes each of the members of a PseudoConsole. It does not free the
 //      data associated with the PseudoConsole. This is helpful for testing,
 //      where we might stack allocate a PseudoConsole (instead of getting a
@@ -381,6 +402,23 @@ extern "C" HRESULT WINAPI ConptyResizePseudoConsole(_In_ HPCON hPC, _In_ COORD s
     if (SUCCEEDED(hr))
     {
         hr = _ResizePseudoConsole(pPty, size);
+    }
+    return hr;
+}
+
+// Function Description:
+// - Clear the contents of the conpty buffer, leaving the cursor row at the top
+//   of the viewport.
+// - This is used exclusively by ConPTY to support GH#1193, GH#1882. This allows
+//   a terminal to clear the contents of the ConPTY buffer, which is important
+//   if the user would like to be able to clear the terminal-side buffer.
+extern "C" HRESULT WINAPI ConptyClearPseudoConsole(_In_ HPCON hPC)
+{
+    const PseudoConsole* const pPty = (PseudoConsole*)hPC;
+    HRESULT hr = pPty == nullptr ? E_INVALIDARG : S_OK;
+    if (SUCCEEDED(hr))
+    {
+        hr = _ClearPseudoConsole(pPty);
     }
     return hr;
 }

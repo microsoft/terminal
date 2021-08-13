@@ -9,6 +9,7 @@ namespace Microsoft.Terminal.TerminalConnection
     {
         ConptyConnection();
         Guid Guid { get; };
+        void ClearBuffer();
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();

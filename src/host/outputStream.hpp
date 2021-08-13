@@ -104,6 +104,7 @@ public:
     bool PrivateEnableAnyEventMouseMode(const bool enabled) override;
     bool PrivateEnableAlternateScroll(const bool enabled) override;
     bool PrivateEraseAll() override;
+    bool PrivateClearBuffer() override;
 
     bool GetUserDefaultCursorStyle(CursorType& style) override;
     bool SetCursorStyle(CursorType const style) override;

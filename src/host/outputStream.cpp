@@ -545,6 +545,11 @@ bool ConhostInternalGetSet::PrivateEraseAll()
     return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
+bool ConhostInternalGetSet::PrivateClearBuffer()
+{
+    return SUCCEEDED(DoSrvPrivateClearBuffer(_io.GetActiveOutputBuffer()));
+}
+
 // Method Description:
 // - Retrieves the current user default cursor style.
 // Arguments:

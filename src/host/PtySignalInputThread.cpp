@@ -82,6 +82,21 @@ void PtySignalInputThread::ConnectConsole() noexcept
     {
         switch (signalId)
         {
+        case PtySignal::ClearBuffer:
+        {
+            LockConsole();
+            auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
+            // If the client app hasn't yet connected, stash the new size in the launchArgs.
+            // We'll later use the value in launchArgs to set up the console buffer
+            // We must be under lock here to ensure that someone else doesn't come in
+            // and set with `ConnectConsole` while we're looking and modifying this.
+            if (_consoleConnected)
+            {
+                _DoClearBuffer();
+            }
+            break;
+        }
         case PtySignal::ResizeWindow:
         {
             ResizeWindowData resizeMsg = { 0 };
@@ -126,6 +141,11 @@ void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
     {
         DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
     }
+}
+
+void PtySignalInputThread::_DoClearBuffer()
+{
+    _pConApi->PrivateClearBuffer();
 }
 
 // Method Description:

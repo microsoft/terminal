@@ -468,3 +468,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
         pair_type{ "toMouse", ValueType::ToMouse },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ClearBufferType)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "all", ValueType::All },
+        pair_type{ "screen", ValueType::Screen },
+        pair_type{ "scrollback", ValueType::Scrollback },
+    };
+};

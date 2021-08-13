@@ -222,6 +222,7 @@ public:
                               const TextAttribute& popupAttributes);
 
     [[nodiscard]] HRESULT VtEraseAll();
+    [[nodiscard]] HRESULT ClearBuffer();
 
     void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
 
