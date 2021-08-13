@@ -464,11 +464,25 @@ bool DxFontRenderData::DidUserSetAxes() const noexcept
     return _didUserSetAxes;
 }
 
+// Routine Description:
+// - Function called to inform us whether to use the user set weight
+//   in the font axes
+// - Called by CustomTextLayout, when the text attribute is bold we should
+//   ignore the user set weight, otherwise setting the bold font axis
+//   breaks the bold font attribute
+// Arguments:
+// - useUserWeight: boolean that tells us if we should use the user set weight
+//   in the font axes
 void DxFontRenderData::UseUserWeight(bool useUserWeight) noexcept
 {
     _useUserWeight = useUserWeight;
 }
 
+// Routine Description:
+// - Returns whether the set italic in the font axes
+// Return Value:
+// - True if the user set the italic axis to 1,
+//   false if the italic axis is not present or the italic axis is set to 0
 bool DxFontRenderData::DidUserSetItalic() const noexcept
 {
     for (const auto& axisVal : _axesVector)
