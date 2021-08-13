@@ -281,17 +281,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_GlobalHotkeysCache)
         {
-            std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
-            for (const auto& [keys, cmd] : KeyBindings())
-            {
-                // Only populate GlobalHotkeys with actions whose
-                // ShortcutAction is GlobalSummon or QuakeMode
-                if (cmd.ActionAndArgs().Action() == ShortcutAction::GlobalSummon || cmd.ActionAndArgs().Action() == ShortcutAction::QuakeMode)
-                {
-                    globalHotkeys.emplace(keys, cmd);
-                }
-            }
-            _GlobalHotkeysCache = single_threaded_map<Control::KeyChord, Model::Command>(std::move(globalHotkeys));
+            _RefreshKeyBindingCaches();
         }
         return _GlobalHotkeysCache.GetView();
     }
@@ -300,14 +290,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         if (!_KeyBindingMapCache)
         {
-            // populate _KeyBindingMapCache
-            std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> keyBindingsMap;
-            std::unordered_set<ActionMapKeyChord> unboundKeys;
-            _PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
-
-            _KeyBindingMapCache = single_threaded_map<KeyChord, Model::Command>(std::move(keyBindingsMap));
+            _RefreshKeyBindingCaches();
         }
         return _KeyBindingMapCache.GetView();
+    }
+
+    void ActionMap::_RefreshKeyBindingCaches()
+    {
+        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> keyBindingsMap;
+        std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> globalHotkeys;
+        std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality> unboundKeys;
+
+        _PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
+
+        for (const auto& [keys, cmd] : keyBindingsMap)
+        {
+            // Only populate GlobalHotkeys with actions whose
+            // ShortcutAction is GlobalSummon or QuakeMode
+            if (cmd.ActionAndArgs().Action() == ShortcutAction::GlobalSummon || cmd.ActionAndArgs().Action() == ShortcutAction::QuakeMode)
+            {
+                globalHotkeys.emplace(keys, cmd);
+            }
+        }
+
+        _KeyBindingMapCache = single_threaded_map<KeyChord, Model::Command>(std::move(keyBindingsMap));
+        _GlobalHotkeysCache = single_threaded_map<KeyChord, Model::Command>(std::move(globalHotkeys));
     }
 
     // Method Description:
@@ -317,7 +324,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - keyBindingsMap: the keyBindingsMap we're populating. This maps the key chord of a command to the command itself.
     // - unboundKeys: a set of keys that are explicitly unbound
-    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<ActionMapKeyChord>& unboundKeys) const
+    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const
     {
         // Update KeyBindingsMap with our current layer
         for (const auto& [keys, actionID] : _KeyMap)
@@ -710,15 +717,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the command with the given key chord
     // - nullptr if the key chord is explicitly unbound
     // - nullopt if it was not bound in this layer
-    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(const ActionMapKeyChord keys) const
+    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(const Control::KeyChord& keys) const
     {
-        // KeyChord's constructor ensures that Modifiers() & Vkey() is a valid value at a minimum.
-        // This allows ActionMap to identify KeyChords which should "layer" (overwrite) each other.
-        // For instance win+sc(41) and win+` both specify the same KeyChord on an US keyboard layout
-        // from the perspective of a user. Either of the two should correctly overwrite the other.
-        // As such we need to pretend as if ScanCode doesn't exist.
-        assert(keys.vkey != 0);
-
         // Check the current layer
         if (const auto actionIDPair = _KeyMap.find(keys); actionIDPair != _KeyMap.end())
         {
