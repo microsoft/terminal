@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         static winrt::fire_and_forget final_release(std::unique_ptr<ConptyConnection> connection);
 
         void Start();
+        void Restart();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close() noexcept;

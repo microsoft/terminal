@@ -22,13 +22,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // - state: the new state
         // Return Value:
         //   Whether we've successfully transitioned to the new state.
-        bool _transitionToState(const ConnectionState state) noexcept
+        bool _transitionToState(const ConnectionState state, bool force = false, bool handler = true) noexcept
         try
         {
             {
                 std::lock_guard<std::mutex> stateLock{ _stateMutex };
                 // only allow movement up the state gradient
-                if (state < _connectionState)
+                if (!force && state < _connectionState)
                 {
                     return false;
                 }
@@ -36,7 +36,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             }
             // Dispatch the event outside of lock.
 #pragma warning(suppress : 26491) // We can't avoid static_cast downcast because this is template magic.
-            _StateChangedHandlers(*static_cast<T*>(this), nullptr);
+            if (handler)
+            {
+                _StateChangedHandlers(*static_cast<T*>(this), nullptr);
+            }
             return true;
         }
         CATCH_FAIL_FAST()

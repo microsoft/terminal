@@ -79,6 +79,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
+        void RestartConnection();
         void Close();
 
 #pragma region ICoreState

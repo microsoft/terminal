@@ -20,6 +20,7 @@ namespace Microsoft.Terminal.TerminalConnection
         void Initialize(Windows.Foundation.Collections.ValueSet settings);
 
         void Start();
+        void Restart();
         void WriteInput(String data);
         void Resize(UInt32 rows, UInt32 columns);
         void Close();

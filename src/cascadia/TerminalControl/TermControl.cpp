@@ -1706,6 +1706,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.RequestPasteTextFromClipboard();
     }
 
+    void TermControl::RestartConnection()
+    {
+        _core.RestartConnection();
+    }
+
     void TermControl::Close()
     {
         if (!_IsClosing())

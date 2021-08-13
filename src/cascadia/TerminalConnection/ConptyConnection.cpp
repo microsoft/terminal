@@ -436,6 +436,43 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _hPC.reset();
     }
 
+
+    void ConptyConnection::Restart()
+    try
+    {
+        THROW_IF_FAILED(_LaunchAttachedClient());
+
+        _startTime = std::chrono::high_resolution_clock::now();
+
+        SetThreadpoolWait(_clientExitWait.get(), _piClient.hProcess, nullptr);
+
+        _transitionToState(ConnectionState::Connected, /*force*/ true, /*handler*/ false);
+    }
+    catch (...)
+    {
+        // EXIT POINT
+        const auto hr = wil::ResultFromCaughtException();
+
+        winrt::hstring failureText{ fmt::format(std::wstring_view{ RS_(L"ProcessFailedToLaunch") },
+                                                gsl::narrow_cast<unsigned long>(hr),
+                                                _commandline) };
+        _TerminalOutputHandlers(failureText);
+
+        // If the path was invalid, let's present an informative message to the user
+        if (hr == HRESULT_FROM_WIN32(ERROR_DIRECTORY))
+        {
+            winrt::hstring badPathText{ fmt::format(std::wstring_view{ RS_(L"BadPathText") },
+                                                    _startingDirectory) };
+            _TerminalOutputHandlers(L"\r\n");
+            _TerminalOutputHandlers(badPathText);
+        }
+
+        _transitionToState(ConnectionState::Failed);
+
+        // Tear down any state we may have accumulated.
+        _hPC.reset();
+    }
+
     // Method Description:
     // - prints out the "process exited" message formatted with the exit code
     // Arguments:
@@ -447,6 +484,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, status) };
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);
+            _TerminalOutputHandlers(L"\r\n");
         }
         CATCH_LOG();
     }
@@ -466,10 +504,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         DWORD exitCode{ 0 };
         GetExitCodeProcess(_piClient.hProcess, &exitCode);
 
+        _indicateExitWithStatus(exitCode);
+
         // Signal the closing or failure of the process.
         // Load bearing. Terminating the pseudoconsole will make the output thread exit unexpectedly,
         // so we need to signal entry into the correct closing state before we do that.
         _transitionToState(exitCode == 0 ? ConnectionState::Closed : ConnectionState::Failed);
+
+        if (_isStateAtOrBeyond(ConnectionState::Connected))
+        {
+            // Restarted.
+            return;
+        }
 
         // Close the pseudoconsole and wait for all output to drain.
         _hPC.reset();
@@ -478,11 +524,12 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
             LOG_LAST_ERROR_IF(WAIT_FAILED == WaitForSingleObject(localOutputThreadHandle.get(), INFINITE));
         }
 
-        _indicateExitWithStatus(exitCode);
-
         _piClient.reset();
     }
-    CATCH_LOG()
+    catch(...)
+    {
+        return;
+    }
 
     void ConptyConnection::WriteInput(hstring const& data)
     {

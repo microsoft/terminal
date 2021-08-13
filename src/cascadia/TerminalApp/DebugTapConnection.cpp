@@ -25,6 +25,10 @@ namespace winrt::Microsoft::TerminalApp::implementation
         {
             _wrappedConnection.Start();
         }
+        void Restart()
+        {
+            _wrappedConnection.Restart();
+        }
         void WriteInput(hstring const& data)
         {
             _pairedTap->_PrintInput(data);
@@ -59,6 +63,10 @@ namespace winrt::Microsoft::TerminalApp::implementation
     void DebugTapConnection::Start()
     {
         // presume the wrapped connection is started.
+    }
+
+    void DebugTapConnection::Restart()
+    {
     }
 
     void DebugTapConnection::WriteInput(hstring const& data)

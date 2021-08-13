@@ -16,6 +16,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
+        void Restart();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();

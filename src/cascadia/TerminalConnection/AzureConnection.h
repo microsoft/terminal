@@ -26,6 +26,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
 
         void Start();
+        void Restart();
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns);
         void Close();

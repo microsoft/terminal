@@ -46,6 +46,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
+        void RestartConnection();
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };

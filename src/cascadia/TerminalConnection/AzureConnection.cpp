@@ -139,6 +139,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         _transitionToState(ConnectionState::Connecting);
     }
 
+    void AzureConnection::Restart()
+    {
+
+    }
+
     std::optional<std::wstring> AzureConnection::_ReadUserInput(InputMode mode)
     {
         std::unique_lock<std::mutex> inputLock{ _inputMutex };

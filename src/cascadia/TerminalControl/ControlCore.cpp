@@ -1304,6 +1304,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    void ControlCore::RestartConnection()
+    {
+        _connection.Restart();
+    }
+
     void ControlCore::Close()
     {
         if (!_IsClosing())

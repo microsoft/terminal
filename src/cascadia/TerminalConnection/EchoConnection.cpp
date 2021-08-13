@@ -17,6 +17,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
     }
 
+    void EchoConnection::Restart() noexcept
+    {
+    }
+
     void EchoConnection::WriteInput(hstring const& data)
     {
         std::wstringstream prettyPrint;
