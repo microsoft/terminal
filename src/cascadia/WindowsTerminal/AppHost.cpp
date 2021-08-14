@@ -92,15 +92,6 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
-    if (_windowManager.IsMonarch())
-    {
-        _DestroyTrayIcon();
-    }
-    else if (_window->IsQuakeWindow())
-    {
-        _HideTrayIconRequested();
-    }
-
     // destruction order is important for proper teardown here
     _window = nullptr;
     _app.Close();
@@ -328,6 +319,15 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - <none>
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
+    if (_windowManager.IsMonarch() && _trayIcon)
+    {
+        _DestroyTrayIcon();
+    }
+    else if (_window->IsQuakeWindow())
+    {
+        _HideTrayIconRequested();
+    }
+
     _window->Close();
 }
 
