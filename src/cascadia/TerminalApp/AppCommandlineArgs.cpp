@@ -380,6 +380,9 @@ void AppCommandlineArgs::_buildFocusTabParser()
             else if (_focusNextTab || _focusPrevTab)
             {
                 focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                focusTabAction.Args(_focusNextTab ?
+                                        static_cast<IActionArgs>(NextTabArgs(TabSwitcherMode::Disabled)) :
+                                        static_cast<IActionArgs>(PrevTabArgs(TabSwitcherMode::Disabled)));
                 _startupActions.push_back(std::move(focusTabAction));
             }
         });
