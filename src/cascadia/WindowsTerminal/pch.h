@@ -60,8 +60,10 @@ Abstract:
 //  * Controls for grid
 //  * Media for ScaleTransform
 //  * ApplicationModel for finding the path to wt.exe
+//  * Primitives for Popup (used by GetOpenPopupsForXamlRoot)
 #include <winrt/Windows.UI.Core.h>
 #include <winrt/Windows.UI.Xaml.Controls.h>
+#include <winrt/Windows.UI.Xaml.Controls.Primitives.h>
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>

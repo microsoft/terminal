@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
     };
 
-    struct Actions : ActionsT<Actions>
+    struct Actions : public HasScrollViewer<Actions>, ActionsT<Actions>
     {
     public:
         Actions();

@@ -119,7 +119,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
     };
 
-    struct Profiles : ProfilesT<Profiles>
+    struct Profiles : public HasScrollViewer<Profiles>, ProfilesT<Profiles>
     {
     public:
         Profiles();
