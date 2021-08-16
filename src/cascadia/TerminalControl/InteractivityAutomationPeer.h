@@ -43,6 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void SetControlBounds(const Windows::Foundation::Rect bounds);
         void SetControlPadding(const Core::Padding padding);
+        void SetParentProvider(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider);
 
 #pragma region IUiaEventDispatcher
         void SignalSelectionChanged() override;
@@ -76,6 +77,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
         winrt::Microsoft::Terminal::Control::implementation::ControlInteractivity* _interactivity;
+        winrt::Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple _parentProvider{ nullptr };
 
         til::rectangle _controlBounds{};
         til::rectangle _controlPadding{};

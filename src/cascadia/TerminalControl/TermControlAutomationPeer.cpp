@@ -66,6 +66,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contentAutomationPeer.SetControlPadding(padding);
     }
 
+    XamlAutomation::IRawElementProviderSimple TermControlAutomationPeer::GetParentProvider()
+    {
+        const auto parentProvider = this->ProviderFromPeer(*this);
+        return parentProvider;
+    }
+
     // Method Description:
     // - Signals the ui automation client that the terminal's selection has changed and should be updated
     // Arguments:

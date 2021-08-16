@@ -286,7 +286,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::_createContentWaitThread()
     {
-        _contentWaitThread = std::thread([weakThis = get_weak(), contentPid = _contentProc.GetPID(), contentWaitInterrupt=_contentWaitInterrupt.get()] {
+        _contentWaitThread = std::thread([weakThis = get_weak(), contentPid = _contentProc.GetPID(), contentWaitInterrupt = _contentWaitInterrupt.get()] {
             if (s_waitOnContentProcess(contentPid, contentWaitInterrupt))
             {
                 if (auto control{ weakThis.get() })
@@ -683,6 +683,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, interactivityAutoPeer);
+                interactivityAutoPeer.SetParentProvider(_automationPeer.GetParentProvider());
                 return _automationPeer;
             }
         }

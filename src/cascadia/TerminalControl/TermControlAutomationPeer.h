@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateControlBounds();
         void SetControlPadding(const Core::Padding padding);
+        Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple GetParentProvider();
 
 #pragma region FrameworkElementAutomationPeer
         hstring GetClassNameCore() const;

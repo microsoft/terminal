@@ -44,6 +44,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _controlPadding = padding;
     }
 
+    void InteractivityAutomationPeer::SetParentProvider(Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider)
+    {
+        _parentProvider = parentProvider;
+    }
+
     // Method Description:
     // - Signals the ui automation client that the terminal's selection has
     //   changed and should be updated
@@ -111,7 +116,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         THROW_IF_FAILED(_uiaProvider->RangeFromChild(/* IRawElementProviderSimple */ nullptr,
                                                      &returnVal));
 
-        const auto parentProvider = this->ProviderFromPeer(*this);
+        // const auto parentProvider = this->ProviderFromPeer(*this);
+        const auto parentProvider = _parentProvider;
         const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
@@ -121,7 +127,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UIA::ITextRangeProvider* returnVal;
         THROW_IF_FAILED(_uiaProvider->RangeFromPoint({ screenLocation.X, screenLocation.Y }, &returnVal));
 
-        const auto parentProvider = this->ProviderFromPeer(*this);
+        // const auto parentProvider = this->ProviderFromPeer(*this);
+        const auto parentProvider = _parentProvider;
         const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
@@ -131,7 +138,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         UIA::ITextRangeProvider* returnVal;
         THROW_IF_FAILED(_uiaProvider->get_DocumentRange(&returnVal));
 
-        const auto parentProvider = this->ProviderFromPeer(*this);
+        // const auto parentProvider = this->ProviderFromPeer(*this);
+        const auto parentProvider = _parentProvider;
         const auto xutr = winrt::make_self<XamlUiaTextRange>(returnVal, parentProvider);
         return xutr.as<XamlAutomation::ITextRangeProvider>();
     }
@@ -194,7 +202,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         std::vector<XamlAutomation::ITextRangeProvider> vec;
         vec.reserve(count);
-        auto parentProvider = this->ProviderFromPeer(*this);
+        // auto parentProvider = this->ProviderFromPeer(*this);
+        const auto parentProvider = _parentProvider;
         for (int i = 0; i < count; i++)
         {
             auto xutr = make_self<XamlUiaTextRange>(providers[i].detach(), parentProvider);

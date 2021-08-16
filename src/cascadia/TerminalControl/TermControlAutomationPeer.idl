@@ -12,5 +12,6 @@ namespace Microsoft.Terminal.Control
 
         void UpdateControlBounds();
         void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
+        Windows.UI.Xaml.Automation.Provider.IRawElementProviderSimple GetParentProvider();
     }
 }
