@@ -1695,4 +1695,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // transparency, or our acrylic, or our image.
         return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
     }
+
+    winrt::Windows::System::DispatcherQueue ControlCore::Dispatcher()
+    {
+        return _dispatcher;
+    }
 }

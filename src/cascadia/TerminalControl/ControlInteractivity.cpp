@@ -16,6 +16,7 @@
 
 #include "ControlInteractivity.g.cpp"
 #include "TermControl.h"
+#include <til/latch.h>
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -626,11 +627,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
     try
     {
-        const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
+        til::latch latch{ 1 };
+        Control::InteractivityAutomationPeer peer{ nullptr };
 
-        _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
-        _core->AttachUiaEngine(_uiaEngine.get());
-        return *autoPeer;
+        _core->Dispatcher().TryEnqueue([this, &peer, &latch]() {
+            auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
+
+            _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
+            _core->AttachUiaEngine(_uiaEngine.get());
+
+            peer = *autoPeer;
+            latch.count_down();
+        });
+
+        latch.wait();
+        return peer;
     }
     catch (...)
     {
