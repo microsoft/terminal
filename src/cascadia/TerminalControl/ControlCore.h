@@ -144,8 +144,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
 
-        winrt::Windows::System::DispatcherQueue Dispatcher();
-
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);

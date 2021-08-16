@@ -1484,8 +1484,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updatePatternLocations->Run();
     }
 
-    winrt::Windows::System::DispatcherQueue ControlCore::Dispatcher()
-    {
-        return _dispatcher;
-    }
 }
