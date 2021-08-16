@@ -389,6 +389,15 @@ void AppCommandlineArgs::_buildFocusTabParser()
     setupSubcommand(_focusTabShort);
 }
 
+static const std::map<std::string, FocusDirection> focusDirectionMap = {
+    { "left", FocusDirection::Left },
+    { "right", FocusDirection::Right },
+    { "up", FocusDirection::Up },
+    { "down", FocusDirection::Down },
+    { "nextInOrder", FocusDirection::NextInOrder },
+    { "previousInOrder", FocusDirection::PreviousInOrder },
+};
+
 // Method Description:
 // - Adds the `move-focus` subcommand and related options to the commandline parser.
 // - Additionally adds the `mf` subcommand, which is just a shortened version of `move-focus`
@@ -402,18 +411,11 @@ void AppCommandlineArgs::_buildMoveFocusParser()
     _moveFocusShort = _app.add_subcommand("mf", RS_A(L"CmdMFDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        std::map<std::string, FocusDirection> map = {
-            { "left", FocusDirection::Left },
-            { "right", FocusDirection::Right },
-            { "up", FocusDirection::Up },
-            { "down", FocusDirection::Down }
-        };
-
         auto* directionOpt = subcommand->add_option("direction",
                                                     _moveFocusDirection,
                                                     RS_A(L"CmdMoveFocusDirectionArgDesc"));
 
-        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->transform(CLI::CheckedTransformer(focusDirectionMap, CLI::ignore_case));
         directionOpt->required();
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -448,18 +450,11 @@ void AppCommandlineArgs::_buildSwapPaneParser()
     _swapPaneCommand = _app.add_subcommand("swap-pane", RS_A(L"CmdSwapPaneDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        std::map<std::string, FocusDirection> map = {
-            { "left", FocusDirection::Left },
-            { "right", FocusDirection::Right },
-            { "up", FocusDirection::Up },
-            { "down", FocusDirection::Down }
-        };
-
         auto* directionOpt = subcommand->add_option("direction",
                                                     _swapPaneDirection,
                                                     RS_A(L"CmdSwapPaneDirectionArgDesc"));
 
-        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->transform(CLI::CheckedTransformer(focusDirectionMap, CLI::ignore_case));
         directionOpt->required();
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure

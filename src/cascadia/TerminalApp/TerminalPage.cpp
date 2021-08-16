@@ -1126,14 +1126,15 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the focused pane in.
     // Return Value:
-    // - <none>
-    void TerminalPage::_SwapPane(const FocusDirection& direction)
+    // - true if panes were swapped.
+    bool TerminalPage::_SwapPane(const FocusDirection& direction)
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->SwapPane(direction);
+            return terminalTab->SwapPane(direction);
         }
+        return false;
     }
 
     TermControl TerminalPage::_GetActiveControl()
@@ -1200,8 +1201,12 @@ namespace winrt::TerminalApp::implementation
     //   specified tab. If the tab index is greater than the number of
     //   tabs, then a new tab will be created for the pane. Similarly, if a pane
     //   is the last remaining pane on a tab, that tab will be closed upon moving.
+    // - No move will occur if the tabIdx is the same as the current tab, or if
+    //   the specified tab is not a host of terminals (such as the settings tab).
     // Arguments:
     // - tabIdx: The target tab index.
+    // Return Value:
+    // - true if the pane was successfully moved to the new tab.
     bool TerminalPage::_MovePane(const uint32_t tabIdx)
     {
         auto focusedTab{ _GetFocusedTabImpl() };

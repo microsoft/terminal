@@ -297,7 +297,9 @@
         "right",
         "up",
         "down",
-        "previous"
+        "previous",
+        "nextInOrder",
+        "previousInOrder"
       ],
       "type": "string"
     },
@@ -538,7 +540,7 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane."
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
             }
           }
         }
@@ -555,7 +557,7 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane."
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
             }
           }
         }
