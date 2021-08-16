@@ -155,7 +155,7 @@
           "type": "string"
         },
         "intenseTextStyle": {
-          "default": "all",
+          "default": "bright",
           "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
           "enum": [
             "none",
