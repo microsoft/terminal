@@ -1056,11 +1056,10 @@ void AppHost::_DestroyTrayIcon()
     }
 }
 
-winrt::fire_and_forget AppHost::_ShowTrayIconRequested()
+void AppHost::_ShowTrayIconRequested()
 {
     if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        co_await winrt::resume_background();
         if (_windowManager.IsMonarch())
         {
             if (!_trayIcon)
@@ -1075,11 +1074,10 @@ winrt::fire_and_forget AppHost::_ShowTrayIconRequested()
     }
 }
 
-winrt::fire_and_forget AppHost::_HideTrayIconRequested()
+void AppHost::_HideTrayIconRequested()
 {
     if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        co_await winrt::resume_background();
         if (_windowManager.IsMonarch())
         {
             // Destroy it only if our settings allow it
