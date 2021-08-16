@@ -182,7 +182,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_KeybindingsDisclaimer"
                        Style="{StaticResource DisclaimerStyle}" />

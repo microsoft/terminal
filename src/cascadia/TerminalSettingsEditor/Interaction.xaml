@@ -24,7 +24,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Copy On Select  -->
             <local:SettingContainer x:Uid="Globals_CopyOnSelect"
