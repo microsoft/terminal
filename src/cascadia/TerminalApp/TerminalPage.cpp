@@ -1206,7 +1206,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - tabIdx: The target tab index.
     // Return Value:
-    // - true if the pane was successfully moved to the new tab. 
+    // - true if the pane was successfully moved to the new tab.
     bool TerminalPage::_MovePane(const uint32_t tabIdx)
     {
         auto focusedTab{ _GetFocusedTabImpl() };
