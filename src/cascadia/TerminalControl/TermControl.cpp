@@ -663,6 +663,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     TermControl::~TermControl()
     {
+        _contentWaitInterrupt.SetEvent();
+        _contentWaitThread.join();
         Close();
     }
 
