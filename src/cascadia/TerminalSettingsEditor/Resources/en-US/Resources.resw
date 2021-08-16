@@ -1186,4 +1186,28 @@
     <value>Shortcut</value>
     <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
   </data>
+  <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
+    <value>Text Formatting</value>
+    <comment>Header for a control to how text is formatted</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyle.Header" xml:space="preserve">
+    <value>Intense Text Format</value>
+    <comment>Header for a control to select how "intense" text is formatted (bold, bright, both or none)</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will not be rendered differently</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleBold.Content" xml:space="preserve">
+    <value>Bold</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as bold text</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleBright.Content" xml:space="preserve">
+    <value>Bright</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered in a brighter color</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleAll.Content" xml:space="preserve">
+    <value>Both</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as both bold text and in a brighter color</comment>
+  </data>
 </root>

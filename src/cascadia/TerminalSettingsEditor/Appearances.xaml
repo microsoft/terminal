@@ -428,5 +428,23 @@
                 </Grid>
             </local:SettingContainer>
         </StackPanel>
+
+        <!--  Grouping: Text Formatting  -->
+        <StackPanel Style="{StaticResource PivotStackStyle}">
+            <TextBlock x:Uid="Appearance_TextFormattingHeader"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+
+            <!--  Intense is bold, bright  -->
+            <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
+                                    Margin="0"
+                                    ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
+                                    HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                   ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}" />
+            </local:SettingContainer>
+        </StackPanel>
+
     </StackPanel>
 </UserControl>

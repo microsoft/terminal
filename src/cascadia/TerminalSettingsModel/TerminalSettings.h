@@ -116,6 +116,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // passed to the terminal only upon creation.
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
+
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
@@ -154,6 +156,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;

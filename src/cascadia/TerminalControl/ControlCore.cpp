@@ -264,6 +264,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
             _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
 
             _updateAntiAliasingMode(_renderEngine.get());
 
@@ -600,6 +601,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+
         _updateAntiAliasingMode(_renderEngine.get());
 
         // Refresh our font with the renderer
@@ -629,6 +631,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
             _renderer->TriggerRedrawAll();
         }
     }

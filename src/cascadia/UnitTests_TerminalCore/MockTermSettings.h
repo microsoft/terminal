@@ -73,6 +73,8 @@ namespace TerminalCoreUnitTests
         void TrimBlockSelection(bool) {}
         void DetectURLs(bool) {}
 
+        WINRT_PROPERTY(bool, IntenseIsBright, true);
+
     private:
         int32_t _historySize;
         int32_t _initialRows;
