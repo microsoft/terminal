@@ -347,6 +347,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_APPEARANCE_SETTING_MACRO(RetroTerminalEffect);
     DUPLICATE_APPEARANCE_SETTING_MACRO(CursorShape);
     DUPLICATE_APPEARANCE_SETTING_MACRO(CursorHeight);
+    DUPLICATE_APPEARANCE_SETTING_MACRO(IntenseTextStyle);
 
     // UnfocusedAppearance is treated as a single setting,
     // but requires a little more legwork to duplicate properly
