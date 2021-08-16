@@ -185,8 +185,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         inline bool _IsClosing() const noexcept
         {
+#ifndef NDEBUG
             // _closing isn't atomic and may only be accessed from the main thread.
-            assert(Dispatcher().HasThreadAccess());
+            if (const auto dispatcher = Dispatcher())
+            {
+                assert(dispatcher.HasThreadAccess());
+            }
+#endif
             return _closing;
         }
 
