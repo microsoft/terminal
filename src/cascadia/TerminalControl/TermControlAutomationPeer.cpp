@@ -261,7 +261,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControlAutomationPeer::GetLocalizedControlTypeCore() const
     {
-        return RS_(L"TerminalControl_ControlType");
+        // return RS_(L"TerminalControl_ControlType");
+        return L"foo";
     }
 
     Windows::Foundation::IInspectable TermControlAutomationPeer::GetPatternCore(PatternInterface patternInterface) const
