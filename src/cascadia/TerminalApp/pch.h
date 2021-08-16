@@ -66,6 +66,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
+#include <msctf.h>
 #include <shellapi.h>
 #include <shobjidl_core.h>
 

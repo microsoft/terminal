@@ -374,7 +374,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel MaxWidth="600"
                     Spacing="8"
                     Style="{StaticResource SettingsStackStyle}">

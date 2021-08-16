@@ -40,6 +40,7 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                            const gsl::not_null<IRenderData*> pData,
+                                                           const bool usingSoftFont,
                                                            const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
                                               const COORD coord,

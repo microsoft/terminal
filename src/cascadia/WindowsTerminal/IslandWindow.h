@@ -24,6 +24,7 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    virtual RECT GetNonClientFrame(const UINT dpi) const noexcept;
     virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
@@ -39,12 +40,16 @@ public:
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
     void UnregisterHotKey(const int index) noexcept;
-    void RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
+    bool RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
 
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
+
+    void HideWindow();
+
+    void SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept;
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
@@ -53,6 +58,11 @@ public:
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
     WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyShowTrayContextMenu, winrt::delegate<void(til::point)>);
+    WINRT_CALLBACK(NotifyTrayMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
+    WINRT_CALLBACK(NotifyReAddTrayIcon, winrt::delegate<void()>);
+
+    WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
 
 protected:
     void ForceResize()
@@ -114,6 +124,8 @@ protected:
     til::rectangle _getQuakeModeSize(HMONITOR hmon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
+
+    bool _minimizeToTray{ false };
 
 private:
     // This minimum width allows for width the tabs fit

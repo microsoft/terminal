@@ -21,9 +21,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     KeyChord::KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey, int32_t scanCode) noexcept :
-        _modifiers{ modifiersFromBooleans(ctrl, alt, shift, win) },
-        _vkey{ vkey },
-        _scanCode{ scanCode }
+        KeyChord(modifiersFromBooleans(ctrl, alt, shift, win), vkey, scanCode)
     {
     }
 
@@ -32,6 +30,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _vkey{ vkey },
         _scanCode{ scanCode }
     {
+        // ActionMap needs to identify KeyChords which should "layer" (overwrite) each other.
+        // For instance win+sc(41) and win+` both specify the same KeyChord on an US keyboard layout
+        // from the perspective of a user. Either of the two should correctly overwrite the other.
+        // We can help ActionMap with this by ensuring that Vkey() is always valid.
+        if (!_vkey)
+        {
+            _vkey = MapVirtualKeyW(scanCode, MAPVK_VSC_TO_VK_EX);
+        }
     }
 
     VirtualKeyModifiers KeyChord::Modifiers() noexcept

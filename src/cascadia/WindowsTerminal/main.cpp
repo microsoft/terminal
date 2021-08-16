@@ -22,6 +22,15 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0x56c06166, 0x2e2e, 0x5f4d, 0x7f, 0xf3, 0x74, 0xf4, 0xb7, 0x8c, 0x87, 0xd6),
     TraceLoggingOptionMicrosoftTelemetry());
 
+// !! BODGY !!
+// Manually use the resources from TerminalApp as our resources.
+// The WindowsTerminal project doesn't actually build a Resources.resw file, but
+// we still need to be able to localize strings for the tray icon menu. Anything
+// you want localized for WindowsTerminal.exe should be stuck in
+// ...\TerminalApp\Resources\en-US\Resources.resw
+#include <LibraryResources.h>
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources");
+
 // Routine Description:
 // - Takes an image architecture and locates a string resource that maps to that architecture.
 // Arguments:
@@ -81,6 +90,10 @@ static bool _messageIsF7Keypress(const MSG& message)
 static bool _messageIsAltKeyup(const MSG& message)
 {
     return (message.message == WM_KEYUP || message.message == WM_SYSKEYUP) && message.wParam == VK_MENU;
+}
+static bool _messageIsAltSpaceKeypress(const MSG& message)
+{
+    return message.message == WM_SYSKEYDOWN && message.wParam == VK_SPACE;
 }
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
@@ -167,6 +180,18 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
             if (host.OnDirectKeyEvent(VK_MENU, LOBYTE(HIWORD(message.lParam)), false))
             {
                 // The application consumed the Alt. Don't let Xaml get it.
+                continue;
+            }
+        }
+
+        // GH#7125 = System XAML will show a system dialog on Alt Space. We might want to
+        // explicitly prevent that - for example when an action is bound to it. So similar to
+        // above, we steal the event and hand it off to the host. When the host does not process
+        // it, we will still dispatch like normal.
+        if (_messageIsAltSpaceKeypress(message))
+        {
+            if (host.OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true))
+            {
                 continue;
             }
         }

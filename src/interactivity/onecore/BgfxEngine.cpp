@@ -196,6 +196,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
 
 [[nodiscard]] HRESULT BgfxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                        const gsl::not_null<IRenderData*> /*pData*/,
+                                                       const bool /*usingSoftFont*/,
                                                        bool const /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();

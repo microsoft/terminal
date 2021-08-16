@@ -33,7 +33,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->

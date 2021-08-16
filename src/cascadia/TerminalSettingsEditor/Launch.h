@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
     };
 
-    struct Launch : LaunchT<Launch>
+    struct Launch : public HasScrollViewer<Launch>, LaunchT<Launch>
     {
     public:
         Launch();

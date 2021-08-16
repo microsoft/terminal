@@ -980,11 +980,9 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
-    //    * the TitleChanged event, for changing the text of the tab
     // Arguments:
     // - term: The newly created TermControl to connect the events for
-    // - hostingTab: The Tab that's hosting this TermControl instance
-    void TerminalPage::_RegisterTerminalEvents(TermControl term, TerminalTab& hostingTab)
+    void TerminalPage::_RegisterTerminalEvents(TermControl term)
     {
         term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
 
@@ -999,10 +997,20 @@ namespace winrt::TerminalApp::implementation
 
         term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
         term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
+        // Add an event handler for when the terminal or tab wants to set a
+        // progress indicator on the taskbar
+        term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
+    }
 
-        // Bind Tab events to the TermControl and the Tab's Pane
-        hostingTab.Initialize(term);
-
+    // Method Description:
+    // - Connects event handlers to the TerminalTab for events that we want to
+    //   handle. This includes:
+    //    * the TitleChanged event, for changing the text of the tab
+    //    * the Color{Selected,Cleared} events to change the color of a tab.
+    // Arguments:
+    // - hostingTab: The Tab that's hosting this TermControl instance
+    void TerminalPage::_RegisterTabEvents(TerminalTab& hostingTab)
+    {
         auto weakTab{ hostingTab.get_weak() };
         auto weakThis{ get_weak() };
         // PropertyChanged is the generic mechanism by which the Tab
@@ -1054,7 +1062,6 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-        term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         // TODO GH#3327: Once we support colorizing the NewTab button based on
         // the color of the tab, we'll want to make sure to call
@@ -1115,17 +1122,17 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Attempt to swap the positions of the focused pane with another pane.
-    //   See Pane::MovePane for details.
+    //   See Pane::SwapPane for details.
     // Arguments:
     // - direction: The direction to move the focused pane in.
     // Return Value:
     // - <none>
-    void TerminalPage::_MovePane(const FocusDirection& direction)
+    void TerminalPage::_SwapPane(const FocusDirection& direction)
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->MovePane(direction);
+            terminalTab->SwapPane(direction);
         }
     }
 
@@ -1186,6 +1193,52 @@ namespace winrt::TerminalApp::implementation
             auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
             terminalTab->Scroll(scrollDelta);
         }
+    }
+
+    // Method Description:
+    // - Moves the currently active pane on the currently active tab to the
+    //   specified tab. If the tab index is greater than the number of
+    //   tabs, then a new tab will be created for the pane. Similarly, if a pane
+    //   is the last remaining pane on a tab, that tab will be closed upon moving.
+    // Arguments:
+    // - tabIdx: The target tab index.
+    bool TerminalPage::_MovePane(const uint32_t tabIdx)
+    {
+        auto focusedTab{ _GetFocusedTabImpl() };
+
+        if (!focusedTab)
+        {
+            return false;
+        }
+
+        // If we are trying to move from the current tab to the current tab do nothing.
+        if (_GetFocusedTabIndex() == tabIdx)
+        {
+            return false;
+        }
+
+        // Moving the pane from the current tab might close it, so get the next
+        // tab before its index changes.
+        if (_tabs.Size() > tabIdx)
+        {
+            auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(tabIdx));
+            // if the selected tab is not a host of terminals (e.g. settings)
+            // don't attempt to add a pane to it.
+            if (!targetTab)
+            {
+                return false;
+            }
+            auto pane = focusedTab->DetachPane();
+            targetTab->AttachPane(pane);
+            _SetFocusedTab(*targetTab);
+        }
+        else
+        {
+            auto pane = focusedTab->DetachPane();
+            _CreateNewTabFromPane(pane);
+        }
+
+        return true;
     }
 
     // Method Description:
@@ -1306,7 +1359,7 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl, tab);
+            _RegisterTerminalEvents(newControl);
 
             _UnZoomIfNeeded();
 
@@ -2077,29 +2130,35 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Gets the taskbar state value from the last active control
+    // - Get the combined taskbar state for the page. This is the combination of
+    //   all the states of all the tabs, which are themselves a combination of
+    //   all their panes. Taskbar states are given a priority based on the rules
+    //   in:
+    //   https://docs.microsoft.com/en-us/windows/win32/api/shobjidl_core/nf-shobjidl_core-itaskbarlist3-setprogressstate
+    //   under "How the Taskbar Button Chooses the Progress Indicator for a Group"
+    // Arguments:
+    // - <none>
     // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarState()
+    // - A TaskbarState object representing the combined taskbar state and
+    //   progress percentage of all our tabs.
+    winrt::TerminalApp::TaskbarState TerminalPage::TaskbarState() const
     {
-        if (auto control{ _GetActiveControl() })
-        {
-            return control.TaskbarState();
-        }
-        return {};
-    }
+        auto state{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>() };
 
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t TerminalPage::GetLastActiveControlTaskbarProgress()
-    {
-        if (auto control{ _GetActiveControl() })
+        for (const auto& tab : _tabs)
         {
-            return control.TaskbarProgress();
+            if (auto tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                auto tabState{ tabImpl->GetCombinedTaskbarState() };
+                // lowest priority wins
+                if (tabState.Priority() < state.Priority())
+                {
+                    state = tabState;
+                }
+            }
         }
-        return {};
+
+        return state;
     }
 
     // Method Description:

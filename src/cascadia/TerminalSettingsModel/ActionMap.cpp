@@ -47,12 +47,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return hashedAction ^ hashedArgs;
     }
 
-    ActionMap::ActionMap() :
-        _NestedCommands{ single_threaded_map<hstring, Model::Command>() },
-        _IterableCommands{ single_threaded_vector<Model::Command>() }
-    {
-    }
-
     // Method Description:
     // - Retrieves the Command in the current layer, if it's valid
     // - We internally store invalid commands as full commands.
@@ -194,7 +188,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // Update NameMap with our parents.
         // Starting with this means we're doing a top-down approach.
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateNameMapWithSpecialCommands(nameMap);
@@ -272,7 +266,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         });
 
         // Now, add the accumulated actions from our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto parentActions{ parent->_GetCumulativeActions() };
@@ -308,7 +302,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // populate _KeyBindingMapCache
             std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality> keyBindingsMap;
-            std::unordered_set<KeyChord, KeyChordHash, KeyChordEquality> unboundKeys;
+            std::unordered_set<ActionMapKeyChord> unboundKeys;
             _PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
 
             _KeyBindingMapCache = single_threaded_map<KeyChord, Model::Command>(std::move(keyBindingsMap));
@@ -323,7 +317,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Arguments:
     // - keyBindingsMap: the keyBindingsMap we're populating. This maps the key chord of a command to the command itself.
     // - unboundKeys: a set of keys that are explicitly unbound
-    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const
+    void ActionMap::_PopulateKeyBindingMapWithStandardCommands(std::unordered_map<KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<ActionMapKeyChord>& unboundKeys) const
     {
         // Update KeyBindingsMap with our current layer
         for (const auto& [keys, actionID] : _KeyMap)
@@ -358,7 +352,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Update keyBindingsMap and unboundKeys with our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             parent->_PopulateKeyBindingMapWithStandardCommands(keyBindingsMap, unboundKeys);
@@ -369,35 +363,38 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto actionMap{ make_self<ActionMap>() };
 
-        // copy _KeyMap (KeyChord --> ID)
+        // KeyChord --> ID
         actionMap->_KeyMap = _KeyMap;
 
-        // copy _ActionMap (ID --> Command)
+        // ID --> Command
+        actionMap->_ActionMap.reserve(_ActionMap.size());
         for (const auto& [actionID, cmd] : _ActionMap)
         {
-            actionMap->_ActionMap.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
+            actionMap->_ActionMap.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // copy _MaskingActions (ID --> Command)
+        // ID --> Command
+        actionMap->_MaskingActions.reserve(_MaskingActions.size());
         for (const auto& [actionID, cmd] : _MaskingActions)
         {
-            actionMap->_MaskingActions.emplace(actionID, *(get_self<Command>(cmd)->Copy()));
+            actionMap->_MaskingActions.emplace(actionID, *winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // copy _NestedCommands (Name --> Command)
+        // Name --> Command
+        actionMap->_NestedCommands.reserve(_NestedCommands.size());
         for (const auto& [name, cmd] : _NestedCommands)
         {
-            actionMap->_NestedCommands.Insert(name, *(get_self<Command>(cmd)->Copy()));
+            actionMap->_NestedCommands.emplace(name, *winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // copy _IterableCommands
+        actionMap->_IterableCommands.reserve(_IterableCommands.size());
         for (const auto& cmd : _IterableCommands)
         {
-            actionMap->_IterableCommands.Append(*(get_self<Command>(cmd)->Copy()));
+            actionMap->_IterableCommands.emplace_back(*winrt::get_self<Command>(cmd)->Copy());
         }
 
-        // repeat this for each of our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
+        actionMap->_parents.reserve(_parents.size());
         for (const auto& parent : _parents)
         {
             actionMap->_parents.emplace_back(parent->Copy());
@@ -431,7 +428,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             const auto name{ cmd.Name() };
             if (!name.empty())
             {
-                _NestedCommands.Insert(name, cmd);
+                _NestedCommands.emplace(name, cmd);
             }
             return;
         }
@@ -439,7 +436,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Handle iterable commands
         if (cmdImpl->IterateOn() != ExpandCommandType::None)
         {
-            _IterableCommands.Append(cmd);
+            _IterableCommands.emplace_back(cmd);
             return;
         }
 
@@ -582,7 +579,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Handle a collision with NestedCommands
-        _NestedCommands.TryRemove(newName);
+        _NestedCommands.erase(newName);
     }
 
     // Method Description:
@@ -678,6 +675,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
+    // - Determines whether the given key chord is explicitly unbound
+    // Arguments:
+    // - keys: the key chord to check
+    // Return value:
+    // - true if the keychord is explicitly unbound
+    // - false if either the keychord is bound, or not bound at all
+    bool ActionMap::IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const
+    {
+        // We use the fact that the ..Internal call returns nullptr for explicitly unbound
+        // key chords, and nullopt for keychord that are not bound - it allows us to distinguish
+        // between unbound and lack of binding.
+        return _GetActionByKeyChordInternal(keys) == nullptr;
+    }
+
+    // Method Description:
     // - Retrieves the assigned command that can be invoked with the given key chord
     // Arguments:
     // - keys: the key chord of the command to search for
@@ -686,21 +698,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - nullptr if the key chord doesn't exist
     Model::Command ActionMap::GetActionByKeyChord(Control::KeyChord const& keys) const
     {
-        const auto modifiers = keys.Modifiers();
-
-        // The "keys" given to us can contain both a Vkey, as well as a ScanCode.
-        // For instance our UI code fills out a KeyChord with all available information.
-        // But our _KeyMap only contains KeyChords that contain _either_ a Vkey or ScanCode.
-        // Due to this we'll have to call _GetActionByKeyChordInternal twice.
-        if (auto vkey = keys.Vkey())
-        {
-            if (auto command = _GetActionByKeyChordInternal({ modifiers, vkey, 0 }))
-            {
-                return *command;
-            }
-        }
-
-        return _GetActionByKeyChordInternal({ modifiers, 0, keys.ScanCode() }).value_or(nullptr);
+        return _GetActionByKeyChordInternal(keys).value_or(nullptr);
     }
 
     // Method Description:
@@ -712,8 +710,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - the command with the given key chord
     // - nullptr if the key chord is explicitly unbound
     // - nullopt if it was not bound in this layer
-    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(Control::KeyChord const& keys) const
+    std::optional<Model::Command> ActionMap::_GetActionByKeyChordInternal(const ActionMapKeyChord keys) const
     {
+        // KeyChord's constructor ensures that Modifiers() & Vkey() is a valid value at a minimum.
+        // This allows ActionMap to identify KeyChords which should "layer" (overwrite) each other.
+        // For instance win+sc(41) and win+` both specify the same KeyChord on an US keyboard layout
+        // from the perspective of a user. Either of the two should correctly overwrite the other.
+        // As such we need to pretend as if ScanCode doesn't exist.
+        assert(keys.vkey != 0);
+
         // Check the current layer
         if (const auto actionIDPair = _KeyMap.find(keys); actionIDPair != _KeyMap.end())
         {
@@ -724,7 +729,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // the command was not bound in this layer,
         // ask my parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             const auto& inheritedCmd{ parent->_GetActionByKeyChordInternal(keys) };
@@ -774,7 +779,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // Check our parents
-        FAIL_FAST_IF(_parents.size() > 1);
+        assert(_parents.size() <= 1);
         for (const auto& parent : _parents)
         {
             if (const auto& keys{ parent->GetKeyBindingForAction(myAction, myArgs) })

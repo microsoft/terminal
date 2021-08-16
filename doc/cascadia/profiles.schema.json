@@ -154,6 +154,17 @@
           "description": "Sets how the background image aligns to the boundaries of the window when unfocused. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
           "type": "string"
         },
+        "intenseTextStyle": {
+          "default": "all",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -240,6 +251,7 @@
         "identifyWindows",
         "moveFocus",
         "movePane",
+        "swapPane",
         "moveTab",
         "newTab",
         "newWindow",
@@ -494,6 +506,23 @@
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+          }
+        }
+      }
+    ],
+    "required": [ "index" ]
+  },
+  "MovePaneAction": {
+      "description": "Arguments corresponding to a Move Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "movePane" },
+            "index": {
+              "type": "integer",
+              "default": 0,
+              "description": "Which tab to move the pane to, with the first being 0"
             }
           }
         }
@@ -517,13 +546,13 @@
       ],
       "required": [ "direction" ]
     },
-    "MovePaneAction": {
-      "description": "Arguments corresponding to a Move Pane Action",
+    "SwapPaneAction": {
+      "description": "Arguments corresponding to a Swap Pane Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "movePane" },
+            "action": { "type": "string", "pattern": "swapPane" },
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
@@ -984,6 +1013,7 @@
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/MovePaneAction" },
+              { "$ref": "#/definitions/SwapPaneAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
@@ -1195,6 +1225,16 @@
           "minimum": 0,
           "type": [ "integer", "string" ],
           "deprecated": true
+        },
+        "minimizeToTray": {
+          "default": "false",
+          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the system tray through which the user can access their windows.",
+          "type": "boolean"
+        },
+        "alwaysShowTrayIcon": {
+          "default": "false",
+          "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "type": "boolean"
         },
 		"actions": {
 			"description": "Properties are specific to each custom action.",

@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false }
+    _trimBlockSelection{ false },
+    _intenseIsBright{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -173,6 +174,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     til::color newBackgroundColor{ appearance.DefaultBackground() };
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
+    _intenseIsBright = appearance.IntenseIsBright();
 
     for (int i = 0; i < 16; i++)
     {
@@ -594,14 +596,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
 
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    // (This doesn't apply to Ctrl+Alt+Space.)
-    if (isAltOnlyPressed && vkey == VK_SPACE)
-    {
-        return false;
-    }
-
     // By default Windows treats Ctrl+Alt as an alias for AltGr.
     // When the altGrAliasing setting is set to false, this behaviour should be disabled.
     //
@@ -672,13 +666,6 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
 // - false otherwise.
 bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
-    {
-        return false;
-    }
-
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
     {

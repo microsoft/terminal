@@ -1640,6 +1640,30 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
+// - A private API call for updating the active soft font.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                          const SIZE cellSize,
+                                          const size_t centeringHint) noexcept
+{
+    try
+    {
+        auto* pRender = ServiceLocator::LocateGlobals().pRender;
+        if (pRender)
+        {
+            pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Routine Description:
 // - A private API call for forcing the renderer to repaint the screen. If the
 //      input screen buffer is not the active one, then just do nothing. We only
 //      want to redraw the screen buffer that requested the repaint, and

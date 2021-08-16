@@ -193,11 +193,9 @@ function Invoke-OpenConsoleTests()
         return
     }
     $OpenConsolePlatform = $Platform
-    $TestHostAppPath = "$root\bin\$OpenConsolePlatform\$Configuration\TestHostApp"
     if ($Platform -eq 'x86')
     {
         $OpenConsolePlatform = 'Win32'
-        $TestHostAppPath = "$root\$Configuration\TestHostApp"
     }
     $OpenConsolePath = "$env:OpenConsoleroot\bin\$OpenConsolePlatform\$Configuration\OpenConsole.exe"
     $TaefExePath = "$root\packages\Microsoft.Taef.10.60.210621002\build\Binaries\$Platform\te.exe"
@@ -236,14 +234,7 @@ function Invoke-OpenConsoleTests()
     {
         if ($t.type -eq "unit")
         {
-            if ($t.runInHostApp -eq "true")
-            {
-                & $TaefExePath "$TestHostAppPath\$($t.binary)" $TaefArgs
-            }
-            else
-            {
-                & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
-            }
+            & $TaefExePath "$BinDir\$($t.binary)" $TaefArgs
         }
         elseif ($t.type -eq "ft")
         {

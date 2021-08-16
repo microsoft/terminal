@@ -93,7 +93,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Margin="{StaticResource StandardIndentMargin}"
                     Spacing="24">
 

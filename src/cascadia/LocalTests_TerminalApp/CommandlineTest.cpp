@@ -56,7 +56,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(ParseComboCommandlineIntoArgs);
         TEST_METHOD(ParseFocusTabArgs);
         TEST_METHOD(ParseMoveFocusArgs);
-        TEST_METHOD(ParseMovePaneArgs);
+        TEST_METHOD(ParseSwapPaneArgs);
         TEST_METHOD(ParseArgumentsWithParsingTerminators);
         TEST_METHOD(ParseFocusPaneArgs);
 
@@ -1208,14 +1208,9 @@ namespace TerminalAppLocalTests
         }
     }
 
-    void CommandlineTest::ParseMovePaneArgs()
+    void CommandlineTest::ParseSwapPaneArgs()
     {
-        BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:useShortForm", L"{false, true}")
-        END_TEST_METHOD_PROPERTIES()
-
-        INIT_TEST_PROPERTY(bool, useShortForm, L"If true, use `mp` instead of `move-pane`");
-        const wchar_t* subcommand = useShortForm ? L"mp" : L"move-pane";
+        const wchar_t* subcommand = L"swap-pane";
 
         {
             AppCommandlineArgs appArgs{};
@@ -1236,9 +1231,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
             auto actionAndArgs = appArgs._startupActions.at(1);
-            VERIFY_ARE_EQUAL(ShortcutAction::MovePane, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::SwapPane, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
-            auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
+            auto myArgs = actionAndArgs.Args().try_as<SwapPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.Direction());
         }
@@ -1253,9 +1248,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
             auto actionAndArgs = appArgs._startupActions.at(1);
-            VERIFY_ARE_EQUAL(ShortcutAction::MovePane, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::SwapPane, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
-            auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
+            auto myArgs = actionAndArgs.Args().try_as<SwapPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.Direction());
         }
@@ -1270,9 +1265,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
             auto actionAndArgs = appArgs._startupActions.at(1);
-            VERIFY_ARE_EQUAL(ShortcutAction::MovePane, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::SwapPane, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
-            auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
+            auto myArgs = actionAndArgs.Args().try_as<SwapPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(FocusDirection::Up, myArgs.Direction());
         }
@@ -1287,9 +1282,9 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
             auto actionAndArgs = appArgs._startupActions.at(1);
-            VERIFY_ARE_EQUAL(ShortcutAction::MovePane, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::SwapPane, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
-            auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
+            auto myArgs = actionAndArgs.Args().try_as<SwapPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(FocusDirection::Down, myArgs.Direction());
         }
@@ -1311,16 +1306,16 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
             auto actionAndArgs = appArgs._startupActions.at(1);
-            VERIFY_ARE_EQUAL(ShortcutAction::MovePane, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::SwapPane, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
-            auto myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
+            auto myArgs = actionAndArgs.Args().try_as<SwapPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(FocusDirection::Left, myArgs.Direction());
 
             actionAndArgs = appArgs._startupActions.at(2);
-            VERIFY_ARE_EQUAL(ShortcutAction::MovePane, actionAndArgs.Action());
+            VERIFY_ARE_EQUAL(ShortcutAction::SwapPane, actionAndArgs.Action());
             VERIFY_IS_NOT_NULL(actionAndArgs.Args());
-            myArgs = actionAndArgs.Args().try_as<MovePaneArgs>();
+            myArgs = actionAndArgs.Args().try_as<SwapPaneArgs>();
             VERIFY_IS_NOT_NULL(myArgs);
             VERIFY_ARE_EQUAL(FocusDirection::Right, myArgs.Direction());
         }

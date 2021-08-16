@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "TaskbarState.idl";
 
 namespace TerminalApp
 {
@@ -42,8 +43,7 @@ namespace TerminalApp
         void ShowKeyboardServiceWarning();
         String KeyboardServiceDisabledText { get; };
 
-        UInt64 GetLastActiveControlTaskbarState();
-        UInt64 GetLastActiveControlTaskbarProgress();
+        TaskbarState TaskbarState{ get; };
 
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
