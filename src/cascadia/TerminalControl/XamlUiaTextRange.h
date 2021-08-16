@@ -21,13 +21,13 @@ Author(s):
 #pragma once
 
 #include "TermControlAutomationPeer.h"
+#include "XamlUiaTextRange.g.h"
 #include <UIAutomationCore.h>
 #include "../types/TermControlUiaTextRange.hpp"
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    class XamlUiaTextRange :
-        public winrt::implements<XamlUiaTextRange, Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>
+    class XamlUiaTextRange : public XamlUiaTextRangeT<XamlUiaTextRange>
     {
     public:
         XamlUiaTextRange(::ITextRangeProvider* uiaProvider, Windows::UI::Xaml::Automation::Provider::IRawElementProviderSimple parentProvider) :

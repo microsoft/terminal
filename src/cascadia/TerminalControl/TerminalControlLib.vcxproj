@@ -67,7 +67,9 @@
     <ClInclude Include="TSFInputControl.h">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </ClInclude>
-    <ClInclude Include="XamlUiaTextRange.h" />
+    <ClInclude Include="XamlUiaTextRange.h" >
+      <DependentUpon>XamlUiaTextRange.idl</DependentUpon>
+    </ClInclude>
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -109,7 +111,9 @@
     <ClCompile Include="InteractivityAutomationPeer.cpp">
       <DependentUpon>InteractivityAutomationPeer.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="XamlUiaTextRange.cpp" />
+    <ClCompile Include="XamlUiaTextRange.cpp" >
+      <DependentUpon>XamlUiaTextRange.idl</DependentUpon>
+    </ClCompile>
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -136,6 +140,7 @@
     <Midl Include="TSFInputControl.idl">
       <DependentUpon>TSFInputControl.xaml</DependentUpon>
     </Midl>
+    <Midl Include="XamlUiaTextRange.idl" />
   </ItemGroup>
   <!-- ========================= XAML Files ======================== -->
   <ItemGroup>
