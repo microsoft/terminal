@@ -491,7 +491,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <none>
     // Return Value:
-    // - The removed pane.
+    // - The removed pane, if the remove succeeded.
     std::shared_ptr<Pane> TerminalTab::DetachPane()
     {
         // if we only have one pane, remove it entirely
@@ -680,7 +680,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the pane in.
     // Return Value:
-    // - <none>
+    // - true if two panes were swapped.
     bool TerminalTab::SwapPane(const FocusDirection& direction)
     {
         if (direction == FocusDirection::Previous)
