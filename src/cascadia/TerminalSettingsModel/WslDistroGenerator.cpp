@@ -137,7 +137,78 @@ std::vector<Profile> _legacyGenerate()
     return profiles;
 }
 
+const wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
+
+HKEY _openWslRegKey()
+{
+    HKEY hKey{ nullptr };
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyLxss, 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+    {
+        return hKey;
+    }
+    return nullptr;
+}
+
+bool _getWslGuids(std::vector<std::wstring>& guidStrings)
+{
+    static wil::unique_hkey wslRootKey{ _openWslRegKey() };
+
+    if (!wslRootKey)
+    {
+        return false;
+    }
+
+    DWORD dwNumSubKeys = 0;
+    DWORD maxSubKeyLen = 0;
+    if (RegQueryInfoKey(wslRootKey.get(), // hKey,
+                        nullptr, // lpClass,
+                        nullptr, // lpcchClass,
+                        nullptr, // lpReserved,
+                        &dwNumSubKeys, // lpcSubKeys,
+                        &maxSubKeyLen, // lpcbMaxSubKeyLen,
+                        nullptr, // lpcbMaxClassLen,
+                        nullptr, // lpcValues,
+                        nullptr, // lpcbMaxValueNameLen,
+                        nullptr, // lpcbMaxValueLen,
+                        nullptr, // lpcbSecurityDescriptor,
+                        nullptr // lpftLastWriteTime
+                        ) != ERROR_SUCCESS)
+    {
+        return false;
+    }
+
+    // lpcbMaxSubKeyLen does not include trailing space
+    std::unique_ptr<wchar_t[]> buffer = std::make_unique<wchar_t[]>(maxSubKeyLen + 1);
+
+    guidStrings.reserve(dwNumSubKeys);
+    for (DWORD i = 0; i < dwNumSubKeys; i++)
+    {
+        auto cbName = maxSubKeyLen+1;
+        auto result = RegEnumKeyEx(wslRootKey.get(), i, buffer.get(), &cbName, nullptr, nullptr, nullptr, nullptr);
+        if (result == ERROR_SUCCESS)
+        {
+            guidStrings.emplace_back(buffer.get(), cbName);
+        }
+
+    }
+    return true;
+}
+
 std::vector<Profile> WslDistroGenerator::GenerateProfiles()
 {
+    std::vector<std::wstring> guidStrings{};
+    if (_getWslGuids(guidStrings))
+    {
+        for (auto& guid : guidStrings)
+        {
+            // wil::unique_cotaskmem_string guidString;
+            // if (SUCCEEDED(StringFromCLSID(guid, &guidString)))
+            // {
+            //     ids.push_back(guidString.get());
+            // }
+            guid;
+        }
+    }
+
     return _legacyGenerate();
 }
