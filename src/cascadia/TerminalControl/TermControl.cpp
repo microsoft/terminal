@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             [weakThis = get_weak()]() {
                 if (auto control{ weakThis.get() }; !control->_IsClosing())
                 {
-                    control->_MoveCursorLight();
+                    control->_MoveCursorLightHelper();
                 }
             });
 
@@ -1674,7 +1674,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             control->TSFInputControl().TryRedrawCanvas();
             if (CursorLight::GetIsTarget(RootGrid()))
             {
-                _MoveCursorLight();
+                _MoveCursorLightHelper();
             }
         }
     }
@@ -2391,18 +2391,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             CursorLight::SetIsTarget(RootGrid(), false);
             _core.TrackCursorMovement(false);
         }
-        else
+        else if (_MoveCursorLightHelper())
         {
-            _MoveCursorLight();
+            CursorLight::SetIsTarget(RootGrid(), true);
             _core.TrackCursorMovement(true);
         }
     }
 
-    void TermControl::_MoveCursorLight()
+    // Method Description:
+    // - Computes the cursor position and moves the cursor light to it
+    // Return Value:
+    // - True if the cursor light was moved, false otherwise (this will
+    //   happen if the cursor is off-screen)
+    bool TermControl::_MoveCursorLightHelper()
     {
         if (_core.IsCursorOffScreen())
         {
+            // If the cursor is off screen, just switch off the light instead of moving it
             CursorLight::SetIsTarget(RootGrid(), false);
+            return false;
         }
         else
         {
@@ -2419,7 +2426,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             CursorLight().ChangeLocation(gsl::narrow_cast<float>(cursorLocationInDIPs.x()) + wtInDips / 2,
                                          gsl::narrow_cast<float>(cursorLocationInDIPs.y()) + htInDips / 2);
-            CursorLight::SetIsTarget(RootGrid(), true);
+
+            return true;
         }
     }
 
