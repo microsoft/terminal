@@ -1506,4 +1506,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updatePatternLocations->Run();
     }
 
+    void ControlCore::TrackCursorMovement(bool track) noexcept
+    {
+        _terminal->TrackCursorMovement(track);
+    }
 }

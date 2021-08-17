@@ -69,6 +69,8 @@ namespace Microsoft.Terminal.Control
         void SetBackgroundOpacity(Double opacity);
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
+        void TrackCursorMovement(Boolean track);
+
         Boolean HasSelection { get; };
         IVector<String> SelectedText(Boolean trimTrailingWhitespace);
 

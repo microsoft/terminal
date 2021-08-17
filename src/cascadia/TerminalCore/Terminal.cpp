@@ -1053,10 +1053,15 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // Firing the CursorPositionChanged event is very expensive so we try not to do that when
     // the cursor does not need to be redrawn.
-    if (!cursor.IsDeferDrawing())
+    if (!cursor.IsDeferDrawing() || _trackingCursorMovement)
     {
         _NotifyTerminalCursorPositionChanged();
     }
+}
+
+void Terminal::TrackCursorMovement(bool track) noexcept
+{
+    _trackingCursorMovement = track;
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

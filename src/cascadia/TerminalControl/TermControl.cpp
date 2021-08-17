@@ -118,6 +118,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
+        _moveCursorLight = std::make_shared<ThrottledFuncLeading>(
+            dispatcher,
+            ScrollBarUpdateInterval,
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                {
+                    control->_MoveCursorLight();
+                }
+            });
+
         _updateScrollBar = std::make_shared<ThrottledFuncTrailing<ScrollBarUpdate>>(
             dispatcher,
             ScrollBarUpdateInterval,
@@ -1638,6 +1648,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newValue = args.ViewTop();
 
         _updateScrollBar->Run(update);
+        if (CursorLight::GetIsTarget(RootGrid()))
+        {
+            _moveCursorLight->Run();
+        }
     }
 
     // Method Description:
@@ -1658,6 +1672,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto control{ weakThis.get() }; !control->_IsClosing())
         {
             control->TSFInputControl().TryRedrawCanvas();
+            if (CursorLight::GetIsTarget(RootGrid()))
+            {
+                _MoveCursorLight();
+            }
         }
     }
 
@@ -2371,8 +2389,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (CursorLight::GetIsTarget(RootGrid()))
         {
             CursorLight::SetIsTarget(RootGrid(), false);
+            _core.TrackCursorMovement(false);
         }
-        else if (!_core.IsCursorOffScreen())
+        else
+        {
+            _MoveCursorLight();
+            _core.TrackCursorMovement(true);
+        }
+    }
+
+    void TermControl::_MoveCursorLight()
+    {
+        if (_core.IsCursorOffScreen())
+        {
+            CursorLight::SetIsTarget(RootGrid(), false);
+        }
+        else
         {
             // Compute the location of where to place the light
             const auto charSizeInPixels = CharacterDimensions();
