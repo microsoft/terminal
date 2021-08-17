@@ -942,6 +942,31 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             profile->LayerJson(profileJson);
             _allProfiles.Append(*profile);
         }
+        else
+        {
+            // TODO!
+            const auto guid = Profile::GetGuidOrGenerateForJson(profileJson);
+            try
+            {
+                // This might throw
+                if (guid == _globals->DefaultProfile())
+                {
+                    _warnings.Append(SettingsLoadWarnings::DidNotFindDynamicDefaultProfile);
+                }
+            }
+            catch (...)
+            {
+                // if it did, then the DefaultProfile isn't valid. It might be the name of the profile!
+                if (GlobalSettings().HasUnparsedDefaultProfile())
+                {
+                    const auto unparsedDefaultProfile{ GlobalSettings().UnparsedDefaultProfile() };
+                    if (Profile::GetNameForJson(profileJson) == unparsedDefaultProfile)
+                    {
+                        _warnings.Append(SettingsLoadWarnings::DidNotFindDynamicDefaultProfile);
+                    }
+                }
+            }
+        }
     }
 
     if (profile && _userDefaultProfileSettings)

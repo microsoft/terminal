@@ -232,6 +232,18 @@
   <data name="FailedToParseSubCommands" xml:space="preserve">
     <value>&#x2022; Failed to parse all subcommands of nested command.</value>
   </data>
+  <data name="DidNotFindDynamicDefaultProfile" xml:space="preserve">
+    <value>&#x2022; We detected your default profile is a dynamic profile that did not generate. The original source of this profile may no longer exist.
+    </value>
+    <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
+  </data>
+  <data name="DynamicDefaultProfileHrefUrl" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2170601</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
+  <data name="DynamicDefaultProfileHrefLabel" xml:space="preserve">
+    <value>For more info, see this web page.</value>
+  </data>
   <data name="MissingRequiredParameter" xml:space="preserve">
     <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
     <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>

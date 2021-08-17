@@ -516,6 +516,11 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
     return Profile::_GenerateGuidForProfile(name, source);
 }
 
+winrt::hstring Profile::GetNameForJson(const Json::Value& json) noexcept
+{
+    return JsonUtils::GetValueForKey<hstring>(json, NameKey);
+}
+
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:

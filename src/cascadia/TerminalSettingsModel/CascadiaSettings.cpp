@@ -532,6 +532,7 @@ void CascadiaSettings::_ValidateDefaultProfileExists()
 
     if (nullDefaultProfile || defaultProfileNotInProfiles)
     {
+        // TODO! Don't add the warning if we already have a DidNotFindDynamicDefaultProfile warning.
         _warnings.Append(Microsoft::Terminal::Settings::Model::SettingsLoadWarnings::MissingDefaultProfile);
         // Use the first profile as the new default
 

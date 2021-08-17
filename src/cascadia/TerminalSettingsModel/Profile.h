@@ -100,6 +100,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring EvaluatedStartingDirectory() const;
         static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
+        static hstring GetNameForJson(const Json::Value& json) noexcept;
 
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();

@@ -49,6 +49,7 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"InvalidSplitSize"),
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
+    USES_RESOURCE(L"DidNotFindDynamicDefaultProfile"),
 };
 static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
@@ -484,6 +485,22 @@ namespace winrt::TerminalApp::implementation
 
                     legacyGlobalsLinkText.Text(legacyGlobalsLinkLabel);
                     legacyGlobalsLink.NavigateUri(legacyGlobalsLinkUri);
+                    legacyGlobalsLink.Inlines().Append(legacyGlobalsLinkText);
+
+                    warningsTextBlock.Inlines().Append(legacyGlobalsLink);
+                }
+                else if (warning == SettingsLoadWarnings::DidNotFindDynamicDefaultProfile)
+                {
+                    // Add the URL here too
+                    const auto linkLabel = RS_(L"DynamicDefaultProfileHrefLabel");
+                    const auto uriValue = RS_(L"DynamicDefaultProfileHrefUrl");
+
+                    winrt::Windows::UI::Xaml::Documents::Run legacyGlobalsLinkText;
+                    winrt::Windows::UI::Xaml::Documents::Hyperlink legacyGlobalsLink;
+                    winrt::Windows::Foundation::Uri linkUri{ uriValue };
+
+                    legacyGlobalsLinkText.Text(linkLabel);
+                    legacyGlobalsLink.NavigateUri(linkUri);
                     legacyGlobalsLink.Inlines().Append(legacyGlobalsLinkText);
 
                     warningsTextBlock.Inlines().Append(legacyGlobalsLink);
