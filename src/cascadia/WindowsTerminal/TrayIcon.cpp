@@ -44,7 +44,7 @@ void TrayIcon::CreateWindowProcess()
                                      CW_USEDEFAULT,
                                      CW_USEDEFAULT,
                                      CW_USEDEFAULT,
-                                     nullptr,
+                                     _owningHwnd,
                                      nullptr,
                                      wc.hInstance,
                                      nullptr);
