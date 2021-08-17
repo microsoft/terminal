@@ -88,7 +88,7 @@ Some things we considered during this investigation:
     previously needed to manually manifest all its classes in a SxS manifest for
     Unpackaged WinRT to allow the classes to be activated, rather than relying
     on the packaged catalog. It's theoretically possible that doing that would
-    have allowed the broker to be activated acreoss integrity levels.
+    have allowed the broker to be activated across integrity levels.
 
     Even if this approach did end up working, we would still need to be
     responsible for securing the elevated windows so that an unelevated attacker
@@ -107,7 +107,7 @@ This also marks a departure from the current behavior, where everything in an
 elevated window would be elevated by default. The user would need to specify for
 each thing in the elevated window that they'd want to create it elevated. Or the
 Terminal would need to provide some setting like
-`"autoElevateEverythnigInAnElevatedWindow"`.
+`"autoElevateEverythingInAnElevatedWindow"`.
 
 We cannot support mixed elevation when starting in a unelevated window.
 Therefore, it doesn't make a lot of UX sense to support it in the other
@@ -217,7 +217,7 @@ elevated split from and unelevated window. This dialog could be something like
 > B. Forget it and cancel. I'll go fix my config.
 
 I'm certainly leaning towards proposal 2 - always create a new tab. This is how
-it's implemented in [#8514]. In that PR, this seems to work resonably sensibly.
+it's implemented in [#8514]. In that PR, this seems to work sensibly.
 -->
 
 After discussing with the team, we have decided that the most sensible approach
@@ -531,7 +531,7 @@ From an internal mail thread:
 > process.
 
 If this is fixed in the future, we could theoretically re-introduce de-elevating
-a profile. The original spec propsed a `"elevated": bool?` setting, with the
+a profile. The original spec proposed a `"elevated": bool?` setting, with the
 following behaviors:
 * `null` (_default_): Don't modify the elevation level when running this profile
 * `true`: If the current window is unelevated, try to create a new elevated
@@ -539,7 +539,7 @@ following behaviors:
 * `false`: If the current window is elevated, try to create a new unelevated
   window to host this connection.
 
-We could always re-introduce this setting, to superceed `elevate`.
+We could always re-introduce this setting, to supercede `elevate`.
 
 ### Change profile appearance for elevated windows
 
