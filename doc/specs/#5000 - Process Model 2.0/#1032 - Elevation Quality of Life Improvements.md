@@ -1,7 +1,7 @@
 ---
 author: Mike Griese @zadjii-msft
 created on: 2020-11-20
-last updated: 2020-12-15
+last updated: 2021-08-17
 issue id: #1032
 ---
 
@@ -123,8 +123,8 @@ environments.
 
 ### Visible indicator for elevated windows
 
-As requested in #1939, it would be nice if it was easy to visibly identify if a
-Terminal window was elevated or not.
+As requested in [#1939], it would be nice if it was easy to visibly identify if
+a Terminal window was elevated or not.
 
 One easy way of doing this is by adding a simple UAC shield to the left of the
 tabs for elevated windows. This shield could be configured by the theme (see
@@ -136,18 +136,6 @@ tabs for elevated windows. This shield could be configured by the theme (see
 
 ![UAC-shield-in-titlebar](UAC-shield-in-titlebar.png)
 _figure 1: a monochrome UAC shield in the titlebar of the window, courtesy of @mdtauk_
-
-### Change profile appearance for elevated windows
-
-In [#3062] and [#8345], we're planning on allowing users to set different
-appearances for a profile whether it's focused or not. We could do similar thing
-to enable a profile to have a different appearance when elevated. In the
-simplest case, this could allow the user to set `"background": "#ff0000"`. This
-would make a profile always appear to have a red background when in an elevated
-window.
-
-The more specific details of this implementation are left to the spec
-[Configuration object for profiles].
 
 ### Configuring a profile to always run elevated
 
@@ -191,19 +179,18 @@ When we create this new `wt` instance, it will obey the glomming rules as
 specified in [Session Management Spec]. It might end up glomming to another
 existing window at that elevation level, or possibly create its own window.
 
-Similarly, for a new elevated **window**, we can make sure to pass the `-s -1`
+Similarly, for a new elevated **window**, we can make sure to pass the `-w new`
 arguments to `wt`. These parameters indicate that we definitely want this
 command to run in a new window, regardless of the current glomming settings.
 
 ```
-wt -s -1 new-tab [args...]
+wt -w new new-tab [args...]
 ```
 
 However, creating a new **pane** is a little trickier. Invoking the `wt
 split-pane [args...]` is straightforward enough.
 
-⚠ **TODO**: For discussion:
-
+<!-- Discussion notes follow:
 If the current window doesn't have the same elevation level as the
 requested profile, do we always want to just create a new split? If the command
 ends up glomming to an existing window, does that even make sense? That invoking
@@ -225,12 +212,18 @@ and splits, because there's no way to invoke another existing window.
 A third proposal is to pop a warning dialog at the user when they try to open an
 elevated split from and unelevated window. This dialog could be something like
 
-> What you requested couldn't be completed as non-sense do you want to:
+> What you requested couldn't be completed. Do you want to:
 > A. Make me a new tab instead.
 > B. Forget it and cancel. I'll go fix my config.
 
 I'm certainly leaning towards proposal 2 - always create a new tab. This is how
 it's implemented in [#8514]. In that PR, this seems to work resonably sensibly.
+-->
+
+After discussing with the team, we have decided that the most sensible approach
+for handling a cross-elevation `split-pane` is to just create a new tab in the
+elevated window. The user can always re-attach the pane as a split with the
+`move-pane` command once the new pane in the elevated window.
 
 #### Configure the Terminal to _always_ run elevated
 
@@ -293,7 +286,7 @@ So we could use something like
 ShellExecute(nullptr,
              L"runas",
              L"wt.exe",
-             L"-s -1 new-tab [args...]",
+             L"-w new new-tab [args...]",
              nullptr,
              SW_SHOWNORMAL);
 ```
@@ -331,8 +324,6 @@ prevent any sort of unexpected escalation-of-privilege.
 
 <hr>
 
-⚠ **TODO**: For discussion:
-
 One security concern is the fact that the `settings.json` file is currently a
 totally unsecured file. It's completely writable by any medium-IL process. That
 means it's totally possible for a malicious program to change the file. The
@@ -345,39 +336,58 @@ If all we expose to the user is the name of the profile in the UAC dialog, then
 there's no way for the user to be sure that the program that's about to be
 launched is actually what they expect.
 
-I propose that we _always_ pass the evaluated `commandline` as a part of the
-call to `ShellExecute`. the arguments that are passed to `ShellExecute` are
-visible to the user, though they need to click the "More Details" dropdown to
-reveal them.
+To help mitigate this, we should _always_ pass the evaluated `commandline` as a
+part of the call to `ShellExecute`. the arguments that are passed to
+`ShellExecute` are visible to the user, though they need to click the "More
+Details" dropdown to reveal them.
 
-A second option: internal to the Terminal, we display a dialog before creating
-the new elevated terminal window. In that dialog, we'll display the commandline
-that will be executed, so the user can very easily confirm the commandline.
-We'll still need to pass the full commandline to `ShellExecute`, even after
-displaying this dialog. This is because it's possible that an attacker migh
-inject itself into the profile between the user confirming the dialog and the
-new Terminal window launching. By explicitly providing the commandline, we can
-avoid this injection.
+We will need to mitigate this vulnerability regardless of adding support for the
+auto-elevation of individual terminal tabs/panes. If a user is launching the
+Terminal elevated (i.e. from the Win+X menu in Windows 11), then it's possible
+for a malicious program to overwrite the `commandline` of their default profile.
+The user may now unknowingly invoke this malicious program while thinking they
+are simply launching the Terminal.
 
-The third variant is to display the warning dialog in the _elevated_ Terminal,
-before we spawn the new connection. This is instead of placing the dialog in the
-unelevated window. This style might allow us to prompt before all elevated
-commandline launches in an elevated window.
+To deal with this more broadly, we will display a dialog within the Terminal
+window before creating **any** elevated terminal instance. In that dialog, we'll
+display the commandline that will be executed, so the user can very easily
+confirm the commandline.
 
-The dialog options will certainly be annoying to userse who don't want to be
+This will need to happen for all elevated terminal instances. For an elevated
+Windows Terminal window, this means _all_ connections made by the Terminal.
+Every time the user opens a new profile or a new commandline in a pane, we'll
+need to prompt them first to confirm the commandline. This dialog within the
+elevated window will also prevent an attacker from editing the `settings.json`
+file while the user already has an elevated Terminal window open and hijacking a
+profile.
+
+The dialog options will certainly be annoying to users who don't want to be
 taken out of their flow to confirm the commandline that they wish to launch.
-This is seen as an acceptable UX degradation in the name of application trust.
-We don't want to provide an avenue that's too easy to abuse.
+There's precedent for a similar warning being implemented by VSCode, with their
+[Workspace Trust] feature. They too faced a similar backlash when the feature
+first shipped. However, in light of recent global cybersecurity attacks, this is
+seen as an acceptable UX degradation in the name of application trust. We don't
+want to provide an avenue that's too easy to abuse.
 
-<hr>
+When the user confirms the commandline of this profile as something safe to run,
+we'll add it to an elevated-only version of `state.json`. (see [#7972] for more
+details). This elevated version of the file will only be accessible by the
+elevated Terminal, so an attacker cannot hijack the contents of the file. This
+will help mitigate the UX discomfort caused by prompting on every commandline
+launched. This should mean that the discomfort is only
 
-Related to the above discussion: because the `settings.json` file is writable by
-any medium IL process, does that mean that a `malicious.exe` could _always_ just
-inject itself into the file for use by already-elevated windows? I suppose
-there's nothing today preventing an attacker from editing the file while the
-user already has an elevated Terminal window open, and hijacking a profile.
-Should we be doing something to secure access to that file while an elevated
-window is open?
+The dialog for confirming these commandlines should have a link to the docs for
+"why do I need to do this?". Transparency in the face of this dialog should
+mitigate some dissatisfaction.
+
+The dialog will _not_ appear if the user does not have a split token - if the
+user's PC does not have UAC enabled, then they're _already_ running as an
+Administrator. Everything they do is elevated, so they shouldn't be prompted in
+this way.
+
+The Settings UI should also expose a way of viewing and removing these cached
+entries. This page should only be populated in the elevated version of the
+Terminal.
 
 </td>
 </tr>
@@ -449,6 +459,18 @@ auto-elevate the profile. In this scenario, however, we can't do that. The
 Terminal is being invoked on behalf of the client app launching, instead of the
 Terminal invoking the client application.
 
+**2021-08-17 edit**: Now that "defterm" has shipped, we're a little more aware
+of some of the limitations with packaged COM and elevation boundaries. Defterm
+cannot be used with elevated processes _at all_ currently (see [#10276]). When
+an elevated commandline application is launched, it will always just appear in
+`conhost.exe`. Furthermore, An unelevated peasant can't communicate with an
+elevated monarch so we can't toss the connection to the elevated monarch and
+have them handle it.
+
+The simplest solution here is to just _always_ ignore the `elevate` property for
+incoming defterm connections. This is not an ideal solution, and one that we're
+willing to revisit if/when [#10276] is ever fixed.
+
 ### Elevation on OneCore SKUs
 
 This spec proposes using `ShellExecute` to elevate the Terminal window. However,
@@ -482,15 +504,10 @@ does become available on those SKUs, we can use these proposals as mitigations.
   became clear that having separate "elevated" appearances defined for
   `profile`s was overly complicated. This is left as a consideration for a
   possible future extension that could handle this scenario in a cleaner way.
-* (Refer to the "Security" discussion in [Potential Issues](#potential-issues)).
-  In [#7972], we designed a `state.json` file to hold "application state".
-  Perhaps we could add an `elevatedState.json`, that's only read/write-able by
-  an elevated process. This might allow us to cache commandlines that the user
-  approves. This might help mitigate the need to prompt the user on every
-  commandline launch. This would probably only work with dialog option 3, where
-  the elevated window is responsible for prompting the user before starting the
-  elevated connection.
-
+* Similarly, we're going to leave [#3637] "different profiles when elevated vs
+  unelevated" for the future. This also plays into the design of "configure the
+  new tab dropdown" ([#1571]), and reconciling those two designs is out-of-scope
+  for this particular release.
 
 ### De-elevating a Terminal
 
@@ -524,22 +541,66 @@ following behaviors:
 
 We could always re-introduce this setting, to superceed `elevate`.
 
+### Change profile appearance for elevated windows
+
+In [#3062] and [#8345], we're planning on allowing users to set different
+appearances for a profile whether it's focused or not. We could do similar thing
+to enable a profile to have a different appearance when elevated. In the
+simplest case, this could allow the user to set `"background": "#ff0000"`. This
+would make a profile always appear to have a red background when in an elevated
+window.
+
+The more specific details of this implementation are left to the spec
+[Configuration object for profiles].
+
+In discussion of that spec, we decided that it would be far too complicated to
+try and overload the `unfocusedAppearance` machinery for differentiating between
+elevated and unelevated versions of the same profile. Already, that would lead
+to 4 states: [`appearance`, `unfocusedAppearance`, `elevatedAppearance`,
+`elevatedUnfocusedAppearance`]. This would lead to a combinatorial explosion if
+we decided in the future that there should also be other states for a profile.
+
+This particular QoL improvement is currently being left as a future
+consideration, should someone come up with a clever way of defining
+elevated-specific settings.
+
+<!--
+Brainstorming notes for future readers:
+
+You could have a profile that layers on an existing profile, with elevated-specific settings:
+
+{
+  "name": "foo",
+  "background": "#0000ff",
+  "commandline": "cmd.exe /k echo I am unelevated"
+},
+{
+  "inheritsFrom": "foo",
+  "background": "#ff0000",
+  "elevate": true,
+  "commandline": "cmd.exe /k echo I am ELEVATED"
+}
+-->
+
 <!-- Footnotes -->
 
-[#1939]: https://github.com/microsoft/terminal/issues/1939
-[#8311]: https://github.com/microsoft/terminal/issues/8311
-[#3062]: https://github.com/microsoft/terminal/issues/3062
-[#8345]: https://github.com/microsoft/terminal/issues/8345
-[#3327]: https://github.com/microsoft/terminal/issues/3327
-[#5000]: https://github.com/microsoft/terminal/issues/5000
-[#4472]: https://github.com/microsoft/terminal/issues/4472
-[#1032]: https://github.com/microsoft/terminal/issues/1032
 [#632]: https://github.com/microsoft/terminal/issues/632
+[#1032]: https://github.com/microsoft/terminal/issues/1032
+[#1571]: https://github.com/microsoft/terminal/issues/1571
+[#1939]: https://github.com/microsoft/terminal/issues/1939
+[#3062]: https://github.com/microsoft/terminal/issues/3062
+[#3327]: https://github.com/microsoft/terminal/issues/3327
+[#3637]: https://github.com/microsoft/terminal/issues/3637
+[#4472]: https://github.com/microsoft/terminal/issues/4472
+[#5000]: https://github.com/microsoft/terminal/issues/5000
+[#7972]: https://github.com/microsoft/terminal/pull/7972
+[#8311]: https://github.com/microsoft/terminal/issues/8311
+[#8345]: https://github.com/microsoft/terminal/issues/8345
 [#8514]: https://github.com/microsoft/terminal/issues/8514
-[#7972]: https://github.com/microsoft/terminal/pulls/7972
+[#10276]: https://github.com/microsoft/terminal/issues/10276
 
 [Process Model 2.0 Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%235000%20-%20Process%20Model%202.0.md
 [Configuration object for profiles]: https://github.com/microsoft/terminal/blob/main/doc/specs/Configuration%20object%20for%20profiles.md
 [Session Management Spec]: https://github.com/microsoft/terminal/blob/main/doc/specs/%234472%20-%20Windows%20Terminal%20Session%20Management.md
 [The Old New Thing: How can I launch an unelevated process from my elevated process, redux]: https://devblogs.microsoft.com/oldnewthing/20190425-00/?p=102443
-
+[Workspace Trust]: https://code.visualstudio.com/docs/editor/workspace-trust
