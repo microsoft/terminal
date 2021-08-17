@@ -35,7 +35,7 @@ std::wstring_view WslDistroGenerator::GetNamespace()
 // - <none>
 // Return Value:
 // - a vector with all distros for all the installed WSL distros
-std::vector<Profile> WslDistroGenerator::GenerateProfiles()
+std::vector<Profile> _legacyGenerate()
 {
     std::vector<Profile> profiles;
 
@@ -135,4 +135,9 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
     }
 
     return profiles;
+}
+
+std::vector<Profile> WslDistroGenerator::GenerateProfiles()
+{
+    return _legacyGenerate();
 }
