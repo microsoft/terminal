@@ -251,7 +251,7 @@ bool _getWslGuids(const wil::unique_hkey& wslRootKey,
     guidStrings.reserve(dwNumSubKeys);
     for (DWORD i = 0; i < dwNumSubKeys; i++)
     {
-        const auto cbName = maxSubKeyLen + 1;
+        auto cbName = maxSubKeyLen + 1;
         const auto result = RegEnumKeyEx(wslRootKey.get(), i, buffer.get(), &cbName, nullptr, nullptr, nullptr, nullptr);
         if (result == ERROR_SUCCESS)
         {
