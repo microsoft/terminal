@@ -12,6 +12,9 @@
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal;
 
+extern "C" IMAGE_DOS_HEADER __ImageBase;
+#define TRAY_ICON_HOSTING_WINDOW_CLASS L"TRAY_ICON_HOSTING_WINDOW_CLASS"
+
 TrayIcon::TrayIcon(const HWND owningHwnd) :
     _owningHwnd{ owningHwnd }
 {
@@ -21,6 +24,95 @@ TrayIcon::TrayIcon(const HWND owningHwnd) :
 TrayIcon::~TrayIcon()
 {
     RemoveIconFromTray();
+}
+
+void TrayIcon::CreateWindowProcess()
+{
+    WNDCLASSW wc{};
+    wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
+    wc.lpszClassName = TRAY_ICON_HOSTING_WINDOW_CLASS;
+    wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = &TrayIcon::_WindowProc;
+    wc.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
+    RegisterClass(&wc);
+
+    _trayIconWndProc = CreateWindowW(wc.lpszClassName,
+                                     TRAY_ICON_HOSTING_WINDOW_CLASS,
+                                     WS_OVERLAPPEDWINDOW | WS_POPUP,
+                                     CW_USEDEFAULT,
+                                     CW_USEDEFAULT,
+                                     CW_USEDEFAULT,
+                                     CW_USEDEFAULT,
+                                     nullptr,
+                                     nullptr,
+                                     wc.hInstance,
+                                     nullptr);
+
+    WINRT_VERIFY(_trayIconWndProc);
+}
+
+LRESULT CALLBACK TrayIcon::_WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept
+{
+    if (message == WM_NCCREATE)
+    {
+        auto cs = reinterpret_cast<CREATESTRUCT*>(lparam);
+        TrayIcon* that = reinterpret_cast<TrayIcon*>(cs);
+        WINRT_ASSERT(that);
+
+        SetWindowLongPtr(window, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(that));
+        return DefWindowProc(window, WM_NCCREATE, wparam, lparam);
+    }
+    else if (TrayIcon* that = reinterpret_cast<TrayIcon*>(GetWindowLongPtr(window, GWLP_USERDATA)))
+    {
+        return that->MessageHandler(window, message, wparam, lparam);
+    }
+
+    return DefWindowProc(window, message, wparam, lparam);
+}
+
+LRESULT TrayIcon::MessageHandler(HWND window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+{
+    switch (message)
+    {
+    case CM_NOTIFY_FROM_TRAY:
+    {
+        switch (LOWORD(lparam))
+        {
+        case NIN_SELECT:
+        case NIN_KEYSELECT:
+        {
+            TrayIconPressed();
+            return 0;
+        }
+        case WM_CONTEXTMENU:
+        {
+            const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
+            //_NotifyShowTrayContextMenuHandlers(eventPoint);
+            //ShowTrayContextMenu(eventPoint);
+            return 0;
+        }
+        }
+        break;
+    }
+    case WM_MENUCOMMAND:
+    {
+        //_NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
+        return 0;
+    }
+        //default:
+        // We'll want to receive this message when explorer.exe restarts
+        // so that we can re-add our icon to the tray.
+        // This unfortunately isn't a switch case because we register the
+        // message at runtime.
+        //if (message == WM_TASKBARCREATED)
+        //{
+        //    //_NotifyReAddTrayIconHandlers();
+        //    return 0;
+        //}
+    }
+
+    return DefWindowProc(window, message, wparam, lparam);
 }
 
 // Method Description:
@@ -33,11 +125,16 @@ TrayIcon::~TrayIcon()
 // - <none>
 void TrayIcon::CreateTrayIcon()
 {
+    if (!_trayIconWndProc)
+    {
+        CreateWindowProcess();
+    }
+
     NOTIFYICONDATA nid{};
     nid.cbSize = sizeof(NOTIFYICONDATA);
 
     // This HWND will receive the callbacks sent by the tray icon.
-    nid.hWnd = _owningHwnd;
+    nid.hWnd = _trayIconWndProc;
 
     // App-defined identifier of the icon. The HWND and ID are used
     // to identify which icon to operate on when calling Shell_NotifyIcon.

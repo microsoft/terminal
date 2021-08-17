@@ -19,6 +19,10 @@ public:
     TrayIcon(const HWND owningHwnd);
     ~TrayIcon();
 
+    void CreateWindowProcess();
+    static LRESULT CALLBACK _WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
+    LRESULT MessageHandler(HWND window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
+
     void CreateTrayIcon();
     void RemoveIconFromTray();
     void ReAddTrayIcon();
@@ -32,6 +36,7 @@ public:
 private:
     HMENU _CreateTrayContextMenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
 
+    HWND _trayIconWndProc;
     HWND _owningHwnd;
     NOTIFYICONDATA _trayIconData;
 };
