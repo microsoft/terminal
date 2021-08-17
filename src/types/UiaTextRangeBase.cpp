@@ -938,6 +938,10 @@ try
     const auto maxLengthOpt = (maxLength == -1) ?
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
     const auto text = _getTextValue(maxLengthOpt);
 
     *pRetVal = SysAllocString(text.c_str());
@@ -958,11 +962,6 @@ CATCH_RETURN();
 #pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
 std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
-
     std::wstring textData{};
     if (!IsDegenerate())
     {
