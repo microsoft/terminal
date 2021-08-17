@@ -137,7 +137,31 @@ std::vector<Profile> _legacyGenerate()
     return profiles;
 }
 
+std::vector<Profile> _namesToProfiles(const std::vector<std::wstring>& names)
+{
+    std::vector<Profile> profiles;
+    for (const auto& distName : names)
+    {
+        if (distName.substr(0, std::min(distName.size(), DockerDistributionPrefix.size())) == DockerDistributionPrefix)
+        {
+            // Docker for Windows creates some utility distributions to handle Docker commands.
+            // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
+            continue;
+        }
+
+        auto WSLDistro{ CreateDefaultProfile(distName) };
+
+        WSLDistro.Commandline(L"wsl.exe -d " + distName);
+        WSLDistro.DefaultAppearance().ColorSchemeName(L"Campbell");
+        WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+        profiles.emplace_back(WSLDistro);
+    }
+    return profiles;
+}
+
 const wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
+const wchar_t RegKeyDistroName[] = L"DistributionName";
 
 HKEY _openWslRegKey()
 {
@@ -149,10 +173,19 @@ HKEY _openWslRegKey()
     return nullptr;
 }
 
-bool _getWslGuids(std::vector<std::wstring>& guidStrings)
+HKEY _openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid)
 {
-    static wil::unique_hkey wslRootKey{ _openWslRegKey() };
+    HKEY hKey{ nullptr };
+    if (RegOpenKeyEx(wslRootKey.get(), guid.c_str(), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+    {
+        return hKey;
+    }
+    return nullptr;
+}
 
+bool _getWslGuids(const wil::unique_hkey& wslRootKey,
+                  std::vector<std::wstring>& guidStrings)
+{
     if (!wslRootKey)
     {
         return false;
@@ -183,30 +216,69 @@ bool _getWslGuids(std::vector<std::wstring>& guidStrings)
     guidStrings.reserve(dwNumSubKeys);
     for (DWORD i = 0; i < dwNumSubKeys; i++)
     {
-        auto cbName = maxSubKeyLen+1;
+        auto cbName = maxSubKeyLen + 1;
         auto result = RegEnumKeyEx(wslRootKey.get(), i, buffer.get(), &cbName, nullptr, nullptr, nullptr, nullptr);
         if (result == ERROR_SUCCESS)
         {
             guidStrings.emplace_back(buffer.get(), cbName);
         }
+    }
+    return true;
+}
 
+bool _getWslNames(const wil::unique_hkey& wslRootKey,
+                  std::vector<std::wstring>& guidStrings,
+                  std::vector<std::wstring>& names)
+{
+    if (!wslRootKey)
+    {
+        return false;
+    }
+    for (const auto& guid : guidStrings)
+    {
+        wil::unique_hkey distroKey{ _openDistroKey(wslRootKey, guid) };
+        if (!distroKey)
+        {
+            // return false;
+            continue;
+        }
+
+        DWORD bufferCapacity = 0;
+        auto result = RegQueryValueEx(distroKey.get(), RegKeyDistroName, 0, nullptr, nullptr, &bufferCapacity);
+        // request regkey binary buffer capacity only
+        if (result != ERROR_SUCCESS)
+        {
+            // return false;
+            continue;
+        }
+        std::unique_ptr<wchar_t[]> buffer = std::make_unique<wchar_t[]>(bufferCapacity);
+        // request regkey binary content
+        result = RegQueryValueEx(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(buffer.get()), &bufferCapacity);
+        if (result != ERROR_SUCCESS)
+        {
+            // return false;
+            continue;
+        }
+
+        names.emplace_back(buffer.get());
     }
     return true;
 }
 
 std::vector<Profile> WslDistroGenerator::GenerateProfiles()
 {
-    std::vector<std::wstring> guidStrings{};
-    if (_getWslGuids(guidStrings))
+    static wil::unique_hkey wslRootKey{ _openWslRegKey() };
+    if (wslRootKey)
     {
-        for (auto& guid : guidStrings)
+        std::vector<std::wstring> guidStrings{};
+        if (_getWslGuids(wslRootKey, guidStrings))
         {
-            // wil::unique_cotaskmem_string guidString;
-            // if (SUCCEEDED(StringFromCLSID(guid, &guidString)))
-            // {
-            //     ids.push_back(guidString.get());
-            // }
-            guid;
+            std::vector<std::wstring> names{};
+            names.reserve(guidStrings.size());
+            if (_getWslNames(wslRootKey, guidStrings, names))
+            {
+                return _namesToProfiles(names);
+            }
         }
     }
 
