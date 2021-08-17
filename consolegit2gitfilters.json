@@ -19,10 +19,13 @@
     "/.github/",
     "/samples/",
     "/res/terminal/",
+    "/res/fonts/",
     "/doc/specs/",
     "/doc/cascadia/",
     "/doc/user-docs/",
     "/src/tools/MonarchPeasantSample/",
+    "/scratch/",
+    "Scratch.sln",
   ],
   "SuffixFilters": [
     ".dbb",
@@ -38,6 +41,7 @@
     ".wrn",
     ".rec",
     ".err",
+    "XamlStyler.json",
     ".xlsx"
   ]
 }

@@ -20,7 +20,7 @@ Author(s):
 
 #include "SearchBoxControl.g.h"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct SearchBoxControl : SearchBoxControlT<SearchBoxControl>
     {
@@ -37,7 +37,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
         void CloseClick(winrt::Windows::Foundation::IInspectable const& /*sender*/, winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
         WINRT_CALLBACK(Search, SearchHandler);
-        TYPED_EVENT(Closed, TerminalControl::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
+        TYPED_EVENT(Closed, Control::SearchBoxControl, Windows::UI::Xaml::RoutedEventArgs);
 
     private:
         std::unordered_set<winrt::Windows::Foundation::IInspectable> _focusableElements;
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::TerminalControl::implementation
     };
 }
 
-namespace winrt::Microsoft::Terminal::TerminalControl::factory_implementation
+namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
     struct SearchBoxControl : SearchBoxControlT<SearchBoxControl, implementation::SearchBoxControl>
     {

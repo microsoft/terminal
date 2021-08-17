@@ -20,14 +20,15 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CreateDefaultProfile(const 
     const winrt::guid profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
                                                                            gsl::as_bytes(gsl::make_span(name))) };
 
-    auto newProfile = winrt::make<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>(profileGuid);
-    newProfile.Name(name);
+    auto newProfile = winrt::make_self<winrt::Microsoft::Terminal::Settings::Model::implementation::Profile>(profileGuid);
+    newProfile->Name(winrt::hstring{ name });
 
     std::wstring iconPath{ PACKAGED_PROFILE_ICON_PATH };
     iconPath.append(Microsoft::Console::Utils::GuidToString(profileGuid));
     iconPath.append(PACKAGED_PROFILE_ICON_EXTENSION);
 
-    newProfile.Icon(iconPath);
+    newProfile->Icon(winrt::hstring{ iconPath });
+    newProfile->Origin(winrt::Microsoft::Terminal::Settings::Model::OriginTag::Generated);
 
-    return newProfile;
+    return *newProfile;
 }

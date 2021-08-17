@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean Equals(IActionArgs other);
         String GenerateName();
         IActionArgs Copy();
+        UInt64 Hash();
     };
 
     interface IActionEventArgs
@@ -32,7 +33,9 @@ namespace Microsoft.Terminal.Settings.Model
         Right,
         Up,
         Down,
-        Previous
+        Previous,
+        PreviousInOrder,
+        NextInOrder
     };
 
     enum SplitState
@@ -64,10 +67,38 @@ namespace Microsoft.Terminal.Settings.Model
         Backward
     };
 
+    enum FindMatchDirection
+    {
+        None = 0,
+        Next,
+        Previous
+    };
+
     enum CommandPaletteLaunchMode
     {
         Action = 0,
         CommandLine
+    };
+
+    enum TabSwitcherMode
+    {
+        MostRecentlyUsed,
+        InOrder,
+        Disabled,
+    };
+
+    enum DesktopBehavior
+    {
+        Any,
+        ToCurrent,
+        OnCurrent,
+    };
+
+    enum MonitorBehavior
+    {
+        Any,
+        ToCurrent,
+        ToMouse,
     };
 
     [default_interface] runtimeclass NewTerminalArgs {
@@ -84,8 +115,14 @@ namespace Microsoft.Terminal.Settings.Model
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
 
+        Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
+
+        String ColorScheme;
+
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
+        String ToCommandline();
+        UInt64 Hash();
     };
 
     [default_interface] runtimeclass ActionEventArgs : IActionEventArgs
@@ -97,13 +134,19 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CopyTextArgs : IActionArgs
     {
         Boolean SingleLine { get; };
-        Windows.Foundation.IReference<Microsoft.Terminal.TerminalControl.CopyFormat> CopyFormatting { get; };
+        Windows.Foundation.IReference<Microsoft.Terminal.Control.CopyFormat> CopyFormatting { get; };
     };
 
     [default_interface] runtimeclass NewTabArgs : IActionArgs
     {
         NewTabArgs(NewTerminalArgs terminalArgs);
         NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    {
+        MovePaneArgs(UInt32 tabIndex);
+        UInt32 TabIndex;
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
@@ -123,6 +166,12 @@ namespace Microsoft.Terminal.Settings.Model
         FocusDirection FocusDirection { get; };
     };
 
+    [default_interface] runtimeclass SwapPaneArgs : IActionArgs
+    {
+        SwapPaneArgs(FocusDirection direction);
+        FocusDirection Direction { get; };
+    };
+
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
         Int32 Delta { get; };
@@ -135,6 +184,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
+        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
@@ -153,6 +203,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
     {
+        SetColorSchemeArgs(String name);
         String SchemeName { get; };
     };
 
@@ -184,6 +235,12 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
+    [default_interface] runtimeclass CloseTabArgs : IActionArgs
+    {
+        CloseTabArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
     [default_interface] runtimeclass MoveTabArgs : IActionArgs
     {
         MoveTabArgs(MoveTabDirection direction);
@@ -203,5 +260,47 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass ToggleCommandPaletteArgs : IActionArgs
     {
         CommandPaletteLaunchMode LaunchMode { get; };
+    };
+
+    [default_interface] runtimeclass FindMatchArgs : IActionArgs
+    {
+        FindMatchArgs(FindMatchDirection direction);
+        FindMatchDirection Direction { get; };
+    };
+
+    [default_interface] runtimeclass NewWindowArgs : IActionArgs
+    {
+        NewWindowArgs(NewTerminalArgs terminalArgs);
+        NewTerminalArgs TerminalArgs { get; };
+    };
+
+    [default_interface] runtimeclass PrevTabArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass NextTabArgs : IActionArgs
+    {
+        Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
+    };
+
+    [default_interface] runtimeclass RenameWindowArgs : IActionArgs
+    {
+        String Name { get; };
+    };
+
+    [default_interface] runtimeclass GlobalSummonArgs : IActionArgs
+    {
+        String Name { get; };
+        DesktopBehavior Desktop { get; };
+        MonitorBehavior Monitor { get; };
+        Boolean ToggleVisibility { get; };
+        UInt32 DropdownDuration { get; };
+    };
+
+    [default_interface] runtimeclass FocusPaneArgs : IActionArgs
+    {
+        FocusPaneArgs(UInt32 Id);
+        UInt32 Id { get; };
     };
 }

@@ -81,13 +81,12 @@ HRESULT GdiEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 // Routine Description:
 // - Notifies us that the console has changed the position of the cursor.
 // Arguments:
-// - pcoordCursor - the new position of the cursor
+// - psrRegion - the region covered by the cursor
 // Return Value:
 // - S_OK, else an appropriate HRESULT for failing to allocate or write.
-HRESULT GdiEngine::InvalidateCursor(const COORD* const pcoordCursor) noexcept
+HRESULT GdiEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 {
-    SMALL_RECT sr = Viewport::FromCoord(*pcoordCursor).ToExclusive();
-    return this->Invalidate(&sr);
+    return this->Invalidate(psrRegion);
 }
 
 // Routine Description:

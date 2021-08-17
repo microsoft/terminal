@@ -14,7 +14,7 @@ namespace winrt::TerminalApp::implementation
         CommandLinePaletteItem() = default;
         CommandLinePaletteItem(winrt::hstring const& commandLine);
 
-        GETSET_PROPERTY(winrt::hstring, CommandLine);
+        WINRT_PROPERTY(winrt::hstring, CommandLine);
     };
 }
 

@@ -6,7 +6,6 @@
     <ProjectName>Microsoft.Terminal.Remoting.Lib</ProjectName>
     <RootNamespace>Microsoft.Terminal.Remoting</RootNamespace>
     <TargetName>Microsoft.Terminal.Remoting.Lib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
@@ -18,6 +17,24 @@
   <ItemGroup>
     <ClInclude Include="Monarch.h">
       <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FindTargetWindowArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ProposeCommandlineResult.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SummonWindowSelectionArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="SummonWindowBehavior.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="RenameRequestArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="WindowActivatedArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="MonarchFactory.h" />
@@ -36,6 +53,24 @@
     <ClCompile Include="Monarch.cpp">
       <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="FindTargetWindowArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ProposeCommandlineResult.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SummonWindowSelectionArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="SummonWindowBehavior.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="RenameRequestArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="WindowActivatedArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -49,6 +84,7 @@
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="init.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>

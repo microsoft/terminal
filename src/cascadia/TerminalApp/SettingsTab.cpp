@@ -10,7 +10,7 @@
 using namespace winrt;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Core;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Editor;
 using namespace winrt::Windows::System;
@@ -62,7 +62,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void SettingsTab::_MakeTabViewItem()
     {
-        TabViewItem(::winrt::MUX::Controls::TabViewItem{});
+        TabBase::_MakeTabViewItem();
+
         Title(RS_(L"SettingsTab"));
         TabViewItem().Header(winrt::box_value(Title()));
     }

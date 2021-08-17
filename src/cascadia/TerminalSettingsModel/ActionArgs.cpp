@@ -12,6 +12,8 @@
 #include "SwitchToTabArgs.g.cpp"
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
+#include "MovePaneArgs.g.cpp"
+#include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
@@ -22,12 +24,20 @@
 #include "ExecuteCommandlineArgs.g.cpp"
 #include "CloseOtherTabsArgs.g.cpp"
 #include "CloseTabsAfterArgs.g.cpp"
+#include "CloseTabArgs.g.cpp"
 #include "MoveTabArgs.g.cpp"
+#include "FindMatchArgs.g.cpp"
 #include "ToggleCommandPaletteArgs.g.cpp"
+#include "NewWindowArgs.g.cpp"
+#include "PrevTabArgs.g.cpp"
+#include "NextTabArgs.g.cpp"
+#include "RenameWindowArgs.g.cpp"
+#include "GlobalSummonArgs.g.cpp"
+#include "FocusPaneArgs.g.cpp"
 
 #include <LibraryResources.h>
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -35,34 +45,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         std::wstringstream ss;
 
-        if (!_Profile.empty())
+        if (!Profile().empty())
         {
-            ss << fmt::format(L"profile: {}, ", _Profile);
+            ss << fmt::format(L"profile: {}, ", Profile());
         }
-        else if (_ProfileIndex)
+        else if (ProfileIndex())
         {
-            ss << fmt::format(L"profile index: {}, ", _ProfileIndex.Value());
-        }
-
-        if (!_Commandline.empty())
-        {
-            ss << fmt::format(L"commandline: {}, ", _Commandline);
+            ss << fmt::format(L"profile index: {}, ", ProfileIndex().Value());
         }
 
-        if (!_StartingDirectory.empty())
+        if (!Commandline().empty())
         {
-            ss << fmt::format(L"directory: {}, ", _StartingDirectory);
+            ss << fmt::format(L"commandline: {}, ", Commandline());
         }
 
-        if (!_TabTitle.empty())
+        if (!StartingDirectory().empty())
         {
-            ss << fmt::format(L"title: {}, ", _TabTitle);
+            ss << fmt::format(L"directory: {}, ", StartingDirectory());
         }
 
-        if (_TabColor)
+        if (!TabTitle().empty())
         {
-            const til::color tabColor{ _TabColor.Value() };
+            ss << fmt::format(L"title: {}, ", TabTitle());
+        }
+
+        if (TabColor())
+        {
+            const til::color tabColor{ TabColor().Value() };
             ss << fmt::format(L"tabColor: {}, ", tabColor.ToHexString(true));
+        }
+        if (!ColorScheme().empty())
+        {
+            ss << fmt::format(L"colorScheme: {}, ", ColorScheme());
+        }
+
+        if (SuppressApplicationTitle())
+        {
+            if (SuppressApplicationTitle().Value())
+            {
+                ss << fmt::format(L"suppress application title, ");
+            }
+            else
+            {
+                ss << fmt::format(L"use application title, ");
+            }
         }
 
         auto s = ss.str();
@@ -75,11 +101,78 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return winrt::hstring{ s.substr(0, s.size() - 2) };
     }
 
+    winrt::hstring NewTerminalArgs::ToCommandline() const
+    {
+        std::wstringstream ss;
+
+        if (!Profile().empty())
+        {
+            ss << fmt::format(L"--profile \"{}\" ", Profile());
+        }
+        // The caller is always expected to provide the evaluated profile in the
+        // NewTerminalArgs, not the index
+        //
+        // else if (ProfileIndex())
+        // {
+        //     ss << fmt::format(L"profile index: {}, ", ProfileIndex().Value());
+        // }
+
+        if (!StartingDirectory().empty())
+        {
+            // If the directory ends in a '\', we need to add another one on so that the enclosing quote added
+            // afterwards isn't escaped
+            const auto trailingBackslashEscape = StartingDirectory().back() == L'\\' ? L"\\" : L"";
+            ss << fmt::format(L"--startingDirectory \"{}{}\" ", StartingDirectory(), trailingBackslashEscape);
+        }
+
+        if (!TabTitle().empty())
+        {
+            ss << fmt::format(L"--title \"{}\" ", TabTitle());
+        }
+
+        if (TabColor())
+        {
+            const til::color tabColor{ TabColor().Value() };
+            ss << fmt::format(L"--tabColor \"{}\" ", tabColor.ToHexString(true));
+        }
+
+        if (SuppressApplicationTitle())
+        {
+            if (SuppressApplicationTitle().Value())
+            {
+                ss << fmt::format(L"--suppressApplicationTitle ");
+            }
+            else
+            {
+                ss << fmt::format(L"--useApplicationTitle ");
+            }
+        }
+
+        if (!ColorScheme().empty())
+        {
+            ss << fmt::format(L"--colorScheme \"{}\" ", ColorScheme());
+        }
+
+        if (!Commandline().empty())
+        {
+            ss << fmt::format(L"-- \"{}\" ", Commandline());
+        }
+
+        auto s = ss.str();
+        if (s.empty())
+        {
+            return L"";
+        }
+
+        // Chop off the last " "
+        return winrt::hstring{ s.substr(0, s.size() - 1) };
+    }
+
     winrt::hstring CopyTextArgs::GenerateName() const
     {
         std::wstringstream ss;
 
-        if (_SingleLine)
+        if (SingleLine())
         {
             ss << RS_(L"CopyTextAsSingleLineCommandKey").c_str();
         }
@@ -88,25 +181,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             ss << RS_(L"CopyTextCommandKey").c_str();
         }
 
-        if (_CopyFormatting != nullptr)
+        if (CopyFormatting())
         {
             ss << L", copyFormatting: ";
-            if (_CopyFormatting.Value() == CopyFormat::All)
+            if (CopyFormatting().Value() == CopyFormat::All)
             {
                 ss << L"all, ";
             }
-            else if (_CopyFormatting.Value() == static_cast<CopyFormat>(0))
+            else if (CopyFormatting().Value() == static_cast<CopyFormat>(0))
             {
                 ss << L"none, ";
             }
             else
             {
-                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::HTML))
+                if (WI_IsFlagSet(CopyFormatting().Value(), CopyFormat::HTML))
                 {
                     ss << L"html, ";
                 }
 
-                if (WI_IsFlagSet(_CopyFormatting.Value(), CopyFormat::RTF))
+                if (WI_IsFlagSet(CopyFormatting().Value(), CopyFormat::RTF))
                 {
                     ss << L"rtf, ";
                 }
@@ -123,9 +216,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring NewTabArgs::GenerateName() const
     {
         winrt::hstring newTerminalArgsStr;
-        if (_TerminalArgs)
+        if (TerminalArgs())
         {
-            newTerminalArgsStr = _TerminalArgs.GenerateName();
+            newTerminalArgsStr = TerminalArgs().GenerateName();
         }
 
         if (newTerminalArgsStr.empty())
@@ -137,17 +230,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
-    winrt::hstring SwitchToTabArgs::GenerateName() const
+    winrt::hstring MovePaneArgs::GenerateName() const
     {
         return winrt::hstring{
-            fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), _TabIndex)
+            fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
+        };
+    }
+
+    winrt::hstring SwitchToTabArgs::GenerateName() const
+    {
+        if (TabIndex() == UINT32_MAX)
+        {
+            return RS_(L"SwitchToLastTabCommandKey");
+        }
+
+        return winrt::hstring{
+            fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), TabIndex())
         };
     }
 
     winrt::hstring ResizePaneArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_ResizeDirection)
+        switch (ResizeDirection())
         {
         case ResizeDirection::Left:
             directionString = RS_(L"DirectionLeft");
@@ -171,7 +276,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MoveFocusArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_FocusDirection)
+        switch (FocusDirection())
         {
         case FocusDirection::Left:
             directionString = RS_(L"DirectionLeft");
@@ -187,9 +292,43 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         case FocusDirection::Previous:
             return RS_(L"MoveFocusToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"MoveFocusNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"MoveFocusPreviousInOrder");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
+                        directionString)
+        };
+    }
+
+    winrt::hstring SwapPaneArgs::GenerateName() const
+    {
+        winrt::hstring directionString;
+        switch (Direction())
+        {
+        case FocusDirection::Left:
+            directionString = RS_(L"DirectionLeft");
+            break;
+        case FocusDirection::Right:
+            directionString = RS_(L"DirectionRight");
+            break;
+        case FocusDirection::Up:
+            directionString = RS_(L"DirectionUp");
+            break;
+        case FocusDirection::Down:
+            directionString = RS_(L"DirectionDown");
+            break;
+        case FocusDirection::Previous:
+            return RS_(L"SwapPaneToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"SwapPaneNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"SwapPanePreviousInOrder");
+        }
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"SwapPaneWithArgCommandKey")),
                         directionString)
         };
     }
@@ -200,21 +339,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // size" (or "Decrease font size"). If the amount delta has a greater
         // absolute value, we'll include it like"
         // * Decrease font size, amount: {delta}"
-        if (_Delta < 0)
+        if (Delta() < 0)
         {
-            return _Delta == -1 ? RS_(L"DecreaseFontSizeCommandKey") :
-                                  winrt::hstring{
-                                      fmt::format(std::wstring_view(RS_(L"DecreaseFontSizeWithAmountCommandKey")),
-                                                  -_Delta)
-                                  };
+            return Delta() == -1 ? RS_(L"DecreaseFontSizeCommandKey") :
+                                   winrt::hstring{
+                                       fmt::format(std::wstring_view(RS_(L"DecreaseFontSizeWithAmountCommandKey")),
+                                                   -Delta())
+                                   };
         }
         else
         {
-            return _Delta == 1 ? RS_(L"IncreaseFontSizeCommandKey") :
-                                 winrt::hstring{
-                                     fmt::format(std::wstring_view(RS_(L"IncreaseFontSizeWithAmountCommandKey")),
-                                                 _Delta)
-                                 };
+            return Delta() == 1 ? RS_(L"IncreaseFontSizeCommandKey") :
+                                  winrt::hstring{
+                                      fmt::format(std::wstring_view(RS_(L"IncreaseFontSizeWithAmountCommandKey")),
+                                                  Delta())
+                                  };
         }
     }
 
@@ -223,7 +362,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // The string will be similar to the following:
         // * "Send Input: ...input..."
 
-        auto escapedInput = til::visualize_control_codes(_Input);
+        auto escapedInput = til::visualize_control_codes(Input());
         auto name = fmt::format(std::wstring_view(RS_(L"SendInputCommandKey")), escapedInput);
         return winrt::hstring{ name };
     }
@@ -240,7 +379,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // will be omitted (as they're unused)
 
         std::wstringstream ss;
-        if (_SplitMode == SplitType::Duplicate)
+        if (SplitMode() == SplitType::Duplicate)
         {
             ss << std::wstring_view(RS_(L"DuplicatePaneCommandKey"));
         }
@@ -252,7 +391,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This text is intentionally _not_ localized, to attempt to mirror the
         // exact syntax that the property would have in JSON.
-        switch (_SplitStyle)
+        switch (SplitStyle())
         {
         case SplitState::Vertical:
             ss << L"split: vertical, ";
@@ -262,18 +401,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         }
 
-        if (_SplitSize != .5f)
+        if (SplitSize() != .5f)
         {
-            ss << L"size: " << (_SplitSize * 100) << L"%, ";
+            ss << L"size: " << (SplitSize() * 100) << L"%, ";
         }
 
         winrt::hstring newTerminalArgsStr;
-        if (_TerminalArgs)
+        if (TerminalArgs())
         {
-            newTerminalArgsStr = _TerminalArgs.GenerateName();
+            newTerminalArgsStr = TerminalArgs().GenerateName();
         }
 
-        if (_SplitMode != SplitType::Duplicate && !newTerminalArgsStr.empty())
+        if (SplitMode() != SplitType::Duplicate && !newTerminalArgsStr.empty())
         {
             ss << newTerminalArgsStr.c_str();
             ss << L", ";
@@ -286,27 +425,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring OpenSettingsArgs::GenerateName() const
     {
-        switch (_Target)
+        switch (Target())
         {
         case SettingsTarget::DefaultsFile:
             return RS_(L"OpenDefaultSettingsCommandKey");
         case SettingsTarget::AllFiles:
             return RS_(L"OpenBothSettingsFilesCommandKey");
-        case SettingsTarget::SettingsUI:
-            return RS_(L"OpenSettingsUICommandKey");
-        default:
+        case SettingsTarget::SettingsFile:
             return RS_(L"OpenSettingsCommandKey");
+        case SettingsTarget::SettingsUI:
+        default:
+            return RS_(L"OpenSettingsUICommandKey");
         }
     }
 
     winrt::hstring SetColorSchemeArgs::GenerateName() const
     {
         // "Set color scheme to "{_SchemeName}""
-        if (!_SchemeName.empty())
+        if (!SchemeName().empty())
         {
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"SetColorSchemeCommandKey")),
-                            _SchemeName.c_str())
+                            SchemeName().c_str())
             };
         }
         return L"";
@@ -316,9 +456,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // "Set tab color to #RRGGBB"
         // "Reset tab color"
-        if (_TabColor)
+        if (TabColor())
         {
-            til::color tabColor{ _TabColor.Value() };
+            til::color tabColor{ TabColor().Value() };
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"SetTabColorCommandKey")),
                             tabColor.ToHexString(true))
@@ -332,11 +472,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // "Rename tab to \"{_Title}\""
         // "Reset tab title"
-        if (!_Title.empty())
+        if (!Title().empty())
         {
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"RenameTabCommandKey")),
-                            _Title.c_str())
+                            Title().c_str())
             };
         }
         return RS_(L"ResetTabNameCommandKey");
@@ -345,11 +485,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring ExecuteCommandlineArgs::GenerateName() const
     {
         // "Run commandline "{_Commandline}" in this window"
-        if (!_Commandline.empty())
+        if (!Commandline().empty())
         {
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"ExecuteCommandlineCommandKey")),
-                            _Commandline.c_str())
+                            Commandline().c_str())
             };
         }
         return L"";
@@ -357,12 +497,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring CloseOtherTabsArgs::GenerateName() const
     {
-        if (_Index)
+        if (Index())
         {
             // "Close tabs other than index {0}"
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"CloseOtherTabsCommandKey")),
-                            _Index.Value())
+                            Index().Value())
             };
         }
         return RS_(L"CloseOtherTabsDefaultCommandKey");
@@ -370,24 +510,37 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring CloseTabsAfterArgs::GenerateName() const
     {
-        if (_Index)
+        if (Index())
         {
             // "Close tabs after index {0}"
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"CloseTabsAfterCommandKey")),
-                            _Index.Value())
+                            Index().Value())
             };
         }
         return RS_(L"CloseTabsAfterDefaultCommandKey");
     }
 
+    winrt::hstring CloseTabArgs::GenerateName() const
+    {
+        if (Index())
+        {
+            // "Close tab at index {0}"
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"CloseTabAtIndexCommandKey")),
+                            Index().Value())
+            };
+        }
+        return RS_(L"CloseTabCommandKey");
+    }
+
     winrt::hstring ScrollUpArgs::GenerateName() const
     {
-        if (_RowsToScroll)
+        if (RowsToScroll())
         {
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"ScrollUpSeveralRowsCommandKey")),
-                            _RowsToScroll.Value())
+                            RowsToScroll().Value())
             };
         }
         return RS_(L"ScrollUpCommandKey");
@@ -395,11 +548,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring ScrollDownArgs::GenerateName() const
     {
-        if (_RowsToScroll)
+        if (RowsToScroll())
         {
             return winrt::hstring{
                 fmt::format(std::wstring_view(RS_(L"ScrollDownSeveralRowsCommandKey")),
-                            _RowsToScroll.Value())
+                            RowsToScroll().Value())
             };
         }
         return RS_(L"ScrollDownCommandKey");
@@ -408,7 +561,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     winrt::hstring MoveTabArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        switch (_Direction)
+        switch (Direction())
         {
         case MoveTabDirection::Forward:
             directionString = RS_(L"MoveTabDirectionForward");
@@ -425,10 +578,107 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring ToggleCommandPaletteArgs::GenerateName() const
     {
-        if (_LaunchMode == CommandPaletteLaunchMode::CommandLine)
+        if (LaunchMode() == CommandPaletteLaunchMode::CommandLine)
         {
             return RS_(L"ToggleCommandPaletteCommandLineModeCommandKey");
         }
         return RS_(L"ToggleCommandPaletteCommandKey");
+    }
+
+    winrt::hstring FindMatchArgs::GenerateName() const
+    {
+        switch (Direction())
+        {
+        case FindMatchDirection::Next:
+            return winrt::hstring{ RS_(L"FindNextCommandKey") };
+        case FindMatchDirection::Previous:
+            return winrt::hstring{ RS_(L"FindPrevCommandKey") };
+        }
+        return L"";
+    }
+
+    winrt::hstring NewWindowArgs::GenerateName() const
+    {
+        winrt::hstring newTerminalArgsStr;
+        if (TerminalArgs())
+        {
+            newTerminalArgsStr = TerminalArgs().GenerateName();
+        }
+
+        if (newTerminalArgsStr.empty())
+        {
+            return RS_(L"NewWindowCommandKey");
+        }
+        return winrt::hstring{
+            fmt::format(L"{}, {}", RS_(L"NewWindowCommandKey"), newTerminalArgsStr)
+        };
+    }
+
+    winrt::hstring PrevTabArgs::GenerateName() const
+    {
+        if (!SwitcherMode())
+        {
+            return RS_(L"PrevTabCommandKey");
+        }
+
+        const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"PrevTabCommandKey"), mode));
+    }
+
+    winrt::hstring NextTabArgs::GenerateName() const
+    {
+        if (!SwitcherMode())
+        {
+            return RS_(L"NextTabCommandKey");
+        }
+
+        const auto mode = SwitcherMode().Value() == TabSwitcherMode::MostRecentlyUsed ? L"most recently used" : L"in order";
+        return winrt::hstring(fmt::format(L"{}, {}", RS_(L"NextTabCommandKey"), mode));
+    }
+
+    winrt::hstring RenameWindowArgs::GenerateName() const
+    {
+        // "Rename window to \"{_Name}\""
+        // "Clear window name"
+        if (!Name().empty())
+        {
+            return winrt::hstring{
+                fmt::format(std::wstring_view(RS_(L"RenameWindowCommandKey")),
+                            Name().c_str())
+            };
+        }
+        return RS_(L"ResetWindowNameCommandKey");
+    }
+
+    winrt::hstring GlobalSummonArgs::GenerateName() const
+    {
+        // GH#10210 - Is this action literally the same thing as the `quakeMode`
+        // action? That has a special name.
+        static const auto quakeModeArgs{ std::get<0>(GlobalSummonArgs::QuakeModeFromJson(Json::Value::null)) };
+        if (quakeModeArgs.Equals(*this))
+        {
+            return RS_(L"QuakeModeCommandKey");
+        }
+
+        std::wstringstream ss;
+        ss << std::wstring_view(RS_(L"GlobalSummonCommandKey"));
+
+        // "Summon the Terminal window"
+        // "Summon the Terminal window, name:\"{_Name}\""
+        if (!Name().empty())
+        {
+            ss << L", name: ";
+            ss << std::wstring_view(Name());
+        }
+        return winrt::hstring{ ss.str() };
+    }
+
+    winrt::hstring FocusPaneArgs::GenerateName() const
+    {
+        // "Focus pane {Id}"
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"FocusPaneCommandKey")),
+                        Id())
+        };
     }
 }

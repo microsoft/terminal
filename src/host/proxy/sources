@@ -1,0 +1,31 @@
+# -------------------------------------
+# Windows Console 
+# - Console Host COM Proxy
+# -------------------------------------
+
+# This program provides the COM call and proxy
+# information for handing off one console session to another
+# capable console host application.
+
+# -------------------------------------
+# Program Information
+# -------------------------------------
+
+TARGETNAME              = 
+TARGETTYPE              = NOTARGET
+
+# -------------------------------------
+# Build System Settings
+# -------------------------------------
+
+MIDL_FLAGS             = $(MIDL_FLAGS)
+
+# -------------------------------------
+# Sources, Headers, and Libraries
+# -------------------------------------
+
+SOURCES = \
+    IConsoleHandoff.idl \
+
+INCLUDES = \
+    $(INCLUDES); \

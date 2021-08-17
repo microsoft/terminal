@@ -27,6 +27,7 @@ public:
     COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
 
@@ -36,8 +37,6 @@ public:
 
 #pragma region IRenderData
     const TextAttribute GetDefaultBrushColors() noexcept override;
-
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
 
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
@@ -54,7 +53,7 @@ public:
 
     const bool IsGridLineDrawingAllowed() noexcept override;
 
-    const std::wstring GetConsoleTitle() const noexcept override;
+    const std::wstring_view GetConsoleTitle() const noexcept override;
 
     const std::wstring GetHyperlinkUri(uint16_t id) const noexcept override;
     const std::wstring GetHyperlinkCustomId(uint16_t id) const noexcept override;

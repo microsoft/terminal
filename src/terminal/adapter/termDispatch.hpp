@@ -82,6 +82,10 @@ public:
     bool EraseCharacters(const size_t /*numChars*/) noexcept override { return false; } // ECH
 
     bool SetGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // SGR
+    bool SetLineRendition(const LineRendition /*rendition*/) noexcept override { return false; } // DECSWL, DECDWL, DECDHL
+
+    bool PushGraphicsRendition(const VTParameters /*options*/) noexcept override { return false; } // XTPUSHSGR
+    bool PopGraphicsRendition() noexcept override { return false; } // XTPOPSGR
 
     bool SetMode(const DispatchTypes::ModeParams /*param*/) noexcept override { return false; } // DECSET
 
@@ -119,4 +123,13 @@ public:
     bool EndHyperlink() noexcept override { return false; }
 
     bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override { return false; }
+
+    StringHandler DownloadDRCS(const size_t /*fontNumber*/,
+                               const VTParameter /*startChar*/,
+                               const DispatchTypes::DrcsEraseControl /*eraseControl*/,
+                               const DispatchTypes::DrcsCellMatrix /*cellMatrix*/,
+                               const DispatchTypes::DrcsFontSet /*fontSet*/,
+                               const DispatchTypes::DrcsFontUsage /*fontUsage*/,
+                               const VTParameter /*cellHeight*/,
+                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) noexcept override { return nullptr; }
 };

@@ -122,6 +122,16 @@ public:
 
     void SetCurrentAttributes(const TextAttribute& currentAttributes) noexcept;
 
+    void SetCurrentLineRendition(const LineRendition lineRendition);
+    void ResetLineRenditionRange(const size_t startRow, const size_t endRow);
+    LineRendition GetLineRendition(const size_t row) const;
+    bool IsDoubleWidthLine(const size_t row) const;
+
+    SHORT GetLineWidth(const size_t row) const;
+    COORD ClampPositionWithinLine(const COORD position) const;
+    COORD ScreenToBufferPosition(const COORD position) const;
+    COORD BufferToScreenPosition(const COORD position) const;
+
     void Reset();
 
     [[nodiscard]] HRESULT ResizeTraditional(const COORD newSize) noexcept;
@@ -141,7 +151,7 @@ public:
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
     bool MoveToPreviousGlyph(til::point& pos) const;
 
-    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection = false) const;
+    const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection, bool bufferCoordinates) const;
 
     void AddHyperlinkToMap(std::wstring_view uri, uint16_t id);
     std::wstring GetHyperlinkUriFromId(uint16_t id) const;
@@ -186,6 +196,7 @@ public:
                           std::optional<std::reference_wrapper<PositionInformation>> positionInfo);
 
     const size_t AddPatternRecognizer(const std::wstring_view regexString);
+    void ClearPatternRecognizers() noexcept;
     void CopyPatterns(const TextBuffer& OtherBuffer);
     interval_tree::IntervalTree<til::point, size_t> GetPatterns(const size_t firstRow, const size_t lastRow) const;
 
@@ -212,7 +223,7 @@ private:
 
     void _SetFirstRowIndex(const SHORT FirstRowIndex) noexcept;
 
-    COORD _GetPreviousFromCursor() const noexcept;
+    COORD _GetPreviousFromCursor() const;
 
     void _SetWrapOnCurrentRow();
     void _AdjustWrapOnCurrentRow(const bool fSet);

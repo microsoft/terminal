@@ -134,6 +134,74 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::HorizontalTabSet() noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto column = _terminalApi.GetCursorPosition().X;
+
+    _InitTabStopsForWidth(width);
+    _tabStopColumns.at(column) = true;
+    return true;
+}
+
+bool TerminalDispatch::ForwardTab(const size_t numTabs) noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto cursorPosition = _terminalApi.GetCursorPosition();
+    auto column = cursorPosition.X;
+    const auto row = cursorPosition.Y;
+    auto tabsPerformed = 0u;
+    _InitTabStopsForWidth(width);
+    while (column + 1 < width && tabsPerformed < numTabs)
+    {
+        column++;
+        if (til::at(_tabStopColumns, column))
+        {
+            tabsPerformed++;
+        }
+    }
+
+    return _terminalApi.SetCursorPosition(column, row);
+}
+
+bool TerminalDispatch::BackwardsTab(const size_t numTabs) noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto cursorPosition = _terminalApi.GetCursorPosition();
+    auto column = cursorPosition.X;
+    const auto row = cursorPosition.Y;
+    auto tabsPerformed = 0u;
+    _InitTabStopsForWidth(width);
+    while (column > 0 && tabsPerformed < numTabs)
+    {
+        column--;
+        if (til::at(_tabStopColumns, column))
+        {
+            tabsPerformed++;
+        }
+    }
+
+    return _terminalApi.SetCursorPosition(column, row);
+}
+
+bool TerminalDispatch::TabClear(const DispatchTypes::TabClearType clearType) noexcept
+{
+    bool success = false;
+    switch (clearType)
+    {
+    case DispatchTypes::TabClearType::ClearCurrentColumn:
+        success = _ClearSingleTabStop();
+        break;
+    case DispatchTypes::TabClearType::ClearAllColumns:
+        success = _ClearAllTabStops();
+        break;
+    default:
+        success = false;
+        break;
+    }
+    return success;
+}
+
 // Method Description:
 // - Sets a single entry of the colortable to a new value
 // Arguments:
@@ -442,7 +510,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
         {
             // A state parameter is defined, parse it out
             const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
-            if (!stateSuccess)
+            if (!stateSuccess && !til::at(parts, 1).empty())
             {
                 return false;
             }
@@ -450,7 +518,7 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
             {
                 // A progress parameter is also defined, parse it out
                 const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
-                if (!progressSuccess)
+                if (!progressSuccess && !til::at(parts, 2).empty())
                 {
                     return false;
                 }
@@ -467,14 +535,26 @@ bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
             // progress is greater than the maximum allowed value, clamp it to the max
             progress = TaskbarMaxProgress;
         }
-        return _terminalApi.SetTaskbarProgress(state, progress);
+        return _terminalApi.SetTaskbarProgress(static_cast<DispatchTypes::TaskbarState>(state), progress);
     }
     // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
     else if (subParam == 9)
     {
         if (parts.size() >= 2)
         {
-            return _terminalApi.SetWorkingDirectory(til::at(parts, 1));
+            const auto path = til::at(parts, 1);
+            // The path should be surrounded with '"' according to the documentation of ConEmu.
+            // An example: 9;"D:/"
+            if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+            {
+                return _terminalApi.SetWorkingDirectory(path.substr(1, path.size() - 2));
+            }
+            else
+            {
+                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+                // ConEmu also does this.
+                return _terminalApi.SetWorkingDirectory(path);
+            }
         }
     }
 
@@ -536,6 +616,48 @@ bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, 
         break;
     }
     return success;
+}
+
+bool TerminalDispatch::_ClearSingleTabStop() noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto column = _terminalApi.GetCursorPosition().X;
+
+    _InitTabStopsForWidth(width);
+    _tabStopColumns.at(column) = false;
+    return true;
+}
+
+bool TerminalDispatch::_ClearAllTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = false;
+    return true;
+}
+
+void TerminalDispatch::_ResetTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = true;
+}
+
+void TerminalDispatch::_InitTabStopsForWidth(const size_t width)
+{
+    const auto initialWidth = _tabStopColumns.size();
+    if (width > initialWidth)
+    {
+        _tabStopColumns.resize(width);
+        if (_initDefaultTabStops)
+        {
+            for (auto column = 8u; column < _tabStopColumns.size(); column += 8)
+            {
+                if (column >= initialWidth)
+                {
+                    til::at(_tabStopColumns, column) = true;
+                }
+            }
+        }
+    }
 }
 
 bool TerminalDispatch::SoftReset() noexcept
@@ -611,8 +733,12 @@ bool TerminalDispatch::HardReset() noexcept
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;
 
-    // // Delete all current tab stops and reapply
-    // _ResetTabStops();
+    // Reset the mouse mode
+    success = EnableSGRExtendedMouseMode(false) && success;
+    success = EnableAnyEventMouseMode(false) && success;
+
+    // Delete all current tab stops and reapply
+    _ResetTabStops();
 
     return success;
 }

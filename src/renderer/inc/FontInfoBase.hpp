@@ -38,7 +38,7 @@ public:
 
     unsigned char GetFamily() const;
     unsigned int GetWeight() const;
-    const std::wstring_view GetFaceName() const;
+    const std::wstring_view GetFaceName() const noexcept;
     unsigned int GetCodePage() const;
 
     HRESULT FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const;

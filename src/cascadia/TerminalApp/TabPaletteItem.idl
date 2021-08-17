@@ -3,6 +3,7 @@
 
 import "PaletteItem.idl";
 import "TabBase.idl";
+import "TerminalTabStatus.idl";
 
 namespace TerminalApp
 {
@@ -11,5 +12,7 @@ namespace TerminalApp
         TabPaletteItem(TabBase tab);
 
         TabBase Tab { get; };
+
+        TerminalTabStatus TabStatus { get; };
     }
 }

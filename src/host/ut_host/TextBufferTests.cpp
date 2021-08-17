@@ -2324,7 +2324,7 @@ void TextBufferTests::GetTextRects()
 
     COORD start{ 1, 0 };
     COORD end{ 7, 4 };
-    const auto result = _buffer->GetTextRects(start, end, blockSelection);
+    const auto result = _buffer->GetTextRects(start, end, blockSelection, false);
     VERIFY_ARE_EQUAL(expected.size(), result.size());
     for (size_t i = 0; i < expected.size(); ++i)
     {
@@ -2370,7 +2370,7 @@ void TextBufferTests::GetText()
         WriteLinesToBuffer(bufferText, *_buffer);
 
         // simulate a selection from origin to {4,4}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection);
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 4 }, blockSelection, false);
 
         std::wstring result = L"";
         const auto textData = _buffer->GetText(includeCRLF, trimTrailingWhitespace, textRects).text;
@@ -2471,7 +2471,7 @@ void TextBufferTests::GetText()
         // |_____|
 
         // simulate a selection from origin to {4,5}
-        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection);
+        const auto textRects = _buffer->GetTextRects({ 0, 0 }, { 4, 5 }, blockSelection, false);
 
         std::wstring result = L"";
 

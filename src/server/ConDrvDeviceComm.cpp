@@ -173,3 +173,12 @@ ConDrvDeviceComm::~ConDrvDeviceComm()
 {
     return reinterpret_cast<void*>(handleId);
 }
+
+// Routine Description:
+// - Provides access to the raw server handle so it can be used to hand off
+//   the session to another console host server.
+[[nodiscard]] HRESULT ConDrvDeviceComm::GetServerHandle(_Out_ HANDLE* pHandle) const
+{
+    *pHandle = _Server.get();
+    return S_OK;
+}

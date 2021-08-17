@@ -18,7 +18,7 @@ Abstract:
 #include "JsonUtils.h"
 #include "SettingsTypes.h"
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CursorStyle)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::CursorStyle)
 {
     static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "bar", ValueType::Bar },
@@ -40,7 +40,7 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::Media::Stretch)
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ScrollbarState)
 {
     static constexpr std::array<pair_type, 2> mappings = {
         pair_type{ "visible", ValueType::Visible },
@@ -50,10 +50,12 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::ScrollbarState)
 
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::BellStyle)
 {
-    static constexpr std::array<pair_type, 4> mappings = {
+    static constexpr std::array<pair_type, 6> mappings = {
         pair_type{ "none", AllClear },
         pair_type{ "audible", ValueType::Audible },
-        pair_type{ "visual", ValueType::Visual },
+        pair_type{ "visual", ValueType::Window | ValueType::Taskbar },
+        pair_type{ "window", ValueType::Window },
+        pair_type{ "taskbar", ValueType::Taskbar },
         pair_type{ "all", AllSet },
     };
 
@@ -93,7 +95,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ConvergedAlignme
     };
 };
 
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::TextAntialiasingMode)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::TextAntialiasingMode)
 {
     static constexpr std::array<pair_type, 3> mappings = {
         pair_type{ "grayscale", ValueType::Grayscale },
@@ -235,7 +237,7 @@ JSON_ENUM_MAPPER(winrt::Microsoft::Terminal::Settings::Model::ExpandCommandType)
     };
 };
 
-JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::TerminalControl::CopyFormat)
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Control::CopyFormat)
 {
     JSON_MAPPINGS(4) = {
         pair_type{ "none", AllClear },
@@ -335,12 +337,14 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
 // Possible FocusDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
 {
-    JSON_MAPPINGS(5) = {
+    JSON_MAPPINGS(7) = {
         pair_type{ "left", ValueType::Left },
         pair_type{ "right", ValueType::Right },
         pair_type{ "up", ValueType::Up },
         pair_type{ "down", ValueType::Down },
         pair_type{ "previous", ValueType::Previous },
+        pair_type{ "previousInOrder", ValueType::PreviousInOrder },
+        pair_type{ "nextInOrder", ValueType::NextInOrder },
     };
 };
 
@@ -429,5 +433,50 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::CommandPaletteLa
     JSON_MAPPINGS(2) = {
         pair_type{ "action", ValueType::Action },
         pair_type{ "commandLine", ValueType::CommandLine },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FindMatchDirection)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "next", ValueType::Next },
+        pair_type{ "prev", ValueType::Previous },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::WindowingMode)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "useNew", ValueType::UseNew },
+        pair_type{ "useAnyExisting", ValueType::UseAnyExisting },
+        pair_type{ "useExisting", ValueType::UseExisting },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::DesktopBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "onCurrent", ValueType::OnCurrent },
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "any", ValueType::Any },
+        pair_type{ "toCurrent", ValueType::ToCurrent },
+        pair_type{ "toMouse", ValueType::ToMouse },
+    };
+};
+
+JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
+{
+    static constexpr std::array<pair_type, 4> mappings = {
+        pair_type{ "none", AllClear },
+        pair_type{ "bold", ValueType::Bold },
+        pair_type{ "bright", ValueType::Bright },
+        pair_type{ "all", AllSet },
     };
 };

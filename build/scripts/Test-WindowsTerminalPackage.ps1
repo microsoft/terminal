@@ -8,7 +8,7 @@ Param(
     [Parameter(HelpMessage="Path to Windows Kit")]
     [ValidateScript({Test-Path $_ -Type Leaf})]
     [string]
-    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0"
+    $WindowsKitPath = "C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0"
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,7 +58,7 @@ Try {
 
     ### Check the activatable class entries for a few DLLs we need.
     $inProcServers = $Manifest.Package.Extensions.Extension.InProcessServer.Path
-    $RequiredInProcServers = ("TerminalApp.dll", "TerminalControl.dll", "TerminalConnection.dll")
+    $RequiredInProcServers = ("TerminalApp.dll", "Microsoft.Terminal.Control.dll", "Microsoft.Terminal.Remoting.dll", "Microsoft.Terminal.Settings.Editor.dll", "Microsoft.Terminal.Settings.Model.dll", "TerminalConnection.dll")
 
     Write-Verbose "InProc Servers: $inProcServers"
 

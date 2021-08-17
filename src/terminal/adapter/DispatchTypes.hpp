@@ -249,6 +249,15 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         Scrollback = 3
     };
 
+    enum class TaskbarState : size_t
+    {
+        Clear = 0,
+        Set = 1,
+        Error = 2,
+        Indeterminate = 3,
+        Paused = 4
+    };
+
     enum GraphicsOptions : size_t
     {
         Off = 0,
@@ -309,6 +318,40 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         BrightBackgroundMagenta = 105,
         BrightBackgroundCyan = 106,
         BrightBackgroundWhite = 107,
+    };
+
+    // Many of these correspond directly to SGR parameters (the GraphicsOptions enum), but
+    // these are distinct (notably 10 and 11, which as SGR parameters would select fonts,
+    // are used here to indicate that the foreground/background colors should be saved).
+    // From xterm's ctlseqs doc for XTPUSHSGR:
+    //
+    //      Ps = 1    =>  Bold.
+    //      Ps = 2    =>  Faint.
+    //      Ps = 3    =>  Italicized.
+    //      Ps = 4    =>  Underlined.
+    //      Ps = 5    =>  Blink.
+    //      Ps = 7    =>  Inverse.
+    //      Ps = 8    =>  Invisible.
+    //      Ps = 9    =>  Crossed-out characters.
+    //      Ps = 2 1  =>  Doubly-underlined.
+    //      Ps = 3 0  =>  Foreground color.
+    //      Ps = 3 1  =>  Background color.
+    //
+    enum class SgrSaveRestoreStackOptions : size_t
+    {
+        All = 0,
+        Boldness = 1,
+        Faintness = 2,
+        Italics = 3,
+        Underline = 4,
+        Blink = 5,
+        Negative = 7,
+        Invisible = 8,
+        CrossedOut = 9,
+        DoublyUnderlined = 21,
+        SaveForegroundColor = 30,
+        SaveBackgroundColor = 31,
+        Max = SaveBackgroundColor
     };
 
     enum class AnsiStatusType : size_t
@@ -389,6 +432,46 @@ namespace Microsoft::Console::VirtualTerminal::DispatchTypes
         WithReturn,
         WithoutReturn,
         DependsOnMode
+    };
+
+    enum class DrcsEraseControl : size_t
+    {
+        AllChars = 0,
+        ReloadedChars = 1,
+        AllRenditions = 2
+    };
+
+    enum class DrcsCellMatrix : size_t
+    {
+        Default = 0,
+        Invalid = 1,
+        Size5x10 = 2,
+        Size6x10 = 3,
+        Size7x10 = 4
+    };
+
+    enum class DrcsFontSet : size_t
+    {
+        Default = 0,
+        Size80x24 = 1,
+        Size132x24 = 2,
+        Size80x36 = 11,
+        Size132x36 = 12,
+        Size80x48 = 21,
+        Size132x48 = 22
+    };
+
+    enum class DrcsFontUsage : size_t
+    {
+        Default = 0,
+        Text = 1,
+        FullCell = 2
+    };
+
+    enum class DrcsCharsetSize : size_t
+    {
+        Size94 = 0,
+        Size96 = 1
     };
 
     constexpr short s_sDECCOLMSetColumns = 132;

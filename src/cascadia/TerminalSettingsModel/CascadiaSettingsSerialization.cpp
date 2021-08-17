@@ -2,14 +2,10 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include <argb.h>
 #include "CascadiaSettings.h"
-#include "../../types/inc/utils.hpp"
-#include "Utils.h"
-#include "JsonUtils.h"
-#include <appmodel.h>
-#include <shlobj.h>
+
 #include <fmt/chrono.h>
+#include <shlobj.h>
 
 // defaults.h is a file containing the default json settings in a std::string_view
 #include "defaults.h"
@@ -19,12 +15,15 @@
 // Both defaults.h and userDefaults.h are generated at build time into the
 // "Generated Files" directory.
 
+#include "ApplicationState.h"
+#include "FileUtils.h"
+
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace ::Microsoft::Console;
+using namespace ::Microsoft::Terminal::Settings::Model;
 
 static constexpr std::wstring_view SettingsFilename{ L"settings.json" };
 static constexpr std::wstring_view LegacySettingsFilename{ L"profiles.json" };
-static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
 static constexpr std::wstring_view DefaultsFilename{ L"defaults.json" };
 
@@ -36,12 +35,47 @@ static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view SchemesKey{ "schemes" };
+static constexpr std::string_view NameKey{ "name" };
+static constexpr std::string_view UpdatesKey{ "updates" };
+static constexpr std::string_view GuidKey{ "guid" };
 
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
-static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::string_view SettingsSchemaFragment{ "\n"
                                                           R"(    "$schema": "https://aka.ms/terminal-profiles-schema")" };
+
+static constexpr std::string_view jsonExtension{ ".json" };
+static constexpr std::string_view FragmentsSubDirectory{ "\\Fragments" };
+static constexpr std::wstring_view FragmentsPath{ L"\\Microsoft\\Windows Terminal\\Fragments" };
+
+static constexpr std::string_view AppExtensionHostName{ "com.microsoft.windows.terminal.settings" };
+
+// Function Description:
+// - Extracting the value from an async task (like talking to the app catalog) when we are on the
+//   UI thread causes C++/WinRT to complain quite loudly (and halt execution!)
+//   This templated function extracts the result from a task with chicanery.
+template<typename TTask>
+static auto _extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype(task.get())
+{
+    using TVal = decltype(task.get());
+    std::optional<TVal> finalVal{};
+    std::condition_variable cv;
+    std::mutex mtx;
+
+    auto waitOnBackground = [&]() -> winrt::fire_and_forget {
+        co_await winrt::resume_background();
+        auto v{ co_await task };
+
+        std::unique_lock<std::mutex> lock{ mtx };
+        finalVal.emplace(std::move(v));
+        cv.notify_all();
+    };
+
+    std::unique_lock<std::mutex> lock{ mtx };
+    waitOnBackground();
+    cv.wait(lock, [&]() { return finalVal.has_value(); });
+    return *finalVal;
+}
 
 static std::tuple<size_t, size_t> _LineAndColumnFromPosition(const std::string_view string, ptrdiff_t position)
 {
@@ -121,21 +155,25 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().DefaultProfile();
 
         std::optional<std::string> fileData = _ReadUserSettings();
-        const bool foundFile = fileData.has_value();
 
         // Make sure the file isn't totally empty. If it is, we'll treat the file
         // like it doesn't exist at all.
-        const bool fileHasData = foundFile && !fileData.value().empty();
+        const bool fileHasData = fileData && !fileData->empty();
         bool needToWriteFile = false;
         if (fileHasData)
         {
-            resultPtr->_ParseJsonString(fileData.value(), false);
+            resultPtr->_ParseJsonString(*fileData, false);
         }
 
         // Load profiles from dynamic profile generators. _userSettings should be
         // created by now, because we're going to check in there for any generators
         // that should be disabled (if the user had any settings.)
         resultPtr->_LoadDynamicProfiles();
+        try
+        {
+            resultPtr->_LoadFragmentExtensions();
+        }
+        CATCH_LOG();
 
         if (!fileHasData)
         {
@@ -163,6 +201,35 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         catch (...)
         {
             _CatchRethrowSerializationExceptionWithLocationInfo(resultPtr->_userSettingsString);
+        }
+
+        // Let's say a user doesn't know that they need to write `"hidden": true` in
+        // order to prevent a profile from showing up (and a settings UI doesn't exist).
+        // Naturally they would open settings.json and try to remove the profile object.
+        // This section of code recognizes if a profile was seen before and marks it as
+        // `"hidden": true` by default and thus ensures the behavior the user expects:
+        // Profiles won't show up again after they've been removed from settings.json.
+        {
+            const auto state = winrt::get_self<implementation::ApplicationState>(ApplicationState::SharedInstance());
+            auto generatedProfiles = state->GeneratedProfiles();
+            bool generatedProfilesChanged = false;
+
+            for (auto profile : resultPtr->_allProfiles)
+            {
+                if (generatedProfiles.emplace(profile.Guid()).second)
+                {
+                    generatedProfilesChanged = true;
+                }
+                else if (profile.Origin() != OriginTag::User)
+                {
+                    profile.Hidden(true);
+                }
+            }
+
+            if (generatedProfilesChanged)
+            {
+                state->GeneratedProfiles(generatedProfiles);
+            }
         }
 
         // After layering the user settings, check if there are any new profiles
@@ -195,7 +262,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
 
             try
             {
-                _WriteSettings(resultPtr->_userSettingsString, CascadiaSettings::SettingsPath());
+                WriteUTF8FileAtomic(_SettingsPath(), resultPtr->_userSettingsString);
             }
             catch (...)
             {
@@ -205,57 +272,6 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
 
         // If this throws, the app will catch it and use the default settings
         resultPtr->_ValidateSettings();
-
-        // GH 3855 - Gathering Data on custom profiles to inform better defaults
-        // Do it after everything else so it won't happen unless validation passed.
-        // Also, avoid processing unless someone's listening for measures. The keybindings work, at least,
-        // is a lot of computation we can skip if no one cares.
-        if (TraceLoggingProviderEnabled(g_hSettingsModelProvider, 0, MICROSOFT_KEYWORD_MEASURES))
-        {
-            const auto guid = resultPtr->GlobalSettings().DefaultProfile();
-
-            // Compare to the defaults.json one that we set on install.
-            // If it's different, log what the user chose.
-            if (hardcodedDefaultGuid != guid)
-            {
-                TraceLoggingWrite(
-                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
-                    "CustomDefaultProfile",
-                    TraceLoggingDescription("Event emitted when user has chosen a different default profile than hardcoded one on load/reload"),
-                    TraceLoggingGuid(guid, "DefaultProfile", "ID of user-chosen default profile"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-
-            // If the user had keybinding settings preferences, we want to learn from them to make better defaults
-            auto userKeybindings = resultPtr->_userSettings[JsonKey(LegacyKeybindingsKey)];
-            if (!userKeybindings.empty())
-            {
-                // If there are custom key bindings, let's understand what they are because maybe the defaults aren't good enough
-
-                // Run it through the object so we can parse it apart and then only serialize the fields we're interested in
-                // and avoid extraneous data.
-                auto km = winrt::make_self<implementation::KeyMapping>();
-                km->LayerJson(userKeybindings);
-                auto value = km->ToJson();
-
-                // Reserialize the keybindings
-                Json::StreamWriterBuilder wbuilder;
-                // Use 4 spaces to indent instead of \t
-                wbuilder.settings_["indentation"] = "    ";
-                wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
-
-                const auto keybindingsString = Json::writeString(wbuilder, value);
-
-                TraceLoggingWrite(
-                    g_hSettingsModelProvider, // handle to TerminalApp tracelogging provider
-                    "CustomKeybindings",
-                    TraceLoggingDescription("Event emitted when custom keybindings are identified on load/reload"),
-                    TraceLoggingUtf8String(keybindingsString.c_str(), "Keybindings", "Keybindings as JSON"),
-                    TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-                    TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
-            }
-        }
 
         return *resultPtr;
     }
@@ -332,6 +348,13 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     resultPtr->_ResolveDefaultProfile();
     resultPtr->_UpdateActiveProfiles();
 
+    // tag these profiles as in-box
+    for (const auto& profile : resultPtr->AllProfiles())
+    {
+        const auto& profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+        profileImpl->Origin(OriginTag::InBox);
+    }
+
     return *resultPtr;
 }
 
@@ -357,7 +380,6 @@ void CascadiaSettings::_LoadDynamicProfiles()
         }
     }
 
-    const GUID nullGuid{ 0 };
     for (auto& generator : _profileGenerators)
     {
         const std::wstring generatorNamespace{ generator->GetNamespace() };
@@ -384,6 +406,221 @@ void CascadiaSettings::_LoadDynamicProfiles()
 }
 
 // Method Description:
+// - Searches the local app data folder, global app data folder and app
+//   extensions for json stubs we should use to create new profiles,
+//   modify existing profiles or add new color schemes
+// - If the user settings has any namespaces in the "disabledProfileSources"
+//   property, we'll ensure that the corresponding folders do not get searched
+void CascadiaSettings::_LoadFragmentExtensions()
+{
+    // First, accumulate the namespaces the user wants to ignore
+    std::unordered_set<std::wstring> ignoredNamespaces;
+    const auto disabledProfileSources = CascadiaSettings::_GetDisabledProfileSourcesJsonObject(_userSettings);
+    if (disabledProfileSources.isArray())
+    {
+        for (const auto& json : disabledProfileSources)
+        {
+            ignoredNamespaces.emplace(JsonUtils::GetValue<std::wstring>(json));
+        }
+    }
+
+    // Search through the local app data folder
+    wil::unique_cotaskmem_string localAppDataFolder;
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &localAppDataFolder));
+    auto localAppDataFragments = std::wstring(localAppDataFolder.get()) + FragmentsPath.data();
+
+    if (std::filesystem::exists(localAppDataFragments))
+    {
+        _ApplyJsonStubsHelper(localAppDataFragments, ignoredNamespaces);
+    }
+
+    // Search through the program data folder
+    wil::unique_cotaskmem_string programDataFolder;
+    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_ProgramData, 0, nullptr, &programDataFolder));
+    auto programDataFragments = std::wstring(programDataFolder.get()) + FragmentsPath.data();
+    if (std::filesystem::exists(programDataFragments))
+    {
+        _ApplyJsonStubsHelper(programDataFragments, ignoredNamespaces);
+    }
+
+    // Search through app extensions
+    // Gets the catalog of extensions with the name "com.microsoft.windows.terminal.settings"
+    const auto catalog = Windows::ApplicationModel::AppExtensions::AppExtensionCatalog::Open(winrt::to_hstring(AppExtensionHostName));
+
+    auto extensions = _extractValueFromTaskWithoutMainThreadAwait(catalog.FindAllAsync());
+
+    for (const auto& ext : extensions)
+    {
+        // Only apply the stubs if the package name is not in ignored namespaces
+        if (ignoredNamespaces.find(ext.Package().Id().FamilyName().c_str()) == ignoredNamespaces.end())
+        {
+            // Likewise, getting the public folder from an extension is an async operation
+            // So we use another mutex and condition variable
+            auto foundFolder = _extractValueFromTaskWithoutMainThreadAwait(ext.GetPublicFolderAsync());
+
+            if (foundFolder)
+            {
+                // the StorageFolder class has its own methods for obtaining the files within the folder
+                // however, all those methods are Async methods
+                // you may have noticed that we need to resort to clunky implementations for async operations
+                // (they are in _extractValueFromTaskWithoutMainThreadAwait)
+                // so for now we will just take the folder path and access the files that way
+                auto path = winrt::to_string(foundFolder.Path());
+                path.append(FragmentsSubDirectory);
+
+                // If the directory exists, use the fragments in it
+                if (std::filesystem::exists(path))
+                {
+                    const auto jsonFiles = _AccumulateJsonFilesInDirectory(til::u8u16(path));
+
+                    // Provide the package name as the source
+                    _ParseAndLayerFragmentFiles(jsonFiles, ext.Package().Id().FamilyName().c_str());
+                }
+            }
+        }
+    }
+}
+
+// Method Description:
+// - Helper function to apply json stubs in the local app data folder and the global program data folder
+// Arguments:
+// - The directory to find json files in
+// - The set of ignored namespaces
+void CascadiaSettings::_ApplyJsonStubsHelper(const std::wstring_view directory, const std::unordered_set<std::wstring>& ignoredNamespaces)
+{
+    // The json files should be within subdirectories where the subdirectory name is the app name
+    for (const auto& fragmentExtFolder : std::filesystem::directory_iterator(directory))
+    {
+        // We only want the parent folder name as the source (not the full path)
+        const auto source = fragmentExtFolder.path().filename().wstring();
+
+        // Only apply the stubs if the parent folder name is not in ignored namespaces
+        // (also make sure this is a directory for sanity)
+        if (std::filesystem::is_directory(fragmentExtFolder) && ignoredNamespaces.find(source) == ignoredNamespaces.end())
+        {
+            const auto jsonFiles = _AccumulateJsonFilesInDirectory(fragmentExtFolder.path().c_str());
+            _ParseAndLayerFragmentFiles(jsonFiles, winrt::hstring{ source });
+        }
+    }
+}
+
+// Method Description:
+// - Finds all the json files within the given directory
+// Arguments:
+// - directory: the directory to search
+// Return Value:
+// - A set containing all the found file data
+std::unordered_set<std::string> CascadiaSettings::_AccumulateJsonFilesInDirectory(const std::wstring_view directory)
+{
+    std::unordered_set<std::string> jsonFiles;
+
+    for (const auto& fragmentExt : std::filesystem::directory_iterator(directory))
+    {
+        if (fragmentExt.path().extension() == jsonExtension)
+        {
+            try
+            {
+                jsonFiles.emplace(ReadUTF8File(fragmentExt.path()));
+            }
+            CATCH_LOG();
+        }
+    }
+    return jsonFiles;
+}
+
+// Method Description:
+// - Given a set of json files, uses them to modify existing profiles,
+//   create new profiles, and create new color schemes
+// Arguments:
+// - files: the set of json files (each item in the set is the file data)
+// - source: the location the files came from
+void CascadiaSettings::_ParseAndLayerFragmentFiles(const std::unordered_set<std::string> files, const winrt::hstring source)
+{
+    for (const auto& file : files)
+    {
+        // A file could have many new profiles/many profiles it wants to modify/many new color schemes
+        // so we first parse the entire file into one json object
+        auto fullFile = _ParseUtf8JsonString(file.data());
+
+        if (fullFile.isMember(JsonKey(ProfilesKey)))
+        {
+            // Now we separately get each stub that modifies/adds a profile
+            // We intentionally don't use a const reference here because we modify
+            // the profile stub by giving it a guid so we can call _FindMatchingProfile
+            for (auto& profileStub : fullFile[JsonKey(ProfilesKey)])
+            {
+                if (profileStub.isMember(JsonKey(UpdatesKey)))
+                {
+                    // This stub is meant to be a modification to an existing profile,
+                    // try to find the matching profile
+                    profileStub[JsonKey(GuidKey)] = profileStub[JsonKey(UpdatesKey)];
+                    auto matchingProfile = _FindMatchingProfile(profileStub);
+                    if (matchingProfile)
+                    {
+                        try
+                        {
+                            // We found a matching profile, create a child of it and put the modifications there
+                            // (we add a new inheritance layer)
+                            auto childImpl{ matchingProfile->CreateChild() };
+                            childImpl->LayerJson(profileStub);
+                            childImpl->Origin(OriginTag::Fragment);
+
+                            // replace parent in _profiles with child
+                            _allProfiles.SetAt(_FindMatchingProfileIndex(matchingProfile->ToJson()).value(), *childImpl);
+                        }
+                        catch (...)
+                        {
+                        }
+                    }
+                }
+                else
+                {
+                    // This is a new profile, check that it meets our minimum requirements first
+                    // (it must have at least a name)
+                    if (profileStub.isMember(JsonKey(NameKey)))
+                    {
+                        try
+                        {
+                            auto newProfile = Profile::FromJson(profileStub);
+                            // Make sure to give the new profile a source, then we add it to our list of profiles
+                            // We don't make modifications to the user's settings file yet, that will happen when
+                            // _AppendDynamicProfilesToUserSettings() is called later
+                            newProfile->Source(source);
+                            newProfile->Origin(OriginTag::Fragment);
+                            _allProfiles.Append(*newProfile);
+                        }
+                        catch (...)
+                        {
+                        }
+                    }
+                }
+            }
+        }
+
+        if (fullFile.isMember(JsonKey(SchemesKey)))
+        {
+            // Now we separately get each stub that adds a color scheme
+            for (const auto& schemeStub : fullFile[JsonKey(SchemesKey)])
+            {
+                if (_FindMatchingColorScheme(schemeStub))
+                {
+                    // We do not allow modifications to existing color schemes
+                }
+                else
+                {
+                    // This is a new color scheme, add it only if it specifies _all_ the fields
+                    if (ColorScheme::ValidateColorScheme(schemeStub))
+                    {
+                        const auto newScheme = ColorScheme::FromJson(schemeStub);
+                        _globals->AddColorScheme(*newScheme);
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Method Description:
 // - Attempts to read the given data as a string of JSON and parse that JSON
 //   into a Json::Value.
 // - Will ignore leading UTF-8 BOMs.
@@ -400,28 +637,12 @@ void CascadiaSettings::_LoadDynamicProfiles()
 // - <none>
 void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool isDefaultSettings)
 {
-    // Ignore UTF-8 BOM
-    auto actualDataStart = fileData.data();
-    const auto actualDataEnd = fileData.data() + fileData.size();
-    if (fileData.compare(0, Utf8Bom.size(), Utf8Bom) == 0)
-    {
-        actualDataStart += Utf8Bom.size();
-    }
-
-    std::string errs; // This string will receive any error text from failing to parse.
-    std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-
     // Parse the json data into either our defaults or user settings. We'll keep
     // these original json values around for later, in case we need to parse
     // their raw contents again.
     Json::Value& root = isDefaultSettings ? _defaultSettings : _userSettings;
-    // `parse` will return false if it fails.
-    if (!reader->parse(actualDataStart, actualDataEnd, &root, &errs))
-    {
-        // This will be caught by App::_TryLoadSettings, who will display
-        // the text to the user.
-        throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-    }
+
+    root = _ParseUtf8JsonString(fileData);
 
     // If this is the user settings, also store away the original settings
     // string. We'll need to keep it around so we can modify it without
@@ -430,6 +651,33 @@ void CascadiaSettings::_ParseJsonString(std::string_view fileData, const bool is
     {
         _userSettingsString = fileData;
     }
+}
+
+// Method Description:
+// - Attempts to read the given data as a string of JSON and parse that JSON
+//   into a Json::Value
+// - Will ignore leading UTF-8 BOMs
+// Arguments:
+// - fileData: the string to parse as JSON data
+// Return value:
+// - the parsed json value
+Json::Value CascadiaSettings::_ParseUtf8JsonString(std::string_view fileData)
+{
+    Json::Value result;
+    const auto actualDataStart = fileData.data();
+    const auto actualDataEnd = fileData.data() + fileData.size();
+
+    std::string errs; // This string will receive any error text from failing to parse.
+    std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+    // `parse` will return false if it fails.
+    if (!reader->parse(actualDataStart, actualDataEnd, &result, &errs))
+    {
+        // This will be caught by App::_TryLoadSettings, who will display
+        // the text to the user.
+        throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+    }
+    return result;
 }
 
 // Method Description:
@@ -467,8 +715,7 @@ bool CascadiaSettings::_PrependSchemaDirective()
 //   them into the user's settings at the end of the list of profiles.
 // - Does not reformat the user's settings file.
 // - Does not write the file! Only modifies in-place the _userSettingsString
-//   member. Callers should make sure to call
-//   _WriteSettings(_userSettingsString) to make sure to persist these changes!
+//   member. Callers should make sure to persist these changes (see WriteSettingsToDisk).
 // - Assumes that the `profiles` object is at an indentation of 4 spaces, and
 //   therefore each profile should be indented 8 spaces. If the user's settings
 //   have a different indentation, we'll still insert valid json, it'll just be
@@ -491,7 +738,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
-    auto isInJsonObj = [](const auto& profile, const auto& json) {
+    static const auto isInJsonObj = [](const auto& profile, const auto& json) {
         for (auto profileJson : _GetProfilesJsonObject(json))
         {
             if (profileJson.isObject())
@@ -525,8 +772,16 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
     for (const auto& profile : _allProfiles)
     {
-        // Skip profiles that are in the user settings or the default settings.
-        if (isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
+        // Skip profiles that are:
+        // * hidden
+        //   Because when a user manually removes profiles from settings.json,
+        //   we mark them as hidden in LoadAll(). Adding those profiles right
+        //   back into settings.json would feel confusing, while the
+        //   profile that was just erased is added right back.
+        // * in the user settings or the default settings
+        //   Because we don't want to add profiles which are already
+        //   in the settings.json (explicitly or implicitly).
+        if (profile.Hidden() || isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
         {
             continue;
         }
@@ -535,6 +790,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         // changes to re-create this profile.
         const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
         const auto diff = profileImpl->GenerateStub();
+
         auto profileSerialization = Json::writeString(wbuilder, diff);
 
         // Add the user's indent to the start of each line
@@ -563,6 +819,18 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     }
 
     return changedFile;
+}
+
+// Function Description:
+// - Given a json serialization of a profile, this function will determine
+//   whether it is "well-formed". We introduced a bug (GH#9962, fixed in GH#9964)
+//   that would result in one or more nameless, guid-less profiles being emitted
+//   into the user's settings file. Those profiles would show up in the list as
+//   "Default" later.
+static bool _IsValidProfileObject(const Json::Value& profileJson)
+{
+    return profileJson.isMember(&*NameKey.cbegin(), (&*NameKey.cbegin()) + NameKey.size()) || // has a name (can generate a guid)
+           profileJson.isMember(&*GuidKey.cbegin(), (&*GuidKey.cbegin()) + GuidKey.size()); // or has a guid
 }
 
 // Method Description:
@@ -607,7 +875,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 
     for (auto profileJson : _GetProfilesJsonObject(json))
     {
-        if (profileJson.isObject())
+        if (profileJson.isObject() && _IsValidProfileObject(profileJson))
         {
             _LayerOrCreateProfile(profileJson);
         }
@@ -629,6 +897,7 @@ void CascadiaSettings::LayerJson(const Json::Value& json)
 void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 {
     // Layer the json on top of an existing profile, if we have one:
+    winrt::com_ptr<implementation::Profile> profile{ nullptr };
     auto profileIndex{ _FindMatchingProfileIndex(profileJson) };
     if (profileIndex)
     {
@@ -641,6 +910,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
             // When we loaded Profile.Defaults, we created an empty child already.
             // So this just populates the empty child
             parent->LayerJson(profileJson);
+            profile.copy_from(parent);
         }
         else
         {
@@ -650,6 +920,7 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
 
             // replace parent in _profiles with child
             _allProfiles.SetAt(*profileIndex, *childImpl);
+            profile = std::move(childImpl);
         }
     }
     else
@@ -659,18 +930,24 @@ void CascadiaSettings::_LayerOrCreateProfile(const Json::Value& profileJson)
         // `source`. Dynamic profiles _must_ be layered on an existing profile.
         if (!Profile::IsDynamicProfileObject(profileJson))
         {
-            auto profile{ winrt::make_self<Profile>() };
+            profile = winrt::make_self<Profile>();
 
             // GH#2325: If we have a set of default profile settings, set that as my parent.
             // We _won't_ have these settings yet for defaults, dynamic profiles.
             if (_userDefaultProfileSettings)
             {
-                profile->InsertParent(0, _userDefaultProfileSettings);
+                Profile::InsertParentHelper(profile, _userDefaultProfileSettings, 0);
             }
 
             profile->LayerJson(profileJson);
             _allProfiles.Append(*profile);
         }
+    }
+
+    if (profile && _userDefaultProfileSettings)
+    {
+        // If we've loaded defaults{} we're in the "user settings" phase for sure
+        profile->Origin(OriginTag::User);
     }
 }
 
@@ -752,6 +1029,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
 
     _userDefaultProfileSettings = winrt::make_self<Profile>();
     _userDefaultProfileSettings->LayerJson(defaultSettings);
+    _userDefaultProfileSettings->Origin(OriginTag::ProfilesDefaults);
 
     const auto numOfProfiles{ _allProfiles.Size() };
     for (uint32_t profileIndex = 0; profileIndex < numOfProfiles; ++profileIndex)
@@ -762,7 +1040,7 @@ void CascadiaSettings::_ApplyDefaultsFromUserSettings()
         auto childImpl{ parentImpl->CreateChild() };
 
         // Add profile.defaults as the _first_ parent to the child
-        childImpl->InsertParent(0, _userDefaultProfileSettings);
+        Profile::InsertParentHelper(childImpl, _userDefaultProfileSettings, 0);
 
         // replace parent in _profiles with child
         _allProfiles.SetAt(profileIndex, *childImpl);
@@ -815,43 +1093,16 @@ winrt::com_ptr<ColorScheme> CascadiaSettings::_FindMatchingColorScheme(const Jso
     return nullptr;
 }
 
-// Function Description:
-// - Returns true if we're running in a packaged context.
-//   If we are, we want to change our settings path slightly.
-// Arguments:
-// - <none>
-// Return Value:
-// - true iff we're running in a packaged context.
-bool CascadiaSettings::_IsPackaged()
-{
-    UINT32 length = 0;
-    LONG rc = GetCurrentPackageFullName(&length, nullptr);
-    return rc != APPMODEL_ERROR_NO_PACKAGE;
-}
-
 // Method Description:
-// - Writes the given content in UTF-8 to a settings file using the Win32 APIS's.
-//   Will overwrite any existing content in the file.
+// - Returns the path of the settings.json file.
 // Arguments:
-// - content: the given string of content to write to the file.
-// Return Value:
 // - <none>
-//   This can throw an exception if we fail to open the file for writing, or we
-//      fail to write the file
-void CascadiaSettings::_WriteSettings(const std::string_view content, const hstring filepath)
+// Return Value:
+// - Returns a path in 80% of cases. I measured!
+const std::filesystem::path& CascadiaSettings::_SettingsPath()
 {
-    wil::unique_hfile hOut{ CreateFileW(filepath.c_str(),
-                                        GENERIC_WRITE,
-                                        FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                        nullptr,
-                                        CREATE_ALWAYS,
-                                        FILE_ATTRIBUTE_NORMAL,
-                                        nullptr) };
-    if (!hOut)
-    {
-        THROW_LAST_ERROR();
-    }
-    THROW_LAST_ERROR_IF(!WriteFile(hOut.get(), content.data(), gsl::narrow<DWORD>(content.size()), nullptr, nullptr));
+    static const auto path = GetBaseSettingsPath() / SettingsFilename;
+    return path;
 }
 
 // Method Description:
@@ -865,92 +1116,7 @@ void CascadiaSettings::_WriteSettings(const std::string_view content, const hstr
 //      from reading the file
 std::optional<std::string> CascadiaSettings::_ReadUserSettings()
 {
-    const auto pathToSettingsFile{ CascadiaSettings::SettingsPath() };
-    wil::unique_hfile hFile{ CreateFileW(pathToSettingsFile.c_str(),
-                                         GENERIC_READ,
-                                         FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                         nullptr,
-                                         OPEN_EXISTING,
-                                         FILE_ATTRIBUTE_NORMAL,
-                                         nullptr) };
-
-    if (!hFile)
-    {
-        // GH#5186 - We moved from profiles.json to settings.json; we want to
-        // migrate any file we find. We're using MoveFile in case their settings.json
-        // is a symbolic link.
-        std::filesystem::path pathToLegacySettingsFile{ std::wstring_view{ pathToSettingsFile } };
-        pathToLegacySettingsFile.replace_filename(LegacySettingsFilename);
-
-        wil::unique_hfile hLegacyFile{ CreateFileW(pathToLegacySettingsFile.c_str(),
-                                                   GENERIC_READ,
-                                                   FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                                   nullptr,
-                                                   OPEN_EXISTING,
-                                                   FILE_ATTRIBUTE_NORMAL,
-                                                   nullptr) };
-
-        if (hLegacyFile)
-        {
-            // Close the file handle, move it, and re-open the file in its new location.
-            hLegacyFile.reset();
-
-            // Note: We're unsure if this is unsafe. Theoretically it's possible
-            // that two instances of the app will try and move the settings file
-            // simultaneously. We don't know what might happen in that scenario,
-            // but we're also not sure how to safely lock the file to prevent
-            // that from occurring.
-            THROW_LAST_ERROR_IF(!MoveFile(pathToLegacySettingsFile.c_str(),
-                                          pathToSettingsFile.c_str()));
-
-            hFile.reset(CreateFileW(pathToSettingsFile.c_str(),
-                                    GENERIC_READ,
-                                    FILE_SHARE_READ | FILE_SHARE_WRITE,
-                                    nullptr,
-                                    OPEN_EXISTING,
-                                    FILE_ATTRIBUTE_NORMAL,
-                                    nullptr));
-
-            // hFile shouldn't be INVALID. That's unexpected - We just moved the
-            // file, we should be able to open it. Throw the error so we can get
-            // some information here.
-            THROW_LAST_ERROR_IF(!hFile);
-        }
-        else
-        {
-            // If the roaming file didn't exist, and the local file doesn't exist,
-            //      that's fine. Just log the error and return nullopt - we'll
-            //      create the defaults.
-            LOG_LAST_ERROR();
-            return std::nullopt;
-        }
-    }
-
-    return _ReadFile(hFile.get());
-}
-
-// Method Description:
-// - Reads the content in UTF-8 encoding of the given file using the Win32 APIs
-// Arguments:
-// - <none>
-// Return Value:
-// - an optional with the content of the file if we were able to read it. If we
-//   fail to read it, this can throw an exception from reading the file
-std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
-{
-    // fileSize is in bytes
-    const auto fileSize = GetFileSize(hFile, nullptr);
-    THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
-
-    auto utf8buffer = std::make_unique<char[]>(fileSize);
-
-    DWORD bytesRead = 0;
-    THROW_LAST_ERROR_IF(!ReadFile(hFile, utf8buffer.get(), fileSize, &bytesRead, nullptr));
-
-    // convert buffer to UTF-8 string
-    std::string utf8string(utf8buffer.get(), fileSize);
-
-    return { utf8string };
+    return ReadUTF8FileIfExists(_SettingsPath());
 }
 
 // function Description:
@@ -965,23 +1131,7 @@ std::optional<std::string> CascadiaSettings::_ReadFile(HANDLE hFile)
 // - the full path to the settings file
 winrt::hstring CascadiaSettings::SettingsPath()
 {
-    wil::unique_cotaskmem_string localAppDataFolder;
-    // KF_FLAG_FORCE_APP_DATA_REDIRECTION, when engaged, causes SHGet... to return
-    // the new AppModel paths (Packages/xxx/RoamingState, etc.) for standard path requests.
-    // Using this flag allows us to avoid Windows.Storage.ApplicationData completely.
-    THROW_IF_FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_FORCE_APP_DATA_REDIRECTION, nullptr, &localAppDataFolder));
-
-    std::filesystem::path parentDirectoryForSettingsFile{ localAppDataFolder.get() };
-
-    if (!_IsPackaged())
-    {
-        parentDirectoryForSettingsFile /= UnpackagedSettingsFolderName;
-    }
-
-    // Create the directory if it doesn't exist
-    std::filesystem::create_directories(parentDirectoryForSettingsFile);
-
-    return winrt::hstring{ (parentDirectoryForSettingsFile / SettingsFilename).wstring() };
+    return winrt::hstring{ _SettingsPath().wstring() };
 }
 
 winrt::hstring CascadiaSettings::DefaultSettingsPath()
@@ -996,15 +1146,12 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
     // directory as the exe, that will work for unpackaged scenarios as well. So
     // let's try that.
 
-    HMODULE hModule = GetModuleHandle(nullptr);
-    THROW_LAST_ERROR_IF(hModule == nullptr);
-
     std::wstring exePathString;
-    THROW_IF_FAILED(wil::GetModuleFileNameW(hModule, exePathString));
+    THROW_IF_FAILED(wil::GetModuleFileNameW(nullptr, exePathString));
 
-    const std::filesystem::path exePath{ exePathString };
-    const std::filesystem::path rootDir = exePath.parent_path();
-    return winrt::hstring{ (rootDir / DefaultsFilename).wstring() };
+    std::filesystem::path path{ exePathString };
+    path.replace_filename(DefaultsFilename);
+    return winrt::hstring{ path.wstring() };
 }
 
 // Function Description:
@@ -1042,21 +1189,20 @@ const Json::Value& CascadiaSettings::_GetDisabledProfileSourcesJsonObject(const 
 // Method Description:
 // - Write the current state of CascadiaSettings to our settings file
 // - Create a backup file with the current contents, if one does not exist
+// - Persists the default terminal handler choice to the registry
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
 void CascadiaSettings::WriteSettingsToDisk() const
 {
-    const auto settingsPath{ CascadiaSettings::SettingsPath() };
+    const auto settingsPath = _SettingsPath();
 
     try
     {
         // create a timestamped backup file
-        const auto clock{ std::chrono::system_clock() };
-        const auto timeStamp{ clock.to_time_t(clock.now()) };
-        const winrt::hstring backupSettingsPath{ fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath, fmt::localtime(timeStamp)) };
-        _WriteSettings(_userSettingsString, backupSettingsPath);
+        const auto backupSettingsPath = fmt::format(L"{}.{:%Y-%m-%dT%H-%M-%S}.backup", settingsPath.wstring(), fmt::localtime(std::time(nullptr)));
+        WriteUTF8File(backupSettingsPath, _userSettingsString);
     }
     CATCH_LOG();
 
@@ -1066,7 +1212,18 @@ void CascadiaSettings::WriteSettingsToDisk() const
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
     const auto styledString{ Json::writeString(wbuilder, ToJson()) };
-    _WriteSettings(styledString, settingsPath);
+    WriteUTF8FileAtomic(settingsPath, styledString);
+
+    // Persists the default terminal choice
+    //
+    // GH#10003 - Only do this if _currentDefaultTerminal was actually
+    // initialized. It's only initialized when Launch.cpp calls
+    // `CascadiaSettings::RefreshDefaultTerminals`. We really don't need it
+    // otherwise.
+    if (_currentDefaultTerminal)
+    {
+        Model::DefaultTerminal::Current(_currentDefaultTerminal);
+    }
 }
 
 // Method Description:
@@ -1078,9 +1235,13 @@ void CascadiaSettings::WriteSettingsToDisk() const
 Json::Value CascadiaSettings::ToJson() const
 {
     // top-level json object
-    // directly inject "globals" and "$schema" into here
+    // directly inject "globals", "$schema", and "disabledProfileSources" into here
     Json::Value json{ _globals->ToJson() };
     JsonUtils::SetValueForKey(json, SchemaKey, JsonKey(SchemaValue));
+    if (_userSettings.isMember(JsonKey(DisabledProfileSourcesKey)))
+    {
+        json[JsonKey(DisabledProfileSourcesKey)] = _userSettings[JsonKey(DisabledProfileSourcesKey)];
+    }
 
     // "profiles" will always be serialized as an object
     Json::Value profiles{ Json::ValueType::objectValue };
@@ -1105,16 +1266,6 @@ Json::Value CascadiaSettings::ToJson() const
         schemes.append(scheme->ToJson());
     }
     json[JsonKey(SchemesKey)] = schemes;
-
-    // "actions"/"keybindings" will be whatever blob we had in the file
-    if (_userSettings.isMember(JsonKey(LegacyKeybindingsKey)))
-    {
-        json[JsonKey(LegacyKeybindingsKey)] = _userSettings[JsonKey(LegacyKeybindingsKey)];
-    }
-    if (_userSettings.isMember(JsonKey(ActionsKey)))
-    {
-        json[JsonKey(ActionsKey)] = _userSettings[JsonKey(ActionsKey)];
-    }
 
     return json;
 }

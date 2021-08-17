@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "TerminalTabStatus.idl";
 
 namespace TerminalApp
 {
@@ -8,16 +9,16 @@ namespace TerminalApp
     [default_interface] runtimeclass TabHeaderControl : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Title { get; set; };
-        Boolean IsPaneZoomed { get; set; };
         Double RenamerMaxWidth { get; set; };
-        Boolean IsProgressRingActive { get; set; };
-        Boolean IsProgressRingIndeterminate { get; set; };
-        Boolean BellIndicator { get; set; };
-        UInt32 ProgressValue { get; set; };
 
         TabHeaderControl();
         void BeginRename();
 
+        Boolean InRename { get; };
+
+        TerminalTabStatus TabStatus { get;  set; };
+
         event TitleChangeRequestedArgs TitleChangeRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RenameEnded;
     }
 }

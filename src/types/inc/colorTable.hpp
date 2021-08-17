@@ -17,6 +17,7 @@ namespace Microsoft::Console::Utils
     void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
     void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
     void Initialize256ColorTable(const gsl::span<COLORREF> table);
+    gsl::span<const til::color> CampbellColorTable();
 
     std::optional<til::color> ColorFromXOrgAppColorName(const std::wstring_view wstr) noexcept;
 

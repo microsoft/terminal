@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../inc/RenderEngineBase.hpp"
+#include "../inc/FontResource.hpp"
 
 namespace Microsoft::Console::Render
 {
@@ -30,7 +31,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
         [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const COORD* const pcoordCursor) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
         [[nodiscard]] HRESULT InvalidateAll() noexcept override;
         [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
@@ -40,6 +41,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT Present() noexcept override;
 
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
+
+        [[nodiscard]] HRESULT ResetLineTransform() noexcept override;
+        [[nodiscard]] HRESULT PrepareLineTransform(const LineRendition lineRendition,
+                                                   const size_t targetRow,
+                                                   const size_t viewportLeft) noexcept override;
 
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
         [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
@@ -56,9 +62,13 @@ namespace Microsoft::Console::Render
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                    const gsl::not_null<IRenderData*> pData,
+                                                   const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
                                          _Out_ FontInfo& FontInfo) noexcept override;
+        [[nodiscard]] HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                             const SIZE cellSize,
+                                             const size_t centeringHint) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
@@ -66,12 +76,12 @@ namespace Microsoft::Console::Render
                                               _Out_ FontInfo& Font,
                                               const int iDpi) noexcept override;
 
-        [[nodiscard]] std::vector<til::rectangle> GetDirtyArea() override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
     protected:
-        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring& newTitle) noexcept override;
+        [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
 
     private:
         HWND _hwndTargetWindow;
@@ -82,6 +92,7 @@ namespace Microsoft::Console::Render
 
         bool _fPaintStarted;
 
+        til::rectangle _invalidCharacters;
         PAINTSTRUCT _psInvalidData;
         HDC _hdcMemoryContext;
         bool _isTrueTypeFont;
@@ -89,6 +100,7 @@ namespace Microsoft::Console::Render
         HFONT _hfont;
         HFONT _hfontItalic;
         TEXTMETRICW _tmFontMetrics;
+        FontResource _softFont;
 
         static const size_t s_cPolyTextCache = 80;
         POLYTEXTW _pPolyText[s_cPolyTextCache];
@@ -96,6 +108,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _FlushBufferLines() noexcept;
 
         std::vector<RECT> cursorInvertRects;
+        XFORM cursorInvertTransform;
 
         struct LineMetrics
         {
@@ -123,7 +136,17 @@ namespace Microsoft::Console::Render
 
         COLORREF _lastFg;
         COLORREF _lastBg;
-        bool _lastFontItalic;
+
+        enum class FontType : size_t
+        {
+            Default,
+            Italic,
+            Soft
+        };
+        FontType _lastFontType;
+
+        XFORM _currentLineTransform;
+        LineRendition _currentLineRendition;
 
         // Memory pooling to save alloc/free work to the OS for things
         // frequently created and dropped.
@@ -181,5 +204,12 @@ namespace Microsoft::Console::Render
         void _CreateDebugWindow();
         HDC _debugContext;
 #endif
+    };
+
+    constexpr XFORM IDENTITY_XFORM = { 1, 0, 0, 1 };
+
+    inline bool operator==(const XFORM& lhs, const XFORM& rhs) noexcept
+    {
+        return ::memcmp(&lhs, &rhs, sizeof(XFORM)) == 0;
     };
 }

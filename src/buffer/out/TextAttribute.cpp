@@ -5,6 +5,13 @@
 #include "TextAttribute.hpp"
 #include "../../inc/conattrs.hpp"
 
+// Keeping TextColor compact helps us keeping TextAttribute compact,
+// which in turn ensures that our buffer memory usage is low.
+static_assert(sizeof(TextAttribute) == 14);
+static_assert(alignof(TextAttribute) == 2);
+// Ensure that we can memcpy() and memmove() the struct for performance.
+static_assert(std::is_trivially_copyable_v<TextAttribute>);
+
 BYTE TextAttribute::s_legacyDefaultForeground = 7;
 BYTE TextAttribute::s_legacyDefaultBackground = 0;
 
@@ -88,16 +95,18 @@ bool TextAttribute::IsLegacy() const noexcept
 // - defaultFgColor: the default foreground color rgb value.
 // - defaultBgColor: the default background color rgb value.
 // - reverseScreenMode: true if the screen mode is reversed.
-// - blinkingIsFaint: true if blinking should be interpreted as faint.
+// - blinkingIsFaint: true if blinking should be interpreted as faint. (defaults to false)
+// - boldIsBright: true if "bold" should be interpreted as bright. (defaults to true)
 // Return Value:
 // - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
                                                                 const COLORREF defaultFgColor,
                                                                 const COLORREF defaultBgColor,
                                                                 const bool reverseScreenMode,
-                                                                const bool blinkingIsFaint) const noexcept
+                                                                const bool blinkingIsFaint,
+                                                                const bool boldIsBright) const noexcept
 {
-    auto fg = _foreground.GetColor(colorTable, defaultFgColor, IsBold());
+    auto fg = _foreground.GetColor(colorTable, defaultFgColor, boldIsBright && IsBold());
     auto bg = _background.GetColor(colorTable, defaultBgColor);
     if (IsFaint() || (IsBlinking() && blinkingIsFaint))
     {

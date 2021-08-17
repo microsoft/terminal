@@ -6,8 +6,8 @@
 #include "InteractDispatch.hpp"
 #include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
+#include "../../interactivity/inc/EventSynthesis.hpp"
 #include "../../types/inc/Viewport.hpp"
-#include "../../types/inc/convert.hpp"
 #include "../../inc/unicode.hpp"
 
 using namespace Microsoft::Console::Types;
@@ -72,7 +72,7 @@ bool InteractDispatch::WriteString(const std::wstring_view string)
 
         for (const auto& wch : string)
         {
-            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, codepage);
+            std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, codepage);
 
             std::move(convertedEvents.begin(),
                       convertedEvents.end(),

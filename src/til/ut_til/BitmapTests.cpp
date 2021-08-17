@@ -969,7 +969,7 @@ class BitmapTests
     TEST_METHOD(RunsWithPmr)
     {
         // This is a copy of the above test, but with a pmr::bitmap.
-        std::pmr::unsynchronized_pool_resource pool;
+        std::pmr::unsynchronized_pool_resource pool{ til::pmr::get_default_resource() };
 
         // This map --> Those runs
         // 1 1 0 1      A A _ B

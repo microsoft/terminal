@@ -9,12 +9,14 @@
 
 #include "LegacyProfileGeneratorNamespaces.h"
 #include "TerminalSettingsSerializationHelpers.h"
+#include "AppearanceConfig.h"
+#include "FontConfig.h"
 
 #include "Profile.g.cpp"
 
 using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::Foundation;
@@ -23,26 +25,17 @@ using namespace ::Microsoft::Console;
 static constexpr std::string_view NameKey{ "name" };
 static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
-static constexpr std::string_view ColorSchemeKey{ "colorScheme" };
 static constexpr std::string_view HiddenKey{ "hidden" };
 
-static constexpr std::string_view ForegroundKey{ "foreground" };
-static constexpr std::string_view BackgroundKey{ "background" };
-static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view TabTitleKey{ "tabTitle" };
 static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
 static constexpr std::string_view HistorySizeKey{ "historySize" };
 static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
 static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
-static constexpr std::string_view CursorColorKey{ "cursorColor" };
-static constexpr std::string_view CursorShapeKey{ "cursorShape" };
-static constexpr std::string_view CursorHeightKey{ "cursorHeight" };
 
 static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
-static constexpr std::string_view FontFaceKey{ "fontFace" };
-static constexpr std::string_view FontSizeKey{ "fontSize" };
-static constexpr std::string_view FontWeightKey{ "fontWeight" };
+static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
@@ -50,15 +43,10 @@ static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
 static constexpr std::string_view IconKey{ "icon" };
-static constexpr std::string_view BackgroundImageKey{ "backgroundImage" };
-static constexpr std::string_view BackgroundImageOpacityKey{ "backgroundImageOpacity" };
-static constexpr std::string_view BackgroundImageStretchModeKey{ "backgroundImageStretchMode" };
-static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageAlignment" };
-static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
-static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
+static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -71,9 +59,31 @@ Profile::Profile(guid guid) :
 {
 }
 
+void Profile::CreateUnfocusedAppearance()
+{
+    if (!_UnfocusedAppearance)
+    {
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+
+        // If an unfocused appearance is defined in this profile, any undefined parameters are
+        // taken from this profile's default appearance, so add it as a parent
+        com_ptr<AppearanceConfig> parentCom;
+        parentCom.copy_from(winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance));
+        unfocusedAppearance->InsertParent(parentCom);
+
+        _UnfocusedAppearance = *unfocusedAppearance;
+    }
+}
+
+void Profile::DeleteUnfocusedAppearance()
+{
+    _UnfocusedAppearance = std::nullopt;
+}
+
 winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };
+
     profile->_Guid = source->_Guid;
     profile->_Name = source->_Name;
     profile->_Source = source->_Source;
@@ -86,33 +96,48 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
     profile->_UseAcrylic = source->_UseAcrylic;
     profile->_AcrylicOpacity = source->_AcrylicOpacity;
     profile->_ScrollState = source->_ScrollState;
-    profile->_FontFace = source->_FontFace;
-    profile->_FontSize = source->_FontSize;
-    profile->_FontWeight = source->_FontWeight;
     profile->_Padding = source->_Padding;
     profile->_Commandline = source->_Commandline;
     profile->_StartingDirectory = source->_StartingDirectory;
-    profile->_BackgroundImagePath = source->_BackgroundImagePath;
-    profile->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
-    profile->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
     profile->_AntialiasingMode = source->_AntialiasingMode;
-    profile->_RetroTerminalEffect = source->_RetroTerminalEffect;
     profile->_ForceFullRepaintRendering = source->_ForceFullRepaintRendering;
     profile->_SoftwareRendering = source->_SoftwareRendering;
-    profile->_ColorSchemeName = source->_ColorSchemeName;
-    profile->_Foreground = source->_Foreground;
-    profile->_Background = source->_Background;
-    profile->_SelectionBackground = source->_SelectionBackground;
-    profile->_CursorColor = source->_CursorColor;
     profile->_HistorySize = source->_HistorySize;
     profile->_SnapOnInput = source->_SnapOnInput;
     profile->_AltGrAliasing = source->_AltGrAliasing;
-    profile->_CursorShape = source->_CursorShape;
-    profile->_CursorHeight = source->_CursorHeight;
     profile->_BellStyle = source->_BellStyle;
-    profile->_PixelShaderPath = source->_PixelShaderPath;
-    profile->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
     profile->_ConnectionType = source->_ConnectionType;
+    profile->_Origin = source->_Origin;
+
+    // Copy over the font info
+    const auto weakRefToProfile = weak_ref<Model::Profile>(*profile);
+    winrt::com_ptr<FontConfig> sourceFontInfoImpl;
+    sourceFontInfoImpl.copy_from(winrt::get_self<FontConfig>(source->_FontInfo));
+    auto copiedFontInfo = FontConfig::CopyFontInfo(sourceFontInfoImpl, weakRefToProfile);
+    profile->_FontInfo = *copiedFontInfo;
+
+    // Copy over the appearance
+    winrt::com_ptr<AppearanceConfig> sourceDefaultAppearanceImpl;
+    sourceDefaultAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_DefaultAppearance));
+    auto copiedDefaultAppearance = AppearanceConfig::CopyAppearance(sourceDefaultAppearanceImpl, weakRefToProfile);
+    profile->_DefaultAppearance = *copiedDefaultAppearance;
+
+    if (source->_UnfocusedAppearance.has_value())
+    {
+        Model::AppearanceConfig unfocused{ nullptr };
+        if (source->_UnfocusedAppearance.value() != nullptr)
+        {
+            // Copy over the unfocused appearance
+            winrt::com_ptr<AppearanceConfig> sourceUnfocusedAppearanceImpl;
+            sourceUnfocusedAppearanceImpl.copy_from(winrt::get_self<AppearanceConfig>(source->_UnfocusedAppearance.value()));
+            auto copiedUnfocusedAppearance = AppearanceConfig::CopyAppearance(sourceUnfocusedAppearanceImpl, weakRefToProfile);
+
+            // Make sure to add the default appearance as a parent
+            copiedUnfocusedAppearance->InsertParent(copiedDefaultAppearance);
+            unfocused = *copiedUnfocusedAppearance;
+        }
+        profile->_UnfocusedAppearance = unfocused;
+    }
 
     return profile;
 }
@@ -141,7 +166,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
             if (kv != visited.end())
             {
                 // add this Profile's clone as a parent
-                cloneGraph->InsertParent(kv->second);
+                InsertParentHelper(cloneGraph, kv->second);
             }
             else
             {
@@ -150,7 +175,7 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
                 winrt::com_ptr<Profile> clone{ CopySettings(sourceParent) };
 
                 // add the new copy to the cloneGraph
-                cloneGraph->InsertParent(clone);
+                InsertParentHelper(cloneGraph, clone);
 
                 // copy the sub-graph at "clone"
                 CloneInheritanceGraph(sourceParent, clone, visited);
@@ -164,6 +189,26 @@ winrt::com_ptr<Profile> Profile::CloneInheritanceGraph(winrt::com_ptr<Profile> s
 
     // we have no more to explore down this path.
     return cloneGraph;
+}
+
+// Method Description:
+// - Inserts a parent profile into a child profile, at the specified index if one was provided
+// - Makes sure to call _FinalizeInheritance after inserting the parent
+// Arguments:
+// - child: the child profile to insert the parent into
+// - parent: the parent profile to insert into the child
+// - index: an optional index value to insert the parent into
+void Profile::InsertParentHelper(winrt::com_ptr<Profile> child, winrt::com_ptr<Profile> parent, std::optional<size_t> index)
+{
+    if (index)
+    {
+        child->InsertParent(index.value(), parent);
+    }
+    else
+    {
+        child->InsertParent(parent);
+    }
+    child->_FinalizeInheritance();
 }
 
 // Method Description:
@@ -191,8 +236,6 @@ Json::Value Profile::GenerateStub() const
     {
         stub[JsonKey(SourceKey)] = winrt::to_string(source);
     }
-
-    stub[JsonKey(HiddenKey)] = Hidden();
 
     return stub;
 }
@@ -289,33 +332,29 @@ bool Profile::ShouldBeLayered(const Json::Value& json) const
 // <none>
 void Profile::LayerJson(const Json::Value& json)
 {
+    // Appearance Settings
+    auto defaultAppearanceImpl = winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance);
+    defaultAppearanceImpl->LayerJson(json);
+
+    // Font Settings
+    auto fontInfoImpl = winrt::get_self<implementation::FontConfig>(_FontInfo);
+    fontInfoImpl->LayerJson(json);
+
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
-    // Core Settings
-    JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
-    JsonUtils::GetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
-
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
     JsonUtils::GetValueForKey(json, HistorySizeKey, _HistorySize);
     JsonUtils::GetValueForKey(json, SnapOnInputKey, _SnapOnInput);
     JsonUtils::GetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
-    JsonUtils::GetValueForKey(json, CursorHeightKey, _CursorHeight);
-    JsonUtils::GetValueForKey(json, CursorShapeKey, _CursorShape);
     JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
-    JsonUtils::GetValueForKey(json, FontWeightKey, _FontWeight);
     JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::GetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::GetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::GetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
@@ -330,50 +369,22 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
-    JsonUtils::GetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
-    JsonUtils::GetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
-    JsonUtils::GetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
-    JsonUtils::GetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
-    JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
-    JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
-}
 
-// Method Description:
-// - Either Returns this profile's background image path, if one is set, expanding
-// - Returns this profile's background image path, if one is set, expanding
-//   any environment variables in the path, if there are any.
-// - Or if "DesktopWallpaper" is set, then gets the path to the desktops wallpaper.
-// Return Value:
-// - This profile's expanded background image path / desktops's wallpaper path /the empty string.
-winrt::hstring Profile::ExpandedBackgroundImagePath() const
-{
-    const auto path{ BackgroundImagePath() };
-    if (path.empty())
+    if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
-        return path;
-    }
-    // checks if the user would like to copy their desktop wallpaper
-    // if so, replaces the path with the desktop wallpaper's path
-    else if (path == DesktopWallpaperEnum)
-    {
-        WCHAR desktopWallpaper[MAX_PATH];
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
 
-        // "The returned string will not exceed MAX_PATH characters" as of 2020
-        if (SystemParametersInfo(SPI_GETDESKWALLPAPER, MAX_PATH, desktopWallpaper, SPIF_UPDATEINIFILE))
-        {
-            return winrt::hstring{ (desktopWallpaper) };
-        }
-        else
-        {
-            return winrt::hstring{ L"" };
-        }
-    }
-    else
-    {
-        return winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+        // If an unfocused appearance is defined in this profile, any undefined parameters are
+        // taken from this profile's default appearance, so add it as a parent
+        com_ptr<AppearanceConfig> parentCom;
+        parentCom.copy_from(defaultAppearanceImpl);
+        unfocusedAppearance->InsertParent(parentCom);
+
+        unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
+        _UnfocusedAppearance = *unfocusedAppearance;
     }
 }
 
@@ -388,6 +399,46 @@ winrt::hstring Profile::EvaluatedStartingDirectory() const
     return path;
 }
 
+void Profile::_FinalizeInheritance()
+{
+    if (auto defaultAppearanceImpl = get_self<AppearanceConfig>(_DefaultAppearance))
+    {
+        // Clear any existing parents first, we don't want duplicates from any previous
+        // calls to this function
+        defaultAppearanceImpl->ClearParents();
+        for (auto& parent : _parents)
+        {
+            if (auto parentDefaultAppearanceImpl = parent->_DefaultAppearance.try_as<AppearanceConfig>())
+            {
+                defaultAppearanceImpl->InsertParent(parentDefaultAppearanceImpl);
+            }
+        }
+    }
+    if (auto fontInfoImpl = get_self<FontConfig>(_FontInfo))
+    {
+        // Clear any existing parents first, we don't want duplicates from any previous
+        // calls to this function
+        fontInfoImpl->ClearParents();
+        for (auto& parent : _parents)
+        {
+            if (auto parentFontInfoImpl = parent->_FontInfo.try_as<FontConfig>())
+            {
+                fontInfoImpl->InsertParent(parentFontInfoImpl);
+            }
+        }
+    }
+}
+
+winrt::Microsoft::Terminal::Settings::Model::IAppearanceConfig Profile::DefaultAppearance()
+{
+    return _DefaultAppearance;
+}
+
+winrt::Microsoft::Terminal::Settings::Model::FontConfig Profile::FontInfo()
+{
+    return _FontInfo;
+}
+
 // Method Description:
 // - Helper function for expanding any environment variables in a user-supplied starting directory and validating the resulting path
 // Arguments:
@@ -397,26 +448,17 @@ winrt::hstring Profile::EvaluatedStartingDirectory() const
 // - the function returns an evaluated version of %userprofile% to avoid blocking the session from starting.
 std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 {
-    // First expand path
-    DWORD numCharsInput = ExpandEnvironmentStrings(directory.c_str(), nullptr, 0);
-    std::unique_ptr<wchar_t[]> evaluatedPath = std::make_unique<wchar_t[]>(numCharsInput);
-    THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(directory.c_str(), evaluatedPath.get(), numCharsInput));
-
-    // Validate that the resulting path is legitimate
-    const DWORD dwFileAttributes = GetFileAttributes(evaluatedPath.get());
-    if ((dwFileAttributes != INVALID_FILE_ATTRIBUTES) && (WI_IsFlagSet(dwFileAttributes, FILE_ATTRIBUTE_DIRECTORY)))
-    {
-        return std::wstring(evaluatedPath.get(), numCharsInput);
-    }
-    else
-    {
-        // In the event where the user supplied a path that can't be resolved, use a reasonable default (in this case, %userprofile%)
-        const DWORD numCharsDefault = ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), nullptr, 0);
-        std::unique_ptr<wchar_t[]> defaultPath = std::make_unique<wchar_t[]>(numCharsDefault);
-        THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(DEFAULT_STARTING_DIRECTORY.c_str(), defaultPath.get(), numCharsDefault));
-
-        return std::wstring(defaultPath.get(), numCharsDefault);
-    }
+    // Prior to GH#9541, we'd validate that the user's startingDirectory existed
+    // here. If it was invalid, we'd gracefully fall back to %USERPROFILE%.
+    //
+    // However, that could cause hangs when combined with WSL. When the WSL
+    // filesystem is slow to respond, we'll end up waiting indefinitely for
+    // their filesystem driver to respond. This can result in the whole terminal
+    // becoming unresponsive.
+    //
+    // If the path is eventually invalid, we'll display warning in the
+    // ConptyConnection when the process fails to launch.
+    return wil::ExpandEnvironmentStringsW<std::wstring>(directory.c_str());
 }
 
 // Function Description:
@@ -482,35 +524,29 @@ winrt::guid Profile::GetGuidOrGenerateForJson(const Json::Value& json) noexcept
 // - the JsonObject representing this instance
 Json::Value Profile::ToJson() const
 {
-    Json::Value json{ Json::ValueType::objectValue };
+    // Initialize the json with the appearance settings
+    Json::Value json{ winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance)->ToJson() };
+
+    // GH #9962:
+    //   If the settings.json was missing, when we load the dynamic profiles, they are completely empty.
+    //   This caused us to serialize empty profiles "{}" on accident.
+    const bool writeBasicSettings{ !Source().empty() };
 
     // Profile-specific Settings
-    JsonUtils::SetValueForKey(json, NameKey, _Name);
-    JsonUtils::SetValueForKey(json, GuidKey, _Guid);
-    JsonUtils::SetValueForKey(json, HiddenKey, _Hidden);
-    JsonUtils::SetValueForKey(json, SourceKey, _Source);
-
-    // Core Settings
-    JsonUtils::SetValueForKey(json, ForegroundKey, _Foreground);
-    JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
-    JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
-    JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
-    JsonUtils::SetValueForKey(json, ColorSchemeKey, _ColorSchemeName);
+    JsonUtils::SetValueForKey(json, NameKey, writeBasicSettings ? Name() : _Name);
+    JsonUtils::SetValueForKey(json, GuidKey, writeBasicSettings ? Guid() : _Guid);
+    JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
+    JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
     JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
     JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
     JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
-    JsonUtils::SetValueForKey(json, CursorHeightKey, _CursorHeight);
-    JsonUtils::SetValueForKey(json, CursorShapeKey, _CursorShape);
     JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
-    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
     JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
     JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
@@ -522,15 +558,21 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
     JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
     JsonUtils::SetValueForKey(json, IconKey, _Icon);
-    JsonUtils::SetValueForKey(json, BackgroundImageKey, _BackgroundImagePath);
-    JsonUtils::SetValueForKey(json, BackgroundImageOpacityKey, _BackgroundImageOpacity);
-    JsonUtils::SetValueForKey(json, BackgroundImageStretchModeKey, _BackgroundImageStretchMode);
-    JsonUtils::SetValueForKey(json, BackgroundImageAlignmentKey, _BackgroundImageAlignment);
-    JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
-    JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
+
+    // Font settings
+    const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
+    if (fontInfoImpl->HasAnyOptionSet())
+    {
+        json[JsonKey(FontInfoKey)] = winrt::get_self<FontConfig>(_FontInfo)->ToJson();
+    }
+
+    if (_UnfocusedAppearance)
+    {
+        json[JsonKey(UnfocusedAppearanceKey)] = winrt::get_self<AppearanceConfig>(_UnfocusedAppearance.value())->ToJson();
+    }
 
     return json;
 }

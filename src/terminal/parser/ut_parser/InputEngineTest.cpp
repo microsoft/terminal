@@ -10,7 +10,7 @@
 #include "ascii.hpp"
 #include "../input/terminalInput.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../types/inc/convert.hpp"
+#include "../../interactivity/inc/EventSynthesis.hpp"
 
 #include <vector>
 #include <functional>
@@ -272,6 +272,8 @@ class Microsoft::Console::VirtualTerminal::InputEngineTest
     TEST_METHOD(SGRMouseTest_Modifiers);
     TEST_METHOD(SGRMouseTest_Movement);
     TEST_METHOD(SGRMouseTest_Scroll);
+    TEST_METHOD(SGRMouseTest_DoubleClick);
+    TEST_METHOD(SGRMouseTest_Hover);
     TEST_METHOD(CtrlAltZCtrlAltXTest);
     TEST_METHOD(TestSs3Entry);
     TEST_METHOD(TestSs3Immediate);
@@ -379,7 +381,7 @@ bool TestInteractDispatch::WriteString(const std::wstring_view string)
     {
         // We're forcing the translation to CP_USA, so that it'll be constant
         //  regardless of the CP the test is running in
-        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = CharToKeyEvents(wch, CP_USA);
+        std::deque<std::unique_ptr<KeyEvent>> convertedEvents = Microsoft::Console::Interactivity::CharToKeyEvents(wch, CP_USA);
         std::move(convertedEvents.begin(),
                   convertedEvents.end(),
                   std::back_inserter(keyEvents));
@@ -1246,6 +1248,80 @@ void InputEngineTest::SGRMouseTest_Scroll()
         {   { CsiMouseButtonCodes::ScrollBack,    0, { 1, 1 }, CsiActionCodes::MouseDown },        { SCROLL_DELTA_BACKWARD, 0, { 0, 0 }, MOUSE_WHEELED } },
     };
     // clang-format on
+    VerifySGRMouseData(testData);
+}
+
+void InputEngineTest::SGRMouseTest_DoubleClick()
+{
+    // SGR_PARAMS serves as test input
+    // - the state of the buttons (constructed via InputStateMachineEngine::CsiMouseButtonCodes)
+    // - the modifiers for the mouse event (constructed via InputStateMachineEngine::CsiMouseModifierCodes)
+    // - the {x,y} position of the event on the viewport where the top-left is {1,1}
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
+
+    // MOUSE_EVENT_PARAMS serves as expected output
+    // - buttonState
+    // - controlKeyState
+    // - mousePosition
+    // - eventFlags
+
+    // clang-format off
+    const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
+        //  TEST INPUT                                                                     EXPECTED OUTPUT
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, DOUBLE_CLICK } },
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { FROM_LEFT_1ST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Left, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseDown },       { FROM_LEFT_2ND_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseDown },       { FROM_LEFT_2ND_BUTTON_PRESSED, 0, { 0, 0 }, DOUBLE_CLICK } },
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseDown },       { FROM_LEFT_2ND_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Middle, 0, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, DOUBLE_CLICK } },
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
+
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseDown },         { RIGHTMOST_BUTTON_PRESSED, 0, { 0, 0 }, 0 } },
+        {   { CsiMouseButtonCodes::Right, 0, { 1, 1 }, CsiActionCodes::MouseUp },           { 0, 0, { 0, 0 }, 0 } },
+    };
+    // clang-format on
+
+    VerifySGRMouseData(testData);
+}
+
+void InputEngineTest::SGRMouseTest_Hover()
+{
+    // SGR_PARAMS serves as test input
+    // - the state of the buttons (constructed via InputStateMachineEngine::CsiMouseButtonCodes)
+    // - the modifiers for the mouse event (constructed via InputStateMachineEngine::CsiMouseModifierCodes)
+    // - the {x,y} position of the event on the viewport where the top-left is {1,1}
+    // - the direction of the mouse press (constructed via InputStateMachineEngine::CsiActionCodes)
+
+    // MOUSE_EVENT_PARAMS serves as expected output
+    // - buttonState
+    // - controlKeyState
+    // - mousePosition
+    // - eventFlags
+
+    // clang-format off
+    const std::vector<std::tuple<SGR_PARAMS, MOUSE_EVENT_PARAMS>> testData = {
+        //  TEST INPUT                                                                                                 EXPECTED OUTPUT
+        {   { CsiMouseButtonCodes::Released, CsiMouseModifierCodes::Drag, { 1, 1 }, CsiActionCodes::MouseUp },         { 0, 0, { 0, 0 }, MOUSE_MOVED } },
+        {   { CsiMouseButtonCodes::Released, CsiMouseModifierCodes::Drag, { 2, 2 }, CsiActionCodes::MouseUp },         { 0, 0, { 1, 1 }, MOUSE_MOVED } },
+    };
+    // clang-format on
+
     VerifySGRMouseData(testData);
 }
 

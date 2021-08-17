@@ -15,8 +15,8 @@ Author(s):
 
 #pragma once
 
-#include "AttrRowIterator.hpp"
 #include "CharRow.hpp"
+#include "AttrRow.hpp"
 #include "OutputCellView.hpp"
 #include "../../types/inc/viewport.hpp"
 
@@ -47,6 +47,8 @@ public:
     const OutputCellView& operator*() const noexcept;
     const OutputCellView* operator->() const noexcept;
 
+    COORD Pos() const noexcept;
+
 protected:
     void _SetPos(const COORD newPos);
     void _GenerateView();
@@ -55,7 +57,7 @@ protected:
     OutputCellView _view;
 
     const ROW* _pRow;
-    AttrRowIterator _attrIter;
+    ATTR_ROW::const_iterator _attrIter;
     const TextBuffer& _buffer;
     const Microsoft::Console::Types::Viewport _bounds;
     bool _exceeded;

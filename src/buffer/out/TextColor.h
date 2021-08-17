@@ -37,8 +37,6 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
-#pragma pack(push, 1)
-
 enum class ColorType : BYTE
 {
     IsIndex256 = 0x0,
@@ -88,10 +86,7 @@ public:
     void SetIndex(const BYTE index, const bool isIndex256) noexcept;
     void SetDefault() noexcept;
 
-    COLORREF GetColor(gsl::span<const COLORREF> colorTable,
-                      const COLORREF defaultColor,
-                      const bool brighten = false) const noexcept;
-
+    COLORREF GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept
@@ -102,13 +97,13 @@ public:
     COLORREF GetRGB() const noexcept;
 
 private:
-    ColorType _meta : 2;
     union
     {
         BYTE _red, _index;
     };
     BYTE _green;
     BYTE _blue;
+    ColorType _meta;
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -116,8 +111,6 @@ private:
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
-
-#pragma pack(pop)
 
 bool constexpr operator==(const TextColor& a, const TextColor& b) noexcept
 {
@@ -161,5 +154,3 @@ namespace WEX
     }
 }
 #endif
-
-static_assert(sizeof(TextColor) <= 4 * sizeof(BYTE), "We should only need 4B for an entire TextColor. Any more than that is just waste");

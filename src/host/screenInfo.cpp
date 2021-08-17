@@ -106,8 +106,9 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
         IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        THROW_HR_IF_NULL(E_FAIL, pNotifier);
-
+        // It is possible for pNotifier to be null and that's OK.
+        // For instance, the PTY doesn't need to send events. Just pass it along
+        // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
         SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
 
         // Set up viewport
@@ -564,6 +565,19 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
     }
 }
 
+// Routine Description:
+// - Informs clients whether we have accessibility eventing so they can
+//   save themselves the work of performing math or lookups before calling
+//   `NotifyAccessibilityEventing`.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if we have an accessibility listener. False otherwise.
+bool SCREEN_INFORMATION::HasAccessibilityEventing() const noexcept
+{
+    return _pAccessibilityNotifier;
+}
+
 // NOTE: This method was historically used to notify accessibility apps AND
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
@@ -573,6 +587,11 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
                                                      const short sEndX,
                                                      const short sEndY)
 {
+    if (!_pAccessibilityNotifier)
+    {
+        return;
+    }
+
     // Fire off a winevent to let accessibility apps know what changed.
     if (IsActiveScreenBuffer())
     {
@@ -674,7 +693,10 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     }
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    if (_pAccessibilityNotifier)
+    {
+        _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    }
 
     ResizingWindow--;
 }
@@ -1411,10 +1433,16 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     // First allocate a new text buffer to take the place of the current one.
     std::unique_ptr<TextBuffer> newTextBuffer;
+
+    // GH#3848 - Stash away the current attributes the old text buffer is using.
+    // We'll initialize the new buffer with the default attributes, but after
+    // the resize, we'll want to make sure that the new buffer's current
+    // attributes (the ones used for printing new text) match the old buffer's.
+    const auto oldPrimaryAttributes = _textBuffer->GetCurrentAttributes();
     try
     {
         newTextBuffer = std::make_unique<TextBuffer>(coordNewScreenSize,
-                                                     GetAttributes(),
+                                                     TextAttribute{},
                                                      0,
                                                      _renderTarget); // temporarily set size to 0 so it won't render.
     }
@@ -1442,6 +1470,8 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         COORD coordCursorHeightDiff = { 0 };
         coordCursorHeightDiff.Y = sCursorHeightInViewportAfter - sCursorHeightInViewportBefore;
         LOG_IF_FAILED(SetViewportOrigin(false, coordCursorHeightDiff, true));
+
+        _textBuffer->SetCurrentAttributes(oldPrimaryAttributes);
 
         _textBuffer.swap(newTextBuffer);
     }
@@ -1512,7 +1542,10 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (NT_SUCCESS(status))
     {
-        NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        if (HasAccessibilityEventing())
+        {
+            NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        }
 
         if ((!ConvScreenInfo))
         {
@@ -1524,7 +1557,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         }
 
         // Fire off an event to let accessibility apps know the layout has changed.
-        if (IsActiveScreenBuffer())
+        if (_pAccessibilityNotifier && IsActiveScreenBuffer())
         {
             _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
         }
@@ -1871,10 +1904,17 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        // Update the alt buffer's cursor style to match our own.
+        // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
         auto* const createdBuffer = *ppsiNewScreenBuffer;
-        createdBuffer->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
+        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        altCursor.SetIsVisible(myCursor.IsVisible());
+        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        // The new position should match the viewport-relative position of the main buffer.
+        auto altCursorPos = myCursor.GetPosition();
+        altCursorPos.Y -= GetVirtualViewport().Top();
+        altCursor.SetPosition(altCursorPos);
 
         s_InsertScreenBuffer(createdBuffer);
 
@@ -1962,6 +2002,14 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
 
         SCREEN_INFORMATION* psiAlt = psiMain->_psiAlternateBuffer;
         psiMain->_psiAlternateBuffer = nullptr;
+
+        // Copy the alt buffer's cursor style and visibility back to the main buffer.
+        const auto& altCursor = psiAlt->GetTextBuffer().GetCursor();
+        auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
+        mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetColor(), altCursor.GetType());
+        mainCursor.SetIsVisible(altCursor.IsVisible());
+        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
+
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
         // deleting the alt buffer will give the GetSet back to its main
 
@@ -2223,6 +2271,9 @@ void SCREEN_INFORMATION::SetViewport(const Viewport& newViewport,
     auto fillData = OutputCellIterator{ fillAttributes, fillLength };
     Write(fillData, fillPosition, false);
 
+    // Also reset the line rendition for the erased rows.
+    _textBuffer->ResetLineRenditionRange(_viewport.Top(), _viewport.BottomExclusive());
+
     return S_OK;
 }
 
@@ -2395,7 +2446,9 @@ void SCREEN_INFORMATION::ClearTextData()
 // - word boundary positions
 std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position) const
 {
-    COORD clampedPosition = position;
+    // The position argument is in screen coordinates, but we need the
+    // equivalent buffer position, taking line rendition into account.
+    COORD clampedPosition = _textBuffer->ScreenToBufferPosition(position);
     GetBufferSize().Clamp(clampedPosition);
 
     COORD start{ clampedPosition };
@@ -2464,6 +2517,12 @@ std::pair<COORD, COORD> SCREEN_INFORMATION::GetWordBoundary(const COORD position
             }
         }
     }
+
+    // The calculated range is in buffer coordinates, but the caller is
+    // expecting screen offsets, so we have to convert these back again.
+    start = _textBuffer->BufferToScreenPosition(start);
+    end = _textBuffer->BufferToScreenPosition(end);
+
     return { start, end };
 }
 
@@ -2541,6 +2600,8 @@ void SCREEN_INFORMATION::InitializeCursorRowAttributes()
         auto fillAttributes = GetAttributes();
         fillAttributes.SetStandardErase();
         row.GetAttrRow().SetAttrToEnd(0, fillAttributes);
+        // The row should also be single width to start with.
+        row.SetLineRendition(LineRendition::SingleWidth);
     }
 }
 
@@ -2669,26 +2730,6 @@ bool SCREEN_INFORMATION::IsCursorInMargins(const COORD cursorPosition) const noe
     }
     const auto margins = GetAbsoluteScrollMargins().ToInclusive();
     return cursorPosition.Y <= margins.Bottom && cursorPosition.Y >= margins.Top;
-}
-
-// Method Description:
-// - Gets the region of the buffer that should be used for scrolling within the
-//      scroll margins. If the scroll margins aren't set, it returns the entire
-//      buffer size.
-// Arguments:
-// - <none>
-// Return Value:
-// - The area of the buffer within the scroll margins
-Viewport SCREEN_INFORMATION::GetScrollingRegion() const noexcept
-{
-    const auto buffer = GetBufferSize();
-    const bool marginsSet = AreMarginsSet();
-    const auto marginRect = GetAbsoluteScrollMargins().ToInclusive();
-    const auto margin = Viewport::FromInclusive({ buffer.Left(),
-                                                  marginsSet ? marginRect.Top : buffer.Top(),
-                                                  buffer.RightInclusive(),
-                                                  marginsSet ? marginRect.Bottom : buffer.BottomInclusive() });
-    return margin;
 }
 
 // Routine Description:

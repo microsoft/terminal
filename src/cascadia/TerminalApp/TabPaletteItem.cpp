@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include "TabPaletteItem.h"
+#include "TerminalTab.h"
 #include <LibraryResources.h>
 
 #include "TabPaletteItem.g.cpp"
@@ -26,7 +27,7 @@ namespace winrt::TerminalApp::implementation
 
         _tabChangedRevoker = tab.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& sender, auto& e) {
             auto item{ weakThis.get() };
-            auto senderTab{ sender.try_as<TabBase>() };
+            auto senderTab{ sender.try_as<winrt::TerminalApp::TabBase>() };
 
             if (item && senderTab)
             {
@@ -41,5 +42,18 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         });
+
+        if (const auto terminalTab{ tab.try_as<winrt::TerminalApp::TerminalTab>() })
+        {
+            const auto status = terminalTab.TabStatus();
+            TabStatus(status);
+
+            _tabStatusChangedRevoker = status.PropertyChanged(winrt::auto_revoke, [weakThis{ get_weak() }](auto& /*sender*/, auto& /*e*/) {
+                // Sometimes nested bindings do not get updated,
+                // thus let's notify property changed on TabStatus when one of its properties changes
+                auto item{ weakThis.get() };
+                item->_PropertyChangedHandlers(*item, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"TabStatus" });
+            });
+        }
     }
 }

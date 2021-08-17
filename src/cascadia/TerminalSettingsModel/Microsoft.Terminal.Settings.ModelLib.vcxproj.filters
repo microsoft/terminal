@@ -18,7 +18,6 @@
     <ClCompile Include="WslDistroGenerator.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="KeyMappingSerialization.cpp" />
     <ClCompile Include="CascadiaSettings.cpp" />
     <ClCompile Include="CascadiaSettingsSerialization.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp" />
@@ -33,6 +32,8 @@
     </ClCompile>
     <ClCompile Include="init.cpp" />
     <ClCompile Include="IconPathConverter.cpp" />
+    <ClCompile Include="DefaultTerminal.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -64,19 +65,28 @@
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="IconPathConverter.h" />
+    <ClInclude Include="DefaultTerminal.h" />
+    <ClInclude Include="FileUtils.h" />
+    <ClInclude Include="HashUtils.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
+    <Midl Include="ActionMap.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
     <Midl Include="GlobalAppSettings.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
     <Midl Include="EnumMappings.idl" />
     <Midl Include="IconPathConverter.idl" />
+    <Midl Include="TerminalSettings.idl" />
+    <Midl Include="AppearanceConfig.idl" />
+    <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="FontConfig.idl" />
+    <Midl Include="DefaultTerminal.idl" />
+    <Midl Include="ApplicationState.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

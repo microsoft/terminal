@@ -7,6 +7,7 @@
 #include "../../inc/DefaultSettings.h"
 #include "JsonUtils.h"
 #include "TerminalSettingsSerializationHelpers.h"
+#include "KeyChordSerialization.h"
 
 #include "GlobalAppSettings.g.cpp"
 
@@ -23,11 +24,14 @@ static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
 static constexpr std::string_view InitialRowsKey{ "initialRows" };
 static constexpr std::string_view InitialColsKey{ "initialCols" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
+static constexpr std::string_view CenterOnLaunchKey{ "centerOnLaunch" };
 static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
+static constexpr std::string_view LanguageKey{ "language" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
+static constexpr std::string_view InputServiceWarningKey{ "inputServiceWarning" };
 static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
@@ -41,12 +45,18 @@ static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" 
 static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
 static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
 static constexpr std::string_view StartupActionsKey{ "startupActions" };
+static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
+static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
+static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
+static constexpr std::string_view AlwaysShowTrayIconKey{ "alwaysShowTrayIcon" };
+static constexpr std::string_view MinimizeToTrayKey{ "minimizeToTray" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
 static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
+static constexpr std::string_view DetectURLsKey{ "experimental.detectURLs" };
 
 #ifdef _DEBUG
 static constexpr bool debugFeaturesDefault{ true };
@@ -60,12 +70,11 @@ bool GlobalAppSettings::_getDefaultDebugFeaturesValue()
 }
 
 GlobalAppSettings::GlobalAppSettings() :
-    _keymap{ winrt::make_self<KeyMapping>() },
+    _actionMap{ winrt::make_self<implementation::ActionMap>() },
     _keybindingsWarnings{},
     _validDefaultProfile{ false },
     _defaultProfile{}
 {
-    _commands = winrt::single_threaded_map<winrt::hstring, Model::Command>();
     _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
 }
 
@@ -81,10 +90,9 @@ void GlobalAppSettings::_FinalizeInheritance()
     FAIL_FAST_IF(_parents.size() > 1);
     for (auto parent : _parents)
     {
-        _keymap = std::move(parent->_keymap);
+        _actionMap->InsertParent(parent->_actionMap);
         _keybindingsWarnings = std::move(parent->_keybindingsWarnings);
         _colorSchemes = std::move(parent->_colorSchemes);
-        _commands = std::move(parent->_commands);
     }
 }
 
@@ -96,15 +104,18 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_AlwaysShowTabs = _AlwaysShowTabs;
     globals->_ShowTitleInTitlebar = _ShowTitleInTitlebar;
     globals->_ConfirmCloseAllTabs = _ConfirmCloseAllTabs;
+    globals->_Language = _Language;
     globals->_Theme = _Theme;
     globals->_TabWidthMode = _TabWidthMode;
     globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
     globals->_WordDelimiters = _WordDelimiters;
+    globals->_InputServiceWarning = _InputServiceWarning;
     globals->_CopyOnSelect = _CopyOnSelect;
     globals->_CopyFormatting = _CopyFormatting;
     globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
     globals->_WarnAboutMultiLinePaste = _WarnAboutMultiLinePaste;
     globals->_InitialPosition = _InitialPosition;
+    globals->_CenterOnLaunch = _CenterOnLaunch;
     globals->_LaunchMode = _LaunchMode;
     globals->_SnapToGridOnResize = _SnapToGridOnResize;
     globals->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
@@ -116,14 +127,17 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
     globals->_StartupActions = _StartupActions;
+    globals->_FocusFollowMouse = _FocusFollowMouse;
+    globals->_WindowingBehavior = _WindowingBehavior;
+    globals->_TrimBlockSelection = _TrimBlockSelection;
+    globals->_DetectURLs = _DetectURLs;
+    globals->_MinimizeToTray = _MinimizeToTray;
+    globals->_AlwaysShowTrayIcon = _AlwaysShowTrayIcon;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
     globals->_defaultProfile = _defaultProfile;
-    if (_keymap)
-    {
-        globals->_keymap = _keymap->Copy();
-    }
+    globals->_actionMap = _actionMap->Copy();
     std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
 
     if (_colorSchemes)
@@ -132,15 +146,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         {
             const auto schemeImpl{ winrt::get_self<ColorScheme>(kv.Value()) };
             globals->_colorSchemes.Insert(kv.Key(), *schemeImpl->Copy());
-        }
-    }
-
-    if (_commands)
-    {
-        for (auto kv : _commands)
-        {
-            const auto commandImpl{ winrt::get_self<Command>(kv.Value()) };
-            globals->_commands.Insert(kv.Key(), *commandImpl->Copy());
         }
     }
 
@@ -224,9 +229,9 @@ std::optional<winrt::hstring> GlobalAppSettings::_getUnparsedDefaultProfileImpl(
 }
 #pragma endregion
 
-winrt::Microsoft::Terminal::Settings::Model::KeyMapping GlobalAppSettings::KeyMap() const noexcept
+winrt::Microsoft::Terminal::Settings::Model::ActionMap GlobalAppSettings::ActionMap() const noexcept
 {
-    return *_keymap;
+    return *_actionMap;
 }
 
 // Method Description:
@@ -260,6 +265,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
 
+    JsonUtils::GetValueForKey(json, CenterOnLaunchKey, _CenterOnLaunch);
+
     JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
 
     JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
@@ -268,6 +275,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, CopyOnSelectKey, _CopyOnSelect);
 
+    JsonUtils::GetValueForKey(json, InputServiceWarningKey, _InputServiceWarning);
+
     JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
 
     JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
@@ -275,6 +284,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
     JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
+
+    JsonUtils::GetValueForKey(json, LanguageKey, _Language);
 
     JsonUtils::GetValueForKey(json, ThemeKey, _Theme);
 
@@ -304,13 +315,26 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, StartupActionsKey, _StartupActions);
 
+    JsonUtils::GetValueForKey(json, FocusFollowMouseKey, _FocusFollowMouse);
+
+    JsonUtils::GetValueForKey(json, WindowingBehaviorKey, _WindowingBehavior);
+
+    JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
+
+    JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
+
+    JsonUtils::GetValueForKey(json, MinimizeToTrayKey, _MinimizeToTray);
+
+    JsonUtils::GetValueForKey(json, AlwaysShowTrayIconKey, _AlwaysShowTrayIcon);
+
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
     auto parseBindings = [this, &json](auto jsonKey) {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
-            auto warnings = _keymap->LayerJson(bindings);
+            auto warnings = _actionMap->LayerJson(bindings);
+
             // It's possible that the user provided keybindings have some warnings
             // in them - problems that we should alert the user to, but we can
             // recover from. Most of these warnings cannot be detected later in the
@@ -318,9 +342,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             // warnings generated from parsing these keybindings, add them to our
             // list of warnings.
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
-
-            // Now parse the array again, but this time as a list of commands.
-            warnings = implementation::Command::LayerJson(_commands, bindings);
         }
     };
     parseBindings(LegacyKeybindingsKey);
@@ -357,11 +378,6 @@ std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> G
     return _keybindingsWarnings;
 }
 
-winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microsoft::Terminal::Settings::Model::Command> GlobalAppSettings::Commands() noexcept
-{
-    return _commands.GetView();
-}
-
 // Method Description:
 // - Create a new serialized JsonObject from an instance of this class
 // Arguments:
@@ -379,14 +395,17 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, InitialRowsKey,                 _InitialRows);
     JsonUtils::SetValueForKey(json, InitialColsKey,                 _InitialCols);
     JsonUtils::SetValueForKey(json, InitialPositionKey,             _InitialPosition);
+    JsonUtils::SetValueForKey(json, CenterOnLaunchKey,              _CenterOnLaunch);
     JsonUtils::SetValueForKey(json, ShowTitleInTitlebarKey,         _ShowTitleInTitlebar);
     JsonUtils::SetValueForKey(json, ShowTabsInTitlebarKey,          _ShowTabsInTitlebar);
     JsonUtils::SetValueForKey(json, WordDelimitersKey,              _WordDelimiters);
+    JsonUtils::SetValueForKey(json, InputServiceWarningKey,         _InputServiceWarning);
     JsonUtils::SetValueForKey(json, CopyOnSelectKey,                _CopyOnSelect);
     JsonUtils::SetValueForKey(json, CopyFormattingKey,              _CopyFormatting);
     JsonUtils::SetValueForKey(json, WarnAboutLargePasteKey,         _WarnAboutLargePaste);
     JsonUtils::SetValueForKey(json, WarnAboutMultiLinePasteKey,     _WarnAboutMultiLinePaste);
     JsonUtils::SetValueForKey(json, LaunchModeKey,                  _LaunchMode);
+    JsonUtils::SetValueForKey(json, LanguageKey,                    _Language);
     JsonUtils::SetValueForKey(json, ThemeKey,                       _Theme);
     JsonUtils::SetValueForKey(json, TabWidthModeKey,                _TabWidthMode);
     JsonUtils::SetValueForKey(json, SnapToGridOnResizeKey,          _SnapToGridOnResize);
@@ -399,12 +418,14 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, TabSwitcherModeKey,             _TabSwitcherMode);
     JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);
     JsonUtils::SetValueForKey(json, StartupActionsKey,              _StartupActions);
+    JsonUtils::SetValueForKey(json, FocusFollowMouseKey,            _FocusFollowMouse);
+    JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
+    JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
+    JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
+    JsonUtils::SetValueForKey(json, MinimizeToTrayKey,              _MinimizeToTray);
+    JsonUtils::SetValueForKey(json, AlwaysShowTrayIconKey,          _AlwaysShowTrayIcon);
     // clang-format on
 
-    // TODO GH#8100: keymap needs to be serialized here
-    //   For deserialization, we iterate over each action in the Json and interpret it as a keybinding, then as a command.
-    //   Converting this back to JSON is a problem because we have no way to know if a Command and Keybinding come from
-    //     the same entry.
-
+    json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;
 }

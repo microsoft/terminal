@@ -6,7 +6,6 @@
     <ProjectName>Microsoft.Terminal.Settings.Model.Lib</ProjectName>
     <RootNamespace>Microsoft.Terminal.Settings.Model</RootNamespace>
     <TargetName>Microsoft.Terminal.Settings.Model.Lib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
@@ -16,6 +15,9 @@
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="DefaultTerminal.h">
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClInclude>
@@ -26,7 +28,13 @@
     <ClInclude Include="ActionAndArgs.h">
       <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ActionMap.h">
+      <DependentUpon>ActionMap.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="AzureCloudShellGenerator.h" />
+    <ClInclude Include="ApplicationState.h">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClInclude>
@@ -37,26 +45,34 @@
       <DependentUpon>Command.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="DefaultProfileUtils.h" />
+    <ClInclude Include="FileUtils.h" />
     <ClInclude Include="GlobalAppSettings.h">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />
+    <ClInclude Include="HashUtils.h" />
     <ClInclude Include="KeyChordSerialization.h">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
-    </ClInclude>
-    <ClInclude Include="KeyMapping.h">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="PowershellCoreProfileGenerator.h" />
     <ClInclude Include="Profile.h">
       <DependentUpon>Profile.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AppearanceConfig.h">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="FontConfig.h">
+      <DependentUpon>FontConfig.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="EnumMappings.h">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="SettingsTypes.h" />
+    <ClInclude Include="TerminalSettings.h">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalSettingsSerializationHelpers.h" />
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
@@ -65,6 +81,9 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="DefaultTerminal.cpp">
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="IconPathConverter.cpp">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
@@ -78,7 +97,16 @@
     <ClCompile Include="ActionArgs.cpp">
       <DependentUpon>ActionArgs.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ActionMap.cpp">
+      <DependentUpon>ActionMap.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ActionMapSerialization.cpp">
+      <DependentUpon>ActionMap.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
+    <ClCompile Include="ApplicationState.cpp">
+      <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
@@ -92,21 +120,25 @@
       <DependentUpon>Command.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="DefaultProfileUtils.cpp" />
+    <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="KeyChordSerialization.cpp">
       <DependentUpon>KeyChordSerialization.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="KeyMapping.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
-    <ClCompile Include="KeyMappingSerialization.cpp">
-      <DependentUpon>KeyMapping.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="PowershellCoreProfileGenerator.cpp" />
     <ClCompile Include="Profile.cpp">
       <DependentUpon>Profile.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="AppearanceConfig.cpp">
+      <DependentUpon>AppearanceConfig.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="FontConfig.cpp">
+      <DependentUpon>FontConfig.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalSettings.cpp">
+      <DependentUpon>TerminalSettings.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
@@ -122,16 +154,22 @@
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
+    <Midl Include="ActionMap.idl" />
+    <Midl Include="ApplicationState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
+    <Midl Include="DefaultTerminal.idl" />
     <Midl Include="GlobalAppSettings.idl" />
     <Midl Include="IconPathConverter.idl" />
-    <Midl Include="KeyMapping.idl" />
     <Midl Include="Profile.idl" />
     <Midl Include="EnumMappings.idl" />
+    <Midl Include="TerminalSettings.idl" />
     <Midl Include="TerminalWarnings.idl" />
     <Midl Include="KeyChordSerialization.idl" />
+    <Midl Include="AppearanceConfig.idl" />
+    <Midl Include="IAppearanceConfig.idl" />
+    <Midl Include="FontConfig.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -166,8 +204,14 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-    <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

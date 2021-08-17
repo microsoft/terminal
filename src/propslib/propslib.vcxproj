@@ -10,6 +10,7 @@
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
+    <ClCompile Include="DelegationConfig.cpp" />
     <ClCompile Include="RegistrySerialization.cpp" />
     <ClCompile Include="ShortcutSerialization.cpp" />
     <ClCompile Include="TrueTypeFontList.cpp" />
@@ -19,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="conpropsp.hpp" />
+    <ClInclude Include="DelegationConfig.hpp" />
     <ClInclude Include="RegistrySerialization.hpp" />
     <ClInclude Include="ShortcutSerialization.hpp" />
     <ClInclude Include="TrueTypeFontList.hpp" />

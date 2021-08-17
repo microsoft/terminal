@@ -432,10 +432,9 @@ bool AdaptDispatch::_InsertDeleteHelper(const size_t count, const bool isInsert)
 
     const auto cursor = csbiex.dwCursorPosition;
     // Rectangle to cut out of the existing buffer. This is inclusive.
-    // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
     SMALL_RECT srScroll;
     srScroll.Left = cursor.X;
-    srScroll.Right = SHORT_MAX;
+    srScroll.Right = _pConApi->PrivateGetLineWidth(cursor.Y) - 1;
     srScroll.Top = cursor.Y;
     srScroll.Bottom = srScroll.Top;
 
@@ -534,7 +533,7 @@ bool AdaptDispatch::_EraseSingleLineHelper(const CONSOLE_SCREEN_BUFFER_INFOEX& c
     case DispatchTypes::EraseType::ToEnd:
     case DispatchTypes::EraseType::All:
         // Remember the .X value is 1 farther than the right most column in the buffer. Therefore no +1.
-        nLength = csbiex.dwSize.X - coordStartPosition.X;
+        nLength = _pConApi->PrivateGetLineWidth(lineId) - coordStartPosition.X;
         break;
     }
 
@@ -622,6 +621,23 @@ bool AdaptDispatch::EraseInDisplay(const DispatchTypes::EraseType eraseType)
 
     if (success)
     {
+        // When erasing the display, every line that is erased in full should be
+        // reset to single width. When erasing to the end, this could include
+        // the current line, if the cursor is in the first column. When erasing
+        // from the beginning, though, the current line would never be included,
+        // because the cursor could never be in the rightmost column (assuming
+        // the line is double width).
+        if (eraseType == DispatchTypes::EraseType::FromBeginning)
+        {
+            const auto endRow = csbiex.dwCursorPosition.Y;
+            _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, endRow);
+        }
+        if (eraseType == DispatchTypes::EraseType::ToEnd)
+        {
+            const auto startRow = csbiex.dwCursorPosition.Y + (csbiex.dwCursorPosition.X > 0 ? 1 : 0);
+            _pConApi->PrivateResetLineRenditionRange(startRow, csbiex.srWindow.Bottom);
+        }
+
         // What we need to erase is grouped into 3 types:
         // 1. Lines before cursor
         // 2. Cursor Line
@@ -695,6 +711,18 @@ bool AdaptDispatch::EraseInLine(const DispatchTypes::EraseType eraseType)
     }
 
     return success;
+}
+
+// Routine Description:
+// - DECSWL/DECDWL/DECDHL - Sets the line rendition attribute for the current line.
+// Arguments:
+// - rendition - Determines whether the line will be rendered as single width, double
+//   width, or as one half of a double height line.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::SetLineRendition(const LineRendition rendition)
+{
+    return _pConApi->PrivateSetCurrentLineRendition(rendition);
 }
 
 // Routine Description:
@@ -1856,6 +1884,7 @@ bool AdaptDispatch::SoftReset()
 //   - Performs a communications line disconnect.
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
+//      * The soft font is reset in the renderer and the font buffer is deleted.
 //   - Clears the screen.
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
@@ -1894,8 +1923,16 @@ bool AdaptDispatch::HardReset()
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;
 
+    // Reset the mouse mode
+    success = EnableSGRExtendedMouseMode(false) && success;
+    success = EnableAnyEventMouseMode(false) && success;
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
+
+    // Clear the soft font in the renderer and delete the font buffer.
+    success = _pConApi->PrivateUpdateSoftFont({}, {}, false) && success;
+    _fontBuffer = nullptr;
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
@@ -1931,6 +1968,8 @@ bool AdaptDispatch::ScreenAlignmentPattern()
         auto fillPosition = COORD{ 0, csbiex.srWindow.Top };
         const auto fillLength = (csbiex.srWindow.Bottom - csbiex.srWindow.Top) * csbiex.dwSize.X;
         success = _pConApi->PrivateFillRegion(fillPosition, fillLength, L'E', false);
+        // Reset the line rendition for all of these rows.
+        success = success && _pConApi->PrivateResetLineRenditionRange(csbiex.srWindow.Top, csbiex.srWindow.Bottom);
         // Reset the meta/extended attributes (but leave the colors unchanged).
         TextAttribute attr;
         if (_pConApi->PrivateGetTextAttributes(attr))
@@ -1995,6 +2034,8 @@ bool AdaptDispatch::_EraseScrollback()
             const COORD coordBelowStartPosition = { 0, height };
             // Again we need to use the default attributes, hence standardFillAttrs is false.
             success = _pConApi->PrivateFillRegion(coordBelowStartPosition, totalAreaBelow, L' ', false);
+            // Also reset the line rendition for all of the cleared rows.
+            success = success && _pConApi->PrivateResetLineRenditionRange(height, csbiex.dwSize.Y);
 
             if (success)
             {
@@ -2402,6 +2443,88 @@ bool AdaptDispatch::EndHyperlink()
 bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
 {
     return false;
+}
+
+// Method Description:
+// - DECDLD - Downloads one or more characters of a dynamically redefinable
+//   character set (DRCS) with a specified pixel pattern. The pixel array is
+//   transmitted in sixel format via the returned StringHandler function.
+// Arguments:
+// - fontNumber - The buffer number into which the font will be loaded.
+// - startChar - The first character in the set that will be replaced.
+// - eraseControl - Which characters to erase before loading the new data.
+// - cellMatrix - The character cell width (sometimes also height in legacy formats).
+// - fontSet - The screen size for which the font is designed.
+// - fontUsage - Whether it is a text font or a full-cell font.
+// - cellHeight - The character cell height (if not defined by cellMatrix).
+// - charsetSize - Whether the character set is 94 or 96 characters.
+// Return Value:
+// - a function to receive the pixel data or nullptr if parameters are invalid
+ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber,
+                                                         const VTParameter startChar,
+                                                         const DispatchTypes::DrcsEraseControl eraseControl,
+                                                         const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                                         const DispatchTypes::DrcsFontSet fontSet,
+                                                         const DispatchTypes::DrcsFontUsage fontUsage,
+                                                         const VTParameter cellHeight,
+                                                         const DispatchTypes::DrcsCharsetSize charsetSize)
+{
+    // If we're a conpty, we're just going to ignore the operation for now.
+    // There's no point in trying to pass it through without also being able
+    // to pass through the character set designations.
+    if (_pConApi->IsConsolePty())
+    {
+        return nullptr;
+    }
+
+    // The font buffer is created on demand.
+    if (!_fontBuffer)
+    {
+        _fontBuffer = std::make_unique<FontBuffer>();
+    }
+
+    // Only one font buffer is supported, so only 0 (default) and 1 are valid.
+    auto success = fontNumber <= 1;
+    success = success && _fontBuffer->SetEraseControl(eraseControl);
+    success = success && _fontBuffer->SetAttributes(cellMatrix, cellHeight, fontSet, fontUsage);
+    success = success && _fontBuffer->SetStartChar(startChar, charsetSize);
+
+    // If any of the parameters are invalid, we return a null handler to let
+    // the state machine know we want to ignore the subsequent data string.
+    if (!success)
+    {
+        return nullptr;
+    }
+
+    return [=](const auto ch) {
+        // We pass the data string straight through to the font buffer class
+        // until we receive an ESC, indicating the end of the string. At that
+        // point we can finalize the buffer, and if valid, update the renderer
+        // with the constructed bit pattern.
+        if (ch != AsciiChars::ESC)
+        {
+            _fontBuffer->AddSixelData(ch);
+        }
+        else if (_fontBuffer->FinalizeSixelData())
+        {
+            // We also need to inform the character set mapper of the ID that
+            // will map to this font (we only support one font buffer so there
+            // will only ever be one active dynamic character set).
+            if (charsetSize == DispatchTypes::DrcsCharsetSize::Size96)
+            {
+                _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
+            }
+            else
+            {
+                _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
+            }
+            const auto bitPattern = _fontBuffer->GetBitPattern();
+            const auto cellSize = _fontBuffer->GetCellSize();
+            const auto centeringHint = _fontBuffer->GetTextCenteringHint();
+            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return true;
+    };
 }
 
 // Routine Description:

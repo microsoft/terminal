@@ -6,7 +6,6 @@
     <RootNamespace>TerminalApp</RootNamespace>
     <ProjectName>TerminalAppLib</ProjectName>
     <TargetName>TerminalAppLib</TargetName>
-    <WindowsTargetPlatformMinVersion>10.0.17763.0</WindowsTargetPlatformMinVersion>
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <SubSystem>Console</SubSystem>
     <OpenConsoleUniversalApp>true</OpenConsoleUniversalApp>
@@ -20,7 +19,7 @@
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <ItemDefinitionGroup>
 
     <ClCompile>
@@ -54,7 +53,7 @@
     <Page Include="TabRowControl.xaml">
       <SubType>Designer</SubType>
     </Page>
-        <Page Include="TabHeaderControl.xaml">
+    <Page Include="TabHeaderControl.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="HighlightedTextControl.xaml">
@@ -75,8 +74,13 @@
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="CommandLinePaletteItem.h" />
     <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="LanguageProfileNotifier.h" />
     <ClInclude Include="MinMaxCloseControl.h">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="PaletteItemTemplateSelector.h">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="SettingsTab.h">
       <DependentUpon>SettingsTab.idl</DependentUpon>
@@ -86,11 +90,18 @@
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TabPaletteItem.h" />
+    <ClInclude Include="TaskbarState.h">
+      <DependentUpon>TaskbarState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="TerminalTab.h">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="TerminalPage.h">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="TerminalTabStatus.h">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="TitlebarControl.h">
@@ -105,7 +116,7 @@
     <ClInclude Include="HighlightedTextControl.h">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClInclude>
-	<ClInclude Include="HighlightedText.h" />
+    <ClInclude Include="HighlightedText.h" />
     <ClInclude Include="ColorPickupFlyout.h">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClInclude>
@@ -116,14 +127,8 @@
     <ClInclude Include="EmptyStringVisibilityConverter.h">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="HasNestedCommandsVisibilityConverter.h">
-      <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="Pane.h" />
     <ClInclude Include="ColorHelper.h" />
-    <ClInclude Include="TerminalSettings.h">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
       <DependentUpon>ShortcutActionDispatch.idl</DependentUpon>
@@ -138,6 +143,7 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="Toast.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
@@ -147,8 +153,13 @@
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
     <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="LanguageProfileNotifier.cpp" />
     <ClCompile Include="MinMaxCloseControl.cpp">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="PaletteItemTemplateSelector.cpp">
+      <DependentUpon>PaletteItemTemplateSelector.idl</DependentUpon>
+      <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <DependentUpon>SettingsTab.idl</DependentUpon>
@@ -158,11 +169,26 @@
       <DependentUpon>TabBase.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TabPaletteItem.cpp" />
+    <ClCompile Include="TaskbarState.cpp">
+      <DependentUpon>TaskbarState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="TerminalTab.cpp">
       <DependentUpon>TerminalTab.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="TerminalPage.cpp">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="TabManagement.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ActionPreviewHandlers.cpp">
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="TerminalTabStatus.cpp">
+      <DependentUpon>TerminalTabStatus.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="TitlebarControl.cpp">
@@ -177,7 +203,7 @@
     <ClCompile Include="HighlightedTextControl.cpp">
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
     </ClCompile>
-	<ClCompile Include="HighlightedText.cpp" />
+    <ClCompile Include="HighlightedText.cpp" />
     <ClCompile Include="ColorPickupFlyout.cpp">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
     </ClCompile>
@@ -188,16 +214,10 @@
     <ClCompile Include="EmptyStringVisibilityConverter.cpp">
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="HasNestedCommandsVisibilityConverter.cpp">
-      <DependentUpon>HasNestedCommandsVisibilityConverter.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="Pane.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
-    <ClCompile Include="TerminalSettings.cpp">
-      <DependentUpon>TerminalSettings.idl</DependentUpon>
-    </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -211,12 +231,14 @@
       <DependentUpon>App.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AppActionHandlers.cpp">
-      <DependentUpon>App.xaml</DependentUpon>
+      <DependentUpon>TerminalPage.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
+    <ClCompile Include="Toast.cpp" />
+
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -227,6 +249,9 @@
     <Midl Include="IDirectKeyListener.idl" />
     <Midl Include="App.idl">
       <DependentUpon>App.xaml</DependentUpon>
+    </Midl>
+    <Midl Include="PaletteItemTemplateSelector.idl">
+      <SubType>Designer</SubType>
     </Midl>
     <Midl Include="SettingsTab.idl" />
     <Midl Include="PaletteItem.idl" />
@@ -239,10 +264,14 @@
     </Midl>
     <Midl Include="TabBase.idl" />
     <Midl Include="TabPaletteItem.idl" />
+    <Midl Include="TaskbarState.idl" />
     <Midl Include="TerminalTab.idl" />
     <Midl Include="TerminalPage.idl">
       <DependentUpon>TerminalPage.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="TerminalTabStatus.idl">
+      <SubType>Designer</SubType>
     </Midl>
     <Midl Include="TitlebarControl.idl">
       <DependentUpon>TitlebarControl.xaml</DependentUpon>
@@ -260,7 +289,7 @@
       <DependentUpon>HighlightedTextControl.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
-	<Midl Include="HighlightedText.idl" />
+    <Midl Include="HighlightedText.idl" />
     <Midl Include="ColorPickupFlyout.idl">
       <DependentUpon>ColorPickupFlyout.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -271,8 +300,6 @@
     </Midl>
     <Midl Include="FilteredCommand.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="HasNestedCommandsVisibilityConverter.idl" />
-    <Midl Include="TerminalSettings.idl" />
   </ItemGroup>
   <!-- ========================= Misc Files ======================== -->
   <ItemGroup>
@@ -313,8 +340,8 @@
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
     </Reference>
-    <Reference Include="Microsoft.Terminal.TerminalControl">
-      <HintPath>$(OpenConsoleCommonOutDir)TerminalControl\Microsoft.Terminal.TerminalControl.winmd</HintPath>
+    <Reference Include="Microsoft.Terminal.Control">
+      <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Control\Microsoft.Terminal.Control.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -327,6 +354,12 @@
     </Reference>
     <Reference Include="Microsoft.Terminal.Settings.Model">
       <HintPath>$(OpenConsoleCommonOutDir)Microsoft.Terminal.Settings.Model\Microsoft.Terminal.Settings.Model.winmd</HintPath>
+      <IsWinMDFile>true</IsWinMDFile>
+      <Private>false</Private>
+      <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
+    </Reference>
+    <Reference Include="Microsoft.Terminal.Core">
+      <HintPath>$(OpenConsoleCommonOutDir)TerminalCore\Microsoft.Terminal.Core.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>
@@ -348,13 +381,13 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
+  <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
-    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.2\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
+    <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets'))" />
   </Target>
 
   <!--

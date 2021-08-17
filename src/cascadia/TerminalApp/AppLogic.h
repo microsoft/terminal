@@ -4,12 +4,37 @@
 #pragma once
 
 #include "AppLogic.g.h"
-#include "TerminalPage.h"
+#include "FindTargetWindowResult.g.h"
 #include "Jumplist.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+#include "LanguageProfileNotifier.h"
+#include "TerminalPage.h"
+
+#include <inc/cppwinrt_utils.h>
+#include <ThrottledFunc.h>
+
+#ifdef UNIT_TESTING
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class CommandlineTest;
+};
+#endif
 
 namespace winrt::TerminalApp::implementation
 {
+    struct FindTargetWindowResult : FindTargetWindowResultT<FindTargetWindowResult>
+    {
+        WINRT_PROPERTY(int32_t, WindowId, -1);
+        WINRT_PROPERTY(winrt::hstring, WindowName, L"");
+
+    public:
+        FindTargetWindowResult(const int32_t id, const winrt::hstring& name) :
+            _WindowId{ id }, _WindowName{ name } {};
+
+        FindTargetWindowResult(const int32_t id) :
+            FindTargetWindowResult(id, L""){};
+    };
+
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
     {
     public:
@@ -29,7 +54,8 @@ namespace winrt::TerminalApp::implementation
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
-        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions);
+        int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
+        TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
         winrt::hstring ParseCommandlineMessage();
         bool ShouldExitEarly();
 
@@ -37,7 +63,16 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
+        void IdentifyWindow();
+        void RenameFailed();
+        winrt::hstring WindowName();
+        void WindowName(const winrt::hstring& name);
+        uint64_t WindowId();
+        void WindowId(const uint64_t& id);
+        bool IsQuakeWindow() const noexcept;
+
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
+        bool CenterOnLaunch();
         TerminalApp::InitialPosition GetInitialPosition(int64_t defaultInitialX, int64_t defaultInitialY);
         winrt::Windows::UI::Xaml::ElementTheme GetRequestedTheme();
         Microsoft::Terminal::Settings::Model::LaunchMode GetLaunchMode();
@@ -47,19 +82,26 @@ namespace winrt::TerminalApp::implementation
 
         Windows::UI::Xaml::UIElement GetRoot() noexcept;
 
+        void SetInboundListener();
+
         hstring Title();
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
         void WindowCloseButtonClicked();
 
-        size_t GetLastActiveControlTaskbarState();
-        size_t GetLastActiveControlTaskbarProgress();
+        winrt::TerminalApp::TaskbarState TaskbarState();
+
+        bool GetMinimizeToTray();
+        bool GetAlwaysShowTrayIcon();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 
+        Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
+
         // -------------------------------- WinRT Events ---------------------------------
-        DECLARE_EVENT_WITH_TYPED_EVENT_HANDLER(RequestedThemeChanged, _requestedThemeChangedHandlers, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
+        TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
+        TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
         bool _isUwp{ false };
@@ -71,32 +113,34 @@ namespace winrt::TerminalApp::implementation
         // ALSO: If you add any UIElements as roots here, make sure they're
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
-
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
-        HRESULT _settingsLoadedResult;
-        winrt::hstring _settingsLoadExceptionText{};
-
-        bool _loadedInitialSettings;
-
-        wil::unique_folder_change_reader_nothrow _reader;
+        winrt::hstring _settingsLoadExceptionText;
+        HRESULT _settingsLoadedResult = S_OK;
+        bool _loadedInitialSettings = false;
 
         std::shared_mutex _dialogLock;
 
-        std::atomic<bool> _settingsReloadQueued{ false };
-
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
-        int _ParseArgs(winrt::array_view<const hstring>& args);
+
+        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
+        til::throttled_func_trailing<> _reloadState;
+
+        // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
+        // (C++ destroys members in reverse-declaration-order.)
+        winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
+        wil::unique_folder_change_reader_nothrow _reader;
+
+        static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
+                                                                       const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
         void _ShowLoadErrorsDialog(const winrt::hstring& titleKey, const winrt::hstring& contentKey, HRESULT settingsLoadedResult);
         void _ShowLoadWarningsDialog();
         bool _IsKeyboardServiceEnabled();
-        void _ShowKeyboardServiceDisabledDialog();
 
-        fire_and_forget _LoadErrorsDialogRoutine();
-        fire_and_forget _ShowLoadWarningsDialogRoutine();
-        fire_and_forget _RefreshThemeRoutine();
+        void _ApplyLanguageSettingChange() noexcept;
+        void _RefreshThemeRoutine();
         fire_and_forget _ApplyStartupTaskStateChange();
 
         void _OnLoaded(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
@@ -123,6 +167,14 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
         FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
+        FORWARDED_TYPED_EVENT(IdentifyWindowsRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IdentifyWindowsRequested);
+        FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
+        FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
+        FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
+
+#ifdef UNIT_TESTING
+        friend class TerminalAppLocalTests::CommandlineTest;
+#endif
     };
 }
 

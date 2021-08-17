@@ -18,7 +18,7 @@ Author(s):
 #include "GlobalAppSettings.g.h"
 #include "IInheritable.h"
 
-#include "KeyMapping.h"
+#include "ActionMap.h"
 #include "Command.h"
 #include "ColorScheme.h"
 
@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void AddColorScheme(const Model::ColorScheme& scheme);
         void RemoveColorScheme(hstring schemeName);
 
-        Model::KeyMapping KeyMap() const noexcept;
+        Model::ActionMap ActionMap() const noexcept;
 
         static com_ptr<GlobalAppSettings> FromJson(const Json::Value& json);
         void LayerJson(const Json::Value& json);
@@ -50,8 +50,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         std::vector<SettingsLoadWarnings> KeybindingsWarnings() const;
-
-        Windows::Foundation::Collections::IMapView<hstring, Model::Command> Commands() noexcept;
 
         // These are implemented manually to handle the string/GUID exchange
         // by higher layers in the app.
@@ -62,42 +60,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void UnparsedDefaultProfile(const hstring& value);
         void ClearUnparsedDefaultProfile();
 
-        GETSET_SETTING(int32_t, InitialRows, DEFAULT_ROWS);
-        GETSET_SETTING(int32_t, InitialCols, DEFAULT_COLS);
-        GETSET_SETTING(bool, AlwaysShowTabs, true);
-        GETSET_SETTING(bool, ShowTitleInTitlebar, true);
-        GETSET_SETTING(bool, ConfirmCloseAllTabs, true);
-        GETSET_SETTING(winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
-        GETSET_SETTING(winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
-        GETSET_SETTING(bool, ShowTabsInTitlebar, true);
-        GETSET_SETTING(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        GETSET_SETTING(bool, CopyOnSelect, false);
-        GETSET_SETTING(winrt::Microsoft::Terminal::TerminalControl::CopyFormat, CopyFormatting, 0);
-        GETSET_SETTING(bool, WarnAboutLargePaste, true);
-        GETSET_SETTING(bool, WarnAboutMultiLinePaste, true);
-        GETSET_SETTING(Model::LaunchPosition, InitialPosition, nullptr, nullptr);
-        GETSET_SETTING(Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
-        GETSET_SETTING(bool, SnapToGridOnResize, true);
-        GETSET_SETTING(bool, ForceFullRepaintRendering, false);
-        GETSET_SETTING(bool, SoftwareRendering, false);
-        GETSET_SETTING(bool, ForceVTInput, false);
-        GETSET_SETTING(bool, DebugFeaturesEnabled, _getDefaultDebugFeaturesValue());
-        GETSET_SETTING(bool, StartOnUserLogin, false);
-        GETSET_SETTING(bool, AlwaysOnTop, false);
-        GETSET_SETTING(Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
-        GETSET_SETTING(bool, DisableAnimations, false);
-        GETSET_SETTING(hstring, StartupActions, L"");
+        // TODO GH#9207: Remove this once we have a GlobalAppSettingsViewModel in TerminalSettingsEditor
+        void SetInvertedDisableAnimationsValue(bool invertedDisableAnimationsValue)
+        {
+            DisableAnimations(!invertedDisableAnimationsValue);
+        }
+
+        INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialRows, DEFAULT_ROWS);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialCols, DEFAULT_COLS);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTabs, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTitleInTitlebar, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ConfirmCloseAllTabs, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, Language);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTabsInTitlebar, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CopyOnSelect, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, InputServiceWarning, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutLargePaste, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SoftwareRendering, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceVTInput, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DebugFeaturesEnabled, _getDefaultDebugFeaturesValue());
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, StartOnUserLogin, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysOnTop, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DisableAnimations, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, StartupActions, L"");
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, FocusFollowMouse, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, MinimizeToTray, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTrayIcon, false);
 
     private:
         guid _defaultProfile;
         std::optional<hstring> _UnparsedDefaultProfile{ std::nullopt };
         bool _validDefaultProfile;
 
-        com_ptr<KeyMapping> _keymap;
+        com_ptr<implementation::ActionMap> _actionMap;
         std::vector<SettingsLoadWarnings> _keybindingsWarnings;
 
         Windows::Foundation::Collections::IMap<hstring, Model::ColorScheme> _colorSchemes;
-        Windows::Foundation::Collections::IMap<hstring, Model::Command> _commands;
 
         std::optional<hstring> _getUnparsedDefaultProfileImpl() const;
         static bool _getDefaultDebugFeaturesValue();

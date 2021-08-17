@@ -59,11 +59,12 @@ public:
 
     bool SetConsoleCursorPosition(const COORD position) override;
 
-    bool GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const override;
-    bool SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& cursorInfo) override;
-
     bool PrivateGetTextAttributes(TextAttribute& attrs) const override;
     bool PrivateSetTextAttributes(const TextAttribute& attrs) override;
+
+    bool PrivateSetCurrentLineRendition(const LineRendition lineRendition) override;
+    bool PrivateResetLineRenditionRange(const size_t startRow, const size_t endRow) override;
+    SHORT PrivateGetLineWidth(const size_t row) const override;
 
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override;
@@ -145,6 +146,10 @@ public:
 
     bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
     bool PrivateEndHyperlink() const override;
+
+    bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                               const SIZE cellSize,
+                               const size_t centeringHint) noexcept override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

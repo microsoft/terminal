@@ -4,6 +4,7 @@
 #pragma once
 
 #include "KeyChordSerialization.g.h"
+#include "JsonUtils.h"
 #include "../inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -12,10 +13,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         KeyChordSerialization() = default;
 
-        static winrt::Microsoft::Terminal::TerminalControl::KeyChord FromString(const winrt::hstring& str);
-        static winrt::hstring ToString(const winrt::Microsoft::Terminal::TerminalControl::KeyChord& chord);
+        static winrt::Microsoft::Terminal::Control::KeyChord FromString(const winrt::hstring& str);
+        static winrt::hstring ToString(const winrt::Microsoft::Terminal::Control::KeyChord& chord);
     };
 }
+
+template<>
+struct Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<winrt::Microsoft::Terminal::Control::KeyChord>
+{
+    winrt::Microsoft::Terminal::Control::KeyChord FromJson(const Json::Value& json);
+    bool CanConvert(const Json::Value& json);
+    Json::Value ToJson(const winrt::Microsoft::Terminal::Control::KeyChord& val);
+    std::string TypeDescription() const;
+};
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {

@@ -311,7 +311,7 @@ std::vector<Profile> PowershellCoreProfileGenerator::GenerateProfiles()
         auto profile{ CreateDefaultProfile(name) };
         profile.Commandline(psI.executablePath.wstring());
         profile.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        profile.ColorSchemeName(L"Campbell");
+        profile.DefaultAppearance().ColorSchemeName(L"Campbell");
 
         profile.Icon(WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON);
         profiles.emplace_back(std::move(profile));

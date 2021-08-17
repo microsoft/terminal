@@ -27,8 +27,15 @@ Author(s):
 
 using namespace Microsoft::WRL;
 
-struct __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
-    OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand>
+struct
+#if defined(WT_BRANDING_RELEASE)
+    __declspec(uuid("9f156763-7844-4dc4-b2b1-901f640f5155"))
+#elif defined(WT_BRANDING_PREVIEW)
+    __declspec(uuid("02db545a-3e20-46de-83a5-1329b1e88b6b"))
+#else // DEV
+    __declspec(uuid("52065414-e077-47ec-a3ac-1cc5455e1b54"))
+#endif
+        OpenTerminalHere : public RuntimeClass<RuntimeClassFlags<ClassicCom | InhibitFtmBase>, IExplorerCommand>
 {
 #pragma region IExplorerCommand
     STDMETHODIMP Invoke(IShellItemArray* psiItemArray,

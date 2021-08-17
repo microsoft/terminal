@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl"; 
+import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
@@ -18,6 +18,9 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentDefaultProfile;
 
         IInspectable CurrentLaunchMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
+
+        IInspectable CurrentWindowingBehavior;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> WindowingBehaviorList { get; };
     }
 }

@@ -23,8 +23,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::hstring CurrentDirectory() { return _cwd; };
 
-        void Args(winrt::array_view<const winrt::hstring> const& value);
-        winrt::com_array<winrt::hstring> Args();
+        void Commandline(winrt::array_view<const winrt::hstring> const& value);
+        winrt::com_array<winrt::hstring> Commandline();
 
     private:
         winrt::com_array<winrt::hstring> _args;

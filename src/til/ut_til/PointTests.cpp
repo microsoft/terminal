@@ -765,7 +765,6 @@ class PointTests
 
         Log::Comment(L"4.) Division by zero");
         {
-            constexpr ptrdiff_t bigSize = std::numeric_limits<ptrdiff_t>().max();
             const til::point pt{ 1, 1 };
             const int scale = 0;
 

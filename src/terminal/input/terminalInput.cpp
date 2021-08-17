@@ -19,8 +19,6 @@
 
 using namespace Microsoft::Console::VirtualTerminal;
 
-DWORD const dwAltGrFlags = LEFT_CTRL_PRESSED | RIGHT_ALT_PRESSED;
-
 TerminalInput::TerminalInput(_In_ std::function<void(std::deque<std::unique_ptr<IInputEvent>>&)> pfn) :
     _leadingSurrogate{}
 {
@@ -565,25 +563,33 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // for the 5 least significant ones to be zeroed out.
     if (keyEvent.IsAltPressed() && keyEvent.IsCtrlPressed())
     {
-        auto ch = keyEvent.GetCharData();
-        if (ch == UNICODE_NULL)
-        {
-            // For Alt+Ctrl+Key messages GetCharData() returns 0.
-            // The values of the ASCII characters and virtual key codes
-            // of <Space>, A-Z (as used below) are numerically identical.
-            // -> Get the char from the virtual key.
-            ch = keyEvent.GetVirtualKeyCode();
-        }
+        const auto ch = keyEvent.GetCharData();
+        const auto vkey = keyEvent.GetVirtualKeyCode();
+
+        // For Alt+Ctrl+Key messages GetCharData() usually returns 0.
+        // Luckily the numerical values of the ASCII characters and virtual key codes
+        // of <Space> and A-Z, as used below, are numerically identical.
+        // -> Get the char from the virtual key if it's 0.
+        const auto ctrlAltChar = keyEvent.GetCharData() != 0 ? keyEvent.GetCharData() : keyEvent.GetVirtualKeyCode();
+
         // Alt+Ctrl acts as a substitute for AltGr on Windows.
         // For instance using a German keyboard both AltGr+< and Alt+Ctrl+< produce a | (pipe) character.
         // The below condition primitively ensures that we allow all common Alt+Ctrl combinations
         // while preserving most of the functionality of Alt+Ctrl as a substitute for AltGr.
-        if (ch == UNICODE_SPACE || (ch > 0x40 && ch <= 0x5A))
+        if (ctrlAltChar == UNICODE_SPACE || (ctrlAltChar > 0x40 && ctrlAltChar <= 0x5A))
         {
             // Pressing the control key causes all bits but the 5 least
             // significant ones to be zeroed out (when using ASCII).
-            ch &= 0b11111;
-            _SendEscapedInputSequence(ch);
+            _SendEscapedInputSequence(ctrlAltChar & 0b11111);
+            return true;
+        }
+
+        // Currently, when we're called with Alt+Ctrl+@, ch will be 0, since Ctrl+@ equals a null byte.
+        // VkKeyScanW(0) in turn returns the vkey for the null character (ASCII @).
+        // -> Use the vkey to determine if Ctrl+@ is being pressed and produce ^[^@.
+        if (ch == UNICODE_NULL && vkey == LOBYTE(VkKeyScanW(0)))
+        {
+            _SendEscapedInputSequence(L'\0');
             return true;
         }
     }
@@ -776,7 +782,7 @@ std::wstring TerminalInput::_GenerateWin32KeySequence(const KeyEvent& key)
     //      Kd: the value of bKeyDown - either a '0' or '1'. If omitted, defaults to '0'.
     //      Cs: the value of dwControlKeyState - any number. If omitted, defaults to '0'.
     //      Rc: the value of wRepeatCount - any number. If omitted, defaults to '1'.
-    return fmt::format(L"\x1b[{};{};{};{};{};{}_",
+    return fmt::format(FMT_COMPILE(L"\x1b[{};{};{};{};{};{}_"),
                        key.GetVirtualKeyCode(),
                        key.GetVirtualScanCode(),
                        static_cast<int>(key.GetCharData()),

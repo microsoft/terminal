@@ -4,7 +4,6 @@
 #include "pch.h"
 
 #include "../TerminalApp/TerminalPage.h"
-#include "../TerminalApp/TerminalSettings.h"
 #include "../LocalTests_SettingsModel/TestUtils.h"
 
 using namespace Microsoft::Console;
@@ -13,7 +12,7 @@ using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::TerminalApp;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace TerminalAppLocalTests
 {
@@ -33,15 +32,6 @@ namespace TerminalAppLocalTests
             TEST_CLASS_PROPERTY(L"RunAs", L"UAP")
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
-
-        TEST_METHOD(TryCreateWinRTType);
-
-        TEST_METHOD(TestTerminalArgsForBinding);
-
-        TEST_METHOD(MakeSettingsForProfileThatDoesntExist);
-        TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
-
-        TEST_METHOD(TestLayerProfileOnColorScheme);
 
         TEST_METHOD(TestIterateCommands);
         TEST_METHOD(TestIterateOnGeneratedNamedCommands);
@@ -82,487 +72,6 @@ namespace TerminalAppLocalTests
             }
         }
     };
-
-    void SettingsTests::TryCreateWinRTType()
-    {
-        TerminalSettings settings;
-        VERIFY_IS_NOT_NULL(settings);
-        auto oldFontSize = settings.FontSize();
-        settings.FontSize(oldFontSize + 5);
-        auto newFontSize = settings.FontSize();
-        VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
-    }
-
-    void SettingsTests::TestTerminalArgsForBinding()
-    {
-        const std::string settingsJson{ R"(
-        {
-            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1,
-                    "commandline": "cmd.exe"
-                },
-                {
-                    "name": "profile1",
-                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2,
-                    "commandline": "pwsh.exe"
-                },
-                {
-                    "name": "profile2",
-                    "historySize": 3,
-                    "commandline": "wsl.exe"
-                }
-            ],
-            "keybindings": [
-                { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" } },
-                { "keys": ["ctrl+b"], "command": { "action": "splitPane", "split": "vertical", "profile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}" } },
-                { "keys": ["ctrl+c"], "command": { "action": "splitPane", "split": "vertical", "profile": "profile1" } },
-                { "keys": ["ctrl+d"], "command": { "action": "splitPane", "split": "vertical", "profile": "profile2" } },
-                { "keys": ["ctrl+e"], "command": { "action": "splitPane", "split": "horizontal", "commandline": "foo.exe" } },
-                { "keys": ["ctrl+f"], "command": { "action": "splitPane", "split": "horizontal", "profile": "profile1", "commandline": "foo.exe" } },
-                { "keys": ["ctrl+g"], "command": { "action": "newTab" } },
-                { "keys": ["ctrl+h"], "command": { "action": "newTab", "startingDirectory": "c:\\foo" } },
-                { "keys": ["ctrl+i"], "command": { "action": "newTab", "profile": "profile2", "startingDirectory": "c:\\foo" } },
-                { "keys": ["ctrl+j"], "command": { "action": "newTab", "tabTitle": "bar" } },
-                { "keys": ["ctrl+k"], "command": { "action": "newTab", "profile": "profile2", "tabTitle": "bar" } },
-                { "keys": ["ctrl+l"], "command": { "action": "newTab", "profile": "profile1", "tabTitle": "bar", "startingDirectory": "c:\\foo", "commandline":"foo.exe" } }
-            ]
-        })" };
-
-        const winrt::guid guid0{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}") };
-        const winrt::guid guid1{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}") };
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
-
-        auto keymap = settings.GlobalSettings().KeyMap();
-        VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
-
-        const auto profile2Guid = settings.ActiveProfiles().GetAt(2).Guid();
-        VERIFY_ARE_NOT_EQUAL(winrt::guid{}, profile2Guid);
-
-        VERIFY_ARE_EQUAL(12u, keymap.Size());
-
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid0, guid);
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('B') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", realArgs.TerminalArgs().Profile());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid1, guid);
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid1, guid);
-            VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid0, guid);
-            VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
-            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid1, guid);
-            VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid0, guid);
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid0, guid);
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
-            VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('J') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid0, guid);
-            VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('K') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
-            VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
-            VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
-            VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
-        }
-        {
-            KeyChord kc{ true, false, false, static_cast<int32_t>('L') };
-            auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
-            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
-            const auto& realArgs = actionAndArgs.Args().try_as<NewTabArgs>();
-            VERIFY_IS_NOT_NULL(realArgs);
-            // Verify the args have the expected value
-            VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Commandline().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().StartingDirectory().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().TabTitle().empty());
-            VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
-            VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
-            VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
-            VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
-            VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
-
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, realArgs.TerminalArgs(), nullptr);
-            VERIFY_ARE_EQUAL(guid1, guid);
-            VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
-            VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
-            VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
-        }
-    }
-
-    void SettingsTests::MakeSettingsForProfileThatDoesntExist()
-    {
-        // Test that MakeSettings throws when the GUID doesn't exist
-        const std::string settingsString{ R"(
-        {
-            "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-            "profiles": [
-                {
-                    "name" : "profile0",
-                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1
-                },
-                {
-                    "name" : "profile1",
-                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2
-                }
-            ]
-        })" };
-        CascadiaSettings settings{ til::u8u16(settingsString) };
-
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-        const auto guid2 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
-        const auto guid3 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
-
-        try
-        {
-            auto terminalSettings = winrt::make<winrt::TerminalApp::implementation::TerminalSettings>(settings, guid1, nullptr);
-            VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
-            VERIFY_ARE_EQUAL(1, terminalSettings.HistorySize());
-        }
-        catch (...)
-        {
-            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
-        }
-
-        try
-        {
-            auto terminalSettings = winrt::make<winrt::TerminalApp::implementation::TerminalSettings>(settings, guid2, nullptr);
-            VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
-            VERIFY_ARE_EQUAL(2, terminalSettings.HistorySize());
-        }
-        catch (...)
-        {
-            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
-        }
-
-        VERIFY_THROWS(auto terminalSettings = winrt::make<winrt::TerminalApp::implementation::TerminalSettings>(settings, guid3, nullptr), wil::ResultException, L"This call to BuildSettings should fail");
-
-        try
-        {
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, nullptr, nullptr);
-            VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-        }
-        catch (...)
-        {
-            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
-        }
-    }
-
-    void SettingsTests::MakeSettingsForDefaultProfileThatDoesntExist()
-    {
-        // Test that MakeSettings _doesnt_ throw when we load settings with a
-        // defaultProfile that's not in the list, we validate the settings, and
-        // then call MakeSettings(nullopt). The validation should ensure that
-        // the default profile is something reasonable
-        const std::string settingsString{ R"(
-        {
-            "defaultProfile": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
-            "profiles": [
-                {
-                    "name" : "profile0",
-                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
-                    "historySize": 1
-                },
-                {
-                    "name" : "profile1",
-                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
-                    "historySize": 2
-                }
-            ]
-        })" };
-        CascadiaSettings settings{ til::u8u16(settingsString) };
-
-        VERIFY_ARE_EQUAL(2u, settings.Warnings().Size());
-        VERIFY_ARE_EQUAL(2u, settings.ActiveProfiles().Size());
-        VERIFY_ARE_EQUAL(settings.GlobalSettings().DefaultProfile(), settings.ActiveProfiles().GetAt(0).Guid());
-        try
-        {
-            const auto [guid, termSettings] = winrt::TerminalApp::implementation::TerminalSettings::BuildSettings(settings, nullptr, nullptr);
-            VERIFY_ARE_NOT_EQUAL(nullptr, termSettings);
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
-        }
-        catch (...)
-        {
-            VERIFY_IS_TRUE(false, L"This call to BuildSettings should succeed");
-        }
-    }
-
-    void SettingsTests::TestLayerProfileOnColorScheme()
-    {
-        Log::Comment(NoThrowString().Format(
-            L"Ensure that setting (or not) a property in the profile that should override a property of the color scheme works correctly."));
-
-        const std::string settings0String{ R"(
-        {
-            "defaultProfile": "profile5",
-            "profiles": [
-                {
-                    "name" : "profile0",
-                    "colorScheme": "schemeWithCursorColor"
-                },
-                {
-                    "name" : "profile1",
-                    "colorScheme": "schemeWithoutCursorColor"
-                },
-                {
-                    "name" : "profile2",
-                    "colorScheme": "schemeWithCursorColor",
-                    "cursorColor": "#234567"
-                },
-                {
-                    "name" : "profile3",
-                    "colorScheme": "schemeWithoutCursorColor",
-                    "cursorColor": "#345678"
-                },
-                {
-                    "name" : "profile4",
-                    "cursorColor": "#456789"
-                },
-                {
-                    "name" : "profile5"
-                }
-            ],
-            "schemes": [
-                {
-                    "name": "schemeWithCursorColor",
-                    "cursorColor": "#123456"
-                },
-                {
-                    "name": "schemeWithoutCursorColor"
-                }
-            ]
-        })" };
-
-        CascadiaSettings settings{ til::u8u16(settings0String) };
-
-        VERIFY_ARE_EQUAL(6u, settings.ActiveProfiles().Size());
-        VERIFY_ARE_EQUAL(2u, settings.GlobalSettings().ColorSchemes().Size());
-
-        auto createTerminalSettings = [&](const auto& profile, const auto& schemes) {
-            auto terminalSettings{ winrt::make_self<winrt::TerminalApp::implementation::TerminalSettings>() };
-            terminalSettings->_ApplyProfileSettings(profile, schemes);
-            return terminalSettings;
-        };
-
-        auto terminalSettings0 = createTerminalSettings(settings.ActiveProfiles().GetAt(0), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings1 = createTerminalSettings(settings.ActiveProfiles().GetAt(1), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings2 = createTerminalSettings(settings.ActiveProfiles().GetAt(2), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings3 = createTerminalSettings(settings.ActiveProfiles().GetAt(3), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings4 = createTerminalSettings(settings.ActiveProfiles().GetAt(4), settings.GlobalSettings().ColorSchemes());
-        auto terminalSettings5 = createTerminalSettings(settings.ActiveProfiles().GetAt(5), settings.GlobalSettings().ColorSchemes());
-
-        VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
-        VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1->CursorColor()); // default
-        VERIFY_ARE_EQUAL(ARGB(0, 0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
-        VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
-        VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
-        VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5->CursorColor()); // default
-    }
 
     void SettingsTests::TestIterateCommands()
     {
@@ -611,13 +120,13 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = commands.Lookup(L"iterable command ${profile.name}");
+            auto command = nameMap.TryLookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -632,7 +141,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -641,7 +150,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -659,7 +168,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile1");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -677,7 +186,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -738,13 +247,13 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = commands.Lookup(L"Split pane, profile: ${profile.name}");
+            auto command = nameMap.TryLookup(L"Split pane, profile: ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -759,7 +268,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -768,7 +277,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"Split pane, profile: profile0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -786,7 +295,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"Split pane, profile: profile1");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -804,7 +313,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"Split pane, profile: profile2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -867,13 +376,13 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = commands.Lookup(L"iterable command ${profile.name}");
+            auto command = nameMap.TryLookup(L"iterable command ${profile.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -888,7 +397,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${profile.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -897,7 +406,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -915,7 +424,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile1\"");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -933,7 +442,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command profile2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -1004,8 +513,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1013,8 +521,9 @@ namespace TerminalAppLocalTests
 
         auto rootCommand = expandedCommands.Lookup(L"Connect to ssh...");
         VERIFY_IS_NOT_NULL(rootCommand);
-        auto rootActionAndArgs = rootCommand.Action();
-        VERIFY_IS_NULL(rootActionAndArgs);
+        auto rootActionAndArgs = rootCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(rootActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(2u, rootCommand.NestedCommands().Size());
 
@@ -1022,7 +531,7 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ L"first.com" };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
 
             VERIFY_IS_FALSE(command.HasNestedCommands());
@@ -1031,7 +540,7 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ L"second.com" };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
 
             VERIFY_IS_FALSE(command.HasNestedCommands());
@@ -1099,8 +608,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1108,23 +616,25 @@ namespace TerminalAppLocalTests
 
         auto grandparentCommand = expandedCommands.Lookup(L"grandparent");
         VERIFY_IS_NOT_NULL(grandparentCommand);
-        auto grandparentActionAndArgs = grandparentCommand.Action();
-        VERIFY_IS_NULL(grandparentActionAndArgs);
+        auto grandparentActionAndArgs = grandparentCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(grandparentActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, grandparentActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(1u, grandparentCommand.NestedCommands().Size());
 
         winrt::hstring parentName{ L"parent" };
         auto parent = grandparentCommand.NestedCommands().Lookup(parentName);
         VERIFY_IS_NOT_NULL(parent);
-        auto parentActionAndArgs = parent.Action();
-        VERIFY_IS_NULL(parentActionAndArgs);
+        auto parentActionAndArgs = parent.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(parentActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, parentActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(2u, parent.NestedCommands().Size());
         {
             winrt::hstring childName{ L"child1" };
             auto child = parent.NestedCommands().Lookup(childName);
             VERIFY_IS_NOT_NULL(child);
-            auto childActionAndArgs = child.Action();
+            auto childActionAndArgs = child.ActionAndArgs();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
 
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
@@ -1144,7 +654,7 @@ namespace TerminalAppLocalTests
             winrt::hstring childName{ L"child2" };
             auto child = parent.NestedCommands().Lookup(childName);
             VERIFY_IS_NOT_NULL(child);
-            auto childActionAndArgs = child.Action();
+            auto childActionAndArgs = child.ActionAndArgs();
             VERIFY_IS_NOT_NULL(childActionAndArgs);
 
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, childActionAndArgs.Action());
@@ -1222,8 +732,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1235,8 +744,9 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ name + L"..." };
             auto command = expandedCommands.Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
-            VERIFY_IS_NULL(actionAndArgs);
+            auto actionAndArgs = command.ActionAndArgs();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::Invalid, actionAndArgs.Action());
 
             VERIFY_IS_TRUE(command.HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, command.NestedCommands().Size());
@@ -1245,7 +755,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1266,7 +776,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1287,7 +797,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1359,8 +869,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1368,8 +877,9 @@ namespace TerminalAppLocalTests
 
         auto rootCommand = expandedCommands.Lookup(L"New Tab With Profile...");
         VERIFY_IS_NOT_NULL(rootCommand);
-        auto rootActionAndArgs = rootCommand.Action();
-        VERIFY_IS_NULL(rootActionAndArgs);
+        auto rootActionAndArgs = rootCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(rootActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(3u, rootCommand.NestedCommands().Size());
 
@@ -1378,7 +888,7 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ fmt::format(L"New tab, profile: {}", name) };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
 
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1462,8 +972,7 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(settings.ActionMap().NameMap(), settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
@@ -1471,8 +980,9 @@ namespace TerminalAppLocalTests
 
         auto rootCommand = expandedCommands.Lookup(L"New Pane...");
         VERIFY_IS_NOT_NULL(rootCommand);
-        auto rootActionAndArgs = rootCommand.Action();
-        VERIFY_IS_NULL(rootActionAndArgs);
+        auto rootActionAndArgs = rootCommand.ActionAndArgs();
+        VERIFY_IS_NOT_NULL(rootActionAndArgs);
+        VERIFY_ARE_EQUAL(ShortcutAction::Invalid, rootActionAndArgs.Action());
 
         VERIFY_ARE_EQUAL(3u, rootCommand.NestedCommands().Size());
 
@@ -1481,8 +991,9 @@ namespace TerminalAppLocalTests
             winrt::hstring commandName{ name + L"..." };
             auto command = rootCommand.NestedCommands().Lookup(commandName);
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
-            VERIFY_IS_NULL(actionAndArgs);
+            auto actionAndArgs = command.ActionAndArgs();
+            VERIFY_IS_NOT_NULL(actionAndArgs);
+            VERIFY_ARE_EQUAL(ShortcutAction::Invalid, actionAndArgs.Action());
 
             VERIFY_IS_TRUE(command.HasNestedCommands());
             VERIFY_ARE_EQUAL(3u, command.NestedCommands().Size());
@@ -1492,7 +1003,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1513,7 +1024,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1534,7 +1045,7 @@ namespace TerminalAppLocalTests
                 winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
-                auto childActionAndArgs = childCommand.Action();
+                auto childActionAndArgs = childCommand.ActionAndArgs();
                 VERIFY_IS_NOT_NULL(childActionAndArgs);
 
                 VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, childActionAndArgs.Action());
@@ -1604,13 +1115,13 @@ namespace TerminalAppLocalTests
 
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
 
-        auto commands = settings.GlobalSettings().Commands();
-        VERIFY_ARE_EQUAL(1u, commands.Size());
+        auto nameMap{ settings.ActionMap().NameMap() };
+        VERIFY_ARE_EQUAL(1u, nameMap.Size());
 
         {
-            auto command = commands.Lookup(L"iterable command ${scheme.name}");
+            auto command = nameMap.TryLookup(L"iterable command ${scheme.name}");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -1625,7 +1136,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(L"${scheme.name}", realArgs.TerminalArgs().Profile());
         }
 
-        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(commands, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
+        auto expandedCommands = winrt::TerminalApp::implementation::TerminalPage::_ExpandCommands(nameMap, settings.ActiveProfiles().GetView(), settings.GlobalSettings().ColorSchemes());
         _logCommandNames(expandedCommands.GetView());
 
         // This is the same warning as above
@@ -1639,7 +1150,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command scheme_0");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -1657,7 +1168,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command scheme_1");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
@@ -1675,7 +1186,7 @@ namespace TerminalAppLocalTests
         {
             auto command = expandedCommands.Lookup(L"iterable command scheme_2");
             VERIFY_IS_NOT_NULL(command);
-            auto actionAndArgs = command.Action();
+            auto actionAndArgs = command.ActionAndArgs();
             VERIFY_IS_NOT_NULL(actionAndArgs);
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();

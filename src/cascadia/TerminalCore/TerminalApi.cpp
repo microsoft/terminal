@@ -16,7 +16,7 @@ try
     _WriteBuffer(stringView);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::ExecuteChar(wchar_t wch) noexcept
 try
@@ -24,7 +24,7 @@ try
     _WriteBuffer({ &wch, 1 });
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 TextAttribute Terminal::GetTextAttributes() const noexcept
 {
@@ -34,6 +34,11 @@ TextAttribute Terminal::GetTextAttributes() const noexcept
 void Terminal::SetTextAttributes(const TextAttribute& attrs) noexcept
 {
     _buffer->SetCurrentAttributes(attrs);
+}
+
+Viewport Terminal::GetBufferSize() noexcept
+{
+    return _buffer->GetSize();
 }
 
 bool Terminal::SetCursorPosition(short x, short y) noexcept
@@ -49,7 +54,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 COORD Terminal::GetCursorPosition() noexcept
 {
@@ -70,7 +75,7 @@ try
     _buffer->GetCursor().SetColor(color);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
@@ -96,7 +101,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - deletes count characters starting from the cursor's current position
@@ -145,7 +150,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Inserts count spaces starting from the cursor's current position, moving over the existing text
@@ -200,7 +205,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::EraseCharacters(const size_t numChars) noexcept
 try
@@ -213,7 +218,7 @@ try
     _buffer->Write(eraseIter, absoluteCursorPos);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method description:
 // - erases a line of text, either from
@@ -259,7 +264,7 @@ try
     _buffer->Write(eraseIter, startPos, false);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method description:
 // - erases text in the buffer in two ways depending on erase type
@@ -343,7 +348,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::WarningBell() noexcept
 try
@@ -351,7 +356,7 @@ try
     _pfnWarningBell();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
 try
@@ -363,7 +368,7 @@ try
     }
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
@@ -382,7 +387,7 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Sets the cursor style to the given style.
@@ -452,7 +457,7 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Updates the default background color from a COLORREF, format 0x00BBGGRR.
@@ -470,7 +475,12 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
+
+til::color Terminal::GetDefaultBackground() const noexcept
+{
+    return _defaultBg;
+}
 
 bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
 {
@@ -499,7 +509,7 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
 {
@@ -581,7 +591,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Updates the buffer's current text attributes to start a hyperlink
@@ -619,10 +629,43 @@ bool Terminal::EndHyperlink() noexcept
 // - progress: indicates the progress value
 // Return Value:
 // - true
-bool Terminal::SetTaskbarProgress(const size_t state, const size_t progress) noexcept
+bool Terminal::SetTaskbarProgress(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TaskbarState state, const size_t progress) noexcept
 {
-    _taskbarState = state;
-    _taskbarProgress = progress;
+    _taskbarState = static_cast<size_t>(state);
+
+    switch (state)
+    {
+    case DispatchTypes::TaskbarState::Clear:
+        // Always set progress to 0 in this case
+        _taskbarProgress = 0;
+        break;
+    case DispatchTypes::TaskbarState::Set:
+        // Always set progress to the value given in this case
+        _taskbarProgress = progress;
+        break;
+    case DispatchTypes::TaskbarState::Indeterminate:
+        // Leave the progress value unchanged in this case
+        break;
+    case DispatchTypes::TaskbarState::Error:
+    case DispatchTypes::TaskbarState::Paused:
+        // In these 2 cases, if the given progress value is 0, then
+        // leave the progress value unchanged, unless the current progress
+        // value is 0, in which case set it to a 'minimum' value (10 in our case);
+        // if the given progress value is greater than 0, then set the progress value
+        if (progress == 0)
+        {
+            if (_taskbarProgress == 0)
+            {
+                _taskbarProgress = TaskbarMinProgress;
+            }
+        }
+        else
+        {
+            _taskbarProgress = progress;
+        }
+        break;
+    }
+
     if (_pfnTaskbarProgressChanged)
     {
         _pfnTaskbarProgressChanged();
@@ -639,4 +682,32 @@ bool Terminal::SetWorkingDirectory(std::wstring_view uri) noexcept
 std::wstring_view Terminal::GetWorkingDirectory() noexcept
 {
     return _workingDirectory;
+}
+
+// Method Description:
+// - Saves the current text attributes to an internal stack.
+// Arguments:
+// - options, cOptions: if present, specify which portions of the current text attributes
+//   should be saved. Only a small subset of GraphicsOptions are actually supported;
+//   others are ignored. If no options are specified, all attributes are stored.
+// Return Value:
+// - true
+bool Terminal::PushGraphicsRendition(const VTParameters options) noexcept
+{
+    _sgrStack.Push(_buffer->GetCurrentAttributes(), options);
+    return true;
+}
+
+// Method Description:
+// - Restores text attributes from the internal stack. If only portions of text attributes
+//   were saved, combines those with the current attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - true
+bool Terminal::PopGraphicsRendition() noexcept
+{
+    const TextAttribute current = _buffer->GetCurrentAttributes();
+    _buffer->SetCurrentAttributes(_sgrStack.Pop(current));
+    return true;
 }

@@ -451,6 +451,13 @@ void ScrollRegion(SCREEN_INFORMATION& screenInfo,
     {
         const auto& view = remaining.at(i);
         screenInfo.WriteRect(fillData, view);
+
+        // If we're scrolling an area that encompasses the full buffer width,
+        // then the filled rows should also have their line rendition reset.
+        if (view.Width() == buffer.Width() && destinationOriginGiven.X == 0)
+        {
+            screenInfo.GetTextBuffer().ResetLineRenditionRange(view.Top(), view.BottomExclusive());
+        }
     }
 }
 

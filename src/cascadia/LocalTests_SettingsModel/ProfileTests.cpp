@@ -36,6 +36,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfileProperties);
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
+        TEST_METHOD(DuplicateProfileTest);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -117,14 +118,14 @@ namespace SettingsModelLocalTests
         const auto profile2Json = VerifyParseSucceeded(profile2String);
 
         auto profile0 = implementation::Profile::FromJson(profile0Json);
-        VERIFY_IS_NOT_NULL(profile0->Foreground());
-        VERIFY_ARE_EQUAL(til::color(0, 0, 0), til::color{ profile0->Foreground().Value() });
+        VERIFY_IS_NOT_NULL(profile0->DefaultAppearance().Foreground());
+        VERIFY_ARE_EQUAL(til::color(0, 0, 0), til::color{ profile0->DefaultAppearance().Foreground().Value() });
 
-        VERIFY_IS_NOT_NULL(profile0->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->Background().Value() });
+        VERIFY_IS_NOT_NULL(profile0->DefaultAppearance().Background());
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->DefaultAppearance().Background().Value() });
 
-        VERIFY_IS_NOT_NULL(profile0->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->SelectionBackground().Value() });
+        VERIFY_IS_NOT_NULL(profile0->DefaultAppearance().SelectionBackground());
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile0->DefaultAppearance().SelectionBackground().Value() });
 
         VERIFY_ARE_EQUAL(L"profile0", profile0->Name());
 
@@ -135,14 +136,14 @@ namespace SettingsModelLocalTests
         auto profile1{ profile0->CreateChild() };
         profile1->LayerJson(profile1Json);
 
-        VERIFY_IS_NOT_NULL(profile1->Foreground());
-        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile1->Foreground().Value() });
+        VERIFY_IS_NOT_NULL(profile1->DefaultAppearance().Foreground());
+        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile1->DefaultAppearance().Foreground().Value() });
 
-        VERIFY_IS_NOT_NULL(profile1->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile1->Background().Value() });
+        VERIFY_IS_NOT_NULL(profile1->DefaultAppearance().Background());
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile1->DefaultAppearance().Background().Value() });
 
-        VERIFY_IS_NOT_NULL(profile1->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile1->Background().Value() });
+        VERIFY_IS_NOT_NULL(profile1->DefaultAppearance().Background());
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile1->DefaultAppearance().Background().Value() });
 
         VERIFY_ARE_EQUAL(L"profile1", profile1->Name());
 
@@ -154,14 +155,14 @@ namespace SettingsModelLocalTests
         auto profile2{ profile1->CreateChild() };
         profile2->LayerJson(profile2Json);
 
-        VERIFY_IS_NOT_NULL(profile2->Foreground());
-        VERIFY_ARE_EQUAL(til::color(3, 3, 3), til::color{ profile2->Foreground().Value() });
+        VERIFY_IS_NOT_NULL(profile2->DefaultAppearance().Foreground());
+        VERIFY_ARE_EQUAL(til::color(3, 3, 3), til::color{ profile2->DefaultAppearance().Foreground().Value() });
 
-        VERIFY_IS_NOT_NULL(profile2->Background());
-        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile2->Background().Value() });
+        VERIFY_IS_NOT_NULL(profile2->DefaultAppearance().Background());
+        VERIFY_ARE_EQUAL(til::color(1, 1, 1), til::color{ profile2->DefaultAppearance().Background().Value() });
 
-        VERIFY_IS_NOT_NULL(profile2->SelectionBackground());
-        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile2->SelectionBackground().Value() });
+        VERIFY_IS_NOT_NULL(profile2->DefaultAppearance().SelectionBackground());
+        VERIFY_ARE_EQUAL(til::color(2, 2, 2), til::color{ profile2->DefaultAppearance().SelectionBackground().Value() });
 
         VERIFY_ARE_EQUAL(L"profile2", profile2->Name());
 
@@ -307,4 +308,22 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(0).Name());
     }
 
+    void ProfileTests::DuplicateProfileTest()
+    {
+        const std::string profile0String{ R"({
+            "name" : "profile0",
+            "backgroundImage" : "some//path"
+        })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profile0String);
+
+        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+
+        settings->_LayerOrCreateProfile(profile0Json);
+        auto duplicatedProfile = settings->DuplicateProfile(*settings->_FindMatchingProfile(profile0Json));
+        duplicatedProfile.Name(L"profile0");
+
+        const auto duplicatedJson = winrt::get_self<implementation::Profile>(duplicatedProfile)->ToJson();
+        VERIFY_ARE_EQUAL(profile0Json, duplicatedJson);
+    }
 }

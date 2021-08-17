@@ -12,7 +12,7 @@
 #include "../Settings.hpp"
 #include "../VtIo.hpp"
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 #include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
@@ -38,7 +38,7 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(RendererDtorAndThread);
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     TEST_METHOD(RendererDtorAndThreadAndDx);
 #endif
 
@@ -355,9 +355,9 @@ public:
         return false;
     }
 
-    const std::wstring GetConsoleTitle() const noexcept override
+    const std::wstring_view GetConsoleTitle() const noexcept override
     {
-        return std::wstring{};
+        return std::wstring_view{};
     }
 
     const bool IsSelectionActive() const override
@@ -433,7 +433,7 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 void VtIoTests::RendererDtorAndThreadAndDx()
 {
     Log::Comment(NoThrowString().Format(

@@ -429,6 +429,87 @@ catch (...)
 }
 
 // Routine Description:
+// - Pre-process text pasted (presumably from the clipboard) with provided option.
+// Arguments:
+// - wstr - String to process.
+// - option - option to use.
+// Return Value:
+// - The result string.
+std::wstring Utils::FilterStringForPaste(const std::wstring_view wstr, const FilterOption option)
+{
+    std::wstring filtered;
+    filtered.reserve(wstr.length());
+
+    const auto isControlCode = [](wchar_t c) {
+        if (c >= L'\x20' && c < L'\x7f')
+        {
+            // Printable ASCII characters.
+            return false;
+        }
+
+        if (c > L'\x9f')
+        {
+            // Not a control code.
+            return false;
+        }
+
+        // All C0 & C1 control codes will be removed except HT(0x09), LF(0x0a) and CR(0x0d).
+        return c != L'\x09' && c != L'\x0a' && c != L'\x0d';
+    };
+
+    std::wstring::size_type pos = 0;
+    std::wstring::size_type begin = 0;
+
+    while (pos < wstr.size())
+    {
+        const wchar_t c = til::at(wstr, pos);
+
+        if (WI_IsFlagSet(option, FilterOption::CarriageReturnNewline) && c == L'\n')
+        {
+            // copy up to but not including the \n
+            filtered.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+            if (!(pos > 0 && (til::at(wstr, pos - 1) == L'\r')))
+            {
+                // there was no \r before the \n we did not copy,
+                // so append our own \r (this effectively replaces the \n
+                // with a \r)
+                filtered.push_back(L'\r');
+            }
+            ++pos;
+            begin = pos;
+        }
+        else if (WI_IsFlagSet(option, FilterOption::ControlCodes) && isControlCode(c))
+        {
+            // copy up to but not including the control code
+            filtered.append(wstr.cbegin() + begin, wstr.cbegin() + pos);
+            ++pos;
+            begin = pos;
+        }
+        else
+        {
+            ++pos;
+        }
+    }
+
+    // If we entered the while loop even once, begin would be non-zero
+    // (because we set begin = pos right after incrementing pos)
+    // So, if begin is still zero at this point it means we never found a newline
+    // and we can just write the original string
+    if (begin == 0)
+    {
+        return std::wstring{ wstr };
+    }
+    else
+    {
+        filtered.append(wstr.cbegin() + begin, wstr.cend());
+        // we may have removed some characters, so we may not need as much space
+        // as we reserved earlier
+        filtered.shrink_to_fit();
+        return filtered;
+    }
+}
+
+// Routine Description:
 // - Shorthand check if a handle value is null or invalid.
 // Arguments:
 // - Handle

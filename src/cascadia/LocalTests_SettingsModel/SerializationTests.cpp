@@ -15,7 +15,7 @@ using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace SettingsModelLocalTests
 {
@@ -39,7 +39,9 @@ namespace SettingsModelLocalTests
         TEST_METHOD(GlobalSettings);
         TEST_METHOD(Profile);
         TEST_METHOD(ColorScheme);
+        TEST_METHOD(Actions);
         TEST_METHOD(CascadiaSettings);
+        TEST_METHOD(LegacyFontSettings);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -84,7 +86,7 @@ namespace SettingsModelLocalTests
                 "initialPosition": ",",
                 "launchMode": "default",
                 "alwaysOnTop": false,
-
+                "inputServiceWarning": true,
                 "copyOnSelect": false,
                 "copyFormatting": "all",
                 "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
@@ -106,12 +108,15 @@ namespace SettingsModelLocalTests
 
                 "experimental.input.forceVT": false,
                 "experimental.rendering.forceFullRepaint": false,
-                "experimental.rendering.software": false
+                "experimental.rendering.software": false,
+
+                "actions": []
             })" };
 
         const std::string smallGlobalsString{ R"(
             {
-                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}"
+                "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                "actions": []
             })" };
 
         RoundtripTest<implementation::GlobalAppSettings>(globalsString);
@@ -134,9 +139,11 @@ namespace SettingsModelLocalTests
                 "tabTitle": "Cool Tab",
                 "suppressApplicationTitle": false,
 
-                "fontFace": "Cascadia Mono",
-                "fontSize": 12,
-                "fontWeight": "normal",
+                "font": {
+                    "face": "Cascadia Mono",
+                    "size": 12,
+                    "weight": "normal"
+                },
                 "padding": "8, 8, 8, 8",
                 "antialiasingMode": "grayscale",
 
@@ -178,7 +185,9 @@ namespace SettingsModelLocalTests
         // - null should be acceptable even though we're working with colors
         const std::string weirdProfileString{ R"(
             {
+                "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
                 "name": "Weird Profile",
+                "hidden": false,
                 "tabColor": null,
                 "foreground": null,
                 "source": "local"
@@ -221,19 +230,188 @@ namespace SettingsModelLocalTests
         RoundtripTest<implementation::ColorScheme>(schemeString);
     }
 
+    void SerializationTests::Actions()
+    {
+        // simple command
+        const std::string actionsString1{ R"([
+                                                { "command": "paste" }
+                                            ])" };
+
+        // complex command
+        const std::string actionsString2A{ R"([
+                                                { "command": { "action": "setTabColor" } }
+                                            ])" };
+        const std::string actionsString2B{ R"([
+                                                { "command": { "action": "setTabColor", "color": "#112233" } }
+                                            ])" };
+        const std::string actionsString2C{ R"([
+                                                { "command": { "action": "copy" } },
+                                                { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" } }
+                                            ])" };
+
+        // simple command with key chords
+        const std::string actionsString3{ R"([
+                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+a" },
+                                                { "command": "toggleAlwaysOnTop", "keys": "ctrl+b" }
+                                            ])" };
+
+        // complex command with key chords
+        const std::string actionsString4{ R"([
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
+                                                { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
+                                            ])" };
+
+        // command with name and icon and multiple key chords
+        const std::string actionsString5{ R"([
+                                                { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "keys": "ctrl+e" },
+                                                { "command": "scrollToTop", "keys": "ctrl+f" }
+                                            ])" };
+
+        // complex command with new terminal args
+        const std::string actionsString6{ R"([
+                                                { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+g" },
+                                            ])" };
+
+        // complex command with meaningful null arg
+        const std::string actionsString7{ R"([
+                                                { "command": { "action": "renameWindow", "name": null }, "keys": "ctrl+h" }
+                                            ])" };
+
+        // nested command
+        const std::string actionsString8{ R"([
+                                                {
+                                                    "name": "Change font size...",
+                                                    "commands": [
+                                                        { "command": { "action": "adjustFontSize", "delta": 1 } },
+                                                        { "command": { "action": "adjustFontSize", "delta": -1 } },
+                                                        { "command": "resetFontSize" },
+                                                    ]
+                                                }
+                                            ])" };
+
+        // iterable command
+        const std::string actionsString9A{ R"([
+                                                {
+                                                    "name": "New tab",
+                                                    "commands": [
+                                                        {
+                                                            "iterateOn": "profiles",
+                                                            "icon": "${profile.icon}",
+                                                            "name": "${profile.name}",
+                                                            "command": { "action": "newTab", "profile": "${profile.name}" }
+                                                        }
+                                                    ]
+                                                }
+                                            ])" };
+        const std::string actionsString9B{ R"([
+                                                {
+                                                    "commands": 
+                                                    [
+                                                        {
+                                                            "command": 
+                                                            {
+                                                                "action": "sendInput",
+                                                                "input": "${profile.name}"
+                                                            },
+                                                            "iterateOn": "profiles"
+                                                        }
+                                                    ],
+                                                    "name": "Send Input ..."
+                                                }
+                                        ])" };
+        const std::string actionsString9C{ R""([
+                                                {
+                                                    "commands": 
+                                                    [
+                                                        {
+                                                            "commands": 
+                                                            [
+                                                                {
+                                                                    "command": 
+                                                                    {
+                                                                        "action": "sendInput",
+                                                                        "input": "${profile.name} ${scheme.name}"
+                                                                    },
+                                                                    "iterateOn": "schemes"
+                                                                }
+                                                            ],
+                                                            "iterateOn": "profiles",
+                                                            "name": "nest level (${profile.name})"
+                                                        }
+                                                    ],
+                                                    "name": "Send Input (Evil) ..."
+                                                }
+                                            ])"" };
+        const std::string actionsString9D{ R""([
+                                                {
+                                                    "command": 
+                                                    {
+                                                        "action": "newTab",
+                                                        "profile": "${profile.name}"
+                                                    },
+                                                    "icon": "${profile.icon}",
+                                                    "iterateOn": "profiles",
+                                                    "name": "${profile.name}: New tab"
+                                                }
+                                            ])"" };
+
+        // unbound command
+        const std::string actionsString10{ R"([
+                                                { "command": "unbound", "keys": "ctrl+c" }
+                                            ])" };
+
+        Log::Comment(L"simple command");
+        RoundtripTest<implementation::ActionMap>(actionsString1);
+
+        Log::Comment(L"complex commands");
+        RoundtripTest<implementation::ActionMap>(actionsString2A);
+        RoundtripTest<implementation::ActionMap>(actionsString2B);
+        RoundtripTest<implementation::ActionMap>(actionsString2C);
+
+        Log::Comment(L"simple command with key chords");
+        RoundtripTest<implementation::ActionMap>(actionsString3);
+
+        Log::Comment(L"complex commands with key chords");
+        RoundtripTest<implementation::ActionMap>(actionsString4);
+
+        Log::Comment(L"command with name and icon and multiple key chords");
+        RoundtripTest<implementation::ActionMap>(actionsString5);
+
+        Log::Comment(L"complex command with new terminal args");
+        RoundtripTest<implementation::ActionMap>(actionsString6);
+
+        Log::Comment(L"complex command with meaningful null arg");
+        RoundtripTest<implementation::ActionMap>(actionsString7);
+
+        Log::Comment(L"nested command");
+        RoundtripTest<implementation::ActionMap>(actionsString8);
+
+        Log::Comment(L"iterable command");
+        RoundtripTest<implementation::ActionMap>(actionsString9A);
+        RoundtripTest<implementation::ActionMap>(actionsString9B);
+        RoundtripTest<implementation::ActionMap>(actionsString9C);
+        RoundtripTest<implementation::ActionMap>(actionsString9D);
+
+        Log::Comment(L"unbound command");
+        RoundtripTest<implementation::ActionMap>(actionsString10);
+    }
+
     void SerializationTests::CascadiaSettings()
     {
         const std::string settingsString{ R"({
                                                 "$schema": "https://aka.ms/terminal-profiles-schema",
                                                 "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+                                                "disabledProfileSources": [ "Windows.Terminal.Wsl" ],
 
                                                 "profiles": {
                                                     "defaults": {
-                                                        "fontFace": "Zamora Code"
+                                                        "font": {
+                                                            "face": "Zamora Code"
+                                                        }
                                                     },
                                                     "list": [
                                                         {
-                                                            "fontFace": "Cascadia Code",
+                                                            "font": { "face": "Cascadia Code" },
                                                             "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
                                                             "name": "HowettShell"
                                                         },
@@ -276,10 +454,9 @@ namespace SettingsModelLocalTests
                                                     }
                                                 ],
                                                 "actions": [
-                                                    {"command": { "action": "renameTab","input": "Liang Tab" },"keys": "ctrl+t" }
-                                                ],
-                                                "keybindings": [
-                                                    { "command": { "action": "sendInput","input": "VT Griese Mode" },"keys": "ctrl+k" }
+                                                    { "command": { "action": "renameTab", "title": "Liang Tab" }, "keys": "ctrl+t" },
+                                                    { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "keys": "ctrl+k" },
+                                                    { "command": { "action": "renameWindow", "name": "Hecker Window" }, "keys": "ctrl+l" }
                                                 ]
                                             })" };
 
@@ -291,5 +468,36 @@ namespace SettingsModelLocalTests
 
         const auto result{ settings->ToJson() };
         VERIFY_ARE_EQUAL(toString(settings->_userSettings), toString(result));
+    }
+
+    void SerializationTests::LegacyFontSettings()
+    {
+        const std::string profileString{ R"(
+            {
+                "name": "Profile with legacy font settings",
+
+                "fontFace": "Cascadia Mono",
+                "fontSize": 12,
+                "fontWeight": "normal"
+            })" };
+
+        const std::string expectedOutput{ R"(
+            {
+                "name": "Profile with legacy font settings",
+
+                "font": {
+                    "face": "Cascadia Mono",
+                    "size": 12,
+                    "weight": "normal"
+                }
+            })" };
+
+        const auto json{ VerifyParseSucceeded(profileString) };
+        const auto settings{ implementation::Profile::FromJson(json) };
+        const auto result{ settings->ToJson() };
+
+        const auto jsonOutput{ VerifyParseSucceeded(expectedOutput) };
+
+        VERIFY_ARE_EQUAL(toString(jsonOutput), toString(result));
     }
 }

@@ -41,6 +41,9 @@ using namespace Microsoft::Console::Render;
     _psInvalidData.hdc = GetDC(_hwndTargetWindow);
     RETURN_HR_IF_NULL(E_FAIL, _psInvalidData.hdc);
 
+    // We need the advanced graphics mode in order to set a transform.
+    SetGraphicsMode(_psInvalidData.hdc, GM_ADVANCED);
+
     // Signal that we're starting to paint.
     _fPaintStarted = true;
 
@@ -71,11 +74,28 @@ using namespace Microsoft::Console::Render;
     // left behind cursor copies in the scrolled region.
     if (cursorInvertRects.size() > 0)
     {
+        // We first need to apply the transform that was active at the time the cursor
+        // was rendered otherwise we won't be clearing the right area of the display.
+        // We don't need to do this if it was an identity transform though.
+        const bool identityTransform = cursorInvertTransform == IDENTITY_XFORM;
+        if (!identityTransform)
+        {
+            LOG_HR_IF(E_FAIL, !SetWorldTransform(_hdcMemoryContext, &cursorInvertTransform));
+            LOG_HR_IF(E_FAIL, !SetWorldTransform(_psInvalidData.hdc, &cursorInvertTransform));
+        }
+
         for (RECT r : cursorInvertRects)
         {
             // Clean both the in-memory and actual window context.
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
-            RETURN_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &r)));
+            LOG_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));
+            LOG_HR_IF(E_FAIL, !(InvertRect(_psInvalidData.hdc, &r)));
+        }
+
+        // If we've applied a transform, then we need to reset it.
+        if (!identityTransform)
+        {
+            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_hdcMemoryContext, nullptr, MWT_IDENTITY));
+            LOG_HR_IF(E_FAIL, !ModifyWorldTransform(_psInvalidData.hdc, nullptr, MWT_IDENTITY));
         }
 
         cursorInvertRects.clear();
@@ -308,11 +328,16 @@ using namespace Microsoft::Console::Render;
 
         const auto pPolyTextLine = &_pPolyText[_cPolyText];
 
-        auto& polyString = _polyStrings.emplace_back(cchLine, UNICODE_NULL);
+        auto& polyString = _polyStrings.emplace_back();
+        polyString.reserve(cchLine);
 
         COORD const coordFontSize = _GetFontSize();
 
-        auto& polyWidth = _polyWidths.emplace_back(cchLine, 0);
+        auto& polyWidth = _polyWidths.emplace_back();
+        polyWidth.reserve(cchLine);
+
+        // If we have a soft font, we only use the character's lower 7 bits.
+        const auto softFontCharMask = _lastFontType == FontType::Soft ? L'\x7F' : ~0;
 
         // Sum up the total widths the entire line/run is expected to take while
         // copying the pixel widths into a structure to direct GDI how many pixels to use per character.
@@ -323,11 +348,12 @@ using namespace Microsoft::Console::Render;
         {
             const auto& cluster = til::at(clusters, i);
 
-            // Our GDI renderer hasn't and isn't going to handle things above U+FFFF or sequences.
-            // So replace anything complicated with a replacement character for drawing purposes.
-            polyString[i] = cluster.GetTextAsSingle();
-            polyWidth[i] = gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X;
-            cchCharWidths += polyWidth[i];
+            const auto text = cluster.GetText();
+            polyString += text;
+            polyString.back() &= softFontCharMask;
+            polyWidth.push_back(gsl::narrow<int>(cluster.GetColumns()) * coordFontSize.X);
+            cchCharWidths += polyWidth.back();
+            polyWidth.append(text.size() - 1, 0);
         }
 
         // Detect and convert for raster font...
@@ -369,15 +395,21 @@ using namespace Microsoft::Console::Render;
             }
         }
 
+        // If the line rendition is double height, we need to adjust the top or bottom
+        // of the clipping rect to clip half the height of the rendered characters.
+        const auto halfHeight = coordFontSize.Y >> 1;
+        const auto topOffset = _currentLineRendition == LineRendition::DoubleHeightBottom ? halfHeight : 0;
+        const auto bottomOffset = _currentLineRendition == LineRendition::DoubleHeightTop ? halfHeight : 0;
+
         pPolyTextLine->lpstr = polyString.data();
-        pPolyTextLine->n = gsl::narrow<UINT>(clusters.size());
+        pPolyTextLine->n = gsl::narrow<UINT>(polyString.size());
         pPolyTextLine->x = ptDraw.x;
         pPolyTextLine->y = ptDraw.y;
         pPolyTextLine->uiFlags = ETO_OPAQUE | ETO_CLIPPED;
         pPolyTextLine->rcl.left = pPolyTextLine->x;
-        pPolyTextLine->rcl.top = pPolyTextLine->y;
-        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + ((SHORT)cchCharWidths * coordFontSize.X);
-        pPolyTextLine->rcl.bottom = pPolyTextLine->rcl.top + coordFontSize.Y;
+        pPolyTextLine->rcl.top = pPolyTextLine->y + topOffset;
+        pPolyTextLine->rcl.right = pPolyTextLine->rcl.left + (SHORT)cchCharWidths;
+        pPolyTextLine->rcl.bottom = pPolyTextLine->y + coordFontSize.Y - bottomOffset;
         pPolyTextLine->pdx = polyWidth.data();
 
         if (trimLeft)
@@ -410,9 +442,14 @@ using namespace Microsoft::Console::Render;
 
     if (_cPolyText > 0)
     {
-        if (!PolyTextOutW(_hdcMemoryContext, _pPolyText, (UINT)_cPolyText))
+        for (size_t i = 0; i != _cPolyText; ++i)
         {
-            hr = E_FAIL;
+            const auto& t = _pPolyText[i];
+            if (!ExtTextOutW(_hdcMemoryContext, t.x, t.y, t.uiFlags, &t.rcl, t.lpstr, t.n, t.pdx))
+            {
+                hr = E_FAIL;
+                break;
+            }
         }
 
         _polyStrings.clear();
@@ -628,6 +665,13 @@ using namespace Microsoft::Console::Render;
     default:
         return E_NOTIMPL;
     }
+
+    // Prepare the appropriate line transform for the current row.
+    LOG_IF_FAILED(PrepareLineTransform(options.lineRendition, 0, options.viewportLeft));
+    auto resetLineTransform = wil::scope_exit([&]() {
+        LOG_IF_FAILED(ResetLineTransform());
+    });
+
     // Either invert all the RECTs, or paint them.
     if (options.fUseColor)
     {
@@ -642,6 +686,10 @@ using namespace Microsoft::Console::Render;
     }
     else
     {
+        // Save the current line transform in case we need to reapply these
+        // inverted rects to hide the cursor in the ScrollFrame method.
+        cursorInvertTransform = _currentLineTransform;
+
         for (RECT r : cursorInvertRects)
         {
             RETURN_HR_IF(E_FAIL, !(InvertRect(_hdcMemoryContext, &r)));

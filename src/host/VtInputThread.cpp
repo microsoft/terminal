@@ -176,6 +176,7 @@ DWORD VtInputThread::_InputThread()
     RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
+    LOG_IF_FAILED(SetThreadDescription(hThread, L"ConPTY Input Handler Thread"));
 
     return S_OK;
 }

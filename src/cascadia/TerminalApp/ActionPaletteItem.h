@@ -14,7 +14,7 @@ namespace winrt::TerminalApp::implementation
         ActionPaletteItem() = default;
         ActionPaletteItem(Microsoft::Terminal::Settings::Model::Command const& command);
 
-        GETSET_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);
+        WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::Command, Command, nullptr);
 
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _commandChangedRevoker;

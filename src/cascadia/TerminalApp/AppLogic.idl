@@ -13,6 +13,12 @@ namespace TerminalApp
         Int64 Y;
     };
 
+    [default_interface] runtimeclass FindTargetWindowResult
+    {
+        Int32 WindowId { get; };
+        String WindowName { get; };
+    };
+
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -29,12 +35,14 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Int32 SetStartupCommandline(String[] commands);
-        Int32 ExecuteCommandline(String[] commands);
+        Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
+
+        void SetInboundListener();
 
         String Title { get; };
 
@@ -42,7 +50,14 @@ namespace TerminalApp
         Boolean Fullscreen { get; };
         Boolean AlwaysOnTop { get; };
 
+        void IdentifyWindow();
+        String WindowName;
+        UInt64 WindowId;
+        void RenameFailed();
+        Boolean IsQuakeWindow();
+
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
 
         InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
@@ -53,8 +68,14 @@ namespace TerminalApp
         void TitlebarClicked();
         void WindowCloseButtonClicked();
 
-        UInt64 GetLastActiveControlTaskbarState();
-        UInt64 GetLastActiveControlTaskbarProgress();
+        TaskbarState TaskbarState{ get; };
+
+        Boolean GetMinimizeToTray();
+        Boolean GetAlwaysShowTrayIcon();
+
+        FindTargetWindowResult FindTargetWindow(String[] args);
+
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
@@ -69,5 +90,10 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
         event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
     }
 }

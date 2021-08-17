@@ -18,7 +18,9 @@ Author(s):
 #include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
+#include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
+#include "..\..\types\inc\sgrStack.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -56,6 +58,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool InsertCharacter(const size_t count) override; // ICH
         bool DeleteCharacter(const size_t count) override; // DCH
         bool SetGraphicsRendition(const VTParameters options) override; // SGR
+        bool SetLineRendition(const LineRendition rendition) override; // DECSWL, DECDWL, DECDHL
+        bool PushGraphicsRendition(const VTParameters options) override; // XTPUSHSGR
+        bool PopGraphicsRendition() override; // XTPOPSGR
         bool DeviceStatusReport(const DispatchTypes::AnsiStatusType statusType) override; // DSR, DSR-OS, DSR-CPR
         bool DeviceAttributes() override; // DA1
         bool SecondaryDeviceAttributes() override; // DA2
@@ -126,6 +131,15 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoConEmuAction(const std::wstring_view string) noexcept override;
 
+        StringHandler DownloadDRCS(const size_t fontNumber,
+                                   const VTParameter startChar,
+                                   const DispatchTypes::DrcsEraseControl eraseControl,
+                                   const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                   const DispatchTypes::DrcsFontSet fontSet,
+                                   const DispatchTypes::DrcsFontUsage fontUsage,
+                                   const VTParameter cellHeight,
+                                   const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
+
     private:
         enum class ScrollDirection
         {
@@ -183,6 +197,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<ConGetSet> _pConApi;
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
+        std::unique_ptr<FontBuffer> _fontBuffer;
         std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need
@@ -198,6 +213,8 @@ namespace Microsoft::Console::VirtualTerminal
         bool _isOriginModeRelative;
 
         bool _isDECCOLMAllowed;
+
+        SgrStack _sgrStack;
 
         size_t _SetRgbColorsHelper(const VTParameters options,
                                    TextAttribute& attr,

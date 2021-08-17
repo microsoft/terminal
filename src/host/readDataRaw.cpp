@@ -218,3 +218,12 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
     }
     return RetVal;
 }
+
+void RAW_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
+{
+    // See the comment in WaitBlock.cpp for more information.
+    if (_BufPtr == reinterpret_cast<const wchar_t*>(oldBuffer))
+    {
+        _BufPtr = reinterpret_cast<wchar_t*>(newBuffer);
+    }
+}

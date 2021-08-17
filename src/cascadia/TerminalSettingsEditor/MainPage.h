@@ -13,7 +13,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         MainPage() = delete;
         MainPage(const Model::CascadiaSettings& settings);
 
-        fire_and_forget UpdateSettings(Model::CascadiaSettings settings);
+        void UpdateSettings(const Model::CascadiaSettings& settings);
 
         void OpenJsonKeyDown(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& args);
         void OpenJsonTapped(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& args);
@@ -24,6 +24,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetHostingWindow(uint64_t hostingWindow) noexcept;
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
+        uint64_t GetHostingWindow() const noexcept;
+
+        bool ShowBaseLayerMenuItem() const noexcept;
 
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
 
@@ -34,15 +37,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         std::optional<HWND> _hostingHwnd;
 
         void _InitializeProfilesList();
-        void _CreateAndNavigateToNewProfile(const uint32_t index);
+        void _CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile);
         winrt::Microsoft::UI::Xaml::Controls::NavigationViewItem _CreateProfileNavViewItem(const Editor::ProfileViewModel& profile);
         void _DeleteProfile(const Windows::Foundation::IInspectable sender, const Editor::DeleteProfileEventArgs& args);
+        void _AddProfileHandler(const winrt::guid profileGuid);
 
         void _Navigate(hstring clickedItemTag);
         void _Navigate(const Editor::ProfileViewModel& profile);
 
-        ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
-        ProfilePageNavigationState _lastProfilesNavState{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState _lastProfilesNavState{ nullptr };
     };
 }
 

@@ -56,7 +56,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
     TEST_METHOD(TestEscapePath)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiTest", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19}") // one value for each type of state test below.
+            TEST_METHOD_PROPERTY(L"Data:uiTest", L"{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17}") // one value for each type of state test below.
         END_TEST_METHOD_PROPERTIES()
 
         size_t uiTest;
@@ -173,25 +173,14 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
             Log::Comment(L"Escape from DcsPassThrough");
             shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::DcsPassThrough;
+            mach._dcsStringHandler = [](const auto) { return true; };
             break;
         }
         case 17:
         {
-            Log::Comment(L"Escape from DcsTermination");
-            mach._state = StateMachine::VTStates::DcsTermination;
-            break;
-        }
-        case 18:
-        {
             Log::Comment(L"Escape from SosPmApcString");
             shouldEscapeOut = false;
             mach._state = StateMachine::VTStates::SosPmApcString;
-            break;
-        }
-        case 19:
-        {
-            Log::Comment(L"Escape from SosPmApcTermination");
-            mach._state = StateMachine::VTStates::SosPmApcTermination;
             break;
         }
         }
@@ -806,9 +795,10 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L' ');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIntermediate);
         mach.ProcessCharacter(L'x');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        // Note that without a dispatcher the pass through data is instead ignored.
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -825,19 +815,20 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'P');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
         mach.ProcessCharacter(L'q');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        // Note that without a dispatcher the pass through state is instead ignored.
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'#');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'1');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'N');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'N');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'N');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -854,11 +845,11 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'P');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
         mach.ProcessCharacter(L'q');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'#');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsTermination);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'['); // This is not a string terminator.
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
         mach.ProcessCharacter(L'4');
@@ -885,7 +876,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'2');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcTermination);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
@@ -898,7 +889,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'4');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcTermination);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
 
@@ -911,7 +902,7 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'6');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcString);
         mach.ProcessCharacter(AsciiChars::ESC);
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::SosPmApcTermination);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Escape);
         mach.ProcessCharacter(L'\\');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
     }
@@ -943,9 +934,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         mach.ProcessCharacter(L'P');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
         mach.ProcessCharacter(L'q');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'#');
-        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsPassThrough);
+        VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsIgnore);
         mach.ProcessCharacter(L'1');
         mach.ProcessCharacter(L'\x9c');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
@@ -1052,6 +1043,8 @@ public:
         _defaultForegroundColor{ RGB(0, 0, 0) },
         _setDefaultBackground(false),
         _defaultBackgroundColor{ RGB(0, 0, 0) },
+        _setDefaultCursorColor(false),
+        _defaultCursorColor{ RGB(0, 0, 0) },
         _hyperlinkMode{ false },
         _options{ s_cMaxOptions, static_cast<DispatchTypes::GraphicsOptions>(s_uiGraphicsCleared) }, // fill with cleared option
         _colorTable{},
@@ -1441,6 +1434,13 @@ public:
         return true;
     }
 
+    bool SetCursorColor(const DWORD color) noexcept override
+    {
+        _setDefaultCursorColor = true;
+        _defaultCursorColor = color;
+        return true;
+    }
+
     bool SetClipboard(std::wstring_view content) noexcept override
     {
         _copyContent = { content.begin(), content.end() };
@@ -1527,6 +1527,8 @@ public:
     DWORD _defaultForegroundColor;
     bool _setDefaultBackground;
     DWORD _defaultBackgroundColor;
+    bool _setDefaultCursorColor;
+    DWORD _defaultCursorColor;
     bool _setColorTableEntry;
     bool _hyperlinkMode;
     std::wstring _copyContent;
@@ -2846,6 +2848,7 @@ class StateMachineExternalTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Single param
         mach.ProcessString(L"\033]10;rgb:1/1/1\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultForegroundColor);
@@ -2876,20 +2879,34 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        // Multiple params.
+        // Multiple params
         mach.ProcessString(L"\033]10;#111;rgb:2/2/2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;DarkOrange\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
-        // Partially valid sequences. Only the first color works.
+        mach.ProcessString(L"\033]10;#111;DarkOrange;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultBackgroundColor);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]10;#111;\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
@@ -2899,12 +2916,28 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\033]10;#111;rgb:\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#111;#2\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultForeground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultForegroundColor);
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultBackgroundColor);
 
         pDispatch->ClearState();
 
@@ -2915,17 +2948,6 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]10;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-
-        pDispatch->ClearState();
-
-        // Invalid multi-param sequences.
-        mach.ProcessString(L"\033]10;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\033]10;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultForeground);
 
         pDispatch->ClearState();
@@ -2944,6 +2966,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        // Single param
         mach.ProcessString(L"\033]11;rgb:12/34/56\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), pDispatch->_defaultBackgroundColor);
@@ -2968,7 +2991,30 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
-        // Partially valid sequences. Only the first color works.
+        // Multiple params
+        mach.ProcessString(L"\033]11;#111;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(0x22, 0x22, 0x22), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;DarkOrange\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#111;DarkOrange;rgb:2/2/2\033\\");
+        VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
+        VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
+        VERIFY_ARE_EQUAL(RGB(255, 140, 0), pDispatch->_defaultCursorColor);
+        // The third param is out of range.
+
+        pDispatch->ClearState();
+
+        // Partially valid multi-param sequences.
         mach.ProcessString(L"\033]11;#111;\033\\");
         VERIFY_IS_TRUE(pDispatch->_setDefaultBackground);
         VERIFY_ARE_EQUAL(RGB(0x10, 0x10, 0x10), pDispatch->_defaultBackgroundColor);
@@ -2987,6 +3033,20 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
 
+        mach.ProcessString(L"\033]11;;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
+        mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
+        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
+        VERIFY_IS_TRUE(pDispatch->_setDefaultCursorColor);
+        VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), pDispatch->_defaultCursorColor);
+
+        pDispatch->ClearState();
+
         // Invalid sequences.
         mach.ProcessString(L"\033]11;rgb:1/1/\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
@@ -2994,17 +3054,6 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         mach.ProcessString(L"\033]11;#1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-
-        pDispatch->ClearState();
-
-        // Invalid multi-param sequences.
-        mach.ProcessString(L"\033]11;;rgb:1/1/1\033\\");
-        VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
-
-        pDispatch->ClearState();
-
-        mach.ProcessString(L"\033]11;#1;rgb:1/1/1\033\\");
         VERIFY_IS_FALSE(pDispatch->_setDefaultBackground);
 
         pDispatch->ClearState();

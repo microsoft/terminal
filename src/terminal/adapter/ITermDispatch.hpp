@@ -13,6 +13,7 @@ Abstract:
 */
 #pragma once
 #include "DispatchTypes.hpp"
+#include "../buffer/out/LineRendition.hpp"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -22,6 +23,8 @@ namespace Microsoft::Console::VirtualTerminal
 class Microsoft::Console::VirtualTerminal::ITermDispatch
 {
 public:
+    using StringHandler = std::function<bool(const wchar_t)>;
+
 #pragma warning(push)
 #pragma warning(disable : 26432) // suppress rule of 5 violation on interface because tampering with this is fraught with peril
     virtual ~ITermDispatch() = 0;
@@ -88,6 +91,10 @@ public:
     virtual bool EraseCharacters(const size_t numChars) = 0; // ECH
 
     virtual bool SetGraphicsRendition(const VTParameters options) = 0; // SGR
+    virtual bool SetLineRendition(const LineRendition rendition) = 0; // DECSWL, DECDWL, DECDHL
+
+    virtual bool PushGraphicsRendition(const VTParameters options) = 0; // XTPUSHSGR
+    virtual bool PopGraphicsRendition() = 0; // XTPOPSGR
 
     virtual bool SetMode(const DispatchTypes::ModeParams param) = 0; // DECSET
 
@@ -125,6 +132,15 @@ public:
     virtual bool EndHyperlink() = 0;
 
     virtual bool DoConEmuAction(const std::wstring_view string) = 0;
+
+    virtual StringHandler DownloadDRCS(const size_t fontNumber,
+                                       const VTParameter startChar,
+                                       const DispatchTypes::DrcsEraseControl eraseControl,
+                                       const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                       const DispatchTypes::DrcsFontSet fontSet,
+                                       const DispatchTypes::DrcsFontUsage fontUsage,
+                                       const VTParameter cellHeight,
+                                       const DispatchTypes::DrcsCharsetSize charsetSize) = 0; // DECDLD
 };
 inline Microsoft::Console::VirtualTerminal::ITermDispatch::~ITermDispatch() {}
 #pragma warning(pop)
