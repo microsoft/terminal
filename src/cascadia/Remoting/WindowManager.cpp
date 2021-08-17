@@ -546,7 +546,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     winrt::fire_and_forget WindowManager::RequestHideTrayIcon()
     {
-        auto strongThis { get_strong() };
+        auto strongThis{ get_strong() };
         co_await winrt::resume_background();
         _peasant.RequestHideTrayIcon();
     }
