@@ -2518,13 +2518,20 @@ namespace winrt::TerminalApp::implementation
         // and wait on it hence the locking mechanism.
         if (Dispatcher().HasThreadAccess())
         {
-            // TODO: GH 9458 will give us more context so we can try to choose a better profile.
-            auto hr = _OpenNewTab(nullptr, connection);
+            try
+            {
+                // TODO GH#9458: we will want more context so we can try to choose a better profile.
+                const auto profile{ _settings.ProfileDefaults() };
+                const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
 
-            // Request a summon of this window to the foreground
-            _SummonWindowRequestedHandlers(*this, nullptr);
+                _CreateNewTabWithProfileAndSettings(profile, settings, connection);
 
-            return hr;
+                // Request a summon of this window to the foreground
+                _SummonWindowRequestedHandlers(*this, nullptr);
+            }
+            CATCH_RETURN();
+
+            return S_OK;
         }
         else
         {
@@ -2532,9 +2539,8 @@ namespace winrt::TerminalApp::implementation
             HRESULT finalVal = S_OK;
 
             Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-                finalVal = _OpenNewTab(nullptr, connection);
-
-                _SummonWindowRequestedHandlers(*this, nullptr);
+                // Re-running ourselves under the dispatcher will cause us to take the first branch above.
+                finalVal = _OnNewConnection(connection);
 
                 latch.count_down();
             });
