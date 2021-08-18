@@ -1865,7 +1865,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         UpdateSelectionArgs() = default;
         ACTION_ARG(Core::SelectionDirection, Direction, Core::SelectionDirection::None);
-        ACTION_ARG(Core::SelectionExpansion, Mode, Core::SelectionExpansion::Cell);
+        ACTION_ARG(Core::SelectionExpansion, Mode, Core::SelectionExpansion::Char);
         static constexpr std::string_view DirectionKey{ "direction" };
         static constexpr std::string_view ModeKey{ "mode" };
 

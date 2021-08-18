@@ -206,7 +206,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
 
     SetSelectionAnchor(realCoordStart);
-    SetSelectionEnd(realCoordEnd, winrt::Microsoft::Terminal::Core::SelectionExpansion::Cell);
+    SetSelectionEnd(realCoordEnd, winrt::Microsoft::Terminal::Core::SelectionExpansion::Char);
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept

@@ -704,7 +704,7 @@ namespace TerminalCoreUnitTests
                 // buffer: doubleClickMe dragThroughHere
                 //         ^                ^
                 //       start            finish
-                term.SetSelectionEnd({ 21, 10 }, SelectionExpansion::Cell);
+                term.SetSelectionEnd({ 21, 10 }, SelectionExpansion::Char);
 
                 // Validate selection area: "doubleClickMe drag" selected
                 ValidateSingleRowSelection(term, SMALL_RECT({ 4, 10, 21, 10 }));
@@ -825,7 +825,7 @@ namespace TerminalCoreUnitTests
 
             // Step 4: Shift+Click at (5,10)
             {
-                term.SetSelectionEnd({ 5, 10 }, SelectionExpansion::Cell);
+                term.SetSelectionEnd({ 5, 10 }, SelectionExpansion::Char);
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)
@@ -834,7 +834,7 @@ namespace TerminalCoreUnitTests
 
             // Step 5: Shift+Click back at (20,10)
             {
-                term.SetSelectionEnd({ 20, 10 }, SelectionExpansion::Cell);
+                term.SetSelectionEnd({ 20, 10 }, SelectionExpansion::Char);
 
                 // Validate selection area
                 // NOTE: Pivot should still be (10, 10)

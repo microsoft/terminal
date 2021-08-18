@@ -16,7 +16,7 @@ namespace Microsoft.Terminal.Core
 
     enum SelectionExpansion
     {
-        Cell,
+        Char,
         Word,
         Line, // Mouse selection only! Not a setting!
         Viewport,
