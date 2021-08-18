@@ -344,7 +344,7 @@
     },
     "SelectionMode": {
       "enum": [
-        "cell",
+        "char",
         "word",
         "view",
         "buffer"
