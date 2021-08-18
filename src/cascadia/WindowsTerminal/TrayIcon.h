@@ -21,7 +21,6 @@ public:
 
     void CreateWindowProcess();
     static LRESULT CALLBACK _WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
-    LRESULT MessageHandler(HWND window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
 
     void CreateTrayIcon();
     void RemoveIconFromTray();
