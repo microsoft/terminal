@@ -939,10 +939,11 @@ try
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
     _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
+    auto Unlock = wil::scope_exit([this]() noexcept {
         _pData->UnlockConsole();
     });
     const auto text = _getTextValue(maxLengthOpt);
+    Unlock.reset();
 
     *pRetVal = SysAllocString(text.c_str());
     RETURN_HR_IF_NULL(E_OUTOFMEMORY, *pRetVal);
