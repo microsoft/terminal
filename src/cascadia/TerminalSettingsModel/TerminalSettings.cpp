@@ -84,25 +84,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
-    //   use the guid to look up the profile that should be used to
-    //   create these TerminalSettings. Then, we'll apply settings contained in the
-    //   global and profile settings to the instance.
-    // Arguments:
-    // - appSettings: the set of settings being used to construct the new terminal
-    // - profileGuid: the unique identifier (guid) of the profile
-    // - keybindings: the keybinding handler
-    // Return Value:
-    // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
-    //   one for when the terminal is focused and the other for when the terminal is unfocused
-    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
-    {
-        const auto profile = appSettings.FindProfile(profileGuid);
-        THROW_HR_IF_NULL(E_INVALIDARG, profile);
-        return CreateWithProfile(appSettings, profile, keybindings);
-    }
-
-    // Method Description:
     // - Create a TerminalSettings object for the provided newTerminalArgs. We'll
     //   use the newTerminalArgs to look up the profile that should be used to
     //   create these TerminalSettings. Then, we'll apply settings contained in the
@@ -124,8 +105,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                                     const NewTerminalArgs& newTerminalArgs,
                                                                                     const IKeyBindings& keybindings)
     {
-        const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
+        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
+        auto settingsPair{ CreateWithProfile(appSettings, profile, keybindings) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
