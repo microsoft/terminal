@@ -13,7 +13,6 @@ using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal;
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
-#define TRAY_ICON_HOSTING_WINDOW_CLASS L"TRAY_ICON_HOSTING_WINDOW_CLASS"
 
 TrayIcon::TrayIcon(const HWND owningHwnd) :
     _owningHwnd{ owningHwnd }
@@ -32,15 +31,15 @@ void TrayIcon::CreateWindowProcess()
     WNDCLASSW wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
-    wc.lpszClassName = TRAY_ICON_HOSTING_WINDOW_CLASS;
+    wc.lpszClassName = L"TRAY_ICON_HOSTING_WINDOW_CLASS";
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = &TrayIcon::_WindowProc;
     wc.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
     RegisterClass(&wc);
 
     _trayIconWndProc = CreateWindowW(wc.lpszClassName,
-                                     TRAY_ICON_HOSTING_WINDOW_CLASS,
-                                     WS_OVERLAPPEDWINDOW | WS_POPUP,
+                                     wc.lpszClassName,
+                                     WS_DISABLED,
                                      CW_USEDEFAULT,
                                      CW_USEDEFAULT,
                                      CW_USEDEFAULT,
@@ -70,9 +69,10 @@ void TrayIcon::CreateTrayIcon()
 {
     if (!_trayIconWndProc)
     {
-        // Creating a window proc just so we can set it as the foreground
-        // window when showing the context menu. This is done so that the
-        // menu can be dismissed by clicking outside of the menu.
+        // Creating a disabled, non visible window just so we can set it
+        // as the foreground window when showing the context menu.
+        // This is done so that the context menu can be dismissed
+        // when clicking outside of it.
         CreateWindowProcess();
     }
 
