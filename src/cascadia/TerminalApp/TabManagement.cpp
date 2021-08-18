@@ -473,7 +473,6 @@ namespace winrt::TerminalApp::implementation
                 state.PersistedTabLayout(nullptr);
             }
 
-
             _LastTabClosedHandlers(*this, nullptr);
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))

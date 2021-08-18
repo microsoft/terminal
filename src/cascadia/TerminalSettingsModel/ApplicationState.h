@@ -21,10 +21,10 @@ Abstract:
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
 //   (type, function name, JSON key, ...variadic construction arguments)
-#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                               \
-    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                         \
-    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>, PersistedTabLayout, "persistedTabLayout") \
-    X(winrt::Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::LaunchPosition>, PersistedInitialPosition, "persistedInitialPosition")                                      \
+#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                  \
+    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                            \
+    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>, PersistedTabLayout, "persistedTabLayout")    \
+    X(winrt::Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::LaunchPosition>, PersistedInitialPosition, "persistedInitialPosition") \
     X(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, PersistedInitialSize, "persistedInitialSize")
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
