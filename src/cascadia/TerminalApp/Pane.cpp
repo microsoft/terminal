@@ -91,8 +91,28 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     args.TabTitle(controlSettings.StartingTitle());
     args.Commandline(controlSettings.Commandline());
     args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
+    if (controlSettings.TabColor() || controlSettings.StartingTabColor())
+    {
 
-    //TODO: color scheme?
+        til::color c;
+        // StartingTabColor is prioritized over other colors
+        if (controlSettings.StartingTabColor())
+        {
+            c = til::color(controlSettings.StartingTabColor().Value());
+        }
+        else
+        {
+            c = til::color(controlSettings.TabColor().Value());
+        }
+
+        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
+    }
+
+    if (controlSettings.AppliedColorScheme())
+    {
+        auto name = controlSettings.AppliedColorScheme().Name();
+        args.ColorScheme(name);
+    }
 
     return args;
 }

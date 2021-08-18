@@ -342,6 +342,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         // If the scheme was nullptr, then just clear out the current color
         // settings.
+        AppliedColorScheme(scheme);
         if (scheme == nullptr)
         {
             ClearDefaultForeground();

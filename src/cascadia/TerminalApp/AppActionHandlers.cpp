@@ -463,10 +463,12 @@ namespace winrt::TerminalApp::implementation
                         // 1 is important to make sure that the effects of
                         // something like `colortool` are cleared when setting
                         // the scheme.
+                        /*
                         if (controlSettings.GetParent() != nullptr)
                         {
                             parentSettings = controlSettings.GetParent();
                         }
+                        */
 
                         // ApplyColorScheme(nullptr) will clear the old color scheme.
                         controlSettings.ApplyColorScheme(nullptr);
