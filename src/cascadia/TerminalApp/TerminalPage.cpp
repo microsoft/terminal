@@ -419,6 +419,7 @@ namespace winrt::TerminalApp::implementation
                     co_return;
                 }
             }
+            _GetActiveControl().Focus(FocusState::Programmatic);
         }
         if (initial)
         {
@@ -437,7 +438,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
-        _GetActiveControl().Focus(FocusState::Programmatic);
         _InitializedHandlers(*this, nullptr);
     }
 
@@ -1370,6 +1370,11 @@ namespace winrt::TerminalApp::implementation
             _UnZoomIfNeeded();
 
             tab.SplitPane(realSplitType, splitSize, realGuid, newControl);
+
+            if (_startupState == StartupState::Initialized)
+            {
+                _GetActiveControl().Focus(FocusState::Programmatic);
+            }
         }
         CATCH_LOG();
     }
