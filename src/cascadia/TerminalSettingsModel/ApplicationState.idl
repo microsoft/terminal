@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+import "Command.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -9,5 +10,7 @@ namespace Microsoft.Terminal.Settings.Model
         void Reload();
 
         String FilePath { get; };
+
+        Windows.Foundation.Collections.IVector<ActionAndArgs> PersistedTabLayout { get; set; };
     }
 }

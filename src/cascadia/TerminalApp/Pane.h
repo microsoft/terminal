@@ -62,6 +62,9 @@ public:
     void ClearActive();
     void SetActive();
 
+    std::pair<std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>, std::shared_ptr<Pane>> BuildStartupActions();
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
+
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const GUID& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);

@@ -320,6 +320,19 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
+
+            // If the user selected to save their tab layout, we are the first
+            // window opened, and wt was not run with any other arguments, then
+            // we should use the saved settings.
+            if (_settings.GlobalSettings().PersistTabLayout() && _WindowId == 1 && _startupActions.Size() == 1)
+            {
+                auto actions = ApplicationState::SharedInstance().PersistedTabLayout();
+                if (actions && actions.Size() > 0)
+                {
+                    _startupActions = actions;
+                }
+            }
+
             ProcessStartupActions(_startupActions, true);
 
             // If we were told that the COM server needs to be started to listen for incoming
@@ -1147,6 +1160,50 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Saves the tab layout to the application state
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::PersistTabLayout()
+    {
+        std::vector<ActionAndArgs> actions;
+
+        for (auto tab : _tabs)
+        {
+            if (auto terminalTab = _GetTerminalTabImpl(tab))
+            {
+                auto tabActions = terminalTab->BuildStartupActions();
+                actions.insert(actions.end(), tabActions.begin(), tabActions.end());
+            }
+            else if (tab.try_as<SettingsTab>())
+            {
+                ActionAndArgs action;
+                action.Action(ShortcutAction::OpenSettings);
+                OpenSettingsArgs args{ SettingsTarget::SettingsUI };
+                action.Args(args);
+
+                actions.push_back(action);
+            }
+        }
+
+        // if the focused tab was not the last tab, restore that
+        auto idx = _GetFocusedTabIndex();
+        if (idx && idx != _tabs.Size() - 1)
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::SwitchToTab);
+            SwitchToTabArgs switchToTabArgs{ idx.value() };
+            action.Args(switchToTabArgs);
+
+            actions.push_back(action);
+        }
+
+        auto state = ApplicationState::SharedInstance();
+        state.PersistedTabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+    }
+
+    // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
     fire_and_forget TerminalPage::CloseWindow()
@@ -1163,6 +1220,11 @@ namespace winrt::TerminalApp::implementation
             {
                 co_return;
             }
+        }
+
+        if (_settings.GlobalSettings().PersistTabLayout() && _WindowId == 1)
+        {
+            PersistTabLayout();
         }
 
         _RemoveAllTabs();

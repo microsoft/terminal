@@ -5,7 +5,7 @@
 #include "ApplicationState.h"
 #include "CascadiaSettings.h"
 #include "ApplicationState.g.cpp"
-
+#include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
@@ -53,6 +53,83 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::string TypeDescription() const
         {
             return fmt::format("{}[]", ConversionTrait<GUID>{}.TypeDescription());
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
+    {
+        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
+        {
+            winrt::Windows::Foundation::Collections::IVector<T> vec = winrt::single_threaded_vector<T>();
+
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
+            {
+                vec.Append(GetValue<T>(*it));
+            }
+
+            return vec;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            if (!json.isArray())
+            {
+                return false;
+            }
+            ConversionTrait<T> trait;
+            for (const auto& v : json)
+            {
+                if (!trait.CanConvert(v))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            ConversionTrait<T> trait;
+            for (const auto& v : val)
+            {
+                json.append(trait.ToJson(v));
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{} array", ConversionTrait<T>{}.TypeDescription());
+        }
+    };
+
+    using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<ActionAndArgs>
+    {
+        ActionAndArgs FromJson(const Json::Value& json)
+        {
+            std::vector<SettingsLoadWarnings> v;
+            return *implementation::ActionAndArgs::FromJson(json, v);
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isObject();
+        }
+
+        Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs& val)
+        {
+            return implementation::ActionAndArgs::ToJson(val);
+        }
+
+        std::string TypeDescription() const
+        {
+            return "ActionAndArgs";
         }
     };
 }

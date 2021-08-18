@@ -133,6 +133,11 @@
                     <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
                 </local:SettingContainer>
 
+                <!--  Retain and Reload Tab Layout  -->
+                <local:SettingContainer x:Uid="Globals_PersistTabLayout">
+                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.PersistTabLayout, Mode=TwoWay}" />
+                </local:SettingContainer>
+
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_LaunchMode">
                     <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"

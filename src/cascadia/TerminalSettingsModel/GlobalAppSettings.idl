@@ -65,6 +65,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, ForceVTInput);
         INHERITABLE_SETTING(Boolean, DebugFeaturesEnabled);
         INHERITABLE_SETTING(Boolean, StartOnUserLogin);
+        INHERITABLE_SETTING(Boolean, PersistTabLayout);
         INHERITABLE_SETTING(Boolean, AlwaysOnTop);
         INHERITABLE_SETTING(TabSwitcherMode, TabSwitcherMode);
         INHERITABLE_SETTING(Boolean, DisableAnimations);

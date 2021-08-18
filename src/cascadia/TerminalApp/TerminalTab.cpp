@@ -441,6 +441,31 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Serializes the state of this tab as a series of commands that can be
+    //   executed to recreate it.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A vector of commands
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions() const
+    {
+        auto [args, pane] = _rootPane->BuildStartupActions();
+
+        ActionAndArgs newTabAction{};
+        newTabAction.Action(ShortcutAction::NewTab);
+        // _getNewTerminalArgs MUST be called before parsing any other options,
+        // as it might clear those options while finding the commandline
+        NewTabArgs newTabArgs{ pane->GetTerminalArgsForPane() };
+        newTabAction.Args(newTabArgs);
+
+        args.insert(args.begin(), newTabAction);
+
+        // TODO: persist focused pane? zoomed pane?
+
+        return args;
+    }
+
+    // Method Description:
     // - Split the focused pane in our tree of panes, and place the
     //   given TermControl into the newly created pane.
     // Arguments:

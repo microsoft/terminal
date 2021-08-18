@@ -178,6 +178,57 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
+    struct ConversionTrait<std::vector<T>>
+    {
+        std::vector<T> FromJson(const Json::Value& json)
+        {
+            std::vector<T> vec;
+            vec.reserve(json.size());
+
+            for (auto it = json.begin(), end = json.end(); it != end; ++it)
+            {
+                vec.push_back(GetValue<T>(*it));
+            }
+
+            return vec;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            if (!json.isArray())
+            {
+                return false;
+            }
+            ConversionTrait<T> trait;
+            for (const auto& v : json)
+            {
+                if (!trait.CanConvert(v))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        Json::Value ToJson(const std::vector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            ConversionTrait<T> trait;
+            for (const auto& v : val)
+            {
+                json.append(trait.ToJson(v));
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{} array", ConversionTrait<T>{}.TypeDescription());
+        }
+    };
+
+    template<typename T>
     struct ConversionTrait<std::unordered_map<std::string, T>>
     {
         std::unordered_map<std::string, T> FromJson(const Json::Value& json) const

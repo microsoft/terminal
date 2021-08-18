@@ -79,6 +79,8 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        void PersistTabLayout();
+
         void SetInboundListener(bool isEmbedding);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
 

@@ -71,6 +71,100 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     });
 }
 
+NewTerminalArgs Pane::GetTerminalArgsForPane() const
+{
+    // Leaves are the only things that have controls
+    assert(_IsLeaf());
+
+    NewTerminalArgs args{};
+    auto controlSettings = _control.Settings().as<TerminalSettings>();
+
+    args.Profile(controlSettings.ProfileName());
+    args.StartingDirectory(controlSettings.StartingDirectory());
+    args.TabTitle(controlSettings.StartingTitle());
+    args.Commandline(controlSettings.Commandline());
+    args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
+
+    //TODO: color scheme?
+
+    return args;
+}
+
+// Method Description:
+// - Serializes the state of this tab as a series of commands that can be
+//   executed to recreate it.
+// - This will always result in the right-most child being the focus
+//   after the commands finish executing.
+// Arguments:
+// - <none>
+// Return Value:
+// - A vector of commands and the original root pane for this new tree
+std::pair<std::vector<ActionAndArgs>, std::shared_ptr<Pane>> Pane::BuildStartupActions()
+{
+    // if we are a leaf then all there is to do is defer to the parent.
+    if (_IsLeaf())
+    {
+        return { {}, shared_from_this() };
+    }
+
+    auto buildSplitPane = [&](auto newPane) {
+        ActionAndArgs actionAndArgs;
+        actionAndArgs.Action(ShortcutAction::SplitPane);
+        auto terminalArgs{ newPane->GetTerminalArgsForPane() };
+        SplitPaneArgs args{ SplitType::Manual, _splitState, _desiredSplitPosition, terminalArgs };
+        actionAndArgs.Args(args);
+
+        return actionAndArgs;
+    };
+
+    auto buildMoveFocus = [](auto direction) {
+        MoveFocusArgs args{ direction };
+
+        ActionAndArgs actionAndArgs{};
+        actionAndArgs.Action(ShortcutAction::MoveFocus);
+        actionAndArgs.Args(args);
+
+        return actionAndArgs;
+    };
+
+    // Handle simple case of a single split (a minor optimization for clarity)
+    // Here we just create the second child (by splitting) and return the first
+    // child for the parent to deal with.
+    if (_firstChild->_IsLeaf() && _secondChild->_IsLeaf())
+    {
+        auto actionAndArgs = buildSplitPane(_secondChild);
+        return { { actionAndArgs }, _firstChild };
+    }
+
+    // We now need to execute the commands for each side of the tree
+    auto [a1, p1] = _firstChild->BuildStartupActions();
+    auto [a2, p2] = _secondChild->BuildStartupActions();
+
+    std::vector<ActionAndArgs> actions;
+    actions.reserve(a1.size() + a2.size() + 3);
+
+    // first we make our split
+    auto newSplit = buildSplitPane(p2);
+    actions.push_back(newSplit);
+
+    if (a1.size() > 0)
+    {
+        // Then move to the first child and execute any actions on the left branch
+        // then move back
+        actions.push_back(buildMoveFocus(FocusDirection::PreviousInOrder));
+        actions.insert(actions.end(), a1.begin(), a1.end());
+        actions.push_back(buildMoveFocus(FocusDirection::NextInOrder));
+    }
+
+    // And if there are any commands to run on the right branch do so
+    if (a2.size() > 0)
+    {
+        actions.insert(actions.end(), a2.begin(), a2.end());
+    }
+
+    return { { actions }, p1 };
+}
+
 // Method Description:
 // - Update the size of this pane. Resizes each of our columns so they have the
 //   same relative sizes, given the newSize.
