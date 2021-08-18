@@ -437,6 +437,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
+        _GetActiveControl().Focus(FocusState::Programmatic);
         _InitializedHandlers(*this, nullptr);
     }
 

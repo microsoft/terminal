@@ -679,8 +679,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             DispatcherTimer cursorTimer;
             cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
             cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
-            cursorTimer.Start();
+            // cursorTimer.Start();
             _cursorTimer.emplace(std::move(cursorTimer));
+            _core.CursorOn(false);
         }
         else
         {
@@ -713,7 +714,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      focus won't actually get passed to us. I believe this is because
         //      we're not technically a part of the UI tree yet, so focusing us
         //      becomes a no-op.
-        this->Focus(FocusState::Programmatic);
+        // this->Focus(FocusState::Programmatic);
 
         _initializedTerminal = true;
 
