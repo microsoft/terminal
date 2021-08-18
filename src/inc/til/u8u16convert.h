@@ -26,7 +26,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // state structure for maintenance of UTF-8 partials
     struct u8state
     {
-        std::array<char, 4> partials{}; // first 3 bytes are for the code units of a partial code point, last byte is the number of cached code units
+        char partials[4]{};
+        uint8_t have{};
+        uint8_t want{};
 
         constexpr void reset() noexcept
         {
@@ -37,7 +39,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // state structure for maintenance of UTF-16 partials
     struct u16state
     {
-        std::array<wchar_t, 2> partials{}; // first element is for the code unit of a partial code point, last element indicates a cached code unit
+        wchar_t partials[2]{};
 
         constexpr void reset() noexcept
         {
@@ -62,17 +64,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         try
         {
             out.clear();
-
-            if (in.empty())
-            {
-                return S_OK;
-            }
+            RETURN_HR_IF(S_OK, in.empty());
 
             int lengthRequired{};
             // The worst ratio of UTF-8 code units to UTF-16 code units is 1 to 1 if UTF-8 consists of ASCII only.
             RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthRequired));
             out.resize(in.length()); // avoid to call MultiByteToWideChar twice only to get the required size
-            const int lengthOut = MultiByteToWideChar(gsl::narrow_cast<UINT>(CP_UTF8), 0ul, in.data(), lengthRequired, out.data(), lengthRequired);
+            const int lengthOut = MultiByteToWideChar(CP_UTF8, 0ul, in.data(), lengthRequired, out.data(), lengthRequired);
             out.resize(gsl::narrow_cast<size_t>(lengthOut));
 
             return lengthOut == 0 ? E_UNEXPECTED : S_OK;
@@ -92,7 +90,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
 #pragma warning(push)
-#pragma warning(disable : 26429 26446 26459 26481 26482) // use not_null,  subscript operator, use span, pointer arithmetic,  dynamic array indexing
+#pragma warning(disable : 26429 26446 26459 26481 26482 26485) // use not_null, subscript operator, use span, pointer arithmetic, dynamic array indexing, array to pointer decay
     // Routine Description:
     // - Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
     // Arguments:
@@ -101,7 +99,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - state - reference to a til::u8state holding the status of the current partials handling
     // Return Value:
     // - S_OK          - the conversion succeeded
-    // - S_FALSE       - the resulting string is converted from the previously cached partials only
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -110,108 +107,66 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         try
         {
-            /* clang-format off */
-            enum Utf8BitMasks : char
-            {
-                IsAscii   = gsl::narrow_cast<char>(0b0'0000000), // Any byte representing an ASCII character has the MSB set to 0
-                MaskAscii = gsl::narrow_cast<char>(0b1'0000000), // Bit mask to be used in a bitwise AND operation to find out whether or not a byte match the IsAscii pattern
-                IsCont    = gsl::narrow_cast<char>(0b10'000000), // Continuation bytes of any UTF-8 non-ASCII character have the MSB set to 1 and the adjacent bit set to 0
-                MaskCont  = gsl::narrow_cast<char>(0b11'000000), // Bit mask to be used in a bitwise AND operation to find out whether or not a byte match the IsCont pattern
-                IsLead2   = gsl::narrow_cast<char>(0b110'00000), // A lead byte that indicates a UTF-8 non-ASCII character consisting of two bytes has the two highest bits set to 1 and the adjacent bit set to 0
-                MaskLead2 = gsl::narrow_cast<char>(0b111'00000), // Bit mask to be used in a bitwise AND operation to find out whether or not a lead byte match the IsLead2 pattern
-                IsLead3   = gsl::narrow_cast<char>(0b1110'0000), // A lead byte that indicates a UTF-8 non-ASCII character consisting of three bytes has the three highest bits set to 1 and the adjacent bit set to 0
-                MaskLead3 = gsl::narrow_cast<char>(0b1111'0000), // Bit mask to be used in a bitwise AND operation to find out whether or not a lead byte match the IsLead3 pattern
-                IsLead4   = gsl::narrow_cast<char>(0b11110'000), // A lead byte that indicates a UTF-8 non-ASCII character consisting of four bytes has the four highest bits set to 1 and the adjacent bit set to 0
-                MaskLead4 = gsl::narrow_cast<char>(0b11111'000), // Bit mask to be used in a bitwise AND operation to find out whether or not a lead byte match the IsLead4 pattern
-            };
-            /* clang-format on */
-
-            constexpr const std::array<char, 4> cmpMasks{
-                '\0', // unused
-                MaskCont,
-                MaskLead2,
-                MaskLead3,
-            };
-
-            constexpr const std::array<char, 4> cmpOperands{
-                '\0', // unused
-                IsAscii, // intentionally conflicts with MaskCont
-                IsLead2,
-                IsLead3,
-            };
+            out.clear();
+            RETURN_HR_IF(S_OK, in.empty());
 
             int capa16{};
             // The worst ratio of UTF-8 code units to UTF-16 code units is 1 to 1 if UTF-8 consists of ASCII only.
-            RETURN_HR_IF(E_ABORT, !base::CheckAdd(in.length(), state.partials[3]).AssignIfValid(&capa16));
-
-            out.clear();
-            RETURN_HR_IF(S_OK, !capa16); // nothing to convert, however this is not an error
+            RETURN_HR_IF(E_ABORT, !base::CheckAdd(in.length(), state.have).AssignIfValid(&capa16));
 
             out.resize(gsl::narrow_cast<size_t>(capa16));
             auto len8{ gsl::narrow_cast<int>(in.length()) };
             int len16{};
             auto cursor8{ in.data() };
-            if (!!state.partials[3])
+            if (state.have)
             {
-                if (!len8) // only the partial code point will be converted and published
+                if (state.want > len8) // we still didn't get enough data to complete the code point, however this is not an error
                 {
-                    len16 = MultiByteToWideChar(CP_UTF8, 0UL, state.partials.data(), gsl::narrow_cast<int>(state.partials[3]), out.data(), capa16);
-                    RETURN_HR_IF(E_UNEXPECTED, !len16);
-
-                    state.reset();
-                    out.resize(gsl::narrow_cast<size_t>(len16));
-                    return S_FALSE;
-                }
-
-                // determine the number of bytes of the code point indicated by the lead byte in the cache
-                const auto codePointLen{
-                    2 + // the code point consists of at least 2 bytes because if we cached data it will never be ASCII
-                    gsl::narrow_cast<int>((state.partials[0] & IsLead3) == IsLead3) + // add one if 3 high-order bits of the lead byte are set
-                    gsl::narrow_cast<int>((state.partials[0] & IsLead4) == IsLead4) // add another one if 4 high-order bits of the lead byte are set
-                };
-
-                const auto fetch8{ codePointLen - gsl::narrow_cast<int>(state.partials[3]) }; // number of bytes we need from the begin of the chunk to complete the code point
-                if (fetch8 > len8) // we still didn't get enough data to complete the code point, however this is not an error
-                {
-                    std::move(cursor8, cursor8 + len8, state.partials.data() + state.partials[3]);
-                    state.partials[3] += gsl::narrow_cast<char>(len8);
+                    std::move(cursor8, cursor8 + len8, state.partials + state.have);
+                    state.have += gsl::narrow_cast<uint8_t>(len8);
+                    state.want -= gsl::narrow_cast<uint8_t>(len8);
                     out.clear();
                     return S_OK;
                 }
 
-                std::move(cursor8, cursor8 + fetch8, state.partials.data() + state.partials[3]);
-                len16 = MultiByteToWideChar(CP_UTF8, 0UL, state.partials.data(), gsl::narrow_cast<int>(codePointLen), out.data(), capa16);
+                std::move(cursor8, cursor8 + state.want, state.partials + state.have);
+                len16 = MultiByteToWideChar(CP_UTF8, 0UL, state.partials, gsl::narrow_cast<int>(state.have) + state.want, out.data(), capa16);
                 RETURN_HR_IF(E_UNEXPECTED, !len16);
 
-                state.reset();
                 capa16 -= len16;
-                len8 -= fetch8;
-                cursor8 += fetch8;
+                len8 -= state.want;
+                cursor8 += state.want;
+                state.reset();
             }
 
-            if (!!len8)
+            if (len8)
             {
                 auto backIter{ cursor8 + len8 };
                 // If the last byte in the string was a byte belonging to a UTF-8 multi-byte character
-                if (!!(backIter[-1] & MaskAscii))
+                if (backIter[-1] & 0b1'0000000)
                 {
                     // Check only up to 3 last bytes, if no Lead Byte is found then the byte before will be the Lead Byte and no partials are in the string
                     const auto stopLen{ std::min(len8, 3) };
                     for (auto sequenceLen{ 1 }; sequenceLen <= stopLen; ++sequenceLen)
                     {
                         --backIter;
-                        // If Lead Byte found
-                        if ((*backIter & MaskCont) > IsCont)
+                        // we found a Lead Byte if at least 2 high-order bits are set
+                        if ((*backIter & 0b11'000000) == 0b11'000000)
                         {
-                            // If the Lead Byte indicates that the last bytes in the string is a partial UTF-8 code point then cache them:
-                            //  Use the bitmask at index `sequenceLen`. Compare the result with the operand having the same index. If they
-                            //  are not equal then the sequence has to be cached because it is a partial code point. Otherwise the
-                            //  sequence is a complete UTF-8 code point and the whole string is ready for the conversion into a UTF-16 string.
-                            if ((*backIter & cmpMasks[gsl::narrow_cast<size_t>(sequenceLen)]) != cmpOperands[gsl::narrow_cast<size_t>(sequenceLen)])
+                            // determine the number of bytes of the code point indicated by the lead byte
+                            const auto codePointLen{
+                                2 + // the code point consists of at least 2 bytes because we found a lead byte
+                                gsl::narrow_cast<int>((*backIter & 0b111'00000) == 0b111'00000) + // add one if at least 3 high-order bits of the lead byte are set
+                                gsl::narrow_cast<int>((*backIter & 0b1111'0000) == 0b1111'0000) // add another one if 4 high-order bits of the lead byte are set
+                            };
+
+                            // if the length of the code point differs from the length we stepped backward, we will capture the last sequence which is a partial code point
+                            if (codePointLen != sequenceLen)
                             {
-                                std::move(backIter, backIter + sequenceLen, state.partials.data());
+                                std::move(backIter, backIter + sequenceLen, state.partials);
                                 len8 -= sequenceLen;
-                                state.partials[3] = gsl::narrow_cast<char>(sequenceLen);
+                                state.have = gsl::narrow_cast<uint8_t>(sequenceLen);
+                                state.want = gsl::narrow_cast<uint8_t>(codePointLen - sequenceLen);
                             }
 
                             break;
@@ -220,7 +175,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
             }
 
-            if (!!len8)
+            if (len8)
             {
                 const auto convLen{ MultiByteToWideChar(CP_UTF8, 0UL, cursor8, len8, out.data() + len16, capa16) };
                 RETURN_HR_IF(E_UNEXPECTED, !convLen);
@@ -263,11 +218,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         try
         {
             out.clear();
-
-            if (in.empty())
-            {
-                return S_OK;
-            }
+            RETURN_HR_IF(S_OK, in.empty());
 
             int lengthIn{};
             int lengthRequired{};
@@ -276,7 +227,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Thus, the worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
             RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&lengthIn) || !base::CheckMul(lengthIn, 3).AssignIfValid(&lengthRequired));
             out.resize(gsl::narrow_cast<size_t>(lengthRequired)); // avoid to call WideCharToMultiByte twice only to get the required size
-            const int lengthOut = WideCharToMultiByte(gsl::narrow_cast<UINT>(CP_UTF8), 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr);
+            const int lengthOut = WideCharToMultiByte(CP_UTF8, 0ul, in.data(), lengthIn, out.data(), lengthRequired, nullptr, nullptr);
             out.resize(gsl::narrow_cast<size_t>(lengthOut));
 
             return lengthOut == 0 ? E_UNEXPECTED : S_OK;
@@ -296,7 +247,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
 #pragma warning(push)
-#pragma warning(disable : 26446 26459 26481) // subscript operator, use span, pointer arithmetic
+#pragma warning(disable : 26429 26446 26459 26481 26485) // use not_null, subscript operator, use span, pointer arithmetic, array to pointer decay
     // Routine Description:
     // - Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
     // Arguments:
@@ -305,7 +256,6 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - state - reference to a til::u16state class holding the status of the current partials handling
     // Return Value:
     // - S_OK          - the conversion succeeded without any change of the represented code points
-    // - S_FALSE       - the resulting string is converted from the previously cached partial only
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
@@ -314,31 +264,21 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     {
         try
         {
+            out.clear();
+            RETURN_HR_IF(S_OK, in.empty());
+
             int len16{};
             int capa8{};
             // The worst ratio of UTF-16 code units to UTF-8 code units is 1 to 3.
-            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&len16) || !base::CheckAdd(len16, state.partials[1]).AssignIfValid(&capa8) || !base::CheckMul(capa8, 3).AssignIfValid(&capa8));
-
-            out.clear();
-            RETURN_HR_IF(S_OK, !capa8); // nothing to convert, however this is not an error
+            RETURN_HR_IF(E_ABORT, !base::MakeCheckedNum(in.length()).AssignIfValid(&len16) || !base::CheckAdd(len16, gsl::narrow_cast<int>(state.partials[0]) != 0).AssignIfValid(&capa8) || !base::CheckMul(capa8, 3).AssignIfValid(&capa8));
 
             out.resize(gsl::narrow_cast<size_t>(capa8));
             int len8{};
             auto cursor16{ in.data() };
-            if (!!state.partials[1])
+            if (state.partials[0])
             {
-                if (!len16) // only the partial code point will be converted and published
-                {
-                    len8 = WideCharToMultiByte(CP_UTF8, 0UL, state.partials.data(), 1, out.data(), capa8, nullptr, nullptr);
-                    RETURN_HR_IF(E_UNEXPECTED, !len8);
-
-                    state.reset();
-                    out.resize(gsl::narrow_cast<size_t>(len8));
-                    return S_FALSE;
-                }
-
-                std::move(in.data(), in.data() + 1, state.partials.data() + 1);
-                len8 = WideCharToMultiByte(CP_UTF8, 0UL, state.partials.data(), 2, out.data(), capa8, nullptr, nullptr);
+                std::move(in.data(), in.data() + 1, state.partials + 1);
+                len8 = WideCharToMultiByte(CP_UTF8, 0UL, state.partials, 2, out.data(), capa8, nullptr, nullptr);
                 RETURN_HR_IF(E_UNEXPECTED, !len8);
 
                 state.reset();
@@ -347,17 +287,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 ++cursor16;
             }
 
-            if (!!len16)
+            if (len16)
             {
                 const auto back = *(cursor16 + len16 - 1);
                 if (back >= 0xD800 && back <= 0xDBFF) // cache the last value in the string if it is in the range of high surrogates
                 {
-                    state.partials = { back, L'\1' };
+                    state.partials[0] = back;
                     --len16;
                 }
             }
 
-            if (!!len16)
+            if (len16)
             {
                 const auto convLen{ WideCharToMultiByte(CP_UTF8, 0UL, cursor16, len16, out.data() + len8, capa8, nullptr, nullptr) };
                 RETURN_HR_IF(E_UNEXPECTED, !convLen);
@@ -390,12 +330,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Return Value:
     // - the resulting UTF-16 string
     // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class inT>
-    typename std::enable_if_t<std::is_same_v<typename inT::value_type, char>, std::wstring>
-    u8u16(const inT& in)
+    inline std::wstring u8u16(const std::string_view& in)
     {
         std::wstring out{};
-        THROW_IF_FAILED(u8u16(std::string_view{ in }, out));
+        THROW_IF_FAILED(u8u16(in, out));
         return out;
     }
 
@@ -423,12 +361,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Return Value:
     // - the resulting UTF-8 string
     // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class inT>
-    typename std::enable_if_t<std::is_same_v<typename inT::value_type, wchar_t>, std::string>
-    u16u8(const inT& in)
+    inline std::string u16u8(const std::wstring_view& in)
     {
         std::string out{};
-        THROW_IF_FAILED(u16u8(std::wstring_view{ in }, out));
+        THROW_IF_FAILED(u16u8(in, out));
         return out;
     }
 
