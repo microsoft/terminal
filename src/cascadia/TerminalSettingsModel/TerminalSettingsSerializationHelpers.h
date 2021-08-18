@@ -490,7 +490,7 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
         pair_type{ "all", AllSet },
 
     };
-}
+};
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::SelectionDirection)
 {
@@ -510,3 +510,4 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::SelectionExpansion)
         pair_type{ "view", ValueType::Viewport },
         pair_type{ "buffer", ValueType::Buffer }
     };
+};
