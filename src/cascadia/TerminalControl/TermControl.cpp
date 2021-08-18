@@ -377,7 +377,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto newMargin = ParseThicknessFromPadding(newSettings.Padding());
+        const auto newMargin = ParseThicknessFromPadding(newSettings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         TSFInputControl().Margin(newMargin);
@@ -511,18 +511,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - The automation peer for our control
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
-        if (_initializedTerminal && !_IsClosing()) // only set up the automation peer if we're ready to go live
+        // MSFT 33353327: We're purposefully not using _initializedTerminal to ensure we're fully initialized.
+        // Doing so makes us return nullptr when XAML requests an automation peer.
+        // Instead, we need to give XAML an automation peer, then fix it later.
+        if (!_IsClosing())
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
-                auto margins{ SwapChainPanel().Margin() };
-
-                Core::Padding padding{ margins.Left,
-                                       margins.Top,
-                                       margins.Right,
-                                       margins.Bottom };
+                const auto margins{ SwapChainPanel().Margin() };
+                const Core::Padding padding{ margins.Left,
+                                             margins.Top,
+                                             margins.Right,
+                                             margins.Bottom };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, padding, interactivityAutoPeer);
                 return _automationPeer;
             }
@@ -716,6 +718,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         this->Focus(FocusState::Programmatic);
 
         _initializedTerminal = true;
+
+        // MSFT 33353327: If the AutomationPeer was created before we were done initializing,
+        // make sure it's properly set up now.
+        if (_automationPeer)
+        {
+            _automationPeer.UpdateControlBounds();
+            const auto margins{ GetPadding() };
+            _automationPeer.SetControlPadding(Core::Padding{ margins.Left,
+                                                             margins.Top,
+                                                             margins.Right,
+                                                             margins.Bottom });
+        }
 
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
