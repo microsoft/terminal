@@ -58,6 +58,8 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
+        bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+
         winrt::fire_and_forget NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e);
 
         hstring Title();

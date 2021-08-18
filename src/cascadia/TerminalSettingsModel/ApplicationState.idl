@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "Command.idl";
+import "GlobalAppSettings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -12,5 +13,7 @@ namespace Microsoft.Terminal.Settings.Model
         String FilePath { get; };
 
         Windows.Foundation.Collections.IVector<ActionAndArgs> PersistedTabLayout { get; set; };
+        LaunchPosition PersistedInitialPosition;
+        Windows.Foundation.Size PersistedInitialSize;
     }
 }

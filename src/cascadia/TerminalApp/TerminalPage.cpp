@@ -238,6 +238,18 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
+    // Method Description;
+    // - Checks if the current terminal window should load or save its layout information.
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - true if the ApplicationState should be used.
+    bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
+    {
+        return settings.GlobalSettings().PersistTabLayout() && _WindowId == 1;
+    }
+
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
@@ -324,7 +336,7 @@ namespace winrt::TerminalApp::implementation
             // If the user selected to save their tab layout, we are the first
             // window opened, and wt was not run with any other arguments, then
             // we should use the saved settings.
-            if (_settings.GlobalSettings().PersistTabLayout() && _WindowId == 1 && _startupActions.Size() == 1)
+            if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1)
             {
                 auto actions = ApplicationState::SharedInstance().PersistedTabLayout();
                 if (actions && actions.Size() > 0)
@@ -1201,6 +1213,24 @@ namespace winrt::TerminalApp::implementation
 
         auto state = ApplicationState::SharedInstance();
         state.PersistedTabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+
+        // Only save the content size because the tab size will be added on load.
+        const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+        const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
+
+        state.PersistedInitialSize(windowSize);
+
+        if (_hostingHwnd)
+        {
+            RECT window;
+            GetWindowRect(_hostingHwnd.value(), &window);
+            LaunchPosition pos{};
+            pos.X = window.left;
+            pos.Y = window.top;
+
+            state.PersistedInitialPosition(pos);
+        }
     }
 
     // Method Description:
@@ -1222,7 +1252,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (_settings.GlobalSettings().PersistTabLayout() && _WindowId == 1)
+        if (ShouldUsePersistedLayout(_settings))
         {
             PersistTabLayout();
         }
