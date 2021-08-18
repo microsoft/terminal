@@ -23,6 +23,7 @@ TrayIcon::TrayIcon(const HWND owningHwnd) :
 
 TrayIcon::~TrayIcon()
 {
+    DestroyWindow(_trayIconWndProc);
     RemoveIconFromTray();
 }
 
@@ -33,6 +34,7 @@ void TrayIcon::CreateWindowProcess()
     wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
     wc.lpszClassName = TRAY_ICON_HOSTING_WINDOW_CLASS;
     wc.style = CS_HREDRAW | CS_VREDRAW;
+    wc.lpfnWndProc = &TrayIcon::_WindowProc;
     wc.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
     RegisterClass(&wc);
 
