@@ -71,6 +71,13 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     });
 }
 
+// Method Description:
+// - Extract the terminal settings from the current (leaf) pane's control
+//   to be used to create an equivalent control
+// Arguments:
+// - <none>
+// Return Value:
+// - Arguments appropriate for a SplitPane or NewTab action
 NewTerminalArgs Pane::GetTerminalArgsForPane() const
 {
     // Leaves are the only things that have controls
