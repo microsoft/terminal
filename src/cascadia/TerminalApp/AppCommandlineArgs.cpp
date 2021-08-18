@@ -598,6 +598,13 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
         args.Profile(winrt::to_hstring(_profileName));
     }
 
+    if (!*subcommand.profileNameOption && !_commandline.empty())
+    {
+        // If there's no profile, but there IS a command line, set the tab title to the first part of the command
+        // This will ensure that the tab we spawn has a name (since it didn't get one from its profile!)
+        args.TabTitle(winrt::to_hstring(til::at(_commandline, 0)));
+    }
+
     if (*subcommand.startingDirectoryOption)
     {
         args.StartingDirectory(winrt::to_hstring(_startingDirectory));
