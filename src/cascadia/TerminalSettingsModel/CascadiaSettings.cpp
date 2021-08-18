@@ -817,7 +817,22 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::GetProfil
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return FindProfile(til::coalesce_value(profileByName, profileByIndex, _globals->DefaultProfile()));
+    if (profileByName)
+    {
+        return FindProfile(*profileByName);
+    }
+
+    if (profileByIndex)
+    {
+        return FindProfile(*profileByIndex);
+    }
+
+    // No profile was specified; what we do now is dependent on whether there was a commandline.
+    // If there was a command line, we want to use the generic profile. If there wasn't, the user
+    // probably wants their specified default profile.
+    return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
+               FindProfile(GlobalSettings().DefaultProfile()) :
+               ProfileDefaults();
 }
 
 // Method Description:
