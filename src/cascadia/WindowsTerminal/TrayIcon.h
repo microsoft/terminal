@@ -35,7 +35,7 @@ public:
 private:
     HMENU _CreateTrayContextMenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
 
-    HWND _trayIconWndProc;
+    wil::unique_hwnd _trayIconHwnd;
     HWND _owningHwnd;
     NOTIFYICONDATA _trayIconData;
 };

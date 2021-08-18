@@ -12,8 +12,6 @@
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal;
 
-extern "C" IMAGE_DOS_HEADER __ImageBase;
-
 TrayIcon::TrayIcon(const HWND owningHwnd) :
     _owningHwnd{ owningHwnd }
 {
@@ -22,7 +20,6 @@ TrayIcon::TrayIcon(const HWND owningHwnd) :
 
 TrayIcon::~TrayIcon()
 {
-    DestroyWindow(_trayIconWndProc);
     RemoveIconFromTray();
 }
 
@@ -30,26 +27,26 @@ void TrayIcon::CreateWindowProcess()
 {
     WNDCLASSW wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wc.hInstance = reinterpret_cast<HINSTANCE>(&__ImageBase);
+    wc.hInstance = wil::GetModuleInstanceHandle();
     wc.lpszClassName = L"TRAY_ICON_HOSTING_WINDOW_CLASS";
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = &TrayIcon::_WindowProc;
     wc.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
     RegisterClass(&wc);
 
-    _trayIconWndProc = CreateWindowW(wc.lpszClassName,
-                                     wc.lpszClassName,
-                                     WS_DISABLED,
-                                     CW_USEDEFAULT,
-                                     CW_USEDEFAULT,
-                                     CW_USEDEFAULT,
-                                     CW_USEDEFAULT,
-                                     HWND_MESSAGE,
-                                     nullptr,
-                                     wc.hInstance,
-                                     nullptr);
+    _trayIconHwnd = wil::unique_hwnd(CreateWindowW(wc.lpszClassName,
+                                                   wc.lpszClassName,
+                                                   WS_DISABLED,
+                                                   CW_USEDEFAULT,
+                                                   CW_USEDEFAULT,
+                                                   CW_USEDEFAULT,
+                                                   CW_USEDEFAULT,
+                                                   HWND_MESSAGE,
+                                                   nullptr,
+                                                   wc.hInstance,
+                                                   nullptr));
 
-    WINRT_VERIFY(_trayIconWndProc);
+    WINRT_VERIFY(_trayIconHwnd);
 }
 
 LRESULT CALLBACK TrayIcon::_WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept
@@ -67,7 +64,7 @@ LRESULT CALLBACK TrayIcon::_WindowProc(HWND window, UINT message, WPARAM wparam,
 // - <none>
 void TrayIcon::CreateTrayIcon()
 {
-    if (!_trayIconWndProc)
+    if (!_trayIconHwnd)
     {
         // Creating a disabled, non visible window just so we can set it
         // as the foreground window when showing the context menu.
@@ -124,7 +121,7 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
     {
         // We'll need to set our window to the foreground before calling
         // TrackPopupMenuEx or else the menu won't dismiss when clicking away.
-        SetForegroundWindow(_trayIconWndProc);
+        SetForegroundWindow(_trayIconHwnd.get());
 
         // User can select menu items with the left and right buttons.
         UINT uFlags = TPM_RIGHTBUTTON;
