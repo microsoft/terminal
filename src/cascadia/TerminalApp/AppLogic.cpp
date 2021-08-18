@@ -603,9 +603,12 @@ namespace winrt::TerminalApp::implementation
         {
             auto state = ApplicationState::SharedInstance();
 
-            proposedSize = state.PersistedInitialSize();
-            proposedSize.Height = proposedSize.Height * scale;
-            proposedSize.Width = proposedSize.Width * scale;
+            if (state.PersistedInitialSize())
+            {
+                proposedSize = state.PersistedInitialSize().Value();
+                proposedSize.Height = proposedSize.Height * scale;
+                proposedSize.Width = proposedSize.Width * scale;
+            }
         }
 
         if (proposedSize.Width == 0 && proposedSize.Height == 0)
@@ -702,9 +705,9 @@ namespace winrt::TerminalApp::implementation
         {
             auto state = ApplicationState::SharedInstance();
 
-            if (state.PersistedInitialPosition().X && state.PersistedInitialPosition().Y)
+            if (state.PersistedInitialPosition())
             {
-                initialPosition = state.PersistedInitialPosition();
+                initialPosition = state.PersistedInitialPosition().Value();
             }
         }
 

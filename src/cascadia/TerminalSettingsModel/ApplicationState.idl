@@ -13,7 +13,7 @@ namespace Microsoft.Terminal.Settings.Model
         String FilePath { get; };
 
         Windows.Foundation.Collections.IVector<ActionAndArgs> PersistedTabLayout { get; set; };
-        LaunchPosition PersistedInitialPosition;
-        Windows.Foundation.Size PersistedInitialSize;
+        Windows.Foundation.IReference<LaunchPosition> PersistedInitialPosition;
+        Windows.Foundation.IReference<Windows.Foundation.Size> PersistedInitialSize;
     }
 }

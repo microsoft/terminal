@@ -24,8 +24,8 @@ Abstract:
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                               \
     X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                         \
     X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>, PersistedTabLayout, "persistedTabLayout") \
-    X(Microsoft::Terminal::Settings::Model::LaunchPosition, PersistedInitialPosition, "persistedInitialPosition")                                      \
-    X(winrt::Windows::Foundation::Size, PersistedInitialSize, "persistedInitialSize")
+    X(winrt::Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::LaunchPosition>, PersistedInitialPosition, "persistedInitialPosition")                                      \
+    X(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, PersistedInitialSize, "persistedInitialSize")
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {

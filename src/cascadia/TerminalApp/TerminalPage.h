@@ -160,6 +160,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
 
+        bool _maintainStateOnTabClose;
         bool _rearranging;
         std::optional<int> _rearrangeFrom;
         std::optional<int> _rearrangeTo;

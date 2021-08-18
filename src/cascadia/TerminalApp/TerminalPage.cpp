@@ -1255,6 +1255,8 @@ namespace winrt::TerminalApp::implementation
         if (ShouldUsePersistedLayout(_settings))
         {
             PersistTabLayout();
+            // don't delete the applicationstate when all of the tabs are removed.
+            _maintainStateOnTabClose = true;
         }
 
         _RemoveAllTabs();

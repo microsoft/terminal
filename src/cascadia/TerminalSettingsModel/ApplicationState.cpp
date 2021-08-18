@@ -92,10 +92,13 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             Json::Value json{ Json::arrayValue };
 
-            ConversionTrait<T> trait;
-            for (const auto& v : val)
+            if (val)
             {
-                json.append(trait.ToJson(v));
+                ConversionTrait<T> trait;
+                for (const auto& v : val)
+                {
+                    json.append(trait.ToJson(v));
+                }
             }
 
             return json;
