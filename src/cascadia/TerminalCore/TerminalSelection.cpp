@@ -127,7 +127,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
-    _multiClickSelectionMode = SelectionExpansion::Cell;
+    _multiClickSelectionMode = SelectionExpansion::Char;
     SetSelectionEnd(viewportPos);
 
     _selection->start = _selection->pivot;
@@ -224,7 +224,7 @@ std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD
         start = _buffer->GetWordStart(start, _wordDelimiters);
         end = _buffer->GetWordEnd(end, _wordDelimiters);
         break;
-    case SelectionExpansion::Cell:
+    case SelectionExpansion::Char:
     default:
         // no expansion is necessary
         break;
@@ -241,23 +241,17 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
-bool Terminal::MovingStart() const noexcept
-{
-    // true --> we're moving start endpoint ("higher")
-    // false --> we're moving end endpoint ("lower")
-    return _selection->start == _selection->pivot ? false : true;
-}
-
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode)
 {
     // 1. Figure out which endpoint to update
     // One of the endpoints is the pivot, signifying that the other endpoint is the one we want to move.
-    auto targetPos{ _selection->start == _selection->pivot ? _selection->end : _selection->start };
+    const bool movingEnd{ _selection->start == _selection->pivot };
+    auto targetPos{ movingEnd ? _selection->end : _selection->start };
 
     // 2. Perform the movement
     switch (mode)
     {
-    case SelectionExpansion::Cell:
+    case SelectionExpansion::Char:
         _MoveByChar(direction, targetPos);
         break;
     case SelectionExpansion::Word:
@@ -289,6 +283,7 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
             _scrollOffset -= amtBelowView;
         }
         _NotifyScrollEvent();
+        _buffer->GetRenderTarget().TriggerScroll();
     }
 }
 
@@ -397,8 +392,9 @@ void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
     case SelectionDirection::Down:
     {
         const auto viewportHeight{ _mutableViewport.Height() };
+        const auto mutableBottom{ _mutableViewport.BottomInclusive() };
         const auto newY{ base::ClampAdd<short, short>(pos.Y, viewportHeight) };
-        pos = newY > bufferSize.BottomInclusive() ? COORD{ bufferSize.RightInclusive(), bufferSize.BottomInclusive() } : COORD{ pos.X, newY };
+        pos = newY > mutableBottom ? COORD{ bufferSize.RightInclusive(), mutableBottom } : COORD{ pos.X, newY };
         break;
     }
     }
@@ -415,7 +411,7 @@ void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
         break;
     case SelectionDirection::Right:
     case SelectionDirection::Down:
-        pos = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+        pos = { bufferSize.RightInclusive(), _mutableViewport.BottomInclusive() };
         break;
     }
 }

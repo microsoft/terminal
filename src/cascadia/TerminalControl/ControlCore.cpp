@@ -1437,10 +1437,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        Core::SelectionExpansion mode = Core::SelectionExpansion::Cell;
+        Core::SelectionExpansion mode = Core::SelectionExpansion::Char;
         if (numberOfClicks == 1)
         {
-            mode = Core::SelectionExpansion::Cell;
+            mode = Core::SelectionExpansion::Char;
         }
         else if (numberOfClicks == 2)
         {
@@ -1473,7 +1473,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (mode != Core::SelectionExpansion::Cell || shiftEnabled)
+        else if (mode != Core::SelectionExpansion::Char || shiftEnabled)
         {
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
