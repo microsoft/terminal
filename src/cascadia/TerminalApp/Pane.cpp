@@ -93,7 +93,6 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
     if (controlSettings.TabColor() || controlSettings.StartingTabColor())
     {
-
         til::color c;
         // StartingTabColor is prioritized over other colors
         if (controlSettings.StartingTabColor())
