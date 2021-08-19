@@ -210,7 +210,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     }
 
     // if the tree is well-formed then f1.has_value and f2.has_value are
-    // mutually exclusive. 
+    // mutually exclusive.
     std::optional<uint32_t> focusedPaneId = f1;
 
     if (f2.has_value())

@@ -44,7 +44,6 @@ enum class Borders : int
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
 
-
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
