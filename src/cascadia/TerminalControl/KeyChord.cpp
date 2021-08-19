@@ -49,10 +49,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This forces us to _either_ hash _vkey or _scanCode.
         //
         // Additionally the hash value with _vkey==123 and _scanCode==123 must be different.
-        // --> Mark the hash of a KeyChord without _vkey with the highest bit set,
-        //     thus generating a different Hash() even if the Vkey/ScanCode are identical.
+        // --> Taint hashes of KeyChord without _vkey.
         auto h = static_cast<uint64_t>(_modifiers) << 32;
-        h |= _vkey ? _vkey : (_scanCode | 0x80000000);
+        h |= _vkey ? _vkey : (_scanCode | 0xBABE0000);
 
         // I didn't like how std::hash uses the byte-wise FNV1a for integers.
         // So I built my own std::hash with murmurhash3.
