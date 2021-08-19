@@ -375,13 +375,13 @@
     <value>When enabled, this enables the launch of Windows Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
-  <data name="Globals_PersistTabLayout.Header" xml:space="preserve">
-    <value>Persist terminal tab layout</value>
-    <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
+  <data name="Globals_PersistWindowLayout.Header" xml:space="preserve">
+    <value>Persist terminal window layout</value>
+    <comment>Header for a control to toggle whether the terminal layout should be saved between runs.</comment>
   </data>
-  <data name="Globals_PersistTabLayout.HelpText" xml:space="preserve">
-    <value>When enabled, the tab layout of terminal windows will be saved on close and reloaded on open.</value>
-    <comment>A description for what the "start on user login" setting does. Presented near "Globals_PersistTabLayout.Header".</comment>
+  <data name="Globals_PersistWindowLayout.HelpText" xml:space="preserve">
+    <value>When enabled, the tab layout, size, and position of the primary terminal window will be saved on close and reloaded on open.</value>
+    <comment>A description for what the "Persist terminal window layout" setting does. Presented near "Globals_PersistWindowLayout.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
     <value>Always on top</value>

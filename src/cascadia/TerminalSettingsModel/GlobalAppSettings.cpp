@@ -40,7 +40,7 @@ static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
-static constexpr std::string_view PersistTabLayoutKey{ "persistTabLayout" };
+static constexpr std::string_view PersistWindowLayoutKey{ "persistWindowLayout" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
@@ -124,7 +124,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_ForceVTInput = _ForceVTInput;
     globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
     globals->_StartOnUserLogin = _StartOnUserLogin;
-    globals->_PersistTabLayout = _PersistTabLayout;
+    globals->_PersistWindowLayout = _PersistWindowLayout;
     globals->_AlwaysOnTop = _AlwaysOnTop;
     globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
@@ -305,7 +305,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
 
-    JsonUtils::GetValueForKey(json, PersistTabLayoutKey, _PersistTabLayout);
+    JsonUtils::GetValueForKey(json, PersistWindowLayoutKey, _PersistWindowLayout);
 
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
 
@@ -418,7 +418,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, SoftwareRenderingKey,           _SoftwareRendering);
     JsonUtils::SetValueForKey(json, ForceVTInputKey,                _ForceVTInput);
     JsonUtils::SetValueForKey(json, EnableStartupTaskKey,           _StartOnUserLogin);
-    JsonUtils::SetValueForKey(json, PersistTabLayoutKey,            _PersistTabLayout);
+    JsonUtils::SetValueForKey(json, PersistWindowLayoutKey,         _PersistWindowLayout);
     JsonUtils::SetValueForKey(json, AlwaysOnTopKey,                 _AlwaysOnTop);
     JsonUtils::SetValueForKey(json, TabSwitcherModeKey,             _TabSwitcherMode);
     JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);

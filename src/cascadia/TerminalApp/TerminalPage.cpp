@@ -247,7 +247,7 @@ namespace winrt::TerminalApp::implementation
     // - true if the ApplicationState should be used.
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
-        return settings.GlobalSettings().PersistTabLayout() && _WindowId == 1;
+        return settings.GlobalSettings().PersistWindowLayout() && _WindowId == 1;
     }
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
@@ -1177,7 +1177,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::PersistTabLayout()
+    void TerminalPage::PersistWindowLayout()
     {
         std::vector<ActionAndArgs> actions;
 
@@ -1254,7 +1254,7 @@ namespace winrt::TerminalApp::implementation
 
         if (ShouldUsePersistedLayout(_settings))
         {
-            PersistTabLayout();
+            PersistWindowLayout();
             // don't delete the ApplicationState when all of the tabs are removed.
             _maintainStateOnTabClose = true;
         }

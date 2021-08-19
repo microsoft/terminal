@@ -133,9 +133,9 @@
                     <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
                 </local:SettingContainer>
 
-                <!--  Retain and Reload Tab Layout  -->
-                <local:SettingContainer x:Uid="Globals_PersistTabLayout">
-                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.PersistTabLayout, Mode=TwoWay}" />
+                <!--  Retain and Reload Window Layout  -->
+                <local:SettingContainer x:Uid="Globals_PersistWindowLayout">
+                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.PersistWindowLayout, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Launch Mode  -->
