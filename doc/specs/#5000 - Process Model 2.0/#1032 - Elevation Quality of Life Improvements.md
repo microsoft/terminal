@@ -155,7 +155,7 @@ handle the new connection.
 `"elevate": false` will do nothing. If the window is already elevated, then the
 profile won't open an un-elevated window.
 
-If the user tries to open an `"elevated": true` profile in a window that's
+If the user tries to open an `"elevate": true` profile in a window that's
 already elevated, then a new tab/split will open in the existing window, rather
 than spawning an additional elevated window.
 
@@ -377,7 +377,7 @@ will help mitigate the UX discomfort caused by prompting on every commandline
 launched. This should mean that the discomfort is only
 
 The dialog for confirming these commandlines should have a link to the docs for
-"why do I need to do this?". Transparency in the face of this dialog should
+"Learn more...". Transparency in the face of this dialog should
 mitigate some dissatisfaction.
 
 The dialog will _not_ appear if the user does not have a split token - if the
@@ -404,7 +404,7 @@ No changes to our reliability are expected as a part of this change.
 <td>
 
 There are no serious compatibility concerns expected with this changelist. The
-new `elevated` property will be unset by default, so users will heed to opt-in
+new `elevate` property will be unset by default, so users will heed to opt-in
 to the new auto-elevating behavior.
 
 There is one minor concern regarding introducing the UAC shield on the window.
@@ -451,9 +451,9 @@ encounter these issues. They are are team best equipped to resolve these issues.
 
 ### Default Terminal & auto-elevation
 
-In the future, when we supporting setting the Terminal as the "default terminal
+In the future, when we support setting the Terminal as the "default terminal
 emulator" on Windows. When that lands, we will use the `profiles.defaults`
-settings to create the tab we'll hosting the commandline client. If the user has
+settings to create the tab where we'll be hosting the commandline client. If the user has
 `"elevate": true` in their `profiles.defaults`, we'd usually try to
 auto-elevate the profile. In this scenario, however, we can't do that. The
 Terminal is being invoked on behalf of the client app launching, instead of the
