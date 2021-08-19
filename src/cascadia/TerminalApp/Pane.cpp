@@ -180,7 +180,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     }
 
     // We now need to execute the commands for each side of the tree
-    // We've done one split, so the firstmost child will have currentId, and the
+    // We've done one split, so the first-most child will have currentId, and the
     // one after it will be incremented.
     auto [a1, p1, f1, n1] = _firstChild->BuildStartupActions(currentId, nextId + 1);
     // the next id for the second branch depends on how many splits were in the
