@@ -122,7 +122,8 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         bool CanConvert(const Json::Value& json)
         {
-            return json.isObject();
+            // commands without args might just be a string
+            return json.isString() || json.isObject();
         }
 
         Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs& val)

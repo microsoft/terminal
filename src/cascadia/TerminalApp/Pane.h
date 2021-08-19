@@ -44,6 +44,7 @@ enum class Borders : int
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
 
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -62,7 +63,14 @@ public:
     void ClearActive();
     void SetActive();
 
-    std::pair<std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>, std::shared_ptr<Pane>> BuildStartupActions();
+    struct BuildStartupState
+    {
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> args;
+        std::shared_ptr<Pane> firstPane;
+        std::optional<uint32_t> focusedPaneId;
+        uint32_t panesCreated;
+    };
+    BuildStartupState BuildStartupActions();
     winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,

@@ -449,18 +449,35 @@ namespace winrt::TerminalApp::implementation
     // - A vector of commands
     std::vector<ActionAndArgs> TerminalTab::BuildStartupActions() const
     {
-        auto [args, pane] = _rootPane->BuildStartupActions();
+        auto [args, pane, focusedPaneId, _] = _rootPane->BuildStartupActions();
 
         ActionAndArgs newTabAction{};
         newTabAction.Action(ShortcutAction::NewTab);
-        // _getNewTerminalArgs MUST be called before parsing any other options,
-        // as it might clear those options while finding the commandline
         NewTabArgs newTabArgs{ pane->GetTerminalArgsForPane() };
         newTabAction.Args(newTabArgs);
 
         args.insert(args.begin(), newTabAction);
 
-        // TODO: persist focused pane? zoomed pane?
+        // If we only have one arg, we only have 1 pane so we don't need any
+        // special focus logic
+        if (args.size() > 1 && focusedPaneId.has_value())
+        {
+            ActionAndArgs focusPaneAction{};
+            focusPaneAction.Action(ShortcutAction::FocusPane);
+            FocusPaneArgs focusArgs{ focusedPaneId.value() };
+            focusPaneAction.Args(focusArgs);
+
+            args.push_back(focusPaneAction);
+        }
+
+        if (_zoomedPane)
+        {
+            // we start without any panes zoomed so toggle zoom will enable zoom.
+            ActionAndArgs zoomPaneAction{};
+            zoomPaneAction.Action(ShortcutAction::TogglePaneZoom);
+
+            args.push_back(zoomPaneAction);
+        }
 
         return args;
     }
