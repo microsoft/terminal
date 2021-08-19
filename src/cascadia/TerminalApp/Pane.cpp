@@ -122,9 +122,12 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
 // - This will always result in the right-most child being the focus
 //   after the commands finish executing.
 // Arguments:
-// - <none>
+// - currentId: the id to use for the current/first pane
+// - nextId: the id to use for a new pane if we split
 // Return Value:
-// - A vector of commands and the original root pane for this new tree
+// - The state from building the startup actions, includes a vector of commands,
+//   the original root pane, the id of the focused pane, and the number of panes
+//   created.
 Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId)
 {
     // if we are a leaf then all there is to do is defer to the parent.
