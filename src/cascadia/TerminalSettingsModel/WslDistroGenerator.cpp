@@ -15,6 +15,13 @@
 
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
 
+// The WSL entries are structured as such:
+// HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
+//   ⌞ {distroGuid}
+//     ⌞ DistributionName: {the name}
+static constexpr auto RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
+static constexpr auto RegKeyDistroName[] = L"DistributionName";
+
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
@@ -35,7 +42,7 @@ std::wstring_view WslDistroGenerator::GetNamespace()
 // - <none>
 // Return Value:
 // - a vector with all distros for all the installed WSL distros
-std::vector<Profile> _legacyGenerate()
+static std::vector<Profile> legacyGenerate()
 {
     std::vector<Profile> profiles;
 
@@ -144,7 +151,7 @@ std::vector<Profile> _legacyGenerate()
 // - names: a list of distro names to turn into profiles
 // Return Value:
 // - the list of profiles we've generated.
-std::vector<Profile> _namesToProfiles(const std::vector<std::wstring>& names)
+static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& names)
 {
     std::vector<Profile> profiles;
     for (const auto& distName : names)
@@ -167,20 +174,13 @@ std::vector<Profile> _namesToProfiles(const std::vector<std::wstring>& names)
     return profiles;
 }
 
-// The WSL entries are structured as such:
-// HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
-//   ⌞ {distroGuid}
-//     ⌞ DistributionName: {the name}
-const wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
-const wchar_t RegKeyDistroName[] = L"DistributionName";
-
 // Function Description:
 // - Open the reg key the root of the WSL data, in HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
 // Arguments:
 // - <none>
 // Return Value:
 // - the HKEY if it exists and we can read it, else nullptr
-HKEY _openWslRegKey()
+static HKEY openWslRegKey()
 {
     HKEY hKey{ nullptr };
     if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyLxss, 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
@@ -197,7 +197,7 @@ HKEY _openWslRegKey()
 // - guid: the string representation of the GUID for the distro to inspect
 // Return Value:
 // - the HKEY if it exists and we can read it, else nullptr
-HKEY _openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid)
+static HKEY openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid)
 {
     HKEY hKey{ nullptr };
     if (RegOpenKeyEx(wslRootKey.get(), guid.c_str(), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
@@ -213,11 +213,11 @@ HKEY _openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid
 //   Places the guids of all the distros into the "guidStrings" param.
 // Arguments:
 // - wslRootKey: the HKEY for the Lxss node.
-// - names: a vector that recieves all the guids of the installed distros.
+// - names: a vector that receives all the guids of the installed distros.
 // Return Value:
 // - false if we failed to enumerate all the WSL distros
-bool _getWslGuids(const wil::unique_hkey& wslRootKey,
-                  std::vector<std::wstring>& guidStrings)
+static bool getWslGuids(const wil::unique_hkey& wslRootKey,
+                        std::vector<std::wstring>& guidStrings)
 {
     if (!wslRootKey)
     {
@@ -268,12 +268,12 @@ bool _getWslGuids(const wil::unique_hkey& wslRootKey,
 // Arguments:
 // - wslRootKey: the HKEY for the Lxss node.
 // - guidStrings: A list of all the GUIDs of the installed distros
-// - names: a vector that recieves all the names of the installed distros.
+// - names: a vector that receives all the names of the installed distros.
 // Return Value:
 // - false if the root key was invalid, else true.
-bool _getWslNames(const wil::unique_hkey& wslRootKey,
-                  std::vector<std::wstring>& guidStrings,
-                  std::vector<std::wstring>& names)
+static bool getWslNames(const wil::unique_hkey& wslRootKey,
+                        std::vector<std::wstring>& guidStrings,
+                        std::vector<std::wstring>& names)
 {
     if (!wslRootKey)
     {
@@ -281,7 +281,7 @@ bool _getWslNames(const wil::unique_hkey& wslRootKey,
     }
     for (const auto& guid : guidStrings)
     {
-        wil::unique_hkey distroKey{ _openDistroKey(wslRootKey, guid) };
+        wil::unique_hkey distroKey{ openDistroKey(wslRootKey, guid) };
         if (!distroKey)
         {
             // return false;
@@ -322,20 +322,20 @@ bool _getWslNames(const wil::unique_hkey& wslRootKey,
 // - A list of WSL profiles.
 std::vector<Profile> WslDistroGenerator::GenerateProfiles()
 {
-    static wil::unique_hkey wslRootKey{ _openWslRegKey() };
+    static wil::unique_hkey wslRootKey{ openWslRegKey() };
     if (wslRootKey)
     {
         std::vector<std::wstring> guidStrings{};
-        if (_getWslGuids(wslRootKey, guidStrings))
+        if (getWslGuids(wslRootKey, guidStrings))
         {
             std::vector<std::wstring> names{};
             names.reserve(guidStrings.size());
-            if (_getWslNames(wslRootKey, guidStrings, names))
+            if (getWslNames(wslRootKey, guidStrings, names))
             {
-                return _namesToProfiles(names);
+                return namesToProfiles(names);
             }
         }
     }
 
-    return _legacyGenerate();
+    return legacyGenerate();
 }
