@@ -125,14 +125,14 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
 // - <none>
 // Return Value:
 // - A vector of commands and the original root pane for this new tree
-Pane::BuildStartupState Pane::BuildStartupActions()
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId)
 {
     // if we are a leaf then all there is to do is defer to the parent.
     if (_IsLeaf())
     {
         if (_lastActive)
         {
-            return { {}, shared_from_this(), 0, 0 };
+            return { {}, shared_from_this(), currentId, 0 };
         }
 
         return { {}, shared_from_this(), std::nullopt, 0 };
@@ -142,7 +142,9 @@ Pane::BuildStartupState Pane::BuildStartupActions()
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
         auto terminalArgs{ newPane->GetTerminalArgsForPane() };
-        SplitPaneArgs args{ SplitType::Manual, _splitState, _desiredSplitPosition, terminalArgs };
+        // When creating a pane the split size is the size of the new pane
+        // and not position.
+        SplitPaneArgs args{ SplitType::Manual, _splitState, 1. - _desiredSplitPosition, terminalArgs };
         actionAndArgs.Args(args);
 
         return actionAndArgs;
@@ -167,19 +169,23 @@ Pane::BuildStartupState Pane::BuildStartupActions()
         std::optional<uint32_t> focusedPaneId = std::nullopt;
         if (_firstChild->_lastActive)
         {
-            focusedPaneId = 0;
+            focusedPaneId = currentId;
         }
         else if (_secondChild->_lastActive)
         {
-            focusedPaneId = 1;
+            focusedPaneId = nextId;
         }
 
         return { { actionAndArgs }, _firstChild, focusedPaneId, 1 };
     }
 
     // We now need to execute the commands for each side of the tree
-    auto [a1, p1, f1, n1] = _firstChild->BuildStartupActions();
-    auto [a2, p2, f2, n2] = _secondChild->BuildStartupActions();
+    // We've done one split, so the firstmost child will have currentId, and the
+    // one after it will be incremented.
+    auto [a1, p1, f1, n1] = _firstChild->BuildStartupActions(currentId, nextId + 1);
+    // the next id for the second branch depends on how many splits were in the
+    // first child.
+    auto [a2, p2, f2, n2] = _secondChild->BuildStartupActions(nextId, nextId + n1 + 1);
 
     std::vector<ActionAndArgs> actions;
     actions.reserve(a1.size() + a2.size() + 3);
@@ -204,19 +210,15 @@ Pane::BuildStartupState Pane::BuildStartupActions()
     }
 
     // if the tree is well-formed then f1.has_value and f2.has_value are
-    // mutually exclusive. If f1 then we use the value as is.
+    // mutually exclusive. 
     std::optional<uint32_t> focusedPaneId = f1;
 
-    // If the focus is on the second side, its id depends on the number of panes
-    // created so far.
     if (f2.has_value())
     {
-        // Add 1 for this split, and the number of panes created on the
-        // left side of this tree.
-        focusedPaneId = f2.value() + 1 + n1;
+        focusedPaneId = f2.value();
     }
 
-    return { { actions }, p1, focusedPaneId, n1 + n2 };
+    return { { actions }, p1, focusedPaneId, n1 + n2 + 1 };
 }
 
 // Method Description:
