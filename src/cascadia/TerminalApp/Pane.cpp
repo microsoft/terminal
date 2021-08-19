@@ -1060,37 +1060,24 @@ void Pane::_FocusFirstChild()
 // - <none>
 void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
 {
-    if (!_IsLeaf())
+    assert(_IsLeaf());
+
+    _profile = profile;
+    auto controlSettings = _control.Settings().as<TerminalSettings>();
+    // Update the parent of the control's settings object (and not the object itself) so
+    // that any overrides made by the control don't get affected by the reload
+    controlSettings.SetParent(settings.DefaultSettings());
+    auto unfocusedSettings{ settings.UnfocusedSettings() };
+    if (unfocusedSettings)
     {
-        _firstChild->UpdateSettings(settings, profile);
-        _secondChild->UpdateSettings(settings, profile);
+        // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
+        // set its parent to the settings object that lives in the control. This is because
+        // the overrides made by the control live in that settings object, so we want to make
+        // sure the unfocused settings inherit from that.
+        unfocusedSettings.SetParent(controlSettings);
     }
-    else
-    {
-        // Because this call may be coming in with a different settings tree,
-        // we want to map the incoming profile based on its GUID.
-        // Failure to find a matching profile will result in a pane holding
-        // a reference to a deleted profile (which is okay!).
-        if (profile.Guid() == _profile.Guid())
-        {
-            _profile = profile;
-            auto controlSettings = _control.Settings().as<TerminalSettings>();
-            // Update the parent of the control's settings object (and not the object itself) so
-            // that any overrides made by the control don't get affected by the reload
-            controlSettings.SetParent(settings.DefaultSettings());
-            auto unfocusedSettings{ settings.UnfocusedSettings() };
-            if (unfocusedSettings)
-            {
-                // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
-                // set its parent to the settings object that lives in the control. This is because
-                // the overrides made by the control live in that settings object, so we want to make
-                // sure the unfocused settings inherit from that.
-                unfocusedSettings.SetParent(controlSettings);
-            }
-            _control.UnfocusedAppearance(unfocusedSettings);
-            _control.UpdateSettings();
-        }
-    }
+    _control.UnfocusedAppearance(unfocusedSettings);
+    _control.UpdateSettings();
 }
 
 // Method Description:

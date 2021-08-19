@@ -54,6 +54,7 @@ public:
     std::shared_ptr<Pane> GetActivePane();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
+    winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const { return _profile; }
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 

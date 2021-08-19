@@ -269,10 +269,8 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
+    void TerminalTab::UpdateSettings()
     {
-        _rootPane->UpdateSettings(settings, profile);
-
         // The tabWidthMode may have changed, update the header control accordingly
         _UpdateHeaderControlMaxWidth();
     }
