@@ -64,16 +64,16 @@ Renderer::~Renderer()
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
-    if (_destructing)
-    {
-        return S_FALSE;
-    }
-
     FOREACH_ENGINE(pEngine)
     {
         auto tries = maxRetriesForRenderEngine;
         while (tries > 0)
         {
+            if (_destructing)
+            {
+                return S_FALSE;
+            }
+
             const auto hr = _PaintFrameForEngine(pEngine);
             if (E_PENDING == hr)
             {
@@ -88,11 +88,6 @@ Renderer::~Renderer()
                     // If there's no callback, we still don't want to FAIL_FAST: the renderer going black
                     // isn't near as bad as the entire application aborting. We're a component. We shouldn't
                     // abort applications that host us.
-                    return S_FALSE;
-                }
-
-                if (_destructing)
-                {
                     return S_FALSE;
                 }
 
