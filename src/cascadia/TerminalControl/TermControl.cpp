@@ -903,6 +903,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        // Only send alt+space to the terminal when explicitly unbound
+        if (vkey == VK_SPACE && modifiers.IsAltPressed())
+        {
+            if (const auto bindings = _settings.KeyBindings())
+            {
+                if (!bindings.IsKeyChordExplicitlyUnbound({ modifiers.IsCtrlPressed(), modifiers.IsAltPressed(), modifiers.IsShiftPressed(), modifiers.IsWinPressed(), vkey, 0 }))
+                {
+                    e.Handled(true);
+                    return;
+                }
+            }
+        }
+
         if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
         {
             e.Handled(true);
