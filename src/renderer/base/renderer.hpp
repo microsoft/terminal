@@ -119,6 +119,7 @@ namespace Microsoft::Console::Render
         std::vector<Cluster> _clusterBuffer;
         std::vector<SMALL_RECT> _previousSelection;
         std::function<void()> _pfnRendererEnteredErrorState;
+        bool _destructing = false;
 
 #ifdef UNIT_TESTING
         friend class ConptyOutputTests;

@@ -52,6 +52,7 @@ Renderer::Renderer(IRenderData* pData,
 Renderer::~Renderer()
 {
     // IRenderThread blocks until it has shut down.
+    _destructing = true;
     _pThread.reset();
 }
 
@@ -63,6 +64,11 @@ Renderer::~Renderer()
 // - HRESULT S_OK, GDI error, Safe Math error, or state/argument errors.
 [[nodiscard]] HRESULT Renderer::PaintFrame()
 {
+    if (_destructing)
+    {
+        return S_FALSE;
+    }
+
     FOREACH_ENGINE(pEngine)
     {
         auto tries = maxRetriesForRenderEngine;
@@ -84,6 +90,12 @@ Renderer::~Renderer()
                     // abort applications that host us.
                     return S_FALSE;
                 }
+
+                if (_destructing)
+                {
+                    return S_FALSE;
+                }
+
                 // Add a bit of backoff.
                 // Sleep 150ms, 300ms, 450ms before failing out and disabling the renderer.
                 Sleep(renderBackoffBaseTimeMilliseconds * (maxRetriesForRenderEngine - tries));
