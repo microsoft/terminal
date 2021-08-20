@@ -146,7 +146,6 @@
                         <!--  Delete Button  -->
                         <StackPanel Margin="{StaticResource StandardControlMargin}">
                             <Button x:Name="DeleteButton"
-                                    IsEnabled="{x:Bind State.Profile.CanDeleteProfile}"
                                     Style="{StaticResource DeleteButtonStyle}">
                                 <Button.Resources>
                                     <ResourceDictionary>

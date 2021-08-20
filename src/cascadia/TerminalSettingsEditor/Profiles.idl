@@ -22,7 +22,6 @@ namespace Microsoft.Terminal.Settings.Editor
         void SetAcrylicOpacityPercentageValue(Double value);
         void SetPadding(Double value);
 
-        Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };

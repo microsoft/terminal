@@ -222,6 +222,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
                 }
                 else if (profile.Origin() != OriginTag::User)
                 {
+                    profile.Deleted(true);
                     profile.Hidden(true);
                 }
             }
@@ -781,7 +782,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         // * in the user settings or the default settings
         //   Because we don't want to add profiles which are already
         //   in the settings.json (explicitly or implicitly).
-        if (profile.Hidden() || isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
+        if (profile.Deleted() || isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
         {
             continue;
         }
@@ -1250,8 +1251,11 @@ Json::Value CascadiaSettings::ToJson() const
     Json::Value profilesList{ Json::ValueType::arrayValue };
     for (const auto& entry : _allProfiles)
     {
-        const auto prof{ winrt::get_self<implementation::Profile>(entry) };
-        profilesList.append(prof->ToJson());
+        if (!entry.Deleted())
+        {
+            const auto prof{ winrt::get_self<implementation::Profile>(entry) };
+            profilesList.append(prof->ToJson());
+        }
     }
     profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;

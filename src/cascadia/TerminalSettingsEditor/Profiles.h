@@ -42,7 +42,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         // general profile knowledge
         winrt::guid OriginalProfileGuid() const noexcept;
-        bool CanDeleteProfile() const;
         Editor::AppearanceViewModel DefaultAppearance();
         Editor::AppearanceViewModel UnfocusedAppearance();
         bool HasUnfocusedAppearance();

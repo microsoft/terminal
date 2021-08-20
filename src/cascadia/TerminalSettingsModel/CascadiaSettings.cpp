@@ -237,9 +237,17 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
         }
     }
 
+    // Technically there's Utils::CreateV5Uuid which we could use, but I wanted
+    // truly globally unique UUIDs for profiles created through the settings UI.
+    GUID guid{};
+    LOG_IF_FAILED(CoCreateGuid(&guid));
+
     auto newProfile{ _userDefaultProfileSettings->CreateChild() };
+    newProfile->Guid(guid);
     newProfile->Name(newName);
+
     _allProfiles.Append(*newProfile);
+    _activeProfiles.Append(*newProfile);
     return *newProfile;
 }
 
@@ -268,12 +276,6 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     {
         duplicated = winrt::make_self<Profile>();
     }
-    _allProfiles.Append(*duplicated);
-
-    if (!source.Hidden())
-    {
-        _activeProfiles.Append(*duplicated);
-    }
 
     winrt::hstring newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
 
@@ -289,11 +291,11 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     }
     duplicated->Name(winrt::hstring(newName));
 
-    const auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
+    static constexpr auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
         return profile && profile.Origin() != OriginTag::ProfilesDefaults;
     };
 
-    const auto isProfilesDefaultsOriginSub = [=](const auto& sub) -> bool {
+    static constexpr auto isProfilesDefaultsOriginSub = [=](const auto& sub) -> bool {
         return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
     };
 
@@ -309,7 +311,9 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         target.settingName(source.settingName());                                                       \
     }
 
-    DUPLICATE_SETTING_MACRO(Hidden);
+    // If the source is hidden and the Settings UI creates a
+    // copy of it we don't want the copy to be hidden as well.
+    duplicated->Hidden(false);
     DUPLICATE_SETTING_MACRO(Icon);
     DUPLICATE_SETTING_MACRO(CloseOnExit);
     DUPLICATE_SETTING_MACRO(TabTitle);
@@ -389,6 +393,8 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         duplicated->ConnectionType(source.ConnectionType());
     }
 
+    _allProfiles.Append(*duplicated);
+    _activeProfiles.Append(*duplicated);
     return *duplicated;
 }
 
