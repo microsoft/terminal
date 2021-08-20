@@ -20,7 +20,8 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <!--  Include the MUX Controls resources  -->
-                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"
+                                       ControlsResourcesVersion="Version1" />
                 <ResourceDictionary>
 
                     <!--
