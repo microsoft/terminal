@@ -1215,7 +1215,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return;
         }
-        
+
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                 point.Properties().MouseWheelDelta(),
                                                 _toTerminalOrigin(point.Position()),
