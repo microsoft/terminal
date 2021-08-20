@@ -23,14 +23,14 @@ TrayIcon::~TrayIcon()
     RemoveIconFromTray();
 }
 
-void TrayIcon::CreateWindowProcess()
+void TrayIcon::_CreateWindow()
 {
     WNDCLASSW wc{};
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.hInstance = wil::GetModuleInstanceHandle();
     wc.lpszClassName = L"TRAY_ICON_HOSTING_WINDOW_CLASS";
     wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpfnWndProc = &TrayIcon::_WindowProc;
+    wc.lpfnWndProc = DefWindowProcW;
     wc.hIcon = static_cast<HICON>(GetActiveAppIconHandle(true));
     RegisterClass(&wc);
 
@@ -49,11 +49,6 @@ void TrayIcon::CreateWindowProcess()
     WINRT_VERIFY(_trayIconHwnd);
 }
 
-LRESULT CALLBACK TrayIcon::_WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept
-{
-    return DefWindowProc(window, message, wparam, lparam);
-}
-
 // Method Description:
 // - Creates and adds an icon to the notification tray.
 // If an icon already exists, update the HWND associated
@@ -70,7 +65,7 @@ void TrayIcon::CreateTrayIcon()
         // as the foreground window when showing the context menu.
         // This is done so that the context menu can be dismissed
         // when clicking outside of it.
-        CreateWindowProcess();
+        _CreateWindow();
     }
 
     NOTIFYICONDATA nid{};

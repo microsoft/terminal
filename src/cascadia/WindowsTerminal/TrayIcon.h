@@ -19,9 +19,6 @@ public:
     TrayIcon(const HWND owningHwnd);
     ~TrayIcon();
 
-    void CreateWindowProcess();
-    static LRESULT CALLBACK _WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) noexcept;
-
     void CreateTrayIcon();
     void RemoveIconFromTray();
     void ReAddTrayIcon();
@@ -33,6 +30,7 @@ public:
     WINRT_CALLBACK(SummonWindowRequested, winrt::delegate<void(winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs)>);
 
 private:
+    void _CreateWindow();
     HMENU _CreateTrayContextMenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
 
     wil::unique_hwnd _trayIconHwnd;
