@@ -5,6 +5,7 @@
 #include "ApplicationState.h"
 #include "CascadiaSettings.h"
 #include "ApplicationState.g.cpp"
+#include "WindowLayout.g.cpp"
 #include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include "FileUtils.h"
@@ -13,103 +14,66 @@ constexpr std::wstring_view stateFileName{ L"state.json" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
-    // This trait exists in order to serialize the std::unordered_set for GeneratedProfiles.
-    template<typename T>
-    struct ConversionTrait<std::unordered_set<T>>
-    {
-        std::unordered_set<T> FromJson(const Json::Value& json) const
-        {
-            ConversionTrait<T> trait;
-            std::unordered_set<T> val;
-            val.reserve(json.size());
-
-            for (const auto& element : json)
-            {
-                val.emplace(trait.FromJson(element));
-            }
-
-            return val;
-        }
-
-        bool CanConvert(const Json::Value& json) const
-        {
-            ConversionTrait<T> trait;
-            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) -> bool { return trait.CanConvert(json); });
-        }
-
-        Json::Value ToJson(const std::unordered_set<T>& val)
-        {
-            ConversionTrait<T> trait;
-            Json::Value json{ Json::arrayValue };
-
-            for (const auto& key : val)
-            {
-                json.append(trait.ToJson(key));
-            }
-
-            return json;
-        }
-
-        std::string TypeDescription() const
-        {
-            return fmt::format("{}[]", ConversionTrait<GUID>{}.TypeDescription());
-        }
-    };
-
-    template<typename T>
-    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
-    {
-        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
-        {
-            winrt::Windows::Foundation::Collections::IVector<T> vec = winrt::single_threaded_vector<T>();
-
-            for (auto it = json.begin(), end = json.end(); it != end; ++it)
-            {
-                vec.Append(GetValue<T>(*it));
-            }
-
-            return vec;
-        }
-
-        bool CanConvert(const Json::Value& json) const
-        {
-            if (!json.isArray())
-            {
-                return false;
-            }
-            ConversionTrait<T> trait;
-            for (const auto& v : json)
-            {
-                if (!trait.CanConvert(v))
-                {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
-        {
-            Json::Value json{ Json::arrayValue };
-
-            if (val)
-            {
-                ConversionTrait<T> trait;
-                for (const auto& v : val)
-                {
-                    json.append(trait.ToJson(v));
-                }
-            }
-
-            return json;
-        }
-        std::string TypeDescription() const
-        {
-            return fmt::format("{} array", ConversionTrait<T>{}.TypeDescription());
-        }
-    };
-
     using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<WindowLayout>
+    {
+        WindowLayout FromJson(const Json::Value& json)
+        {
+            auto layout = winrt::make_self<implementation::WindowLayout>();
+
+            if (json.isMember("tabLayout"))
+            {
+                auto val = GetValueForKey<winrt::Windows::Foundation::Collections::IVector<ActionAndArgs>>(json, std::string_view("tabLayout"));
+                layout->TabLayout(val);
+            }
+
+            if (json.isMember("initialPosition"))
+            {
+                layout->InitialPosition(GetValueForKey<LaunchPosition>(json, std::string_view("initialPosition")));
+            }
+
+            if (json.isMember("initialSize"))
+            {
+                layout->InitialSize(GetValueForKey<winrt::Windows::Foundation::Size>(json, std::string_view("initialSize")));
+            }
+
+            return *layout;
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isObject();
+        }
+
+        Json::Value ToJson(const WindowLayout& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            if (val.TabLayout())
+            {
+                SetValueForKey(json, std::string_view("tabLayout"), val.TabLayout());
+            }
+
+            if (val.InitialPosition())
+            {
+                SetValueForKey(json, std::string_view("initialPosition"), val.InitialPosition());
+            }
+
+            if (val.InitialSize())
+            {
+                SetValueForKey(json, std::string_view("initialSize"), val.InitialSize());
+            }
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return "WindowLayout";
+        }
+    };
 
     template<>
     struct ConversionTrait<ActionAndArgs>
@@ -126,7 +90,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return json.isString() || json.isObject();
         }
 
-        Json::Value ToJson(const winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs& val)
+        Json::Value ToJson(const ActionAndArgs& val)
         {
             return implementation::ActionAndArgs::ToJson(val);
         }

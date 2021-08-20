@@ -601,11 +601,13 @@ namespace winrt::TerminalApp::implementation
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (_root->ShouldUsePersistedLayout(_settings))
         {
-            auto state = ApplicationState::SharedInstance();
+            auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
 
-            if (state.PersistedInitialSize())
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialSize())
             {
-                proposedSize = state.PersistedInitialSize().Value();
+                proposedSize = layouts.GetAt(0).InitialSize().Value();
+                // The size is saved as a non-scaled real pixel size,
+                // so we need to scale it appropriately.
                 proposedSize.Height = proposedSize.Height * scale;
                 proposedSize.Width = proposedSize.Width * scale;
             }
@@ -703,11 +705,11 @@ namespace winrt::TerminalApp::implementation
 
         if (_root->ShouldUsePersistedLayout(_settings))
         {
-            auto state = ApplicationState::SharedInstance();
+            auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
 
-            if (state.PersistedInitialPosition())
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialPosition())
             {
-                initialPosition = state.PersistedInitialPosition().Value();
+                initialPosition = layouts.GetAt(0).InitialPosition().Value();
             }
         }
 

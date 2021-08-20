@@ -338,10 +338,10 @@ namespace winrt::TerminalApp::implementation
             // we should use the saved settings.
             if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1)
             {
-                auto actions = ApplicationState::SharedInstance().PersistedTabLayout();
-                if (actions && actions.Size() > 0)
+                auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+                if (layouts && layouts.Size() > 0 && layouts.GetAt(0).TabLayout() && layouts.GetAt(0).TabLayout().Size() > 0)
                 {
-                    _startupActions = actions;
+                    _startupActions = layouts.GetAt(0).TabLayout();
                 }
             }
 
@@ -1211,15 +1211,15 @@ namespace winrt::TerminalApp::implementation
             actions.push_back(action);
         }
 
-        auto state = ApplicationState::SharedInstance();
-        state.PersistedTabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+        WindowLayout layout{};
+        layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
 
         // Only save the content size because the tab size will be added on load.
         const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
         const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
         const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
 
-        state.PersistedInitialSize(windowSize);
+        layout.InitialSize(windowSize);
 
         if (_hostingHwnd)
         {
@@ -1229,8 +1229,11 @@ namespace winrt::TerminalApp::implementation
             pos.X = window.left;
             pos.Y = window.top;
 
-            state.PersistedInitialPosition(pos);
+            layout.InitialPosition(pos);
         }
+
+        auto state = ApplicationState::SharedInstance();
+        state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
     }
 
     // Method Description:

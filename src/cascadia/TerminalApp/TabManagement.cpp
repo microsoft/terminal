@@ -468,9 +468,7 @@ namespace winrt::TerminalApp::implementation
             if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings))
             {
                 auto state = ApplicationState::SharedInstance();
-                state.PersistedInitialPosition(nullptr);
-                state.PersistedInitialSize(nullptr);
-                state.PersistedTabLayout(nullptr);
+                state.PersistedWindowLayouts(nullptr);
             }
 
             _LastTabClosedHandlers(*this, nullptr);

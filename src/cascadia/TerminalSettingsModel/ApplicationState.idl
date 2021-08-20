@@ -5,6 +5,15 @@ import "GlobalAppSettings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    runtimeclass WindowLayout
+    {
+        WindowLayout();
+
+        Windows.Foundation.Collections.IVector<ActionAndArgs> TabLayout;
+        Windows.Foundation.IReference<LaunchPosition> InitialPosition;
+        Windows.Foundation.IReference<Windows.Foundation.Size> InitialSize;
+    };
+
     [default_interface] runtimeclass ApplicationState {
         static ApplicationState SharedInstance();
 
@@ -12,8 +21,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         String FilePath { get; };
 
-        Windows.Foundation.Collections.IVector<ActionAndArgs> PersistedTabLayout { get; set; };
-        Windows.Foundation.IReference<LaunchPosition> PersistedInitialPosition;
-        Windows.Foundation.IReference<Windows.Foundation.Size> PersistedInitialSize;
+        Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts { get; set; };
     }
 }
