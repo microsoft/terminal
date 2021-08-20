@@ -466,11 +466,15 @@ void Renderer::TriggerScroll(const COORD* const pcoordDelta)
 // - <none>
 void Renderer::TriggerCircling()
 {
+    const auto rects = _GetSelectionRects();
+
     for (IRenderEngine* const pEngine : _rgpEngines)
     {
         bool fEngineRequestsRepaint = false;
         HRESULT hr = pEngine->InvalidateCircling(&fEngineRequestsRepaint);
         LOG_IF_FAILED(hr);
+
+        LOG_IF_FAILED(pEngine->InvalidateSelection(rects));
 
         if (SUCCEEDED(hr) && fEngineRequestsRepaint)
         {
