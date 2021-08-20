@@ -907,7 +907,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (const auto bindings = _settings.KeyBindings())
             {
-                if (!bindings.IsKeyChordExplicitlyUnbound({ modifiers.IsCtrlPressed(), modifiers.IsAltPressed(), modifiers.IsShiftPressed(), modifiers.IsWinPressed(), vkey, 0 }))
+                if (!bindings.IsKeyChordExplicitlyUnbound({ modifiers.IsCtrlPressed(), modifiers.IsAltPressed(), modifiers.IsShiftPressed(), modifiers.IsWinPressed(), vkey, scanCode }))
                 {
                     // If we get here, it means that
                     //      1. we do not have a command bound to alt+space
