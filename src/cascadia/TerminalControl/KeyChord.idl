@@ -10,6 +10,9 @@ namespace Microsoft.Terminal.Control
         KeyChord(Windows.System.VirtualKeyModifiers modifiers, Int32 vkey, Int32 scanCode);
         KeyChord(Boolean ctrl, Boolean alt, Boolean shift, Boolean win, Int32 vkey, Int32 scanCode);
 
+        UInt64 Hash();
+        Boolean Equals(KeyChord other);
+
         Windows.System.VirtualKeyModifiers Modifiers;
         Int32 Vkey;
         Int32 ScanCode;
