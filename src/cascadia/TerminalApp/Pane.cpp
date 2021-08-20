@@ -760,7 +760,7 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
 
     if (_profile)
     {
-        auto mode = _profile.CloseOnExit();
+        const auto mode = _profile.CloseOnExit();
         if ((mode == CloseOnExitMode::Always) ||
             (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
@@ -943,14 +943,14 @@ void Pane::SetActive()
 }
 
 // Method Description:
-// - Returns nullopt if no children of this pane were the last control to be
-//   focused, or the GUID of the profile of the last control to be focused (if
-//   there was one).
+// - Returns nullptr if no children of this pane were the last control to be
+//   focused, or the profile of the last control to be focused (if there was
+//   one).
 // Arguments:
 // - <none>
 // Return Value:
-// - nullopt if no children of this pane were the last control to be
-//   focused, else the GUID of the profile of the last control to be focused
+// - nullptr if no children of this pane were the last control to be
+//   focused, else the profile of the last control to be focused
 Profile Pane::GetFocusedProfile()
 {
     auto lastFocused = GetActivePane();
@@ -1055,7 +1055,7 @@ void Pane::_FocusFirstChild()
 //   * If we're not a leaf, we'll recurse on our children.
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
-// - profile: The GUID of the profile these settings should apply to.
+// - profile: The profile from which these settings originated.
 // Return Value:
 // - <none>
 void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
@@ -1880,7 +1880,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 //   we'll create two new children, and place them side-by-side in our Grid.
 // Arguments:
 // - splitType: what type of split we want to create.
-// - profile: The profile GUID to associate with the newly created pane.
+// - profile: The profile to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes

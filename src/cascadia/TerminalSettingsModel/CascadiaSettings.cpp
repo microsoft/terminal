@@ -804,7 +804,7 @@ void CascadiaSettings::_ValidateMediaResources()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-::winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
 {
     std::optional<winrt::guid> profileByIndex, profileByName;
     if (newTerminalArgs)

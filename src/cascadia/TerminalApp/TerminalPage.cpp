@@ -734,8 +734,11 @@ namespace winrt::TerminalApp::implementation
             if (newTerminalArgs.ProfileIndex() != nullptr)
             {
                 // We want to promote the index to a GUID because there is no "launch to profile index" command.
-                const auto profile = _settings.ActiveProfiles().GetAt(newTerminalArgs.ProfileIndex().Value());
-                newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                const auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+                if (profile)
+                {
+                    newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                }
             }
             this->_OpenNewWindow(false, newTerminalArgs);
         }
@@ -767,7 +770,8 @@ namespace winrt::TerminalApp::implementation
     {
         if (!profile)
         {
-            profile = _settings.ProfileDefaults();
+            // Use the default profile if we didn't get one as an argument.
+            profile = _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
         }
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
