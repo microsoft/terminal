@@ -119,11 +119,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             auto cursor8{ in.data() };
             if (state.have)
             {
-                const auto copyable = std::min<int>(state.want, len8);
+                const auto copyable{ std::min<int>(state.want, len8) };
                 std::move(cursor8, cursor8 + copyable, &state.partials[state.have]);
                 state.have += gsl::narrow_cast<uint8_t>(copyable);
                 state.want -= gsl::narrow_cast<uint8_t>(copyable);
-                RETURN_HR_IF(S_OK, state.want); // we still didn't get enough data to complete the code point, however this is not an error
+                if (state.want) // we still didn't get enough data to complete the code point, however this is not an error
+                {
+                    out.clear();
+                    return S_OK;
+                }
 
                 len16 = MultiByteToWideChar(CP_UTF8, 0UL, &state.partials[0], gsl::narrow_cast<int>(state.have), out.data(), capa16);
                 RETURN_HR_IF(E_UNEXPECTED, !len16);
@@ -137,8 +141,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             if (len8)
             {
-                auto backIter = cursor8 + len8 - 1;
-                int sequenceLen = 1;
+                auto backIter{ cursor8 + len8 - 1 };
+                int sequenceLen{ 1 };
 
                 // skip UTF8 continuation bytes
                 while (backIter != cursor8 && (*backIter & 0b11'000000) == 0b10'000000)
@@ -151,8 +155,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 if ((*backIter & 0b11'000000) == 0b11'000000)
                 {
                     // credits go to Christopher Wellons for this algorithm to determine the length of a UTF-8 code point
-                    static constexpr uint8_t lengths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
-                    const auto codePointLen = lengths[gsl::narrow_cast<uint8_t>(*backIter) >> 3];
+                    static constexpr uint8_t lengths[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
+                    const auto codePointLen{ lengths[gsl::narrow_cast<uint8_t>(*backIter) >> 3] };
 
                     if (codePointLen > sequenceLen)
                     {
