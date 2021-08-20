@@ -1028,7 +1028,13 @@ try
         }
         else if (unit <= TextUnit::TextUnit_Word)
         {
-            _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBoundary);
+            // TODO GH#10925: passing in "true" instead of "preventBoundary"
+            // We still need to go through the process of writing
+            // tests, finding failing cases, and fixing them.
+            // For now, just use true because we've been doing that so far.
+            // The tests at the time of writing don't report any failures
+            // if we use one over the other.
+            _moveEndpointByUnitWord(count, endpoint, pRetVal, true);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {

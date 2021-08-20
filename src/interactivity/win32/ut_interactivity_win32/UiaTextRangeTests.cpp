@@ -726,18 +726,6 @@ class UiaTextRangeTests
         const std::vector<MoveTest> testData
         {
             MoveTest{
-                L"can't move backward from (0, 0)",
-                { 0, 0 },
-                { 2, 0 },
-                -1,
-                {
-                    0,
-                    {0,0},
-                    {2,0}
-                }
-            },
-
-            MoveTest{
                 L"can move backward within a row",
                 { 1, 0 },
                 { 2, 0 },
@@ -758,18 +746,6 @@ class UiaTextRangeTests
                     5,
                     {6,2},
                     {7,2}
-                }
-            },
-
-            MoveTest{
-                L"can't move past the last column in the last row",
-                { lastColumnIndex, bottomRow },
-                { lastColumnIndex, bottomRow },
-                5,
-                {
-                    0,
-                    { lastColumnIndex, bottomRow },
-                    { lastColumnIndex, bottomRow },
                 }
             },
 
@@ -823,18 +799,6 @@ class UiaTextRangeTests
         const std::vector<MoveTest> testData
         {
             MoveTest{
-                L"can't move backward from top row",
-                {0, 0},
-                {0, lastColumnIndex},
-                -4,
-                {
-                    0,
-                    {0, 0},
-                    {0, lastColumnIndex}
-                }
-            },
-
-            MoveTest{
                 L"can move forward from top row",
                 {0, 0},
                 {0, lastColumnIndex},
@@ -847,18 +811,6 @@ class UiaTextRangeTests
             },
 
             MoveTest{
-                L"can't move forward from bottom row",
-                {0, bottomRow},
-                {lastColumnIndex, bottomRow},
-                3,
-                {
-                    0,
-                    {0, bottomRow},
-                    {lastColumnIndex, bottomRow},
-                }
-            },
-
-            MoveTest{
                 L"can move backward from bottom row",
                 {0, bottomRow},
                 {lastColumnIndex, bottomRow},
@@ -867,30 +819,6 @@ class UiaTextRangeTests
                     -3,
                     {0, bottomRow - 3},
                     {0, bottomRow - 2}
-                }
-            },
-
-            MoveTest{
-                L"can't move backward when part of the top row is in the range",
-                {5, 0},
-                {lastColumnIndex, 0},
-                -1,
-                {
-                    0,
-                    {5, 0},
-                    {lastColumnIndex, 0},
-                }
-            },
-
-            MoveTest{
-                L"can't move forward when part of the bottom row is in the range",
-                {0, bottomRow},
-                {0, bottomRow},
-                1,
-                {
-                    0,
-                    {0, bottomRow},
-                    {0, bottomRow}
                 }
             },
 
@@ -1332,8 +1260,13 @@ class UiaTextRangeTests
         // the UTR should refuse to move past the end.
 
         const auto lastLineStart{ bufferEndLeft };
+        const auto secondToLastLinePos{ point_offset_by_line(lastLineStart, bufferSize, -1) };
         const auto secondToLastCharacterPos{ point_offset_by_char(bufferEnd, bufferSize, -1) };
         const auto endInclusive{ bufferEnd };
+
+        // write "temp" at (2,2)
+        const til::point writeTarget{ 2, 2 };
+        _pTextBuffer->Write({ L"temp" }, writeTarget);
 
         // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
@@ -1366,10 +1299,6 @@ class UiaTextRangeTests
 
         VERIFY_ARE_EQUAL(endExclusive, til::point{ utr->_end });
         VERIFY_ARE_EQUAL(0, moveAmt);
-
-        // write "temp" at (2,2)
-        const til::point writeTarget{ 2, 2 };
-        _pTextBuffer->Write({ L"temp" }, writeTarget);
 
         // Verify expansion works properly
         Log::Comment(NoThrowString().Format(L"Expand by %s", toString(textUnit)));
@@ -1408,7 +1337,6 @@ class UiaTextRangeTests
         // Verify that moving backwards still works properly
         Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(textUnit)));
         THROW_IF_FAILED(utr->Move(textUnit, -1, &moveAmt));
-        VERIFY_ARE_EQUAL(-1, moveAmt);
 
         // NOTE: If the range is degenerate, _start == _end before AND after the move.
         if (textUnit <= TextUnit::TextUnit_Character)
@@ -1416,21 +1344,25 @@ class UiaTextRangeTests
             // Special case: _end will always be endInclusive, because...
             // -  degenerate --> it moves with _start to stay degenerate
             // - !degenerate --> it excludes the last char, to select the second to last char
+            VERIFY_ARE_EQUAL(-1, moveAmt);
             VERIFY_ARE_EQUAL(degenerate ? endInclusive : secondToLastCharacterPos, til::point{ utr->_start });
             VERIFY_ARE_EQUAL(endInclusive, til::point{ utr->_end });
         }
         else if (textUnit <= TextUnit::TextUnit_Word)
         {
+            VERIFY_ARE_EQUAL(-1, moveAmt);
             VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
             VERIFY_ARE_EQUAL(degenerate ? origin : writeTarget, til::point{ utr->_end });
         }
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
-            VERIFY_ARE_EQUAL(lastLineStart, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(degenerate ? lastLineStart : endExclusive, til::point{ utr->_end });
+            VERIFY_ARE_EQUAL(-1, moveAmt);
+            VERIFY_ARE_EQUAL(degenerate ? lastLineStart : secondToLastLinePos, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(lastLineStart, til::point{ utr->_end });
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
+            VERIFY_ARE_EQUAL(degenerate ? -1 : 0, moveAmt);
             VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
             VERIFY_ARE_EQUAL(degenerate ? origin : endExclusive, til::point{ utr->_end });
         }
