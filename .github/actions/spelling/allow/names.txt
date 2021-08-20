@@ -31,6 +31,7 @@ Kourosh
 kowalczyk
 leonmsft
 Lepilleur
+lhecker
 lukesampson
 Manandhar
 mbadolato
@@ -66,6 +67,7 @@ sonpham
 stakx
 thereses
 Walisch
+Wellons
 Wirt
 Wojciech
 zadjii

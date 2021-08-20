@@ -16,7 +16,7 @@ Based on the results the decision was made to keep using the platform
 functions MultiByteToWideChar and WideCharToMultiByte.
 
 Author(s):
-- Steffen Illhardt (german-one) 2020
+- Steffen Illhardt (german-one), Leonard Hecker (lhecker) 2020-2021
 --*/
 
 #pragma once
@@ -26,7 +26,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // state structure for maintenance of UTF-8 partials
     struct u8state
     {
-        char partials[4]{};
+        char partials[4];
         uint8_t have{};
         uint8_t want{};
 
@@ -58,8 +58,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
     template<class outT>
-    [[nodiscard]] typename std::enable_if_t<std::is_same_v<typename outT::value_type, wchar_t>, HRESULT>
-    u8u16(const std::string_view& in, outT& out) noexcept
+    [[nodiscard]] HRESULT u8u16(const std::string_view& in, outT& out) noexcept
     {
         try
         {
@@ -90,7 +89,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
 #pragma warning(push)
-#pragma warning(disable : 26429 26446 26459 26481 26482 26485) // use not_null, subscript operator, use span, pointer arithmetic, dynamic array indexing, array to pointer decay
+#pragma warning(disable : 26429 26446 26459 26481 26482) // use not_null, subscript operator, use span, pointer arithmetic, dynamic array indexing
     // Routine Description:
     // - Takes a UTF-8 string, complements and/or caches partials, and performs the conversion to UTF-16.
     // Arguments:
@@ -120,57 +119,47 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             auto cursor8{ in.data() };
             if (state.have)
             {
-                if (state.want > len8) // we still didn't get enough data to complete the code point, however this is not an error
-                {
-                    std::move(cursor8, cursor8 + len8, state.partials + state.have);
-                    state.have += gsl::narrow_cast<uint8_t>(len8);
-                    state.want -= gsl::narrow_cast<uint8_t>(len8);
-                    out.clear();
-                    return S_OK;
-                }
+                const auto copyable = std::min<int>(state.want, len8);
+                std::move(cursor8, cursor8 + copyable, &state.partials[state.have]);
+                state.have += gsl::narrow_cast<uint8_t>(copyable);
+                state.want -= gsl::narrow_cast<uint8_t>(copyable);
+                RETURN_HR_IF(S_OK, state.want); // we still didn't get enough data to complete the code point, however this is not an error
 
-                std::move(cursor8, cursor8 + state.want, state.partials + state.have);
-                len16 = MultiByteToWideChar(CP_UTF8, 0UL, state.partials, gsl::narrow_cast<int>(state.have) + state.want, out.data(), capa16);
+                len16 = MultiByteToWideChar(CP_UTF8, 0UL, &state.partials[0], gsl::narrow_cast<int>(state.have), out.data(), capa16);
                 RETURN_HR_IF(E_UNEXPECTED, !len16);
 
                 capa16 -= len16;
-                len8 -= state.want;
-                cursor8 += state.want;
-                state.reset();
+                len8 -= copyable;
+                cursor8 += copyable;
+                // state.want is already zero at this point
+                state.have = 0;
             }
 
             if (len8)
             {
-                auto backIter{ cursor8 + len8 };
-                // If the last byte in the string was a byte belonging to a UTF-8 multi-byte character
-                if (backIter[-1] & 0b1'0000000)
+                auto backIter = cursor8 + len8 - 1;
+                int sequenceLen = 1;
+
+                // skip UTF8 continuation bytes
+                while (backIter != cursor8 && (*backIter & 0b11'000000) == 0b10'000000)
                 {
-                    // Check only up to 3 last bytes, if no Lead Byte is found then the byte before will be the Lead Byte and no partials are in the string
-                    const auto stopLen{ std::min(len8, 3) };
-                    for (auto sequenceLen{ 1 }; sequenceLen <= stopLen; ++sequenceLen)
+                    --backIter;
+                    ++sequenceLen;
+                }
+
+                // we found a Lead Byte if at least 2 high-order bits are set
+                if ((*backIter & 0b11'000000) == 0b11'000000)
+                {
+                    // credits go to Christopher Wellons for this algorithm to determine the length of a UTF-8 code point
+                    static constexpr uint8_t lengths[] = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
+                    const auto codePointLen = lengths[gsl::narrow_cast<uint8_t>(*backIter) >> 3];
+
+                    if (codePointLen > sequenceLen)
                     {
-                        --backIter;
-                        // we found a Lead Byte if at least 2 high-order bits are set
-                        if ((*backIter & 0b11'000000) == 0b11'000000)
-                        {
-                            // determine the number of bytes of the code point indicated by the lead byte
-                            const auto codePointLen{
-                                2 + // the code point consists of at least 2 bytes because we found a lead byte
-                                gsl::narrow_cast<int>((*backIter & 0b111'00000) == 0b111'00000) + // add one if at least 3 high-order bits of the lead byte are set
-                                gsl::narrow_cast<int>((*backIter & 0b1111'0000) == 0b1111'0000) // add another one if 4 high-order bits of the lead byte are set
-                            };
-
-                            // if the length of the code point differs from the length we stepped backward, we will capture the last sequence which is a partial code point
-                            if (codePointLen != sequenceLen)
-                            {
-                                std::move(backIter, backIter + sequenceLen, state.partials);
-                                len8 -= sequenceLen;
-                                state.have = gsl::narrow_cast<uint8_t>(sequenceLen);
-                                state.want = gsl::narrow_cast<uint8_t>(codePointLen - sequenceLen);
-                            }
-
-                            break;
-                        }
+                        std::move(backIter, backIter + sequenceLen, &state.partials[0]);
+                        len8 -= sequenceLen;
+                        state.have = gsl::narrow_cast<uint8_t>(sequenceLen);
+                        state.want = gsl::narrow_cast<uint8_t>(codePointLen - sequenceLen);
                     }
                 }
             }
@@ -212,8 +201,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
     // - E_UNEXPECTED  - an unexpected error occurred
     template<class outT>
-    [[nodiscard]] typename std::enable_if_t<std::is_same_v<typename outT::value_type, char>, HRESULT>
-    u16u8(const std::wstring_view& in, outT& out) noexcept
+    [[nodiscard]] HRESULT u16u8(const std::wstring_view& in, outT& out) noexcept
     {
         try
         {
@@ -247,7 +235,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     }
 
 #pragma warning(push)
-#pragma warning(disable : 26429 26446 26459 26481 26485) // use not_null, subscript operator, use span, pointer arithmetic, array to pointer decay
+#pragma warning(disable : 26429 26446 26459 26481) // use not_null, subscript operator, use span, pointer arithmetic
     // Routine Description:
     // - Takes a UTF-16 string, complements and/or caches partials, and performs the conversion to UTF-8.
     // Arguments:
@@ -277,8 +265,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             auto cursor16{ in.data() };
             if (state.partials[0])
             {
-                std::move(in.data(), in.data() + 1, state.partials + 1);
-                len8 = WideCharToMultiByte(CP_UTF8, 0UL, state.partials, 2, out.data(), capa8, nullptr, nullptr);
+                state.partials[1] = *cursor16;
+                len8 = WideCharToMultiByte(CP_UTF8, 0UL, &state.partials[0], 2, out.data(), capa8, nullptr, nullptr);
                 RETURN_HR_IF(E_UNEXPECTED, !len8);
 
                 state.reset();
@@ -345,9 +333,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Return Value:
     // - the resulting UTF-16 string
     // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class stateT>
-    typename std::enable_if_t<std::is_same_v<stateT, u8state>, std::wstring>
-    u8u16(const std::string_view& in, stateT& state)
+    inline std::wstring u8u16(const std::string_view& in, u8state& state)
     {
         std::wstring out{};
         THROW_IF_FAILED(u8u16(in, out, state));
@@ -376,9 +362,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // Return Value:
     // - the resulting UTF-8 string
     // - NOTE: Throws HRESULT errors that the non-throwing sibling returns
-    template<class stateT>
-    typename std::enable_if_t<std::is_same_v<stateT, u16state>, std::string>
-    u16u8(const std::wstring_view& in, stateT& state)
+    inline std::string u16u8(const std::wstring_view& in, u16state& state)
     {
         std::string out{};
         THROW_IF_FAILED(u16u8(in, out, state));
