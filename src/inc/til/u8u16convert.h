@@ -151,20 +151,16 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                     ++sequenceLen;
                 }
 
-                // we found a Lead Byte if at least 2 high-order bits are set
-                if ((*backIter & 0b11'000000) == 0b11'000000)
-                {
-                    // credits go to Christopher Wellons for this algorithm to determine the length of a UTF-8 code point
-                    static constexpr uint8_t lengths[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
-                    const auto codePointLen{ lengths[gsl::narrow_cast<uint8_t>(*backIter) >> 3] };
+                // credits go to Christopher Wellons for this algorithm to determine the length of a UTF-8 code point
+                static constexpr uint8_t lengths[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
+                const auto codePointLen{ lengths[gsl::narrow_cast<uint8_t>(*backIter) >> 3] };
 
-                    if (codePointLen > sequenceLen)
-                    {
-                        std::move(backIter, backIter + sequenceLen, &state.partials[0]);
-                        len8 -= sequenceLen;
-                        state.have = gsl::narrow_cast<uint8_t>(sequenceLen);
-                        state.want = gsl::narrow_cast<uint8_t>(codePointLen - sequenceLen);
-                    }
+                if (codePointLen > sequenceLen)
+                {
+                    std::move(backIter, backIter + sequenceLen, &state.partials[0]);
+                    len8 -= sequenceLen;
+                    state.have = gsl::narrow_cast<uint8_t>(sequenceLen);
+                    state.want = gsl::narrow_cast<uint8_t>(codePointLen - sequenceLen);
                 }
             }
 
