@@ -56,7 +56,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
+    // - E_UNEXPECTED  - the underlying conversion function failed
+    // - HRESULT value converted from a caught exception
     template<class outT>
     [[nodiscard]] HRESULT u8u16(const std::string_view& in, outT& out) noexcept
     {
@@ -74,18 +75,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             return lengthOut == 0 ? E_UNEXPECTED : S_OK;
         }
-        catch (std::length_error&)
-        {
-            return E_ABORT;
-        }
-        catch (std::bad_alloc&)
-        {
-            return E_OUTOFMEMORY;
-        }
-        catch (...)
-        {
-            return E_UNEXPECTED;
-        }
+        CATCH_RETURN();
     }
 
 #pragma warning(push)
@@ -100,7 +90,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
+    // - E_UNEXPECTED  - the underlying conversion function failed
+    // - HRESULT value converted from a caught exception
     template<class outT>
     [[nodiscard]] HRESULT u8u16(const std::string_view& in, outT& out, u8state& state) noexcept
     {
@@ -175,18 +166,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.resize(gsl::narrow_cast<size_t>(len16));
             return S_OK;
         }
-        catch (std::length_error&)
-        {
-            return E_ABORT;
-        }
-        catch (std::bad_alloc&)
-        {
-            return E_OUTOFMEMORY;
-        }
-        catch (...)
-        {
-            return E_UNEXPECTED;
-        }
+        CATCH_RETURN();
     }
 #pragma warning(pop)
 
@@ -199,7 +179,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - S_OK          - the conversion succeeded
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
+    // - E_UNEXPECTED  - the underlying conversion function failed
+    // - HRESULT value converted from a caught exception
     template<class outT>
     [[nodiscard]] HRESULT u16u8(const std::wstring_view& in, outT& out) noexcept
     {
@@ -220,18 +201,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             return lengthOut == 0 ? E_UNEXPECTED : S_OK;
         }
-        catch (std::length_error&)
-        {
-            return E_ABORT;
-        }
-        catch (std::bad_alloc&)
-        {
-            return E_OUTOFMEMORY;
-        }
-        catch (...)
-        {
-            return E_UNEXPECTED;
-        }
+        CATCH_RETURN();
     }
 
 #pragma warning(push)
@@ -246,7 +216,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // - S_OK          - the conversion succeeded without any change of the represented code points
     // - E_OUTOFMEMORY - the function failed to allocate memory for the resulting string
     // - E_ABORT       - the resulting string length would exceed the upper boundary of an int and thus, the conversion was aborted before the conversion has been completed
-    // - E_UNEXPECTED  - an unexpected error occurred
+    // - E_UNEXPECTED  - the underlying conversion function failed
+    // - HRESULT value converted from a caught exception
     template<class outT>
     [[nodiscard]] HRESULT u16u8(const std::wstring_view& in, outT& out, u16state& state) noexcept
     {
@@ -296,18 +267,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             out.resize(gsl::narrow_cast<size_t>(len8));
             return S_OK;
         }
-        catch (std::length_error&)
-        {
-            return E_ABORT;
-        }
-        catch (std::bad_alloc&)
-        {
-            return E_OUTOFMEMORY;
-        }
-        catch (...)
-        {
-            return E_UNEXPECTED;
-        }
+        CATCH_RETURN();
     }
 #pragma warning(pop)
 
