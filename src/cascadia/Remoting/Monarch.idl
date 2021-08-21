@@ -28,6 +28,7 @@ namespace Microsoft.Terminal.Remoting
 
         Boolean FoundMatch;
         SummonWindowBehavior SummonBehavior;
+        Windows.Foundation.IReference<UInt64> WindowID;
     }
 
 
@@ -40,6 +41,11 @@ namespace Microsoft.Terminal.Remoting
         void HandleActivatePeasant(WindowActivatedArgs args);
         void SummonWindow(SummonWindowSelectionArgs args);
 
+        void SummonAllWindows();
+        Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames { get; };
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
     };
 }

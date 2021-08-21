@@ -29,7 +29,7 @@ GdiEngine::GdiEngine() :
     _fInvalidRectUsed(false),
     _lastFg(INVALID_COLOR),
     _lastBg(INVALID_COLOR),
-    _lastFontItalic(false),
+    _lastFontType(FontType::Default),
     _currentLineTransform(IDENTITY_XFORM),
     _currentLineRendition(LineRendition::SingleWidth),
     _fPaintStarted(false),
@@ -148,8 +148,8 @@ GdiEngine::~GdiEngine()
         LOG_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
     }
 
-    // Record the fact that the selected font is not italic.
-    _lastFontItalic = false;
+    // Record the fact that the selected font is the default.
+    _lastFontType = FontType::Default;
 
     if (nullptr != hdcRealWindow)
     {
@@ -269,12 +269,14 @@ GdiEngine::~GdiEngine()
 // Arguments:
 // - textAttributes - Text attributes to use for the brush color
 // - pData - The interface to console data structures required for rendering
+// - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
 //                             and the hung app background painting color
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                       const gsl::not_null<IRenderData*> pData,
+                                                      const bool usingSoftFont,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
     RETURN_IF_FAILED(_FlushBufferLines());
@@ -304,12 +306,25 @@ GdiEngine::~GdiEngine()
         RETURN_IF_FAILED(s_SetWindowLongWHelper(_hwndTargetWindow, GWL_CONSOLE_BKCOLOR, colorBackground));
     }
 
-    // If the italic attribute has changed, select an appropriate font variant.
-    const auto fontItalic = textAttributes.IsItalic();
-    if (fontItalic != _lastFontItalic)
+    // If the font type has changed, select an appropriate font variant or soft font.
+    const auto usingItalicFont = textAttributes.IsItalic();
+    const auto fontType = usingSoftFont ? FontType::Soft : usingItalicFont ? FontType::Italic : FontType::Default;
+    if (fontType != _lastFontType)
     {
-        SelectFont(_hdcMemoryContext, fontItalic ? _hfontItalic : _hfont);
-        _lastFontItalic = fontItalic;
+        switch (fontType)
+        {
+        case FontType::Soft:
+            SelectFont(_hdcMemoryContext, _softFont);
+            break;
+        case FontType::Italic:
+            SelectFont(_hdcMemoryContext, _hfontItalic);
+            break;
+        case FontType::Default:
+        default:
+            SelectFont(_hdcMemoryContext, _hfont);
+            break;
+        }
+        _lastFontType = fontType;
     }
 
     return S_OK;
@@ -331,8 +346,8 @@ GdiEngine::~GdiEngine()
     // Select into DC
     RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, hFont.get()));
 
-    // Record the fact that the selected font is not italic.
-    _lastFontItalic = false;
+    // Record the fact that the selected font is the default.
+    _lastFontType = FontType::Default;
 
     // Save off the font metrics for various other calculations
     RETURN_HR_IF(E_FAIL, !(GetTextMetricsW(_hdcMemoryContext, &_tmFontMetrics)));
@@ -419,7 +434,35 @@ GdiEngine::~GdiEngine()
     _isTrueTypeFont = Font.IsTrueTypeFont();
     _fontCodepage = Font.GetCodePage();
 
+    // Inform the soft font of the change in size.
+    _softFont.SetTargetSize(_GetFontSize());
+
     LOG_IF_FAILED(InvalidateAll());
+
+    return S_OK;
+}
+
+// Routine Description:
+// - This method will replace the active soft font with the given bit pattern.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if successful. E_FAIL if there was an error.
+[[nodiscard]] HRESULT GdiEngine::UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                                const SIZE cellSize,
+                                                const size_t centeringHint) noexcept
+{
+    // If the soft font is currently selected, replace it with the default font.
+    if (_lastFontType == FontType::Soft)
+    {
+        RETURN_HR_IF_NULL(E_FAIL, SelectFont(_hdcMemoryContext, _hfont));
+        _lastFontType = FontType::Default;
+    }
+
+    // Create a new font resource with the updated pattern, or delete if empty.
+    _softFont = { bitPattern, cellSize, _GetFontSize(), centeringHint };
 
     return S_OK;
 }

@@ -169,6 +169,7 @@ brandings
 BRK
 Browsable
 bsearch
+Bspace
 bstr
 BTNFACE
 buf
@@ -270,10 +271,12 @@ cmder
 CMDEXT
 Cmdlet
 cmdline
+cmh
 CMOUSEBUTTONS
 cmp
 cmpeq
 cmt
+cmw
 cmyk
 CNL
 cnt
@@ -406,11 +409,13 @@ csbiex
 csharp
 CSHORT
 CSIDL
+Cspace
 csproj
 Csr
 csrmsg
 CSRSS
 csrutil
+css
 cstdarg
 cstddef
 cstdio
@@ -509,6 +514,8 @@ DECAWM
 DECCKM
 DECCOLM
 DECDHL
+decdld
+DECDLD
 DECDWL
 DECEKBD
 DECID
@@ -781,6 +788,7 @@ flyout
 fmodern
 fmtarg
 fmtid
+FNV
 FOLDERID
 FONTCHANGE
 fontdlg
@@ -789,6 +797,7 @@ FONTENUMPROC
 FONTFACE
 FONTFAMILY
 FONTHEIGHT
+FONTINFO
 fontlist
 FONTOK
 FONTSIZE
@@ -902,6 +911,7 @@ github
 gitlab
 gle
 globals
+GLYPHENTRY
 gmail
 GMEM
 GNUC
@@ -950,6 +960,7 @@ hdrstop
 HEIGHTSCROLL
 hfile
 hfont
+hfontresource
 hglobal
 hhh
 HHmm
@@ -1272,6 +1283,7 @@ locsrc
 locstudio
 Loewen
 LOGFONT
+LOGFONTA
 LOGFONTW
 logissue
 lowercased
@@ -1458,6 +1470,7 @@ Mul
 multiline
 munged
 munges
+murmurhash
 mutex
 mutexes
 muxes
@@ -1935,6 +1948,7 @@ realloc
 reamapping
 rects
 redef
+redefinable
 Redir
 redirector
 redist
@@ -1980,6 +1994,7 @@ rfc
 rftp
 rgb
 rgba
+RGBCOLOR
 rgbi
 rgci
 rgfae
@@ -2149,6 +2164,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+sixel
 SIZEBOX
 sizeof
 SIZESCROLL
@@ -2253,6 +2269,7 @@ SWMR
 SWP
 swprintf
 SYMED
+symlink
 SYNCPAINT
 sys
 syscalls
@@ -2754,6 +2771,7 @@ WTo
 wtof
 wtoi
 WTs
+WTSOFTFONT
 wtw
 wtypes
 Wubi
@@ -2783,6 +2801,7 @@ xes
 xff
 XFile
 XFORM
+xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2815,6 +2834,7 @@ YCast
 YCENTER
 YCount
 YDPI
+yIcon
 yml
 YOffset
 YPosition

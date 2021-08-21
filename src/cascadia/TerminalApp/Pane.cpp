@@ -214,48 +214,172 @@ bool Pane::ResizePane(const ResizeDirection& direction)
 }
 
 // Method Description:
-// - Attempts to move focus to one of our children. If we have a focused child,
-//   we'll try to move the focus in the direction requested.
-//   - If there isn't a pane that exists as a child of this pane in the correct
-//     direction, we'll return false. This will indicate to our parent that they
-//     should try and move the focus themselves. In this way, the focus can move
-//     up and down the tree to the correct pane.
-// - This method is _very_ similar to MovePane. Both are trying to find the
-//   right pane to move (focus) in a direction.
+// - Attempt to navigate from the sourcePane according to direction.
+//   - If the direction is NextInOrder or PreviousInOrder, the next or previous
+//     leaf in the tree, respectively, will be returned.
+//   - If the direction is {Up, Down, Left, Right} then the visually-adjacent
+//     neighbor (if it exists) will be returned. If there are multiple options
+//     then the first-most leaf will be selected.
 // Arguments:
-// - direction: The direction to move the focus in.
+// - sourcePane: the pane to navigate from
+// - direction: which direction to go in
 // Return Value:
-// - true if we or a child handled this focus move request.
-bool Pane::NavigateFocus(const FocusDirection& direction)
+// - The result of navigating from source according to direction, which may be
+//   nullptr (i.e. no pane was found in that direction).
+std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> sourcePane, const FocusDirection& direction)
 {
-    // If we're a leaf, do nothing. We can't possibly have a descendant with a
-    // separator the correct direction.
+    // Can't navigate anywhere if we are a leaf
     if (_IsLeaf())
     {
-        return false;
+        return nullptr;
     }
 
-    // If the focus direction does not match the split direction, the focused pane
+    // If the MRU previous pane is requested we can't move; the tab handles MRU
+    if (direction == FocusDirection::None || direction == FocusDirection::Previous)
+    {
+        return nullptr;
+    }
+
+    // Check if we in-order traversal is requested
+    if (direction == FocusDirection::NextInOrder)
+    {
+        return NextPane(sourcePane);
+    }
+
+    if (direction == FocusDirection::PreviousInOrder)
+    {
+        return PreviousPane(sourcePane);
+    }
+
+    // We are left with directional traversal now
+    // If the focus direction does not match the split direction, the source pane
     // and its neighbor must necessarily be contained within the same child.
     if (!DirectionMatchesSplit(direction, _splitState))
     {
-        return _firstChild->NavigateFocus(direction) || _secondChild->NavigateFocus(direction);
+        if (auto p = _firstChild->NavigateDirection(sourcePane, direction))
+        {
+            return p;
+        }
+        return _secondChild->NavigateDirection(sourcePane, direction);
     }
 
     // Since the direction is the same as our split, it is possible that we must
     // move focus from from one child to another child.
     // We now must keep track of state while we recurse.
-    auto focusNeighborPair = _FindFocusAndNeighbor(direction, { 0, 0 });
+    const auto paneNeighborPair = _FindPaneAndNeighbor(sourcePane, direction, { 0, 0 });
 
-    // Once we have found the focused pane and its neighbor, wherever they may
-    // be we can update the focus.
-    if (focusNeighborPair.focus && focusNeighborPair.neighbor)
+    if (paneNeighborPair.source && paneNeighborPair.neighbor)
     {
-        focusNeighborPair.neighbor->_FocusFirstChild();
-        return true;
+        return paneNeighborPair.neighbor;
     }
 
-    return false;
+    return nullptr;
+}
+
+// Method Description:
+// - Attempts to find the succeeding pane of the provided pane.
+// - NB: If targetPane is not a leaf, then this will return one of its children.
+// Arguments:
+// - targetPane: The pane to search for.
+// Return Value:
+// - The next pane in tree order after the target pane (if found)
+std::shared_ptr<Pane> Pane::NextPane(const std::shared_ptr<Pane> targetPane)
+{
+    // if we are a leaf pane there is no next pane.
+    if (_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    std::shared_ptr<Pane> firstLeaf = nullptr;
+    std::shared_ptr<Pane> nextPane = nullptr;
+    bool foundTarget = false;
+
+    auto foundNext = WalkTree([&](auto pane) {
+        // In case the target pane is the last pane in the tree, keep a reference
+        // to the first leaf so we can wrap around.
+        if (firstLeaf == nullptr && pane->_IsLeaf())
+        {
+            firstLeaf = pane;
+        }
+
+        // If we've found the target pane already, get the next leaf pane.
+        if (foundTarget && pane->_IsLeaf())
+        {
+            nextPane = pane;
+            return true;
+        }
+
+        // Test if we're the target pane so we know to return the next pane.
+        if (pane == targetPane)
+        {
+            foundTarget = true;
+        }
+
+        return false;
+    });
+
+    // If we found the desired pane just return it
+    if (foundNext)
+    {
+        return nextPane;
+    }
+
+    // If we found the target pane, but not the next pane it means we were the
+    // last leaf in the tree.
+    if (foundTarget)
+    {
+        return firstLeaf;
+    }
+
+    return nullptr;
+}
+
+// Method Description:
+// - Attempts to find the preceding pane of the provided pane.
+// Arguments:
+// - targetPane: The pane to search for.
+// Return Value:
+// - The previous pane in tree order before the target pane (if found)
+std::shared_ptr<Pane> Pane::PreviousPane(const std::shared_ptr<Pane> targetPane)
+{
+    // if we are a leaf pane there is no previous pane.
+    if (_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    std::shared_ptr<Pane> lastLeaf = nullptr;
+    bool foundTarget = false;
+
+    WalkTree([&](auto pane) {
+        if (pane == targetPane)
+        {
+            foundTarget = true;
+            // If we were not the first leaf, then return the previous leaf.
+            // Otherwise keep walking the tree to get the last pane.
+            if (lastLeaf != nullptr)
+            {
+                return true;
+            }
+        }
+
+        if (pane->_IsLeaf())
+        {
+            lastLeaf = pane;
+        }
+
+        return false;
+    });
+
+    // If we found the target pane then lastLeaf will either be the preceding
+    // pane or the last pane in the tree if targetPane is the first leaf.
+    if (foundTarget)
+    {
+        return lastLeaf;
+    }
+
+    return nullptr;
 }
 
 // Method Description:
@@ -382,6 +506,10 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             updateParent(secondParent);
         }
 
+        // For now the first pane is always the focused pane, so re-focus to
+        // make sure the cursor is still in the terminal since the root was moved.
+        first->_FocusFirstChild();
+
         return true;
     }
 
@@ -453,29 +581,29 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
 }
 
 // Method Description:
-// - Given the focused pane, and its relative position in the tree, attempt to
+// - Given the source pane, and its relative position in the tree, attempt to
 //   find its visual neighbor within the current pane's tree.
 //   The neighbor, if it exists, will be a leaf pane.
 // Arguments:
-// - direction: The direction to search in from the focused pane.
-// - focus: the focused pane
-// - focusIsSecondSide: If the focused pane is on the "second" side (down/right of split)
+// - direction: The direction to search in from the source pane.
+// - searchResult: the source pane and its relative position.
+// - sourceIsSecondSide: If the source pane is on the "second" side (down/right of split)
 //   relative to the branch being searched
 // - offset: the offset of the current pane
 // Return Value:
 // - A tuple of Panes, the first being the focused pane if found, and the second
 //   being the adjacent pane if it exists, and a bool that represents if the move
 //   goes out of bounds.
-Pane::FocusNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direction,
-                                                     FocusNeighborSearch searchResult,
-                                                     const bool focusIsSecondSide,
-                                                     const Pane::PanePoint offset)
+Pane::PaneNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direction,
+                                                    PaneNeighborSearch searchResult,
+                                                    const bool sourceIsSecondSide,
+                                                    const Pane::PanePoint offset)
 {
     // Test if the move will go out of boundaries. E.g. if the focus is already
     // on the second child of some pane and it attempts to move right, there
     // can't possibly be a neighbor to be found in the first child.
-    if ((focusIsSecondSide && (direction == FocusDirection::Right || direction == FocusDirection::Down)) ||
-        (!focusIsSecondSide && (direction == FocusDirection::Left || direction == FocusDirection::Up)))
+    if ((sourceIsSecondSide && (direction == FocusDirection::Right || direction == FocusDirection::Down)) ||
+        (!sourceIsSecondSide && (direction == FocusDirection::Left || direction == FocusDirection::Up)))
     {
         return searchResult;
     }
@@ -483,7 +611,7 @@ Pane::FocusNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direc
     // If we are a leaf node test if we adjacent to the focus node
     if (_IsLeaf())
     {
-        if (_IsAdjacent(searchResult.focus, searchResult.focusOffset, shared_from_this(), offset, direction))
+        if (_IsAdjacent(searchResult.source, searchResult.sourceOffset, shared_from_this(), offset, direction))
         {
             searchResult.neighbor = shared_from_this();
         }
@@ -501,30 +629,36 @@ Pane::FocusNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direc
     {
         secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
     }
-    auto focusNeighborSearch = _firstChild->_FindNeighborForPane(direction, searchResult, focusIsSecondSide, firstOffset);
-    if (focusNeighborSearch.neighbor)
+    auto sourceNeighborSearch = _firstChild->_FindNeighborForPane(direction, searchResult, sourceIsSecondSide, firstOffset);
+    if (sourceNeighborSearch.neighbor)
     {
-        return focusNeighborSearch;
+        return sourceNeighborSearch;
     }
 
-    return _secondChild->_FindNeighborForPane(direction, searchResult, focusIsSecondSide, secondOffset);
+    return _secondChild->_FindNeighborForPane(direction, searchResult, sourceIsSecondSide, secondOffset);
 }
 
 // Method Description:
-// - Searches the tree to find the currently focused pane, and if it exists, the
+// - Searches the tree to find the source pane, and if it exists, the
 //   visually adjacent pane by direction.
 // Arguments:
+// - sourcePane: The pane to find the neighbor of.
 // - direction: The direction to search in from the focused pane.
 // - offset: The offset, with the top-left corner being (0,0), that the current pane is relative to the root.
 // Return Value:
-// - The (partial) search result. If the search was successful, the focus and its neighbor will be returned.
+// - The (partial) search result. If the search was successful, the pane and its neighbor will be returned.
 //   Otherwise, the neighbor will be null and the focus will be null/non-null if it was found.
-Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& direction, const Pane::PanePoint offset)
+Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> sourcePane, const FocusDirection& direction, const Pane::PanePoint offset)
 {
-    // If we are the currently focused pane, return ourselves
+    // If we are the source pane, return ourselves
+    if (this == sourcePane.get())
+    {
+        return { shared_from_this(), nullptr, offset };
+    }
+
     if (_IsLeaf())
     {
-        return { _lastActive ? shared_from_this() : nullptr, nullptr, offset };
+        return { nullptr, nullptr, offset };
     }
 
     // Search the first child, which has no offset from the parent pane
@@ -540,98 +674,45 @@ Pane::FocusNeighborSearch Pane::_FindFocusAndNeighbor(const FocusDirection& dire
         secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
     }
 
-    auto focusNeighborSearch = _firstChild->_FindFocusAndNeighbor(direction, firstOffset);
+    auto sourceNeighborSearch = _firstChild->_FindPaneAndNeighbor(sourcePane, direction, firstOffset);
     // If we have both the focus element and its neighbor, we are done
-    if (focusNeighborSearch.focus && focusNeighborSearch.neighbor)
+    if (sourceNeighborSearch.source && sourceNeighborSearch.neighbor)
     {
-        return focusNeighborSearch;
+        return sourceNeighborSearch;
     }
     // if we only found the focus, then we search the second branch for the
     // neighbor.
-    if (focusNeighborSearch.focus)
+    if (sourceNeighborSearch.source)
     {
         // If we can possibly have both sides of a direction, check if the sibling has the neighbor
         if (DirectionMatchesSplit(direction, _splitState))
         {
-            return _secondChild->_FindNeighborForPane(direction, focusNeighborSearch, false, secondOffset);
+            return _secondChild->_FindNeighborForPane(direction, sourceNeighborSearch, false, secondOffset);
         }
-        return focusNeighborSearch;
+        return sourceNeighborSearch;
     }
 
     // If we didn't find the focus at all, we need to search the second branch
     // for the focus (and possibly its neighbor).
-    focusNeighborSearch = _secondChild->_FindFocusAndNeighbor(direction, secondOffset);
+    sourceNeighborSearch = _secondChild->_FindPaneAndNeighbor(sourcePane, direction, secondOffset);
     // We found both so we are done.
-    if (focusNeighborSearch.focus && focusNeighborSearch.neighbor)
+    if (sourceNeighborSearch.source && sourceNeighborSearch.neighbor)
     {
-        return focusNeighborSearch;
+        return sourceNeighborSearch;
     }
     // We only found the focus, which means that its neighbor might be in the
     // first branch.
-    if (focusNeighborSearch.focus)
+    if (sourceNeighborSearch.source)
     {
         // If we can possibly have both sides of a direction, check if the sibling has the neighbor
         if (DirectionMatchesSplit(direction, _splitState))
         {
-            return _firstChild->_FindNeighborForPane(direction, focusNeighborSearch, true, firstOffset);
+            return _firstChild->_FindNeighborForPane(direction, sourceNeighborSearch, true, firstOffset);
         }
-        return focusNeighborSearch;
+        return sourceNeighborSearch;
     }
 
     return { nullptr, nullptr, offset };
-}
-
-// Method Description:
-// - Attempts to swap places of the focused pane with one of our children. This
-//   will swap with the visually adjacent leaf pane if one exists in the
-//   direction requested, maintaining the existing tree structure.
-//   This breaks down into a few possible cases
-//   - If the move direction would encounter the edge of the pane, no move occurs
-//   - If the focused pane has a single neighbor according to the direction,
-//     then it will swap with it.
-//   - If the focused pane has multiple neighbors, it will swap with the
-//     first-most leaf of the neighboring panes.
-// Arguments:
-// - direction: The direction to move the focused pane in.
-// Return Value:
-// - true if we or a child handled this pane move request.
-bool Pane::MovePane(const FocusDirection& direction)
-{
-    // If we're a leaf, do nothing. We can't possibly swap anything.
-    if (_IsLeaf())
-    {
-        return false;
-    }
-
-    // If we get a request to move to the previous pane return false because
-    // that needs to be handled at the tab level.
-    if (direction == FocusDirection::Previous)
-    {
-        return false;
-    }
-
-    // If the move direction does not match the split direction, the focused pane
-    // and its neighbor must necessarily be contained within the same child.
-    if (!DirectionMatchesSplit(direction, _splitState))
-    {
-        return _firstChild->MovePane(direction) || _secondChild->MovePane(direction);
-    }
-
-    // Since the direction is the same as our split, it is possible that we must
-    // swap a pane from one child to the other child.
-    // We now must keep track of state while we recurse.
-    auto focusNeighborPair = _FindFocusAndNeighbor(direction, { 0, 0 });
-
-    // Once we have found the focused pane and its neighbor, wherever they may
-    // be, we can swap them.
-    if (focusNeighborPair.focus && focusNeighborPair.neighbor)
-    {
-        auto swapped = SwapPanes(focusNeighborPair.focus, focusNeighborPair.neighbor);
-        focusNeighborPair.focus->_FocusFirstChild();
-        return swapped;
-    }
-
-    return false;
 }
 
 // Method Description:
@@ -1012,6 +1093,85 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
 }
 
 // Method Description:
+// - Attempts to add the provided pane as a split of the current pane.
+// Arguments:
+// - pane: the new pane to add
+// - splitType: How the pane should be attached
+// Return Value:
+// - the new reference to the child created from the current pane.
+std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState splitType)
+{
+    // Splice the new pane into the tree
+    const auto [first, _] = _Split(splitType, .5, pane);
+
+    // If the new pane has a child that was the focus, re-focus it
+    // to steal focus from the currently focused pane.
+    if (pane->_HasFocusedChild())
+    {
+        pane->WalkTree([](auto p) {
+            if (p->_lastActive)
+            {
+                p->_FocusFirstChild();
+                return true;
+            }
+            return false;
+        });
+    }
+
+    return first;
+}
+
+// Method Description:
+// - Attempts to find the parent of the target pane,
+//   if found remove the pane from the tree and return it.
+// - If the removed pane was (or contained the focus) the first sibling will
+//   gain focus.
+// Arguments:
+// - pane: the pane to detach
+// Return Value:
+// - The removed pane, if found.
+std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
+{
+    // We can't remove a pane if we only have a reference to a leaf, even if we
+    // are the pane.
+    if (_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    // Check if either of our children matches the search
+    const auto isFirstChild = _firstChild == pane;
+    const auto isSecondChild = _secondChild == pane;
+
+    if (isFirstChild || isSecondChild)
+    {
+        // Keep a reference to the child we are removing
+        auto detached = isFirstChild ? _firstChild : _secondChild;
+        // Remove the child from the tree, replace the current node with the
+        // other child.
+        _CloseChild(isFirstChild);
+
+        detached->_borders = Borders::None;
+        detached->_UpdateBorders();
+
+        // Trigger the detached event on each child
+        detached->WalkTree([](auto pane) {
+            pane->_PaneDetachedHandlers(pane);
+            return false;
+        });
+
+        return detached;
+    }
+
+    if (const auto detached = _firstChild->DetachPane(pane))
+    {
+        return detached;
+    }
+
+    return _secondChild->DetachPane(pane);
+}
+
+// Method Description:
 // - Closes one of our children. In doing so, takes the control from the other
 //   child, and makes this pane a leaf node again.
 // Arguments:
@@ -1073,12 +1233,10 @@ void Pane::_CloseChild(const bool closeFirst)
         // them.
         _lastActive = _firstChild->_lastActive || _secondChild->_lastActive;
 
-        // Remove all the ui elements of our children. This'll make sure we can
-        // re-attach the TermControl to our Grid.
-        _firstChild->_root.Children().Clear();
-        _secondChild->_root.Children().Clear();
-        _firstChild->_border.Child(nullptr);
-        _secondChild->_border.Child(nullptr);
+        // Remove all the ui elements of the remaining child. This'll make sure
+        // we can re-attach the TermControl to our Grid.
+        remainingChild->_root.Children().Clear();
+        remainingChild->_border.Child(nullptr);
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1125,17 +1283,8 @@ void Pane::_CloseChild(const bool closeFirst)
     }
     else
     {
-        // Determine which border flag we gave to the child when we first split
-        // it, so that we can take just that flag away from them.
-        Borders clearBorderFlag = Borders::None;
-        if (_splitState == SplitState::Horizontal)
-        {
-            clearBorderFlag = closeFirst ? Borders::Top : Borders::Bottom;
-        }
-        else if (_splitState == SplitState::Vertical)
-        {
-            clearBorderFlag = closeFirst ? Borders::Left : Borders::Right;
-        }
+        // Find what borders need to persist after we close the child
+        auto remainingBorders = _GetCommonBorders();
 
         // First stash away references to the old panes and their tokens
         const auto oldFirstToken = _firstClosedToken;
@@ -1192,13 +1341,9 @@ void Pane::_CloseChild(const bool closeFirst)
         _root.Children().Append(_firstChild->GetRootElement());
         _root.Children().Append(_secondChild->GetRootElement());
 
-        // Take the flag away from the children that they inherited from their
-        // parent, and update their borders to visually match
-        WI_ClearAllFlags(_firstChild->_borders, clearBorderFlag);
-        WI_ClearAllFlags(_secondChild->_borders, clearBorderFlag);
-        _UpdateBorders();
-        _firstChild->_UpdateBorders();
-        _secondChild->_UpdateBorders();
+        // Propagate the new borders down to the children.
+        _borders = remainingBorders;
+        _ApplySplitDefinitions();
 
         // If the closed child was focused, transfer the focus to it's first sibling.
         if (closedChild->_lastActive)
@@ -1757,7 +1902,8 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState s
         return { nullptr, nullptr };
     }
 
-    return _Split(splitType, splitSize, profile, control);
+    auto newPane = std::make_shared<Pane>(profile, control);
+    return _Split(splitType, splitSize, newPane);
 }
 
 // Method Description:
@@ -1827,14 +1973,13 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
 //   creates a new Pane to host the control, registers event handlers.
 // Arguments:
 // - splitType: what type of split we should create.
-// - profile: The profile GUID to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
+// - splitSize: what fraction of the pane the new pane should get
+// - newPane: the pane to add as a child
 // Return Value:
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
                                                                      const float splitSize,
-                                                                     const GUID& profile,
-                                                                     const TermControl& control)
+                                                                     std::shared_ptr<Pane> newPane)
 {
     if (splitType == SplitState::None)
     {
@@ -1874,7 +2019,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
     _profile = std::nullopt;
     _control = { nullptr };
-    _secondChild = std::make_shared<Pane>(profile, control);
+    _secondChild = newPane;
 
     _CreateRowColDefinitions();
 
@@ -2006,6 +2151,33 @@ bool Pane::FocusPane(const uint32_t id)
         {
             return _firstChild->FocusPane(id) ||
                    _secondChild->FocusPane(id);
+        }
+    }
+    return false;
+}
+// Method Description:
+// - Focuses the given pane if it is in the tree.
+//   This deliberately mirrors FocusPane(id) instead of just calling
+//   _FocusFirstChild directly.
+// Arguments:
+// - the pane to focus
+// Return Value:
+// - true if focus was set
+bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
+{
+    if (_IsLeaf() && this == pane.get())
+    {
+        // Make sure to use _FocusFirstChild here - that'll properly update the
+        // focus if we're in startup.
+        _FocusFirstChild();
+        return true;
+    }
+    else
+    {
+        if (_firstChild && _secondChild)
+        {
+            return _firstChild->FocusPane(pane) ||
+                   _secondChild->FocusPane(pane);
         }
     }
     return false;
@@ -2548,6 +2720,30 @@ bool Pane::ContainsReadOnly() const
     return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
 }
 
+// Method Description:
+// - If we're a parent, place the taskbar state for all our leaves into the
+//   provided vector.
+// - If we're a leaf, place our own state into the vector.
+// Arguments:
+// - states: a vector that will receive all the states of all leaves in the tree
+// Return Value:
+// - <none>
+void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
+{
+    if (_IsLeaf())
+    {
+        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_control.TaskbarState(),
+                                                                                    _control.TaskbarProgress()) };
+        states.push_back(tbState);
+    }
+    else
+    {
+        _firstChild->CollectTaskbarStates(states);
+        _secondChild->CollectTaskbarStates(states);
+    }
+}
+
 DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
+DEFINE_EVENT(Pane, Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);

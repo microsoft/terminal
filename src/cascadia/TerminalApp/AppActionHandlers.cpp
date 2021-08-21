@@ -143,6 +143,20 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        {
+            auto moved = _MovePane(realArgs.TabIndex());
+            args.Handled(moved);
+        }
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
@@ -264,12 +278,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(nullptr);
+            LOG_IF_FAILED(_OpenNewTab(nullptr));
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            _OpenNewTab(realArgs.TerminalArgs());
+            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
     }
@@ -323,10 +337,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSwapPane(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        if (const auto& realArgs = args.ActionArgs().try_as<SwapPaneArgs>())
         {
             if (realArgs.Direction() == FocusDirection::None)
             {
@@ -335,8 +349,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MovePane(realArgs.Direction());
-                args.Handled(true);
+                auto swapped = _SwapPane(realArgs.Direction());
+                args.Handled(swapped);
             }
         }
     }

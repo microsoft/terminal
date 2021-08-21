@@ -11,8 +11,6 @@
 #include "VirtualDesktopUtils.h"
 #include "icon.h"
 
-#include <ScopedResourceLoader.h>
-
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
@@ -65,6 +63,8 @@ AppHost::AppHost() noexcept :
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
+    _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
+
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
                          this,
@@ -79,15 +79,10 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
     _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
-    _window->NotifyTrayIconPressed({ this, &AppHost::_HandleTrayIconPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
-
-    if (_window->IsQuakeWindow())
-    {
-        _UpdateTrayIcon();
-    }
 
     _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
@@ -99,12 +94,6 @@ AppHost::AppHost() noexcept :
 AppHost::~AppHost()
 {
     // destruction order is important for proper teardown here
-    if (_trayIconData)
-    {
-        Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
-        _trayIconData.reset();
-    }
-
     _window = nullptr;
     _app.Close();
     _app = nullptr;
@@ -126,13 +115,14 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, cons
 // Arguments:
 // - sender: not used
 // - args: not used
-void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::Windows::Foundation::IInspectable& /*args*/)
+void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     if (_logic)
     {
-        const auto state = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarState());
-        const auto progress = gsl::narrow_cast<size_t>(_logic.GetLastActiveControlTaskbarProgress());
-        _window->SetTaskbarProgress(state, progress);
+        const auto state = _logic.TaskbarState();
+        _window->SetTaskbarProgress(gsl::narrow_cast<size_t>(state.State()),
+                                    gsl::narrow_cast<size_t>(state.Progress()));
     }
 }
 
@@ -330,6 +320,15 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - <none>
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
+    if (_windowManager.IsMonarch() && _trayIcon)
+    {
+        _DestroyTrayIcon();
+    }
+    else if (_window->IsQuakeWindow())
+    {
+        _HideTrayIconRequested();
+    }
+
     _window->Close();
 }
 
@@ -410,6 +409,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
     const til::size nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+    const til::rectangle nonClientFrame = _window->GetNonClientFrame(dpix);
     adjustedWidth = islandWidth + nonClientSize.width<long>();
     adjustedHeight = islandHeight + nonClientSize.height<long>();
 
@@ -425,14 +425,18 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
                                        gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
 
-    til::point origin{ (proposedRect.left),
+    // GH#10583 - Adjust the position of the rectangle to account for the size
+    // of the invisible borders on the left/right. We DON'T want to adjust this
+    // for the top here - the IslandWindow includes the titlebar in
+    // nonClientFrame.top, so adjusting for that would actually place the
+    // titlebar _off_ the monitor.
+    til::point origin{ (proposedRect.left + nonClientFrame.left<LONG>()),
                        (proposedRect.top) };
 
     if (_logic.IsQuakeWindow())
     {
         // If we just use rcWork by itself, we'll fail to account for the invisible
         // space reserved for the resize handles. So retrieve that size here.
-        const til::size ncSize{ _window->GetTotalNonClientExclusiveSize(dpix) };
         const til::size availableSpace = desktopDimensions + nonClientSize;
 
         origin = til::point{
@@ -657,8 +661,16 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
 {
     _setupGlobalHotkeys();
 
-    // The monarch is just going to be THE listener for inbound connections.
-    _listenForInboundConnections();
+    if (_windowManager.DoesQuakeWindowExist() ||
+        _window->IsQuakeWindow() ||
+        (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray()))
+    {
+        _CreateTrayIcon();
+    }
+
+    // These events are coming from peasants that become or un-become quake windows.
+    _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
+    _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });
 }
 
 void AppHost::_listenForInboundConnections()
@@ -689,7 +701,17 @@ winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
     {
         if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
         {
-            _window->RegisterHotKey(gsl::narrow_cast<int>(_hotkeys.size()), keyChord);
+            int index = gsl::narrow_cast<int>(_hotkeys.size());
+            const bool succeeded = _window->RegisterHotKey(index, keyChord);
+
+            TraceLoggingWrite(g_hWindowsTerminalProvider,
+                              "AppHost_setupGlobalHotkey",
+                              TraceLoggingDescription("Emitted when setting a single hotkey"),
+                              TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+                              TraceLoggingWideString(cmd.Name().c_str(), "name", "the name of the command"),
+                              TraceLoggingBoolean(succeeded, "succeeded", "true if we succeeded"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             _hotkeys.emplace_back(summonArgs);
         }
     }
@@ -934,24 +956,50 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
                                      const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
+
+    // If we're monarch, we need to check some conditions to show the tray icon.
+    // If there's a Quake window somewhere, we'll want to keep the tray icon.
+    // There's two settings - MinimizeToTray and AlwaysShowTrayIcon. If either
+    // one of them are true, we want to make sure there's a tray icon.
+    // If both are false, we want to remove our icon from the tray.
+    // When we remove our icon from the tray, we'll also want to re-summon
+    // any hidden windows, but right now we're not keeping track of who's hidden,
+    // so just summon them all. Tracking the work to do a "summon all minimized" in
+    // GH#10448
+    if (_windowManager.IsMonarch())
+    {
+        if (!_windowManager.DoesQuakeWindowExist())
+        {
+            if (!_trayIcon && (_logic.GetMinimizeToTray() || _logic.GetAlwaysShowTrayIcon()))
+            {
+                _CreateTrayIcon();
+            }
+            else if (_trayIcon && !_logic.GetMinimizeToTray() && !_logic.GetAlwaysShowTrayIcon())
+            {
+                _windowManager.SummonAllWindows();
+                _DestroyTrayIcon();
+            }
+        }
+    }
+
+    _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
+    // We want the quake window to be accessible through the tray icon.
+    // This means if there's a quake window _somewhere_, we want the tray icon
+    // to show regardless of the tray icon settings.
+    // This also means we'll need to destroy the tray icon if it was created
+    // specifically for the quake window. If not, it should not be destroyed.
+    if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
     {
-        // If we're exiting quake mode, we should make our
-        // tray icon disappear.
-        if (_trayIconData)
-        {
-            Shell_NotifyIcon(NIM_DELETE, &_trayIconData.value());
-            _trayIconData.reset();
-        }
+        _ShowTrayIconRequested();
     }
-    else if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
+    else if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
     {
-        _UpdateTrayIcon();
+        _HideTrayIconRequested();
     }
 
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
@@ -968,55 +1016,108 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     _HandleSummon(sender, summonArgs);
 }
 
-void AppHost::_HandleTrayIconPressed()
+// Method Description:
+// - Creates a Tray Icon and hooks up its handlers
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::_CreateTrayIcon()
 {
-    // Currently scoping "minimize to tray" to only
-    // the quake window.
-    if (_logic.IsQuakeWindow())
+    if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        const Remoting::SummonWindowBehavior summonArgs{};
-        summonArgs.DropdownDuration(200);
-        _window->SummonWindow(summonArgs);
+        _trayIcon = std::make_unique<TrayIcon>(_window->GetHandle());
+
+        // Hookup the handlers, save the tokens for revoking if settings change.
+        _ReAddTrayIconToken = _window->NotifyReAddTrayIcon([this]() { _trayIcon->ReAddTrayIcon(); });
+        _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
+        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantNames()); });
+        _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
+        _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
     }
 }
 
 // Method Description:
-// - Creates and adds an icon to the notification tray.
+// - Deletes our tray icon if we have one.
 // Arguments:
-// - <unused>
+// - <none>
 // Return Value:
 // - <none>
-void AppHost::_UpdateTrayIcon()
+void AppHost::_DestroyTrayIcon()
 {
-    if (!_trayIconData && _window->GetHandle())
+    if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        NOTIFYICONDATA nid{};
+        _window->NotifyReAddTrayIcon(_ReAddTrayIconToken);
+        _window->NotifyTrayIconPressed(_TrayIconPressedToken);
+        _window->NotifyShowTrayContextMenu(_ShowTrayContextMenuToken);
+        _window->NotifyTrayMenuItemSelected(_TrayMenuItemSelectedToken);
 
-        // This HWND will receive the callbacks sent by the tray icon.
-        nid.hWnd = _window->GetHandle();
+        _trayIcon->RemoveIconFromTray();
+        _trayIcon = nullptr;
+    }
+}
 
-        // App-defined identifier of the icon. The HWND and ID are used
-        // to identify which icon to operate on when calling Shell_NotifyIcon.
-        // Multiple icons can be associated with one HWND, but here we're only
-        // going to be showing one so the ID doesn't really matter.
-        nid.uID = 1;
+void AppHost::_ShowTrayIconRequested()
+{
+    if constexpr (Feature_TrayIcon::IsEnabled())
+    {
+        if (_windowManager.IsMonarch())
+        {
+            if (!_trayIcon)
+            {
+                _CreateTrayIcon();
+            }
+        }
+        else
+        {
+            _windowManager.RequestShowTrayIcon();
+        }
+    }
+}
 
-        nid.uCallbackMessage = CM_NOTIFY_FROM_TRAY;
+void AppHost::_HideTrayIconRequested()
+{
+    if constexpr (Feature_TrayIcon::IsEnabled())
+    {
+        if (_windowManager.IsMonarch())
+        {
+            // Destroy it only if our settings allow it
+            if (_trayIcon &&
+                !_logic.GetAlwaysShowTrayIcon() &&
+                !_logic.GetMinimizeToTray())
+            {
+                _DestroyTrayIcon();
+            }
+        }
+        else
+        {
+            _windowManager.RequestHideTrayIcon();
+        }
+    }
+}
 
-        ScopedResourceLoader cascadiaLoader{ L"Resources" };
+// Method Description:
+// - BODGY workaround for GH#9320. When the window moves, dismiss all the popups
+//   in the UI tree. Xaml Islands unfortunately doesn't do this for us, see
+//   microsoft/microsoft-ui-xaml#4554
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::_WindowMoved()
+{
+    if (_logic)
+    {
+        const auto root{ _logic.GetRoot() };
 
-        nid.hIcon = static_cast<HICON>(GetActiveAppIconHandle(ICON_SMALL));
-        StringCchCopy(nid.szTip, ARRAYSIZE(nid.szTip), cascadiaLoader.GetLocalizedString(L"AppName").c_str());
-        nid.uFlags = NIF_MESSAGE | NIF_SHOWTIP | NIF_TIP | NIF_ICON;
-        Shell_NotifyIcon(NIM_ADD, &nid);
-
-        // For whatever reason, the NIM_ADD call doesn't seem to set the version
-        // properly, resulting in us being unable to receive the expected notification
-        // events. We actually have to make a separate NIM_SETVERSION call for it to
-        // work properly.
-        nid.uVersion = NOTIFYICON_VERSION_4;
-        Shell_NotifyIcon(NIM_SETVERSION, &nid);
-
-        _trayIconData = nid;
+        // This is basically DismissAllPopups which is also in
+        // TerminalSettingsEditor/Utils.h
+        // There isn't a good place that's shared between these two files, but
+        // it's only 5 LOC so whatever.
+        const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+        for (const auto& p : popups)
+        {
+            p.IsOpen(false);
+        }
     }
 }

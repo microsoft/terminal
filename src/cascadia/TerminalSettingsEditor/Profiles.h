@@ -153,7 +153,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme> _Schemes;
     };
 
-    struct Profiles : ProfilesT<Profiles>
+    struct Profiles : public HasScrollViewer<Profiles>, ProfilesT<Profiles>
     {
     public:
         Profiles();

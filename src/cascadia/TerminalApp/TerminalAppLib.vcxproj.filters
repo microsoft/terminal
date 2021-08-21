@@ -13,9 +13,6 @@
     <ClCompile Include="Pane.cpp">
       <Filter>pane</Filter>
     </ClCompile>
-    <ClCompile Include="Tab.cpp">
-      <Filter>tab</Filter>
-    </ClCompile>
     <ClCompile Include="Pane.LayoutSizeNode.cpp">
       <Filter>pane</Filter>
     </ClCompile>
@@ -23,7 +20,6 @@
     <ClCompile Include="Commandline.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
-    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="Jumplist.cpp" />
     <ClCompile Include="Tab.cpp">
       <Filter>tab</Filter>
@@ -49,19 +45,16 @@
     <ClCompile Include="HighlightedText.cpp">
       <Filter>highlightedText</Filter>
     </ClCompile>
+    <ClCompile Include="Toast.cpp" />
+    <ClCompile Include="LanguageProfileNotifier.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Utils.h" />
-    <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="App.base.h">
       <Filter>app</Filter>
     </ClInclude>
     <ClInclude Include="Pane.h">
       <Filter>pane</Filter>
-    </ClInclude>
-    <ClInclude Include="Tab.h">
-      <Filter>tab</Filter>
     </ClInclude>
     <ClInclude Include="AppCommandlineArgs.h" />
     <ClInclude Include="Commandline.h" />
@@ -92,13 +85,12 @@
     <ClInclude Include="HighlightedText.h">
       <Filter>highlightedText</Filter>
     </ClInclude>
+    <ClInclude Include="Toast.h" />
+    <ClInclude Include="LanguageProfileNotifier.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AppLogic.idl">
       <Filter>app</Filter>
-    </Midl>
-    <Midl Include="ActionArgs.idl">
-      <Filter>settings</Filter>
     </Midl>
     <Midl Include="AppKeyBindings.idl">
       <Filter>settings</Filter>
@@ -107,9 +99,6 @@
       <Filter>settings</Filter>
     </Midl>
     <Midl Include="IDirectKeyListener.idl" />
-    <Midl Include="ITab.idl">
-      <Filter>tab</Filter>
-    </Midl>
     <Midl Include="SettingsTab.idl">
       <Filter>tab</Filter>
     </Midl>
@@ -125,6 +114,9 @@
     <Midl Include="TerminalTabStatus.idl">
       <Filter>tab</Filter>
     </Midl>
+    <Midl Include="PaletteItemTemplateSelector.idl" />
+    <Midl Include="TabBase.idl" />
+    <Midl Include="EmptyStringVisibilityConverter.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -158,9 +150,6 @@
       <Filter>commandPalette</Filter>
     </Midl>
     <Midl Include="ActionPaletteItem.idl">
-      <Filter>commandPalette</Filter>
-    </Midl>
-    <Midl Include="FilterableListItem.idl">
       <Filter>commandPalette</Filter>
     </Midl>
     <Midl Include="CommandLinePaletteItem.idl">

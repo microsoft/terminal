@@ -20,8 +20,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
     }
 
-    // This is a private constructor to be used in unit tests, where we don't
-    // want each Peasant to necessarily use the current PID.
+    // This constructor is intended to be used in unit tests,
+    // but we need to make it public in order to use make_self
+    // in the tests. It's not exposed through the idl though
+    // so it's not _truly_ fully public which should be acceptable.
     Peasant::Peasant(const uint64_t testPID) :
         _ourPID{ testPID }
     {
@@ -31,6 +33,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         _id = id;
     }
+
     uint64_t Peasant::GetID()
     {
         return _id;
@@ -219,6 +222,38 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingWideString(args.NewName().c_str(), "newName", "The proposed name"),
                           TraceLoggingBoolean(args.Succeeded(), "succeeded", "true if the monarch ok'd this new name for us."),
                           TraceLoggingBoolean(successfullyNotified, "successfullyNotified", "true if we successfully notified the monarch"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    void Peasant::RequestShowTrayIcon()
+    {
+        try
+        {
+            _ShowTrayIconRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestShowTrayIcon",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    void Peasant::RequestHideTrayIcon()
+    {
+        try
+        {
+            _HideTrayIconRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestHideTrayIcon",
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }

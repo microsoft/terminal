@@ -348,6 +348,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, SelectionBackground);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorColor);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, PixelShaderPath);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, IntenseTextStyle);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImagePath);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageOpacity);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageStretchMode);

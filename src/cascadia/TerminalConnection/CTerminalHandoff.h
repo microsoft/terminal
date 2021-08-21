@@ -37,12 +37,12 @@ struct __declspec(uuid(__CLSID_CTerminalHandoff))
                                      HANDLE signal,
                                      HANDLE ref,
                                      HANDLE server,
-                                     HANDLE client) noexcept override;
+                                     HANDLE client) override;
 
 #pragma endregion
 
-    static HRESULT s_StartListening(NewHandoffFunction pfnHandoff) noexcept;
-    static HRESULT s_StopListening() noexcept;
+    static HRESULT s_StartListening(NewHandoffFunction pfnHandoff);
+    static HRESULT s_StopListening();
 };
 
 // Disable warnings from the CoCreatableClass macro as the value it provides for

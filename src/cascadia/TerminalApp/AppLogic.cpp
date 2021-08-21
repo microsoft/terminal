@@ -203,11 +203,15 @@ namespace winrt::TerminalApp::implementation
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(_root->Dispatcher(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
             {
                 self->_ReloadSettings();
             }
+        });
+
+        _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
+            _reloadSettings->Run();
         });
     }
 
@@ -1125,28 +1129,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    // Method Description:
-    // - Gets the taskbar state value from the last active control
-    // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarState()
+    winrt::TerminalApp::TaskbarState AppLogic::TaskbarState()
     {
         if (_root)
         {
-            return _root->GetLastActiveControlTaskbarState();
-        }
-        return {};
-    }
-
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarProgress()
-    {
-        if (_root)
-        {
-            return _root->GetLastActiveControlTaskbarProgress();
+            return _root->TaskbarState();
         }
         return {};
     }
@@ -1229,6 +1216,11 @@ namespace winrt::TerminalApp::implementation
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
 
             _root->ProcessStartupActions(actions, false, cwd);
+
+            if (appArgs.IsHandoffListener())
+            {
+                _root->SetInboundListener(true);
+            }
         }
         // Return the result of parsing with commandline, though it may or may not be used.
         return result;
@@ -1450,4 +1442,39 @@ namespace winrt::TerminalApp::implementation
         return _root->IsQuakeWindow();
     }
 
+    bool AppLogic::GetMinimizeToTray()
+    {
+        if constexpr (Feature_TrayIcon::IsEnabled())
+        {
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
+
+            return _settings.GlobalSettings().MinimizeToTray();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool AppLogic::GetAlwaysShowTrayIcon()
+    {
+        if constexpr (Feature_TrayIcon::IsEnabled())
+        {
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
+
+            return _settings.GlobalSettings().AlwaysShowTrayIcon();
+        }
+        else
+        {
+            return false;
+        }
+    }
 }

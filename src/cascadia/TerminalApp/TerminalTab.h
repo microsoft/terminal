@@ -22,9 +22,10 @@ namespace winrt::TerminalApp::implementation
     {
     public:
         TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::Control::TermControl& control);
+        TerminalTab(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
-        void Initialize(const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void Initialize();
 
         winrt::Microsoft::Terminal::Control::TermControl GetActiveTerminalControl() const;
         std::optional<GUID> GetFocusedProfile() const noexcept;
@@ -32,6 +33,10 @@ namespace winrt::TerminalApp::implementation
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
         winrt::fire_and_forget Scroll(const int delta);
+
+        std::shared_ptr<Pane> DetachRoot();
+        std::shared_ptr<Pane> DetachPane();
+        void AttachPane(std::shared_ptr<Pane> pane);
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                        const float splitSize,
@@ -54,7 +59,7 @@ namespace winrt::TerminalApp::implementation
         void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-        void MovePane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+        bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
         void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
@@ -83,6 +88,7 @@ namespace winrt::TerminalApp::implementation
 
         void TogglePaneReadOnly();
         std::shared_ptr<Pane> GetActivePane() const;
+        winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
 
         winrt::TerminalApp::TerminalTabStatus TabStatus()
         {
@@ -94,18 +100,33 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
         std::shared_ptr<Pane> _rootPane{ nullptr };
         std::shared_ptr<Pane> _activePane{ nullptr };
         std::shared_ptr<Pane> _zoomedPane{ nullptr };
+
         winrt::hstring _lastIconPath{};
         winrt::TerminalApp::ColorPickupFlyout _tabColorPickup{};
         std::optional<winrt::Windows::UI::Color> _themeTabColor{};
         std::optional<winrt::Windows::UI::Color> _runtimeTabColor{};
         winrt::TerminalApp::TabHeaderControl _headerControl{};
         winrt::TerminalApp::TerminalTabStatus _tabStatus{};
+
+        struct ControlEventTokens
+        {
+            winrt::event_token titleToken;
+            winrt::event_token fontToken;
+            winrt::event_token colorToken;
+            winrt::event_token taskbarToken;
+            winrt::event_token readOnlyToken;
+            winrt::event_token focusToken;
+        };
+        std::unordered_map<uint32_t, ControlEventTokens> _controlEvents;
+
+        winrt::event_token _rootClosedToken{};
 
         std::vector<uint32_t> _mruPanes;
         uint32_t _nextPaneId{ 0 };
@@ -119,6 +140,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch;
 
+        void _Setup();
+
         std::optional<Windows::UI::Xaml::DispatcherTimer> _bellIndicatorTimer;
         void _BellIndicatorTimerTick(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
@@ -131,9 +154,8 @@ namespace winrt::TerminalApp::implementation
 
         void _RefreshVisualState();
 
-        void _BindEventHandlers(const winrt::Microsoft::Terminal::Control::TermControl& control) noexcept;
-
-        void _AttachEventHandlersToControl(const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void _DetachEventHandlersFromControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
+        void _AttachEventHandlersToControl(const uint32_t paneId, const winrt::Microsoft::Terminal::Control::TermControl& control);
         void _AttachEventHandlersToPane(std::shared_ptr<Pane> pane);
 
         void _UpdateActivePane(std::shared_ptr<Pane> pane);

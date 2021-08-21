@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
     };
 
-    struct Interaction : InteractionT<Interaction>
+    struct Interaction : public HasScrollViewer<Interaction>, InteractionT<Interaction>
     {
         Interaction();
 

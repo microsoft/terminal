@@ -282,6 +282,16 @@
   <data name="CmdFocusTabTargetArgDesc" xml:space="preserve">
     <value>Move focus the tab at the given index</value>
   </data>
+  <data name="CmdMovePaneTabArgDesc" xml:space="preserve">
+    <value>Move focused pane to the tab at the given index</value>
+  </data>
+  <data name="CmdMovePaneDesc" xml:space="preserve">
+    <value>Move focused pane to another tab</value>
+  </data>
+  <data name="CmdMPDesc" xml:space="preserve">
+    <value>An alias for the "move-pane" subcommand.</value>
+    <comment>{Locked="\"move-pane\""}</comment>
+  </data>
   <data name="CmdSplitPaneSizeArgDesc" xml:space="preserve">
     <value>Specify the size as a percentage of the parent pane. Valid values are between (0,1), exclusive.</value>
   </data>
@@ -359,14 +369,10 @@
   <data name="CmdMoveFocusDirectionArgDesc" xml:space="preserve">
     <value>The direction to move focus in</value>
   </data>
-  <data name="CmdMovePaneDesc" xml:space="preserve">
+  <data name="CmdSwapPaneDesc" xml:space="preserve">
     <value>Swap the focused pane with the adjacent pane in the specified direction</value>
   </data>
-  <data name="CmdMPDesc" xml:space="preserve">
-    <value>An alias for the "move-pane" subcommand.</value>
-    <comment>{Locked="\"move-pane\""}</comment>
-  </data>
-  <data name="CmdMovePaneDirectionArgDesc" xml:space="preserve">
+  <data name="CmdSwapPaneDirectionArgDesc" xml:space="preserve">
     <value>The direction to move the focused pane in</value>
   </data>
   <data name="CmdFocusDesc" xml:space="preserve">
@@ -647,6 +653,14 @@
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Command Palette</value>
   </data>
+  <data name="TrayIconFocusTerminal" xml:space="preserve">
+    <value>Focus Terminal</value>
+    <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
+  </data>
+  <data name="TrayIconWindowSubmenu" xml:space="preserve">
+    <value>Windows</value>
+    <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
+  </data>
   <data name="ShellExtension_OpenInTerminalMenuItem_Dev" xml:space="preserve">
     <value>Open in Windows Terminal (Dev)</value>
     <comment>{Locked} The dev build will never be seen in multiple languages</comment>
@@ -661,6 +675,9 @@
   </data>
   <data name="DropPathTabRun.Text" xml:space="preserve">
     <value>Open a new tab in given starting directory</value>
+  </data>
+  <data name="SplitTabText" xml:space="preserve">
+    <value>Split Tab</value>
   </data>
   <data name="DropPathTabNewWindow.Text" xml:space="preserve">
     <value>Open a new window with given starting directory</value>

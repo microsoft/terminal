@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
     };
 
-    struct ReadOnlyActions : ReadOnlyActionsT<ReadOnlyActions>
+    struct ReadOnlyActions : public HasScrollViewer<ReadOnlyActions>, ReadOnlyActionsT<ReadOnlyActions>
     {
     public:
         ReadOnlyActions();

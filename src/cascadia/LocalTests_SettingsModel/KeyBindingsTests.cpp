@@ -41,6 +41,10 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerKeybindings);
         TEST_METHOD(UnbindKeybindings);
 
+        TEST_METHOD(LayerScancodeKeybindings);
+
+        TEST_METHOD(TestExplicitUnbind);
+
         TEST_METHOD(TestArbitraryArgs);
         TEST_METHOD(TestSplitPaneArgs);
 
@@ -54,6 +58,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestMoveTabArgs);
 
         TEST_METHOD(TestGetKeyBindingForAction);
+        TEST_METHOD(KeybindingsWithoutVkey);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -95,23 +100,33 @@ namespace SettingsModelLocalTests
                 VirtualKeyModifiers::Control | VirtualKeyModifiers::Menu | VirtualKeyModifiers::Shift | VirtualKeyModifiers::Windows,
                 255,
                 0,
-                L"ctrl+shift+alt+win+vk(255)",
+                L"win+ctrl+alt+shift+vk(255)",
             },
             testCase{
-                VirtualKeyModifiers::Windows,
+                VirtualKeyModifiers::Control | VirtualKeyModifiers::Menu | VirtualKeyModifiers::Shift | VirtualKeyModifiers::Windows,
                 0,
                 123,
-                L"ctrl+shift+alt+win+sc(123)",
+                L"win+ctrl+alt+shift+sc(123)",
             },
         };
 
         for (const auto& tc : testCases)
         {
-            KeyChord expectedKeyChord{ tc.modifiers, tc.vkey, tc.scanCode };
-            const auto actualString = KeyChordSerialization::ToString(expectedKeyChord);
+            Log::Comment(NoThrowString().Format(L"Testing case:\"%s\"", tc.expected.data()));
+
+            const auto actualString = KeyChordSerialization::ToString({ tc.modifiers, tc.vkey, tc.scanCode });
             VERIFY_ARE_EQUAL(tc.expected, actualString);
+
+            auto expectedVkey = tc.vkey;
+            if (!expectedVkey)
+            {
+                expectedVkey = MapVirtualKeyW(tc.scanCode, MAPVK_VSC_TO_VK_EX);
+            }
+
             const auto actualKeyChord = KeyChordSerialization::FromString(actualString);
-            VERIFY_ARE_EQUAL(expectedKeyChord, actualKeyChord);
+            VERIFY_ARE_EQUAL(tc.modifiers, actualKeyChord.Modifiers());
+            VERIFY_ARE_EQUAL(expectedVkey, actualKeyChord.Vkey());
+            VERIFY_ARE_EQUAL(tc.scanCode, actualKeyChord.ScanCode());
         }
     }
 
@@ -230,6 +245,31 @@ namespace SettingsModelLocalTests
         actionMap->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
         VERIFY_IS_NULL(actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 }));
+    }
+
+    void KeyBindingsTests::TestExplicitUnbind()
+    {
+        const std::string bindings0String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
+        const std::string bindings1String{ R"([ { "command": "unbound", "keys": ["ctrl+c"] } ])" };
+        const std::string bindings2String{ R"([ { "command": "copy", "keys": ["ctrl+c"] } ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+        const auto bindings1Json = VerifyParseSucceeded(bindings1String);
+        const auto bindings2Json = VerifyParseSucceeded(bindings2String);
+
+        const KeyChord keyChord{ VirtualKeyModifiers::Control, static_cast<int32_t>('C'), 0 };
+
+        auto actionMap = winrt::make_self<implementation::ActionMap>();
+        VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
+
+        actionMap->LayerJson(bindings0Json);
+        VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
+
+        actionMap->LayerJson(bindings1Json);
+        VERIFY_IS_TRUE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
+
+        actionMap->LayerJson(bindings2Json);
+        VERIFY_IS_FALSE(actionMap->IsKeyChordExplicitlyUnbound(keyChord));
     }
 
     void KeyBindingsTests::TestArbitraryArgs()
@@ -721,5 +761,43 @@ namespace SettingsModelLocalTests
             const auto& kbd{ actionMap->GetKeyBindingForAction(ShortcutAction::ToggleCommandPalette) };
             VerifyKeyChordEquality({ VirtualKeyModifiers::Control | VirtualKeyModifiers::Shift, static_cast<int32_t>('P'), 0 }, kbd);
         }
+    }
+
+    void KeyBindingsTests::LayerScancodeKeybindings()
+    {
+        Log::Comment(L"Layering a keybinding with a character literal on top of"
+                     L" an equivalent sc() key should replace it.");
+
+        // Wrap the first one in `R"!(...)!"` because it has `()` internally.
+        const std::string bindings0String{ R"!([ { "command": "quakeMode", "keys":"win+sc(41)" } ])!" };
+        const std::string bindings1String{ R"([ { "keys": "win+`", "command": { "action": "globalSummon", "monitor": "any" } } ])" };
+        const std::string bindings2String{ R"([ { "keys": "ctrl+shift+`", "command": { "action": "quakeMode" } } ])" };
+
+        const auto bindings0Json = VerifyParseSucceeded(bindings0String);
+        const auto bindings1Json = VerifyParseSucceeded(bindings1String);
+        const auto bindings2Json = VerifyParseSucceeded(bindings2String);
+
+        auto actionMap = winrt::make_self<implementation::ActionMap>();
+        VERIFY_ARE_EQUAL(0u, actionMap->_KeyMap.size());
+
+        actionMap->LayerJson(bindings0Json);
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size());
+
+        actionMap->LayerJson(bindings1Json);
+        VERIFY_ARE_EQUAL(1u, actionMap->_KeyMap.size(), L"Layering the second action should replace the first one.");
+
+        actionMap->LayerJson(bindings2Json);
+        VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
+    }
+
+    void KeyBindingsTests::KeybindingsWithoutVkey()
+    {
+        const auto json = VerifyParseSucceeded(R"!([{"command": "quakeMode", "keys":"shift+sc(255)"}])!");
+
+        const auto actionMap = winrt::make_self<implementation::ActionMap>();
+        actionMap->LayerJson(json);
+
+        const auto action = actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Shift, 0, 255 });
+        VERIFY_IS_NOT_NULL(action);
     }
 }

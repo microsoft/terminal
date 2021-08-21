@@ -68,7 +68,8 @@ public:
                                                      const COLORREF defaultFgColor,
                                                      const COLORREF defaultBgColor,
                                                      const bool reverseScreenMode = false,
-                                                     const bool blinkingIsFaint = false) const noexcept;
+                                                     const bool blinkingIsFaint = false,
+                                                     const bool boldIsBright = true) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;

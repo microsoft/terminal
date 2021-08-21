@@ -50,6 +50,7 @@
     ON_ALL_ACTIONS(ResizePane)             \
     ON_ALL_ACTIONS(MoveFocus)              \
     ON_ALL_ACTIONS(MovePane)               \
+    ON_ALL_ACTIONS(SwapPane)               \
     ON_ALL_ACTIONS(Find)                   \
     ON_ALL_ACTIONS(ToggleShaderEffects)    \
     ON_ALL_ACTIONS(ToggleFocusMode)        \
@@ -90,6 +91,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(GlobalSummon)         \
     ON_ALL_ACTIONS_WITH_ARGS(MoveFocus)            \
     ON_ALL_ACTIONS_WITH_ARGS(MovePane)             \
+    ON_ALL_ACTIONS_WITH_ARGS(SwapPane)             \
     ON_ALL_ACTIONS_WITH_ARGS(MoveTab)              \
     ON_ALL_ACTIONS_WITH_ARGS(NewTab)               \
     ON_ALL_ACTIONS_WITH_ARGS(NewWindow)            \
