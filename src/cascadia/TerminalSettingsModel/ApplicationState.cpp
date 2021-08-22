@@ -10,7 +10,10 @@
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
-constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::string_view TabLayoutKey{ "tabLayout" };
+static constexpr std::string_view InitialPositionKey{ "initialPosition" };
+static constexpr std::string_view InitialSizeKey{ "initialSize" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
@@ -25,18 +28,18 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
             if (json.isMember("tabLayout"))
             {
-                auto val = GetValueForKey<winrt::Windows::Foundation::Collections::IVector<ActionAndArgs>>(json, std::string_view("tabLayout"));
+                auto val = GetValueForKey<winrt::Windows::Foundation::Collections::IVector<ActionAndArgs>>(json, TabLayoutKey);
                 layout->TabLayout(val);
             }
 
             if (json.isMember("initialPosition"))
             {
-                layout->InitialPosition(GetValueForKey<LaunchPosition>(json, std::string_view("initialPosition")));
+                layout->InitialPosition(GetValueForKey<LaunchPosition>(json, InitialPositionKey));
             }
 
             if (json.isMember("initialSize"))
             {
-                layout->InitialSize(GetValueForKey<winrt::Windows::Foundation::Size>(json, std::string_view("initialSize")));
+                layout->InitialSize(GetValueForKey<winrt::Windows::Foundation::Size>(json, InitialSizeKey));
             }
 
             return *layout;
@@ -53,17 +56,17 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
             if (val.TabLayout())
             {
-                SetValueForKey(json, std::string_view("tabLayout"), val.TabLayout());
+                SetValueForKey(json, TabLayoutKey, val.TabLayout());
             }
 
             if (val.InitialPosition())
             {
-                SetValueForKey(json, std::string_view("initialPosition"), val.InitialPosition());
+                SetValueForKey(json, InitialPositionKey, val.InitialPosition());
             }
 
             if (val.InitialSize())
             {
-                SetValueForKey(json, std::string_view("initialSize"), val.InitialSize());
+                SetValueForKey(json, InitialSizeKey, val.InitialSize());
             }
 
             return json;

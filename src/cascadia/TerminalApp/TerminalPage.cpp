@@ -1172,7 +1172,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Saves the tab layout to the application state
+    // - Saves the window position and tab layout to the application state
     // Arguments:
     // - <none>
     // Return Value:

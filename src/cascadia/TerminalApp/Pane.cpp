@@ -607,7 +607,6 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             else if (parent->_secondChild == oldChild)
             {
                 parent->_secondChild->Closed(parent->_secondClosedToken);
-
                 parent->_secondChild = newChild;
             }
             // Clear now to ensure that we can add the child's grid to us later
