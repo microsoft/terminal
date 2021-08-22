@@ -47,4 +47,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
         _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
     }
+
+    winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultProfiles() const
+    {
+        const auto allProfiles = _State.Settings().AllProfiles();
+
+        std::vector<IInspectable> profiles;
+        profiles.reserve(allProfiles.Size());
+
+        // Remove profiles from the selection which have been explicitly deleted.
+        // We do want to show hidden profiles though, as they are just hidden
+        // from menus, but still work as the startup profile for instance.
+        for (const auto& profile : allProfiles)
+        {
+            if (!profile.Deleted())
+            {
+                profiles.emplace_back(profile);
+            }
+        }
+
+        return winrt::single_threaded_observable_vector(std::move(profiles));
+    }
 }
