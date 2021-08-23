@@ -224,26 +224,8 @@ static bool getWslGuids(const wil::unique_hkey& wslRootKey,
         return false;
     }
 
-    // Figure out how many subkeys we have, and what the longest name of these subkeys is.
-    DWORD dwNumSubKeys = 0;
-    if (RegQueryInfoKey(wslRootKey.get(),
-                        nullptr,
-                        nullptr,
-                        nullptr,
-                        &dwNumSubKeys,
-                        nullptr,
-                        nullptr,
-                        nullptr,
-                        nullptr,
-                        nullptr,
-                        nullptr,
-                        nullptr) != ERROR_SUCCESS)
-    {
-        return false;
-    }
-
     wchar_t buffer[39]; // a {GUID} is 38 chars long
-    for (DWORD i = 0; i < dwNumSubKeys; i++)
+    for (DWORD i = 0;; i++)
     {
         DWORD length;
         const auto result = RegEnumKeyEx(wslRootKey.get(), i, &buffer[0], &length, nullptr, nullptr, nullptr, nullptr);
@@ -275,7 +257,7 @@ static bool getWslGuids(const wil::unique_hkey& wslRootKey,
 // Return Value:
 // - false if the root key was invalid, else true.
 static bool getWslNames(const wil::unique_hkey& wslRootKey,
-                        std::vector<std::wstring>& guidStrings,
+                        const std::vector<std::wstring>& guidStrings,
                         std::vector<std::wstring>& names)
 {
     if (!wslRootKey)
@@ -300,10 +282,10 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
             *valueLengthNeededWithNull = (length / sizeof(wchar_t));
             // If you add one for another trailing null, then there'll actually
             // be _two_ trailing nulls in the buffer.
-            return status == ERROR_MORE_DATA ? ERROR_SUCCESS : status;
+            return status == ERROR_MORE_DATA ? S_OK : HRESULT_FROM_WIN32(status);
         });
 
-        if (result != ERROR_SUCCESS)
+        if (result != S_OK)
         {
             continue;
         }
@@ -324,7 +306,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 // - A list of WSL profiles.
 std::vector<Profile> WslDistroGenerator::GenerateProfiles()
 {
-    static wil::unique_hkey wslRootKey{ openWslRegKey() };
+    wil::unique_hkey wslRootKey{ openWslRegKey() };
     if (wslRootKey)
     {
         std::vector<std::wstring> guidStrings{};
