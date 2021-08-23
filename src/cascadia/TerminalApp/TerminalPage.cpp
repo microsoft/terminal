@@ -1999,16 +1999,19 @@ namespace winrt::TerminalApp::implementation
 
         // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
         // when we stabilize its guid this will become fully safe.
-        std::unordered_map<winrt::guid, std::pair<Profile, TerminalSettingsCreateResult>> _profileGuidSettingsMap;
+        std::unordered_map<winrt::guid, std::pair<Profile, TerminalSettingsCreateResult>> profileGuidSettingsMap;
+        const auto profileDefaults{ _settings.ProfileDefaults() };
+        const auto allProfiles{ _settings.AllProfiles() };
+
+        profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
 
         // Include the Defaults profile for consideration
-        const auto profileDefaults{ _settings.ProfileDefaults() };
-        _profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, nullptr });
-        for (const auto& newProfile : _settings.AllProfiles())
+        profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, nullptr });
+        for (const auto& newProfile : allProfiles)
         {
             // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
             // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
-            _profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
+            profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
         }
 
         for (const auto& tab : _tabs)
@@ -2022,12 +2025,12 @@ namespace winrt::TerminalApp::implementation
                 terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
                     if (const auto profile{ pane->GetProfile() })
                     {
-                        const auto found{ _profileGuidSettingsMap.find(profile.Guid()) };
+                        const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
                         // GH#2455: If there are any panes with controls that had been
                         // initialized with a Profile that no longer exists in our list of
                         // profiles, we'll leave it unmodified. The profile doesn't exist
                         // anymore, so we can't possibly update its settings.
-                        if (found != _profileGuidSettingsMap.cend())
+                        if (found != profileGuidSettingsMap.cend())
                         {
                             auto& pair{ found->second };
                             if (!pair.second)
