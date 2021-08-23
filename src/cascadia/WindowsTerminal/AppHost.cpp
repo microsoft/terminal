@@ -667,6 +667,13 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
         _CreateTrayIcon();
     }
 
+    // Set the number of open windows (so we know if we are the last window)
+    // and subscribe for updates if there are any changes to that number.
+    _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+
+    _windowManager.WindowCreated([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+    _windowManager.WindowClosed([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+
     // These events are coming from peasants that become or un-become quake windows.
     _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
     _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });

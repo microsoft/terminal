@@ -54,6 +54,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // monarch!
         CoRevokeClassObject(_registrationHostClass);
         _registrationHostClass = 0;
+        if (_monarch)
+        {
+            _monarch.SignalClose(_peasant.GetID());
+        }
         _monarchWaitInterrupt.SetEvent();
 
         // A thread is joinable once it's been started. Basically this just
@@ -61,6 +65,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         if (_electionThread.joinable())
         {
             _electionThread.join();
+        }
+    }
+
+    void WindowManager::SignalClose()
+    {
+        if (_monarch)
+        {
+            _monarch.SignalClose(_peasant.GetID());
         }
     }
 
@@ -187,6 +199,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Otherwise, we'll do _nothing_.
     }
 
+    void SignalClose()
+    {
+    }
+
     bool WindowManager::ShouldCreateWindow()
     {
         return _shouldCreateWindow;
@@ -250,9 +266,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Here, we're the king!
         //
         // This is where you should do any additional setup that might need to be
-        // done when we become the king. THis will be called both for the first
+        // done when we become the king. This will be called both for the first
         // window, and when the current monarch dies.
 
+        auto weakThis{ get_weak() };
+
+        _monarch.WindowCreated([weakThis](auto&&, auto&&) { if (auto mgr{ weakThis.get() }) { mgr->_WindowCreatedHandlers(nullptr, nullptr); } });
+        _monarch.WindowClosed([weakThis](auto&&, auto&&) { if (auto mgr{ weakThis.get() }) { mgr->_WindowCreatedHandlers(nullptr, nullptr); } });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
         _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
         _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
@@ -524,6 +544,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // We should only get called when we're the monarch since the monarch
         // is the only one that knows about all peasants.
         return _monarch.GetPeasantNames();
+    }
+
+    uint64_t WindowManager::GetNumberOfPeasants()
+    {
+        if (_monarch)
+        {
+            return _monarch.GetNumberOfPeasants();
+        }
+        return 0;
     }
 
     // Method Description:

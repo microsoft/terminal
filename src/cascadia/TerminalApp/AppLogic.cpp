@@ -1458,6 +1458,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void AppLogic::SetNumberOfOpenWindows(const uint64_t num)
+    {
+        if (_root)
+        {
+            _root->SetNumberOfOpenWindows(num);
+        }
+    }
+
     void AppLogic::RenameFailed()
     {
         if (_root)

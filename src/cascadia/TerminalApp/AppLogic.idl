@@ -53,6 +53,7 @@ namespace TerminalApp
         void IdentifyWindow();
         String WindowName;
         UInt64 WindowId;
+        void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         Boolean IsQuakeWindow();
 

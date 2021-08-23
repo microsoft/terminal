@@ -247,7 +247,8 @@ namespace winrt::TerminalApp::implementation
     // - true if the ApplicationState should be used.
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
-        return settings.GlobalSettings().PersistWindowLayout() && _WindowId == 1;
+        // If the setting is enabled, and we are the only window.
+        return settings.GlobalSettings().PersistWindowLayout() && _numOpenWindows == 1;
     }
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
@@ -2955,6 +2956,11 @@ namespace winrt::TerminalApp::implementation
             _WindowId = value;
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
         }
+    }
+
+    void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
+    {
+        _numOpenWindows = num;
     }
 
     // Method Description:

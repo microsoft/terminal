@@ -108,6 +108,9 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget WindowName(const winrt::hstring& value);
         uint64_t WindowId() const noexcept;
         void WindowId(const uint64_t& value);
+
+        void SetNumberOfOpenWindows(const uint64_t value);
+
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
@@ -159,6 +162,7 @@ namespace winrt::TerminalApp::implementation
         bool _isAlwaysOnTop{ false };
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
+        uint64_t _numOpenWindows{ 0 };
 
         bool _maintainStateOnTabClose;
         bool _rearranging;

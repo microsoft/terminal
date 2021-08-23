@@ -91,6 +91,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingUInt64(newPeasantsId, "peasantID", "the ID of the new peasant"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            _WindowCreatedHandlers(nullptr, nullptr);
             return newPeasantsId;
         }
         catch (...)
@@ -105,6 +107,39 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // get it.
             return -1;
         }
+    }
+
+    void Monarch::SignalClose(const uint64_t peasantId)
+    {
+        _peasants.erase(peasantId);
+        _WindowClosedHandlers(nullptr, nullptr);
+    }
+
+    // Method Description:
+    // - Counts the number of living peasants.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the number of active peasants.
+    uint64_t Monarch::GetNumberOfPeasants()
+    {
+        auto num = 0;
+        auto callback = [&](auto&& p, auto&& /*id*/) {
+            // Check that the peasant is alive, and if so increment the count
+            p.GetID();
+            num += 1;
+        };
+        auto onError = [](auto&& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_GetNumberOfPeasants_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not summon"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forAllPeasantsIgnoringTheDead(callback, onError);
+
+        return num;
     }
 
     // Method Description:
