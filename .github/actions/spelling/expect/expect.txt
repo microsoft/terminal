@@ -788,6 +788,7 @@ flyout
 fmodern
 fmtarg
 fmtid
+FNV
 FOLDERID
 FONTCHANGE
 fontdlg
@@ -1469,6 +1470,7 @@ Mul
 multiline
 munged
 munges
+murmurhash
 mutex
 mutexes
 muxes
@@ -2267,6 +2269,7 @@ SWMR
 SWP
 swprintf
 SYMED
+symlink
 SYNCPAINT
 sys
 syscalls
@@ -2798,6 +2801,7 @@ xes
 xff
 XFile
 XFORM
+xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2830,6 +2834,7 @@ YCast
 YCENTER
 YCount
 YDPI
+yIcon
 yml
 YOffset
 YPosition

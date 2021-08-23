@@ -74,6 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, Language);
         INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
         INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, UseAcrylicInTabRow, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTabsInTitlebar, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CopyOnSelect, false);
@@ -98,6 +99,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, MinimizeToTray, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTrayIcon, false);
 
     private:
         guid _defaultProfile;

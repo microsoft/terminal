@@ -65,6 +65,13 @@
     </feature>
 
     <feature>
+        <name>Feature_TrayIcon</name>
+        <description>Controls whether the Tray Icon and related settings (aka. MinimizeToTray and AlwaysShowTrayIcon) are enabled</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledReleaseTokens/>
+    </feature>
+
+    <feature>
         <name>Feature_ShowProfileDefaultsInSettings</name>
         <description>Whether to show the "defaults" page in the Terminal settings UI</description>
         <id>10430</id>

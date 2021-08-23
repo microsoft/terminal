@@ -56,7 +56,7 @@
                SelectionChanged="Pivot_SelectionChanged">
             <!--  General Tab  -->
             <PivotItem x:Uid="Profile_General">
-                <ScrollViewer>
+                <ScrollViewer ViewChanging="ViewChanging">
                     <StackPanel Style="{StaticResource PivotStackStyle}">
 
                         <!--  Name  -->
@@ -225,7 +225,7 @@
 
             <!--  Appearance Tab  -->
             <PivotItem x:Uid="Profile_Appearance">
-                <ScrollViewer>
+                <ScrollViewer ViewChanging="ViewChanging">
                     <StackPanel>
                         <!--  Control Preview  -->
                         <Border x:Name="ControlPreview"
@@ -397,7 +397,7 @@
 
             <!--  Advanced Tab  -->
             <PivotItem x:Uid="Profile_Advanced">
-                <ScrollViewer>
+                <ScrollViewer ViewChanging="ViewChanging">
                     <StackPanel Style="{StaticResource PivotStackStyle}">
                         <!--  Suppress Application Title  -->
                         <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"

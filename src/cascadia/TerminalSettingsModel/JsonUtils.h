@@ -101,7 +101,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
     public:
         DeserializationError(const Json::Value& value) :
-            runtime_error("failed to deserialize"),
+            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asCString())),
             jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)

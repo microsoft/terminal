@@ -142,6 +142,44 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
+        if (_settings.GlobalSettings().UseAcrylicInTabRow())
+        {
+            const auto res = Application::Current().Resources();
+
+            const auto lightKey = winrt::box_value(L"Light");
+            const auto darkKey = winrt::box_value(L"Dark");
+            const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
+
+            for (auto const& dictionary : res.MergedDictionaries())
+            {
+                // Don't change MUX resources
+                if (dictionary.Source())
+                {
+                    continue;
+                }
+
+                for (auto const& kvPair : dictionary.ThemeDictionaries())
+                {
+                    const auto themeDictionary = kvPair.Value().as<winrt::Windows::UI::Xaml::ResourceDictionary>();
+
+                    if (themeDictionary.HasKey(tabViewBackgroundKey))
+                    {
+                        const auto backgroundSolidBrush = themeDictionary.Lookup(tabViewBackgroundKey).as<Media::SolidColorBrush>();
+
+                        const til::color backgroundColor = backgroundSolidBrush.Color();
+
+                        const auto acrylicBrush = Media::AcrylicBrush();
+                        acrylicBrush.BackgroundSource(Media::AcrylicBackgroundSource::HostBackdrop);
+                        acrylicBrush.FallbackColor(backgroundColor);
+                        acrylicBrush.TintColor(backgroundColor);
+                        acrylicBrush.TintOpacity(0.5);
+
+                        themeDictionary.Insert(tabViewBackgroundKey, acrylicBrush);
+                    }
+                }
+            }
+        }
+
         _tabRow.PointerMoved({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
         _tabView.CanReorderTabs(!isElevated);
         _tabView.CanDragTabs(!isElevated);
@@ -733,7 +771,12 @@ namespace winrt::TerminalApp::implementation
             // Manually fill in the evaluated profile.
             if (newTerminalArgs.ProfileIndex() != nullptr)
             {
-                newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(this->_settings.GetProfileForArgs(newTerminalArgs)));
+                // We want to promote the index to a GUID because there is no "launch to profile index" command.
+                const auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+                if (profile)
+                {
+                    newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                }
             }
             this->_OpenNewWindow(false, newTerminalArgs);
         }
@@ -756,14 +799,18 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Creates a new connection based on the profile settings
     // Arguments:
-    // - the profile GUID we want the settings from
+    // - the profile we want the settings from
     // - the terminal settings
     // Return value:
     // - the desired connection
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
+    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
                                                                                         TerminalSettings settings)
     {
-        const auto profile = _settings.FindProfile(profileGuid);
+        if (!profile)
+        {
+            // Use the default profile if we didn't get one as an argument.
+            profile = _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
+        }
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -788,7 +835,8 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            std::wstring guidWString = Utils::GuidToString(profileGuid);
+            // profile is guaranteed to exist here
+            std::wstring guidWString = Utils::GuidToString(profile.Guid());
 
             StringMap envMap{};
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
@@ -837,7 +885,7 @@ namespace winrt::TerminalApp::implementation
             "ConnectionCreated",
             TraceLoggingDescription("Event emitted upon the creation of a connection"),
             TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
-            TraceLoggingGuid(profileGuid, "ProfileGuid", "The profile's GUID"),
+            TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
             TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -980,11 +1028,9 @@ namespace winrt::TerminalApp::implementation
     //   handle. This includes:
     //    * the Copy and Paste events, for setting and retrieving clipboard data
     //      on the right thread
-    //    * the TitleChanged event, for changing the text of the tab
     // Arguments:
     // - term: The newly created TermControl to connect the events for
-    // - hostingTab: The Tab that's hosting this TermControl instance
-    void TerminalPage::_RegisterTerminalEvents(TermControl term, TerminalTab& hostingTab)
+    void TerminalPage::_RegisterTerminalEvents(TermControl term)
     {
         term.RaiseNotice({ this, &TerminalPage::_ControlNoticeRaisedHandler });
 
@@ -999,10 +1045,20 @@ namespace winrt::TerminalApp::implementation
 
         term.HidePointerCursor({ get_weak(), &TerminalPage::_HidePointerCursorHandler });
         term.RestorePointerCursor({ get_weak(), &TerminalPage::_RestorePointerCursorHandler });
+        // Add an event handler for when the terminal or tab wants to set a
+        // progress indicator on the taskbar
+        term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
+    }
 
-        // Bind Tab events to the TermControl and the Tab's Pane
-        hostingTab.Initialize(term);
-
+    // Method Description:
+    // - Connects event handlers to the TerminalTab for events that we want to
+    //   handle. This includes:
+    //    * the TitleChanged event, for changing the text of the tab
+    //    * the Color{Selected,Cleared} events to change the color of a tab.
+    // Arguments:
+    // - hostingTab: The Tab that's hosting this TermControl instance
+    void TerminalPage::_RegisterTabEvents(TerminalTab& hostingTab)
+    {
         auto weakTab{ hostingTab.get_weak() };
         auto weakThis{ get_weak() };
         // PropertyChanged is the generic mechanism by which the Tab
@@ -1054,7 +1110,6 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         hostingTab.TaskbarProgressChanged({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
-        term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
 
         // TODO GH#3327: Once we support colorizing the NewTab button based on
         // the color of the tab, we'll want to make sure to call
@@ -1115,18 +1170,19 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Attempt to swap the positions of the focused pane with another pane.
-    //   See Pane::MovePane for details.
+    //   See Pane::SwapPane for details.
     // Arguments:
     // - direction: The direction to move the focused pane in.
     // Return Value:
-    // - <none>
-    void TerminalPage::_MovePane(const FocusDirection& direction)
+    // - true if panes were swapped.
+    bool TerminalPage::_SwapPane(const FocusDirection& direction)
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
             _UnZoomIfNeeded();
-            terminalTab->MovePane(direction);
+            return terminalTab->SwapPane(direction);
         }
+        return false;
     }
 
     TermControl TerminalPage::_GetActiveControl()
@@ -1189,6 +1245,56 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Moves the currently active pane on the currently active tab to the
+    //   specified tab. If the tab index is greater than the number of
+    //   tabs, then a new tab will be created for the pane. Similarly, if a pane
+    //   is the last remaining pane on a tab, that tab will be closed upon moving.
+    // - No move will occur if the tabIdx is the same as the current tab, or if
+    //   the specified tab is not a host of terminals (such as the settings tab).
+    // Arguments:
+    // - tabIdx: The target tab index.
+    // Return Value:
+    // - true if the pane was successfully moved to the new tab.
+    bool TerminalPage::_MovePane(const uint32_t tabIdx)
+    {
+        auto focusedTab{ _GetFocusedTabImpl() };
+
+        if (!focusedTab)
+        {
+            return false;
+        }
+
+        // If we are trying to move from the current tab to the current tab do nothing.
+        if (_GetFocusedTabIndex() == tabIdx)
+        {
+            return false;
+        }
+
+        // Moving the pane from the current tab might close it, so get the next
+        // tab before its index changes.
+        if (_tabs.Size() > tabIdx)
+        {
+            auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(tabIdx));
+            // if the selected tab is not a host of terminals (e.g. settings)
+            // don't attempt to add a pane to it.
+            if (!targetTab)
+            {
+                return false;
+            }
+            auto pane = focusedTab->DetachPane();
+            targetTab->AttachPane(pane);
+            _SetFocusedTab(*targetTab);
+        }
+        else
+        {
+            auto pane = focusedTab->DetachPane();
+            _CreateNewTabFromPane(pane);
+        }
+
+        return true;
+    }
+
+    // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
     // - If splitType == SplitState::None, this method does nothing.
@@ -1248,23 +1354,20 @@ namespace winrt::TerminalApp::implementation
         try
         {
             TerminalSettingsCreateResult controlSettings{ nullptr };
-            GUID realGuid;
-            bool profileFound = false;
+            Profile profile{ nullptr };
 
             if (splitMode == SplitType::Duplicate)
             {
-                std::optional<GUID> current_guid = tab.GetFocusedProfile();
-                if (current_guid)
+                profile = tab.GetFocusedProfile();
+                if (profile)
                 {
-                    profileFound = true;
-                    controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
+                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
                     const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
                         controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
                     }
-                    realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of
                 // the focused pane, and use that to build a new instance of the
@@ -1279,13 +1382,13 @@ namespace winrt::TerminalApp::implementation
                 // connection without keeping an instance of the original Profile
                 // object around.
             }
-            if (!profileFound)
+            if (!profile)
             {
-                realGuid = _settings.GetProfileForArgs(newTerminalArgs);
+                profile = _settings.GetProfileForArgs(newTerminalArgs);
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
+            const auto controlConnection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
 
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -1306,11 +1409,11 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl, tab);
+            _RegisterTerminalEvents(newControl);
 
             _UnZoomIfNeeded();
 
-            tab.SplitPane(realSplitType, splitSize, realGuid, newControl);
+            tab.SplitPane(realSplitType, splitSize, profile, newControl);
         }
         CATCH_LOG();
     }
@@ -1896,19 +1999,15 @@ namespace winrt::TerminalApp::implementation
         auto profiles = _settings.ActiveProfiles();
         for (const auto& profile : profiles)
         {
-            const auto profileGuid = profile.Guid();
-
             try
             {
-                // This can throw an exception if the profileGuid does
-                // not belong to an actual profile in the list of profiles.
-                auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid, *_bindings) };
+                auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
 
                 for (auto tab : _tabs)
                 {
                     if (auto terminalTab = _GetTerminalTabImpl(tab))
                     {
-                        terminalTab->UpdateSettings(settings, profileGuid);
+                        terminalTab->UpdateSettings(settings, profile);
                     }
                 }
             }

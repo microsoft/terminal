@@ -254,6 +254,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // window, and when the current monarch dies.
 
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
+        _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
+        _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
 
         _BecameMonarchHandlers(*this, nullptr);
     }
@@ -507,6 +509,59 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // the monarch ever registers for the global hotkey. So the monarch is
         // the only window that will be calling this.
         _monarch.SummonWindow(args);
+    }
+
+    void WindowManager::SummonAllWindows()
+    {
+        if constexpr (Feature_TrayIcon::IsEnabled())
+        {
+            _monarch.SummonAllWindows();
+        }
+    }
+
+    Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> WindowManager::GetPeasantNames()
+    {
+        // We should only get called when we're the monarch since the monarch
+        // is the only one that knows about all peasants.
+        return _monarch.GetPeasantNames();
+    }
+
+    // Method Description:
+    // - Ask the monarch to show a tray icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestShowTrayIcon()
+    {
+        co_await winrt::resume_background();
+        _peasant.RequestShowTrayIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to hide its tray icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestHideTrayIcon()
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        _peasant.RequestHideTrayIcon();
+    }
+
+    bool WindowManager::DoesQuakeWindowExist()
+    {
+        const auto names = GetPeasantNames();
+        for (const auto [id, name] : names)
+        {
+            if (name == QuakeWindowName)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

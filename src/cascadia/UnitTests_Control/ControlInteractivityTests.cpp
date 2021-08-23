@@ -36,6 +36,7 @@ namespace ControlUnitTests
         TEST_METHOD(TestDragSelectOutsideBounds);
 
         TEST_METHOD(PointerClickOutsideActiveRegion);
+        TEST_METHOD(IncrementCircularBufferWithSelection);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -717,6 +718,83 @@ namespace ControlUnitTests
                                     cursorPosition1,
                                     true);
         Log::Comment(L"Verify that there's still no selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+    }
+
+    void ControlInteractivityTests::IncrementCircularBufferWithSelection()
+    {
+        // This is a test for GH#10749
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+
+        auto [settings, conn] = _createSettingsAndConnection();
+        auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        _standardInit(core, interactivity);
+
+        Log::Comment(L"Fill up the history buffer");
+        // Output lines equal to history size + viewport height to make sure we're
+        // at the point where outputting more lines causes circular incrementing
+        for (int i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+
+        // For this test, don't use any modifiers
+        const auto modifiers = ControlKeyStates();
+        const Control::MouseButtonState leftMouseDown{ Control::MouseButtonState::IsLeftButtonDown };
+        const Control::MouseButtonState noMouseDown{};
+
+        const til::size fontSize{ 9, 21 };
+
+        Log::Comment(L"Click on the terminal");
+        const til::point terminalPosition0{ 5, 5 };
+        const til::point cursorPosition0{ terminalPosition0 * fontSize };
+        interactivity->PointerPressed(leftMouseDown,
+                                      WM_LBUTTONDOWN, //pointerUpdateKind
+                                      0, // timestamp
+                                      modifiers,
+                                      cursorPosition0);
+
+        Log::Comment(L"Verify that there's not yet a selection");
+        VERIFY_IS_FALSE(core->HasSelection());
+
+        VERIFY_IS_TRUE(interactivity->_singleClickTouchdownPos.has_value());
+        VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
+
+        Log::Comment(L"Drag the mouse just a little");
+        // move not quite a whole cell, but enough to start a selection
+        const til::point cursorPosition1{ cursorPosition0 + til::point{ 6, 0 } };
+        interactivity->PointerMoved(leftMouseDown,
+                                    WM_LBUTTONDOWN, //pointerUpdateKind
+                                    modifiers,
+                                    true, // focused,
+                                    cursorPosition1,
+                                    true);
+        Log::Comment(L"Verify that there's one selection");
+        VERIFY_IS_TRUE(core->HasSelection());
+        VERIFY_ARE_EQUAL(1u, core->_terminal->GetSelectionRects().size());
+
+        Log::Comment(L"Verify the location of the selection");
+        // The viewport is on row (historySize + 5), so the selection will be on:
+        // {(5, (historySize+5))+(0, 21)} to {(5, (historySize+5))+(0, 21)}
+        COORD expectedAnchor{ 5, gsl::narrow_cast<SHORT>(settings->HistorySize()) + 5 };
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+
+        Log::Comment(L"Output a line of text");
+        conn->WriteInput(L"Foo\r\n");
+
+        Log::Comment(L"Verify the location of the selection");
+        // The selection should now be 1 row lower
+        expectedAnchor.Y -= 1;
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
+        VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionEnd());
+
+        // Output enough text for the selection to get pushed off the buffer
+        for (int i = 0; i < settings->HistorySize() + core->ViewHeight(); ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        // Verify that the selection got reset
         VERIFY_IS_FALSE(core->HasSelection());
     }
 }

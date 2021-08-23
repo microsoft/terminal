@@ -22,6 +22,15 @@ TRACELOGGING_DEFINE_PROVIDER(
     (0x56c06166, 0x2e2e, 0x5f4d, 0x7f, 0xf3, 0x74, 0xf4, 0xb7, 0x8c, 0x87, 0xd6),
     TraceLoggingOptionMicrosoftTelemetry());
 
+// !! BODGY !!
+// Manually use the resources from TerminalApp as our resources.
+// The WindowsTerminal project doesn't actually build a Resources.resw file, but
+// we still need to be able to localize strings for the tray icon menu. Anything
+// you want localized for WindowsTerminal.exe should be stuck in
+// ...\TerminalApp\Resources\en-US\Resources.resw
+#include <LibraryResources.h>
+UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources");
+
 // Routine Description:
 // - Takes an image architecture and locates a string resource that maps to that architecture.
 // Arguments:

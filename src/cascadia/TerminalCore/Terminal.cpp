@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false }
+    _trimBlockSelection{ false },
+    _intenseIsBright{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -173,6 +174,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     til::color newBackgroundColor{ appearance.DefaultBackground() };
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
+    _intenseIsBright = appearance.IntenseIsBright();
 
     for (int i = 0; i < 16; i++)
     {
@@ -989,6 +991,31 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
+
+            // Update our selection too, so it doesn't move as the buffer is cycled
+            if (_selection)
+            {
+                // If the start of the selection is above 0, we can reduce both the start and end by 1
+                if (_selection->start.Y > 0)
+                {
+                    _selection->start.Y -= 1;
+                    _selection->end.Y -= 1;
+                }
+                else
+                {
+                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
+                    if (_selection->end.Y > 0)
+                    {
+                        _selection->start.X = 0;
+                        _selection->end.Y -= 1;
+                    }
+                    else
+                    {
+                        // Both the start and end of the selection are at 0, clear the selection
+                        _selection.reset();
+                    }
+                }
+            }
         }
 
         // manually erase our pattern intervals since the locations have changed now

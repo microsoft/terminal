@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
     };
 
-    struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance>
+    struct GlobalAppearance : public HasScrollViewer<GlobalAppearance>, GlobalAppearanceT<GlobalAppearance>
     {
     public:
         GlobalAppearance();

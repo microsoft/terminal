@@ -136,13 +136,12 @@ void CascadiaSettings::_CopyProfileInheritanceTree(winrt::com_ptr<CascadiaSettin
 // - Finds a profile that matches the given GUID. If there is no profile in this
 //      settings object that matches, returns nullptr.
 // Arguments:
-// - profileGuid: the GUID of the profile to return.
+// - guid: the GUID of the profile to return.
 // Return Value:
-// - a non-ownership pointer to the profile matching the given guid, or nullptr
+// - a strong reference to the profile matching the given guid, or nullptr
 //      if there is no match.
-winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::FindProfile(winrt::guid profileGuid) const noexcept
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::FindProfile(const winrt::guid& guid) const noexcept
 {
-    const winrt::guid guid{ profileGuid };
     for (const auto& profile : _allProfiles)
     {
         try
@@ -348,6 +347,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, SelectionBackground);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorColor);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, PixelShaderPath);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, IntenseTextStyle);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImagePath);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageOpacity);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, BackgroundImageStretchMode);
@@ -804,7 +804,7 @@ void CascadiaSettings::_ValidateMediaResources()
 //   and attempt to look the profile up by name instead.
 // Return Value:
 // - the GUID of the profile corresponding to this combination of index and NewTerminalArgs
-winrt::guid CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
+winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const
 {
     std::optional<winrt::guid> profileByIndex, profileByName;
     if (newTerminalArgs)
@@ -817,7 +817,7 @@ winrt::guid CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs& ne
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return til::coalesce_value(profileByName, profileByIndex, _globals->DefaultProfile());
+    return FindProfile(til::coalesce_value(profileByName, profileByIndex, _globals->DefaultProfile()));
 }
 
 // Method Description:
@@ -1042,9 +1042,8 @@ std::string CascadiaSettings::_ApplyFirstRunChangesToSettingsTemplate(std::strin
 // - profileGuid: the GUID of the profile to find the scheme for.
 // Return Value:
 // - a non-owning pointer to the scheme.
-winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetColorSchemeForProfile(const winrt::guid profileGuid) const
+winrt::Microsoft::Terminal::Settings::Model::ColorScheme CascadiaSettings::GetColorSchemeForProfile(const Model::Profile& profile) const
 {
-    auto profile = FindProfile(profileGuid);
     if (!profile)
     {
         return nullptr;

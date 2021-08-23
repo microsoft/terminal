@@ -1442,4 +1442,39 @@ namespace winrt::TerminalApp::implementation
         return _root->IsQuakeWindow();
     }
 
+    bool AppLogic::GetMinimizeToTray()
+    {
+        if constexpr (Feature_TrayIcon::IsEnabled())
+        {
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
+
+            return _settings.GlobalSettings().MinimizeToTray();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool AppLogic::GetAlwaysShowTrayIcon()
+    {
+        if constexpr (Feature_TrayIcon::IsEnabled())
+        {
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
+
+            return _settings.GlobalSettings().AlwaysShowTrayIcon();
+        }
+        else
+        {
+            return false;
+        }
+    }
 }
