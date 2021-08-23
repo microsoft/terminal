@@ -888,28 +888,26 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
     ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
     if (!_axesVector.empty() && !FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))))
     {
-        std::optional<float> oldWeight;
         if (!_useUserWeight)
         {
             // Remove the user set weight if we were told not to use it
-            // This is quite awkward, we don't want to permanently delete the weight axis from our _axesVector,
-            // we only want to delete it from the list we are about to pass into the text format
-            for (auto iter = _axesVector.begin(); iter != _axesVector.end(); ++iter)
+            // (only remove it from the list we are about to pass to the text format,
+            //  don't delete it from our internal axes vector)
+            std::vector<DWRITE_FONT_AXIS_VALUE> axesWithoutWeight;
+            for (const auto axis : _axesVector)
             {
-                if (iter->axisTag == DWRITE_FONT_AXIS_TAG_WEIGHT)
+                if (axis.axisTag != DWRITE_FONT_AXIS_TAG_WEIGHT)
                 {
-                    oldWeight = iter->value;
-                    _axesVector.erase(iter);
-                    break;
+                    axesWithoutWeight.emplace_back(axis);
                 }
             }
+            //DWRITE_FONT_AXIS_VALUE const* axesList = axesWithoutWeight.data();
+            format3->SetFontAxisValues(axesWithoutWeight.data(), gsl::narrow<uint32_t>(axesWithoutWeight.size()));
         }
-        DWRITE_FONT_AXIS_VALUE const* axesList = _axesVector.data();
-        format3->SetFontAxisValues(axesList, gsl::narrow<uint32_t>(_axesVector.size()));
-        // If we removed the user weight, make sure to put it back
-        if (oldWeight)
+        else
         {
-            _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, oldWeight.value() });
+            //DWRITE_FONT_AXIS_VALUE const* axesList = _axesVector.data();
+            format3->SetFontAxisValues(_axesVector.data(), gsl::narrow<uint32_t>(_axesVector.size()));
         }
     }
 
