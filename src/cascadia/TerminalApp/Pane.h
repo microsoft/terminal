@@ -47,13 +47,13 @@ DEFINE_ENUM_FLAG_OPERATORS(Borders);
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    Pane(const GUID& profile,
+    Pane(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
          const winrt::Microsoft::Terminal::Control::TermControl& control,
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
-    std::optional<GUID> GetFocusedProfile();
+    winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
@@ -63,7 +63,7 @@ public:
     void SetActive();
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                        const GUID& profile);
+                        const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
@@ -75,7 +75,7 @@ public:
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                   const float splitSize,
-                                                                  const GUID& profile,
+                                                                  const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
@@ -160,7 +160,7 @@ private:
     std::optional<uint32_t> _id;
 
     bool _lastActive{ false };
-    std::optional<GUID> _profile{ std::nullopt };
+    winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
     winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };

@@ -771,7 +771,12 @@ namespace winrt::TerminalApp::implementation
             // Manually fill in the evaluated profile.
             if (newTerminalArgs.ProfileIndex() != nullptr)
             {
-                newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(this->_settings.GetProfileForArgs(newTerminalArgs)));
+                // We want to promote the index to a GUID because there is no "launch to profile index" command.
+                const auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+                if (profile)
+                {
+                    newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+                }
             }
             this->_OpenNewWindow(false, newTerminalArgs);
         }
@@ -794,14 +799,18 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Creates a new connection based on the profile settings
     // Arguments:
-    // - the profile GUID we want the settings from
+    // - the profile we want the settings from
     // - the terminal settings
     // Return value:
     // - the desired connection
-    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(GUID profileGuid,
+    TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
                                                                                         TerminalSettings settings)
     {
-        const auto profile = _settings.FindProfile(profileGuid);
+        if (!profile)
+        {
+            // Use the default profile if we didn't get one as an argument.
+            profile = _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
+        }
 
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
@@ -826,7 +835,8 @@ namespace winrt::TerminalApp::implementation
 
         else
         {
-            std::wstring guidWString = Utils::GuidToString(profileGuid);
+            // profile is guaranteed to exist here
+            std::wstring guidWString = Utils::GuidToString(profile.Guid());
 
             StringMap envMap{};
             envMap.Insert(L"WT_PROFILE_ID", guidWString);
@@ -875,7 +885,7 @@ namespace winrt::TerminalApp::implementation
             "ConnectionCreated",
             TraceLoggingDescription("Event emitted upon the creation of a connection"),
             TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
-            TraceLoggingGuid(profileGuid, "ProfileGuid", "The profile's GUID"),
+            TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
             TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
@@ -1344,23 +1354,20 @@ namespace winrt::TerminalApp::implementation
         try
         {
             TerminalSettingsCreateResult controlSettings{ nullptr };
-            GUID realGuid;
-            bool profileFound = false;
+            Profile profile{ nullptr };
 
             if (splitMode == SplitType::Duplicate)
             {
-                std::optional<GUID> current_guid = tab.GetFocusedProfile();
-                if (current_guid)
+                profile = tab.GetFocusedProfile();
+                if (profile)
                 {
-                    profileFound = true;
-                    controlSettings = TerminalSettings::CreateWithProfileByID(_settings, current_guid.value(), *_bindings);
+                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
                     const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
                     if (validWorkingDirectory)
                     {
                         controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
                     }
-                    realGuid = current_guid.value();
                 }
                 // TODO: GH#5047 - In the future, we should get the Profile of
                 // the focused pane, and use that to build a new instance of the
@@ -1375,13 +1382,13 @@ namespace winrt::TerminalApp::implementation
                 // connection without keeping an instance of the original Profile
                 // object around.
             }
-            if (!profileFound)
+            if (!profile)
             {
-                realGuid = _settings.GetProfileForArgs(newTerminalArgs);
+                profile = _settings.GetProfileForArgs(newTerminalArgs);
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            const auto controlConnection = _CreateConnectionFromSettings(realGuid, controlSettings.DefaultSettings());
+            const auto controlConnection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
 
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -1406,7 +1413,7 @@ namespace winrt::TerminalApp::implementation
 
             _UnZoomIfNeeded();
 
-            tab.SplitPane(realSplitType, splitSize, realGuid, newControl);
+            tab.SplitPane(realSplitType, splitSize, profile, newControl);
         }
         CATCH_LOG();
     }
@@ -1992,19 +1999,15 @@ namespace winrt::TerminalApp::implementation
         auto profiles = _settings.ActiveProfiles();
         for (const auto& profile : profiles)
         {
-            const auto profileGuid = profile.Guid();
-
             try
             {
-                // This can throw an exception if the profileGuid does
-                // not belong to an actual profile in the list of profiles.
-                auto settings{ TerminalSettings::CreateWithProfileByID(_settings, profileGuid, *_bindings) };
+                auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
 
                 for (auto tab : _tabs)
                 {
                     if (auto terminalTab = _GetTerminalTabImpl(tab))
                     {
-                        terminalTab->UpdateSettings(settings, profileGuid);
+                        terminalTab->UpdateSettings(settings, profile);
                     }
                 }
             }

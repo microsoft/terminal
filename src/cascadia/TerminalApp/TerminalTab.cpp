@@ -25,7 +25,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
@@ -257,7 +257,7 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - nullopt if no children of this tab were the last control to be
     //   focused, else the GUID of the profile of the last control to be focused
-    std::optional<GUID> TerminalTab::GetFocusedProfile() const noexcept
+    Profile TerminalTab::GetFocusedProfile() const noexcept
     {
         return _activePane->GetFocusedProfile();
     }
@@ -269,7 +269,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: The GUID of the profile these settings should apply to.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
     {
         _rootPane->UpdateSettings(settings, profile);
 
@@ -451,7 +451,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::SplitPane(SplitState splitType,
                                 const float splitSize,
-                                const GUID& profile,
+                                const Profile& profile,
                                 TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID

@@ -34,7 +34,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
 
-Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
+Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastActive{ lastFocused },
     _profile{ profile }
@@ -758,11 +758,9 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
         return;
     }
 
-    const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-    auto paneProfile = settings.FindProfile(_profile.value());
-    if (paneProfile)
+    if (_profile)
     {
-        auto mode = paneProfile.CloseOnExit();
+        const auto mode = _profile.CloseOnExit();
         if ((mode == CloseOnExitMode::Always) ||
             (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
@@ -786,27 +784,25 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     {
         return;
     }
-    const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-    auto paneProfile = settings.FindProfile(_profile.value());
-    if (paneProfile)
+    if (_profile)
     {
         // We don't want to do anything if nothing is set, so check for that first
-        if (static_cast<int>(paneProfile.BellStyle()) != 0)
+        if (static_cast<int>(_profile.BellStyle()) != 0)
         {
-            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
             {
                 // Audible is set, play the sound
                 const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
                 PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
             }
 
-            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
+            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
             {
                 _control.BellLightOn();
             }
 
             // raise the event with the bool value corresponding to the taskbar flag
-            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
+            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
         }
     }
 }
@@ -947,18 +943,18 @@ void Pane::SetActive()
 }
 
 // Method Description:
-// - Returns nullopt if no children of this pane were the last control to be
-//   focused, or the GUID of the profile of the last control to be focused (if
-//   there was one).
+// - Returns nullptr if no children of this pane were the last control to be
+//   focused, or the profile of the last control to be focused (if there was
+//   one).
 // Arguments:
 // - <none>
 // Return Value:
-// - nullopt if no children of this pane were the last control to be
-//   focused, else the GUID of the profile of the last control to be focused
-std::optional<GUID> Pane::GetFocusedProfile()
+// - nullptr if no children of this pane were the last control to be
+//   focused, else the profile of the last control to be focused
+Profile Pane::GetFocusedProfile()
 {
     auto lastFocused = GetActivePane();
-    return lastFocused ? lastFocused->_profile : std::nullopt;
+    return lastFocused ? lastFocused->_profile : nullptr;
 }
 
 // Method Description:
@@ -1059,10 +1055,10 @@ void Pane::_FocusFirstChild()
 //   * If we're not a leaf, we'll recurse on our children.
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
-// - profile: The GUID of the profile these settings should apply to.
+// - profile: The profile from which these settings originated.
 // Return Value:
 // - <none>
-void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
+void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
 {
     if (!_IsLeaf())
     {
@@ -1071,8 +1067,13 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GU
     }
     else
     {
-        if (profile == _profile)
+        // Because this call may be coming in with a different settings tree,
+        // we want to map the incoming profile based on its GUID.
+        // Failure to find a matching profile will result in a pane holding
+        // a reference to a deleted profile (which is okay!).
+        if (profile.Guid() == _profile.Guid())
         {
+            _profile = profile;
             auto controlSettings = _control.Settings().as<TerminalSettings>();
             // Update the parent of the control's settings object (and not the object itself) so
             // that any overrides made by the control don't get affected by the reload
@@ -1879,13 +1880,13 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 //   we'll create two new children, and place them side-by-side in our Grid.
 // Arguments:
 // - splitType: what type of split we want to create.
-// - profile: The profile GUID to associate with the newly created pane.
+// - profile: The profile to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType,
                                                                     const float splitSize,
-                                                                    const GUID& profile,
+                                                                    const Profile& profile,
                                                                     const TermControl& control)
 {
     if (!_IsLeaf())
@@ -2015,9 +2016,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // Create two new Panes
     //   Move our control, guid into the first one.
     //   Move the new guid, control into the second.
-    _firstChild = std::make_shared<Pane>(_profile.value(), _control);
+    _firstChild = std::make_shared<Pane>(_profile, _control);
     _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
-    _profile = std::nullopt;
+    _profile = nullptr;
     _control = { nullptr };
     _secondChild = newPane;
 
