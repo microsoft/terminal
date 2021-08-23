@@ -43,6 +43,8 @@ namespace Microsoft.Terminal.Settings.Model
         Profile();
         Profile(Guid guid);
 
+        // True if the user explicitly removed this Profile from settings.json.
+        Boolean Deleted { get; };
         OriginTag Origin { get; };
 
         INHERITABLE_PROFILE_SETTING(String, Name);

@@ -124,6 +124,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value _defaultSettings;
         winrt::com_ptr<Profile> _userDefaultProfileSettings{ nullptr };
 
+        winrt::com_ptr<Profile> _CreateNewProfile(const std::wstring_view& name) const;
+
         void _LayerOrCreateProfile(const Json::Value& profileJson);
         winrt::com_ptr<implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);
         std::optional<uint32_t> _FindMatchingProfileIndex(const Json::Value& profileJson);
