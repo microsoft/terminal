@@ -214,16 +214,18 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             auto generatedProfiles = state->GeneratedProfiles();
             bool generatedProfilesChanged = false;
 
-            for (auto profile : resultPtr->_allProfiles)
+            for (const auto& profile : resultPtr->_allProfiles)
             {
-                if (generatedProfiles.emplace(profile.Guid()).second)
+                const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+                if (generatedProfiles.emplace(profileImpl->Guid()).second)
                 {
                     generatedProfilesChanged = true;
                 }
-                else if (profile.Origin() != OriginTag::User)
+                else if (profileImpl->Origin() != OriginTag::User)
                 {
-                    profile.Deleted(true);
-                    profile.Hidden(true);
+                    profileImpl->Deleted(true);
+                    profileImpl->Hidden(true);
                 }
             }
 
@@ -352,7 +354,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     // tag these profiles as in-box
     for (const auto& profile : resultPtr->AllProfiles())
     {
-        const auto& profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+        const auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
         profileImpl->Origin(OriginTag::InBox);
     }
 
