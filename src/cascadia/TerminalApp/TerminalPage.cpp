@@ -1223,10 +1223,24 @@ namespace winrt::TerminalApp::implementation
 
         if (_hostingHwnd)
         {
-            RECT window;
+            // Get the position of the current window. This includes the
+            // non-client already.
+            RECT window{};
             GetWindowRect(_hostingHwnd.value(), &window);
+
+            // We want to remove the non-client area so calculate that.
+            // We don't have access to the (NonClient)IslandWindow directly so
+            // just replicate the logic.
+            const auto windowStyle = static_cast<DWORD>(GetWindowLong(_hostingHwnd.value(), GWL_STYLE));
+
+            auto dpi = GetDpiForWindow(_hostingHwnd.value());
+            RECT nonClientArea{};
+            LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&nonClientArea, windowStyle, false, 0, dpi));
+
+            // The nonClientArea adjustment is negative, so subtract that out.
+            // This way we save the user-visible location of the terminal.
             LaunchPosition pos{};
-            pos.X = window.left;
+            pos.X = window.left - nonClientArea.left;
             pos.Y = window.top;
 
             layout.InitialPosition(pos);
