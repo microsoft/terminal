@@ -2003,12 +2003,12 @@ namespace winrt::TerminalApp::implementation
 
         // Include the Defaults profile for consideration
         const auto profileDefaults{ _settings.ProfileDefaults() };
-        _profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair<Profile, TerminalSettingsCreateResult>{ profileDefaults, nullptr });
+        _profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, nullptr });
         for (const auto& newProfile : _settings.AllProfiles())
         {
             // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
             // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
-            _profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair<Profile, TerminalSettingsCreateResult>{ newProfile, nullptr });
+            _profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
         }
 
         for (const auto& tab : _tabs)

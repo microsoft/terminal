@@ -1049,10 +1049,7 @@ void Pane::_FocusFirstChild()
 }
 
 // Method Description:
-// - Attempts to update the settings of this pane or any children of this pane.
-//   * If this pane is a leaf, and our profile guid matches the parameter, then
-//     we'll apply the new settings to our control.
-//   * If we're not a leaf, we'll recurse on our children.
+// - Updates the settings of this pane, presuming that it is a leaf.
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
 // - profile: The profile from which these settings originated.
