@@ -30,8 +30,10 @@ public:
     WINRT_CALLBACK(SummonWindowRequested, winrt::delegate<void(winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs)>);
 
 private:
+    void _CreateWindow();
     HMENU _CreateTrayContextMenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
 
+    wil::unique_hwnd _trayIconHwnd;
     HWND _owningHwnd;
     NOTIFYICONDATA _trayIconData;
 };

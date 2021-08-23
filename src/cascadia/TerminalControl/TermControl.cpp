@@ -1220,6 +1220,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
+        // GH#10329 - we don't need to handle horizontal scrolls. Only vertical ones.
+        // So filter out the horizontal ones.
+        if (point.Properties().IsHorizontalMouseWheel())
+        {
+            return;
+        }
 
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                 point.Properties().MouseWheelDelta(),

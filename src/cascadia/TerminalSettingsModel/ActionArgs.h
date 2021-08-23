@@ -1475,6 +1475,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs>
     {
         PrevTabArgs() = default;
+        PrevTabArgs(TabSwitcherMode switcherMode) :
+            _SwitcherMode(switcherMode) {}
         ACTION_ARG(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
         static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
 
@@ -1523,6 +1525,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct NextTabArgs : public NextTabArgsT<NextTabArgs>
     {
         NextTabArgs() = default;
+        NextTabArgs(TabSwitcherMode switcherMode) :
+            _SwitcherMode(switcherMode) {}
         ACTION_ARG(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
         static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
 
@@ -1772,4 +1776,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(FindMatchArgs);
     BASIC_FACTORY(NewWindowArgs);
     BASIC_FACTORY(FocusPaneArgs);
+    BASIC_FACTORY(PrevTabArgs);
+    BASIC_FACTORY(NextTabArgs);
 }

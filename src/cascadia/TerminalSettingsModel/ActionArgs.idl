@@ -276,11 +276,15 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass PrevTabArgs : IActionArgs
     {
+        PrevTabArgs();
+        PrevTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
     [default_interface] runtimeclass NextTabArgs : IActionArgs
     {
+        NextTabArgs();
+        NextTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
