@@ -19,8 +19,8 @@ static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" }
 // HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
 //   ⌞ {distroGuid}
 //     ⌞ DistributionName: {the name}
-static constexpr auto RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
-static constexpr auto RegKeyDistroName[] = L"DistributionName";
+static constexpr wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
+static constexpr wchar_t RegKeyDistroName[] = L"DistributionName";
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
@@ -226,13 +226,12 @@ static bool getWslGuids(const wil::unique_hkey& wslRootKey,
 
     // Figure out how many subkeys we have, and what the longest name of these subkeys is.
     DWORD dwNumSubKeys = 0;
-    DWORD maxSubKeyLen = 0;
     if (RegQueryInfoKey(wslRootKey.get(), // hKey,
                         nullptr, // lpClass,
                         nullptr, // lpcchClass,
                         nullptr, // lpReserved,
                         &dwNumSubKeys, // lpcSubKeys,
-                        &maxSubKeyLen, // lpcbMaxSubKeyLen,
+                        nullptr, // lpcbMaxSubKeyLen,
                         nullptr, // lpcbMaxClassLen,
                         nullptr, // lpcValues,
                         nullptr, // lpcbMaxValueNameLen,
@@ -244,20 +243,25 @@ static bool getWslGuids(const wil::unique_hkey& wslRootKey,
         return false;
     }
 
-    // lpcbMaxSubKeyLen does not include trailing space
-    std::unique_ptr<wchar_t[]> buffer = std::make_unique<wchar_t[]>(maxSubKeyLen + 1);
-
-    // reserve enough space for all the GUIDs we're about to enumerate
-    guidStrings.reserve(dwNumSubKeys);
+    wchar_t buffer[39]; // a {GUID} is 38 chars long
     for (DWORD i = 0; i < dwNumSubKeys; i++)
     {
-        auto cbName = maxSubKeyLen + 1;
-        const auto result = RegEnumKeyEx(wslRootKey.get(), i, buffer.get(), &cbName, nullptr, nullptr, nullptr, nullptr);
-        if (result == ERROR_SUCCESS)
+        DWORD length;
+        const auto result = RegEnumKeyEx(wslRootKey.get(), i, &buffer[0], &length, nullptr, nullptr, nullptr, nullptr);
+        if (result == ERROR_NO_MORE_ITEMS)
         {
-            guidStrings.emplace_back(buffer.get(), cbName);
+            break;
+        }
+
+        if (result == ERROR_SUCCESS &&
+            length == 38 &&
+            buffer[0] == L'{' &&
+            buffer[37] == L'}')
+        {
+            guidStrings.emplace_back(&buffer[0], length);
         }
     }
+
     return true;
 }
 
@@ -284,28 +288,27 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
         wil::unique_hkey distroKey{ openDistroKey(wslRootKey, guid) };
         if (!distroKey)
         {
-            // return false;
             continue;
         }
 
-        DWORD bufferCapacity = 0;
-        auto result = RegQueryValueEx(distroKey.get(), RegKeyDistroName, 0, nullptr, nullptr, &bufferCapacity);
-        // request regkey binary buffer capacity only
-        if (result != ERROR_SUCCESS)
-        {
-            // return false;
-            continue;
-        }
-        std::unique_ptr<wchar_t[]> buffer = std::make_unique<wchar_t[]>(bufferCapacity);
-        // request regkey binary content
-        result = RegQueryValueEx(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(buffer.get()), &bufferCapacity);
-        if (result != ERROR_SUCCESS)
-        {
-            // return false;
-            continue;
-        }
+        std::wstring buffer;
+        auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, 256>(buffer, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
+            auto length = static_cast<DWORD>(valueLength);
+            const auto status = RegQueryValueExW(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(value), &length);
+            // length will recieve the number of bytes - convert to a number of
+            // wchar_t's. AdaptFixedSizeToAllocatedResult wll resize buffer to
+            // valueLengthNeededWithNull
+            *valueLengthNeededWithNull = (length / sizeof(wchar_t));
+            // If you add one for another trailing null, then there'll actually
+            // be _two_ trailing nulls in the buffer.
+            return status == ERROR_MORE_DATA ? ERROR_SUCCESS : status;
+        });
 
-        names.emplace_back(buffer.get());
+        if (result != ERROR_SUCCESS)
+        {
+            continue;
+        }
+        names.emplace_back(std::move(buffer));
     }
     return true;
 }
