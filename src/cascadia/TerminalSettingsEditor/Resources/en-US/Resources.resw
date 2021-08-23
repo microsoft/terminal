@@ -343,6 +343,14 @@
     <value>When disabled, the title bar will appear above the tabs.</value>
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
   </data>
+  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
+    <value>Show acrylic in tab row (requires relaunch)</value>
+    <comment>Header for a control to toggle whether acrylic shows in the tab row. Changing this setting requires the user to relaunch the app.</comment>
+  </data>
+  <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
+    <value>When checked, the tab row will have the acrylic material.</value>
+    <comment>A description for what the "use acrylic in tab row" setting does. Presented near "Globals_AcrylicTabRow.Header".</comment>
+  </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
