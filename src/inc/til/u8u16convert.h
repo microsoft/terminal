@@ -143,6 +143,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 }
 
                 // credits go to Christopher Wellons for this algorithm to determine the length of a UTF-8 code point
+                // it is released into the Public Domain. https://github.com/skeeto/branchless-utf8
                 static constexpr uint8_t lengths[]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0 };
                 const auto codePointLen{ lengths[gsl::narrow_cast<uint8_t>(*backIter) >> 3] };
 
