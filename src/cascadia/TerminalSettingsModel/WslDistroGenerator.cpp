@@ -226,19 +226,18 @@ static bool getWslGuids(const wil::unique_hkey& wslRootKey,
 
     // Figure out how many subkeys we have, and what the longest name of these subkeys is.
     DWORD dwNumSubKeys = 0;
-    if (RegQueryInfoKey(wslRootKey.get(), // hKey,
-                        nullptr, // lpClass,
-                        nullptr, // lpcchClass,
-                        nullptr, // lpReserved,
-                        &dwNumSubKeys, // lpcSubKeys,
-                        nullptr, // lpcbMaxSubKeyLen,
-                        nullptr, // lpcbMaxClassLen,
-                        nullptr, // lpcValues,
-                        nullptr, // lpcbMaxValueNameLen,
-                        nullptr, // lpcbMaxValueLen,
-                        nullptr, // lpcbSecurityDescriptor,
-                        nullptr // lpftLastWriteTime
-                        ) != ERROR_SUCCESS)
+    if (RegQueryInfoKey(wslRootKey.get(),
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        &dwNumSubKeys,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr) != ERROR_SUCCESS)
     {
         return false;
     }
@@ -295,8 +294,8 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
         auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, 256>(buffer, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
             auto length = static_cast<DWORD>(valueLength);
             const auto status = RegQueryValueExW(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(value), &length);
-            // length will recieve the number of bytes - convert to a number of
-            // wchar_t's. AdaptFixedSizeToAllocatedResult wll resize buffer to
+            // length will receive the number of bytes - convert to a number of
+            // wchar_t's. AdaptFixedSizeToAllocatedResult will resize buffer to
             // valueLengthNeededWithNull
             *valueLengthNeededWithNull = (length / sizeof(wchar_t));
             // If you add one for another trailing null, then there'll actually
