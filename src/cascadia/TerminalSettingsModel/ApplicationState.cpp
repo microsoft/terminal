@@ -26,18 +26,18 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             auto layout = winrt::make_self<implementation::WindowLayout>();
 
-            if (json.isMember("tabLayout"))
+            if (json.isMember(TabLayoutKey.data()))
             {
                 auto val = GetValueForKey<winrt::Windows::Foundation::Collections::IVector<ActionAndArgs>>(json, TabLayoutKey);
                 layout->TabLayout(val);
             }
 
-            if (json.isMember("initialPosition"))
+            if (json.isMember(InitialPositionKey.data()))
             {
                 layout->InitialPosition(GetValueForKey<LaunchPosition>(json, InitialPositionKey));
             }
 
-            if (json.isMember("initialSize"))
+            if (json.isMember(InitialSizeKey.data()))
             {
                 layout->InitialSize(GetValueForKey<winrt::Windows::Foundation::Size>(json, InitialSizeKey));
             }
