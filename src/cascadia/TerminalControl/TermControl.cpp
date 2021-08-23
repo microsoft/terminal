@@ -914,6 +914,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     //      2. alt+space was not explicitly unbound
                     // That means that XAML handled the alt+space to open up the context menu, and
                     // so we don't want to send anything to the terminal
+                    // TODO GH#11018: Add a new "openSystemMenu" keybinding
                     e.Handled(true);
                     return;
                 }
