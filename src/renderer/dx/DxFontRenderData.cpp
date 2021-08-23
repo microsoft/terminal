@@ -545,6 +545,7 @@ void DxFontRenderData::_SetFeatures(const std::unordered_map<std::wstring_view, 
 void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, float>& axes)
 {
     _axesVector.clear();
+    _didUserSetAxes = false;
 
     // Update our axis map with the provided axes
     if (!axes.empty())
