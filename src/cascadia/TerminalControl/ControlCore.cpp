@@ -104,6 +104,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
+        // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
+        // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
+        // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
+        // the UIA Engine to the renderer. This prevents us from signaling changes to the cursor or buffer.
+        {
+            // First create the render thread.
+            // Then stash a local pointer to the render thread so we can initialize it and enable it
+            // to paint itself *after* we hand off its ownership to the renderer.
+            // We split up construction and initialization of the render thread object this way
+            // because the renderer and render thread have circular references to each other.
+            auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
+            auto* const localPointerToThread = renderThread.get();
+
+            // Now create the renderer and initialize the render thread.
+            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
+
+            _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
+                if (auto strongThis{ weakThis.get() })
+                {
+                    strongThis->_RendererEnteredErrorStateHandlers(*strongThis, nullptr);
+                }
+            });
+
+            THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
+        }
+
         // Get our dispatcher. If we're hosted in-proc with XAML, this will get
         // us the same dispatcher as TermControl::Dispatcher(). If we're out of
         // proc, this'll return null. We'll need to instead make a new
@@ -196,27 +222,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            // First create the render thread.
-            // Then stash a local pointer to the render thread so we can initialize it and enable it
-            // to paint itself *after* we hand off its ownership to the renderer.
-            // We split up construction and initialization of the render thread object this way
-            // because the renderer and render thread have circular references to each other.
-            auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
-            auto* const localPointerToThread = renderThread.get();
-
-            // Now create the renderer and initialize the render thread.
-            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
-            ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
-
-            _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
-                if (auto strongThis{ weakThis.get() })
-                {
-                    strongThis->_RendererEnteredErrorStateHandlers(*strongThis, nullptr);
-                }
-            });
-
-            THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
-
             // Set up the DX Engine
             auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
             _renderer->AddRenderEngine(dxEngine.get());
@@ -248,7 +253,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _settings.InitialCols(width);
             _settings.InitialRows(height);
 
-            _terminal->CreateFromSettings(_settings, renderTarget);
+            _terminal->CreateFromSettings(_settings, *_renderer);
 
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
@@ -1465,10 +1470,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
     {
-        if (_renderer)
-        {
-            _renderer->AddRenderEngine(pEngine);
-        }
+        // _renderer will always exist since it's introduced in the ctor
+        _renderer->AddRenderEngine(pEngine);
     }
 
     bool ControlCore::IsInReadOnlyMode() const
