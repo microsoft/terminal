@@ -55,6 +55,14 @@ public:
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
 
+    // Method Description:
+    // - If this is a leaf pane, return its profile.
+    // - If this is a branch/root pane, return nullptr.
+    winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
+    {
+        return _profile;
+    }
+
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
     bool WasLastFocused() const noexcept;

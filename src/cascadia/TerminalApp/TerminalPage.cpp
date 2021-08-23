@@ -1996,36 +1996,56 @@ namespace winrt::TerminalApp::implementation
         _HookupKeyBindings(_settings.ActionMap());
 
         // Refresh UI elements
-        auto profiles = _settings.ActiveProfiles();
-        for (const auto& profile : profiles)
-        {
-            try
-            {
-                auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
 
-                for (auto tab : _tabs)
-                {
-                    if (auto terminalTab = _GetTerminalTabImpl(tab))
-                    {
-                        terminalTab->UpdateSettings(settings, profile);
-                    }
-                }
-            }
-            CATCH_LOG();
+        // Mapping by GUID isn't _excellent_ because the defaults profile doesn't have a stable GUID; however,
+        // when we stabilize its guid this will become fully safe.
+        std::unordered_map<winrt::guid, std::pair<Profile, TerminalSettingsCreateResult>> profileGuidSettingsMap;
+        const auto profileDefaults{ _settings.ProfileDefaults() };
+        const auto allProfiles{ _settings.AllProfiles() };
+
+        profileGuidSettingsMap.reserve(allProfiles.Size() + 1);
+
+        // Include the Defaults profile for consideration
+        profileGuidSettingsMap.insert_or_assign(profileDefaults.Guid(), std::pair{ profileDefaults, nullptr });
+        for (const auto& newProfile : allProfiles)
+        {
+            // Avoid creating a TerminalSettings right now. They're not totally cheap, and we suspect that users with many
+            // panes may not be using all of their profiles at the same time. Lazy evaluation is king!
+            profileGuidSettingsMap.insert_or_assign(newProfile.Guid(), std::pair{ newProfile, nullptr });
         }
 
-        // GH#2455: If there are any panes with controls that had been
-        // initialized with a Profile that no longer exists in our list of
-        // profiles, we'll leave it unmodified. The profile doesn't exist
-        // anymore, so we can't possibly update its settings.
-
-        // Update the icon of the tab for the currently focused profile in that tab.
-        // Only do this for TerminalTabs. Other types of tabs won't have multiple panes
-        // and profiles so the Title and Icon will be set once and only once on init.
-        for (auto tab : _tabs)
+        for (const auto& tab : _tabs)
         {
-            if (auto terminalTab = _GetTerminalTabImpl(tab))
+            if (auto terminalTab{ _GetTerminalTabImpl(tab) })
             {
+                terminalTab->UpdateSettings();
+
+                // Manually enumerate the panes in each tab; this will let us recycle TerminalSettings
+                // objects but only have to iterate one time.
+                terminalTab->GetRootPane()->WalkTree([&](auto&& pane) {
+                    if (const auto profile{ pane->GetProfile() })
+                    {
+                        const auto found{ profileGuidSettingsMap.find(profile.Guid()) };
+                        // GH#2455: If there are any panes with controls that had been
+                        // initialized with a Profile that no longer exists in our list of
+                        // profiles, we'll leave it unmodified. The profile doesn't exist
+                        // anymore, so we can't possibly update its settings.
+                        if (found != profileGuidSettingsMap.cend())
+                        {
+                            auto& pair{ found->second };
+                            if (!pair.second)
+                            {
+                                pair.second = TerminalSettings::CreateWithProfile(_settings, pair.first, *_bindings);
+                            }
+                            pane->UpdateSettings(pair.second, pair.first);
+                        }
+                    }
+                    return false;
+                });
+
+                // Update the icon of the tab for the currently focused profile in that tab.
+                // Only do this for TerminalTabs. Other types of tabs won't have multiple panes
+                // and profiles so the Title and Icon will be set once and only once on init.
                 _UpdateTabIcon(*terminalTab);
 
                 // Force the TerminalTab to re-grab its currently active control's title.

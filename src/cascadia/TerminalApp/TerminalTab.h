@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
-        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void UpdateSettings();
         winrt::fire_and_forget UpdateTitle();
 
         void Shutdown() override;
@@ -89,6 +89,8 @@ namespace winrt::TerminalApp::implementation
         void TogglePaneReadOnly();
         std::shared_ptr<Pane> GetActivePane() const;
         winrt::TerminalApp::TaskbarState GetCombinedTaskbarState() const;
+
+        std::shared_ptr<Pane> GetRootPane() const { return _rootPane; }
 
         winrt::TerminalApp::TerminalTabStatus TabStatus()
         {
