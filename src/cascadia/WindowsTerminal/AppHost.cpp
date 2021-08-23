@@ -93,11 +93,6 @@ AppHost::AppHost() noexcept :
 
 AppHost::~AppHost()
 {
-    if (_window->IsQuakeWindow())
-    {
-        _windowManager.RequestHideTrayIcon();
-    }
-
     // destruction order is important for proper teardown here
     _window = nullptr;
     _app.Close();
@@ -325,6 +320,15 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - <none>
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
+    if (_windowManager.IsMonarch() && _trayIcon)
+    {
+        _DestroyTrayIcon();
+    }
+    else if (_window->IsQuakeWindow())
+    {
+        _HideTrayIconRequested();
+    }
+
     _window->Close();
 }
 
@@ -656,9 +660,6 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
                              const winrt::Windows::Foundation::IInspectable& /*args*/)
 {
     _setupGlobalHotkeys();
-
-    // The monarch is just going to be THE listener for inbound connections.
-    _listenForInboundConnections();
 
     if (_windowManager.DoesQuakeWindowExist() ||
         _window->IsQuakeWindow() ||
@@ -1056,11 +1057,10 @@ void AppHost::_DestroyTrayIcon()
     }
 }
 
-winrt::fire_and_forget AppHost::_ShowTrayIconRequested()
+void AppHost::_ShowTrayIconRequested()
 {
     if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        co_await winrt::resume_background();
         if (_windowManager.IsMonarch())
         {
             if (!_trayIcon)
@@ -1075,11 +1075,10 @@ winrt::fire_and_forget AppHost::_ShowTrayIconRequested()
     }
 }
 
-winrt::fire_and_forget AppHost::_HideTrayIconRequested()
+void AppHost::_HideTrayIconRequested()
 {
     if constexpr (Feature_TrayIcon::IsEnabled())
     {
-        co_await winrt::resume_background();
         if (_windowManager.IsMonarch())
         {
             // Destroy it only if our settings allow it

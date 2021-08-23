@@ -380,6 +380,11 @@ void AppCommandlineArgs::_buildFocusTabParser()
             else if (_focusNextTab || _focusPrevTab)
             {
                 focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                // GH#10070 - make sure to not use the MRU order when switching
+                // tabs on the commandline. That wouldn't make any sense!
+                focusTabAction.Args(_focusNextTab ?
+                                        static_cast<IActionArgs>(NextTabArgs(TabSwitcherMode::Disabled)) :
+                                        static_cast<IActionArgs>(PrevTabArgs(TabSwitcherMode::Disabled)));
                 _startupActions.push_back(std::move(focusTabAction));
             }
         });
@@ -596,6 +601,13 @@ NewTerminalArgs AppCommandlineArgs::_getNewTerminalArgs(AppCommandlineArgs::NewT
     if (*subcommand.profileNameOption)
     {
         args.Profile(winrt::to_hstring(_profileName));
+    }
+
+    if (!*subcommand.profileNameOption && !_commandline.empty())
+    {
+        // If there's no profile, but there IS a command line, set the tab title to the first part of the command
+        // This will ensure that the tab we spawn has a name (since it didn't get one from its profile!)
+        args.TabTitle(winrt::to_hstring(til::at(_commandline, 0)));
     }
 
     if (*subcommand.startingDirectoryOption)

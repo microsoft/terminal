@@ -21,14 +21,14 @@ namespace winrt::TerminalApp::implementation
     struct TerminalTab : TerminalTabT<TerminalTab, TabBase>
     {
     public:
-        TerminalTab(const GUID& profile, const winrt::Microsoft::Terminal::Control::TermControl& control);
+        TerminalTab(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile, const winrt::Microsoft::Terminal::Control::TermControl& control);
         TerminalTab(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
         void Initialize();
 
         winrt::Microsoft::Terminal::Control::TermControl GetActiveTerminalControl() const;
-        std::optional<GUID> GetFocusedProfile() const noexcept;
+        winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile() const noexcept;
 
         void Focus(winrt::Windows::UI::Xaml::FocusState focusState) override;
 
@@ -40,7 +40,7 @@ namespace winrt::TerminalApp::implementation
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                        const float splitSize,
-                       const GUID& profile,
+                       const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                        winrt::Microsoft::Terminal::Control::TermControl& control);
 
         void ToggleSplitOrientation();
@@ -62,7 +62,7 @@ namespace winrt::TerminalApp::implementation
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool FocusPane(const uint32_t id);
 
-        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const GUID& profile);
+        void UpdateSettings(const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
         winrt::fire_and_forget UpdateTitle();
 
         void Shutdown() override;
