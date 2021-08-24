@@ -42,6 +42,8 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(TestLayerProfileOnColorScheme);
 
+        TEST_METHOD(TestCommandlineToTitlePromotion);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
@@ -553,5 +555,86 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
         VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5->CursorColor()); // default
+    }
+
+    void TerminalSettingsTests::TestCommandlineToTitlePromotion()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": { "list": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+            ],
+            "defaults": {
+                "historySize": 29
+            } }
+        })" };
+
+        const winrt::guid guid0{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}") };
+
+        CascadiaSettings settings{ til::u8u16(settingsJson) };
+
+        { // just a profile (profile wins)
+            NewTerminalArgs args{};
+            args.Profile(L"profile0");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"profile0", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // profile and command line -> no promotion (profile wins)
+            NewTerminalArgs args{};
+            args.Profile(L"profile0");
+            args.Commandline(L"foo.exe");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"profile0", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // just a title -> it is propagated
+            NewTerminalArgs args{};
+            args.TabTitle(L"Analog Kid");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"Analog Kid", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // title and command line -> no promotion
+            NewTerminalArgs args{};
+            args.TabTitle(L"Digital Man");
+            args.Commandline(L"foo.exe");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"Digital Man", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // just a commandline -> promotion
+            NewTerminalArgs args{};
+            args.Commandline(L"foo.exe");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"foo.exe", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        // various typesof commandline follow
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L"foo.exe bar");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"foo.exe", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L"\"foo exe.exe\" bar");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"foo exe.exe", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L"\"\" grand designs");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L" imagine a man");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"", settingsStruct.DefaultSettings().StartingTitle());
+        }
     }
 }
