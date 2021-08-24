@@ -200,6 +200,7 @@ private:
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
 
     std::shared_ptr<Pane> _FindParentOfPane(const std::shared_ptr<Pane> pane);
+    std::pair<PanePoint, PanePoint> _GetOffsetsForPane(const PanePoint parentOffset) const;
     bool _IsAdjacent(const std::shared_ptr<Pane> first, const PanePoint firstOffset, const std::shared_ptr<Pane> second, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;
     PaneNeighborSearch _FindNeighborForPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
                                             PaneNeighborSearch searchResult,
@@ -225,7 +226,6 @@ private:
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
     SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
-
     winrt::Windows::Foundation::Size _GetMinSize() const;
     LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
@@ -274,6 +274,8 @@ private:
     {
         float x;
         float y;
+        float scaleX;
+        float scaleY;
     };
 
     struct PaneNeighborSearch
