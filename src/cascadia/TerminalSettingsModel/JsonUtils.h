@@ -491,7 +491,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
         {
-
             Json::Value json{ Json::arrayValue };
 
             if (val)
