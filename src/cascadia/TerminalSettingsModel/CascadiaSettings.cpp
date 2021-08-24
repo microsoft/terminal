@@ -836,7 +836,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::GetProfil
         // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
         //   launch in the user's actual default profile.
         // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
-        // TODO GH#XXXXX: Detect the profile based on the commandline (add matching support)
+        // TODO GH#10952: Detect the profile based on the commandline (add matching support)
         return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
                    FindProfile(GlobalSettings().DefaultProfile()) :
                    ProfileDefaults();

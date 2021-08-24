@@ -2517,7 +2517,7 @@ namespace winrt::TerminalApp::implementation
             try
             {
                 NewTerminalArgs newTerminalArgs{};
-                // TODO GH#XXXXX: When we pass the actual commandline (or originating application), the
+                // TODO GH#10952: When we pass the actual commandline (or originating application), the
                 // settings model can choose the right settings based on command matching, or synthesize
                 // a profile from the registry/link settings (TODO GH#9458).
                 // TODO GH#9458: Get and pass the LNK/EXE filenames.
