@@ -147,11 +147,11 @@ try
         weight = DWRITE_FONT_WEIGHT_BOLD;
         // Since we are setting the font weight according to the text attribute,
         // make sure to tell the text format to ignore the user set font weight
-        _fontRenderData->UseUserWeight(false);
+        _fontRenderData->InhibitUserWeight(true);
     }
     else
     {
-        _fontRenderData->UseUserWeight(true);
+        _fontRenderData->InhibitUserWeight(false);
     }
 
     if (drawingContext->useItalicFont || _fontRenderData->DidUserSetItalic())

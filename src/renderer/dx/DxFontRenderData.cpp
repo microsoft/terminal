@@ -471,11 +471,11 @@ bool DxFontRenderData::DidUserSetAxes() const noexcept
 //   ignore the user set weight, otherwise setting the bold font axis
 //   breaks the bold font attribute
 // Arguments:
-// - useUserWeight: boolean that tells us if we should use the user set weight
+// - inhibitUserWeight: boolean that tells us if we should use the user set weight
 //   in the font axes
-void DxFontRenderData::UseUserWeight(bool useUserWeight) noexcept
+void DxFontRenderData::InhibitUserWeight(bool inhibitUserWeight) noexcept
 {
-    _useUserWeight = useUserWeight;
+    _inhibitUserWeight = inhibitUserWeight;
 }
 
 // Routine Description:
@@ -890,7 +890,7 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
     ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
     if (!_axesVector.empty() && !FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))))
     {
-        if (!_useUserWeight)
+        if (_inhibitUserWeight)
         {
             format3->SetFontAxisValues(_axesVectorWithoutWeight.data(), gsl::narrow<uint32_t>(_axesVectorWithoutWeight.size()));
         }

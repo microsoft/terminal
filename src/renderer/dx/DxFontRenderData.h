@@ -89,7 +89,7 @@ namespace Microsoft::Console::Render
 
         bool DidUserSetFeatures() const noexcept;
         bool DidUserSetAxes() const noexcept;
-        void UseUserWeight(bool useUserWeight) noexcept;
+        void InhibitUserWeight(bool inhibitUserWeight) noexcept;
         bool DidUserSetItalic() const noexcept;
 
         std::vector<DWRITE_FONT_AXIS_VALUE> GetAxisVector(const DWRITE_FONT_WEIGHT fontWeight,
@@ -100,7 +100,7 @@ namespace Microsoft::Console::Render
     private:
         using FontAttributeMapKey = uint32_t;
 
-        bool _useUserWeight{ true };
+        bool _inhibitUserWeight{ false };
         bool _didUserSetItalic{ false };
         bool _didUserSetFeatures{ false };
         bool _didUserSetAxes{ false };
