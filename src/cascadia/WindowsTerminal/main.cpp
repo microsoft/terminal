@@ -121,7 +121,12 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // should choose and install the correct one from the bundle.
     EnsureNativeArchitecture();
 
+    // If we _are_ a content process, then this function will call ExitThread(),
+    // after spawning some COM threads to deal with inbound COM requests to the
+    // ContentProcess object.
     TryRunAsContentProcess();
+    // If we weren't a content process, then we'll just move on, and do the
+    // normal WindowsTerminal thing.
 
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);

@@ -24,7 +24,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     ContentProcess::~ContentProcess()
     {
-        _DestructedHandlers();
+        // DANGER - We're straight up going to EXIT THE ENTIRE PROCESS when we
+        // get destructed. This eliminates the need to do any sort of
+        // refcounting weirdness. This entire process exists to host one
+        // singular ContentProcess instance. When we're destructed, it's because
+        // every other window process was done with us. We can die now, knowing
+        // that our job is complete.
+        ExitProcess(0);
     }
 
     Control::ControlInteractivity ContentProcess::GetInteractivity()
