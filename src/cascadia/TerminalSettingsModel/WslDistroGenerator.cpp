@@ -15,6 +15,13 @@
 
 static constexpr std::wstring_view DockerDistributionPrefix{ L"docker-desktop" };
 
+// The WSL entries are structured as such:
+// HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
+//   ⌞ {distroGuid}
+//     ⌞ DistributionName: {the name}
+static constexpr wchar_t RegKeyLxss[] = L"Software\\Microsoft\\Windows\\CurrentVersion\\Lxss";
+static constexpr wchar_t RegKeyDistroName[] = L"DistributionName";
+
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
@@ -35,7 +42,7 @@ std::wstring_view WslDistroGenerator::GetNamespace()
 // - <none>
 // Return Value:
 // - a vector with all distros for all the installed WSL distros
-std::vector<Profile> WslDistroGenerator::GenerateProfiles()
+static std::vector<Profile> legacyGenerate()
 {
     std::vector<Profile> profiles;
 
@@ -135,4 +142,184 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
     }
 
     return profiles;
+}
+
+// Function Description:
+// - Create a list of Profiles for each distro listed in names.
+// - Skips distros that are utility distros for docker (see GH#3556)
+// Arguments:
+// - names: a list of distro names to turn into profiles
+// Return Value:
+// - the list of profiles we've generated.
+static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& names)
+{
+    std::vector<Profile> profiles;
+    for (const auto& distName : names)
+    {
+        if (til::starts_with(distName, DockerDistributionPrefix))
+        {
+            // Docker for Windows creates some utility distributions to handle Docker commands.
+            // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
+            continue;
+        }
+
+        auto WSLDistro{ CreateDefaultProfile(distName) };
+
+        WSLDistro.Commandline(L"wsl.exe -d " + distName);
+        WSLDistro.DefaultAppearance().ColorSchemeName(L"Campbell");
+        WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
+        WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+        profiles.emplace_back(WSLDistro);
+    }
+    return profiles;
+}
+
+// Function Description:
+// - Open the reg key the root of the WSL data, in HKCU\Software\Microsoft\Windows\CurrentVersion\Lxss
+// Arguments:
+// - <none>
+// Return Value:
+// - the HKEY if it exists and we can read it, else nullptr
+static wil::unique_hkey openWslRegKey()
+{
+    HKEY hKey{ nullptr };
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyLxss, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+    {
+        return wil::unique_hkey{ hKey };
+    }
+    return nullptr;
+}
+
+// Function Description:
+// - Open the reg key for a single distro, underneath the root WSL key.
+// Arguments:
+// - wslRootKey: the HKEY for the Lxss node.
+// - guid: the string representation of the GUID for the distro to inspect
+// Return Value:
+// - the HKEY if it exists and we can read it, else nullptr
+static wil::unique_hkey openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid)
+{
+    HKEY hKey{ nullptr };
+    if (RegOpenKeyEx(wslRootKey.get(), guid.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS)
+    {
+        return wil::unique_hkey{ hKey };
+    }
+    return nullptr;
+}
+
+// Function Description:
+// - Get the list of all the guids of all the WSL distros from the registry. If
+//   we fail to open or read the root reg key, we'll return false.
+//   Places the guids of all the distros into the "guidStrings" param.
+// Arguments:
+// - wslRootKey: the HKEY for the Lxss node.
+// - names: a vector that receives all the guids of the installed distros.
+// Return Value:
+// - false if we failed to enumerate all the WSL distros
+static bool getWslGuids(const wil::unique_hkey& wslRootKey,
+                        std::vector<std::wstring>& guidStrings)
+{
+    if (!wslRootKey)
+    {
+        return false;
+    }
+
+    wchar_t buffer[39]; // a {GUID} is 38 chars long
+    for (DWORD i = 0;; i++)
+    {
+        DWORD length = 39;
+        const auto result = RegEnumKeyEx(wslRootKey.get(), i, &buffer[0], &length, nullptr, nullptr, nullptr, nullptr);
+        if (result == ERROR_NO_MORE_ITEMS)
+        {
+            break;
+        }
+
+        if (result == ERROR_SUCCESS &&
+            length == 38 &&
+            buffer[0] == L'{' &&
+            buffer[37] == L'}')
+        {
+            guidStrings.emplace_back(&buffer[0], length);
+        }
+    }
+
+    return true;
+}
+
+// Function Description:
+// - Get the list of all the names of all the WSL distros from the registry. If
+//   we fail to open any regkey for the GUID of a distro, we'll just skip it.
+//   Places the names of all the distros into the "names" param.
+// Arguments:
+// - wslRootKey: the HKEY for the Lxss node.
+// - guidStrings: A list of all the GUIDs of the installed distros
+// - names: a vector that receives all the names of the installed distros.
+// Return Value:
+// - false if the root key was invalid, else true.
+static bool getWslNames(const wil::unique_hkey& wslRootKey,
+                        const std::vector<std::wstring>& guidStrings,
+                        std::vector<std::wstring>& names)
+{
+    if (!wslRootKey)
+    {
+        return false;
+    }
+    for (const auto& guid : guidStrings)
+    {
+        wil::unique_hkey distroKey{ openDistroKey(wslRootKey, guid) };
+        if (!distroKey)
+        {
+            continue;
+        }
+
+        std::wstring buffer;
+        auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, 256>(buffer, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
+            auto length = static_cast<DWORD>(valueLength);
+            const auto status = RegQueryValueExW(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(value), &length);
+            // length will receive the number of bytes - convert to a number of
+            // wchar_t's. AdaptFixedSizeToAllocatedResult will resize buffer to
+            // valueLengthNeededWithNull
+            *valueLengthNeededWithNull = (length / sizeof(wchar_t));
+            // If you add one for another trailing null, then there'll actually
+            // be _two_ trailing nulls in the buffer.
+            return status == ERROR_MORE_DATA ? S_OK : HRESULT_FROM_WIN32(status);
+        });
+
+        if (result != S_OK)
+        {
+            continue;
+        }
+        names.emplace_back(std::move(buffer));
+    }
+    return true;
+}
+
+// Method Description:
+// - Generate a list of profiles for each on the installed WSL distros. This
+//   will first try to read the installed distros from the registry. If that
+//   fails, we'll fall back to the legacy way of launching WSL.exe to read the
+//   distros from the commandline. Reading the registry is slightly more stable
+//   (see GH#7199, GH#9905), but it is certainly BODGY
+// Arguments:
+// - <none>
+// Return Value:
+// - A list of WSL profiles.
+std::vector<Profile> WslDistroGenerator::GenerateProfiles()
+{
+    wil::unique_hkey wslRootKey{ openWslRegKey() };
+    if (wslRootKey)
+    {
+        std::vector<std::wstring> guidStrings{};
+        if (getWslGuids(wslRootKey, guidStrings))
+        {
+            std::vector<std::wstring> names{};
+            names.reserve(guidStrings.size());
+            if (getWslNames(wslRootKey, guidStrings, names))
+            {
+                return namesToProfiles(names);
+            }
+        }
+    }
+
+    return legacyGenerate();
 }
