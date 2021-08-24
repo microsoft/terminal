@@ -31,8 +31,7 @@ TRACELOGGING_DEFINE_PROVIDER(
 #include <LibraryResources.h>
 UTILS_DEFINE_LIBRARY_RESOURCE_SCOPE(L"TerminalApp/Resources");
 
-bool checkIfContentProcess(winrt::guid& contentProcessGuid, HANDLE& eventHandle);
-void doContentProcessThing(const winrt::guid& contentProcessGuid, const HANDLE& eventHandle);
+void TryRunAsContentProcess();
 
 // Routine Description:
 // - Takes an image architecture and locates a string resource that maps to that architecture.
@@ -122,17 +121,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
     // should choose and install the correct one from the bundle.
     EnsureNativeArchitecture();
 
-    winrt::guid contentProcessGuid{};
-    HANDLE eventHandle{ INVALID_HANDLE_VALUE };
-    if (checkIfContentProcess(contentProcessGuid, eventHandle))
-    {
-        doContentProcessThing(contentProcessGuid, eventHandle);
-        // If we were told to not have a window, exit early. Make sure to use
-        // ExitProcess to die here. If you try just `return 0`, then
-        // the XAML app host will crash during teardown. ExitProcess avoids
-        // that.
-        ExitProcess(0);
-    }
+    TryRunAsContentProcess();
 
     // Make sure to call this so we get WM_POINTER messages.
     EnableMouseInPointer(true);

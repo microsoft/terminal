@@ -13,7 +13,7 @@ using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
 
-bool checkIfContentProcess(winrt::guid& contentProcessGuid, HANDLE& eventHandle)
+static bool checkIfContentProcess(winrt::guid& contentProcessGuid, HANDLE& eventHandle)
 {
     std::vector<std::wstring> args;
 
@@ -98,7 +98,7 @@ private:
     winrt::guid _guid;
 };
 
-void doContentProcessThing(const winrt::guid& contentProcessGuid, const HANDLE& eventHandle)
+static void doContentProcessThing(const winrt::guid& contentProcessGuid, const HANDLE& eventHandle)
 {
     // !! LOAD BEARING !! - important to be a MTA
     winrt::init_apartment();
@@ -117,4 +117,19 @@ void doContentProcessThing(const winrt::guid& contentProcessGuid, const HANDLE& 
 
     std::unique_lock<std::mutex> lk(m);
     cv.wait(lk, [] { return dtored; });
+}
+
+void TryRunAsContentProcess()
+{
+    winrt::guid contentProcessGuid{};
+    HANDLE eventHandle{ INVALID_HANDLE_VALUE };
+    if (checkIfContentProcess(contentProcessGuid, eventHandle))
+    {
+        doContentProcessThing(contentProcessGuid, eventHandle);
+        // If we were told to not have a window, exit early. Make sure to use
+        // ExitProcess to die here. If you try just `return 0`, then
+        // the XAML app host will crash during teardown. ExitProcess avoids
+        // that.
+        ExitProcess(0);
+    }
 }
