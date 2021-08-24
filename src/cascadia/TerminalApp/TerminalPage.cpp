@@ -2521,6 +2521,9 @@ namespace winrt::TerminalApp::implementation
                 // settings model can choose the right settings based on command matching, or synthesize
                 // a profile from the registry/link settings (TODO GH#9458).
                 // TODO GH#9458: Get and pass the LNK/EXE filenames.
+                // Passing in a commandline forces GetProfileForArgs to use Base Layer instead of Default Profile;
+                // in the future, it can make a better decision based on the value we pull out of the process handle.
+                // TODO GH#5047: When we hang on to the N.T.A., try not to spawn "default... .exe" :)
                 newTerminalArgs.Commandline(L"default-terminal-invocation-placeholder");
                 const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
                 const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
