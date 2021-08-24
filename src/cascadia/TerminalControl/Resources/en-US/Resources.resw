@@ -200,4 +200,10 @@ Please either install the missing font or choose another one.</value>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Read-only mode is enabled.</value>
   </data>
+  <data name="TermControl_ContentDiedTextBlock.Text" xml:space="preserve">
+    <value>The content of this terminal was closed unexpectedly.</value>
+  </data>
+  <data name="TermControl_ContentDiedButton.Content" xml:space="preserve">
+    <value>Close</value>
+  </data>
 </root>

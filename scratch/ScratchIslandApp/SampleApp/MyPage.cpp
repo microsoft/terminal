@@ -209,6 +209,19 @@ namespace winrt::SampleApp::implementation
                 piContentProcess.reset();
             }
         });
+        control.ConnectionStateChanged([this, control](auto&&, auto&) {
+            const auto newConnectionState = control.ConnectionState();
+            if (newConnectionState == TerminalConnection::ConnectionState::Closed)
+            {
+                _writeToLog(L"Connection was closed");
+                OutOfProcContent().Children().Clear();
+                GuidInput().Text(L"");
+                if (piContentProcess.hProcess)
+                {
+                    piContentProcess.reset();
+                }
+            }
+        });
 
         Log().Children().Clear();
         OutOfProcContent().Children().Append(control);
@@ -240,7 +253,6 @@ namespace winrt::SampleApp::implementation
             piContentProcess.reset();
         }
     }
-
 
     // Method Description:
     // - Gets the title of the currently focused terminal control. If there

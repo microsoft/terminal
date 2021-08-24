@@ -96,6 +96,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This event is specifically triggered by the renderer thread, a BG thread. Use a weak ref here.
         _core.RendererEnteredErrorState({ get_weak(), &TermControl::_RendererEnteredErrorState });
 
+        _core.ConnectionStateChanged({ get_weak(), &TermControl::_coreConnectionStateChanged });
+
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
@@ -269,9 +271,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contentWaitThread = std::thread([weakThis = get_weak(), contentPid = _contentProc.GetPID(), contentWaitInterrupt = _contentWaitInterrupt.get()] {
             if (s_waitOnContentProcess(contentPid, contentWaitInterrupt))
             {
+                // When s_waitOnContentProcess returns, if it returned true, we
+                // should display a dialog in our bounds to indicate that we
+                // were closed unexpectedly. If we closed in an expected way,
+                // then s_waitOnContentProcess will return false.
                 if (auto control{ weakThis.get() })
                 {
-                    // control->_contentWaitThread.detach();
                     control->_raiseContentDied();
                 }
             }
@@ -285,10 +290,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            // dialog the thing
-            auto noticeArgs = winrt::make<NoticeEventArgs>(NoticeLevel::Error, L"The content of this terminal died unexpectedly.");
-            control->_RaiseNoticeHandlers(*control, noticeArgs);
+            if (auto loadedUiElement{ FindName(L"ContentDiedNotice") })
+            {
+                if (auto uiElement{ loadedUiElement.try_as<::winrt::Windows::UI::Xaml::UIElement>() })
+                {
+                    uiElement.Visibility(Visibility::Visible);
+                }
+            }
         }
+    }
+    // Method Description:
+    // - Handler for when the "Content Died" dialog's button is clicked.
+    void TermControl::_ContentDiedCloseButton_Click(IInspectable const& /*sender*/, IInspectable const& /*args*/)
+    {
+        // Alert whoever's hosting us that the connection was closed.
+        // When they come asking what the new connection state is, we'll reply with Closed
+        _ConnectionStateChangedHandlers(*this, nullptr);
     }
 
     // Method Description:
@@ -695,7 +712,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     TerminalConnection::ConnectionState TermControl::ConnectionState() const
     {
-        return _core.ConnectionState();
+        try
+        {
+            return _core.ConnectionState();
+        }
+        CATCH_LOG();
+        return TerminalConnection::ConnectionState::Closed;
     }
 
     winrt::fire_and_forget TermControl::RenderEngineSwapChainChanged(IInspectable /*sender*/, IInspectable /*args*/)
@@ -2725,5 +2747,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_coreWarningBell(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _playWarningBell->Run();
+    }
+    void TermControl::_coreConnectionStateChanged(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        _ConnectionStateChangedHandlers(*this, nullptr);
     }
 }
