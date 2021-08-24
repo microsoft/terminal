@@ -50,7 +50,8 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
         _defaultFg,
         _defaultBg,
         _screenReversed,
-        _blinkingState.IsBlinkingFaint());
+        _blinkingState.IsBlinkingFaint(),
+        _intenseIsBright);
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.

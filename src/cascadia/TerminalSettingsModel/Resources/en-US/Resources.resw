@@ -246,15 +246,15 @@
   <data name="MoveFocusToLastUsedPane" xml:space="preserve">
     <value>Move focus to the last used pane</value>
   </data>
-  <data name="MovePaneCommandKey" xml:space="preserve">
-    <value>Move pane</value>
+  <data name="SwapPaneCommandKey" xml:space="preserve">
+    <value>Swap pane</value>
   </data>
-  <data name="MovePaneWithArgCommandKey" xml:space="preserve">
-    <value>Move pane {0}</value>
+  <data name="SwapPaneWithArgCommandKey" xml:space="preserve">
+    <value>Swap pane {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
-  <data name="MovePaneToLastUsedPane" xml:space="preserve">
-    <value>Move pane to the last used pane</value>
+  <data name="SwapPaneToLastUsedPane" xml:space="preserve">
+    <value>Swap panes with the last used pane</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>
@@ -356,6 +356,9 @@
   <data name="SplitHorizontalCommandKey" xml:space="preserve">
     <value>Split pane horizontally</value>
   </data>
+  <data name="MovePaneCommandKey" xml:space="preserve">
+    <value>Move pane</value>
+  </data>
   <data name="SplitPaneCommandKey" xml:space="preserve">
     <value>Split pane</value>
   </data>
@@ -432,5 +435,20 @@
   <data name="InboxWindowsConsoleName" xml:space="preserve">
     <value>Windows Console Host</value>
     <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
+  </data>
+  <data name="MoveFocusNextInOrder" xml:space="preserve">
+    <value>Move focus to the next pane in order</value>
+  </data>
+  <data name="MoveFocusPreviousInOrder" xml:space="preserve">
+    <value>Move focus to the previous pane in order</value>
+  </data>
+  <data name="SwapPaneNextInOrder" xml:space="preserve">
+    <value>Swap panes with the next pane in order</value>
+  </data>
+  <data name="SwapPanePreviousInOrder" xml:space="preserve">
+    <value>Swap panes with the previous pane in order</value>
+  </data>
+  <data name="MinimizeToTrayCommandKey" xml:space="preserve">
+    <value>Minimize current window to tray</value>
   </data>
 </root>

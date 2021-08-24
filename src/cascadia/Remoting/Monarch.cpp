@@ -28,8 +28,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         CATCH_LOG();
     }
 
-    // This is a private constructor to be used in unit tests, where we don't
-    // want each Monarch to necessarily use the current PID.
+    // This constructor is intended to be used in unit tests,
+    // but we need to make it public in order to use make_self
+    // in the tests. It's not exposed through the idl though
+    // so it's not _truly_ fully public which should be acceptable.
     Monarch::Monarch(const uint64_t testPID) :
         _ourPID{ testPID }
     {
@@ -77,6 +79,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
             peasant.RenameRequested({ this, &Monarch::_renameRequested });
+
+            peasant.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
+            peasant.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
 
             _peasants[newPeasantsId] = peasant;
 
@@ -201,6 +206,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _clearOldMruEntries(id);
         }
 
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Monarch_lookupPeasantIdForName",
+                          TraceLoggingWideString(std::wstring{ name }.c_str(), "name", "the name we're looking for"),
+                          TraceLoggingUInt64(result, "peasantID", "the ID of the peasant with that name"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         return result;
     }
 
@@ -732,24 +743,55 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         try
         {
             args.FoundMatch(false);
+
+            // If a WindowID is provided from the args, use that first.
             uint64_t windowId = 0;
-            // If no name was provided, then just summon the MRU window.
-            if (searchedForName.empty())
+            if (args.WindowID())
             {
-                // Use the value of the `desktop` arg to determine if we should
-                // limit to the current desktop (desktop:onCurrent) or not
-                // (desktop:any or desktop:toCurrent)
-                windowId = _getMostRecentPeasantID(args.OnCurrentDesktop(), false);
+                windowId = args.WindowID().Value();
             }
             else
             {
-                // Try to find a peasant that currently has this name
-                windowId = _lookupPeasantIdForName(searchedForName);
+                // If no name was provided, then just summon the MRU window.
+                if (searchedForName.empty())
+                {
+                    // Use the value of the `desktop` arg to determine if we should
+                    // limit to the current desktop (desktop:onCurrent) or not
+                    // (desktop:any or desktop:toCurrent)
+                    windowId = _getMostRecentPeasantID(args.OnCurrentDesktop(), false);
+                }
+                else
+                {
+                    // Try to find a peasant that currently has this name
+                    windowId = _lookupPeasantIdForName(searchedForName);
+                }
             }
+
             if (auto targetPeasant{ _getPeasant(windowId) })
             {
                 targetPeasant.Summon(args.SummonBehavior());
                 args.FoundMatch(true);
+
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_SummonWindow_Success",
+                                  TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
+                                  TraceLoggingUInt64(windowId, "peasantID", "The id of the window we tried to summon"),
+                                  TraceLoggingBoolean(args.OnCurrentDesktop(), "OnCurrentDesktop", "true iff the window needs to be on the current virtual desktop"),
+                                  TraceLoggingBoolean(args.SummonBehavior().MoveToCurrentDesktop(), "MoveToCurrentDesktop", "if true, move the window to the current virtual desktop"),
+                                  TraceLoggingBoolean(args.SummonBehavior().ToggleVisibility(), "ToggleVisibility", "true if we should toggle the visibility of the window"),
+                                  TraceLoggingUInt32(args.SummonBehavior().DropdownDuration(), "DropdownDuration", "the duration to dropdown the window"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            }
+            else
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_SummonWindow_NoPeasant",
+                                  TraceLoggingWideString(searchedForName.c_str(), "searchedForName", "The name of the window we tried to summon"),
+                                  TraceLoggingUInt64(windowId, "peasantID", "The id of the window we tried to summon"),
+                                  TraceLoggingBoolean(args.OnCurrentDesktop(), "OnCurrentDesktop", "true iff the window needs to be on the current virtual desktop"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
             }
         }
         catch (...)
@@ -761,5 +803,57 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         }
+    }
+
+    // Method Description:
+    // - This method creates a map of peasant IDs to peasant names
+    //   while removing dead peasants.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A map of peasant IDs to their names.
+    Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> Monarch::GetPeasantNames()
+    {
+        auto names = winrt::single_threaded_map<uint64_t, winrt::hstring>();
+
+        std::vector<uint64_t> peasantsToErase{};
+        for (const auto& [id, p] : _peasants)
+        {
+            try
+            {
+                names.Insert(id, p.WindowName());
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                peasantsToErase.push_back(id);
+            }
+        }
+
+        // Remove the dead peasants we came across while iterating.
+        for (const auto& id : peasantsToErase)
+        {
+            _peasants.erase(id);
+            _clearOldMruEntries(id);
+        }
+
+        return names.GetView();
+    }
+
+    void Monarch::SummonAllWindows()
+    {
+        auto callback = [](auto&& p, auto&& /*id*/) {
+            SummonWindowBehavior args{};
+            args.ToggleVisibility(false);
+            p.Summon(args);
+        };
+        auto onError = [](auto&& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_SummonAll_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not summon"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+        _forAllPeasantsIgnoringTheDead(callback, onError);
     }
 }

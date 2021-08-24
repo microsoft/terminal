@@ -21,6 +21,11 @@ namespace winrt::TerminalApp::implementation
         return false;
     }
 
+    bool AppKeyBindings::IsKeyChordExplicitlyUnbound(const KeyChord& kc)
+    {
+        return _actionMap.IsKeyChordExplicitlyUnbound(kc);
+    }
+
     void AppKeyBindings::SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch)
     {
         _dispatch = dispatch;

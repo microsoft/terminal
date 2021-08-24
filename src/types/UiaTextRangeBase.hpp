@@ -153,6 +153,8 @@ namespace Microsoft::Console::Types
 
         void _getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const;
 
+        void _expandToEnclosingUnit(TextUnit unit);
+
         void
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,

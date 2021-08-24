@@ -22,6 +22,14 @@ namespace Microsoft.Terminal.Settings.Model
         Vertical_Bottom = 0x20
     };
 
+    [flags]
+    enum IntenseStyle
+    {
+        Bold = 0x1,
+        Bright = 0x2,
+        All = 0xffffffff
+    };
+
     interface IAppearanceConfig
     {
         Microsoft.Terminal.Settings.Model.Profile SourceProfile { get; };
@@ -42,5 +50,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         INHERITABLE_APPEARANCE_SETTING(Boolean, RetroTerminalEffect);
         INHERITABLE_APPEARANCE_SETTING(String, PixelShaderPath);
+        INHERITABLE_APPEARANCE_SETTING(IntenseStyle, IntenseTextStyle);
     };
 }

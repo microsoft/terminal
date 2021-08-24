@@ -31,13 +31,14 @@ namespace XamlAutomation
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControlAutomationPeer::TermControlAutomationPeer(TermControl* owner,
+                                                         const Core::Padding padding,
                                                          Control::InteractivityAutomationPeer impl) :
         TermControlAutomationPeerT<TermControlAutomationPeer>(*owner), // pass owner to FrameworkElementAutomationPeer
         _termControl{ owner },
         _contentAutomationPeer{ impl }
     {
         UpdateControlBounds();
-
+        SetControlPadding(padding);
         // Listen for UIA signalling events from the implementation. We need to
         // be the one to actually raise these automation events, so they go
         // through the UI tree correctly.

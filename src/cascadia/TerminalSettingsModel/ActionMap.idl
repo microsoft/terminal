@@ -8,6 +8,8 @@ namespace Microsoft.Terminal.Settings.Model
     // This interface ensures that no changes are made to ActionMap
     interface IActionMapView
     {
+        Boolean IsKeyChordExplicitlyUnbound(Microsoft.Terminal.Control.KeyChord keys);
+
         Command GetActionByKeyChord(Microsoft.Terminal.Control.KeyChord keys);
 
         Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);

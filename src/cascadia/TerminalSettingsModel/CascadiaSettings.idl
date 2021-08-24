@@ -41,10 +41,10 @@ namespace Microsoft.Terminal.Settings.Model
 
         Profile CreateNewProfile();
         Profile FindProfile(Guid profileGuid);
-        ColorScheme GetColorSchemeForProfile(Guid profileGuid);
+        ColorScheme GetColorSchemeForProfile(Profile profile);
         void UpdateColorSchemeReferences(String oldName, String newName);
 
-        Guid GetProfileForArgs(NewTerminalArgs newTerminalArgs);
+        Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
 
         void RefreshDefaultTerminals();
         static Boolean IsDefaultTerminalAvailable { get; };

@@ -41,6 +41,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     struct Monarch : public MonarchT<Monarch>
     {
         Monarch();
+        Monarch(const uint64_t testPID);
         ~Monarch();
 
         uint64_t GetPID();
@@ -51,10 +52,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void HandleActivatePeasant(const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
+        void SummonAllWindows();
+        Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> GetPeasantNames();
+
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
+        TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
-        Monarch(const uint64_t testPID);
         uint64_t _ourPID;
 
         uint64_t _nextPeasantID{ 1 };

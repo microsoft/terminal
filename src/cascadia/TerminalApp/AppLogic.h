@@ -90,8 +90,10 @@ namespace winrt::TerminalApp::implementation
 
         void WindowCloseButtonClicked();
 
-        uint64_t GetLastActiveControlTaskbarState();
-        uint64_t GetLastActiveControlTaskbarProgress();
+        winrt::TerminalApp::TaskbarState TaskbarState();
+
+        bool GetMinimizeToTray();
+        bool GetAlwaysShowTrayIcon();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 

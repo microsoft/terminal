@@ -18,7 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
     };
 
-    struct Launch : LaunchT<Launch>
+    struct Launch : public HasScrollViewer<Launch>, LaunchT<Launch>
     {
     public:
         Launch();
@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
+        winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
 
         WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 

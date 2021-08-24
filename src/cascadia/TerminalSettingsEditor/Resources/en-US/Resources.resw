@@ -232,7 +232,7 @@
     <comment>Header for a control to toggle if the app should always show the tabs (similar to a website browser).</comment>
   </data>
   <data name="Globals_AlwaysShowTabs.HelpText" xml:space="preserve">
-    <value>When unchecked, the tab bar will appear when a new tab is created.</value>
+    <value>When disabled, the tab bar will appear when a new tab is created.</value>
     <comment>A description for what the "always show tabs" setting does. Presented near "Globals_AlwaysShowTabs.Header".</comment>
   </data>
   <data name="Globals_CopyOnSelect.Header" xml:space="preserve">
@@ -272,7 +272,7 @@
     <comment>Header for a control to toggle the "force full repaint" setting. When enabled, the app renders new content between screen frames.</comment>
   </data>
   <data name="Globals_ForceFullRepaint.HelpText" xml:space="preserve">
-    <value>When unchecked, the terminal will render only the updates to the screen between frames.</value>
+    <value>When disabled, the terminal will render only the updates to the screen between frames.</value>
     <comment>A description for what the "force full repaint" setting does. Presented near "Globals_ForceFullRepaint.Header".</comment>
   </data>
   <data name="Globals_InitialCols.Header" xml:space="preserve">
@@ -340,15 +340,23 @@
     <comment>Header for a control to toggle whether the title bar should be shown or not. Changing this setting requires the user to relaunch the app.</comment>
   </data>
   <data name="Globals_ShowTitlebar.HelpText" xml:space="preserve">
-    <value>When unchecked, the title bar will appear above the tabs.</value>
+    <value>When disabled, the title bar will appear above the tabs.</value>
     <comment>A description for what the "show titlebar" setting does. Presented near "Globals_ShowTitlebar.Header".</comment>
+  </data>
+  <data name="Globals_AcrylicTabRow.Header" xml:space="preserve">
+    <value>Show acrylic in tab row (requires relaunch)</value>
+    <comment>Header for a control to toggle whether acrylic shows in the tab row. Changing this setting requires the user to relaunch the app.</comment>
+  </data>
+  <data name="Globals_AcrylicTabRow.HelpText" xml:space="preserve">
+    <value>When checked, the tab row will have the acrylic material.</value>
+    <comment>A description for what the "use acrylic in tab row" setting does. Presented near "Globals_AcrylicTabRow.Header".</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.Header" xml:space="preserve">
     <value>Use active terminal title as application title</value>
     <comment>Header for a control to toggle whether the terminal's title is shown as the application title, or not.</comment>
   </data>
   <data name="Globals_ShowTitleInTitlebar.HelpText" xml:space="preserve">
-    <value>When unchecked, the title bar will be 'Windows Terminal'.</value>
+    <value>When disabled, the title bar will be 'Windows Terminal'.</value>
     <comment>A description for what the "show title in titlebar" setting does. Presented near "Globals_ShowTitleInTitlebar.Header".{Locked="Windows"}</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.Header" xml:space="preserve">
@@ -356,7 +364,7 @@
     <comment>Header for a control to toggle whether the terminal snaps the window to the character grid when resizing, or not.</comment>
   </data>
   <data name="Globals_SnapToGridOnResize.HelpText" xml:space="preserve">
-    <value>When unchecked, the window will resize smoothly.</value>
+    <value>When disabled, the window will resize smoothly.</value>
     <comment>A description for what the "snap to grid on resize" setting does. Presented near "Globals_SnapToGridOnResize.Header".</comment>
   </data>
   <data name="Globals_SoftwareRendering.Header" xml:space="preserve">
@@ -364,7 +372,7 @@
     <comment>Header for a control to toggle whether the terminal should use software to render content instead of the hardware.</comment>
   </data>
   <data name="Globals_SoftwareRendering.HelpText" xml:space="preserve">
-    <value>When checked, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one.</value>
+    <value>When enabled, the terminal will use the software renderer (a.k.a. WARP) instead of the hardware one.</value>
     <comment>A description for what the "software rendering" setting does. Presented near "Globals_SoftwareRendering.Header".</comment>
   </data>
   <data name="Globals_StartOnUserLogin.Header" xml:space="preserve">
@@ -372,7 +380,7 @@
     <comment>Header for a control to toggle whether the app should launch when the user's machine starts up, or not.</comment>
   </data>
   <data name="Globals_StartOnUserLogin.HelpText" xml:space="preserve">
-    <value>When checked, this enables the launch of Windows Terminal at machine startup.</value>
+    <value>When enabled, this enables the launch of Windows Terminal at machine startup.</value>
     <comment>A description for what the "start on user login" setting does. Presented near "Globals_StartOnUserLogin.Header".</comment>
   </data>
   <data name="Globals_AlwaysOnTop.Header" xml:space="preserve">
@@ -480,7 +488,7 @@
     <comment>Header for a control to toggle whether the app treats ctrl+alt as the AltGr (also known as the Alt Graph) modifier key found on keyboards. {Locked="AltGr"}</comment>
   </data>
   <data name="Profile_AltGrAliasing.HelpText" xml:space="preserve">
-    <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When unchecked, this behavior will be disabled.</value>
+    <value>By default Windows treats Ctrl+Alt as an alias for AltGr. When disabled, this behavior will be disabled.</value>
     <comment>A description for what the "AltGr aliasing" setting does. Presented near "Profile_AltGrAliasing.Header".</comment>
   </data>
   <data name="Profile_AntialiasingMode.Header" xml:space="preserve">
@@ -700,7 +708,7 @@
     <comment>Header for a control to toggle whether the profile is shown in a dropdown menu, or not.</comment>
   </data>
   <data name="Profile_Hidden.HelpText" xml:space="preserve">
-    <value>If checked, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
+    <value>If enabled, the profile will not appear in the list of profiles. This can be used to hide default profiles and dynamically generated profiles, while leaving them in your settings file.</value>
     <comment>A description for what the "hidden" setting does. Presented near "Profile_Hidden".</comment>
   </data>
   <data name="Profile_HistorySize.Header" xml:space="preserve">
@@ -736,7 +744,7 @@
     <comment>Header for a control to toggle classic CRT display effects, which gives the terminal a retro look.</comment>
   </data>
   <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
-    <value>When checked, enables retro terminal effects such as glowing text and scan lines.</value>
+    <value>When enabled, enables retro terminal effects such as glowing text and scan lines.</value>
     <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect".</comment>
   </data>
   <data name="Profile_ScrollbarVisibility.Header" xml:space="preserve">
@@ -772,7 +780,7 @@
     <comment>A supplementary setting to the "starting directory" setting. "Parent" refers to the parent process of the current process.</comment>
   </data>
   <data name="Profile_StartingDirectoryUseParentCheckbox.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>If checked, this profile will spawn in the directory from which Windows Terminal was launched.</value>
+    <value>If enabled, this profile will spawn in the directory from which Windows Terminal was launched.</value>
     <comment>A description for what the supplementary "use parent process directory" setting does. Presented near "Profile_StartingDirectoryUseParentCheckbox".</comment>
   </data>
   <data name="Profile_SuppressApplicationTitle.Header" xml:space="preserve">
@@ -808,7 +816,7 @@
     <comment>A supplementary setting to the "background image" setting. When enabled, the OS desktop wallpaper is used as the background image. Presented near "Profile_BackgroundImage".</comment>
   </data>
   <data name="Profile_UseDesktopImage.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>When checked, use the desktop wallpaper image as the background image for the terminal.</value>
+    <value>When enabled, use the desktop wallpaper image as the background image for the terminal.</value>
     <comment>A description for what the supplementary "use desktop image" setting does. Presented near "Profile_UseDesktopImage".</comment>
   </data>
   <data name="Settings_ResetSettingsButton.Content" xml:space="preserve">
@@ -986,14 +994,6 @@
     <value>Rename</value>
     <comment>Text label for a button that can be used to begin the renaming process.</comment>
   </data>
-  <data name="Profile_DeleteButtonDisclaimerInBox" xml:space="preserve">
-    <value>This profile cannot be deleted because it is included by default.</value>
-    <comment>Disclaimer presented next to the delete button when it is disabled. Some profiles are included in the app by default and cannot be deleted.</comment>
-  </data>
-  <data name="Profile_DeleteButtonDisclaimerDynamic" xml:space="preserve">
-    <value>This profile cannot be deleted because it is automatically generated.</value>
-    <comment>Disclaimer presented next to the delete button when it is disabled. Some profiles are automatically generated by the app and cannot be deleted.</comment>
-  </data>
   <data name="ColorScheme_DeleteButtonDisclaimerInBox" xml:space="preserve">
     <value>This color scheme cannot be deleted or renamed because it is included by default.</value>
     <comment>Disclaimer presented next to the delete button when it is disabled.</comment>
@@ -1111,7 +1111,7 @@
     <comment>A supplementary setting to the "font face" setting. Toggling this control updates the font face control to show all of the fonts installed.</comment>
   </data>
   <data name="Profile_FontFaceShowAllFonts.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
-    <value>If checked, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
+    <value>If enabled, show all installed fonts in the list above. Otherwise, only show the list of monospace fonts.</value>
     <comment>A description for what the supplementary "show all fonts" setting does. Presented near "Profile_FontFaceShowAllFonts".</comment>
   </data>
   <data name="Profile_CreateUnfocusedAppearanceButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
@@ -1185,5 +1185,29 @@
   <data name="KeyChordListener.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
     <value>Shortcut</value>
     <comment>The label for a "key chord listener" control that sets the keys a key binding is bound to.</comment>
+  </data>
+  <data name="Appearance_TextFormattingHeader.Text" xml:space="preserve">
+    <value>Text Formatting</value>
+    <comment>Header for a control to how text is formatted</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyle.Header" xml:space="preserve">
+    <value>Intense Text Style</value>
+    <comment>Header for a control to select how "intense" text is formatted (bold, bright, both or none)</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleNone.Content" xml:space="preserve">
+    <value>None</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will not be rendered differently</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleBold.Content" xml:space="preserve">
+    <value>Bold font</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as bold text</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleBright.Content" xml:space="preserve">
+    <value>Bright colors</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered in a brighter color</comment>
+  </data>
+  <data name="Appearance_IntenseTextStyleAll.Content" xml:space="preserve">
+    <value>Bold font with bright colors</value>
+    <comment>An option to choose from for the "intense text format" setting. When selected, "intense" text will be rendered as both bold text and in a brighter color</comment>
   </data>
 </root>

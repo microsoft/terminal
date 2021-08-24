@@ -64,6 +64,8 @@ namespace Microsoft.Terminal.Remoting
         void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
         void RequestRename(RenameRequestArgs args); // Tells us to raise a RenameRequested
         void Summon(SummonWindowBehavior behavior);
+        void RequestShowTrayIcon();
+        void RequestHideTrayIcon();
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
@@ -71,6 +73,8 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> DisplayWindowIdRequested;
         event Windows.Foundation.TypedEventHandler<Object, RenameRequestArgs> RenameRequested;
         event Windows.Foundation.TypedEventHandler<Object, SummonWindowBehavior> SummonRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant
