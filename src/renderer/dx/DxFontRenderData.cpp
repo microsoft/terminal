@@ -888,13 +888,13 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
 
     // If the OS supports IDWriteTextFormat3, set the font axes
     ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
-    if (!_axesVector.empty() && !FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))))
+    if (!FAILED(format->QueryInterface(IID_PPV_ARGS(&format3))))
     {
-        if (_inhibitUserWeight)
+        if (_inhibitUserWeight && !_axesVectorWithoutWeight.empty())
         {
             format3->SetFontAxisValues(_axesVectorWithoutWeight.data(), gsl::narrow<uint32_t>(_axesVectorWithoutWeight.size()));
         }
-        else
+        else if (!_inhibitUserWeight && !_axesVector.empty())
         {
             format3->SetFontAxisValues(_axesVector.data(), gsl::narrow<uint32_t>(_axesVector.size()));
         }
