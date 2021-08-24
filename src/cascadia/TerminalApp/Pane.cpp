@@ -95,9 +95,9 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     {
         til::color c;
         // StartingTabColor is prioritized over other colors
-        if (controlSettings.StartingTabColor())
+        if (const auto color = controlSettings.StartingTabColor())
         {
-            c = til::color(controlSettings.StartingTabColor().Value());
+            c = til::color(color.Value());
         }
         else
         {
@@ -185,43 +185,38 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     // We now need to execute the commands for each side of the tree
     // We've done one split, so the first-most child will have currentId, and the
     // one after it will be incremented.
-    auto [a1, p1, f1, n1] = _firstChild->BuildStartupActions(currentId, nextId + 1);
+    const auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1);
     // the next id for the second branch depends on how many splits were in the
     // first child.
-    auto [a2, p2, f2, n2] = _secondChild->BuildStartupActions(nextId, nextId + n1 + 1);
+    const auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1);
 
-    std::vector<ActionAndArgs> actions;
-    actions.reserve(a1.size() + a2.size() + 3);
+    std::vector<ActionAndArgs> actions{};
+    actions.reserve(firstState.args.size() + secondState.args.size() + 3);
 
     // first we make our split
-    auto newSplit = buildSplitPane(p2);
+    const auto newSplit = buildSplitPane(secondState.firstPane);
     actions.push_back(newSplit);
 
-    if (a1.size() > 0)
+    if (firstState.args.size() > 0)
     {
         // Then move to the first child and execute any actions on the left branch
         // then move back
         actions.push_back(buildMoveFocus(FocusDirection::PreviousInOrder));
-        actions.insert(actions.end(), a1.begin(), a1.end());
+        actions.insert(actions.end(), firstState.args.begin(), firstState.args.end());
         actions.push_back(buildMoveFocus(FocusDirection::NextInOrder));
     }
 
     // And if there are any commands to run on the right branch do so
-    if (a2.size() > 0)
+    if (secondState.args.size() > 0)
     {
-        actions.insert(actions.end(), a2.begin(), a2.end());
+        actions.insert(actions.end(), secondState.args.begin(), secondState.args.end());
     }
 
     // if the tree is well-formed then f1.has_value and f2.has_value are
     // mutually exclusive.
-    std::optional<uint32_t> focusedPaneId = f1;
+    const auto focusedPaneId = firstState.focusedPaneId.has_value() ? firstState.focusedPaneId : secondState.focusedPaneId;
 
-    if (f2.has_value())
-    {
-        focusedPaneId = f2.value();
-    }
-
-    return { { actions }, p1, focusedPaneId, n1 + n2 + 1 };
+    return { actions, firstState.firstPane, focusedPaneId, firstState.panesCreated + secondState.panesCreated + 1 };
 }
 
 // Method Description:

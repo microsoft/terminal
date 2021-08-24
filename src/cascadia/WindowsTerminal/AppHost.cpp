@@ -219,6 +219,10 @@ void AppHost::_HandleCommandlineArgs()
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
 
+        if (_windowManager.IsMonarch())
+        {
+            _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+        }
         _logic.WindowName(peasant.WindowName());
         _logic.WindowId(peasant.GetID());
     }

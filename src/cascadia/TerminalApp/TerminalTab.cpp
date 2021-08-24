@@ -451,25 +451,25 @@ namespace winrt::TerminalApp::implementation
     {
         // Give initial ids (0 for the child created with this tab,
         // 1 for the child after the first split.
-        auto [args, pane, focusedPaneId, _] = _rootPane->BuildStartupActions(0, 1);
+        auto state = _rootPane->BuildStartupActions(0, 1);
 
         ActionAndArgs newTabAction{};
         newTabAction.Action(ShortcutAction::NewTab);
-        NewTabArgs newTabArgs{ pane->GetTerminalArgsForPane() };
+        NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
         newTabAction.Args(newTabArgs);
 
-        args.insert(args.begin(), newTabAction);
+        state.args.insert(state.args.begin(), newTabAction);
 
         // If we only have one arg, we only have 1 pane so we don't need any
         // special focus logic
-        if (args.size() > 1 && focusedPaneId.has_value())
+        if (state.args.size() > 1 && state.focusedPaneId.has_value())
         {
             ActionAndArgs focusPaneAction{};
             focusPaneAction.Action(ShortcutAction::FocusPane);
-            FocusPaneArgs focusArgs{ focusedPaneId.value() };
+            FocusPaneArgs focusArgs{ state.focusedPaneId.value() };
             focusPaneAction.Args(focusArgs);
 
-            args.push_back(focusPaneAction);
+            state.args.push_back(focusPaneAction);
         }
 
         if (_zoomedPane)
@@ -478,10 +478,10 @@ namespace winrt::TerminalApp::implementation
             ActionAndArgs zoomPaneAction{};
             zoomPaneAction.Action(ShortcutAction::TogglePaneZoom);
 
-            args.push_back(zoomPaneAction);
+            state.args.push_back(zoomPaneAction);
         }
 
-        return args;
+        return state.args;
     }
 
     // Method Description:

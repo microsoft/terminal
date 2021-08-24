@@ -303,15 +303,16 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         std::vector<T> FromJson(const Json::Value& json)
         {
-            std::vector<T> vec;
-            vec.reserve(json.size());
+            std::vector<T> val;
+            val.reserve(json.size());
 
-            for (auto it = json.begin(), end = json.end(); it != end; ++it)
+            ConversionTrait<T> trait;
+            for (const auto& element : json)
             {
-                vec.push_back(GetValue<T>(*it));
+                val.push_back(trait.FromJson(element));
             }
 
-            return vec;
+            return val;
         }
 
         bool CanConvert(const Json::Value& json) const
@@ -478,35 +479,19 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
         {
-            winrt::Windows::Foundation::Collections::IVector<T> vec = winrt::single_threaded_vector<T>();
-
-            for (auto it = json.begin(), end = json.end(); it != end; ++it)
-            {
-                vec.Append(GetValue<T>(*it));
-            }
-
-            return vec;
+            ConversionTrait<std::vector<T>> trait;
+            return winrt::single_threaded_vector<T>(std::move(trait.FromJson(json)));
         }
 
         bool CanConvert(const Json::Value& json) const
         {
-            if (!json.isArray())
-            {
-                return false;
-            }
-            ConversionTrait<T> trait;
-            for (const auto& v : json)
-            {
-                if (!trait.CanConvert(v))
-                {
-                    return false;
-                }
-            }
-            return true;
+            ConversionTrait<std::vector<T>> trait;
+            return trait.CanConvert(json);
         }
 
         Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
         {
+
             Json::Value json{ Json::arrayValue };
 
             if (val)

@@ -22,18 +22,16 @@ Abstract:
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
 //   (type, function name, JSON key, ...variadic construction arguments)
-#define MTSM_APPLICATION_STATE_FIELDS(X)                                       \
-    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles") \
-    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    #define MTSM_APPLICATION_STATE_FIELDS(X)                                       \
+        X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles") \
+        X(Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")
+
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
-        WindowLayout(){};
-
-        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs>, TabLayout, nullptr);
-        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Microsoft::Terminal::Settings::Model::LaunchPosition>, InitialPosition, nullptr);
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
+        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);
     };
 
