@@ -172,11 +172,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ApplyUISettings();
     }
 
+    bool TermControl::_contentIsOutOfProc() const
+    {
+        return _contentProc != nullptr;
+    }
+
     bool s_waitOnContentProcess(uint64_t contentPid, HANDLE contentWaitInterrupt)
     {
         // This is the array of HANDLEs that we're going to wait on in
         // WaitForMultipleObjects below.
-        // * waits[0] will be the handle to the monarch process. It gets
+        // * waits[0] will be the handle to the content process. It gets
         //   signalled when the process exits / dies.
         // * waits[1] is the handle to our _contentWaitInterrupt event. Another
         //   thread can use that to manually break this loop. We'll do that when
@@ -184,60 +189,48 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         HANDLE waits[2];
         waits[1] = contentWaitInterrupt;
         bool displayError = true;
-        // bool exitThreadRequested = false;
-        // while (!exitThreadRequested)
-        // {
-        // At any point in all this, the current monarch might die. If it
-        // does, we'll go straight to a new election, in the "jail"
-        // try/catch below. Worst case, eventually, we'll become the new
-        // monarch.
+
+        // At any point in all this, the content process might die. If it does,
+        // we want to raise an error message, to inform that this control is now
+        // dead.
         try
         {
-            // This might fail to even ask the monarch for it's PID.
+            // This might fail to even ask the content for it's PID.
             wil::unique_handle hContent{ OpenProcess(PROCESS_ALL_ACCESS,
                                                      FALSE,
                                                      static_cast<DWORD>(contentPid)) };
 
             // If we fail to open the content, then they don't exist
-            //  anymore! Go straight to an election.
+            //  anymore! We'll need to immediately raise the notification that the content has died.
             if (hContent.get() == nullptr)
             {
                 const auto gle = GetLastError();
                 TraceLoggingWrite(g_hTerminalControlProvider,
                                   "TermControl_FailedToOpenContent",
-                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                   TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-                // exitThreadRequested = true;
-                // continue;
+                return displayError;
             }
 
             waits[0] = hContent.get();
 
             switch (WaitForMultipleObjects(2, waits, FALSE, INFINITE))
             {
-            case WAIT_OBJECT_0 + 0: // waits[0] was signaled, the handle to the monarch process
+            case WAIT_OBJECT_0 + 0: // waits[0] was signaled, the handle to the content process
 
                 TraceLoggingWrite(g_hTerminalControlProvider,
                                   "TermControl_ContentDied",
-                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-                // Connect to the new monarch, which might be us!
-                // If we become the monarch, then we'll return true and exit this thread.
-                // exitThreadRequested = true;
                 break;
 
             case WAIT_OBJECT_0 + 1: // waits[1] was signaled, our manual interrupt
 
                 TraceLoggingWrite(g_hTerminalControlProvider,
                                   "TermControl_ContentWaitInterrupted",
-                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-                // exitThreadRequested = true;
                 displayError = false;
                 break;
 
@@ -245,25 +238,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // This should be impossible.
                 TraceLoggingWrite(g_hTerminalControlProvider,
                                   "TermControl_ContentWaitTimeout",
-                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-                // exitThreadRequested = true;
                 break;
 
             default:
             {
-                // TODO!
                 // Returning any other value is invalid. Just die.
                 const auto gle = GetLastError();
                 TraceLoggingWrite(g_hTerminalControlProvider,
                                   "TermControl_WaitFailed",
-                                  // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                                   TraceLoggingUInt64(gle, "lastError", "The result of GetLastError"),
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-                // exitThreadRequested = true;
-                // ExitProcess(0);
             }
             }
         }
@@ -274,16 +261,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             TraceLoggingWrite(g_hTerminalControlProvider,
                               "TermControl_ExceptionInWaitThread",
-                              // TraceLoggingUInt64(peasantID, "peasantID", "Our peasant ID"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-            // exitThreadRequested = true;
         }
-        // }
-
-        // if (displayError)
-        // {
-        // }
         return displayError;
     }
 
@@ -294,7 +274,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 if (auto control{ weakThis.get() })
                 {
-                    control->_contentWaitThread.detach();
+                    // control->_contentWaitThread.detach();
                     control->_raiseContentDied();
                 }
             }
@@ -736,8 +716,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     TermControl::~TermControl()
     {
-        _contentWaitInterrupt.SetEvent();
-        _contentWaitThread.join();
+        if (_contentIsOutOfProc())
+        {
+            _contentWaitInterrupt.SetEvent();
+            _contentWaitThread.join();
+        }
         Close();
     }
 
@@ -800,7 +783,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto control{ weakThis.get() })
         {
             // TODO! very good chance we leak this handle
-            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_contentProc ?
+            const HANDLE chainHandle = reinterpret_cast<HANDLE>(control->_contentIsOutOfProc() ?
                                                                     control->_contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
                                                                     control->_core.SwapChainHandle());
             _AttachDxgiSwapChainToXaml(chainHandle);
@@ -891,7 +874,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _interactivity.Initialize();
 
         // TODO! very good chance we leak this handle
-        const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentProc ?
+        const HANDLE chainHandle = reinterpret_cast<HANDLE>(_contentIsOutOfProc() ?
                                                                 _contentProc.RequestSwapChainHandle(GetCurrentProcessId()) :
                                                                 _core.SwapChainHandle());
         _AttachDxgiSwapChainToXaml(chainHandle);
@@ -2010,14 +1993,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Disconnect the TSF input control so it doesn't receive EditContext events.
             TSFInputControl().Close();
             _autoScrollTimer.Stop();
-            // try
-            // {
-            if (!_contentProc)
+            if (!_contentIsOutOfProc())
             {
                 _core.Close();
             }
-            // }
-            // CATCH_LOG();
         }
     }
 

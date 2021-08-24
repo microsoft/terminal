@@ -194,7 +194,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         wil::unique_event _contentWaitInterrupt;
         std::thread _contentWaitThread;
         void _createContentWaitThread();
-        // void _waitOnContentProcess();
+        bool _contentIsOutOfProc() const;
 
         inline bool _IsClosing() const noexcept
         {
