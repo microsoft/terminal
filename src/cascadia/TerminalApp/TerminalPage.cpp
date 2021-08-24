@@ -457,6 +457,11 @@ namespace winrt::TerminalApp::implementation
                     co_return;
                 }
             }
+
+            // GH#6586: now that we're done processing all startup commands,
+            // focus the active control. This will work as expected for both
+            // commandline invocations and for `wt` action invocations.
+            _GetActiveControl().Focus(FocusState::Programmatic);
         }
         if (initial)
         {
@@ -1414,6 +1419,14 @@ namespace winrt::TerminalApp::implementation
             _UnZoomIfNeeded();
 
             tab.SplitPane(realSplitType, splitSize, profile, newControl);
+
+            // After GH#6586, the control will no longer focus itself
+            // automatically when it's finished being laid out. Manually focus
+            // the control here instead.
+            if (_startupState == StartupState::Initialized)
+            {
+                _GetActiveControl().Focus(FocusState::Programmatic);
+            }
         }
         CATCH_LOG();
     }
