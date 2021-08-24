@@ -156,7 +156,7 @@ static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& nam
     std::vector<Profile> profiles;
     for (const auto& distName : names)
     {
-        if (distName.substr(0, std::min(distName.size(), DockerDistributionPrefix.size())) == DockerDistributionPrefix)
+        if (til::starts_with(distName, DockerDistributionPrefix))
         {
             // Docker for Windows creates some utility distributions to handle Docker commands.
             // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
@@ -183,7 +183,7 @@ static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& nam
 static HKEY openWslRegKey()
 {
     HKEY hKey{ nullptr };
-    if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyLxss, 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+    if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyLxss, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
     {
         return hKey;
     }
@@ -200,7 +200,7 @@ static HKEY openWslRegKey()
 static HKEY openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid)
 {
     HKEY hKey{ nullptr };
-    if (RegOpenKeyEx(wslRootKey.get(), guid.c_str(), 0, KEY_ALL_ACCESS, &hKey) == ERROR_SUCCESS)
+    if (RegOpenKeyEx(wslRootKey.get(), guid.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS)
     {
         return hKey;
     }
@@ -227,7 +227,7 @@ static bool getWslGuids(const wil::unique_hkey& wslRootKey,
     wchar_t buffer[39]; // a {GUID} is 38 chars long
     for (DWORD i = 0;; i++)
     {
-        DWORD length;
+        DWORD length = std::size(buffer);
         const auto result = RegEnumKeyEx(wslRootKey.get(), i, &buffer[0], &length, nullptr, nullptr, nullptr, nullptr);
         if (result == ERROR_NO_MORE_ITEMS)
         {
