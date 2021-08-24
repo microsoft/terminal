@@ -587,6 +587,15 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
             return _tabSwitcherMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabActions : _tabActions;
         case CommandPaletteMode::CommandlineMode:
+            _commandLineHistory.Clear();
+            for (const auto& recentCommand : ApplicationState::SharedInstance().RecentCommands())
+            {
+                auto parsedCommand = _buildCommandLineCommand(recentCommand.c_str());
+                if (parsedCommand.has_value())
+                {
+                    _commandLineHistory.Append(parsedCommand.value());
+                }
+            }
             return _commandLineHistory;
         default:
             return _allCommands;
@@ -728,6 +737,14 @@ namespace winrt::TerminalApp::implementation
                 _commandLineHistory.RemoveAtEnd();
             }
             _commandLineHistory.InsertAt(0, filteredCommand.value());
+
+            auto recentCommands = winrt::single_threaded_vector<hstring>();
+            for (const auto& recentFilteredCommand : _commandLineHistory)
+            {
+                recentCommands.Append(recentFilteredCommand.Item().Name());
+            }
+
+            ApplicationState::SharedInstance().RecentCommands(recentCommands);
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
