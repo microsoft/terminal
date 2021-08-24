@@ -54,10 +54,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // monarch!
         CoRevokeClassObject(_registrationHostClass);
         _registrationHostClass = 0;
-        if (_monarch)
-        {
-            _monarch.SignalClose(_peasant.GetID());
-        }
+        SignalClose();
         _monarchWaitInterrupt.SetEvent();
 
         // A thread is joinable once it's been started. Basically this just
@@ -197,10 +194,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             _peasant.ExecuteCommandline(args);
         }
         // Otherwise, we'll do _nothing_.
-    }
-
-    void SignalClose()
-    {
     }
 
     bool WindowManager::ShouldCreateWindow()

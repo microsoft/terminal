@@ -109,6 +109,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
+    // Method Description:
+    // - Tells the monarch that a peasant is being closed.
+    // Arguments:
+    // - peasantId: the id of the peasant
+    // Return Value:
+    // - <none>
     void Monarch::SignalClose(const uint64_t peasantId)
     {
         _peasants.erase(peasantId);
