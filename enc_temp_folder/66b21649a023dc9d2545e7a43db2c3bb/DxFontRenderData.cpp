@@ -901,10 +901,12 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
                     axesWithoutWeight.emplace_back(axis);
                 }
             }
+            //DWRITE_FONT_AXIS_VALUE const* axesList = axesWithoutWeight.data();
             format3->SetFontAxisValues(axesWithoutWeight.data(), gsl::narrow<uint32_t>(axesWithoutWeight.size()));
         }
         else
         {
+            //DWRITE_FONT_AXIS_VALUE const* axesList = _axesVector.data();
             format3->SetFontAxisValues(_axesVector.data(), gsl::narrow<uint32_t>(_axesVector.size()));
         }
     }
