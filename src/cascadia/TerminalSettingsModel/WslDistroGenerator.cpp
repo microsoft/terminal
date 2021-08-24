@@ -180,12 +180,12 @@ static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& nam
 // - <none>
 // Return Value:
 // - the HKEY if it exists and we can read it, else nullptr
-static HKEY openWslRegKey()
+static wil::unique_hkey openWslRegKey()
 {
     HKEY hKey{ nullptr };
     if (RegOpenKeyEx(HKEY_CURRENT_USER, RegKeyLxss, 0, KEY_READ, &hKey) == ERROR_SUCCESS)
     {
-        return hKey;
+        return wil::unique_hkey{ hKey };
     }
     return nullptr;
 }
@@ -197,12 +197,12 @@ static HKEY openWslRegKey()
 // - guid: the string representation of the GUID for the distro to inspect
 // Return Value:
 // - the HKEY if it exists and we can read it, else nullptr
-static HKEY openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid)
+static wil::unique_hkey openDistroKey(const wil::unique_hkey& wslRootKey, const std::wstring& guid)
 {
     HKEY hKey{ nullptr };
     if (RegOpenKeyEx(wslRootKey.get(), guid.c_str(), 0, KEY_READ, &hKey) == ERROR_SUCCESS)
     {
-        return hKey;
+        return wil::unique_hkey{ hKey };
     }
     return nullptr;
 }
@@ -227,7 +227,7 @@ static bool getWslGuids(const wil::unique_hkey& wslRootKey,
     wchar_t buffer[39]; // a {GUID} is 38 chars long
     for (DWORD i = 0;; i++)
     {
-        DWORD length = std::size(buffer);
+        DWORD length = 39;
         const auto result = RegEnumKeyEx(wslRootKey.get(), i, &buffer[0], &length, nullptr, nullptr, nullptr, nullptr);
         if (result == ERROR_NO_MORE_ITEMS)
         {
