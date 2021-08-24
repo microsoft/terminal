@@ -225,20 +225,20 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::CreateNew
         return nullptr;
     }
 
-    winrt::hstring newName{};
-    for (uint32_t candidateIndex = 0; candidateIndex < _allProfiles.Size() + 1; candidateIndex++)
+    std::wstring newName;
+    for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; candidateIndex++)
     {
         // There is a theoretical unsigned integer wraparound, which is OK
-        newName = fmt::format(L"Profile {}", _allProfiles.Size() + 1 + candidateIndex);
+        newName = fmt::format(L"Profile {}", count + candidateIndex);
         if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
         {
             break;
         }
     }
 
-    auto newProfile{ _userDefaultProfileSettings->CreateChild() };
-    newProfile->Name(newName);
+    const auto newProfile = _CreateNewProfile(newName);
     _allProfiles.Append(*newProfile);
+    _activeProfiles.Append(*newProfile);
     return *newProfile;
 }
 
@@ -258,26 +258,10 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
 {
     THROW_HR_IF_NULL(E_INVALIDARG, source);
 
-    winrt::com_ptr<Profile> duplicated;
-    if (_userDefaultProfileSettings)
-    {
-        duplicated = _userDefaultProfileSettings->CreateChild();
-    }
-    else
-    {
-        duplicated = winrt::make_self<Profile>();
-    }
-    _allProfiles.Append(*duplicated);
-
-    if (!source.Hidden())
-    {
-        _activeProfiles.Append(*duplicated);
-    }
-
-    winrt::hstring newName{ fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix")) };
+    auto newName = fmt::format(L"{} ({})", source.Name(), RS_(L"CopySuffix"));
 
     // Check if this name already exists and if so, append a number
-    for (uint32_t candidateIndex = 0; candidateIndex < _allProfiles.Size() + 1; ++candidateIndex)
+    for (uint32_t candidateIndex = 0, count = _allProfiles.Size() + 1; candidateIndex < count; ++candidateIndex)
     {
         if (std::none_of(begin(_allProfiles), end(_allProfiles), [&](auto&& profile) { return profile.Name() == newName; }))
         {
@@ -286,13 +270,14 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         // There is a theoretical unsigned integer wraparound, which is OK
         newName = fmt::format(L"{} ({} {})", source.Name(), RS_(L"CopySuffix"), candidateIndex + 2);
     }
-    duplicated->Name(winrt::hstring(newName));
 
-    const auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
+    const auto duplicated = _CreateNewProfile(newName);
+
+    static constexpr auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
         return profile && profile.Origin() != OriginTag::ProfilesDefaults;
     };
 
-    const auto isProfilesDefaultsOriginSub = [=](const auto& sub) -> bool {
+    static constexpr auto isProfilesDefaultsOriginSub = [](const auto& sub) -> bool {
         return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
     };
 
@@ -308,7 +293,9 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         target.settingName(source.settingName());                                                       \
     }
 
-    DUPLICATE_SETTING_MACRO(Hidden);
+    // If the source is hidden and the Settings UI creates a
+    // copy of it we don't want the copy to be hidden as well.
+    // --> Don't do DUPLICATE_SETTING_MACRO(Hidden);
     DUPLICATE_SETTING_MACRO(Icon);
     DUPLICATE_SETTING_MACRO(CloseOnExit);
     DUPLICATE_SETTING_MACRO(TabTitle);
@@ -388,6 +375,8 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         duplicated->ConnectionType(source.ConnectionType());
     }
 
+    _allProfiles.Append(*duplicated);
+    _activeProfiles.Append(*duplicated);
     return *duplicated;
 }
 
@@ -419,6 +408,32 @@ winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Settings::Mod
 winrt::hstring CascadiaSettings::GetSerializationErrorMessage()
 {
     return _deserializationErrorMessage;
+}
+
+// As used by CreateNewProfile and DuplicateProfile this function
+// creates a new Profile instance with a random UUID and a given name.
+winrt::com_ptr<Profile> CascadiaSettings::_CreateNewProfile(const std::wstring_view& name) const
+{
+    winrt::com_ptr<Profile> profile;
+
+    if (_userDefaultProfileSettings)
+    {
+        profile = _userDefaultProfileSettings->CreateChild();
+    }
+    else
+    {
+        profile = winrt::make_self<Profile>();
+    }
+
+    // Technically there's Utils::CreateV5Uuid which we could use, but I wanted
+    // truly globally unique UUIDs for profiles created through the settings UI.
+    GUID guid{};
+    LOG_IF_FAILED(CoCreateGuid(&guid));
+
+    profile->Guid(guid);
+    profile->Name(winrt::hstring{ name });
+
+    return profile;
 }
 
 // Method Description:

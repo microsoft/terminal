@@ -16,6 +16,9 @@ namespace Microsoft.Terminal.Settings.Editor
         LaunchPageNavigationState State { get; };
 
         IInspectable CurrentDefaultProfile;
+        // I wish this was a IObservableVector<Microsoft.Terminal.Settings.Model.Profile>, but:
+        //   https://github.com/microsoft/microsoft-ui-xaml/issues/5395
+        IObservableVector<IInspectable> DefaultProfiles { get; };
 
         IInspectable CurrentLaunchMode;
         IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
