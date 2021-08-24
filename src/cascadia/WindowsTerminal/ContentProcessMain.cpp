@@ -52,10 +52,8 @@ static bool checkIfContentProcess(winrt::guid& contentProcessGuid, HANDLE& event
     return false;
 }
 
-std::mutex m;
-std::condition_variable cv;
-bool dtored = false;
 winrt::weak_ref<winrt::Microsoft::Terminal::Control::ContentProcess> g_weak{ nullptr };
+wil::unique_event g_canExitThread;
 
 struct HostClassFactory : implements<HostClassFactory, IClassFactory>
 {
@@ -72,12 +70,7 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
 
         if (!g_weak)
         {
-            winrt::Microsoft::Terminal::Control::ContentProcess strong{}; // = winrt::make<winrt::Microsoft::Terminal::Control::ContentProcess>();
-            strong.Destructed([]() {
-                std::unique_lock<std::mutex> lk(m);
-                dtored = true;
-                cv.notify_one();
-            });
+            winrt::Microsoft::Terminal::Control::ContentProcess strong{};
             winrt::weak_ref<winrt::Microsoft::Terminal::Control::ContentProcess> weak{ strong };
             g_weak = weak;
             return strong.as(iid, result);
@@ -85,6 +78,17 @@ struct HostClassFactory : implements<HostClassFactory, IClassFactory>
         else
         {
             auto strong = g_weak.get();
+            // !! LOAD BEARING !! If you set this event in the _first_ branch
+            // here, when we first create the object, then there will be _no_
+            // referernces to the ContentProcess object for a small slice. We'll
+            // stash the ContentProcess in the weak_ptr, and return it, and at
+            // that moment, there will be 0 outstanding references, it'll dtor,
+            // and wei'll ExitProcess.
+            //
+            // Instead, set the event here, once there's already a reference
+            // outside of just the weak one we keep. Experimentation showed this
+            // waw always hit when creating the ContentProcess at least once.
+            g_canExitThread.SetEvent();
             return strong.as(iid, result);
         }
     }
@@ -100,9 +104,8 @@ private:
 
 static void doContentProcessThing(const winrt::guid& contentProcessGuid, const HANDLE& eventHandle)
 {
-    // !! LOAD BEARING !! - important to be a MTA
+    // !! LOAD BEARING !! - important to be a MTA for these COM calls.
     winrt::init_apartment();
-
     DWORD registrationHostClass{};
     check_hresult(CoRegisterClassObject(contentProcessGuid,
                                         make<HostClassFactory>(contentProcessGuid).get(),
@@ -114,9 +117,6 @@ static void doContentProcessThing(const winrt::guid& contentProcessGuid, const H
     // ready to go.
     SetEvent(eventHandle);
     CloseHandle(eventHandle);
-
-    std::unique_lock<std::mutex> lk(m);
-    cv.wait(lk, [] { return dtored; });
 }
 
 void TryRunAsContentProcess()
@@ -125,11 +125,13 @@ void TryRunAsContentProcess()
     HANDLE eventHandle{ INVALID_HANDLE_VALUE };
     if (checkIfContentProcess(contentProcessGuid, eventHandle))
     {
+        g_canExitThread = wil::unique_event{ CreateEvent(nullptr, true, false, L"ContentProcessReady") };
+
         doContentProcessThing(contentProcessGuid, eventHandle);
-        // If we were told to not have a window, exit early. Make sure to use
-        // ExitProcess to die here. If you try just `return 0`, then
-        // the XAML app host will crash during teardown. ExitProcess avoids
-        // that.
-        ExitProcess(0);
+
+        WaitForSingleObject(g_canExitThread.get(), INFINITE);
+        // This is the conhost thing - if we ExitThread the main thread, the
+        // other threads can keep running till one calls ExitProcess.
+        ExitThread(0);
     }
 }

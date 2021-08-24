@@ -142,7 +142,7 @@ namespace winrt::SampleApp::implementation
         //   spawn the process that will actually host the ContentProcess
         //   object.
         // * If we're attaching, then that process already exists.
-        Control::ContentProcess content;
+        Control::ContentProcess content{nullptr};
         try
         {
             content = create_instance<Control::ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);

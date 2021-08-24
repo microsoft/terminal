@@ -5,8 +5,6 @@ import "ControlInteractivity.idl";
 
 namespace Microsoft.Terminal.Control
 {
-    delegate void DestructedArgs();
-
     runtimeclass ContentProcess {
 
         ContentProcess();
@@ -19,7 +17,5 @@ namespace Microsoft.Terminal.Control
         UInt64 GetPID();
 
         UInt64 RequestSwapChainHandle(UInt64 pid);
-
-        event DestructedArgs Destructed;
     };
 }

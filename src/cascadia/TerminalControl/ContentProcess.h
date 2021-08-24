@@ -20,8 +20,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint64_t GetPID();
         uint64_t RequestSwapChainHandle(const uint64_t pid);
 
-        WINRT_CALLBACK(Destructed, Control::DestructedArgs);
-
     private:
         Control::ControlInteractivity _interactivity{ nullptr };
         uint64_t _ourPID;
