@@ -485,14 +485,7 @@ void DxFontRenderData::UseUserWeight(bool useUserWeight) noexcept
 //   false if the italic axis is not present or the italic axis is set to 0
 bool DxFontRenderData::DidUserSetItalic() const noexcept
 {
-    for (const auto& axisVal : _axesVector)
-    {
-        if (axisVal.axisTag == DWRITE_FONT_AXIS_TAG_ITALIC && axisVal.value == 1)
-        {
-            return true;
-        }
-    }
-    return false;
+    return _didUserSetItalic;
 }
 
 // Routine Description:
@@ -546,6 +539,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
 {
     _axesVector.clear();
     _didUserSetAxes = false;
+    _didUserSetItalic = false;
 
     // Update our axis map with the provided axes
     if (!axes.empty())
@@ -555,8 +549,16 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
         {
             if (axis.length() == TAG_LENGTH)
             {
-                const auto dwriteTag = DWRITE_MAKE_FONT_AXIS_TAG(til::at(axis, 0), til::at(axis, 1), til::at(axis, 2), til::at(axis, 3));
-                _axesVector.emplace_back(DWRITE_FONT_AXIS_VALUE{ dwriteTag, value });
+                const auto dwriteFontAxis = DWRITE_FONT_AXIS_VALUE{ DWRITE_MAKE_FONT_AXIS_TAG(til::at(axis, 0), til::at(axis, 1), til::at(axis, 2), til::at(axis, 3)), value };
+                _axesVector.emplace_back(dwriteFontAxis);
+                if (dwriteFontAxis.axisTag != DWRITE_FONT_AXIS_TAG_WEIGHT)
+                {
+                    _axesVectorWithoutWeight.emplace_back(dwriteFontAxis);
+                }
+                if (dwriteFontAxis.axisTag == DWRITE_FONT_AXIS_TAG_ITALIC && value == 1)
+                {
+                    _didUserSetItalic = true;
+                }
             }
         }
         _didUserSetAxes = true;
@@ -890,18 +892,7 @@ Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(con
     {
         if (!_useUserWeight)
         {
-            // Remove the user set weight if we were told not to use it
-            // (only remove it from the list we are about to pass to the text format,
-            //  don't delete it from our internal axes vector)
-            std::vector<DWRITE_FONT_AXIS_VALUE> axesWithoutWeight;
-            for (const auto axis : _axesVector)
-            {
-                if (axis.axisTag != DWRITE_FONT_AXIS_TAG_WEIGHT)
-                {
-                    axesWithoutWeight.emplace_back(axis);
-                }
-            }
-            format3->SetFontAxisValues(axesWithoutWeight.data(), gsl::narrow<uint32_t>(axesWithoutWeight.size()));
+            format3->SetFontAxisValues(_axesVectorWithoutWeight.data(), gsl::narrow<uint32_t>(_axesVectorWithoutWeight.size()));
         }
         else
         {
