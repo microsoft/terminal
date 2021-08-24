@@ -82,6 +82,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget _RendererEnteredErrorState(IInspectable sender, IInspectable args);
 
         void _RenderRetryButton_Click(IInspectable const& button, IInspectable const& args);
+        void _ContentDiedCloseButton_Click(IInspectable const& button, IInspectable const& args);
         winrt::fire_and_forget _RendererWarning(IInspectable sender,
                                                 Control::RendererWarningArgs args);
 
@@ -125,7 +126,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         PROJECTED_FORWARDED_TYPED_EVENT(TitleChanged,           IInspectable, Control::TitleChangedEventArgs, _core, TitleChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(TabColorChanged,        IInspectable, IInspectable, _core, TabColorChanged);
         PROJECTED_FORWARDED_TYPED_EVENT(SetTaskbarProgress,     IInspectable, IInspectable, _core, TaskbarProgressChanged);
-        PROJECTED_FORWARDED_TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable, _core, ConnectionStateChanged);
+        TYPED_EVENT(ConnectionStateChanged, IInspectable, IInspectable);
 
         PROJECTED_FORWARDED_TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs, _interactivity, PasteFromClipboard);
 
@@ -290,6 +291,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _coreFoundMatch(const IInspectable& sender, const Control::FoundResultsArgs& args);
 
         winrt::fire_and_forget _raiseContentDied();
+        void _coreConnectionStateChanged(const IInspectable& sender, const IInspectable& args);
     };
 }
 

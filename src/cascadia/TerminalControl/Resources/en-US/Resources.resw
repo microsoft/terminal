@@ -208,4 +208,10 @@ Please either install the missing font or choose another one.</value>
     <value>No results found</value>
     <comment>Announced to a screen reader when the user searches for some text and there are no matches for that text in the terminal.</comment>
   </data>
+  <data name="TermControl_ContentDiedTextBlock.Text" xml:space="preserve">
+    <value>The content of this terminal was closed unexpectedly.</value>
+  </data>
+  <data name="TermControl_ContentDiedButton.Content" xml:space="preserve">
+    <value>Close</value>
+  </data>
 </root>

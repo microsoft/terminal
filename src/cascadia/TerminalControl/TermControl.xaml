@@ -1272,6 +1272,27 @@
             </Border>
         </Grid>
 
+        <Grid x:Name="ContentDiedNotice"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              x:Load="False">
+            <Border Margin="8,8,8,8"
+                    Padding="8,8,8,8"
+                    Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{ThemeResource SystemAccentColor}"
+                    BorderThickness="2,2,2,2"
+                    CornerRadius="{ThemeResource OverlayCornerRadius}">
+                <StackPanel>
+                    <TextBlock x:Uid="TermControl_ContentDiedTextBlock"
+                               HorizontalAlignment="Center"
+                               TextWrapping="WrapWholeWords" />
+                    <Button x:Uid="TermControl_ContentDiedButton"
+                            HorizontalAlignment="Right"
+                            Click="_ContentDiedCloseButton_Click" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
     </Grid>
 
 </UserControl>
