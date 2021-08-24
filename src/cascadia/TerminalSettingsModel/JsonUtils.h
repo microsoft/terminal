@@ -317,19 +317,8 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
         bool CanConvert(const Json::Value& json) const
         {
-            if (!json.isArray())
-            {
-                return false;
-            }
             ConversionTrait<T> trait;
-            for (const auto& v : json)
-            {
-                if (!trait.CanConvert(v))
-                {
-                    return false;
-                }
-            }
-            return true;
+            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); });
         }
 
         Json::Value ToJson(const std::vector<T>& val)
@@ -370,7 +359,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         bool CanConvert(const Json::Value& json) const
         {
             ConversionTrait<T> trait;
-            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) -> bool { return trait.CanConvert(json); });
+            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); });
         }
 
         Json::Value ToJson(const std::unordered_set<T>& val)

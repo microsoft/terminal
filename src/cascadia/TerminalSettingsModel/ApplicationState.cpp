@@ -26,21 +26,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             auto layout = winrt::make_self<implementation::WindowLayout>();
 
-            if (json.isMember(TabLayoutKey.data()))
-            {
-                auto val = GetValueForKey<winrt::Windows::Foundation::Collections::IVector<ActionAndArgs>>(json, TabLayoutKey);
-                layout->TabLayout(val);
-            }
-
-            if (json.isMember(InitialPositionKey.data()))
-            {
-                layout->InitialPosition(GetValueForKey<LaunchPosition>(json, InitialPositionKey));
-            }
-
-            if (json.isMember(InitialSizeKey.data()))
-            {
-                layout->InitialSize(GetValueForKey<winrt::Windows::Foundation::Size>(json, InitialSizeKey));
-            }
+            GetValueForKey(json, TabLayoutKey, layout->_TabLayout);
+            GetValueForKey(json, InitialPositionKey, layout->_InitialPosition);
+            GetValueForKey(json, InitialSizeKey, layout->_InitialSize);
 
             return *layout;
         }
@@ -54,20 +42,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             Json::Value json{ Json::objectValue };
 
-            if (val.TabLayout())
-            {
-                SetValueForKey(json, TabLayoutKey, val.TabLayout());
-            }
-
-            if (val.InitialPosition())
-            {
-                SetValueForKey(json, InitialPositionKey, val.InitialPosition());
-            }
-
-            if (val.InitialSize())
-            {
-                SetValueForKey(json, InitialSizeKey, val.InitialSize());
-            }
+            SetValueForKey(json, TabLayoutKey, val.TabLayout());
+            SetValueForKey(json, InitialPositionKey, val.InitialPosition());
+            SetValueForKey(json, InitialSizeKey, val.InitialSize());
 
             return json;
         }
@@ -75,32 +52,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::string TypeDescription() const
         {
             return "WindowLayout";
-        }
-    };
-
-    template<>
-    struct ConversionTrait<ActionAndArgs>
-    {
-        ActionAndArgs FromJson(const Json::Value& json)
-        {
-            std::vector<SettingsLoadWarnings> v;
-            return *implementation::ActionAndArgs::FromJson(json, v);
-        }
-
-        bool CanConvert(const Json::Value& json)
-        {
-            // commands without args might just be a string
-            return json.isString() || json.isObject();
-        }
-
-        Json::Value ToJson(const ActionAndArgs& val)
-        {
-            return implementation::ActionAndArgs::ToJson(val);
-        }
-
-        std::string TypeDescription() const
-        {
-            return "ActionAndArgs";
         }
     };
 }

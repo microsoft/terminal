@@ -18,6 +18,7 @@ Abstract:
 #include <inc/cppwinrt_utils.h>
 #include <til/mutex.h>
 #include <til/throttled_func.h>
+#include <JsonUtils.h>
 
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
@@ -33,6 +34,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);
+
+        friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
     };
 
     struct ApplicationState : ApplicationStateT<ApplicationState>
