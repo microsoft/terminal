@@ -59,6 +59,7 @@ CascadiaSettings::CascadiaSettings(winrt::hstring json) :
 {
     const auto jsonString{ til::u16u8(json) };
     _ParseJsonString(jsonString, false);
+    _ApplyDefaultsFromUserSettings();
     LayerJson(_userSettings);
     _ValidateSettings();
 }
