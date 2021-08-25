@@ -788,4 +788,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
         return nullptr;
     }
+
+    winrt::fire_and_forget WindowManager::RequestMovePane(winrt::hstring window,
+                                                          winrt::guid contentGuid,
+                                                          uint32_t tabIndex)
+    {
+        co_await winrt::resume_background();
+        _monarch.RequestMovePane(window, contentGuid, tabIndex);
+    }
+
 }

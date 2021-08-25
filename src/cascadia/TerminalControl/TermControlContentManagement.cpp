@@ -15,6 +15,11 @@ using namespace winrt::Windows::System;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    winrt::guid TermControl::ContentGuid() const
+    {
+        return _contentIsOutOfProc() ? _contentProc.Guid() : winrt::guid{};
+    }
+
     bool TermControl::_contentIsOutOfProc() const
     {
         return _contentProc != nullptr;

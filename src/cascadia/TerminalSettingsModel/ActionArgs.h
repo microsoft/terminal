@@ -95,8 +95,9 @@ private:                                                                        
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
-#define MOVE_PANE_ARGS(X) \
-    X(uint32_t, TabIndex, "index", false, 0)
+#define MOVE_PANE_ARGS(X)                    \
+    X(uint32_t, TabIndex, "index", false, 0) \
+    X(winrt::hstring, Window, "window", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWITCH_TO_TAB_ARGS(X) \
@@ -269,6 +270,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
         ACTION_ARG(Windows::Foundation::IReference<bool>, Elevate, nullptr);
+        ACTION_ARG(winrt::guid, ContentGuid);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };

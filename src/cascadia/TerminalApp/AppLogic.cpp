@@ -1660,4 +1660,11 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().CurrentTheme();
     }
 
+    void AppLogic::AttachPane(winrt::guid contentGuid, uint32_t tabIndex)
+    {
+        if (_root)
+        {
+            _root->AttachPane(contentGuid, tabIndex);
+        }
+    }
 }

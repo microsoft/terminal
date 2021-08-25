@@ -5,6 +5,7 @@
 
 #include "Peasant.g.h"
 #include "RenameRequestArgs.h"
+#include "AttachRequest.g.h"
 
 namespace RemotingUnitTests
 {
@@ -12,6 +13,17 @@ namespace RemotingUnitTests
 };
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
+    struct AttachRequest : public AttachRequestT<AttachRequest>
+    {
+        WINRT_PROPERTY(winrt::guid, ContentGuid);
+        WINRT_PROPERTY(uint32_t, TabIndex);
+
+    public:
+        AttachRequest(winrt::guid contentGuid,
+                      uint32_t tabIndex) :
+            _ContentGuid{ contentGuid }, _TabIndex{ tabIndex } {};
+    };
+
     struct Peasant : public PeasantT<Peasant>
     {
         Peasant();
@@ -32,6 +44,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void RequestQuitAll();
         void Quit();
 
+        void AttachPaneToWindow(Remoting::AttachRequest request);
+
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
@@ -47,11 +61,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::RenameRequestArgs);
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
+
         TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
+
+        TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
 
     private:
         Peasant(const uint64_t testPID);

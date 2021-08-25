@@ -8,6 +8,7 @@
 #include "AppKeyBindings.h"
 #include "AppCommandlineArgs.h"
 #include "RenameWindowRequestedArgs.g.h"
+#include "RequestMovePaneArgs.g.h"
 #include "Toast.h"
 
 #define DECLARE_ACTION_HANDLER(action) void _Handle##action(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);
@@ -48,6 +49,18 @@ namespace winrt::TerminalApp::implementation
     public:
         RenameWindowRequestedArgs(const winrt::hstring& name) :
             _ProposedName{ name } {};
+    };
+
+    struct RequestMovePaneArgs : RequestMovePaneArgsT<RequestMovePaneArgs>
+    {
+        WINRT_PROPERTY(winrt::guid, ContentGuid);
+        WINRT_PROPERTY(Microsoft::Terminal::Settings::Model::MovePaneArgs, Args, nullptr);
+
+    public:
+        RequestMovePaneArgs(const winrt::guid& g,
+                            Microsoft::Terminal::Settings::Model::MovePaneArgs args) :
+            _ContentGuid{ g },
+            _Args{ args } {};
     };
 
     struct PreparedContent
@@ -138,10 +151,13 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
+
         bool IsElevated() const noexcept;
 
         void OpenSettingsUI();
         void WindowActivated(const bool activated);
+
+        winrt::fire_and_forget AttachPane(winrt::guid contentGuid, uint32_t tabIndex);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -160,10 +176,13 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+
         TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
         TYPED_EVENT(ShowWindowChanged, IInspectable, winrt::Microsoft::Terminal::Control::ShowWindowArgs)
+
+        TYPED_EVENT(RequestMovePane, Windows::Foundation::IInspectable, winrt::TerminalApp::RequestMovePaneArgs);
 
         WINRT_OBSERVABLE_PROPERTY(winrt::Windows::UI::Xaml::Media::Brush, TitlebarBrush, _PropertyChangedHandlers, nullptr);
 
@@ -301,7 +320,7 @@ namespace winrt::TerminalApp::implementation
         bool _SelectTab(uint32_t tabIndex);
         bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
-        bool _MovePane(const uint32_t tabIdx);
+        bool _MovePane(const Microsoft::Terminal::Settings::Model::MovePaneArgs args);
 
         template<typename F>
         bool _ApplyToActiveControls(F f)

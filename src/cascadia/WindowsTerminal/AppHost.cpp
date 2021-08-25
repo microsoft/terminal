@@ -329,6 +329,12 @@ void AppHost::_HandleCommandlineArgs()
             }
             _logic.SetNumberOfOpenWindows(numPeasants);
         }
+
+        // TODO! add revoker
+        peasant.AttachRequested([this](auto&&, Remoting::AttachRequest args) {
+            _logic.AttachPane(args.ContentGuid(), args.TabIndex());
+        });
+
         _logic.WindowName(peasant.WindowName());
         _logic.WindowId(peasant.GetID());
     }
@@ -423,6 +429,10 @@ void AppHost::Initialize()
     _revokers.OpenSystemMenu = _logic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _logic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _logic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
+    // TODO! revoker
+    _logic.RequestMovePane([this](auto&&, winrt::TerminalApp::RequestMovePaneArgs args) {
+        _windowManager.RequestMovePane(args.Args().Window(), args.ContentGuid(), args.Args().TabIndex());
+    });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default

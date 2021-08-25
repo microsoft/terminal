@@ -22,7 +22,11 @@ namespace Microsoft.Terminal.Remoting
         void RequestQuitAll();
         void UpdateActiveTabTitle(String title);
         Boolean DoesQuakeWindowExist();
+
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos();
+
+        void RequestMovePane(String window, Guid contentGuid, UInt32 tabIndex);
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
