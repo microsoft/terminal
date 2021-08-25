@@ -548,8 +548,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
         // Store the weight aside: we will be creating a span of all the axes in the vector except the weight,
         // and then we will add the weight to the vector
         // We are doing this so that when the text attribute is bold, we can apply all the axes except the weight
-        bool hasWeight{ false };
-        DWRITE_FONT_AXIS_VALUE weightAxis;
+        std::optional<DWRITE_FONT_AXIS_VALUE> weightAxis;
 
         // Since we are calling an 'emplace_back' after creating the span,
         // there is a chance a reallocation happens (if the vector needs to grow), which would make the span point to
@@ -568,7 +567,6 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
                 }
                 else
                 {
-                    hasWeight = true;
                     weightAxis = dwriteFontAxis;
                 }
                 _didUserSetItalic |= dwriteFontAxis.axisTag == DWRITE_FONT_AXIS_TAG_ITALIC && value == 1;
@@ -579,9 +577,9 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
         _axesVectorWithoutWeight = gsl::make_span(_axesVector);
 
         // Add the weight axis to the vector if needed
-        if (hasWeight)
+        if (weightAxis)
         {
-            _axesVector.emplace_back(weightAxis);
+            _axesVector.emplace_back(weightAxis.value());
         }
         _didUserSetAxes = true;
     }
