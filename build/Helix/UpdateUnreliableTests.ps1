@@ -23,7 +23,7 @@ Write-Host "queryUri = $queryUri"
 # To account for unreliable tests, we'll iterate through all of the tests associated with this build, check to see any tests that were unreliable
 # (denoted by being marked as "skipped"), and if so, we'll instead mark those tests with a warning and enumerate all of the attempted runs
 # with their pass/fail states as well as any relevant error messages for failed attempts.
-$testRuns = Invoke-RestMethodWithRetries -Uri $queryUri -Headers $azureDevOpsRestApiHeaders
+$testRuns = Invoke-RestMethodWithRetries $queryUri -Headers $azureDevOpsRestApiHeaders
 
 $timesSeenByRunName = @{}
       
@@ -35,7 +35,7 @@ foreach ($testRun in $testRuns.value)
     Invoke-RestMethod "$($testRun.url)?api-version=5.0" -Method Patch -Body (ConvertTo-Json @{ "state" = "InProgress" }) -Headers $azureDevOpsRestApiHeaders -ContentType "application/json" | Out-Null
 
     Write-Host "Retrieving test results..."
-    $testResults = Invoke-RestMethodWithRetries -Uri $testRunResultsUri -Method Get -Headers $azureDevOpsRestApiHeaders
+    $testResults = Invoke-RestMethodWithRetries $testRunResultsUri -Headers $azureDevOpsRestApiHeaders
         
     foreach ($testResult in $testResults.value)
     {
