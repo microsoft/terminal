@@ -571,10 +571,7 @@ void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, floa
                     hasWeight = true;
                     weightAxis = dwriteFontAxis;
                 }
-                if (dwriteFontAxis.axisTag == DWRITE_FONT_AXIS_TAG_ITALIC && value == 1)
-                {
-                    _didUserSetItalic = true;
-                }
+                _didUserSetItalic |= dwriteFontAxis.axisTag == DWRITE_FONT_AXIS_TAG_ITALIC && value == 1;
             }
         }
 
