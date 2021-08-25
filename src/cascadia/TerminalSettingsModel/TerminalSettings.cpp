@@ -124,6 +124,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             {
                 defaultSettings.StartingTitle(newTerminalArgs.TabTitle());
             }
+            else
+            {
+                // There was no title, and no profile from which to infer the title.
+                // Per GH#6776, promote the first component of the command line to the title.
+                // This will ensure that the tab we spawn has a name (since it didn't get one from its profile!)
+                if (newTerminalArgs.Profile().empty() && !newTerminalArgs.Commandline().empty())
+                {
+                    const std::wstring_view commandLine{ newTerminalArgs.Commandline() };
+                    const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+                    const auto terminator{ commandLine.find_first_of(start ? L'"' : L' ', start) }; // look past the first character if it starts with "
+                    // We have to take a copy here; winrt::param::hstring requires a null-terminated string
+                    const std::wstring firstComponent{ commandLine.substr(start, terminator - start) };
+                    defaultSettings.StartingTitle(firstComponent);
+                }
+            }
             if (newTerminalArgs.TabColor())
             {
                 defaultSettings.StartingTabColor(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>{ til::color{ newTerminalArgs.TabColor().Value() } });
