@@ -1423,8 +1423,37 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
         const auto contentProc = _AttachToContentProcess(contentGuid);
         contentProc;
+
+        Settings::Model::NewTerminalArgs newTerminalArgs{ nullptr };
+        auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+        auto controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+
         co_await winrt::resume_foreground(Dispatcher());
-        
+
+        auto newControl = _InitControl(controlSettings, contentProc.Guid());
+        // Hookup our event handlers to the new terminal
+        _RegisterTerminalEvents(newControl);
+        _UnZoomIfNeeded();
+
+        if (_tabs.Size() > tabIndex)
+        {
+            auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(tabIndex));
+            targetTab->SplitPane(SplitState::Vertical, .5f, profile, newControl);
+
+            // After GH#6586, the control will no longer focus itself
+            // automatically when it's finished being laid out. Manually focus
+            // the control here instead.
+            if (_startupState == StartupState::Initialized)
+            {
+                _GetActiveControl().Focus(FocusState::Programmatic);
+            }
+        }
+        // else
+        // {
+        //         realSplitType = tab.PreCalculateAutoSplit(availableSpace);
+
+        //     tab.SplitPane(realSplitType, splitSize, profile, newControl);
+        // }
     }
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
@@ -1520,10 +1549,6 @@ namespace winrt::TerminalApp::implementation
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            co_await winrt::resume_background();
-            const auto contentProc = _CreateNewContentProcess(profile, controlSettings).get();
-            co_await winrt::resume_foreground(Dispatcher());
-
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
             const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
@@ -1540,6 +1565,9 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
 
+            co_await winrt::resume_background();
+            const auto contentProc = _CreateNewContentProcess(profile, controlSettings).get();
+            co_await winrt::resume_foreground(Dispatcher());
             auto newControl = _InitControl(controlSettings, contentProc.Guid());
 
             // Hookup our event handlers to the new terminal
