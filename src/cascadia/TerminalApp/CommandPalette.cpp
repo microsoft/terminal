@@ -739,14 +739,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const winrt::hstring& commandLine)
+    std::optional<TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const hstring& commandLine)
     {
         if (commandLine.empty())
         {
             return std::nullopt;
         }
 
-        auto commandLinePaletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(commandLine) };
+        auto commandLinePaletteItem{ winrt::make<CommandLinePaletteItem>(commandLine) };
         return winrt::make<FilteredCommand>(commandLinePaletteItem);
     }
 
@@ -1216,10 +1216,10 @@ namespace winrt::TerminalApp::implementation
     // - Reads the list of recent commands from the persistent application state
     // Return Value:
     // - The list of FilteredCommand representing the ones stored in the state
-    Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
+    IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        std::vector<winrt::TerminalApp::FilteredCommand> parsedCommands;
+        std::vector<TerminalApp::FilteredCommand> parsedCommands;
         parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
 
         for (const auto& c : recentCommands)
@@ -1243,7 +1243,7 @@ namespace winrt::TerminalApp::implementation
     // Upon race condition might override an update made by another window.
     // Return Value:
     // - <none>
-    void CommandPalette::_updateRecentCommands(const winrt::hstring& command)
+    void CommandPalette::_updateRecentCommands(const hstring& command)
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
         std::vector<hstring> newRecentCommands{ std::min(recentCommands.Size(), CommandLineHistoryLength - 1) };
