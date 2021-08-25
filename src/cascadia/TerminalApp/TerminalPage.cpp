@@ -6,6 +6,7 @@
 #include "TerminalPage.h"
 #include "TerminalPage.g.cpp"
 #include "RenameWindowRequestedArgs.g.cpp"
+#include "RequestMovePaneArgs.g.cpp"
 
 #include <filesystem>
 
@@ -1949,16 +1950,30 @@ namespace winrt::TerminalApp::implementation
     // - No move will occur if the tabIdx is the same as the current tab, or if
     //   the specified tab is not a host of terminals (such as the settings tab).
     // Arguments:
-    // - tabIdx: The target tab index.
+    // - TODO!
     // Return Value:
     // - true if the pane was successfully moved to the new tab.
-    bool TerminalPage::_MovePane(const uint32_t tabIdx)
+    bool TerminalPage::_MovePane(MovePaneArgs args)
     {
+        const auto tabIdx{ args.TabIndex() };
+        const auto windowId{ args.Window() };
+
         auto focusedTab{ _GetFocusedTabImpl() };
 
         if (!focusedTab)
         {
             return false;
+        }
+
+        if (!windowId.empty())
+        {
+            if (const auto& control{ _GetActiveControl() })
+            {
+                const auto currentContentGuid{ control.ContentGuid() };
+                auto request = winrt::make_self<RequestMovePaneArgs>(currentContentGuid, args);
+                _RequestMovePaneHandlers(*this, *request);
+                return true;
+            }
         }
 
         // If we are trying to move from the current tab to the current tab do nothing.
@@ -1991,6 +2006,15 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    winrt::fire_and_forget TerminalPage::AttachPane(winrt::guid contentGuid, uint32_t tabIndex)
+    {
+        contentGuid;
+        tabIndex;
+        co_await winrt::resume_background();
+        // const auto contentProc = _AttachToContentProcess(contentGuid);
+        // contentProc;
+        co_await winrt::resume_foreground(Dispatcher());
+    }
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given pane accordingly in the tree

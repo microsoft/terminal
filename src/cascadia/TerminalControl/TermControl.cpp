@@ -142,6 +142,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _ApplyUISettings();
     }
 
+    winrt::guid TermControl::ContentGuid() const
+    {
+        return _interactivity.Id();
+    }
+
     void TermControl::_throttledUpdateScrollbar(const ScrollBarUpdate& update)
     {
         // Assumptions:

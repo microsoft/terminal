@@ -1240,4 +1240,12 @@ namespace winrt::TerminalApp::implementation
         return WindowName() == QuakeWindowName;
     }
     ////////////////////////////////////////////////////////////////////////////
+
+    void TerminalWindow::AttachPane(winrt::guid contentGuid, uint32_t tabIndex)
+    {
+        if (_root)
+        {
+            _root->AttachPane(contentGuid, tabIndex);
+        }
+    }
 };

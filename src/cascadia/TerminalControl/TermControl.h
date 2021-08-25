@@ -35,6 +35,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
         IControlSettings Settings() const;
 
+        winrt::guid ContentGuid() const;
+
         hstring GetProfileName() const;
 
         bool CopySelectionToClipboard(bool singleLine, const Windows::Foundation::IReference<CopyFormat>& formats);

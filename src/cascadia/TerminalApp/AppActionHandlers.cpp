@@ -209,7 +209,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
         {
-            auto moved = _MovePane(realArgs.TabIndex());
+            auto moved = _MovePane(realArgs);
             args.Handled(moved);
         }
     }

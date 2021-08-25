@@ -25,8 +25,9 @@ namespace Microsoft.Terminal.Remoting
 
         UInt64 GetNumberOfPeasants();
 
-
         Boolean DoesQuakeWindowExist();
+
+        void RequestMovePane(String window, Guid contentGuid, UInt32 tabIndex);
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
 
@@ -36,7 +37,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
-
 
         event Windows.Foundation.TypedEventHandler<Object, WindowRequestedArgs> RequestNewWindow;
 

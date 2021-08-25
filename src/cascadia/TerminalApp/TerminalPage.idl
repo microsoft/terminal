@@ -22,6 +22,11 @@ namespace TerminalApp
     {
         String ProposedName { get; };
     };
+    [default_interface] runtimeclass RequestMovePaneArgs
+    {
+        Microsoft.Terminal.Settings.Model.MovePaneArgs Args { get; };
+        Guid ContentGuid { get; };
+    };
 
     interface IDialogPresenter
     {
@@ -61,6 +66,7 @@ namespace TerminalApp
         String KeyboardServiceDisabledText { get; };
 
         TaskbarState TaskbarState{ get; };
+        void AttachPane(Guid contentGuid, UInt32 tabIndex);
 
         Windows.UI.Xaml.Media.Brush TitlebarBrush { get; };
         void WindowActivated(Boolean activated);
@@ -77,8 +83,12 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Microsoft.Terminal.Control.ShowWindowArgs> ShowWindowChanged;
+
+        event Windows.Foundation.TypedEventHandler<Object, RequestMovePaneArgs> RequestMovePane;
+
     }
 }

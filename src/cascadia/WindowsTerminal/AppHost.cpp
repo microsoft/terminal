@@ -352,6 +352,11 @@ void AppHost::_HandleCommandlineArgs(/*const winrt::Microsoft::Terminal::Remotin
         // }
         _windowLogic.WindowName(_peasant.WindowName());
         _windowLogic.WindowId(_peasant.GetID());
+
+        // TODO! add revoker
+        _peasant.AttachRequested([this](auto&&, Remoting::AttachRequest args) {
+            _windowLogic.AttachPane(args.ContentGuid(), args.TabIndex());
+        });
     }
 }
 
@@ -454,6 +459,11 @@ void AppHost::Initialize()
     _revokers.OpenSystemMenu = _windowLogic.OpenSystemMenu(winrt::auto_revoke, { this, &AppHost::_OpenSystemMenu });
     _revokers.QuitRequested = _windowLogic.QuitRequested(winrt::auto_revoke, { this, &AppHost::_RequestQuitAll });
     _revokers.ShowWindowChanged = _windowLogic.ShowWindowChanged(winrt::auto_revoke, { this, &AppHost::_ShowWindowChanged });
+
+    // TODO! revoker
+    _windowLogic.RequestMovePane([this](auto&&, winrt::TerminalApp::RequestMovePaneArgs args) {
+        _windowManager2.RequestMovePane(args.Args().Window(), args.ContentGuid(), args.Args().TabIndex());
+    });
 
     // BODGY
     // On certain builds of Windows, when Terminal is set as the default
@@ -1500,7 +1510,7 @@ void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs&)
 {
     // TODO! wat do
-    // 
+    //
     //// Make sure that the current timer is destroyed so that it doesn't attempt
     //// to run while we are in the middle of quitting.
     //if (_getWindowLayoutThrottler.has_value())
