@@ -1875,7 +1875,40 @@ namespace winrt::TerminalApp::implementation
         co_await winrt::resume_background();
         const auto contentProc = _AttachToContentProcess(contentGuid);
         contentProc;
+
+        Settings::Model::NewTerminalArgs newTerminalArgs{ nullptr };
+        auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+        auto controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+
         co_await winrt::resume_foreground(Dispatcher());
+
+        auto newControl = _InitControl(controlSettings, contentProc.Guid());
+        // Hookup our event handlers to the new terminal
+        _RegisterTerminalEvents(newControl);
+        auto resultPane = std::make_shared<Pane>(profile, newControl);
+
+        _UnZoomIfNeeded();
+
+        uint32_t realIndex = std::min(tabIndex, _tabs.Size() - 1);
+        // if (_tabs.Size() > tabIndex)
+        // {
+        auto targetTab = _GetTerminalTabImpl(_tabs.GetAt(realIndex));
+        targetTab->SplitPane(SplitDirection::Automatic, .5f, resultPane);
+
+        // After GH#6586, the control will no longer focus itself
+        // automatically when it's finished being laid out. Manually focus
+        // the control here instead.
+        if (_startupState == StartupState::Initialized)
+        {
+            _GetActiveControl().Focus(FocusState::Programmatic);
+        }
+        // }
+        // else
+        // {
+        //         realSplitType = tab.PreCalculateAutoSplit(availableSpace);
+
+        //     tab.SplitPane(realSplitType, splitSize, profile, newControl);
+        // }
     }
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
