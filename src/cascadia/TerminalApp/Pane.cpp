@@ -58,8 +58,8 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     _root.Background(s_unfocusedBorderBrush);
 
     // Register an event with the control to have it inform us when it gains focus.
-    _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-    _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+    _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+    _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -1202,7 +1202,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         auto detached = isFirstChild ? _firstChild : _secondChild;
         // Remove the child from the tree, replace the current node with the
         // other child.
-        _CloseChild(isFirstChild);
+        _CloseChild(isFirstChild, true);
 
         detached->_borders = Borders::None;
         detached->_UpdateBorders();
@@ -1230,9 +1230,12 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 // Arguments:
 // - closeFirst: if true, the first child should be closed, and the second
 //   should be preserved, and vice-versa for false.
+// - isDetaching: if true, then the pane event handlers for the closed child
+//   should be kept, this way they don't have to be recreated when it is later
+//   reattached to a tree somewhere as the control moves with the pane.
 // Return Value:
 // - <none>
-void Pane::_CloseChild(const bool closeFirst)
+void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -1250,6 +1253,8 @@ void Pane::_CloseChild(const bool closeFirst)
 
     auto closedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
+    auto closedChildClosedToken = closeFirst ? _firstClosedToken : _secondClosedToken;
+    auto remainingChildClosedToken = closeFirst ? _secondClosedToken : _firstClosedToken;
 
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
@@ -1275,11 +1280,18 @@ void Pane::_CloseChild(const bool closeFirst)
         // themselves closing, and remove their handlers for their controls
         // closing. At this point, if the remaining child's control is closed,
         // they'll trigger only our event handler for the control's close.
-        _firstChild->Closed(_firstClosedToken);
-        _secondChild->Closed(_secondClosedToken);
-        closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+
+        // However, if we are detaching the pane we want to keep its control
+        // handlers since it is just getting moved.
+        if (!isDetaching)
+        {
+            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        }
+
+        closedChild->Closed(closedChildClosedToken);
+        remainingChild->Closed(remainingChildClosedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
-        closedChild->_control.WarningBell(closedChild->_warningBellToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
 
         // If either of our children was focused, we want to take that focus from
@@ -1339,12 +1351,6 @@ void Pane::_CloseChild(const bool closeFirst)
         // Find what borders need to persist after we close the child
         auto remainingBorders = _GetCommonBorders();
 
-        // First stash away references to the old panes and their tokens
-        const auto oldFirstToken = _firstClosedToken;
-        const auto oldSecondToken = _secondClosedToken;
-        const auto oldFirst = _firstChild;
-        const auto oldSecond = _secondChild;
-
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
         _firstChild = remainingChild->_firstChild;
@@ -1357,11 +1363,14 @@ void Pane::_CloseChild(const bool closeFirst)
         _firstChild->Closed(remainingChild->_firstClosedToken);
         _secondChild->Closed(remainingChild->_secondClosedToken);
 
-        // Revoke event handlers on old panes and controls
-        oldFirst->Closed(oldFirstToken);
-        oldSecond->Closed(oldSecondToken);
-        closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-        closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        // Remove the event handlers on the old children
+        remainingChild->Closed(remainingChildClosedToken);
+        closedChild->Closed(closedChildClosedToken);
+        if (!isDetaching)
+        {
+            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        }
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1432,7 +1441,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         // this one doesn't seem to.
         if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
         {
-            pane->_CloseChild(closeFirst);
+            pane->_CloseChild(closeFirst, false);
             co_return;
         }
 
@@ -1539,7 +1548,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
             {
                 // We don't need to manually undo any of the above trickiness.
                 // We're going to re-parent the child's content into us anyways
-                pane->_CloseChild(closeFirst);
+                pane->_CloseChild(closeFirst, false);
             }
         });
     }

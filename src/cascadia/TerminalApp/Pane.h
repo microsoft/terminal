@@ -210,7 +210,7 @@ private:
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
                                             const PanePoint offset);
 
-    void _CloseChild(const bool closeFirst);
+    void _CloseChild(const bool closeFirst, const bool isDetaching);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
 
     void _FocusFirstChild();
