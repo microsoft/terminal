@@ -814,12 +814,6 @@ namespace winrt::TerminalApp::implementation
     TerminalConnection::ITerminalConnection TerminalPage::_CreateConnectionFromSettings(Profile profile,
                                                                                         TerminalSettings settings)
     {
-        if (!profile)
-        {
-            // Use the default profile if we didn't get one as an argument.
-            profile = _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
-        }
-
         TerminalConnection::ITerminalConnection connection{ nullptr };
 
         winrt::guid connectionType = profile.ConnectionType();
@@ -1369,6 +1363,8 @@ namespace winrt::TerminalApp::implementation
                 profile = tab.GetFocusedProfile();
                 if (profile)
                 {
+                    // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+                    profile = GetClosestProfileForDuplicationOfProfile(profile);
                     controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
                     const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                     const auto validWorkingDirectory = !workingDirectory.empty();
@@ -2534,13 +2530,28 @@ namespace winrt::TerminalApp::implementation
         // and wait on it hence the locking mechanism.
         if (Dispatcher().HasThreadAccess())
         {
-            // TODO: GH 9458 will give us more context so we can try to choose a better profile.
-            auto hr = _OpenNewTab(nullptr, connection);
+            try
+            {
+                NewTerminalArgs newTerminalArgs{};
+                // TODO GH#10952: When we pass the actual commandline (or originating application), the
+                // settings model can choose the right settings based on command matching, or synthesize
+                // a profile from the registry/link settings (TODO GH#9458).
+                // TODO GH#9458: Get and pass the LNK/EXE filenames.
+                // Passing in a commandline forces GetProfileForArgs to use Base Layer instead of Default Profile;
+                // in the future, it can make a better decision based on the value we pull out of the process handle.
+                // TODO GH#5047: When we hang on to the N.T.A., try not to spawn "default... .exe" :)
+                newTerminalArgs.Commandline(L"default-terminal-invocation-placeholder");
+                const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+                const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
 
-            // Request a summon of this window to the foreground
-            _SummonWindowRequestedHandlers(*this, nullptr);
+                _CreateNewTabWithProfileAndSettings(profile, settings, connection);
 
-            return hr;
+                // Request a summon of this window to the foreground
+                _SummonWindowRequestedHandlers(*this, nullptr);
+            }
+            CATCH_RETURN();
+
+            return S_OK;
         }
         else
         {
@@ -2548,9 +2559,8 @@ namespace winrt::TerminalApp::implementation
             HRESULT finalVal = S_OK;
 
             Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-                finalVal = _OpenNewTab(nullptr, connection);
-
-                _SummonWindowRequestedHandlers(*this, nullptr);
+                // Re-running ourselves under the dispatcher will cause us to take the first branch above.
+                finalVal = _OnNewConnection(connection);
 
                 latch.count_down();
             });
@@ -3047,5 +3057,17 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::IsQuakeWindow() const noexcept
     {
         return WindowName() == QuakeWindowName;
+    }
+
+    // Method Description:
+    // - This function stops people from duplicating the base profile, because
+    //   it gets ~ ~ weird ~ ~ when they do. Remove when TODO GH#5047 is done.
+    Profile TerminalPage::GetClosestProfileForDuplicationOfProfile(const Profile& profile) const noexcept
+    {
+        if (profile == _settings.ProfileDefaults())
+        {
+            return _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
+        }
+        return profile;
     }
 }
