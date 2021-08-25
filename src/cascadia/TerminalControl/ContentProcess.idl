@@ -7,7 +7,7 @@ namespace Microsoft.Terminal.Control
 {
     runtimeclass ContentProcess {
 
-        ContentProcess();
+        ContentProcess(Guid g);
 
         Boolean Initialize(IControlSettings settings,
                            Microsoft.Terminal.TerminalConnection.ConnectionInformation connectionInfo);
@@ -15,6 +15,7 @@ namespace Microsoft.Terminal.Control
         ControlInteractivity GetInteractivity();
 
         UInt64 GetPID();
+        Guid Guid { get; };
 
         UInt64 RequestSwapChainHandle(UInt64 pid);
     };

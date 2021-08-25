@@ -63,8 +63,9 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
+        // TODO! Handle defterm connections here (and above)
         // _CreateNewTabWithProfileAndSettings(profile, settings, existingConnection);
-        _CreateTabWithContent(profile, settings);
+        _CreateTabWithContent(profile, settings, nullptr);
 
         // const uint32_t tabCount = _tabs.Size();
         // const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -238,7 +239,7 @@ namespace winrt::TerminalApp::implementation
         // ready to go. We won't need the event after this function, so the
         // unique_event will clean up our handle when we leave this scope. The
         // ContentProcess is responsible for cleaning up its own handle.
-        wil::unique_event ev{ CreateEvent(nullptr, true, false, nullptr/*L"contentProcessStarted"*/) };
+        wil::unique_event ev{ CreateEvent(nullptr, true, false, nullptr /*L"contentProcessStarted"*/) };
         // Make sure to mark this handle as inheritable! Even with
         // bInheritHandles=true, this is only inherited when it's explicitly
         // allowed to be.
@@ -272,13 +273,11 @@ namespace winrt::TerminalApp::implementation
         return std::move(piOne);
     }
 
-    winrt::fire_and_forget TerminalPage::_CreateTabWithContent(Profile profile,
-                                                               TerminalSettingsCreateResult settings)
+    Windows::Foundation::IAsyncOperation<ContentProcess> TerminalPage::_CreateNewContentProcess(Profile profile,
+                                                                           TerminalSettingsCreateResult settings)
     {
-        // Capture calling context.
-        winrt::apartment_context ui_thread;
-        winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
         co_await winrt::resume_background();
+        winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
         // Spawn a wt.exe, with the guid on the commandline
         auto piContentProcess{ _createHostClassProcess(contentGuid) };
         // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
@@ -295,26 +294,60 @@ namespace winrt::TerminalApp::implementation
         {
             // _writeToLog(L"CreateInstance the ContentProces object");
             // _writeToLog(fmt::format(L"    HR ({}): {}", hr.code(), hr.message().c_str()));
-            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+            co_return nullptr; // be sure to co_return or we'll fall through to the part where we clear the log
         }
 
         if (content == nullptr)
         {
             // _writeToLog(L"Failed to connect to the ContentProces object. It may not have been started fast enough.");
-            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+            co_return nullptr; // be sure to co_return or we'll fall through to the part where we clear the log
         }
+
         TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings.DefaultSettings()) };
         // TODO! how do we init the content proc with the focused/unfocused pair correctly?
         if (!content.Initialize(settings.DefaultSettings(), connectInfo))
         {
             // _writeToLog(L"Failed to Initialize the ContentProces object.");
-            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+            co_return nullptr; // be sure to co_return or we'll fall through to the part where we clear the log
         }
+
+        co_return content;
+    }
+
+    ContentProcess TerminalPage::_AttachToContentProcess(const winrt::guid contentGuid)
+    {
+        ContentProcess content{ nullptr };
+        try
+        {
+            content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+        }
+        catch (winrt::hresult_error hr)
+        {
+            // _writeToLog(L"CreateInstance the ContentProces object");
+            // _writeToLog(fmt::format(L"    HR ({}): {}", hr.code(), hr.message().c_str()));
+            // return nullptr; // be sure to co_return or we'll fall through to the part where we clear the log
+        }
+        return content;
+    }
+
+    winrt::fire_and_forget TerminalPage::_CreateTabWithContent(Profile profile,
+                                                               TerminalSettingsCreateResult settings,
+                                                               ContentProcess existingContentProc)
+    {
+        // Capture calling context.
+        winrt::apartment_context ui_thread;
+        co_await winrt::resume_background();
+        auto content = existingContentProc ? existingContentProc : _CreateNewContentProcess(profile, settings).get();
+        if (!content)
+        {
+            co_return;
+        }
+
         // Switch back to the UI thread.
         co_await ui_thread;
         // Create the XAML control that will be attached to the content process.
         // We're not passing in a connection, because the contentGuid will be used instead.
-        auto term = _InitControl(settings, contentGuid);
+        auto term = _InitControl(settings, content.Guid());
         auto newTabImpl = winrt::make_self<TerminalTab>(profile, term);
         _RegisterTerminalEvents(term);
         _InitializeTab(newTabImpl);
@@ -455,9 +488,11 @@ namespace winrt::TerminalApp::implementation
                     settingsCreateResult.DefaultSettings().StartingDirectory(workingDirectory);
                 }
 
-                _CreateTabWithContent(profile, settingsCreateResult);
+                _CreateTabWithContent(profile, settingsCreateResult, nullptr);
 
-                // TODO!
+                // TODO! duplicating a tab should dup the tab title over, but
+                // _CreateTabWithContent will return before the tab actually
+                // exists.
                 //
                 // const auto runtimeTabText{ tab.GetTabText() };
                 // if (!runtimeTabText.empty())

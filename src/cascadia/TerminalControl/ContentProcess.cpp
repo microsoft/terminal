@@ -7,8 +7,8 @@
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    ContentProcess::ContentProcess() :
-        _ourPID{ GetCurrentProcessId() } {}
+    ContentProcess::ContentProcess(winrt::guid g) :
+        _ourPID{ GetCurrentProcessId() }, _guid{ g } {}
 
     bool ContentProcess::Initialize(Control::IControlSettings settings,
                                     TerminalConnection::ConnectionInformation connectionInfo)
@@ -41,6 +41,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     uint64_t ContentProcess::GetPID()
     {
         return _ourPID;
+    }
+    winrt::guid ContentProcess::Guid()
+    {
+        return _guid;
     }
 
     // Method Description:

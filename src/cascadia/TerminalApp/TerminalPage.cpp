@@ -466,7 +466,7 @@ namespace winrt::TerminalApp::implementation
                 // TODO! this doesn't work during startup anymore now that
                 // tabs are made on a BG thread
                 activeControl.Focus(FocusState::Programmatic);
-            }   
+            }
         }
         if (initial)
         {
@@ -1446,11 +1446,11 @@ namespace winrt::TerminalApp::implementation
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
-    void TerminalPage::_SplitPane(TerminalTab& tab,
-                                  const SplitState splitType,
-                                  const SplitType splitMode,
-                                  const float splitSize,
-                                  const NewTerminalArgs& newTerminalArgs)
+    winrt::fire_and_forget TerminalPage::_SplitPane(TerminalTab& tab,
+                                                    const SplitState splitType,
+                                                    const SplitType splitMode,
+                                                    const float splitSize,
+                                                    const NewTerminalArgs& newTerminalArgs)
     {
         // Do nothing if we're requesting no split.
         if (splitType == SplitState::None)
@@ -1495,7 +1495,11 @@ namespace winrt::TerminalApp::implementation
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            const auto controlConnection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+            // const auto controlConnection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+
+            co_await winrt::resume_background();
+            const auto contentProc = _CreateNewContentProcess(profile, controlSettings).get();
+            co_await winrt::resume_foreground(Dispatcher());
 
             const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -1510,10 +1514,11 @@ namespace winrt::TerminalApp::implementation
             const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
             if (!canSplit)
             {
-                return;
+                co_return;
             }
 
-            auto newControl = _InitControl(controlSettings, controlConnection);
+            auto newControl = _InitControl(controlSettings, contentProc.Guid());
+            // auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl);
