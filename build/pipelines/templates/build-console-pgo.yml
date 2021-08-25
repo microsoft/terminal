@@ -3,7 +3,7 @@ parameters:
   platform: ''
   additionalBuildArguments: ''
   minimumExpectedTestsExecutedCount: 1  # Sanity check for minimum expected tests to be reported
-  rerunPassesRequiredToAvoidFailure: 0
+  rerunPassesRequiredToAvoidFailure: 5
 
 jobs:
 - job: Build${{ parameters.platform }}${{ parameters.configuration }}

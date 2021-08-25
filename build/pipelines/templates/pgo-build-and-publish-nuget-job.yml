@@ -20,11 +20,15 @@ jobs:
     inputs:
       artifactName: ${{ parameters.pgoArtifact }}
       downloadPath: $(artifactsPath)
-  
-  - task: NuGetToolInstaller@0
-    displayName: 'Use NuGet 5.2.0'
+
+  - task: NuGetAuthenticate@0
     inputs:
-      versionSpec: 5.2.0
+      nuGetServiceConnections: 'Terminal Public Artifact Feed'
+
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 5.8.0'
+    inputs:
+      versionSpec: 5.8.0
 
   - task: CopyFiles@2
     displayName: 'Copy pgd files to NuGet build directory'
@@ -58,5 +62,11 @@ jobs:
     displayName: 'NuGet push'
     inputs:
       command: push
-      publishVstsFeed: Terminal/TerminalDependencies
+      nuGetFeedType: external
       packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
+      # The actual URL and PAT for this feed is configured at
+      # https://microsoft.visualstudio.com/Dart/_settings/adminservices
+      # This is the name of that connection
+      publishFeedCredentials: 'Terminal Public Artifact Feed'
+      feedsToUse: config
+      nugetConfigPath: '$(Build.SourcesDirectory)/NuGet.config'
