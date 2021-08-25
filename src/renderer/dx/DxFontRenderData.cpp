@@ -537,29 +537,54 @@ void DxFontRenderData::_SetFeatures(const std::unordered_map<std::wstring_view, 
 // - axes - the axes to update our map with
 void DxFontRenderData::_SetAxes(const std::unordered_map<std::wstring_view, float>& axes)
 {
-    _axesVector.clear();
+    // Clear out the old vector and booleans in case this is a hot reload
+    _axesVector = std::vector<DWRITE_FONT_AXIS_VALUE>{};
     _didUserSetAxes = false;
     _didUserSetItalic = false;
 
     // Update our axis map with the provided axes
     if (!axes.empty())
     {
+        // Store the weight aside: we will be creating a span of all the axes in the vector except the weight,
+        // and then we will add the weight to the vector
+        // We are doing this so that when the text attribute is bold, we can apply all the axes except the weight
+        bool hasWeight{ false };
+        DWRITE_FONT_AXIS_VALUE weightAxis;
+
+        // Since we are calling an 'emplace_back' after creating the span,
+        // there is a chance a reallocation happens (if the vector needs to grow), which would make the span point to
+        // deallocated memory. To avoid this, make sure to reserve enough memory in the vector.
+        _axesVector.reserve(axes.size());
+
 #pragma warning(suppress : 26445) // the analyzer doesn't like reference to string_view
         for (const auto& [axis, value] : axes)
         {
             if (axis.length() == TAG_LENGTH)
             {
                 const auto dwriteFontAxis = DWRITE_FONT_AXIS_VALUE{ DWRITE_MAKE_FONT_AXIS_TAG(til::at(axis, 0), til::at(axis, 1), til::at(axis, 2), til::at(axis, 3)), value };
-                _axesVector.emplace_back(dwriteFontAxis);
                 if (dwriteFontAxis.axisTag != DWRITE_FONT_AXIS_TAG_WEIGHT)
                 {
-                    _axesVectorWithoutWeight.emplace_back(dwriteFontAxis);
+                    _axesVector.emplace_back(dwriteFontAxis);
+                }
+                else
+                {
+                    hasWeight = true;
+                    weightAxis = dwriteFontAxis;
                 }
                 if (dwriteFontAxis.axisTag == DWRITE_FONT_AXIS_TAG_ITALIC && value == 1)
                 {
                     _didUserSetItalic = true;
                 }
             }
+        }
+
+        // Make the span, which has all the axes except the weight
+        _axesVectorWithoutWeight = gsl::make_span(_axesVector);
+
+        // Add the weight axis to the vector if needed
+        if (hasWeight)
+        {
+            _axesVector.emplace_back(weightAxis);
         }
         _didUserSetAxes = true;
     }
