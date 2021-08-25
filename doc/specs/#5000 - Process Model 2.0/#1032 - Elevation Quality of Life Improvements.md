@@ -137,6 +137,13 @@ tabs for elevated windows. This shield could be configured by the theme (see
 ![UAC-shield-in-titlebar](UAC-shield-in-titlebar.png)
 _figure 1: a monochrome UAC shield in the titlebar of the window, courtesy of @mdtauk_
 
+We could also simplify this to only allow a boolean true/false for displaying
+the shield. As we do often with other enums, we could define `true` to be the
+same as the default appearance, and `false` to be the hidden option. As always,
+the development of the Terminal is an iterative process, where we can
+incrememntally improve from no setting, to a boolean setting, to a enum-backed
+one.
+
 ### Configuring a profile to always run elevated
 
 Oftentimes, users might have a particular tool chain that only works when
@@ -374,7 +381,9 @@ we'll add it to an elevated-only version of `state.json`. (see [#7972] for more
 details). This elevated version of the file will only be accessible by the
 elevated Terminal, so an attacker cannot hijack the contents of the file. This
 will help mitigate the UX discomfort caused by prompting on every commandline
-launched. This should mean that the discomfort is only
+launched. This should mean that the discomfort is only limited to the first
+elevated launch of a particular profile. Subsequent launches (without modifying
+the `commandline`) will work as they always have.
 
 The dialog for confirming these commandlines should have a link to the docs for
 "Learn more...". Transparency in the face of this dialog should
@@ -508,6 +517,10 @@ does become available on those SKUs, we can use these proposals as mitigations.
   unelevated" for the future. This also plays into the design of "configure the
   new tab dropdown" ([#1571]), and reconciling those two designs is out-of-scope
   for this particular release.
+* Tangentially, we may want to have a separate Terminal icon we ship with the
+  UAC shield present on it. This would be especially useful for the tray icon.
+  Since there will be different tray icon instances for elevated and unelevated
+  windows, having unique icons may help users identify which is which.
 
 ### De-elevating a Terminal
 
