@@ -87,8 +87,8 @@ private:
 
     void _CreateTrayIcon();
     void _DestroyTrayIcon();
-    winrt::fire_and_forget _ShowTrayIconRequested();
-    winrt::fire_and_forget _HideTrayIconRequested();
+    void _ShowTrayIconRequested();
+    void _HideTrayIconRequested();
     std::unique_ptr<TrayIcon> _trayIcon;
     winrt::event_token _ReAddTrayIconToken;
     winrt::event_token _TrayIconPressedToken;

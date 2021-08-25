@@ -25,7 +25,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const GUID& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
@@ -257,22 +257,19 @@ namespace winrt::TerminalApp::implementation
     // Return Value:
     // - nullopt if no children of this tab were the last control to be
     //   focused, else the GUID of the profile of the last control to be focused
-    std::optional<GUID> TerminalTab::GetFocusedProfile() const noexcept
+    Profile TerminalTab::GetFocusedProfile() const noexcept
     {
         return _activePane->GetFocusedProfile();
     }
 
     // Method Description:
-    // - Attempts to update the settings of this tab's tree of panes.
-    // Arguments:
-    // - settings: The new TerminalSettingsCreateResult to apply to any matching controls
-    // - profile: The GUID of the profile these settings should apply to.
+    // - Attempts to update the settings that apply to this tab.
+    // - Panes are handled elsewhere, by somebody who can establish broader knowledge
+    //   of the settings that apply to all tabs.
     // Return Value:
     // - <none>
-    void TerminalTab::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
+    void TerminalTab::UpdateSettings()
     {
-        _rootPane->UpdateSettings(settings, profile);
-
         // The tabWidthMode may have changed, update the header control accordingly
         _UpdateHeaderControlMaxWidth();
     }
@@ -451,7 +448,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::SplitPane(SplitState splitType,
                                 const float splitSize,
-                                const GUID& profile,
+                                const Profile& profile,
                                 TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
@@ -491,7 +488,7 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - <none>
     // Return Value:
-    // - The removed pane.
+    // - The removed pane, if the remove succeeded.
     std::shared_ptr<Pane> TerminalTab::DetachPane()
     {
         // if we only have one pane, remove it entirely
@@ -664,7 +661,12 @@ namespace winrt::TerminalApp::implementation
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            return _rootPane->NavigateFocus(direction);
+            if (auto newFocus = _rootPane->NavigateDirection(_activePane, direction))
+            {
+                return _rootPane->FocusPane(newFocus);
+            }
+
+            return false;
         }
     }
 
@@ -675,26 +677,33 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - direction: The direction to move the pane in.
     // Return Value:
-    // - <none>
-    void TerminalTab::SwapPane(const FocusDirection& direction)
+    // - true if two panes were swapped.
+    bool TerminalTab::SwapPane(const FocusDirection& direction)
     {
         if (direction == FocusDirection::Previous)
         {
             if (_mruPanes.size() < 2)
             {
-                return;
+                return false;
             }
             if (auto lastPane = _rootPane->FindPane(_mruPanes.at(1)))
             {
-                _rootPane->SwapPanes(_activePane, lastPane);
+                return _rootPane->SwapPanes(_activePane, lastPane);
             }
         }
         else
         {
             // NOTE: This _must_ be called on the root pane, so that it can propagate
             // throughout the entire tree.
-            _rootPane->SwapPane(direction);
+            if (auto neighbor = _rootPane->NavigateDirection(_activePane, direction))
+            {
+                return _rootPane->SwapPanes(_activePane, neighbor);
+            }
+
+            return false;
         }
+
+        return false;
     }
 
     bool TerminalTab::FocusPane(const uint32_t id)

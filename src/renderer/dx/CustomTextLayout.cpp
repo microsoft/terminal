@@ -145,9 +145,16 @@ try
     {
         // TODO: "relative" bold?
         weight = DWRITE_FONT_WEIGHT_BOLD;
+        // Since we are setting the font weight according to the text attribute,
+        // make sure to tell the text format to ignore the user set font weight
+        _fontRenderData->InhibitUserWeight(true);
+    }
+    else
+    {
+        _fontRenderData->InhibitUserWeight(false);
     }
 
-    if (drawingContext->useItalicFont)
+    if (drawingContext->useItalicFont || _fontRenderData->DidUserSetItalic())
     {
         style = DWRITE_FONT_STYLE_ITALIC;
     }
@@ -236,7 +243,7 @@ CATCH_RETURN()
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        if (!_isEntireTextSimple)
+        if (!_isEntireTextSimple || _fontRenderData->DidUserSetAxes())
         {
             // Call each of the analyzers in sequence, recording their results.
             RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, 0, textLength, this));

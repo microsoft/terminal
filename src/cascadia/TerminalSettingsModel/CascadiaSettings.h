@@ -86,8 +86,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring ApplicationVersion();
 
         Model::Profile CreateNewProfile();
-        Model::Profile FindProfile(guid profileGuid) const noexcept;
-        Model::ColorScheme GetColorSchemeForProfile(const guid profileGuid) const;
+        Model::Profile FindProfile(const guid& profileGuid) const noexcept;
+        Model::ColorScheme GetColorSchemeForProfile(const Model::Profile& profile) const;
         void UpdateColorSchemeReferences(const hstring oldName, const hstring newName);
 
         Windows::Foundation::Collections::IVectorView<SettingsLoadWarnings> Warnings();
@@ -96,7 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::IReference<SettingsLoadErrors> GetLoadingError();
         hstring GetSerializationErrorMessage();
 
-        winrt::guid GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
+        Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
 
         Model::Profile DuplicateProfile(const Model::Profile& source);
         void RefreshDefaultTerminals();
@@ -123,6 +123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value _userSettings;
         Json::Value _defaultSettings;
         winrt::com_ptr<Profile> _userDefaultProfileSettings{ nullptr };
+
+        winrt::com_ptr<Profile> _CreateNewProfile(const std::wstring_view& name) const;
 
         void _LayerOrCreateProfile(const Json::Value& profileJson);
         winrt::com_ptr<implementation::Profile> _FindMatchingProfile(const Json::Value& profileJson);

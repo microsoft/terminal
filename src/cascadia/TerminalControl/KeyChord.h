@@ -13,11 +13,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         KeyChord(const winrt::Windows::System::VirtualKeyModifiers modifiers, int32_t vkey, int32_t scanCode) noexcept;
         KeyChord(bool ctrl, bool alt, bool shift, bool win, int32_t vkey, int32_t scanCode) noexcept;
 
-        winrt::Windows::System::VirtualKeyModifiers Modifiers() noexcept;
-        void Modifiers(winrt::Windows::System::VirtualKeyModifiers const& value) noexcept;
-        int32_t Vkey() noexcept;
+        uint64_t Hash() const noexcept;
+        bool Equals(const Control::KeyChord& other) const noexcept;
+
+        winrt::Windows::System::VirtualKeyModifiers Modifiers() const noexcept;
+        void Modifiers(const winrt::Windows::System::VirtualKeyModifiers value) noexcept;
+        int32_t Vkey() const noexcept;
         void Vkey(int32_t value) noexcept;
-        int32_t ScanCode() noexcept;
+        int32_t ScanCode() const noexcept;
         void ScanCode(int32_t value) noexcept;
 
     private:

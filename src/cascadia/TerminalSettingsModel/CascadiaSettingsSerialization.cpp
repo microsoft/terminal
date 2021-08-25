@@ -214,15 +214,18 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
             auto generatedProfiles = state->GeneratedProfiles();
             bool generatedProfilesChanged = false;
 
-            for (auto profile : resultPtr->_allProfiles)
+            for (const auto& profile : resultPtr->_allProfiles)
             {
-                if (generatedProfiles.emplace(profile.Guid()).second)
+                const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+                if (generatedProfiles.emplace(profileImpl->Guid()).second)
                 {
                     generatedProfilesChanged = true;
                 }
-                else if (profile.Origin() != OriginTag::User)
+                else if (profileImpl->Origin() != OriginTag::User)
                 {
-                    profile.Hidden(true);
+                    profileImpl->Deleted(true);
+                    profileImpl->Hidden(true);
                 }
             }
 
@@ -351,7 +354,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     // tag these profiles as in-box
     for (const auto& profile : resultPtr->AllProfiles())
     {
-        const auto& profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+        const auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
         profileImpl->Origin(OriginTag::InBox);
     }
 
@@ -781,7 +784,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
         // * in the user settings or the default settings
         //   Because we don't want to add profiles which are already
         //   in the settings.json (explicitly or implicitly).
-        if (profile.Hidden() || isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
+        if (profile.Deleted() || isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
         {
             continue;
         }
@@ -1250,8 +1253,11 @@ Json::Value CascadiaSettings::ToJson() const
     Json::Value profilesList{ Json::ValueType::arrayValue };
     for (const auto& entry : _allProfiles)
     {
-        const auto prof{ winrt::get_self<implementation::Profile>(entry) };
-        profilesList.append(prof->ToJson());
+        if (!entry.Deleted())
+        {
+            const auto prof{ winrt::get_self<implementation::Profile>(entry) };
+            profilesList.append(prof->ToJson());
+        }
     }
     profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;

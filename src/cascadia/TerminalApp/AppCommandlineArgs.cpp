@@ -380,6 +380,11 @@ void AppCommandlineArgs::_buildFocusTabParser()
             else if (_focusNextTab || _focusPrevTab)
             {
                 focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                // GH#10070 - make sure to not use the MRU order when switching
+                // tabs on the commandline. That wouldn't make any sense!
+                focusTabAction.Args(_focusNextTab ?
+                                        static_cast<IActionArgs>(NextTabArgs(TabSwitcherMode::Disabled)) :
+                                        static_cast<IActionArgs>(PrevTabArgs(TabSwitcherMode::Disabled)));
                 _startupActions.push_back(std::move(focusTabAction));
             }
         });
@@ -388,6 +393,15 @@ void AppCommandlineArgs::_buildFocusTabParser()
     setupSubcommand(_focusTabCommand);
     setupSubcommand(_focusTabShort);
 }
+
+static const std::map<std::string, FocusDirection> focusDirectionMap = {
+    { "left", FocusDirection::Left },
+    { "right", FocusDirection::Right },
+    { "up", FocusDirection::Up },
+    { "down", FocusDirection::Down },
+    { "nextInOrder", FocusDirection::NextInOrder },
+    { "previousInOrder", FocusDirection::PreviousInOrder },
+};
 
 // Method Description:
 // - Adds the `move-focus` subcommand and related options to the commandline parser.
@@ -402,18 +416,11 @@ void AppCommandlineArgs::_buildMoveFocusParser()
     _moveFocusShort = _app.add_subcommand("mf", RS_A(L"CmdMFDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        std::map<std::string, FocusDirection> map = {
-            { "left", FocusDirection::Left },
-            { "right", FocusDirection::Right },
-            { "up", FocusDirection::Up },
-            { "down", FocusDirection::Down }
-        };
-
         auto* directionOpt = subcommand->add_option("direction",
                                                     _moveFocusDirection,
                                                     RS_A(L"CmdMoveFocusDirectionArgDesc"));
 
-        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->transform(CLI::CheckedTransformer(focusDirectionMap, CLI::ignore_case));
         directionOpt->required();
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -448,18 +455,11 @@ void AppCommandlineArgs::_buildSwapPaneParser()
     _swapPaneCommand = _app.add_subcommand("swap-pane", RS_A(L"CmdSwapPaneDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        std::map<std::string, FocusDirection> map = {
-            { "left", FocusDirection::Left },
-            { "right", FocusDirection::Right },
-            { "up", FocusDirection::Up },
-            { "down", FocusDirection::Down }
-        };
-
         auto* directionOpt = subcommand->add_option("direction",
                                                     _swapPaneDirection,
                                                     RS_A(L"CmdSwapPaneDirectionArgDesc"));
 
-        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->transform(CLI::CheckedTransformer(focusDirectionMap, CLI::ignore_case));
         directionOpt->required();
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure

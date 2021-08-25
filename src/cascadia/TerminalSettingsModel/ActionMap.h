@@ -30,75 +30,21 @@ namespace SettingsModelLocalTests
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    union ActionMapKeyChord
-    {
-        uint16_t value = 0;
-        struct
-        {
-            uint8_t modifiers;
-            uint8_t vkey;
-        };
-
-        constexpr ActionMapKeyChord() = default;
-        ActionMapKeyChord(const Control::KeyChord& keys) :
-            modifiers(gsl::narrow_cast<uint8_t>(keys.Modifiers())),
-            vkey(gsl::narrow_cast<uint8_t>(keys.Vkey()))
-        {
-        }
-
-        constexpr bool operator==(ActionMapKeyChord other) const noexcept
-        {
-            return value == other.value;
-        }
-    };
-}
-
-template<>
-struct std::hash<winrt::Microsoft::Terminal::Settings::Model::implementation::ActionMapKeyChord>
-{
-    constexpr size_t operator()(winrt::Microsoft::Terminal::Settings::Model::implementation::ActionMapKeyChord keys) const noexcept
-    {
-        // I didn't like how std::hash uses the byte-wise FNV1a for integers.
-        // So I built my own std::hash with murmurhash3.
-#if SIZE_MAX == UINT32_MAX
-        size_t h = keys.value;
-        h ^= h >> 16;
-        h *= UINT32_C(0x85ebca6b);
-        h ^= h >> 13;
-        h *= UINT32_C(0xc2b2ae35);
-        h ^= h >> 16;
-        return h;
-#elif SIZE_MAX == UINT64_MAX
-        size_t h = keys.value;
-        h ^= h >> 33;
-        h *= UINT64_C(0xff51afd7ed558ccd);
-        h ^= h >> 33;
-        h *= UINT64_C(0xc4ceb9fe1a85ec53);
-        h ^= h >> 33;
-        return h;
-#else
-        return std::hash<uint16_t>{}(keys.value);
-#endif
-    }
-};
-
-namespace winrt::Microsoft::Terminal::Settings::Model::implementation
-{
     using InternalActionID = size_t;
 
     struct KeyChordHash
     {
-        std::size_t operator()(const Control::KeyChord& key) const
+        inline std::size_t operator()(const Control::KeyChord& key) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(key.Modifiers(), key.Vkey());
+            return static_cast<size_t>(key.Hash());
         }
     };
 
     struct KeyChordEquality
     {
-        bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
+        inline bool operator()(const Control::KeyChord& lhs, const Control::KeyChord& rhs) const
         {
-            return lhs.Modifiers() == rhs.Modifiers() && lhs.Vkey() == rhs.Vkey();
+            return lhs.Equals(rhs);
         }
     };
 
@@ -132,12 +78,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         std::optional<Model::Command> _GetActionByID(const InternalActionID actionID) const;
-        std::optional<Model::Command> _GetActionByKeyChordInternal(const ActionMapKeyChord keys) const;
+        std::optional<Model::Command> _GetActionByKeyChordInternal(const Control::KeyChord& keys) const;
 
+        void _RefreshKeyBindingCaches();
         void _PopulateAvailableActionsWithStandardCommands(std::unordered_map<hstring, Model::ActionAndArgs>& availableActions, std::unordered_set<InternalActionID>& visitedActionIDs) const;
         void _PopulateNameMapWithSpecialCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
         void _PopulateNameMapWithStandardCommands(std::unordered_map<hstring, Model::Command>& nameMap) const;
-        void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<ActionMapKeyChord>& unboundKeys) const;
+        void _PopulateKeyBindingMapWithStandardCommands(std::unordered_map<Control::KeyChord, Model::Command, KeyChordHash, KeyChordEquality>& keyBindingsMap, std::unordered_set<Control::KeyChord, KeyChordHash, KeyChordEquality>& unboundKeys) const;
         std::vector<Model::Command> _GetCumulativeActions() const noexcept;
 
         void _TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
@@ -151,7 +98,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         std::unordered_map<winrt::hstring, Model::Command> _NestedCommands;
         std::vector<Model::Command> _IterableCommands;
-        std::unordered_map<ActionMapKeyChord, InternalActionID> _KeyMap;
+        std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
 
         // Masking Actions:

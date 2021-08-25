@@ -58,6 +58,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestMoveTabArgs);
 
         TEST_METHOD(TestGetKeyBindingForAction);
+        TEST_METHOD(KeybindingsWithoutVkey);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -787,5 +788,16 @@ namespace SettingsModelLocalTests
 
         actionMap->LayerJson(bindings2Json);
         VERIFY_ARE_EQUAL(2u, actionMap->_KeyMap.size());
+    }
+
+    void KeyBindingsTests::KeybindingsWithoutVkey()
+    {
+        const auto json = VerifyParseSucceeded(R"!([{"command": "quakeMode", "keys":"shift+sc(255)"}])!");
+
+        const auto actionMap = winrt::make_self<implementation::ActionMap>();
+        actionMap->LayerJson(json);
+
+        const auto action = actionMap->GetActionByKeyChord({ VirtualKeyModifiers::Shift, 0, 255 });
+        VERIFY_IS_NOT_NULL(action);
     }
 }

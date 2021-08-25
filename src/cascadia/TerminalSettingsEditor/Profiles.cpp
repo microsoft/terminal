@@ -18,11 +18,6 @@ using namespace winrt::Windows::Foundation;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-static const std::array<winrt::guid, 2> InBoxProfileGuids{
-    winrt::guid{ 0x61c54bbd, 0xc2c6, 0x5271, { 0x96, 0xe7, 0x00, 0x9a, 0x87, 0xff, 0x44, 0xbf } }, // Windows Powershell
-    winrt::guid{ 0x0caa0dad, 0x35be, 0x5f56, { 0xa8, 0xff, 0xaf, 0xce, 0xee, 0xaa, 0x61, 0x01 } } // Command Prompt
-};
-
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     Windows::Foundation::Collections::IObservableVector<Editor::Font> ProfileViewModel::_MonospaceFontList{ nullptr };
@@ -221,25 +216,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool ProfileViewModel::CanDeleteProfile() const
     {
-        const auto guid{ Guid() };
-        if (IsBaseLayer())
-        {
-            return false;
-        }
-        else if (std::find(std::begin(InBoxProfileGuids), std::end(InBoxProfileGuids), guid) != std::end(InBoxProfileGuids))
-        {
-            // in-box profile
-            return false;
-        }
-        else if (!Source().empty())
-        {
-            // dynamic profile
-            return false;
-        }
-        else
-        {
-            return true;
-        }
+        return !IsBaseLayer();
     }
 
     Editor::AppearanceViewModel ProfileViewModel::DefaultAppearance()
@@ -382,21 +359,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             ProfileViewModel::UpdateFontList();
         }
-
-        // Set the text disclaimer for the text box
-        hstring disclaimer{};
-        const auto guid{ _State.Profile().Guid() };
-        if (std::find(std::begin(InBoxProfileGuids), std::end(InBoxProfileGuids), guid) != std::end(InBoxProfileGuids))
-        {
-            // load disclaimer for in-box profiles
-            disclaimer = RS_(L"Profile_DeleteButtonDisclaimerInBox");
-        }
-        else if (!_State.Profile().Source().empty())
-        {
-            // load disclaimer for dynamic profiles
-            disclaimer = RS_(L"Profile_DeleteButtonDisclaimerDynamic");
-        }
-        DeleteButtonDisclaimer().Text(disclaimer);
 
         // Check the use parent directory box if the starting directory is empty
         if (_State.Profile().StartingDirectory().empty())

@@ -349,8 +349,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _SwapPane(realArgs.Direction());
-                args.Handled(true);
+                auto swapped = _SwapPane(realArgs.Direction());
+                args.Handled(swapped);
             }
         }
     }
@@ -753,11 +753,10 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
 
         // Manually fill in the evaluated profile.
-        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
         _OpenNewWindow(false, newTerminalArgs);
         actionArgs.Handled(true);
     }

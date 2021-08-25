@@ -292,6 +292,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         case FocusDirection::Previous:
             return RS_(L"MoveFocusToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"MoveFocusNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"MoveFocusPreviousInOrder");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
@@ -318,6 +322,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         case FocusDirection::Previous:
             return RS_(L"SwapPaneToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"SwapPaneNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"SwapPanePreviousInOrder");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"SwapPaneWithArgCommandKey")),
