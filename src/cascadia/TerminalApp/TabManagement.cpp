@@ -56,39 +56,41 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: An optional connection that is already established to a PTY
     //   for this tab to host instead of creating one.
     //   If not defined, the tab will create the connection.
-    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection)
+    HRESULT TerminalPage::_OpenNewTab(const NewTerminalArgs& newTerminalArgs,
+                                      TerminalConnection::ITerminalConnection /*existingConnection*/)
     try
     {
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        _CreateNewTabWithProfileAndSettings(profile, settings, existingConnection);
+        // _CreateNewTabWithProfileAndSettings(profile, settings, existingConnection);
+        _CreateTabWithContent(profile, settings);
 
-        const uint32_t tabCount = _tabs.Size();
-        const bool usedManualProfile = (newTerminalArgs != nullptr) &&
-                                       (newTerminalArgs.ProfileIndex() != nullptr ||
-                                        newTerminalArgs.Profile().empty());
+        // const uint32_t tabCount = _tabs.Size();
+        // const bool usedManualProfile = (newTerminalArgs != nullptr) &&
+        //                                (newTerminalArgs.ProfileIndex() != nullptr ||
+        //                                 newTerminalArgs.Profile().empty());
 
-        // Lookup the name of the color scheme used by this profile.
-        const auto scheme = _settings.GetColorSchemeForProfile(profile);
-        // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
-        // that as the empty string.
-        const auto schemeName = scheme ? scheme.Name() : L"\0";
+        // // Lookup the name of the color scheme used by this profile.
+        // const auto scheme = _settings.GetColorSchemeForProfile(profile);
+        // // If they explicitly specified `null` as the scheme (indicating _no_ scheme), log
+        // // that as the empty string.
+        // const auto schemeName = scheme ? scheme.Name() : L"\0";
 
-        TraceLoggingWrite(
-            g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
-            "TabInformation",
-            TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
-            TraceLoggingUInt32(1u, "EventVer", "Version of this event"),
-            TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
-            TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
-            TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The GUID of the profile spawned in the new tab"),
-            TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
-            TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
-            TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
-            TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+        // TraceLoggingWrite(
+        //     g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
+        //     "TabInformation",
+        //     TraceLoggingDescription("Event emitted upon new tab creation in TerminalApp"),
+        //     TraceLoggingUInt32(1u, "EventVer", "Version of this event"),
+        //     TraceLoggingUInt32(tabCount, "TabCount", "Count of tabs currently opened in TerminalApp"),
+        //     TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
+        //     TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The GUID of the profile spawned in the new tab"),
+        //     TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
+        //     TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+        //     TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
+        //     TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
+        //     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        //     TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         return S_OK;
     }
@@ -228,6 +230,97 @@ namespace winrt::TerminalApp::implementation
         _InitializeTab(newTabImpl);
     }
 
+    static wil::unique_process_information _createHostClassProcess(const winrt::guid& g)
+    {
+        auto guidStr{ ::Microsoft::Console::Utils::GuidToString(g) };
+
+        // Create an event that the content process will use to signal it is
+        // ready to go. We won't need the event after this function, so the
+        // unique_event will clean up our handle when we leave this scope. The
+        // ContentProcess is responsible for cleaning up its own handle.
+        wil::unique_event ev{ CreateEvent(nullptr, true, false, L"contentProcessStarted") };
+        // Make sure to mark this handle as inheritable! Even with
+        // bInheritHandles=true, this is only inherited when it's explicitly
+        // allowed to be.
+        SetHandleInformation(ev.get(), HANDLE_FLAG_INHERIT, 1);
+
+        // god bless, fmt::format will format a HANDLE like `0xa80`
+        std::wstring commandline{
+            fmt::format(L"windowsterminal.exe --content {} --signal {}", guidStr, ev.get())
+        };
+
+        STARTUPINFO siOne{ 0 };
+        siOne.cb = sizeof(STARTUPINFOW);
+        wil::unique_process_information piOne;
+        auto succeeded = CreateProcessW(
+            nullptr,
+            commandline.data(),
+            nullptr, // lpProcessAttributes
+            nullptr, // lpThreadAttributes
+            true, // bInheritHandles
+            CREATE_UNICODE_ENVIRONMENT, // dwCreationFlags
+            nullptr, // lpEnvironment
+            nullptr, // startingDirectory
+            &siOne, // lpStartupInfo
+            &piOne // lpProcessInformation
+        );
+        THROW_IF_WIN32_BOOL_FALSE(succeeded);
+
+        // Wait for the child process to signal that they're ready.
+        WaitForSingleObject(ev.get(), INFINITE);
+
+        return std::move(piOne);
+    }
+
+    winrt::fire_and_forget TerminalPage::_CreateTabWithContent(Profile profile,
+                                                               TerminalSettingsCreateResult settings)
+    {
+        // Capture calling context.
+        winrt::apartment_context ui_thread;
+        winrt::guid contentGuid{ ::Microsoft::Console::Utils::CreateGuid() };
+        co_await winrt::resume_background();
+        // Spawn a wt.exe, with the guid on the commandline
+        auto piContentProcess{ _createHostClassProcess(contentGuid) };
+        // THIS MUST TAKE PLACE AFTER _createHostClassProcess.
+        // * If we're creating a new OOP control, _createHostClassProcess will
+        //   spawn the process that will actually host the ContentProcess
+        //   object.
+        // * If we're attaching, then that process already exists.
+        ContentProcess content{ nullptr };
+        try
+        {
+            content = create_instance<ContentProcess>(contentGuid, CLSCTX_LOCAL_SERVER);
+        }
+        catch (winrt::hresult_error hr)
+        {
+            // _writeToLog(L"CreateInstance the ContentProces object");
+            // _writeToLog(fmt::format(L"    HR ({}): {}", hr.code(), hr.message().c_str()));
+            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+        }
+
+        if (content == nullptr)
+        {
+            // _writeToLog(L"Failed to connect to the ContentProces object. It may not have been started fast enough.");
+            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+        }
+        TerminalConnection::ConnectionInformation connectInfo{ _CreateConnectionInfoFromSettings(profile, settings.DefaultSettings()) };
+        // TODO! how do we init the content proc with the focused/unfocused pair correctly?
+        if (!content.Initialize(settings.DefaultSettings(), connectInfo))
+        {
+            // _writeToLog(L"Failed to Initialize the ContentProces object.");
+            co_return; // be sure to co_return or we'll fall through to the part where we clear the log
+        }
+        // Switch back to the UI thread.
+        co_await ui_thread;
+        // Create the XAML control that will be attached to the content process.
+        // We're not passing in a connection, because the contentGuid will be used instead.
+        auto term = _InitControl(settings, contentGuid);
+        auto newTabImpl = winrt::make_self<TerminalTab>(profile, term);
+        _RegisterTerminalEvents(term);
+        _InitializeTab(newTabImpl);
+        co_return;
+    }
+
     // Method Description:
     // - Creates a new tab with the given settings. If the tab bar is not being
     //      currently displayed, it will be shown.
@@ -235,7 +328,9 @@ namespace winrt::TerminalApp::implementation
     // - profile: profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
-    void TerminalPage::_CreateNewTabWithProfileAndSettings(const Profile& profile, const TerminalSettingsCreateResult& settings, TerminalConnection::ITerminalConnection existingConnection)
+    void TerminalPage::_CreateNewTabWithProfileAndSettings(const Profile& profile,
+                                                           const TerminalSettingsCreateResult& settings,
+                                                           TerminalConnection::ITerminalConnection existingConnection)
     {
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
@@ -360,16 +455,18 @@ namespace winrt::TerminalApp::implementation
                     settingsCreateResult.DefaultSettings().StartingDirectory(workingDirectory);
                 }
 
-                _CreateNewTabWithProfileAndSettings(profile, settingsCreateResult);
+                _CreateTabWithContent(profile, settingsCreateResult);
 
-                const auto runtimeTabText{ tab.GetTabText() };
-                if (!runtimeTabText.empty())
-                {
-                    if (auto newTab{ _GetFocusedTabImpl() })
-                    {
-                        newTab->SetTabText(runtimeTabText);
-                    }
-                }
+                // TODO!
+                //
+                // const auto runtimeTabText{ tab.GetTabText() };
+                // if (!runtimeTabText.empty())
+                // {
+                //     if (auto newTab{ _GetFocusedTabImpl() })
+                //     {
+                //         newTab->SetTabText(runtimeTabText);
+                //     }
+                // }
             }
         }
         CATCH_LOG();

@@ -595,7 +595,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont = { _actualFont };
 
         // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
+        // Are you seeing a crash specifically on this line?
+        Core::ICoreSettings coreSettings{ _settings };
+        // Then you might not have Microsoft.Terminal.Core.winmd in the package
+        // or SxS with windowsterminal.exe! 
+        _terminal->UpdateSettings(coreSettings);
 
         if (!_initializedTerminal)
         {

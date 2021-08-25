@@ -461,7 +461,12 @@ namespace winrt::TerminalApp::implementation
             // GH#6586: now that we're done processing all startup commands,
             // focus the active control. This will work as expected for both
             // commandline invocations and for `wt` action invocations.
-            _GetActiveControl().Focus(FocusState::Programmatic);
+            if (auto activeControl{ _GetActiveControl() })
+            {
+                // TODO! this doesn't work during startup anymore now that
+                // tabs are made on a BG thread
+                activeControl.Focus(FocusState::Programmatic);
+            }   
         }
         if (initial)
         {
@@ -896,6 +901,103 @@ namespace winrt::TerminalApp::implementation
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
         return connection;
+    }
+
+    // Method Description:
+    // - Creates a new connection based on the profile settings
+    // Arguments:
+    // - the profile we want the settings from
+    // - the terminal settings
+    // Return value:
+    // - the desired connection
+    TerminalConnection::ConnectionInformation TerminalPage::_CreateConnectionInfoFromSettings(Profile profile,
+                                                                                              const TerminalSettings& settings)
+    {
+        if (!profile)
+        {
+            // Use the default profile if we didn't get one as an argument.
+            profile = _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
+        }
+
+        winrt::guid connectionType = profile.ConnectionType();
+        winrt::guid sessionGuid{};
+
+        Windows::Foundation::Collections::ValueSet connectionSettings{ nullptr };
+        winrt::hstring className;
+
+        if (connectionType == TerminalConnection::AzureConnection::ConnectionType() &&
+            TerminalConnection::AzureConnection::IsAzureConnectionAvailable())
+        {
+            // TODO GH#4661: Replace this with directly using the AzCon when our VT is better
+            std::filesystem::path azBridgePath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
+            azBridgePath.replace_filename(L"TerminalAzBridge.exe");
+            className = winrt::name_of<TerminalConnection::ConptyConnection>();
+            connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(azBridgePath.wstring(),
+                                                                                      L".",
+                                                                                      L"Azure",
+                                                                                      nullptr,
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                      winrt::guid());
+        }
+
+        else
+        {
+            // profile is guaranteed to exist here
+            std::wstring guidWString = Utils::GuidToString(profile.Guid());
+
+            StringMap envMap{};
+            envMap.Insert(L"WT_PROFILE_ID", guidWString);
+            envMap.Insert(L"WSLENV", L"WT_PROFILE_ID");
+
+            // Update the path to be relative to whatever our CWD is.
+            //
+            // Refer to the examples in
+            // https://en.cppreference.com/w/cpp/filesystem/path/append
+            //
+            // We need to do this here, to ensure we tell the ConptyConnection
+            // the correct starting path. If we're being invoked from another
+            // terminal instance (e.g. wt -w 0 -d .), then we have switched our
+            // CWD to the provided path. We should treat the StartingDirectory
+            // as relative to the current CWD.
+            //
+            // The connection must be informed of the current CWD on
+            // construction, because the connection might not spawn the child
+            // process until later, on another thread, after we've already
+            // restored the CWD to it's original value.
+            winrt::hstring newWorkingDirectory{ settings.StartingDirectory() };
+            if (newWorkingDirectory.size() <= 1 ||
+                !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
+            { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
+                std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
+                std::filesystem::path cwd{ cwdString };
+                cwd /= settings.StartingDirectory().c_str();
+                newWorkingDirectory = winrt::hstring{ cwd.wstring() };
+            }
+
+            className = winrt::name_of<TerminalConnection::ConptyConnection>();
+            connectionSettings = TerminalConnection::ConptyConnection::CreateSettings(settings.Commandline(),
+                                                                                      newWorkingDirectory,
+                                                                                      settings.StartingTitle(),
+                                                                                      envMap.GetView(),
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialRows()),
+                                                                                      ::base::saturated_cast<uint32_t>(settings.InitialCols()),
+                                                                                      winrt::guid());
+
+            // sessionGuid = conhostConn.Guid();
+        }
+
+        // TraceLoggingWrite(
+        //     g_hTerminalAppProvider,
+        //     "ConnectionCreated",
+        //     TraceLoggingDescription("Event emitted upon the creation of a connection"),
+        //     TraceLoggingGuid(connectionType, "ConnectionTypeGuid", "The type of the connection"),
+        //     TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The profile's GUID"),
+        //     TraceLoggingGuid(sessionGuid, "SessionGuid", "The WT_SESSION's GUID"),
+        //     TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+        //     TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
+        return TerminalConnection::ConnectionInformation(className, connectionSettings);
     }
 
     // Method Description:
@@ -1991,6 +2093,17 @@ namespace winrt::TerminalApp::implementation
         // This way, when we do a settings reload we just update the parent and the overrides remain
         const auto child = TerminalSettings::CreateWithParent(settings);
         TermControl term{ child.DefaultSettings(), connection };
+
+        term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
+
+        return term;
+    }
+    TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const winrt::guid& contentGuid)
+    {
+        // Give term control a child of the settings so that any overrides go in the child
+        // This way, when we do a settings reload we just update the parent and the overrides remain
+        const auto child = TerminalSettings::CreateWithParent(settings);
+        TermControl term{ contentGuid, child.DefaultSettings(), nullptr };
 
         term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
 

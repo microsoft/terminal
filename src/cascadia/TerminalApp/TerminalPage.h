@@ -190,7 +190,9 @@ namespace winrt::TerminalApp::implementation
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane);
         void _CreateNewTabWithProfileAndSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        winrt::fire_and_forget _CreateTabWithContent(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
+        winrt::Microsoft::Terminal::TerminalConnection::ConnectionInformation _CreateConnectionInfoFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, const Microsoft::Terminal::Settings::Model::TerminalSettings& settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
@@ -309,6 +311,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+
+        winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
+                                                                      const winrt::guid& contentGuid);
 
         void _RefreshUIForSettingsReload();
 

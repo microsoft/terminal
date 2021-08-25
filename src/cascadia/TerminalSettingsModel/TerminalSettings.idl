@@ -22,7 +22,9 @@ namespace Microsoft.Terminal.Settings.Model
     //      and pass along the Core properties to the terminal core.
     [default_interface]
     runtimeclass TerminalSettings : Microsoft.Terminal.Core.ICoreSettings,
-                                    Microsoft.Terminal.Control.IControlSettings
+                                    Microsoft.Terminal.Control.IControlSettings,
+                                    Microsoft.Terminal.Core.ICoreAppearance,
+                                    Microsoft.Terminal.Control.IControlAppearance
     {
         TerminalSettings();
 
