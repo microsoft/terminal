@@ -224,13 +224,14 @@ namespace SettingsModelLocalTests
             {
                 // This action specified a command but no profile; it gets reassigned to the base profile
                 VERIFY_ARE_EQUAL(settings.ProfileDefaults(), profile);
+                VERIFY_ARE_EQUAL(29, termSettings.HistorySize());
             }
             else
             {
                 VERIFY_ARE_EQUAL(guid0, profile.Guid());
+                VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
             }
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(29, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
