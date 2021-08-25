@@ -529,7 +529,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     try
     {
-        if (_initializedTerminal && !_IsClosing()) // only set up the automation peer if we're ready to go live
+        if (!_IsClosing())
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
