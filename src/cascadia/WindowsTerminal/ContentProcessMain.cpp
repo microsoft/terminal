@@ -138,7 +138,7 @@ void TryRunAsContentProcess()
     HANDLE eventHandle{ INVALID_HANDLE_VALUE };
     if (checkIfContentProcess(contentProcessGuid, eventHandle))
     {
-        g_canExitThread = wil::unique_event{ CreateEvent(nullptr, true, false, L"ContentProcessReady") };
+        g_canExitThread = wil::unique_event{ CreateEvent(nullptr, true, false, nullptr/*L"ContentProcessReady"*/) };
 
         doContentProcessThing(contentProcessGuid, eventHandle);
 

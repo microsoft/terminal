@@ -238,7 +238,7 @@ namespace winrt::TerminalApp::implementation
         // ready to go. We won't need the event after this function, so the
         // unique_event will clean up our handle when we leave this scope. The
         // ContentProcess is responsible for cleaning up its own handle.
-        wil::unique_event ev{ CreateEvent(nullptr, true, false, L"contentProcessStarted") };
+        wil::unique_event ev{ CreateEvent(nullptr, true, false, nullptr/*L"contentProcessStarted"*/) };
         // Make sure to mark this handle as inheritable! Even with
         // bInheritHandles=true, this is only inherited when it's explicitly
         // allowed to be.
