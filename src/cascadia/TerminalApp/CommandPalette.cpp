@@ -36,7 +36,6 @@ namespace winrt::TerminalApp::implementation
         _allCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _tabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         _mruTabActions = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
-        _commandLineHistory = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
 
         _switchToMode(CommandPaletteMode::ActionMode);
 
@@ -587,16 +586,7 @@ namespace winrt::TerminalApp::implementation
         case CommandPaletteMode::TabSwitchMode:
             return _tabSwitcherMode == TabSwitcherMode::MostRecentlyUsed ? _mruTabActions : _tabActions;
         case CommandPaletteMode::CommandlineMode:
-            _commandLineHistory.Clear();
-            for (const auto& recentCommand : ApplicationState::SharedInstance().RecentCommands())
-            {
-                auto parsedCommand = _buildCommandLineCommand(recentCommand.c_str());
-                if (parsedCommand.has_value())
-                {
-                    _commandLineHistory.Append(parsedCommand.value());
-                }
-            }
-            return _commandLineHistory;
+            return _loadRecentCommands();
         default:
             return _allCommands;
         }
@@ -732,19 +722,7 @@ namespace winrt::TerminalApp::implementation
         const auto filteredCommand = command ? command : _buildCommandLineCommand(_getTrimmedInput());
         if (filteredCommand.has_value())
         {
-            if (_commandLineHistory.Size() == CommandLineHistoryLength)
-            {
-                _commandLineHistory.RemoveAtEnd();
-            }
-            _commandLineHistory.InsertAt(0, filteredCommand.value());
-
-            auto recentCommands = winrt::single_threaded_vector<hstring>();
-            for (const auto& recentFilteredCommand : _commandLineHistory)
-            {
-                recentCommands.Append(recentFilteredCommand.Item().Name());
-            }
-
-            ApplicationState::SharedInstance().RecentCommands(recentCommands);
+            _updateRecentCommands(filteredCommand.value().Item().Name());
 
             TraceLoggingWrite(
                 g_hTerminalAppProvider, // handle to TerminalApp tracelogging provider
@@ -761,7 +739,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(std::wstring const& commandLine)
+    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(std::wstring const& commandLine)  const
     {
         if (commandLine.empty())
         {
@@ -1233,5 +1211,38 @@ namespace winrt::TerminalApp::implementation
         {
             itemContainer.DataContext(args.Item());
         }
+    }
+
+    // Method Description:
+    // - Reads the list of recent commands from the persistent application state
+    // Return Value:
+    // - The list of FilteredCommand representing the ones stored in the state
+    Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands() const
+    {
+        const auto parsedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
+        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
+        std::for_each(begin(recentCommands), end(recentCommands), [&](const auto& c) {
+            auto parsedCommand = _buildCommandLineCommand(c.c_str());
+            if (parsedCommand.has_value())
+            {
+                parsedCommands.Append(parsedCommand.value());
+            }
+        });
+        return parsedCommands;
+    }
+
+    // Method Description:
+    // - Update recent commands by putting the provided command as most recent.
+    // Upon race condition might override an update made by another window.
+    // Return Value:
+    // - <none>
+    void CommandPalette::_updateRecentCommands(const winrt::hstring& command) const
+    {
+        std::vector<hstring> newRecentCommands;
+        newRecentCommands.push_back(command);
+
+        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
+        std::copy_n(begin(recentCommands), std::min(recentCommands.Size(), CommandLineHistoryLength - 1), back_inserter(newRecentCommands));
+        ApplicationState::SharedInstance().RecentCommands(winrt::single_threaded_vector<hstring>(std::move(newRecentCommands)));
     }
 }
