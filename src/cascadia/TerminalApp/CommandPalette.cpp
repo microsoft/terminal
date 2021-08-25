@@ -739,7 +739,7 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const winrt::hstring& commandLine) const
+    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const winrt::hstring& commandLine)
     {
         if (commandLine.empty())
         {
@@ -1216,7 +1216,7 @@ namespace winrt::TerminalApp::implementation
     // - Reads the list of recent commands from the persistent application state
     // Return Value:
     // - The list of FilteredCommand representing the ones stored in the state
-    Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands() const
+    Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
         std::vector<winrt::TerminalApp::FilteredCommand> parsedCommands;
@@ -1243,26 +1243,15 @@ namespace winrt::TerminalApp::implementation
     // Upon race condition might override an update made by another window.
     // Return Value:
     // - <none>
-    void CommandPalette::_updateRecentCommands(const winrt::hstring& command) const
+    void CommandPalette::_updateRecentCommands(const winrt::hstring& command)
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        std::vector<hstring> newRecentCommands;
-        newRecentCommands.reserve(std::min(recentCommands.Size() + 1, CommandLineHistoryLength));
-
-        // Push the provided command to be the first one
-        newRecentCommands.push_back(command);
-
-        // Copy the remaining commands
-        for (const auto& c : recentCommands)
+        recentCommands.InsertAt(0, command);
+        while (recentCommands.Size() > CommandLineHistoryLength)
         {
-            if (newRecentCommands.size() >= CommandLineHistoryLength)
-            {
-                // Don't store more than CommandLineHistoryLength commands
-                break;
-            }
-
-            newRecentCommands.push_back(c);
+            // We shouldn't store more than CommandLineHistoryLength commands
+            recentCommands.RemoveAtEnd();
         }
-        ApplicationState::SharedInstance().RecentCommands(winrt::single_threaded_vector(std::move(newRecentCommands)));
+        ApplicationState::SharedInstance().RecentCommands(recentCommands);
     }
 }
