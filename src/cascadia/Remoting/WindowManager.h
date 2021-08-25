@@ -46,6 +46,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::fire_and_forget RequestShowTrayIcon();
         winrt::fire_and_forget RequestHideTrayIcon();
         bool DoesQuakeWindowExist();
+        winrt::fire_and_forget RequestMovePane(winrt::hstring window, winrt::guid contentGuid, uint32_t tabIndex);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

@@ -74,6 +74,7 @@ namespace TerminalApp
         Boolean GetAlwaysShowTrayIcon();
 
         FindTargetWindowResult FindTargetWindow(String[] args);
+        void AttachPane(Guid contentGuid, UInt32 tabIndex);
 
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
@@ -95,5 +96,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RequestMovePaneArgs> RequestMovePane;
     }
 }

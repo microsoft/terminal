@@ -119,6 +119,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         String ColorScheme;
 
+        Guid ContentGuid{ get; };
+
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
         String ToCommandline();
@@ -147,6 +149,7 @@ namespace Microsoft.Terminal.Settings.Model
     {
         MovePaneArgs(UInt32 tabIndex);
         UInt32 TabIndex;
+        String Window;
     };
 
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs

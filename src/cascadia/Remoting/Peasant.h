@@ -6,6 +6,7 @@
 #include "Peasant.g.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 #include "RenameRequestArgs.h"
+#include "AttachRequest.g.h"
 
 namespace RemotingUnitTests
 {
@@ -13,6 +14,17 @@ namespace RemotingUnitTests
 };
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {
+    struct AttachRequest : public AttachRequestT<AttachRequest>
+    {
+        WINRT_PROPERTY(winrt::guid, ContentGuid);
+        WINRT_PROPERTY(uint32_t, TabIndex);
+
+    public:
+        AttachRequest(winrt::guid contentGuid,
+                      uint32_t tabIndex) :
+            _ContentGuid{ contentGuid }, _TabIndex{ tabIndex } {};
+    };
+
     struct Peasant : public PeasantT<Peasant>
     {
         Peasant();
@@ -31,6 +43,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
 
+        void AttachPaneToWindow(Remoting::AttachRequest request);
+
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
@@ -44,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(AttachRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::AttachRequest);
 
     private:
         Peasant(const uint64_t testPID);

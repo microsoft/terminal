@@ -17,6 +17,9 @@ namespace Microsoft.Terminal.Remoting
         void RequestHideTrayIcon();
         Boolean DoesQuakeWindowExist();
         Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames();
+
+        void RequestMovePane(String window, Guid contentGuid, UInt32 tabIndex);
+
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;

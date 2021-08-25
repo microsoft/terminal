@@ -47,6 +47,11 @@ namespace Microsoft.Terminal.Remoting
         MonitorBehavior ToMonitor;
     }
 
+    [default_interface] runtimeclass AttachRequest {
+        Guid ContentGuid { get; };
+        UInt32 TabIndex { get; };
+    }
+
     interface IPeasant
     {
         CommandlineArgs InitialArgs { get; };
@@ -66,6 +71,7 @@ namespace Microsoft.Terminal.Remoting
         void Summon(SummonWindowBehavior behavior);
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
+        void AttachPaneToWindow(AttachRequest request);
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
         event Windows.Foundation.TypedEventHandler<Object, CommandlineArgs> ExecuteCommandlineRequested;
@@ -75,6 +81,7 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, SummonWindowBehavior> SummonRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, AttachRequest> AttachRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant

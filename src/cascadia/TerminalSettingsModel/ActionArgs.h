@@ -108,6 +108,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ACTION_ARG(winrt::hstring, Profile, L"");
         ACTION_ARG(Windows::Foundation::IReference<bool>, SuppressApplicationTitle, nullptr);
         ACTION_ARG(winrt::hstring, ColorScheme);
+        ACTION_ARG(winrt::guid, ContentGuid);
 
         static constexpr std::string_view CommandlineKey{ "commandline" };
         static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -293,8 +294,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         MovePaneArgs(uint32_t& tabIndex) :
             _TabIndex{ tabIndex } {};
         ACTION_ARG(uint32_t, TabIndex, 0);
+        ACTION_ARG(winrt::hstring, Window, L"");
 
         static constexpr std::string_view TabIndexKey{ "index" };
+        static constexpr std::string_view WindowKey{ "window" };
 
     public:
         hstring GenerateName() const;
@@ -304,7 +307,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<MovePaneArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_TabIndex == _TabIndex;
+                return otherAsUs->_TabIndex == _TabIndex && otherAsUs->_Window == _Window;
             }
             return false;
         };
@@ -313,6 +316,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MovePaneArgs>();
             JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
+            JsonUtils::GetValueForKey(json, WindowKey, args->_Window);
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -324,17 +328,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<MovePaneArgs>(val) };
             JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
+            JsonUtils::SetValueForKey(json, WindowKey, args->_Window);
             return json;
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<MovePaneArgs>() };
             copy->_TabIndex = _TabIndex;
+            copy->_Window = _Window;
             return *copy;
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabIndex());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabIndex(), Window());
         }
     };
 

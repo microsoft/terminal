@@ -214,6 +214,10 @@ void AppHost::_HandleCommandlineArgs()
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
 
+        peasant.AttachRequested([this](auto&&, Remoting::AttachRequest args) {
+            _logic.AttachPane(args.ContentGuid(), args.TabIndex());
+        });
+
         _logic.WindowName(peasant.WindowName());
         _logic.WindowId(peasant.GetID());
     }
@@ -271,6 +275,9 @@ void AppHost::Initialize()
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
+    _logic.RequestMovePane([this](auto&&, winrt::TerminalApp::RequestMovePaneArgs args) {
+        _windowManager.RequestMovePane(args.Args().Window(), args.ContentGuid(), args.Args().TabIndex());
+    });
 
     _window->UpdateTitle(_logic.Title());
 

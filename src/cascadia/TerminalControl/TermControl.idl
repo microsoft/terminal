@@ -24,6 +24,8 @@ namespace Microsoft.Terminal.Control
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
 
+        Guid ContentGuid{ get; };
+
         void UpdateSettings();
 
         Microsoft.Terminal.Control.IControlSettings Settings;
