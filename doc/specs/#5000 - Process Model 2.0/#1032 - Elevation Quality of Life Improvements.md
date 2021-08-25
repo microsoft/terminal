@@ -141,7 +141,7 @@ We could also simplify this to only allow a boolean true/false for displaying
 the shield. As we do often with other enums, we could define `true` to be the
 same as the default appearance, and `false` to be the hidden option. As always,
 the development of the Terminal is an iterative process, where we can
-incrememntally improve from no setting, to a boolean setting, to a enum-backed
+incrementally improve from no setting, to a boolean setting, to a enum-backed
 one.
 
 ### Configuring a profile to always run elevated
