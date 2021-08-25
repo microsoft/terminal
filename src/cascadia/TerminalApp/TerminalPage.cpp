@@ -461,7 +461,10 @@ namespace winrt::TerminalApp::implementation
             // GH#6586: now that we're done processing all startup commands,
             // focus the active control. This will work as expected for both
             // commandline invocations and for `wt` action invocations.
-            _GetActiveControl().Focus(FocusState::Programmatic);
+            if (const auto control = _GetActiveControl())
+            {
+                control.Focus(FocusState::Programmatic);
+            }
         }
         if (initial)
         {
