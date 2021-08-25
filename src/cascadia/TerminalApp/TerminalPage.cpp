@@ -1495,8 +1495,6 @@ namespace winrt::TerminalApp::implementation
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
-            // const auto controlConnection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
-
             co_await winrt::resume_background();
             const auto contentProc = _CreateNewContentProcess(profile, controlSettings).get();
             co_await winrt::resume_foreground(Dispatcher());
@@ -1518,7 +1516,6 @@ namespace winrt::TerminalApp::implementation
             }
 
             auto newControl = _InitControl(controlSettings, contentProc.Guid());
-            // auto newControl = _InitControl(controlSettings, controlConnection);
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl);
