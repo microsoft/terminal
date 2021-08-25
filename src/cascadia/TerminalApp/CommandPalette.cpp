@@ -1235,7 +1235,7 @@ namespace winrt::TerminalApp::implementation
                 parsedCommands.push_back(*parsedCommand);
             }
         }
-        return winrt::single_threaded_vector(std::move(parsedCommands));
+        return single_threaded_vector(std::move(parsedCommands));
     }
 
     // Method Description:
@@ -1246,12 +1246,9 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateRecentCommands(const winrt::hstring& command)
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        recentCommands.InsertAt(0, command);
-        while (recentCommands.Size() > CommandLineHistoryLength)
-        {
-            // We shouldn't store more than CommandLineHistoryLength commands
-            recentCommands.RemoveAtEnd();
-        }
-        ApplicationState::SharedInstance().RecentCommands(recentCommands);
+        std::vector<hstring> newRecentCommands{ std::min(recentCommands.Size(), CommandLineHistoryLength - 1) };
+        recentCommands.GetMany(0, newRecentCommands);
+        newRecentCommands.insert(newRecentCommands.begin(), command);
+        ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 }
