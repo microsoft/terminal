@@ -719,7 +719,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command)
     {
-        const auto filteredCommand = command ? command : _buildCommandLineCommand(_getTrimmedInput());
+        const auto filteredCommand = command ? command : _buildCommandLineCommand(winrt::hstring(_getTrimmedInput()));
         if (filteredCommand.has_value())
         {
             _updateRecentCommands(filteredCommand.value().Item().Name());
@@ -739,15 +739,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(std::wstring const& commandLine)  const
+    std::optional<winrt::TerminalApp::FilteredCommand> CommandPalette::_buildCommandLineCommand(const winrt::hstring& commandLine) const
     {
         if (commandLine.empty())
         {
             return std::nullopt;
         }
 
-        winrt::hstring cl{ commandLine };
-        auto commandLinePaletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(cl) };
+        auto commandLinePaletteItem{ winrt::make<winrt::TerminalApp::implementation::CommandLinePaletteItem>(commandLine) };
         return winrt::make<FilteredCommand>(commandLinePaletteItem);
     }
 
@@ -1219,16 +1218,24 @@ namespace winrt::TerminalApp::implementation
     // - The list of FilteredCommand representing the ones stored in the state
     Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands() const
     {
-        const auto parsedCommands = winrt::single_threaded_vector<winrt::TerminalApp::FilteredCommand>();
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        std::for_each(begin(recentCommands), end(recentCommands), [&](const auto& c) {
-            auto parsedCommand = _buildCommandLineCommand(c.c_str());
-            if (parsedCommand.has_value())
+        std::vector<winrt::TerminalApp::FilteredCommand> parsedCommands;
+        parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
+
+        for (const auto& c : recentCommands)
+        {
+            if (parsedCommands.size() >= CommandLineHistoryLength)
             {
-                parsedCommands.Append(parsedCommand.value());
+                // Don't load more than CommandLineHistoryLength commands
+                break;
             }
-        });
-        return parsedCommands;
+
+            if (const auto parsedCommand = _buildCommandLineCommand(c))
+            {
+                parsedCommands.push_back(*parsedCommand);
+            }
+        }
+        return winrt::single_threaded_vector(std::move(parsedCommands));
     }
 
     // Method Description:
@@ -1238,11 +1245,24 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void CommandPalette::_updateRecentCommands(const winrt::hstring& command) const
     {
+        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
         std::vector<hstring> newRecentCommands;
+        newRecentCommands.reserve(std::min(recentCommands.Size() + 1, CommandLineHistoryLength));
+
+        // Push the provided command to be the first one
         newRecentCommands.push_back(command);
 
-        const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        std::copy_n(begin(recentCommands), std::min(recentCommands.Size(), CommandLineHistoryLength - 1), back_inserter(newRecentCommands));
-        ApplicationState::SharedInstance().RecentCommands(winrt::single_threaded_vector<hstring>(std::move(newRecentCommands)));
+        // Copy the remaining commands
+        for (const auto& c : recentCommands)
+        {
+            if (newRecentCommands.size() >= CommandLineHistoryLength)
+            {
+                // Don't store more than CommandLineHistoryLength commands
+                break;
+            }
+
+            newRecentCommands.push_back(c);
+        }
+        ApplicationState::SharedInstance().RecentCommands(winrt::single_threaded_vector(std::move(newRecentCommands)));
     }
 }

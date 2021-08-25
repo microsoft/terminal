@@ -123,7 +123,7 @@ namespace winrt::TerminalApp::implementation
         void _dispatchCommand(winrt::TerminalApp::FilteredCommand const& command);
         void _dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command);
         void _switchToTab(winrt::TerminalApp::FilteredCommand const& command);
-        std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(std::wstring const& commandLine) const;
+        std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(const winrt::hstring& commandLine) const;
 
         void _dismissPalette();
 
