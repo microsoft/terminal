@@ -243,9 +243,10 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // Previous movement relies on the last used panes
     if (direction == FocusDirection::Previous)
     {
-        // if there is actually a previous pane
+        // If there is actually a previous pane.
         if (mruPanes.size() > 1)
         {
+            // This could return nullptr if the id is not actually in the tree.
             return FindPane(mruPanes.at(1));
         }
         return nullptr;
@@ -267,7 +268,7 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // and its neighbor must necessarily be contained within the same child.
     if (!DirectionMatchesSplit(direction, _splitState))
     {
-        if (auto p = _firstChild->NavigateDirection(sourcePane, direction, mruPanes))
+        if (const auto p = _firstChild->NavigateDirection(sourcePane, direction, mruPanes))
         {
             return p;
         }
@@ -562,8 +563,8 @@ bool Pane::_IsAdjacent(const PanePoint firstOffset,
     // corner of the first element is within the second element's height
     if (direction == FocusDirection::Left)
     {
-        auto sharesBorders = floatEqual(firstOffset.x, getXMax(secondOffset));
-        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset));
+        const auto sharesBorders = floatEqual(firstOffset.x, getXMax(secondOffset));
+        const auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset));
 
         return sharesBorders && withinHeight;
     }
@@ -572,8 +573,8 @@ bool Pane::_IsAdjacent(const PanePoint firstOffset,
     // corner of the first element is within the second element's height
     else if (direction == FocusDirection::Right)
     {
-        auto sharesBorders = floatEqual(getXMax(firstOffset), secondOffset.x);
-        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset));
+        const auto sharesBorders = floatEqual(getXMax(firstOffset), secondOffset.x);
+        const auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset));
 
         return sharesBorders && withinHeight;
     }
@@ -582,8 +583,8 @@ bool Pane::_IsAdjacent(const PanePoint firstOffset,
     // corner of the first element is within the second element's width
     else if (direction == FocusDirection::Up)
     {
-        auto sharesBorders = floatEqual(firstOffset.y, getYMax(secondOffset));
-        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset));
+        const auto sharesBorders = floatEqual(firstOffset.y, getYMax(secondOffset));
+        const auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset));
 
         return sharesBorders && withinWidth;
     }
@@ -592,8 +593,8 @@ bool Pane::_IsAdjacent(const PanePoint firstOffset,
     // corner of the first element is within the second element's width
     else if (direction == FocusDirection::Down)
     {
-        auto sharesBorders = floatEqual(getYMax(firstOffset), secondOffset.y);
-        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset));
+        const auto sharesBorders = floatEqual(getYMax(firstOffset), secondOffset.y);
+        const auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset));
 
         return sharesBorders && withinWidth;
     }

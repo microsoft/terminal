@@ -652,7 +652,7 @@ namespace winrt::TerminalApp::implementation
         // throughout the entire tree.
         if (const auto newFocus = _rootPane->NavigateDirection(_activePane, direction, _mruPanes))
         {
-            auto res = _rootPane->FocusPane(newFocus);
+            const auto res = _rootPane->FocusPane(newFocus);
 
             if (_zoomedPane)
             {
