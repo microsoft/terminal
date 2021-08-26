@@ -816,7 +816,6 @@
         {
           "properties": {
             "action": { "type": "string", "pattern": "multipleActions" },
-            "name": { "type": "string"},
             "actions" : {
               "$ref": "#/definitions/ShortcutAction",
               "type": "array",
@@ -826,7 +825,7 @@
           }
         }
       ],
-      "required": [ "name", "actions" ]
+      "required": [ "actions" ]
     }, 
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
