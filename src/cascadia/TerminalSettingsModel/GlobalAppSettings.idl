@@ -34,6 +34,12 @@ namespace Microsoft.Terminal.Settings.Model
         UseExisting,
     };
 
+    enum FirstWindowPreference
+    {
+        DefaultProfile,
+        PersistedWindowLayout,
+    };
+
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
 
@@ -59,6 +65,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, WarnAboutMultiLinePaste);
         INHERITABLE_SETTING(LaunchPosition, InitialPosition);
         INHERITABLE_SETTING(Boolean, CenterOnLaunch);
+        INHERITABLE_SETTING(FirstWindowPreference, FirstWindowPreference);
         INHERITABLE_SETTING(LaunchMode, LaunchMode);
         INHERITABLE_SETTING(Boolean, SnapToGridOnResize);
         INHERITABLE_SETTING(Boolean, ForceFullRepaintRendering);

@@ -41,6 +41,7 @@ static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
+static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreference" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
@@ -125,6 +126,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_ForceVTInput = _ForceVTInput;
     globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
     globals->_StartOnUserLogin = _StartOnUserLogin;
+    globals->_FirstWindowPreference = _FirstWindowPreference;
     globals->_AlwaysOnTop = _AlwaysOnTop;
     globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
@@ -285,6 +287,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
+    JsonUtils::GetValueForKey(json, FirstWindowPreferenceKey, _FirstWindowPreference);
+
     JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
 
     JsonUtils::GetValueForKey(json, LanguageKey, _Language);
@@ -408,6 +412,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, CopyFormattingKey,              _CopyFormatting);
     JsonUtils::SetValueForKey(json, WarnAboutLargePasteKey,         _WarnAboutLargePaste);
     JsonUtils::SetValueForKey(json, WarnAboutMultiLinePasteKey,     _WarnAboutMultiLinePaste);
+    JsonUtils::SetValueForKey(json, FirstWindowPreferenceKey,       _FirstWindowPreference);
     JsonUtils::SetValueForKey(json, LaunchModeKey,                  _LaunchMode);
     JsonUtils::SetValueForKey(json, LanguageKey,                    _Language);
     JsonUtils::SetValueForKey(json, ThemeKey,                       _Theme);

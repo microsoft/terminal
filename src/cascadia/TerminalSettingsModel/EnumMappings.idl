@@ -10,6 +10,7 @@ namespace Microsoft.Terminal.Settings.Model
         // Global Settings
         static Windows.Foundation.Collections.IMap<String, Windows.UI.Xaml.ElementTheme> ElementTheme { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.UI.Xaml.Controls.TabViewWidthMode> TabViewWidthMode { get; };
+        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.FirstWindowPreference> FirstWindowPreference { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.LaunchMode> LaunchMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.TabSwitcherMode> TabSwitcherMode { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Control.CopyFormat> CopyFormat { get; };

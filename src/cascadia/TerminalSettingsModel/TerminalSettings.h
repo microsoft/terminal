@@ -127,6 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
         INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, Model::ColorScheme, AppliedColorScheme);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
         INHERITABLE_SETTING(Model::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 

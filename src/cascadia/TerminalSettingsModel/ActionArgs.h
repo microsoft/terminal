@@ -124,14 +124,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool Equals(const Model::NewTerminalArgs& other)
         {
-            return other.Commandline() == _Commandline &&
-                   other.StartingDirectory() == _StartingDirectory &&
-                   other.TabTitle() == _TabTitle &&
-                   other.TabColor() == _TabColor &&
-                   other.ProfileIndex() == _ProfileIndex &&
-                   other.Profile() == _Profile &&
-                   other.SuppressApplicationTitle() == _SuppressApplicationTitle &&
-                   other.ColorScheme() == _ColorScheme;
+            // Treat "default value" as the same as nullopt so that we can
+            // compare two terminal args that don't have all settings set.
+            auto nullEqual = [](auto first, auto& second) { return (first == second) || (first == decltype(first){} && second == std::nullopt); };
+            return nullEqual(other.Commandline(), _Commandline) &&
+                   nullEqual(other.StartingDirectory(), _StartingDirectory) &&
+                   nullEqual(other.TabTitle(), _TabTitle) &&
+                   nullEqual(other.TabColor(), _TabColor) &&
+                   nullEqual(other.ProfileIndex(), _ProfileIndex) &&
+                   nullEqual(other.Profile(), _Profile) &&
+                   nullEqual(other.SuppressApplicationTitle(), _SuppressApplicationTitle) &&
+                   nullEqual(other.ColorScheme(), _ColorScheme);
         };
         static Model::NewTerminalArgs FromJson(const Json::Value& json)
         {

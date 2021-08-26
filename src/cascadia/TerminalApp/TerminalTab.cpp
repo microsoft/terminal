@@ -438,6 +438,50 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Serializes the state of this tab as a series of commands that can be
+    //   executed to recreate it.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A vector of commands
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions() const
+    {
+        // Give initial ids (0 for the child created with this tab,
+        // 1 for the child after the first split.
+        auto state = _rootPane->BuildStartupActions(0, 1);
+
+        ActionAndArgs newTabAction{};
+        newTabAction.Action(ShortcutAction::NewTab);
+        NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
+        newTabAction.Args(newTabArgs);
+
+        state.args.emplace(state.args.begin(), std::move(newTabAction));
+
+        // If we only have one arg, we only have 1 pane so we don't need any
+        // special focus logic
+        if (state.args.size() > 1 && state.focusedPaneId.has_value())
+        {
+            ActionAndArgs focusPaneAction{};
+            focusPaneAction.Action(ShortcutAction::FocusPane);
+            FocusPaneArgs focusArgs{ state.focusedPaneId.value() };
+            focusPaneAction.Args(focusArgs);
+
+            state.args.emplace_back(std::move(focusPaneAction));
+        }
+
+        if (_zoomedPane)
+        {
+            // we start without any panes zoomed so toggle zoom will enable zoom.
+            ActionAndArgs zoomPaneAction{};
+            zoomPaneAction.Action(ShortcutAction::TogglePaneZoom);
+
+            state.args.emplace_back(std::move(zoomPaneAction));
+        }
+
+        return state.args;
+    }
+
+    // Method Description:
     // - Split the focused pane in our tree of panes, and place the
     //   given TermControl into the newly created pane.
     // Arguments:

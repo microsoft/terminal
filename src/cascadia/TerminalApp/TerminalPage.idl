@@ -33,6 +33,7 @@ namespace TerminalApp
         UInt64 WindowId;
         String WindowNameForDisplay { get; };
         String WindowIdForDisplay { get; };
+        void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         Boolean IsQuakeWindow();
 
