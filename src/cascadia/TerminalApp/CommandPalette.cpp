@@ -1246,9 +1246,13 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateRecentCommands(const hstring& command)
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        std::vector<hstring> newRecentCommands{ std::min(recentCommands.Size(), CommandLineHistoryLength - 1) };
-        recentCommands.GetMany(0, newRecentCommands);
-        newRecentCommands.insert(newRecentCommands.begin(), command);
+        const auto countToCopy = std::min(recentCommands.Size(), CommandLineHistoryLength - 1);
+        std::vector<hstring> newRecentCommands{ countToCopy + 1 };
+        til::at(newRecentCommands, 0) = command;
+        if (countToCopy)
+        {
+            recentCommands.GetMany(0, { newRecentCommands.data() + 1, countToCopy });
+        }
         ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 }
