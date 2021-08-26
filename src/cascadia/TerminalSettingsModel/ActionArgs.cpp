@@ -310,7 +310,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return { directionString, isTarget };
-
     }
 
     winrt::hstring MoveFocusArgs::GenerateName() const
