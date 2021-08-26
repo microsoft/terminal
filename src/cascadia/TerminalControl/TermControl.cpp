@@ -706,7 +706,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // As of GH#6586, don't start the cursor timer immediately, and
             // don't show the cursor initially. We'll show the cursor and start
             // the timer when the control is first focused. cursorTimer.Start();
-            _core.CursorOn(false);
+            _core->CursorOn(false);
         }
         else
         {

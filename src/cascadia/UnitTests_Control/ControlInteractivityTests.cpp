@@ -32,8 +32,10 @@ namespace ControlUnitTests
         TEST_METHOD(ScrollWithSelection);
         TEST_METHOD(TestScrollWithTrackpad);
         TEST_METHOD(TestQuickDragOnSelect);
+#if 0
         TEST_METHOD(PointerClickOutsideActiveRegion);
         TEST_METHOD(IncrementCircularBufferWithSelection);
+#endif
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -545,6 +547,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(expectedAnchor, core->_terminal->GetSelectionAnchor());
     }
 
+#if 0 // The test relies on 1.11 changes to the interactivity code.
     void ControlInteractivityTests::PointerClickOutsideActiveRegion()
     {
         // This is a test for GH#10642
@@ -710,4 +713,5 @@ namespace ControlUnitTests
         // Verify that the selection got reset
         VERIFY_IS_FALSE(core->HasSelection());
     }
+#endif
 }

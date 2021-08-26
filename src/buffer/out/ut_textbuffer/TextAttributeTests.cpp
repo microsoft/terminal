@@ -276,9 +276,9 @@ void TextAttributeTests::TestRoundtripDefaultColors()
 
 void TextAttributeTests::TestBoldAsBright()
 {
-    const COLORREF darkBlack = til::at(_colorTable, 0);
-    const COLORREF brightBlack = til::at(_colorTable, 8);
-    const COLORREF darkGreen = til::at(_colorTable, 2);
+    const COLORREF darkBlack = _colorTable[0];
+    const COLORREF brightBlack = _colorTable[8];
+    const COLORREF darkGreen = _colorTable[2];
 
     TextAttribute attr{};
 
