@@ -337,7 +337,22 @@ namespace winrt::TerminalApp::implementation
             // If the user selected to save their tab layout, we are the first
             // window opened, and wt was not run with any other arguments, then
             // we should use the saved settings.
-            if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1)
+            auto firstActionIsDefault = [](ActionAndArgs action) {
+                if (action.Action() != ShortcutAction::NewTab)
+                {
+                    return false;
+                }
+
+                // If no commands were given, we will have default args
+                if (const auto args = action.Args().try_as<NewTabArgs>())
+                {
+                    NewTerminalArgs defaultArgs{};
+                    return args.TerminalArgs() == nullptr || args.TerminalArgs().Equals(defaultArgs);
+                }
+
+                return false;
+            };
+            if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
             {
                 auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
                 if (layouts && layouts.Size() > 0 && layouts.GetAt(0).TabLayout() && layouts.GetAt(0).TabLayout().Size() > 0)
@@ -1224,7 +1239,6 @@ namespace winrt::TerminalApp::implementation
 
         if (_hostingHwnd)
         {
-
             // Get the position of the current window. This includes the
             // non-client already.
             RECT window{};
