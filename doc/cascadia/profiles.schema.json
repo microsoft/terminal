@@ -818,7 +818,7 @@
             "action": { "type": "string", "pattern": "multipleActions" },
             "name": { "type": "string"},
             "actions" : {
-              "$ref": "#/definitions/ShortcutAction"
+              "$ref": "#/definitions/ShortcutAction",
               "type": "array",
               "minItems": 1,
               "description": "A list of other actions."
