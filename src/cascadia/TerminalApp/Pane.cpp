@@ -251,6 +251,27 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return PreviousPane(sourcePane);
     }
 
+    if (direction == FocusDirection::First)
+    {
+        std::shared_ptr<Pane> firstPane = nullptr;
+        WalkTree([&](auto p) {
+            if (p->_IsLeaf())
+            {
+                firstPane = p;
+                return true;
+            }
+
+            return false;
+        });
+
+        // Don't need to do any movement if we are the source and target pane.
+        if (firstPane == sourcePane)
+        {
+            return nullptr;
+        }
+        return firstPane;
+    }
+
     // We are left with directional traversal now
     // If the focus direction does not match the split direction, the source pane
     // and its neighbor must necessarily be contained within the same child.
