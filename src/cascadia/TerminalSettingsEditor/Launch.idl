@@ -17,6 +17,9 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentDefaultProfile;
 
+        IInspectable CurrentFirstWindowPreference;
+        IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FirstWindowPreferenceList { get; };
+
         IInspectable CurrentLaunchMode;
         IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> LaunchModeList { get; };
 

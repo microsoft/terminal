@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::FirstWindowPreference, FirstWindowPreference, FirstWindowPreference::DefaultProfile);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);
@@ -90,7 +91,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceVTInput, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DebugFeaturesEnabled, _getDefaultDebugFeaturesValue());
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, StartOnUserLogin, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, PersistWindowLayout, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysOnTop, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DisableAnimations, false);

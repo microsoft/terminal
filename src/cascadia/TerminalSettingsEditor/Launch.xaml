@@ -133,10 +133,13 @@
                     <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
                 </local:SettingContainer>
 
-                <!--  Retain and Reload Window Layout  -->
-                <local:SettingContainer x:Uid="Globals_PersistWindowLayout">
-                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.PersistWindowLayout, Mode=TwoWay}" />
+                <!--  First Window Behavior  -->
+                <local:SettingContainer x:Uid="Globals_FirstWindowPreference">
+                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                       ItemsSource="{x:Bind FirstWindowPreferenceList}"
+                                       SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />
                 </local:SettingContainer>
+
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_LaunchMode">

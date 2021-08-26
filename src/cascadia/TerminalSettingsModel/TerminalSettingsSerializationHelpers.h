@@ -209,6 +209,14 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "defaultProfile", ValueType::DefaultProfile },
+        pair_type{ "persistedWindowLayout", ValueType::PersistedWindowLayout },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
 {
     JSON_MAPPINGS(5) = {
