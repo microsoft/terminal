@@ -291,11 +291,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             directionString = RS_(L"DirectionDown");
             break;
         case FocusDirection::Previous:
-            return RS_(L"MoveFocusLastUsedPane");
+            return RS_(L"MoveFocusToLastUsedPane");
         case FocusDirection::NextInOrder:
-            return RS_(L"MoveFocusNextPaneInOrder");
+            return RS_(L"MoveFocusNextInOrder");
         case FocusDirection::PreviousInOrder:
-            return RS_(L"MoveFocusPreviousPaneInOrder");
+            return RS_(L"MoveFocusPreviousInOrder");
         case FocusDirection::First:
             return RS_(L"MoveFocusFirstPane");
         }
@@ -324,11 +324,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             directionString = RS_(L"DirectionDown");
             break;
         case FocusDirection::Previous:
-            return RS_(L"SwapPaneLastUsedPane");
+            return RS_(L"SwapPaneToLastUsedPane");
         case FocusDirection::NextInOrder:
-            return RS_(L"SwapPaneNextPaneInOrder");
+            return RS_(L"SwapPaneNextInOrder");
         case FocusDirection::PreviousInOrder:
-            return RS_(L"SwapPanePreviousPaneInOrder");
+            return RS_(L"SwapPanePreviousInOrder");
         case FocusDirection::First:
             return RS_(L"SwapPaneFirstPane");
         }

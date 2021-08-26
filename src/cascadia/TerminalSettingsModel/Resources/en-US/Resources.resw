@@ -207,18 +207,6 @@
   <data name="DirectionUp" xml:space="preserve">
     <value>up</value>
   </data>
-  <data name="FirstPane" xml:space="preserve">
-    <value>first pane</value>
-  </data>
-  <data name="NextPaneInOrder" xml:space="preserve">
-    <value>next pane in order</value>
-  </data>
-  <data name="PreviousPaneInOrder" xml:space="preserve">
-    <value>previous pane in order</value>
-  </data>
-  <data name="LastUsedPane" xml:space="preserve">
-    <value>last used pane</value>
-  </data>
   <data name="DirectionPrevious" xml:space="preserve">
     <value>previous</value>
   </data>
@@ -255,13 +243,13 @@
     <value>Move focus {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
-  <data name="MoveFocusLastUsedPane" xml:space="preserve">
+  <data name="MoveFocusToLastUsedPane" xml:space="preserve">
     <value>Move focus to the last used pane</value>
   </data>
-  <data name="MoveFocusNextPaneInOrder" xml:space="preserve">
+  <data name="MoveFocusNextInOrder" xml:space="preserve">
     <value>Move focus to the next pane in order</value>
   </data>
-  <data name="MoveFocusPreviousPaneInOrder" xml:space="preserve">
+  <data name="MoveFocusPreviousInOrder" xml:space="preserve">
     <value>Move focus to the previous pane in order</value>
   </data>
   <data name="MoveFocusFirstPane" xml:space="preserve">
@@ -274,13 +262,13 @@
     <value>Swap pane {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
-  <data name="SwapPaneLastUsedPane" xml:space="preserve">
+  <data name="SwapPaneToLastUsedPane" xml:space="preserve">
     <value>Swap panes with the last used pane</value>
   </data>
-  <data name="SwapPaneNextPaneInOrder" xml:space="preserve">
+  <data name="SwapPaneNextInOrder" xml:space="preserve">
     <value>Swap panes with the next pane in order</value>
   </data>
-  <data name="SwapPanePreviousPaneInOrder" xml:space="preserve">
+  <data name="SwapPanePreviousInOrder" xml:space="preserve">
     <value>Swap panes with the previous pane in order</value>
   </data>
   <data name="SwapPaneFirstPane" xml:space="preserve">
