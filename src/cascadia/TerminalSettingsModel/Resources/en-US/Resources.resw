@@ -255,9 +255,17 @@
     <value>Move focus {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
-  <data name="MoveFocusWithTargetArgCommandKey" xml:space="preserve">
-    <value>Move focus to the {0}</value>
-    <comment>{0} will be replaced with one of "LastUsedPane", "NextPaneInOrder", "PreviousPaneInOrder", "FirstPane"</comment>
+  <data name="MoveFocusLastUsedPane" xml:space="preserve">
+    <value>Move focus to the last used pane</value>
+  </data>
+  <data name="MoveFocusNextPaneInOrder" xml:space="preserve">
+    <value>Move focus to the next pane in order</value>
+  </data>
+  <data name="MoveFocusPreviousPaneInOrder" xml:space="preserve">
+    <value>Move focus to the previous pane in order</value>
+  </data>
+  <data name="MoveFocusFirstPane" xml:space="preserve">
+    <value>Move focus to the first pane</value>
   </data>
   <data name="SwapPaneCommandKey" xml:space="preserve">
     <value>Swap pane</value>
@@ -266,9 +274,17 @@
     <value>Swap pane {0}</value>
     <comment>{0} will be replaced with one of the four directions "DirectionLeft", "DirectionRight", "DirectionUp", "DirectionDown"</comment>
   </data>
-  <data name="SwapPaneWithTargetArgCommandKey" xml:space="preserve">
-    <value>Swap panes with the {0}</value>
-    <comment>{0} will be replaced with one of "LastUsedPane", "NextPaneInOrder", "PreviousPaneInOrder", "FirstPane"</comment>
+  <data name="SwapPaneLastUsedPane" xml:space="preserve">
+    <value>Swap panes with the last used pane</value>
+  </data>
+  <data name="SwapPaneNextPaneInOrder" xml:space="preserve">
+    <value>Swap panes with the next pane in order</value>
+  </data>
+  <data name="SwapPanePreviousPaneInOrder" xml:space="preserve">
+    <value>Swap panes with the previous pane in order</value>
+  </data>
+  <data name="SwapPaneFirstPane" xml:space="preserve">
+    <value>Swap panes with the first pane</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>

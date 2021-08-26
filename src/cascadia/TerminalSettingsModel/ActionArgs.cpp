@@ -273,11 +273,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
-    std::pair<winrt::hstring, bool> GetFocusDirectionString(const FocusDirection& direction)
+    winrt::hstring MoveFocusArgs::GenerateName() const
     {
         winrt::hstring directionString;
-        bool isTarget = false;
-        switch (direction)
+        switch (FocusDirection())
         {
         case FocusDirection::Left:
             directionString = RS_(L"DirectionLeft");
@@ -292,35 +291,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             directionString = RS_(L"DirectionDown");
             break;
         case FocusDirection::Previous:
-            directionString = RS_(L"LastUsedPane");
-            isTarget = true;
-            break;
+            return RS_(L"MoveFocusLastUsedPane");
         case FocusDirection::NextInOrder:
-            directionString = RS_(L"NextPaneInOrder");
-            isTarget = true;
-            break;
+            return RS_(L"MoveFocusNextPaneInOrder");
         case FocusDirection::PreviousInOrder:
-            directionString = RS_(L"PreviousPaneInOrder");
-            isTarget = true;
-            break;
+            return RS_(L"MoveFocusPreviousPaneInOrder");
         case FocusDirection::First:
-            directionString = RS_(L"FirstPane");
-            isTarget = true;
-            break;
-        }
-
-        return { directionString, isTarget };
-    }
-
-    winrt::hstring MoveFocusArgs::GenerateName() const
-    {
-        auto [directionString, isTarget] = GetFocusDirectionString(FocusDirection());
-        if (isTarget)
-        {
-            return winrt::hstring{
-                fmt::format(std::wstring_view(RS_(L"MoveFocusWithTargetArgCommandKey")),
-                            directionString)
-            };
+            return RS_(L"MoveFocusFirstPane");
         }
 
         return winrt::hstring{
@@ -331,13 +308,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring SwapPaneArgs::GenerateName() const
     {
-        auto [directionString, isTarget] = GetFocusDirectionString(Direction());
-        if (isTarget)
+        winrt::hstring directionString;
+        switch (Direction())
         {
-            return winrt::hstring{
-                fmt::format(std::wstring_view(RS_(L"SwapPaneWithTargetArgCommandKey")),
-                            directionString)
-            };
+        case FocusDirection::Left:
+            directionString = RS_(L"DirectionLeft");
+            break;
+        case FocusDirection::Right:
+            directionString = RS_(L"DirectionRight");
+            break;
+        case FocusDirection::Up:
+            directionString = RS_(L"DirectionUp");
+            break;
+        case FocusDirection::Down:
+            directionString = RS_(L"DirectionDown");
+            break;
+        case FocusDirection::Previous:
+            return RS_(L"SwapPaneLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"SwapPaneNextPaneInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"SwapPanePreviousPaneInOrder");
+        case FocusDirection::First:
+            return RS_(L"SwapPaneFirstPane");
         }
 
         return winrt::hstring{
