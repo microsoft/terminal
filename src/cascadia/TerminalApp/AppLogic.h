@@ -94,6 +94,7 @@ namespace winrt::TerminalApp::implementation
 
         bool GetMinimizeToTray();
         bool GetAlwaysShowTrayIcon();
+        bool GetShowTitleInTitlebar();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 

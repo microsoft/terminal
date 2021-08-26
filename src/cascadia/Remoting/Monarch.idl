@@ -42,7 +42,7 @@ namespace Microsoft.Terminal.Remoting
         void SummonWindow(SummonWindowSelectionArgs args);
 
         void SummonAllWindows();
-        Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames { get; };
+        Windows.Foundation.Collections.IMapView<UInt64, IPeasant> GetPeasants { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;

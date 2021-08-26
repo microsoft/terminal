@@ -1022,7 +1022,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.Title();
 
-        if (_settings.GlobalSettings().ShowTitleInTitlebar() && tab == _GetFocusedTab())
+        if (tab == _GetFocusedTab())
         {
             _TitleChangedHandlers(*this, newTabTitle);
         }

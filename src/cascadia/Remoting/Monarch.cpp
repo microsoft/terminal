@@ -812,16 +812,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - A map of peasant IDs to their names.
-    Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> Monarch::GetPeasantNames()
+    Windows::Foundation::Collections::IMapView<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> Monarch::GetPeasants()
     {
-        auto names = winrt::single_threaded_map<uint64_t, winrt::hstring>();
+        auto names = winrt::single_threaded_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant>();
 
         std::vector<uint64_t> peasantsToErase{};
         for (const auto& [id, p] : _peasants)
         {
             try
             {
-                names.Insert(id, p.WindowName());
+                names.Insert(id, p);
             }
             catch (...)
             {

@@ -519,11 +519,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
-    Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> WindowManager::GetPeasantNames()
+    Windows::Foundation::Collections::IMapView<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> WindowManager::GetPeasants()
     {
         // We should only get called when we're the monarch since the monarch
         // is the only one that knows about all peasants.
-        return _monarch.GetPeasantNames();
+        return _monarch.GetPeasants();
     }
 
     // Method Description:
@@ -553,10 +553,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     bool WindowManager::DoesQuakeWindowExist()
     {
-        const auto names = GetPeasantNames();
-        for (const auto [id, name] : names)
+        const auto names = GetPeasants();
+        for (const auto [id, p] : names)
         {
-            if (name == QuakeWindowName)
+            if (p.WindowName() == QuakeWindowName)
             {
                 return true;
             }
@@ -564,4 +564,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return false;
     }
 
+    void WindowManager::UpdateTitle(winrt::hstring title)
+    {
+        _peasant.ActiveTabTitle(title);
+    }
 }
