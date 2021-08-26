@@ -69,7 +69,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         if (_monarch)
         {
-            _monarch.SignalClose(_peasant.GetID());
+            try
+            {
+                _monarch.SignalClose(_peasant.GetID());
+            }
+            CATCH_LOG()
         }
     }
 
@@ -264,8 +268,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         auto weakThis{ get_weak() };
 
-        _monarch.WindowCreated([weakThis](auto&&, auto&&) { if (auto mgr{ weakThis.get() }) { mgr->_WindowCreatedHandlers(nullptr, nullptr); } });
-        _monarch.WindowClosed([weakThis](auto&&, auto&&) { if (auto mgr{ weakThis.get() }) { mgr->_WindowCreatedHandlers(nullptr, nullptr); } });
+        _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
+        _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
         _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
         _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
@@ -543,7 +547,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         if (_monarch)
         {
-            return _monarch.GetNumberOfPeasants();
+            try
+            {
+                return _monarch.GetNumberOfPeasants();
+            }
+            CATCH_LOG()
         }
         return 0;
     }

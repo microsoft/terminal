@@ -138,7 +138,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto onError = [](auto&& id) {
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_GetNumberOfPeasants_Failed",
-                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not summon"),
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not enumerate"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         };

@@ -219,6 +219,9 @@ void AppHost::_HandleCommandlineArgs()
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
 
+        // We need this property to be set before we get the InitialSize/Position
+        // and BecameMonarch which normally sets it is only run after the window
+        // is created.
         if (_windowManager.IsMonarch())
         {
             _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());

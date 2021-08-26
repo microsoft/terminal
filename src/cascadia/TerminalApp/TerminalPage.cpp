@@ -1224,6 +1224,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_hostingHwnd)
         {
+
             // Get the position of the current window. This includes the
             // non-client already.
             RECT window{};
