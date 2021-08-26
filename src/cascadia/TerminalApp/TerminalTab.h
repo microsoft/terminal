@@ -79,6 +79,7 @@ namespace winrt::TerminalApp::implementation
         void ResetRuntimeTabColor();
         void ActivateColorPicker();
 
+        void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
         bool IsZoomed();
         void EnterZoom();

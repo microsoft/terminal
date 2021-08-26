@@ -223,10 +223,11 @@ bool Pane::ResizePane(const ResizeDirection& direction)
 // Arguments:
 // - sourcePane: the pane to navigate from
 // - direction: which direction to go in
+// - mruPanes: the list of most recently used panes, in order
 // Return Value:
 // - The result of navigating from source according to direction, which may be
 //   nullptr (i.e. no pane was found in that direction).
-std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> sourcePane, const FocusDirection& direction)
+std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> sourcePane, const FocusDirection& direction, const std::vector<uint32_t>& mruPanes)
 {
     // Can't navigate anywhere if we are a leaf
     if (_IsLeaf())
@@ -234,9 +235,19 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return nullptr;
     }
 
-    // If the MRU previous pane is requested we can't move; the tab handles MRU
-    if (direction == FocusDirection::None || direction == FocusDirection::Previous)
+    if (direction == FocusDirection::None)
     {
+        return nullptr;
+    }
+
+    // Previous movement relies on the last used panes
+    if (direction == FocusDirection::Previous)
+    {
+        // if there is actually a previous pane
+        if (mruPanes.size() > 1)
+        {
+            return FindPane(mruPanes.at(1));
+        }
         return nullptr;
     }
 
@@ -256,11 +267,11 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // and its neighbor must necessarily be contained within the same child.
     if (!DirectionMatchesSplit(direction, _splitState))
     {
-        if (auto p = _firstChild->NavigateDirection(sourcePane, direction))
+        if (auto p = _firstChild->NavigateDirection(sourcePane, direction, mruPanes))
         {
             return p;
         }
-        return _secondChild->NavigateDirection(sourcePane, direction);
+        return _secondChild->NavigateDirection(sourcePane, direction, mruPanes);
     }
 
     // Since the direction is the same as our split, it is possible that we must
@@ -541,7 +552,7 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
 
     auto getXMax = [](PanePoint offset, std::shared_ptr<Pane> pane) {
         // If we are past startup panes should have real dimensions
-        if (pane->GetRootElement().ActualWidth() > 0)
+        if (false && pane->GetRootElement().ActualWidth() > 0)
         {
             return offset.x + gsl::narrow_cast<float>(pane->GetRootElement().ActualWidth());
         }
@@ -552,7 +563,7 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
 
     auto getYMax = [](PanePoint offset, std::shared_ptr<Pane> pane) {
         // If we are past startup panes should have real dimensions
-        if (pane->GetRootElement().ActualHeight() > 0)
+        if (false && pane->GetRootElement().ActualHeight() > 0)
         {
             return offset.y + gsl::narrow_cast<float>(pane->GetRootElement().ActualHeight());
         }
@@ -620,7 +631,7 @@ std::pair<Pane::PanePoint, Pane::PanePoint> Pane::_GetOffsetsForPane(const PaneP
     auto secondOffset = parentOffset;
 
     // When panes are initialized they don't have dimensions yet.
-    if (_firstChild->GetRootElement().ActualHeight() > 0)
+    if (false && _firstChild->GetRootElement().ActualHeight() > 0)
     {
         // The second child has an offset depending on the split
         if (_splitState == SplitState::Horizontal)

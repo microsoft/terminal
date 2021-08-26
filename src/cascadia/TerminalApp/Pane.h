@@ -75,7 +75,9 @@ public:
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
-    std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
+                                            const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                            const std::vector<uint32_t>& mruPanes);
     bool SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second);
 
     std::shared_ptr<Pane> NextPane(const std::shared_ptr<Pane> pane);
