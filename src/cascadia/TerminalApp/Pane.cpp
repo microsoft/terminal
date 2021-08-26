@@ -185,31 +185,31 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     // We now need to execute the commands for each side of the tree
     // We've done one split, so the first-most child will have currentId, and the
     // one after it will be incremented.
-    const auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1);
+    auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1);
     // the next id for the second branch depends on how many splits were in the
     // first child.
-    const auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1);
+    auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1);
 
     std::vector<ActionAndArgs> actions{};
     actions.reserve(firstState.args.size() + secondState.args.size() + 3);
 
     // first we make our split
     const auto newSplit = buildSplitPane(secondState.firstPane);
-    actions.push_back(newSplit);
+    actions.emplace_back(std::move(newSplit));
 
     if (firstState.args.size() > 0)
     {
         // Then move to the first child and execute any actions on the left branch
         // then move back
-        actions.push_back(buildMoveFocus(FocusDirection::PreviousInOrder));
-        actions.insert(actions.end(), firstState.args.begin(), firstState.args.end());
-        actions.push_back(buildMoveFocus(FocusDirection::NextInOrder));
+        actions.emplace_back(buildMoveFocus(FocusDirection::PreviousInOrder));
+        actions.insert(actions.end(), std::make_move_iterator(std::begin(firstState.args)), std::make_move_iterator(std::end(firstState.args)));
+        actions.emplace_back(buildMoveFocus(FocusDirection::NextInOrder));
     }
 
     // And if there are any commands to run on the right branch do so
     if (secondState.args.size() > 0)
     {
-        actions.insert(actions.end(), secondState.args.begin(), secondState.args.end());
+        actions.insert(actions.end(), std::make_move_iterator(secondState.args.begin()), std::make_move_iterator(secondState.args.end()));
     }
 
     // if the tree is well-formed then f1.has_value and f2.has_value are

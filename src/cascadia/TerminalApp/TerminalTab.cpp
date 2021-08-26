@@ -458,7 +458,7 @@ namespace winrt::TerminalApp::implementation
         NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
         newTabAction.Args(newTabArgs);
 
-        state.args.insert(state.args.begin(), newTabAction);
+        state.args.emplace(state.args.begin(), std::move(newTabAction));
 
         // If we only have one arg, we only have 1 pane so we don't need any
         // special focus logic
@@ -469,7 +469,7 @@ namespace winrt::TerminalApp::implementation
             FocusPaneArgs focusArgs{ state.focusedPaneId.value() };
             focusPaneAction.Args(focusArgs);
 
-            state.args.push_back(focusPaneAction);
+            state.args.emplace_back(std::move(focusPaneAction));
         }
 
         if (_zoomedPane)
@@ -478,7 +478,7 @@ namespace winrt::TerminalApp::implementation
             ActionAndArgs zoomPaneAction{};
             zoomPaneAction.Action(ShortcutAction::TogglePaneZoom);
 
-            state.args.push_back(zoomPaneAction);
+            state.args.emplace_back(std::move(zoomPaneAction));
         }
 
         return state.args;
