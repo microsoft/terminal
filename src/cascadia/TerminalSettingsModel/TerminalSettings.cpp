@@ -154,6 +154,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 {
                     defaultSettings.ApplyColorScheme(scheme);
                 }
+                else if (newTerminalArgs.ColorScheme() == winrt::to_hstring(L"_random"))
+                {
+                    if (const auto& scheme = schemes.TryLookup(L"Campbell"))
+                    {
+                        defaultSettings.ApplyColorScheme(scheme);
+                    }
+                }
             }
         }
 
@@ -166,8 +173,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _CursorHeight = appearance.CursorHeight();
         if (!appearance.ColorSchemeName().empty())
         {
+            // TODO: Edit this scheme to apply a random scheme
             if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
             {
+                ApplyColorScheme(scheme);
+            }
+            else if (appearance.ColorSchemeName() == winrt::to_hstring(L"_random"))
+            {
+                const auto scheme = schemes.TryLookup(winrt::to_hstring(L"Tango Light"));
                 ApplyColorScheme(scheme);
             }
         }
