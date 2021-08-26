@@ -9,10 +9,11 @@
       xmlns:local="using:TerminalApp"
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+      Background="Transparent"
       mc:Ignorable="d">
 
     <Grid x:Name="Root"
-          Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+          Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />

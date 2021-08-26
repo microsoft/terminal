@@ -311,6 +311,8 @@ void IslandWindow::Initialize()
             _taskbar = std::move(taskbar);
         }
     }
+
+    auto iSupportBackdrop{ _source.try_as<winrt::Windows::UI::Composition::ICompositionSupportsSystemBackdrop>() };
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
