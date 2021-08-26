@@ -313,7 +313,6 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
     {
         MultipleActionsArgs();
-        String Name;
         Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     }
 }

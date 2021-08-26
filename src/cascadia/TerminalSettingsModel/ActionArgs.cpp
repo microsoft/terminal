@@ -685,11 +685,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     winrt::hstring MultipleActionsArgs::GenerateName() const
     {
-        if (!_Name.empty())
-        {
-            return _Name;
-        }
-
-        return RS_(L"MultipleActionsMissingName");
+        return L"";
     }
 }

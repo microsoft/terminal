@@ -1758,9 +1758,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
     {
         MultipleActionsArgs() = default;
-        WINRT_PROPERTY(hstring, Name, L"");
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<ActionAndArgs>, Actions);
-        static constexpr std::string_view NameKey{ "name" };
         static constexpr std::string_view ActionsKey{ "actions" };
 
     public:
@@ -1771,7 +1769,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<MultipleActionsArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_Name == _Name && otherAsUs->_Actions == _Actions;
+                return otherAsUs->_Actions == _Actions;
             }
             return false;
         };
@@ -1779,7 +1777,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<MultipleActionsArgs>();
-            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
             JsonUtils::GetValueForKey(json, ActionsKey, args->_Actions);
             return { *args, {} };
         }
@@ -1791,20 +1788,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<MultipleActionsArgs>(val) };
-            JsonUtils::SetValueForKey(json, NameKey, args->_Name);
             JsonUtils::SetValueForKey(json, ActionsKey, args->_Actions);
             return json;
         }
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<MultipleActionsArgs>() };
-            copy->_Name = _Name;
             copy->_Actions = _Actions;
             return *copy;
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Name, _Actions);
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Actions);
         }
     };
 }

@@ -451,7 +451,4 @@
   <data name="MinimizeToTrayCommandKey" xml:space="preserve">
     <value>Minimize current window to tray</value>
   </data>
-  <data name="MultipleActionsMissingName" xml:space="preserve">
-    <value>Multiple Actions (give this a name)</value>
-  </data>
 </root>
