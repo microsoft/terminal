@@ -1,0 +1,58 @@
+trigger: none
+#  batch: true
+#  branches:
+#    include:
+#      - main
+#  paths:
+#    exclude:
+#      - docs/*
+#      - samples/*
+#      - tools/*
+
+pr: none
+
+#     0.0.yyMM.dd##
+#     0.0.1904.0900
+name: 0.0.$(Date:yyMM).$(Date:dd)$(Rev:rr)
+
+stages:
+  - stage: Build_Fuzz_Config
+    displayName: Build Fuzzers
+    dependsOn: []
+    condition: succeeded()
+    jobs:
+    - template: ./templates/build-console-fuzzing.yml
+      parameters:
+        platform: x64
+  - stage: OneFuzz
+    displayName: OneFuzz
+    dependsOn: ['Build_Fuzz_Config']
+    condition: succeeded()
+    pool:
+      vmImage: 'ubuntu-latest'
+    variables:
+      publishedArtifactsPath: drop
+      artifactsPath: $(Build.SourcesDirectory)Artifacts
+      commitSHA1: $(Build.SourceVersion)
+    jobs:
+    - job:
+      steps:
+      - task: DownloadBuildArtifacts@0
+        inputs:
+          artifactName: $(publishedArtifactsPath)
+          downloadPath: $(artifactsPath)
+      - task: UsePythonVersion@0
+        displayName: Setup Python Env
+        inputs:
+          versionSpec: '3.x'
+          addToPath: true
+          architecture: 'x64'
+      - bash: |
+          set -ex
+          pip -q install onefuzz
+          onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
+          onefuzz template libfuzzer basic OpenConsole WriteCharsLegacy $(commitSHA1) windows --target_exe $(artifactsPath)/$(publishedArtifactsPath)/Fuzzing/x64/test/OpenConsoleFuzzer.exe
+        displayName: Submit OneFuzz Job
+        env:
+          client_id: client_id
+          client_secret: client_secret

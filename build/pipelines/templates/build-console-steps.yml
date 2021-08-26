@@ -70,7 +70,7 @@ steps:
   displayName: 'Check MSIX for common regressions'
   # PGO runtime needs its own CRT and it's in the package for convenience.
   # That will make this script mad so skip since we're not shipping the PGO Instrumentation one anyway.
-  condition: ne(variables['PGOBuildMode'], 'Instrument')
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'))
   inputs:
     targetType: inline
     script: |
@@ -79,7 +79,7 @@ steps:
 
 - task: powershell@2
   displayName: 'Source Index PDBs'
-  condition: ne(variables['PGOBuildMode'], 'Instrument')
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'))
   inputs:
     targetType: filePath
     filePath: build\scripts\Index-Pdbs.ps1
@@ -113,7 +113,7 @@ steps:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
     arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
-  condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+  condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PowerShell@2
   displayName: 'Run Feature Tests (x64 only)'
@@ -121,7 +121,7 @@ steps:
     targetType: filePath
     filePath: build\scripts\Run-Tests.ps1
     arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}'
-  condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), eq(variables['BuildPlatform'], 'x64'))
+  condition: and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'), eq(variables['BuildPlatform'], 'x64'))
 
 - task: PowerShell@2
   displayName: 'Convert Test Logs from WTL to xUnit format'
@@ -129,11 +129,11 @@ steps:
     targetType: filePath
     filePath: build\Helix\ConvertWttLogToXUnit.ps1
     arguments: -WttInputPath '${{ parameters.testLogPath }}' -WttSingleRerunInputPath 'unused.wtl' -WttMultipleRerunInputPath 'unused2.wtl' -XUnitOutputPath 'onBuildMachineResults.xml' -TestNamePrefix '$(BuildConfiguration).$(BuildPlatform)'
-  condition: and(ne(variables['PGOBuildMode'], 'Instrument'),or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
 - task: PublishTestResults@2
   displayName: 'Upload converted test logs'
-  condition: ne(variables['PGOBuildMode'], 'Instrument')
+  condition: and(ne(variables['PGOBuildMode'], 'Instrument'), ne(variables['BuildConfiguration'], 'Fuzzing'))
   inputs:
     testResultsFormat: 'xUnit' # Options: JUnit, NUnit, VSTest, xUnit, cTest
     testResultsFiles: '**/onBuildMachineResults.xml'
@@ -193,7 +193,7 @@ steps:
   displayName: 'Publish All Build Artifacts'
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'  
+    ArtifactName: 'drop'
 
 - task: CopyFiles@2
   displayName: 'Copy PGO databases needed for PGO instrumentation run'
