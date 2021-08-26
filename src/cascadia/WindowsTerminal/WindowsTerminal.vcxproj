@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
-
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -16,16 +15,13 @@
     <TargetPlatformIdentifier>Windows</TargetPlatformIdentifier>
     <PgoTarget>true</PgoTarget>
   </PropertyGroup>
-
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <ItemDefinitionGroup>
     <ClCompile>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
   </ItemDefinitionGroup>
-
   <ItemDefinitionGroup>
     <ClCompile>
       <AdditionalIncludeDirectories>$(OpenConsoleDir)\src\inc;$(OpenConsoleDir)\dep;$(OpenConsoleDir)\dep\Console;$(OpenConsoleDir)\dep\Win32K;$(OpenConsoleDir)\dep\gsl\include;%(AdditionalIncludeDirectories);</AdditionalIncludeDirectories>
@@ -78,18 +74,15 @@
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalConnection\TerminalConnection.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsModel\dll\Microsoft.Terminal.Settings.Model.vcxproj" />
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalApp\dll\TerminalApp.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\Remoting\dll\Microsoft.Terminal.Remoting.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj" />
-
     <ProjectReference Include="$(OpenConsoleDir)src\types\lib\types.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WinRTUtils\WinRTUtils.vcxproj">
       <Project>{CA5CAD1A-039A-4929-BA2A-8BEB2E4106FE}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-
   <!-- Manually add a reference to Core here. We need this so MDMERGE will know
   where the Core types are defined. However, we need to do it exactly like this,
   because the Core project is a lib not a dll, so it can't be ProjectReference'd
@@ -113,10 +106,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
-
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
   <Import Project="..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets" Condition="Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" />
@@ -130,7 +122,6 @@
     <Error Condition="!Exists('..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VCRTForwarders.140.1.0.4\build\native\Microsoft.VCRTForwarders.140.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.3.210521003\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.Internal.Windows.Terminal.ThemeHelpers.0.3.210521003\build\native\Microsoft.Internal.Windows.Terminal.ThemeHelpers.targets'))" />
   </Target>
-
   <!-- Override GetPackagingOutputs to roll up all our dependencies.
        This ensures that when the WAP packaging project asks what files go into
        the package, we tell it.
@@ -141,32 +132,20 @@
     <_ContinueOnError Condition="'$(BuildingProject)' != 'true'">false</_ContinueOnError>
   </PropertyGroup>
   <Target Name="GetPackagingOutputs" Returns="@(PackagingOutputs)">
-    <MSBuild
-      Projects="@(ProjectReferenceWithConfiguration)"
-      Targets="GetPackagingOutputs"
-      BuildInParallel="$(BuildInParallel)"
-      Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)"
-      Condition="'@(ProjectReferenceWithConfiguration)' != ''
-                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'
-                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'"
-      ContinueOnError="$(_ContinueOnError)">
-      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects"/>
+    <MSBuild Projects="@(ProjectReferenceWithConfiguration)" Targets="GetPackagingOutputs" BuildInParallel="$(BuildInParallel)" Properties="%(ProjectReferenceWithConfiguration.SetConfiguration); %(ProjectReferenceWithConfiguration.SetPlatform)" Condition="'@(ProjectReferenceWithConfiguration)' != ''&#xD;&#xA;                 and '%(ProjectReferenceWithConfiguration.BuildReference)' == 'true'&#xD;&#xA;                 and '%(ProjectReferenceWithConfiguration.ReferenceOutputAssembly)' == 'true'" ContinueOnError="$(_ContinueOnError)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PackagingOutputsFromOtherProjects" />
     </MSBuild>
-
     <ItemGroup>
       <PackagingOutputs Include="@(_PackagingOutputsFromOtherProjects)" />
     </ItemGroup>
-
     <!-- **BEGIN VC LIBS HACK** -->
     <PropertyGroup>
       <ReasonablePlatform Condition="'$(Platform)'=='Win32'">x86</ReasonablePlatform>
       <ReasonablePlatform Condition="'$(ReasonablePlatform)'==''">$(Platform)</ReasonablePlatform>
     </PropertyGroup>
-
     <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
       <!-- Add all the CRT libs as content; these must be inside a Target as they are wildcards. -->
       <_OpenConsoleVCLibToCopy Include="$(VCToolsRedistInstallDir)\$(ReasonablePlatform)\Microsoft.VC142.CRT\*.dll" />
-
       <PackagingOutputs Include="@(_OpenConsoleVCLibToCopy)">
         <ProjectName>$(ProjectName)</ProjectName>
         <OutputGroup>BuiltProjectOutputGroup</OutputGroup>

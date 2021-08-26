@@ -55,7 +55,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 
     // Use the unfocused border color as the pane background, so an actual color
     // appears behind panes as we animate them sliding in.
-    _root.Background(s_unfocusedBorderBrush);
+    // _root.Background(s_unfocusedBorderBrush);
 
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
@@ -1497,7 +1497,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         // Create the dummy grid. This grid will be the one we actually animate,
         // in the place of the closed pane.
         Controls::Grid dummyGrid;
-        dummyGrid.Background(s_unfocusedBorderBrush);
+        // dummyGrid.Background(s_unfocusedBorderBrush);
         // It should be the size of the closed pane.
         dummyGrid.Width(removedOriginalSize.Width);
         dummyGrid.Height(removedOriginalSize.Height);

@@ -311,8 +311,6 @@ void IslandWindow::Initialize()
             _taskbar = std::move(taskbar);
         }
     }
-
-    auto iSupportBackdrop{ _source.try_as<winrt::Windows::UI::Composition::ICompositionSupportsSystemBackdrop>() };
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
@@ -425,7 +423,18 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         if (LOWORD(wparam) != 0)
         {
             _WindowActivatedHandlers();
+
+            if (_rootGrid)
+            {
+                auto iSupportBackdrop{ _source.try_as<winrt::Windows::UI::Composition::ICompositionSupportsSystemBackdrop>() };
+                // auto brush = Window::Current().Compositor().CreateColorBrush(winrt::Windows::UI::Colors::Goldenrod());
+                auto brush = Window::Current().Compositor().CreateBackdropBrush();
+                // Alas, this didn't magically work
+                // auto brush = Window::Current().Compositor().CreateColorBrush(winrt::Windows::UI::Colors::Transparent());
+                iSupportBackdrop.SystemBackdrop(brush);
+            }
         }
+
         break;
     }
 
