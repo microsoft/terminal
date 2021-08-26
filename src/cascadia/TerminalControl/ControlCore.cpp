@@ -414,6 +414,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This is a scroll event that wasn't initiated by the terminal
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(viewTop);
+
+        _updatePatternLocations->Run();
     }
 
     void ControlCore::AdjustOpacity(const double adjustment)
