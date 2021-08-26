@@ -1,4 +1,4 @@
-$pgoBranch           = "main"
+$pgoBranch           = "release-1.10"
 $packageId           = "Microsoft.Internal.Windows.Terminal.PGODatabase"
 
 # Get release version
