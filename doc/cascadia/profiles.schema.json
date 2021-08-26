@@ -299,7 +299,8 @@
         "down",
         "previous",
         "nextInOrder",
-        "previousInOrder"
+        "previousInOrder",
+        "first"
       ],
       "type": "string"
     },
