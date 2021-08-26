@@ -203,7 +203,7 @@ private:
 
     std::shared_ptr<Pane> _FindParentOfPane(const std::shared_ptr<Pane> pane);
     std::pair<PanePoint, PanePoint> _GetOffsetsForPane(const PanePoint parentOffset) const;
-    bool _IsAdjacent(const std::shared_ptr<Pane> first, const PanePoint firstOffset, const std::shared_ptr<Pane> second, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;
+    bool _IsAdjacent(const PanePoint firstOffset, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;
     PaneNeighborSearch _FindNeighborForPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
                                             PaneNeighborSearch searchResult,
                                             const bool focusIsSecondSide,
