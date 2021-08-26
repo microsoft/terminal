@@ -178,6 +178,47 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
+    struct ConversionTrait<std::vector<T>>
+    {
+        std::vector<T> FromJson(const Json::Value& json)
+        {
+            std::vector<T> val;
+            val.reserve(json.size());
+
+            ConversionTrait<T> trait;
+            for (const auto& element : json)
+            {
+                val.push_back(trait.FromJson(element));
+            }
+
+            return val;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<T> trait;
+            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); });
+        }
+
+        Json::Value ToJson(const std::vector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            ConversionTrait<T> trait;
+            for (const auto& v : val)
+            {
+                json.append(trait.ToJson(v));
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{}[]", ConversionTrait<T>{}.TypeDescription());
+        }
+    };
+
+    template<typename T>
     struct ConversionTrait<std::unordered_map<std::string, T>>
     {
         std::unordered_map<std::string, T> FromJson(const Json::Value& json) const
@@ -256,6 +297,42 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         {
             // hstring has a specific behavior for null, so it can convert it
             return ConversionTrait<std::wstring>::CanConvert(json) || json.isNull();
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
+    {
+        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
+        {
+            ConversionTrait<std::vector<T>> trait;
+            return winrt::single_threaded_vector<T>(std::move(trait.FromJson(json)));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<std::vector<T>> trait;
+            return trait.CanConvert(json);
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            if (val)
+            {
+                ConversionTrait<T> trait;
+                for (const auto& v : val)
+                {
+                    json.append(trait.ToJson(v));
+                }
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{}[]", ConversionTrait<T>{}.TypeDescription());
         }
     };
 
