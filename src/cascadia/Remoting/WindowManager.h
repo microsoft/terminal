@@ -41,12 +41,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
         void SummonAllWindows();
-        Windows::Foundation::Collections::IMapView<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> GetPeasants();
+        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetAllPeasantInfo();
 
         winrt::fire_and_forget RequestShowTrayIcon();
         winrt::fire_and_forget RequestHideTrayIcon();
         bool DoesQuakeWindowExist();
-        void UpdateTitle(winrt::hstring title);
+        void UpdateActiveTabTitle(winrt::hstring title);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

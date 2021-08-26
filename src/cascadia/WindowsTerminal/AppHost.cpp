@@ -299,8 +299,9 @@ void AppHost::Initialize()
 }
 
 // Method Description:
-// - Called when the app's title changes. Fires off a window message so we can
-//   update the window's title on the main thread.
+// - Called everytime when the active tab's title changes. We'll also fire off
+//   a window message so we can update the window's title on the main thread,
+//   though we'll only do so if the settings are configured for that.
 // Arguments:
 // - sender: unused
 // - newTitle: the string to use as the new window title
@@ -312,7 +313,7 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
     {
         _window->UpdateTitle(newTitle);
     }
-    _windowManager.UpdateTitle(newTitle);
+    _windowManager.UpdateActiveTabTitle(newTitle);
 }
 
 // Method Description:
@@ -1035,7 +1036,7 @@ void AppHost::_CreateTrayIcon()
         // Hookup the handlers, save the tokens for revoking if settings change.
         _ReAddTrayIconToken = _window->NotifyReAddTrayIcon([this]() { _trayIcon->ReAddTrayIcon(); });
         _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
-        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasants()); });
+        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetAllPeasantInfo()); });
         _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
         _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
     }

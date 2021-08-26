@@ -812,16 +812,16 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - A map of peasant IDs to their names.
-    Windows::Foundation::Collections::IMapView<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> Monarch::GetPeasants()
+    Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> Monarch::GetAllPeasantInfo()
     {
-        auto names = winrt::single_threaded_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant>();
+        auto names = winrt::single_threaded_vector<winrt::Microsoft::Terminal::Remoting::PeasantInfo>();
 
         std::vector<uint64_t> peasantsToErase{};
         for (const auto& [id, p] : _peasants)
         {
             try
             {
-                names.Insert(id, p);
+                names.Append({ id, p.WindowName(), p.ActiveTabTitle() });
             }
             catch (...)
             {
@@ -838,6 +838,36 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
 
         return names.GetView();
+    }
+
+    bool Monarch::DoesQuakeWindowExist()
+    {
+        bool result = false;
+        std::vector<uint64_t> peasantsToErase{};
+        for (const auto& [id, p] : _peasants)
+        {
+            try
+            {
+                if (p.WindowName() == QuakeWindowName)
+                {
+                    result = true;
+                }
+            }
+            catch (...)
+            {
+                LOG_CAUGHT_EXCEPTION();
+                peasantsToErase.push_back(id);
+            }
+        }
+
+        // Remove the dead peasants we came across while iterating.
+        for (const auto& id : peasantsToErase)
+        {
+            _peasants.erase(id);
+            _clearOldMruEntries(id);
+        }
+
+        return result;
     }
 
     void Monarch::SummonAllWindows()

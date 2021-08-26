@@ -110,7 +110,7 @@ void TrayIcon::CreateTrayIcon()
 // Return Value:
 // - <none>
 void TrayIcon::ShowTrayContextMenu(const til::point coord,
-                                   IMapView<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> peasants)
+                                   IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> peasants)
 {
     if (const auto hMenu = _CreateTrayContextMenu(peasants))
     {
@@ -142,7 +142,7 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
 // - peasants: A map of all peasants' ID to their window name.
 // Return Value:
 // - The handle to the newly created context menu.
-HMENU TrayIcon::_CreateTrayContextMenu(IMapView<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> peasants)
+HMENU TrayIcon::_CreateTrayContextMenu(IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> peasants)
 {
     auto hMenu = CreatePopupMenu();
     if (hMenu)
@@ -161,21 +161,21 @@ HMENU TrayIcon::_CreateTrayContextMenu(IMapView<uint64_t, winrt::Microsoft::Term
         // Submenu for Windows
         if (auto submenu = CreatePopupMenu())
         {
-            for (const auto [id, p] : peasants)
+            for (const auto& p : peasants)
             {
-                winrt::hstring displayText{ fmt::format(L"#{} : ", id) };
+                winrt::hstring displayText{ fmt::format(L"#{} : ", p.Id) };
 
-                if (!p.ActiveTabTitle().empty())
+                if (!p.TabTitle.empty())
                 {
-                    displayText = fmt::format(L"{} {}", displayText, p.ActiveTabTitle());
+                    displayText = fmt::format(L"{} {}", displayText, p.TabTitle);
                 }
 
-                if (!p.WindowName().empty())
+                if (!p.Name.empty())
                 {
-                    displayText = fmt::format(L"{} [{}]", displayText, p.WindowName());
+                    displayText = fmt::format(L"{} [{}]", displayText, p.Name);
                 }
 
-                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(id), displayText.c_str());
+                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(p.Id), displayText.c_str());
             }
 
             MENUINFO submenuInfo{};
