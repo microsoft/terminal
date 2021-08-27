@@ -1164,7 +1164,6 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            _UnZoomIfNeeded();
             return terminalTab->NavigateFocus(direction);
         }
         return false;
