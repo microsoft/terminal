@@ -1499,44 +1499,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updatePatternLocations->Run();
     }
 
-    winrt::fire_and_forget ControlCore::StoreEntireBuffer(const winrt::Windows::Storage::StorageFile storageFile)
+    hstring ControlCore::ReadEntireBuffer() const
     {
-        std::wstringstream ss;
-        {
-            auto terminalLock = _terminal->LockForWriting();
-            const auto& textBuffer = _terminal->GetTextBuffer();
-            const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
-            for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
-            {
-                const auto& row = textBuffer.GetRowByOffset(rowIndex);
-                auto rowText = row.GetText();
-                const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
-                if (strEnd != std::string::npos)
-                {
-                    rowText.erase(strEnd + 1);
-                    ss << rowText;
-                }
+        auto terminalLock = _terminal->LockForWriting();
 
-                if (!row.WasWrapForced())
-                {
-                    ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
-                }
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::wstringstream ss;
+        const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
+        {
+            const auto& row = textBuffer.GetRowByOffset(rowIndex);
+            auto rowText = row.GetText();
+            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                rowText.erase(strEnd + 1);
+                ss << rowText;
+            }
+
+            if (!row.WasWrapForced())
+            {
+                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
             }
         }
 
-        winrt::Windows::Storage::CachedFileManager::DeferUpdates(storageFile);
-        co_await winrt::Windows::Storage::FileIO::WriteTextAsync(storageFile, hstring(ss.str()));
-
-        const auto status = co_await winrt::Windows::Storage::CachedFileManager::CompleteUpdatesAsync(storageFile);
-        switch (status)
-        {
-        case winrt::Windows::Storage::Provider::FileUpdateStatus::Complete:
-        case winrt::Windows::Storage::Provider::FileUpdateStatus::CompleteAndRenamed:
-            _RaiseNoticeHandlers(*this, std::move(winrt::make<NoticeEventArgs>(NoticeLevel::Info, RS_(L"ExportSuccess"))));
-            break;
-        default:
-            _RaiseNoticeHandlers(*this, std::move(winrt::make<NoticeEventArgs>(NoticeLevel::Warning, RS_(L"ExportFailure"))));
-        }
+        return hstring(ss.str());
     }
 
 }

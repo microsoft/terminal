@@ -30,6 +30,7 @@ using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::Storage;
 using namespace winrt::Windows::Storage::Pickers;
+using namespace winrt::Windows::Storage::Provider;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
@@ -423,7 +424,19 @@ namespace winrt::TerminalApp::implementation
                 const StorageFile file = co_await savePicker.PickSaveFileAsync();
                 if (file != nullptr)
                 {
-                    control.StoreEntireBuffer(file);
+                    const auto buffer = control.ReadEntireBuffer();
+                    CachedFileManager::DeferUpdates(file);
+                    co_await FileIO::WriteTextAsync(file, buffer);
+                    const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
+                    switch (status)
+                    {
+                    case FileUpdateStatus::Complete:
+                    case FileUpdateStatus::CompleteAndRenamed:
+                        _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"ExportSuccess"));
+                        break;
+                    default:
+                        _ShowControlNoticeDialog(RS_(L"NoticeError"), RS_(L"ExportFailure"));
+                    }
                 }
             }
         }

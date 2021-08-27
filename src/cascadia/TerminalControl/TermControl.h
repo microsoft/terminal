@@ -107,7 +107,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
         static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
 
-        void StoreEntireBuffer(const winrt::Windows::Storage::StorageFile& storageFile) const;
+        hstring ReadEntireBuffer() const;
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

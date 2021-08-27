@@ -2587,8 +2587,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _playWarningBell->Run();
     }
 
-    void TermControl::StoreEntireBuffer(const winrt::Windows::Storage::StorageFile& storageFile) const
+    hstring TermControl::ReadEntireBuffer() const
     {
-        _core.StoreEntireBuffer(storageFile);
+        return _core.ReadEntireBuffer();
     }
 }
