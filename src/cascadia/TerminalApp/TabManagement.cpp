@@ -28,6 +28,9 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Text;
+using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Storage::Pickers;
+using namespace winrt::Windows::Storage::Provider;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
@@ -168,6 +171,16 @@ namespace winrt::TerminalApp::implementation
             if (page && tab)
             {
                 page->_SplitTab(*tab);
+            }
+        });
+
+        newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_ExportTab(*tab);
             }
         });
 
@@ -387,6 +400,45 @@ namespace winrt::TerminalApp::implementation
         {
             _SetFocusedTab(tab);
             _SplitPane(tab, SplitState::Automatic, SplitType::Duplicate);
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
+    // - Exports the content of the Terminal Buffer inside the tab
+    // Arguments:
+    // - tab: tab to export
+    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab)
+    {
+        try
+        {
+            if (const auto control{ tab.GetActiveTerminalControl() })
+            {
+                const FileSavePicker savePicker;
+                savePicker.as<IInitializeWithWindow>()->Initialize(*_hostingHwnd);
+                savePicker.SuggestedStartLocation(PickerLocationId::Downloads);
+                const auto fileChoices = single_threaded_vector<hstring>({ L".txt" });
+                savePicker.FileTypeChoices().Insert(RS_(L"PlainText"), fileChoices);
+                savePicker.SuggestedFileName(control.Title());
+
+                const StorageFile file = co_await savePicker.PickSaveFileAsync();
+                if (file != nullptr)
+                {
+                    const auto buffer = control.ReadEntireBuffer();
+                    CachedFileManager::DeferUpdates(file);
+                    co_await FileIO::WriteTextAsync(file, buffer);
+                    const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
+                    switch (status)
+                    {
+                    case FileUpdateStatus::Complete:
+                    case FileUpdateStatus::CompleteAndRenamed:
+                        _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"ExportSuccess"));
+                        break;
+                    default:
+                        _ShowControlNoticeDialog(RS_(L"NoticeError"), RS_(L"ExportFailure"));
+                    }
+                }
+            }
         }
         CATCH_LOG();
     }

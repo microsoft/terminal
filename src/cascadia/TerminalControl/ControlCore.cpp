@@ -1499,4 +1499,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updatePatternLocations->Run();
     }
 
+    hstring ControlCore::ReadEntireBuffer() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::wstringstream ss;
+        const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
+        {
+            const auto& row = textBuffer.GetRowByOffset(rowIndex);
+            auto rowText = row.GetText();
+            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                rowText.erase(strEnd + 1);
+                ss << rowText;
+            }
+
+            if (!row.WasWrapForced())
+            {
+                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+            }
+        }
+
+        return hstring(ss.str());
+    }
+
 }
