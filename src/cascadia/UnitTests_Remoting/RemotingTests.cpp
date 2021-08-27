@@ -62,6 +62,8 @@ namespace RemotingUnitTests
         void AssignID(uint64_t /*id*/) { throw winrt::hresult_error{}; };
         uint64_t GetID() { throw winrt::hresult_error{}; };
         winrt::hstring WindowName() { throw winrt::hresult_error{}; };
+        winrt::hstring ActiveTabTitle() { throw winrt::hresult_error{}; };
+        void ActiveTabTitle(const winrt::hstring& /*value*/) { throw winrt::hresult_error{}; };
         uint64_t GetPID() { throw winrt::hresult_error{}; };
         bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
         void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }

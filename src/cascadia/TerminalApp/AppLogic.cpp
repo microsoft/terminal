@@ -1477,4 +1477,9 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
     }
+
+    bool AppLogic::GetShowTitleInTitlebar()
+    {
+        return _settings.GlobalSettings().ShowTitleInTitlebar();
+    }
 }
