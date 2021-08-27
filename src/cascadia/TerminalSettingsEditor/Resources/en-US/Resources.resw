@@ -1095,7 +1095,7 @@
     <comment>Header for a control to toggle whether the tray icon should always be shown.</comment>
   </data>
   <data name="Globals_MinimizeToTray.Header" xml:space="preserve">
-    <value>Hide the window in the tray when minimizing</value>
+    <value>Hide terminal in the system tray when minimized</value>
     <comment>Header for a control to toggle whether the terminal should hide itself in the tray instead of the taskbar when minimized.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
