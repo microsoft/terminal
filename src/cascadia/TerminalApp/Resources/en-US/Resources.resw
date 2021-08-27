@@ -685,4 +685,16 @@
   <data name="DropPathTabSplit.Text" xml:space="preserve">
     <value>Split the window and start in given directory</value>
   </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>Export Text</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>Failed to export terminal content</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>Successfully exported terminal content</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>Plain Text</value>
+  </data>
 </root>

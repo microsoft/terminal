@@ -81,6 +81,8 @@ namespace Microsoft.Terminal.Control
         Boolean CursorOn;
         void EnablePainting();
 
+        String ReadEntireBuffer();
+
         event FontSizeChangedEventArgs FontSizeChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;

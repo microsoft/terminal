@@ -220,6 +220,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTab(const TerminalTab& tab);
 
         void _SplitTab(TerminalTab& tab);
+        winrt::fire_and_forget _ExportTab(const TerminalTab& tab);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
         void _CloseTabAtIndex(uint32_t index);
