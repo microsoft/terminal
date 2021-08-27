@@ -81,7 +81,7 @@ namespace Microsoft.Terminal.Control
         Boolean CursorOn;
         void EnablePainting();
 
-        String ReadEntireBuffer();
+        void StoreEntireBuffer(Windows.Storage.StorageFile storageFile);
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

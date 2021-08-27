@@ -144,7 +144,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
 
-        hstring ReadEntireBuffer() const;
+        winrt::fire_and_forget StoreEntireBuffer(const winrt::Windows::Storage::StorageFile storageFile);
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

@@ -68,6 +68,6 @@ namespace Microsoft.Terminal.Control
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
 
-        String ReadEntireBuffer();
+        void StoreEntireBuffer(Windows.Storage.StorageFile storageFile);
     }
 }

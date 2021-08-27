@@ -200,4 +200,10 @@ Please either install the missing font or choose another one.</value>
   <data name="TermControlReadOnly" xml:space="preserve">
     <value>Read-only mode is enabled.</value>
   </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>Failed to export terminal content</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>Successfully exported terminal content</value>
+  </data>
 </root>
