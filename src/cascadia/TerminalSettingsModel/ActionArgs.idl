@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     interface IActionArgs
@@ -308,4 +310,10 @@ namespace Microsoft.Terminal.Settings.Model
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
     };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
+    }
 }
