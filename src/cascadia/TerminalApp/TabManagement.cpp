@@ -414,8 +414,6 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control{ tab.GetActiveTerminalControl() })
             {
-                const auto buffer = control.ReadEntireBuffer();
-
                 const FileSavePicker savePicker;
                 savePicker.as<IInitializeWithWindow>()->Initialize(*_hostingHwnd);
                 savePicker.SuggestedStartLocation(PickerLocationId::Downloads);
@@ -426,6 +424,7 @@ namespace winrt::TerminalApp::implementation
                 const StorageFile file = co_await savePicker.PickSaveFileAsync();
                 if (file != nullptr)
                 {
+                    const auto buffer = control.ReadEntireBuffer();
                     CachedFileManager::DeferUpdates(file);
                     co_await FileIO::WriteTextAsync(file, buffer);
                     const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
