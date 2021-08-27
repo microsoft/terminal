@@ -244,6 +244,17 @@ namespace winrt::TerminalApp::implementation
                 _PreviewActionHandlers(*this, actionPaletteItem.Command());
             }
         }
+        else if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            if (filteredCommand)
+            {
+                SearchBoxPlaceholderText(filteredCommand.Item().Name());
+            }
+            else
+            {
+                SearchBoxPlaceholderText(RS_(L"CmdPalCommandlinePrompt"));
+            }
+        }
     }
 
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
@@ -362,6 +373,19 @@ namespace winrt::TerminalApp::implementation
         else if (key == VirtualKey::V && ctrlDown)
         {
             _searchBox().PasteFromClipboard();
+            e.Handled(true);
+        }
+        else if (key == VirtualKey::Right)
+        {
+            if (_currentMode == CommandPaletteMode::CommandlineMode)
+            {
+                if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
+                {
+                    _searchBox().Text(command.Item().Name());
+                    _searchBox().Select(_searchBox().Text().size(), 0);
+                    _searchBox().Focus(FocusState::Programmatic);
+                }
+            }
             e.Handled(true);
         }
     }
