@@ -215,6 +215,14 @@
               "type": "integer"
             }
           ]
+        },
+        "features": {
+          "description": "Sets the DWrite font features for the given font. For example, { 'ss01': 1, 'liga':0 } will enable ss01 and disable ligatures.",
+          "type": "object"
+        },
+        "axes": {
+          "description": "Sets the DWrite font axes for the given font. For example, { 'wght': 200 } will set the font weight to 200.",
+          "type": "object"
         }
       },
       "type": "object"
