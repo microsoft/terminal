@@ -308,4 +308,10 @@ namespace Microsoft.Terminal.Settings.Model
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
     };
+
+    [default_interface] runtimeclass UpdateSelectionArgs : IActionArgs
+    {
+        Microsoft.Terminal.Core.SelectionDirection Direction { get; };
+        Microsoft.Terminal.Core.SelectionExpansion Mode { get; };
+    };
 }

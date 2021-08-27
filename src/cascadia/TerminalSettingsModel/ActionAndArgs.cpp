@@ -65,6 +65,7 @@ static constexpr std::string_view OpenWindowRenamerKey{ "openWindowRenamer" };
 static constexpr std::string_view GlobalSummonKey{ "globalSummon" };
 static constexpr std::string_view QuakeModeKey{ "quakeMode" };
 static constexpr std::string_view FocusPaneKey{ "focusPane" };
+static constexpr std::string_view UpdateSelectionKey{ "updateSelection" };
 
 static constexpr std::string_view ActionKey{ "action" };
 

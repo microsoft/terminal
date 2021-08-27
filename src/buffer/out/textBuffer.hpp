@@ -147,7 +147,7 @@ public:
     bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
 
     const til::point GetGlyphStart(const til::point pos) const;
-    const til::point GetGlyphEnd(const til::point pos) const;
+    const til::point GetGlyphEnd(const til::point pos, bool accessibilityMode = false) const;
     bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
     bool MoveToPreviousGlyph(til::point& pos) const;
 

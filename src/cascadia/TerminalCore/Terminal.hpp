@@ -227,16 +227,11 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    enum class SelectionExpansionMode
-    {
-        Cell,
-        Word,
-        Line
-    };
-    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
+    void MultiClickSelection(const COORD viewportPos, winrt::Microsoft::Terminal::Core::SelectionExpansion expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
+    void SetSelectionEnd(const COORD position, std::optional<winrt::Microsoft::Terminal::Core::SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
+    void UpdateSelection(winrt::Microsoft::Terminal::Core::SelectionDirection direction, winrt::Microsoft::Terminal::Core::SelectionExpansion mode);
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -308,7 +303,7 @@ private:
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
     std::wstring _wordDelimiters;
-    SelectionExpansionMode _multiClickSelectionMode;
+    winrt::Microsoft::Terminal::Core::SelectionExpansion _multiClickSelectionMode;
 #pragma endregion
 
     // TODO: These members are not shared by an alt-buffer. They should be
@@ -372,9 +367,13 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
+    std::tuple<COORD, COORD, bool> _PivotSelection(const COORD targetPos) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    void _MoveByChar(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
+    void _MoveByWord(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
+    void _MoveByViewport(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
+    void _MoveByBuffer(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;

@@ -2253,7 +2253,7 @@ void TextBufferTests::GetGlyphBoundaries()
         _buffer->Write(iter, target);
 
         auto start = _buffer->GetGlyphStart(target);
-        auto end = _buffer->GetGlyphEnd(target);
+        auto end = _buffer->GetGlyphEnd(target, true);
 
         VERIFY_ARE_EQUAL(test.start, start);
         VERIFY_ARE_EQUAL(wideGlyph ? test.wideGlyphEnd : test.normalEnd, end);
