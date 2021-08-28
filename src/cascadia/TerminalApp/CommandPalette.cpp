@@ -375,18 +375,16 @@ namespace winrt::TerminalApp::implementation
             _searchBox().PasteFromClipboard();
             e.Handled(true);
         }
-        else if (key == VirtualKey::Right)
+        else if (key == VirtualKey::Right && _currentMode == CommandPaletteMode::CommandlineMode)
         {
-            if (_currentMode == CommandPaletteMode::CommandlineMode)
+            if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
             {
-                if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
-                {
-                    _searchBox().Text(command.Item().Name());
-                    _searchBox().Select(_searchBox().Text().size(), 0);
-                    _searchBox().Focus(FocusState::Programmatic);
-                }
+                _searchBox().Text(command.Item().Name());
+                _searchBox().Select(_searchBox().Text().size(), 0);
+                _searchBox().Focus(FocusState::Programmatic);
+                _filteredActionsView().SelectedIndex(-1);
+                e.Handled(true);
             }
-            e.Handled(true);
         }
     }
 
