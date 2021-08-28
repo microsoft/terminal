@@ -213,9 +213,12 @@ public:
 
     void SetCursorOn(const bool isOn);
     bool IsCursorBlinkingAllowed() const noexcept;
+    bool IsCursorOffScreen() noexcept;
 
     void UpdatePatternsUnderLock() noexcept;
     void ClearPatternTree() noexcept;
+
+    void TrackCursorMovement(bool track) noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;
     til::color GetDefaultBackground() const noexcept;
@@ -288,6 +291,8 @@ private:
     size_t _taskbarProgress;
 
     size_t _hyperlinkPatternId;
+
+    bool _trackingCursorMovement{ false };
 
     std::wstring _workingDirectory;
 

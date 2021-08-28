@@ -70,6 +70,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void AdjustOpacity(const double adjustment);
         void ResumeRendering();
 
+        void TrackCursorMovement(bool track) noexcept;
+
         void UpdatePatternLocations();
         void SetHoveredCell(Core::Point terminalPosition);
         void ClearHoveredCell();
@@ -120,6 +122,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void CursorOn(const bool isCursorOn);
 
         bool IsVtMouseModeEnabled() const;
+        bool IsCursorOffScreen() const;
         til::point CursorPosition() const;
 
         bool HasSelection() const;

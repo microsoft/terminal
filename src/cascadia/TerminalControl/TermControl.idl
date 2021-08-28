@@ -65,6 +65,8 @@ namespace Microsoft.Terminal.Control
 
         void BellLightOn();
 
+        void HighlightCursor();
+
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
     }

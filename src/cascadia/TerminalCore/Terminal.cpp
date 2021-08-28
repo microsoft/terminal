@@ -1078,10 +1078,15 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
 
     // Firing the CursorPositionChanged event is very expensive so we try not to do that when
     // the cursor does not need to be redrawn.
-    if (!cursor.IsDeferDrawing())
+    if (!cursor.IsDeferDrawing() || _trackingCursorMovement)
     {
         _NotifyTerminalCursorPositionChanged();
     }
+}
+
+void Terminal::TrackCursorMovement(bool track) noexcept
+{
+    _trackingCursorMovement = track;
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
@@ -1218,6 +1223,17 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
     return cursor.IsBlinkingAllowed();
+}
+
+// Method Description:
+// - Computes whether the cursor is currently off the screen
+// Return value:
+// - True if the cursor if off the screen, false otherwise
+bool Terminal::IsCursorOffScreen() noexcept
+{
+    const auto absoluteCursorPosY = _buffer->GetCursor().GetPosition().Y;
+    const auto scrollOffset = GetScrollOffset();
+    return absoluteCursorPosY < scrollOffset || absoluteCursorPosY >= (scrollOffset + _GetMutableViewport().Height());
 }
 
 // Method Description:

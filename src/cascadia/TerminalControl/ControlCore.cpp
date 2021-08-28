@@ -1394,6 +1394,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal != nullptr && _terminal->IsTrackingMouseInput();
     }
 
+    bool ControlCore::IsCursorOffScreen() const
+    {
+        // If we haven't been initialized yet, then just return true
+        if (!_initializedTerminal)
+        {
+            return true;
+        }
+
+        auto lock = _terminal->LockForReading();
+        return _terminal->IsCursorOffScreen();
+    }
+
     til::point ControlCore::CursorPosition() const
     {
         // If we haven't been initialized yet, then fake it.
@@ -1499,4 +1511,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updatePatternLocations->Run();
     }
 
+    void ControlCore::TrackCursorMovement(bool track) noexcept
+    {
+        _terminal->TrackCursorMovement(track);
+    }
 }

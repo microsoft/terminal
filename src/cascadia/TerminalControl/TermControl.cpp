@@ -118,6 +118,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
+        _moveCursorLight = std::make_shared<ThrottledFuncLeading>(
+            dispatcher,
+            ScrollBarUpdateInterval,
+            [weakThis = get_weak()]() {
+                if (auto control{ weakThis.get() }; !control->_IsClosing())
+                {
+                    control->_MoveCursorLightHelper();
+                }
+            });
+
         _updateScrollBar = std::make_shared<ThrottledFuncTrailing<ScrollBarUpdate>>(
             dispatcher,
             ScrollBarUpdateInterval,
@@ -1673,6 +1683,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         update.newValue = args.ViewTop();
 
         _updateScrollBar->Run(update);
+        if (CursorLight::GetIsTarget(RootGrid()))
+        {
+            _moveCursorLight->Run();
+        }
     }
 
     // Method Description:
@@ -1693,6 +1707,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (auto control{ weakThis.get() }; !control->_IsClosing())
         {
             control->TSFInputControl().TryRedrawCanvas();
+            if (CursorLight::GetIsTarget(RootGrid()))
+            {
+                _MoveCursorLightHelper();
+            }
         }
     }
 
@@ -2396,6 +2414,56 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     const uint64_t TermControl::TaskbarProgress() const noexcept
     {
         return _core.TaskbarProgress();
+    }
+
+    // Method Description:
+    // - Toggles the spotlight on the cursor
+    // - If the cursor is currently off the screen, does nothing
+    void TermControl::HighlightCursor()
+    {
+        if (CursorLight::GetIsTarget(RootGrid()))
+        {
+            CursorLight::SetIsTarget(RootGrid(), false);
+            _core.TrackCursorMovement(false);
+        }
+        else if (_MoveCursorLightHelper())
+        {
+            CursorLight::SetIsTarget(RootGrid(), true);
+            _core.TrackCursorMovement(true);
+        }
+    }
+
+    // Method Description:
+    // - Computes the cursor position and moves the cursor light to it
+    // Return Value:
+    // - True if the cursor light was moved, false otherwise (this will
+    //   happen if the cursor is off-screen)
+    bool TermControl::_MoveCursorLightHelper()
+    {
+        if (_core.IsCursorOffScreen())
+        {
+            // If the cursor is off screen, just switch off the light instead of moving it
+            CursorLight::SetIsTarget(RootGrid(), false);
+            return false;
+        }
+        else
+        {
+            // Compute the location of where to place the light
+            const auto charSizeInPixels = CharacterDimensions();
+            const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
+            const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+            const til::size marginsInDips{ til::math::rounding, GetPadding().Left, GetPadding().Top };
+            const til::size fontSize{ til::math::rounding, _core.FontSize() };
+            const til::point cursorPos = _core.CursorPosition();
+            const til::point cursorPosInPixels{ cursorPos * fontSize };
+            const til::point cursorPosInDIPs{ cursorPosInPixels / SwapChainPanel().CompositionScaleX() };
+            const til::point cursorLocationInDIPs{ cursorPosInDIPs + marginsInDips };
+
+            CursorLight().ChangeLocation(gsl::narrow_cast<float>(cursorLocationInDIPs.x()) + wtInDips / 2,
+                                         gsl::narrow_cast<float>(cursorLocationInDIPs.y()) + htInDips / 2);
+
+            return true;
+        }
     }
 
     void TermControl::BellLightOn()
