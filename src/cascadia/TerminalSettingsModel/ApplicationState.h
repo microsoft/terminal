@@ -12,11 +12,12 @@ Abstract:
 --*/
 #pragma once
 
+#include "BaseApplicationState.h"
 #include "ApplicationState.g.h"
 
 #include <inc/cppwinrt_utils.h>
-#include <til/mutex.h>
-#include <til/throttled_func.h>
+// #include <til/mutex.h>
+// #include <til/throttled_func.h>
 
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
@@ -27,18 +28,21 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct ApplicationState : ApplicationStateT<ApplicationState>
+    struct ApplicationState : ApplicationStateT<ApplicationState>, public BaseApplicationState
     {
         static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
 
         ApplicationState(std::filesystem::path path) noexcept;
         ~ApplicationState();
 
-        // Methods
-        void Reload() const noexcept;
+        void FromJson(const Json::Value& root) const noexcept override;
+        Json::Value ToJson() const noexcept override;
 
-        // General getters/setters
-        winrt::hstring FilePath() const noexcept;
+        // // Methods
+        // void Reload() const noexcept;
+
+        // // General getters/setters
+        // winrt::hstring FilePath() const noexcept;
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
@@ -54,13 +58,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         };
-
-        void _write() const noexcept;
-        void _read() const noexcept;
-
-        std::filesystem::path _path;
         til::shared_mutex<state_t> _state;
-        til::throttled_func_trailing<> _throttler;
+
+        // void _write() const noexcept;
+        // void _read() const noexcept;
+
+        // std::filesystem::path _path;
+        // til::throttled_func_trailing<> _throttler;
     };
 }
 
