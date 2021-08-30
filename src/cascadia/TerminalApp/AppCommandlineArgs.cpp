@@ -187,6 +187,10 @@ void AppCommandlineArgs::_buildParser()
                     _windowTarget,
                     RS_A(L"CmdWindowTargetArgDesc"));
 
+    _app.add_option("-s,--saved",
+                    _loadPersistedLayoutIdx,
+                    RS_A(L"CmdSavedLayoutArgDesc"));
+
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
@@ -914,6 +918,12 @@ void AppCommandlineArgs::ValidateStartupCommands()
             _startupActions.insert(_startupActions.begin(), 1, newTabAction);
         }
     }
+}
+std::optional<uint32_t> AppCommandlineArgs::GetPersistedLayoutIdx() const noexcept
+{
+    return _loadPersistedLayoutIdx >= 0 ?
+               std::optional{ static_cast<uint32_t>(_loadPersistedLayoutIdx) } :
+               std::nullopt;
 }
 
 std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept

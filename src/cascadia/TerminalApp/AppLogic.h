@@ -53,6 +53,7 @@ namespace winrt::TerminalApp::implementation
         void LoadSettings();
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
+        bool HasCommandlineArguments() const noexcept;
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
@@ -63,12 +64,16 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
+        bool ShouldUsePersistedLayout();
+        hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
+        void SaveWindowLayoutJsons(Windows::Foundation::Collections::IVector<hstring> layouts);
         void IdentifyWindow();
         void RenameFailed();
         winrt::hstring WindowName();
         void WindowName(const winrt::hstring& name);
         uint64_t WindowId();
         void WindowId(const uint64_t& id);
+        void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         bool IsQuakeWindow() const noexcept;
 
@@ -89,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void WindowCloseButtonClicked();
+        void WindowCloseButtonClicked(Microsoft::Terminal::Settings::Model::LaunchPosition position);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
 

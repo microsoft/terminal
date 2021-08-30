@@ -501,7 +501,9 @@ namespace winrt::TerminalApp::implementation
         {
             // If we are supposed to save state, make sure we clear it out
             // if the user manually closed all tabs.
-            if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings))
+            // Do this only if we are the last window; the monarch will notice
+            // we are missing and remove us that way otherwise.
+            if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
             {
                 auto state = ApplicationState::SharedInstance();
                 state.PersistedWindowLayouts(nullptr);

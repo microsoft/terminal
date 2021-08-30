@@ -34,6 +34,7 @@ namespace TerminalApp
         void RunAsUwp();
         Boolean IsElevated();
 
+        Boolean HasCommandlineArguments();
         Int32 SetStartupCommandline(String[] commands);
         Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
@@ -53,6 +54,7 @@ namespace TerminalApp
         void IdentifyWindow();
         String WindowName;
         UInt64 WindowId;
+        void SetPersistedLayoutIdx(UInt32 idx);
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         Boolean IsQuakeWindow();
@@ -67,9 +69,13 @@ namespace TerminalApp
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
-        void WindowCloseButtonClicked();
+        void WindowCloseButtonClicked(Microsoft.Terminal.Settings.Model.LaunchPosition position);
 
         TaskbarState TaskbarState{ get; };
+
+        Boolean ShouldUsePersistedLayout();
+        String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
         Boolean GetMinimizeToTray();
         Boolean GetAlwaysShowTrayIcon();

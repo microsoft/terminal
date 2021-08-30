@@ -59,6 +59,8 @@ namespace winrt::TerminalApp::implementation
         void Create();
 
         bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+        std::optional<uint32_t> LoadPersistedLayoutIdx(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+        Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
 
         winrt::fire_and_forget NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e);
 
@@ -71,7 +73,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
-        winrt::fire_and_forget CloseWindow();
+        winrt::fire_and_forget CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition pos = {});
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -81,7 +83,6 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
-        void PersistWindowLayout();
 
         void SetInboundListener(bool isEmbedding);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
@@ -110,6 +111,7 @@ namespace winrt::TerminalApp::implementation
         void WindowId(const uint64_t& value);
 
         void SetNumberOfOpenWindows(const uint64_t value);
+        void SetPersistedLayoutIdx(const uint32_t value);
 
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
@@ -162,6 +164,7 @@ namespace winrt::TerminalApp::implementation
         bool _isAlwaysOnTop{ false };
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
+        std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
         uint64_t _numOpenWindows{ 0 };
 
         bool _maintainStateOnTabClose{ false };

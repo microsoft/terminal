@@ -287,8 +287,19 @@ namespace winrt::TerminalApp::implementation
     {
         // If the setting is enabled, and we are the only window.
         return Feature_PersistedWindowLayout::IsEnabled() &&
-               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout &&
-               _numOpenWindows == 1;
+               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    }
+
+    // Method Description;
+    // - Checks if the current window is configured to load a particular layout
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - non-null if there is a particular saved layout to use
+    std::optional<uint32_t> TerminalPage::LoadPersistedLayoutIdx(CascadiaSettings& settings) const
+    {
+        return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
     }
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
@@ -392,12 +403,16 @@ namespace winrt::TerminalApp::implementation
 
                 return false;
             };
-            if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
+            const auto idx = LoadPersistedLayoutIdx(_settings);
+            // It is not well defined what should happen if a user specifies a
+            // command line and also to load from a particular layout.
+            if (idx && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
             {
+                auto i = idx.value();
                 auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-                if (layouts && layouts.Size() > 0 && layouts.GetAt(0).TabLayout() && layouts.GetAt(0).TabLayout().Size() > 0)
+                if (layouts && layouts.Size() > i && layouts.GetAt(i).TabLayout() && layouts.GetAt(i).TabLayout().Size() > 0)
                 {
-                    _startupActions = layouts.GetAt(0).TabLayout();
+                    _startupActions = layouts.GetAt(i).TabLayout();
                 }
             }
 
@@ -1240,12 +1255,19 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Saves the window position and tab layout to the application state
+    // - This does not create the InitialPosition field, that needs to be
+    //   added externally.
     // Arguments:
     // - <none>
     // Return Value:
-    // - <none>
-    void TerminalPage::PersistWindowLayout()
+    // - the window layout
+    WindowLayout TerminalPage::GetWindowLayout()
     {
+        if (_startupState != StartupState::Initialized)
+        {
+            return nullptr;
+        }
+
         std::vector<ActionAndArgs> actions;
 
         for (auto tab : _tabs)
@@ -1288,39 +1310,13 @@ namespace winrt::TerminalApp::implementation
 
         layout.InitialSize(windowSize);
 
-        if (_hostingHwnd)
-        {
-            // Get the position of the current window. This includes the
-            // non-client already.
-            RECT window{};
-            GetWindowRect(_hostingHwnd.value(), &window);
-
-            // We want to remove the non-client area so calculate that.
-            // We don't have access to the (NonClient)IslandWindow directly so
-            // just replicate the logic.
-            const auto windowStyle = static_cast<DWORD>(GetWindowLong(_hostingHwnd.value(), GWL_STYLE));
-
-            auto dpi = GetDpiForWindow(_hostingHwnd.value());
-            RECT nonClientArea{};
-            LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&nonClientArea, windowStyle, false, 0, dpi));
-
-            // The nonClientArea adjustment is negative, so subtract that out.
-            // This way we save the user-visible location of the terminal.
-            LaunchPosition pos{};
-            pos.X = window.left - nonClientArea.left;
-            pos.Y = window.top;
-
-            layout.InitialPosition(pos);
-        }
-
-        auto state = ApplicationState::SharedInstance();
-        state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
+        return layout;
     }
 
     // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    fire_and_forget TerminalPage::CloseWindow()
+    fire_and_forget TerminalPage::CloseWindow(LaunchPosition pos)
     {
         if (_HasMultipleTabs() &&
             _settings.GlobalSettings().ConfirmCloseAllTabs() &&
@@ -1338,8 +1334,22 @@ namespace winrt::TerminalApp::implementation
 
         if (ShouldUsePersistedLayout(_settings))
         {
-            PersistWindowLayout();
-            // don't delete the ApplicationState when all of the tabs are removed.
+            // If persisted layout is enabled and we are the last window closing
+            // we should save our state.
+            if (_numOpenWindows == 1)
+            {
+                auto layout = GetWindowLayout();
+                if (pos.X || pos.Y)
+                {
+                    layout.InitialPosition(pos);
+                }
+                auto state = ApplicationState::SharedInstance();
+                state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
+            }
+
+            // Don't delete the ApplicationState when all of the tabs are removed.
+            // If there is still a monarch living they will get the event that
+            // a window closed and trigger a new save without this window.
             _maintainStateOnTabClose = true;
         }
 
@@ -3059,6 +3069,11 @@ namespace winrt::TerminalApp::implementation
             _WindowId = value;
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
         }
+    }
+
+    void TerminalPage::SetPersistedLayoutIdx(const uint32_t idx)
+    {
+        _loadFromPersistedLayoutIdx = idx;
     }
 
     void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)

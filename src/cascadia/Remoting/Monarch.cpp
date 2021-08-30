@@ -885,4 +885,29 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         _forEachPeasant(func, onError);
     }
+
+    // Method Description:
+    // - Ask all peasants to return their window layout as json
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The collection of window layouts from each peasant.
+    Windows::Foundation::Collections::IVector<winrt::hstring> Monarch::GetAllWindowLayouts()
+    {
+        auto vec = winrt::single_threaded_vector<winrt::hstring>();
+        auto callback = [&](auto&& p, auto&& /*id*/) {
+            auto layout = p.GetWindowLayout();
+            vec.Append(layout);
+        };
+        auto onError = [](auto&& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_GetAllWindowLayouts_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not get a window layout from"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+        _forAllPeasantsIgnoringTheDead(callback, onError);
+
+        return vec;
+    }
 }

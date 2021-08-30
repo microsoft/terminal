@@ -16,6 +16,8 @@ namespace Microsoft.Terminal.Remoting
         void SummonAllWindows();
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
+        Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
+
         UInt64 GetNumberOfPeasants();
         void UpdateActiveTabTitle(String title);
         Boolean DoesQuakeWindowExist();
@@ -26,5 +28,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
     };
 }

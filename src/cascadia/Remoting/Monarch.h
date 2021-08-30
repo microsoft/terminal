@@ -58,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         bool DoesQuakeWindowExist();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
+        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

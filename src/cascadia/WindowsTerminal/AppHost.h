@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "NonClientIslandWindow.h"
 #include "TrayIcon.h"
+#include <til/throttled_func.h>
 
 class AppHost
 {
@@ -31,7 +32,11 @@ private:
     bool _shouldCreateWindow{ false };
     bool _useNonClientArea{ false };
 
+    std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
+    winrt::fire_and_forget _SaveWindowLayouts();
+
     void _HandleCommandlineArgs();
+    winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
 
     void _HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode);
     void _UpdateTitleBarContent(const winrt::Windows::Foundation::IInspectable& sender,
@@ -52,6 +57,8 @@ private:
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                               winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);
+
+    winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> _GetWindowLayoutAsync();
 
     void _FindTargetWindow(const winrt::Windows::Foundation::IInspectable& sender,
                            const winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs& args);

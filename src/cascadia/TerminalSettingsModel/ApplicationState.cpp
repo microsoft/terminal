@@ -60,6 +60,33 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    winrt::hstring WindowLayout::ToJson(const Model::WindowLayout& layout)
+    {
+        JsonUtils::ConversionTrait<Model::WindowLayout> trait;
+        auto json = trait.ToJson(layout);
+
+        Json::StreamWriterBuilder wbuilder;
+        const auto content = Json::writeString(wbuilder, json);
+        return hstring{ til::u8u16(content) };
+    }
+
+    Model::WindowLayout WindowLayout::FromJson(const hstring& str)
+    {
+        auto data = til::u16u8(str);
+        std::string errs;
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+        JsonUtils::ConversionTrait<Model::WindowLayout> trait;
+        auto obj = trait.FromJson(root);
+
+        return obj;
+    }
+
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {

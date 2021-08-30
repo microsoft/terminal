@@ -34,6 +34,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
         winrt::Microsoft::Terminal::Remoting::CommandlineArgs InitialArgs();
+
+        winrt::hstring GetWindowLayout();
+
         WINRT_PROPERTY(winrt::hstring, WindowName);
         WINRT_PROPERTY(winrt::hstring, ActiveTabTitle);
 
@@ -45,6 +48,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
     private:
         Peasant(const uint64_t testPID);

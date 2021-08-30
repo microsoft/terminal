@@ -12,7 +12,6 @@
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Monarch.h">
@@ -34,6 +33,9 @@
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="WindowActivatedArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="GetWindowLayoutArgs.h">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="pch.h" />
@@ -69,6 +71,9 @@
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="WindowActivatedArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="GetWindowLayoutArgs.cpp">
       <DependentUpon>Peasant.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="pch.cpp">
@@ -128,6 +133,5 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

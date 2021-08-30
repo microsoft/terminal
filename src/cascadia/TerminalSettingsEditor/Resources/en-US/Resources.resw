@@ -304,8 +304,8 @@
     <comment>An option to choose from for the "First window preference" setting. Open the default profile.</comment>
   </data>
   <data name="Globals_FirstWindowPreferencePersistedWindowLayout.Content" xml:space="preserve">
-    <value>Open tabs from a previous session</value>
-    <comment>An option to choose from for the "First window preference" setting. Reopen the layout from the last session.</comment>
+    <value>Open windows from a previous session</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layouts from the last session.</comment>
   </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>

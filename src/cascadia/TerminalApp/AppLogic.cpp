@@ -599,13 +599,14 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size proposedSize{};
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-        if (_root->ShouldUsePersistedLayout(_settings))
+        if (const auto idx = _root->LoadPersistedLayoutIdx(_settings))
         {
+            const auto i = idx.value();
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
 
-            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialSize())
+            if (layouts && layouts.Size() > i && layouts.GetAt(i).InitialSize())
             {
-                proposedSize = layouts.GetAt(0).InitialSize().Value();
+                proposedSize = layouts.GetAt(i).InitialSize().Value();
                 // The size is saved as a non-scaled real pixel size,
                 // so we need to scale it appropriately.
                 proposedSize.Height = proposedSize.Height * scale;
@@ -703,13 +704,14 @@ namespace winrt::TerminalApp::implementation
 
         auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
 
-        if (_root->ShouldUsePersistedLayout(_settings))
+        if (const auto idx = _root->LoadPersistedLayoutIdx(_settings))
         {
+            const auto i = idx.value();
             const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
 
-            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialPosition())
+            if (layouts && layouts.Size() > i && layouts.GetAt(i).InitialPosition())
             {
-                initialPosition = layouts.GetAt(0).InitialPosition().Value();
+                initialPosition = layouts.GetAt(i).InitialPosition().Value();
             }
         }
 
@@ -1150,11 +1152,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void AppLogic::WindowCloseButtonClicked()
+    void AppLogic::WindowCloseButtonClicked(LaunchPosition pos)
     {
         if (_root)
         {
-            _root->CloseWindow();
+            _root->CloseWindow(pos);
         }
     }
 
@@ -1165,6 +1167,11 @@ namespace winrt::TerminalApp::implementation
             return _root->TaskbarState();
         }
         return {};
+    }
+
+    bool AppLogic::HasCommandlineArguments() const noexcept
+    {
+        return _hasCommandLineArguments;
     }
 
     // Method Description:
@@ -1190,6 +1197,10 @@ namespace winrt::TerminalApp::implementation
             // then it contains only the executable name and no other arguments.
             _hasCommandLineArguments = args.size() > 1;
             _appArgs.ValidateStartupCommands();
+            if (const auto idx = _appArgs.GetPersistedLayoutIdx())
+            {
+                _root->SetPersistedLayoutIdx(idx.value());
+            }
             _root->SetStartupActions(_appArgs.GetStartupActions());
 
             // Check if we were started as a COM server for inbound connections of console sessions
@@ -1427,6 +1438,38 @@ namespace winrt::TerminalApp::implementation
         return _settings.GlobalSettings().ActionMap().GlobalHotkeys();
     }
 
+    bool AppLogic::ShouldUsePersistedLayout()
+    {
+        return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
+    }
+
+    void AppLogic::SaveWindowLayoutJsons(Windows::Foundation::Collections::IVector<hstring> layouts)
+    {
+        auto converted = winrt::single_threaded_vector<WindowLayout>();
+
+        for (const auto& json : layouts)
+        {
+            if (json != L"")
+            {
+                converted.Append(WindowLayout::FromJson(json));
+            }
+        }
+
+        auto state = ApplicationState::SharedInstance();
+        state.PersistedWindowLayouts(converted);
+    }
+
+    hstring AppLogic::GetWindowLayoutJson(LaunchPosition position)
+    {
+        if (_root != nullptr)
+        {
+            auto layout = _root->GetWindowLayout();
+            layout.InitialPosition(position);
+            return layout ? WindowLayout::ToJson(layout) : L"";
+        }
+        return L"";
+    }
+
     void AppLogic::IdentifyWindow()
     {
         if (_root)
@@ -1455,6 +1498,14 @@ namespace winrt::TerminalApp::implementation
         if (_root)
         {
             _root->WindowId(id);
+        }
+    }
+
+    void AppLogic::SetPersistedLayoutIdx(const uint32_t idx)
+    {
+        if (_root)
+        {
+            _root->SetPersistedLayoutIdx(idx);
         }
     }
 
