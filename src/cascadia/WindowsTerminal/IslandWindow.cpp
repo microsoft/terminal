@@ -1645,5 +1645,63 @@ void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
     _minimizeToTray = minimizeToTray;
 }
 
+// Method Description:
+// - Opens the window's system menu.
+// - The system menu is the menu that opens when the user presses Alt+Space or
+//   right clicks on the title bar.
+// - Before updating the menu, we update the buttons like "Maximize" and
+//   "Restore" so that they are grayed out depending on the window's state.
+// Arguments:
+// - cursorX: the cursor's X position in screen coordinates
+// - cursorY: the cursor's Y position in screen coordinates
+void IslandWindow::OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept
+{
+    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+
+    WINDOWPLACEMENT placement;
+    if (!GetWindowPlacement(_window.get(), &placement))
+    {
+        return;
+    }
+    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+
+    // Update the options based on window state.
+    MENUITEMINFO mii;
+    mii.cbSize = sizeof(MENUITEMINFO);
+    mii.fMask = MIIM_STATE;
+    mii.fType = MFT_STRING;
+    auto setState = [&](UINT item, bool enabled) {
+        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
+        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
+    };
+    setState(SC_RESTORE, isMaximized);
+    setState(SC_MOVE, !isMaximized);
+    setState(SC_SIZE, !isMaximized);
+    setState(SC_MINIMIZE, true);
+    setState(SC_MAXIMIZE, !isMaximized);
+    setState(SC_CLOSE, true);
+    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
+
+    int xPos;
+    int yPos;
+    if (mouseX && mouseY)
+    {
+        xPos = mouseX.value();
+        yPos = mouseY.value();
+    }
+    else
+    {
+        RECT windowPos;
+        ::GetWindowRect(GetHandle(), &windowPos);
+        xPos = windowPos.left;
+        yPos = windowPos.top;
+    }
+    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, xPos, yPos, 0, _window.get(), nullptr);
+    if (ret != 0)
+    {
+        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
+    }
+}
+
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

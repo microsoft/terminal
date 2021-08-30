@@ -85,6 +85,9 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
+    void _OpenSystemMenu(const winrt::Windows::Foundation::IInspectable& sender,
+                         const winrt::Windows::Foundation::IInspectable& args);
+
     void _CreateTrayIcon();
     void _DestroyTrayIcon();
     void _ShowTrayIconRequested();
