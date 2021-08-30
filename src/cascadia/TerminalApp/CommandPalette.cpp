@@ -1219,8 +1219,8 @@ namespace winrt::TerminalApp::implementation
     IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        // If this is ter first time we've opened the commandline mode and
-        // there aren't any recent commands, then just return an emptry vector.
+        // If this is the first time we've opened the commandline mode and
+        // there aren't any recent commands, then just return an empty vector.
         if (!recentCommands)
         {
             return single_threaded_vector<TerminalApp::FilteredCommand>();
