@@ -1219,6 +1219,13 @@ namespace winrt::TerminalApp::implementation
     IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
+        // If this is ter first time we've opened the commandline mode and
+        // there aren't any recent commands, then just return an emptry vector.
+        if (!recentCommands)
+        {
+            return single_threaded_vector<TerminalApp::FilteredCommand>();
+        }
+
         std::vector<TerminalApp::FilteredCommand> parsedCommands;
         parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
 
@@ -1246,7 +1253,9 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateRecentCommands(const hstring& command)
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        const auto countToCopy = std::min(recentCommands.Size(), CommandLineHistoryLength - 1);
+        // If there aren't and recent commands already in the state, then we
+        // don't need to copy any.
+        const auto countToCopy = std::min(recentCommands? recentCommands.Size() : 0, CommandLineHistoryLength - 1);
         std::vector<hstring> newRecentCommands{ countToCopy + 1 };
         til::at(newRecentCommands, 0) = command;
         if (countToCopy)
