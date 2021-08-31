@@ -84,6 +84,18 @@
             <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
                 <ToggleSwitch IsOn="{x:Bind local:Converters.InvertBoolean(State.Globals.DisableAnimations), BindBack=State.Globals.SetInvertedDisableAnimationsValue, Mode=TwoWay}" />
             </local:SettingContainer>
+
+            <!--  Always Show Tray Icon  -->
+            <local:SettingContainer x:Uid="Globals_AlwaysShowTrayIcon"
+                                    Visibility="{x:Bind FeatureTrayIconEnabled}">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowTrayIcon, Mode=TwoWay}" />
+            </local:SettingContainer>
+
+            <!--  Minimize To Tray  -->
+            <local:SettingContainer x:Uid="Globals_MinimizeToTray"
+                                    Visibility="{x:Bind FeatureTrayIconEnabled}">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.MinimizeToTray, Mode=TwoWay}" />
+            </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
 </Page>
