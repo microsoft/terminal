@@ -195,10 +195,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     try
     {
         // re-read the state so that we can only update the properties that were changed.
-        auto root = _getRoot();
+        Json::Value root{};
 
         {
             auto state = _state.lock();
+            root = _getRoot();
 #define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)            \
             if (state->name##Changed) {                             \
                 JsonUtils::SetValueForKey(root, key, state->name);  \
