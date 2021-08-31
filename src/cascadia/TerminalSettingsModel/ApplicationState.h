@@ -14,10 +14,7 @@ Abstract:
 
 #include "BaseApplicationState.h"
 #include "ApplicationState.g.h"
-
 #include <inc/cppwinrt_utils.h>
-// #include <til/mutex.h>
-// #include <til/throttled_func.h>
 
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
@@ -28,15 +25,14 @@ Abstract:
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    struct ApplicationState : ApplicationStateT<ApplicationState>, public BaseApplicationState
+    struct ApplicationState : public BaseApplicationState, ApplicationStateT<ApplicationState>
     {
         static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
 
         ApplicationState(std::filesystem::path path) noexcept;
-        ~ApplicationState();
 
-        void FromJson(const Json::Value& root) const noexcept override;
-        Json::Value ToJson() const noexcept override;
+        virtual void FromJson(const Json::Value& root) const noexcept override;
+        virtual Json::Value ToJson() const noexcept override;
 
         // // Methods
         // void Reload() const noexcept;

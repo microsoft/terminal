@@ -36,6 +36,9 @@
     <ClInclude Include="ApplicationState.h">
       <DependentUpon>ApplicationState.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="ElevatedState.h">
+      <DependentUpon>ElevatedState.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="CascadiaSettings.h">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClInclude>
@@ -109,6 +112,9 @@
     <ClCompile Include="ApplicationState.cpp">
       <DependentUpon>ApplicationState.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="ElevatedState.cpp">
+      <DependentUpon>ElevatedState.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
     </ClCompile>
@@ -158,6 +164,7 @@
     <Midl Include="ActionArgs.idl" />
     <Midl Include="ActionMap.idl" />
     <Midl Include="ApplicationState.idl" />
+    <Midl Include="ElevatedState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />

@@ -18,7 +18,7 @@ BaseApplicationState::BaseApplicationState(std::filesystem::path path) noexcept 
     _path{ std::move(path) },
     _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
 {
-    _read();
+    // _read();
 }
 
 // The destructor ensures that the last write is flushed to disk before returning.
@@ -62,7 +62,7 @@ try
         throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
     }
 
-    this->FromJson(root);
+    FromJson(root);
 }
 CATCH_LOG()
 
