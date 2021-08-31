@@ -377,7 +377,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
-        auto newMargin = ParseThicknessFromPadding(newSettings.Padding());
+        const auto newMargin = ParseThicknessFromPadding(newSettings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         TSFInputControl().Margin(newMargin);
@@ -511,18 +511,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - The automation peer for our control
     Windows::UI::Xaml::Automation::Peers::AutomationPeer TermControl::OnCreateAutomationPeer()
     {
-        if (_initializedTerminal && !_IsClosing()) // only set up the automation peer if we're ready to go live
+        // MSFT 33353327: We're purposefully not using _initializedTerminal to ensure we're fully initialized.
+        // Doing so makes us return nullptr when XAML requests an automation peer.
+        // Instead, we need to give XAML an automation peer, then fix it later.
+        if (!_IsClosing())
         {
             // create a custom automation peer with this code pattern:
             // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
-                auto margins{ SwapChainPanel().Margin() };
-
-                Core::Padding padding{ margins.Left,
-                                       margins.Top,
-                                       margins.Right,
-                                       margins.Bottom };
+                const auto margins{ SwapChainPanel().Margin() };
+                const Core::Padding padding{ margins.Left,
+                                             margins.Top,
+                                             margins.Right,
+                                             margins.Bottom };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, padding, interactivityAutoPeer);
                 return _automationPeer;
             }
@@ -679,8 +681,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             DispatcherTimer cursorTimer;
             cursorTimer.Interval(std::chrono::milliseconds(blinkTime));
             cursorTimer.Tick({ get_weak(), &TermControl::_CursorTimerTick });
-            cursorTimer.Start();
             _cursorTimer.emplace(std::move(cursorTimer));
+            // As of GH#6586, don't start the cursor timer immediately, and
+            // don't show the cursor initially. We'll show the cursor and start
+            // the timer when the control is first focused. cursorTimer.Start();
+            _core.CursorOn(false);
         }
         else
         {
@@ -709,13 +714,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Now that the renderer is set up, update the appearance for initialization
         _UpdateAppearanceFromUIThread(_settings);
 
-        // Focus the control here. If we do it during control initialization, then
-        //      focus won't actually get passed to us. I believe this is because
-        //      we're not technically a part of the UI tree yet, so focusing us
-        //      becomes a no-op.
-        this->Focus(FocusState::Programmatic);
-
         _initializedTerminal = true;
+
+        // MSFT 33353327: If the AutomationPeer was created before we were done initializing,
+        // make sure it's properly set up now.
+        if (_automationPeer)
+        {
+            _automationPeer.UpdateControlBounds();
+            const auto margins{ GetPadding() };
+            _automationPeer.SetControlPadding(Core::Padding{ margins.Left,
+                                                             margins.Top,
+                                                             margins.Right,
+                                                             margins.Bottom });
+        }
 
         // Likewise, run the event handlers outside of lock (they could
         // be reentrant)
@@ -887,6 +898,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             e.Handled(true);
             return;
+        }
+
+        if (vkey == VK_SPACE && modifiers.IsAltPressed())
+        {
+            if (const auto bindings = _settings.KeyBindings())
+            {
+                if (!bindings.IsKeyChordExplicitlyUnbound({ modifiers.IsCtrlPressed(), modifiers.IsAltPressed(), modifiers.IsShiftPressed(), modifiers.IsWinPressed(), vkey, scanCode }))
+                {
+                    // If we get here, it means that
+                    //      1. we do not have a command bound to alt+space
+                    //      2. alt+space was not explicitly unbound
+                    // That means that XAML handled the alt+space to open up the context menu, and
+                    // so we don't want to send anything to the terminal
+                    // TODO GH#11018: Add a new "openSystemMenu" keybinding
+                    e.Handled(true);
+                    return;
+                }
+            }
         }
 
         if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
@@ -1209,6 +1238,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _RestorePointerCursorHandlers(*this, nullptr);
 
         const auto point = args.GetCurrentPoint(*this);
+        // GH#10329 - we don't need to handle horizontal scrolls. Only vertical ones.
+        // So filter out the horizontal ones.
+        if (point.Properties().IsHorizontalMouseWheel())
+        {
+            return;
+        }
 
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                 point.Properties().MouseWheelDelta(),

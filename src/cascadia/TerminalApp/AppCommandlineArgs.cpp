@@ -380,6 +380,11 @@ void AppCommandlineArgs::_buildFocusTabParser()
             else if (_focusNextTab || _focusPrevTab)
             {
                 focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                // GH#10070 - make sure to not use the MRU order when switching
+                // tabs on the commandline. That wouldn't make any sense!
+                focusTabAction.Args(_focusNextTab ?
+                                        static_cast<IActionArgs>(NextTabArgs(TabSwitcherMode::Disabled)) :
+                                        static_cast<IActionArgs>(PrevTabArgs(TabSwitcherMode::Disabled)));
                 _startupActions.push_back(std::move(focusTabAction));
             }
         });
@@ -394,8 +399,10 @@ static const std::map<std::string, FocusDirection> focusDirectionMap = {
     { "right", FocusDirection::Right },
     { "up", FocusDirection::Up },
     { "down", FocusDirection::Down },
+    { "previous", FocusDirection::Previous },
     { "nextInOrder", FocusDirection::NextInOrder },
     { "previousInOrder", FocusDirection::PreviousInOrder },
+    { "first", FocusDirection::First },
 };
 
 // Method Description:

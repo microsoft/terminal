@@ -35,7 +35,8 @@ namespace Microsoft.Terminal.Settings.Model
         Down,
         Previous,
         PreviousInOrder,
-        NextInOrder
+        NextInOrder,
+        First
     };
 
     enum SplitState
@@ -276,11 +277,15 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass PrevTabArgs : IActionArgs
     {
+        PrevTabArgs();
+        PrevTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
     [default_interface] runtimeclass NextTabArgs : IActionArgs
     {
+        NextTabArgs();
+        NextTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 

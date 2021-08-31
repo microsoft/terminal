@@ -164,10 +164,7 @@ class AliasTests
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
         size_t cbTargetUsed = 0;
-        auto const cbTargetUsedBefore = cbTargetUsed;
-
         DWORD dwLines = 0;
-        auto const dwLinesBefore = dwLines;
 
         // Register the wrong alias name before we try.
         std::wstring exe(L"exe.exe");
@@ -306,7 +303,6 @@ class AliasTests
         auto rgwchTargetBefore = std::make_unique<wchar_t[]>(cchTarget);
         wcscpy_s(rgwchTargetBefore.get(), cchTarget, rgwchTarget.get());
 
-        const size_t cbTarget = cchTarget * sizeof(wchar_t);
         size_t cbTargetUsed = 0;
         auto const cbTargetUsedBefore = cbTargetUsed;
 

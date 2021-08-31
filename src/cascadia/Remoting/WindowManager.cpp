@@ -562,8 +562,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void WindowManager::RequestShowTrayIcon()
+    winrt::fire_and_forget WindowManager::RequestShowTrayIcon()
     {
+        co_await winrt::resume_background();
         _peasant.RequestShowTrayIcon();
     }
 
@@ -573,8 +574,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void WindowManager::RequestHideTrayIcon()
+    winrt::fire_and_forget WindowManager::RequestHideTrayIcon()
     {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
         _peasant.RequestHideTrayIcon();
     }
 

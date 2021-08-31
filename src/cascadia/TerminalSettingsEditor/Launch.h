@@ -27,6 +27,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
+        winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
 
         WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 

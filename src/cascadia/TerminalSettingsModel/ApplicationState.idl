@@ -22,5 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
         String FilePath { get; };
 
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts { get; set; };
+
+        Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
     }
 }

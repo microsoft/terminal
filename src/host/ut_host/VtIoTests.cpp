@@ -456,6 +456,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         // which is what CI uses.
         /*Sleep(500);*/
 
+        (void)dxEngine->Enable();
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();
         pRenderer.reset();

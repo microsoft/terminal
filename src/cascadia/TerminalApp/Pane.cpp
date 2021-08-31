@@ -34,7 +34,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
 
-Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocused) :
+Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
     _lastActive{ lastFocused },
     _profile{ profile }
@@ -58,8 +58,8 @@ Pane::Pane(const GUID& profile, const TermControl& control, const bool lastFocus
     _root.Background(s_unfocusedBorderBrush);
 
     // Register an event with the control to have it inform us when it gains focus.
-    _gotFocusRevoker = control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-    _lostFocusRevoker = control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+    _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+    _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -399,6 +399,27 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return PreviousPane(sourcePane);
     }
 
+    if (direction == FocusDirection::First)
+    {
+        std::shared_ptr<Pane> firstPane = nullptr;
+        WalkTree([&](auto p) {
+            if (p->_IsLeaf())
+            {
+                firstPane = p;
+                return true;
+            }
+
+            return false;
+        });
+
+        // Don't need to do any movement if we are the source and target pane.
+        if (firstPane == sourcePane)
+        {
+            return nullptr;
+        }
+        return firstPane;
+    }
+
     // We are left with directional traversal now
     // If the focus direction does not match the split direction, the source pane
     // and its neighbor must necessarily be contained within the same child.
@@ -414,7 +435,10 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // Since the direction is the same as our split, it is possible that we must
     // move focus from from one child to another child.
     // We now must keep track of state while we recurse.
-    const auto paneNeighborPair = _FindPaneAndNeighbor(sourcePane, direction, { 0, 0 });
+    // If we have it, get the size of this pane.
+    const auto scaleX = _root.ActualWidth() > 0 ? gsl::narrow_cast<float>(_root.ActualWidth()) : 1.f;
+    const auto scaleY = _root.ActualHeight() > 0 ? gsl::narrow_cast<float>(_root.ActualHeight()) : 1.f;
+    const auto paneNeighborPair = _FindPaneAndNeighbor(sourcePane, direction, { 0, 0, scaleX, scaleY });
 
     if (paneNeighborPair.source && paneNeighborPair.neighbor)
     {
@@ -673,9 +697,9 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 // Return Value:
 // - true if the two panes are adjacent.
 bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
-                       const Pane::PanePoint firstOffset,
+                       const PanePoint firstOffset,
                        const std::shared_ptr<Pane> second,
-                       const Pane::PanePoint secondOffset,
+                       const PanePoint secondOffset,
                        const FocusDirection& direction) const
 {
     // Since float equality is tricky (arithmetic is non-associative, commutative),
@@ -684,14 +708,36 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
         return abs(left - right) < 1e-4F;
     };
 
+    auto getXMax = [](PanePoint offset, std::shared_ptr<Pane> pane) {
+        // If we are past startup panes should have real dimensions
+        if (pane->GetRootElement().ActualWidth() > 0)
+        {
+            return offset.x + gsl::narrow_cast<float>(pane->GetRootElement().ActualWidth());
+        }
+
+        // If we have simulated dimensions we rely on the calculated scale
+        return offset.x + offset.scaleX;
+    };
+
+    auto getYMax = [](PanePoint offset, std::shared_ptr<Pane> pane) {
+        // If we are past startup panes should have real dimensions
+        if (pane->GetRootElement().ActualHeight() > 0)
+        {
+            return offset.y + gsl::narrow_cast<float>(pane->GetRootElement().ActualHeight());
+        }
+
+        // If we have simulated dimensions we rely on the calculated scale
+        return offset.y + offset.scaleY;
+    };
+
     // When checking containment in a range, the range is half-closed, i.e. [x, x+w).
     // If the direction is left test that the left side of the first element is
     // next to the right side of the second element, and that the top left
     // corner of the first element is within the second element's height
     if (direction == FocusDirection::Left)
     {
-        auto sharesBorders = floatEqual(firstOffset.x, secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
-        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
+        auto sharesBorders = floatEqual(firstOffset.x, getXMax(secondOffset, second));
+        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset, second));
 
         return sharesBorders && withinHeight;
     }
@@ -700,8 +746,8 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // corner of the first element is within the second element's height
     else if (direction == FocusDirection::Right)
     {
-        auto sharesBorders = floatEqual(firstOffset.x + gsl::narrow_cast<float>(first->GetRootElement().ActualWidth()), secondOffset.x);
-        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
+        auto sharesBorders = floatEqual(getXMax(firstOffset, first), secondOffset.x);
+        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset, second));
 
         return sharesBorders && withinHeight;
     }
@@ -710,8 +756,8 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // corner of the first element is within the second element's width
     else if (direction == FocusDirection::Up)
     {
-        auto sharesBorders = floatEqual(firstOffset.y, secondOffset.y + gsl::narrow_cast<float>(second->GetRootElement().ActualHeight()));
-        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
+        auto sharesBorders = floatEqual(firstOffset.y, getYMax(secondOffset, second));
+        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset, second));
 
         return sharesBorders && withinWidth;
     }
@@ -720,12 +766,76 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // corner of the first element is within the second element's width
     else if (direction == FocusDirection::Down)
     {
-        auto sharesBorders = floatEqual(firstOffset.y + gsl::narrow_cast<float>(first->GetRootElement().ActualHeight()), secondOffset.y);
-        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < secondOffset.x + gsl::narrow_cast<float>(second->GetRootElement().ActualWidth()));
+        auto sharesBorders = floatEqual(getYMax(firstOffset, first), secondOffset.y);
+        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset, second));
 
         return sharesBorders && withinWidth;
     }
     return false;
+}
+
+// Method Description:
+// - Gets the offsets for the two children of this parent pane
+// - If real dimensions are not available, simulated ones based on the split size
+//   will be used instead.
+// Arguments:
+// - parentOffset the location and scale information of this pane.
+// Return Value:
+// - the two location/scale points for the children panes.
+std::pair<Pane::PanePoint, Pane::PanePoint> Pane::_GetOffsetsForPane(const PanePoint parentOffset) const
+{
+    assert(!_IsLeaf());
+    auto firstOffset = parentOffset;
+    auto secondOffset = parentOffset;
+
+    // When panes are initialized they don't have dimensions yet.
+    if (_firstChild->GetRootElement().ActualHeight() > 0)
+    {
+        // The second child has an offset depending on the split
+        if (_splitState == SplitState::Horizontal)
+        {
+            const auto diff = gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualHeight());
+            secondOffset.y += diff;
+            // However, if a command is run in an existing window that opens multiple new panes
+            // the parent will have a size (triggering  this) and then the children will go
+            // to the other branch.
+            firstOffset.scaleY = diff;
+            secondOffset.scaleY = parentOffset.scaleY - diff;
+        }
+        else
+        {
+            const auto diff = gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
+            secondOffset.x += diff;
+            firstOffset.scaleX = diff;
+            secondOffset.scaleX = parentOffset.scaleX - diff;
+        }
+    }
+    else
+    {
+        // Since we don't have real dimensions make up fake ones using an
+        // exponential layout. Basically create the tree layout on the fly by
+        // partitioning [0,1].
+        // This could run into issues if the tree depth is >127 (or other
+        // degenerate splits) as a float's mantissa only has so many bits of
+        // precision.
+
+        // In theory this could always be used, but there might be edge cases
+        // where using the actual sizing information provides a better result.
+        if (_splitState == SplitState::Horizontal)
+        {
+            secondOffset.y += (1 - _desiredSplitPosition) * parentOffset.scaleY;
+            firstOffset.scaleY *= _desiredSplitPosition;
+            secondOffset.scaleY *= (1 - _desiredSplitPosition);
+        }
+        else
+        {
+            secondOffset.x += (1 - _desiredSplitPosition) * parentOffset.scaleX;
+            firstOffset.scaleX *= _desiredSplitPosition;
+            secondOffset.scaleX *= (1 - _desiredSplitPosition);
+        }
+    }
+
+    return { firstOffset, secondOffset };
 }
 
 // Method Description:
@@ -766,17 +876,7 @@ Pane::PaneNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direct
         return searchResult;
     }
 
-    auto firstOffset = offset;
-    auto secondOffset = offset;
-    // The second child has an offset depending on the split
-    if (_splitState == SplitState::Horizontal)
-    {
-        secondOffset.y += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualHeight());
-    }
-    else
-    {
-        secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
-    }
+    auto [firstOffset, secondOffset] = _GetOffsetsForPane(offset);
     auto sourceNeighborSearch = _firstChild->_FindNeighborForPane(direction, searchResult, sourceIsSecondSide, firstOffset);
     if (sourceNeighborSearch.neighbor)
     {
@@ -809,18 +909,7 @@ Pane::PaneNeighborSearch Pane::_FindPaneAndNeighbor(const std::shared_ptr<Pane> 
         return { nullptr, nullptr, offset };
     }
 
-    // Search the first child, which has no offset from the parent pane
-    auto firstOffset = offset;
-    auto secondOffset = offset;
-    // The second child has an offset depending on the split
-    if (_splitState == SplitState::Horizontal)
-    {
-        secondOffset.y += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualHeight());
-    }
-    else
-    {
-        secondOffset.x += gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
-    }
+    auto [firstOffset, secondOffset] = _GetOffsetsForPane(offset);
 
     auto sourceNeighborSearch = _firstChild->_FindPaneAndNeighbor(sourcePane, direction, firstOffset);
     // If we have both the focus element and its neighbor, we are done
@@ -906,11 +995,9 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
         return;
     }
 
-    const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-    auto paneProfile = settings.FindProfile(_profile.value());
-    if (paneProfile)
+    if (_profile)
     {
-        auto mode = paneProfile.CloseOnExit();
+        const auto mode = _profile.CloseOnExit();
         if ((mode == CloseOnExitMode::Always) ||
             (mode == CloseOnExitMode::Graceful && newConnectionState == ConnectionState::Closed))
         {
@@ -934,27 +1021,25 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     {
         return;
     }
-    const auto settings{ winrt::TerminalApp::implementation::AppLogic::CurrentAppSettings() };
-    auto paneProfile = settings.FindProfile(_profile.value());
-    if (paneProfile)
+    if (_profile)
     {
         // We don't want to do anything if nothing is set, so check for that first
-        if (static_cast<int>(paneProfile.BellStyle()) != 0)
+        if (static_cast<int>(_profile.BellStyle()) != 0)
         {
-            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
+            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
             {
                 // Audible is set, play the sound
                 const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
                 PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
             }
 
-            if (WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
+            if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
             {
                 _control.BellLightOn();
             }
 
             // raise the event with the bool value corresponding to the taskbar flag
-            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(paneProfile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
+            _PaneRaiseBellHandlers(nullptr, WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Taskbar));
         }
     }
 }
@@ -1095,18 +1180,18 @@ void Pane::SetActive()
 }
 
 // Method Description:
-// - Returns nullopt if no children of this pane were the last control to be
-//   focused, or the GUID of the profile of the last control to be focused (if
-//   there was one).
+// - Returns nullptr if no children of this pane were the last control to be
+//   focused, or the profile of the last control to be focused (if there was
+//   one).
 // Arguments:
 // - <none>
 // Return Value:
-// - nullopt if no children of this pane were the last control to be
-//   focused, else the GUID of the profile of the last control to be focused
-std::optional<GUID> Pane::GetFocusedProfile()
+// - nullptr if no children of this pane were the last control to be
+//   focused, else the profile of the last control to be focused
+Profile Pane::GetFocusedProfile()
 {
     auto lastFocused = GetActivePane();
-    return lastFocused ? lastFocused->_profile : std::nullopt;
+    return lastFocused ? lastFocused->_profile : nullptr;
 }
 
 // Method Description:
@@ -1201,43 +1286,32 @@ void Pane::_FocusFirstChild()
 }
 
 // Method Description:
-// - Attempts to update the settings of this pane or any children of this pane.
-//   * If this pane is a leaf, and our profile guid matches the parameter, then
-//     we'll apply the new settings to our control.
-//   * If we're not a leaf, we'll recurse on our children.
+// - Updates the settings of this pane, presuming that it is a leaf.
 // Arguments:
 // - settings: The new TerminalSettings to apply to any matching controls
-// - profile: The GUID of the profile these settings should apply to.
+// - profile: The profile from which these settings originated.
 // Return Value:
 // - <none>
-void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const GUID& profile)
+void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
 {
-    if (!_IsLeaf())
+    assert(_IsLeaf());
+
+    _profile = profile;
+    auto controlSettings = _control.Settings().as<TerminalSettings>();
+    // Update the parent of the control's settings object (and not the object itself) so
+    // that any overrides made by the control don't get affected by the reload
+    controlSettings.SetParent(settings.DefaultSettings());
+    auto unfocusedSettings{ settings.UnfocusedSettings() };
+    if (unfocusedSettings)
     {
-        _firstChild->UpdateSettings(settings, profile);
-        _secondChild->UpdateSettings(settings, profile);
+        // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
+        // set its parent to the settings object that lives in the control. This is because
+        // the overrides made by the control live in that settings object, so we want to make
+        // sure the unfocused settings inherit from that.
+        unfocusedSettings.SetParent(controlSettings);
     }
-    else
-    {
-        if (profile == _profile)
-        {
-            auto controlSettings = _control.Settings().as<TerminalSettings>();
-            // Update the parent of the control's settings object (and not the object itself) so
-            // that any overrides made by the control don't get affected by the reload
-            controlSettings.SetParent(settings.DefaultSettings());
-            auto unfocusedSettings{ settings.UnfocusedSettings() };
-            if (unfocusedSettings)
-            {
-                // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
-                // set its parent to the settings object that lives in the control. This is because
-                // the overrides made by the control live in that settings object, so we want to make
-                // sure the unfocused settings inherit from that.
-                unfocusedSettings.SetParent(controlSettings);
-            }
-            _control.UnfocusedAppearance(unfocusedSettings);
-            _control.UpdateSettings();
-        }
-    }
+    _control.UnfocusedAppearance(unfocusedSettings);
+    _control.UpdateSettings();
 }
 
 // Method Description:
@@ -1297,7 +1371,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         auto detached = isFirstChild ? _firstChild : _secondChild;
         // Remove the child from the tree, replace the current node with the
         // other child.
-        _CloseChild(isFirstChild);
+        _CloseChild(isFirstChild, true);
 
         detached->_borders = Borders::None;
         detached->_UpdateBorders();
@@ -1325,9 +1399,12 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 // Arguments:
 // - closeFirst: if true, the first child should be closed, and the second
 //   should be preserved, and vice-versa for false.
+// - isDetaching: if true, then the pane event handlers for the closed child
+//   should be kept, this way they don't have to be recreated when it is later
+//   reattached to a tree somewhere as the control moves with the pane.
 // Return Value:
 // - <none>
-void Pane::_CloseChild(const bool closeFirst)
+void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 {
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -1345,6 +1422,8 @@ void Pane::_CloseChild(const bool closeFirst)
 
     auto closedChild = closeFirst ? _firstChild : _secondChild;
     auto remainingChild = closeFirst ? _secondChild : _firstChild;
+    auto closedChildClosedToken = closeFirst ? _firstClosedToken : _secondClosedToken;
+    auto remainingChildClosedToken = closeFirst ? _secondClosedToken : _firstClosedToken;
 
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
@@ -1370,11 +1449,18 @@ void Pane::_CloseChild(const bool closeFirst)
         // themselves closing, and remove their handlers for their controls
         // closing. At this point, if the remaining child's control is closed,
         // they'll trigger only our event handler for the control's close.
-        _firstChild->Closed(_firstClosedToken);
-        _secondChild->Closed(_secondClosedToken);
-        closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+
+        // However, if we are detaching the pane we want to keep its control
+        // handlers since it is just getting moved.
+        if (!isDetaching)
+        {
+            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        }
+
+        closedChild->Closed(closedChildClosedToken);
+        remainingChild->Closed(remainingChildClosedToken);
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
-        closedChild->_control.WarningBell(closedChild->_warningBellToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
 
         // If either of our children was focused, we want to take that focus from
@@ -1434,12 +1520,6 @@ void Pane::_CloseChild(const bool closeFirst)
         // Find what borders need to persist after we close the child
         auto remainingBorders = _GetCommonBorders();
 
-        // First stash away references to the old panes and their tokens
-        const auto oldFirstToken = _firstClosedToken;
-        const auto oldSecondToken = _secondClosedToken;
-        const auto oldFirst = _firstChild;
-        const auto oldSecond = _secondChild;
-
         // Steal all the state from our child
         _splitState = remainingChild->_splitState;
         _firstChild = remainingChild->_firstChild;
@@ -1452,11 +1532,14 @@ void Pane::_CloseChild(const bool closeFirst)
         _firstChild->Closed(remainingChild->_firstClosedToken);
         _secondChild->Closed(remainingChild->_secondClosedToken);
 
-        // Revoke event handlers on old panes and controls
-        oldFirst->Closed(oldFirstToken);
-        oldSecond->Closed(oldSecondToken);
-        closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-        closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        // Remove the event handlers on the old children
+        remainingChild->Closed(remainingChildClosedToken);
+        closedChild->Closed(closedChildClosedToken);
+        if (!isDetaching)
+        {
+            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+        }
 
         // Reset our UI:
         _root.Children().Clear();
@@ -1527,7 +1610,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         // this one doesn't seem to.
         if (!animationsEnabledInOS || !animationsEnabledInApp || eitherChildZoomed)
         {
-            pane->_CloseChild(closeFirst);
+            pane->_CloseChild(closeFirst, false);
             co_return;
         }
 
@@ -1634,7 +1717,7 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
             {
                 // We don't need to manually undo any of the above trickiness.
                 // We're going to re-parent the child's content into us anyways
-                pane->_CloseChild(closeFirst);
+                pane->_CloseChild(closeFirst, false);
             }
         });
     }
@@ -2027,13 +2110,13 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 //   we'll create two new children, and place them side-by-side in our Grid.
 // Arguments:
 // - splitType: what type of split we want to create.
-// - profile: The profile GUID to associate with the newly created pane.
+// - profile: The profile to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType,
                                                                     const float splitSize,
-                                                                    const GUID& profile,
+                                                                    const Profile& profile,
                                                                     const TermControl& control)
 {
     if (!_IsLeaf())
@@ -2163,9 +2246,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // Create two new Panes
     //   Move our control, guid into the first one.
     //   Move the new guid, control into the second.
-    _firstChild = std::make_shared<Pane>(_profile.value(), _control);
+    _firstChild = std::make_shared<Pane>(_profile, _control);
     _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
-    _profile = std::nullopt;
+    _profile = nullptr;
     _control = { nullptr };
     _secondChild = newPane;
 
@@ -2776,10 +2859,10 @@ void Pane::_SetupResources()
         s_focusedBorderBrush = SolidColorBrush{ Colors::Black() };
     }
 
-    const auto tabViewBackgroundKey = winrt::box_value(L"TabViewBackground");
-    if (res.HasKey(tabViewBackgroundKey))
+    const auto unfocusedBorderBrushKey = winrt::box_value(L"UnfocusedBorderBrush");
+    if (res.HasKey(unfocusedBorderBrushKey))
     {
-        winrt::Windows::Foundation::IInspectable obj = res.Lookup(tabViewBackgroundKey);
+        winrt::Windows::Foundation::IInspectable obj = res.Lookup(unfocusedBorderBrushKey);
         s_unfocusedBorderBrush = obj.try_as<winrt::Windows::UI::Xaml::Media::SolidColorBrush>();
     }
     else

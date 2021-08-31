@@ -37,10 +37,12 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(TestTerminalArgsForBinding);
 
-        TEST_METHOD(MakeSettingsForProfileThatDoesntExist);
+        TEST_METHOD(MakeSettingsForProfile);
         TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
 
         TEST_METHOD(TestLayerProfileOnColorScheme);
+
+        TEST_METHOD(TestCommandlineToTitlePromotion);
 
         TEST_CLASS_SETUP(ClassSetup)
         {
@@ -63,7 +65,7 @@ namespace SettingsModelLocalTests
         const std::string settingsJson{ R"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "profiles": [
+            "profiles": { "list": [
                 {
                     "name": "profile0",
                     "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
@@ -82,6 +84,9 @@ namespace SettingsModelLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
+            "defaults": {
+                "historySize": 29
+            } },
             "keybindings": [
                 { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" } },
                 { "keys": ["ctrl+b"], "command": { "action": "splitPane", "split": "vertical", "profile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}" } },
@@ -126,10 +131,10 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
@@ -148,10 +153,10 @@ namespace SettingsModelLocalTests
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}", realArgs.TerminalArgs().Profile());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
@@ -170,10 +175,10 @@ namespace SettingsModelLocalTests
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"pwsh.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
@@ -192,10 +197,10 @@ namespace SettingsModelLocalTests
             VERIFY_IS_FALSE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
         }
@@ -214,12 +219,21 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid0, guid);
+            if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
+            {
+                // This action specified a command but no profile; it gets reassigned to the base profile
+                VERIFY_ARE_EQUAL(settings.ProfileDefaults(), profile);
+                VERIFY_ARE_EQUAL(29, termSettings.HistorySize());
+            }
+            else
+            {
+                VERIFY_ARE_EQUAL(guid0, profile.Guid());
+                VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+            }
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };
@@ -237,10 +251,10 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
             VERIFY_ARE_EQUAL(L"foo.exe", realArgs.TerminalArgs().Commandline());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(2, termSettings.HistorySize());
         }
@@ -257,10 +271,10 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().TabTitle().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
@@ -278,10 +292,10 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
@@ -301,10 +315,10 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"c:\\foo", realArgs.TerminalArgs().StartingDirectory());
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
@@ -323,10 +337,10 @@ namespace SettingsModelLocalTests
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Profile().empty());
             VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid0, guid);
+            VERIFY_ARE_EQUAL(guid0, profile.Guid());
             VERIFY_ARE_EQUAL(L"cmd.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
             VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
@@ -346,10 +360,10 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
             VERIFY_ARE_EQUAL(L"profile2", realArgs.TerminalArgs().Profile());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(profile2Guid, guid);
+            VERIFY_ARE_EQUAL(profile2Guid, profile.Guid());
             VERIFY_ARE_EQUAL(L"wsl.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
             VERIFY_ARE_EQUAL(3, termSettings.HistorySize());
@@ -371,10 +385,10 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(L"bar", realArgs.TerminalArgs().TabTitle());
             VERIFY_ARE_EQUAL(L"profile1", realArgs.TerminalArgs().Profile());
 
-            const auto guid{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
+            const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid1, guid);
+            VERIFY_ARE_EQUAL(guid1, profile.Guid());
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
             VERIFY_ARE_EQUAL(L"bar", termSettings.StartingTitle());
             VERIFY_ARE_EQUAL(L"c:\\foo", termSettings.StartingDirectory());
@@ -382,9 +396,9 @@ namespace SettingsModelLocalTests
         }
     }
 
-    void TerminalSettingsTests::MakeSettingsForProfileThatDoesntExist()
+    void TerminalSettingsTests::MakeSettingsForProfile()
     {
-        // Test that making settings throws when the GUID doesn't exist
+        // Test that making settings generally works.
         const std::string settingsString{ R"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
@@ -405,31 +419,31 @@ namespace SettingsModelLocalTests
 
         const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
         const auto guid2 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-2222-49a3-80bd-e8fdd045185c}");
-        const auto guid3 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-3333-49a3-80bd-e8fdd045185c}");
+
+        const auto profile1 = settings.FindProfile(guid1);
+        const auto profile2 = settings.FindProfile(guid2);
 
         try
         {
-            auto terminalSettings{ TerminalSettings::CreateWithProfileByID(settings, guid1, nullptr) };
+            auto terminalSettings{ TerminalSettings::CreateWithProfile(settings, profile1, nullptr) };
             VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
             VERIFY_ARE_EQUAL(1, terminalSettings.DefaultSettings().HistorySize());
         }
         catch (...)
         {
-            VERIFY_IS_TRUE(false, L"This call to CreateWithProfileByID should succeed");
+            VERIFY_IS_TRUE(false, L"This call to CreateWithProfile should succeed");
         }
 
         try
         {
-            auto terminalSettings{ TerminalSettings::CreateWithProfileByID(settings, guid2, nullptr) };
+            auto terminalSettings{ TerminalSettings::CreateWithProfile(settings, profile2, nullptr) };
             VERIFY_ARE_NOT_EQUAL(nullptr, terminalSettings);
             VERIFY_ARE_EQUAL(2, terminalSettings.DefaultSettings().HistorySize());
         }
         catch (...)
         {
-            VERIFY_IS_TRUE(false, L"This call to CreateWithProfileByID should succeed");
+            VERIFY_IS_TRUE(false, L"This call to CreateWithProfile should succeed");
         }
-
-        VERIFY_THROWS(auto terminalSettings = TerminalSettings::CreateWithProfileByID(settings, guid3, nullptr), wil::ResultException, L"This call to constructor should fail");
 
         try
         {
@@ -553,5 +567,86 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
         VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5->CursorColor()); // default
+    }
+
+    void TerminalSettingsTests::TestCommandlineToTitlePromotion()
+    {
+        const std::string settingsJson{ R"(
+        {
+            "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+            "profiles": { "list": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "historySize": 1,
+                    "commandline": "cmd.exe"
+                },
+            ],
+            "defaults": {
+                "historySize": 29
+            } }
+        })" };
+
+        const winrt::guid guid0{ ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}") };
+
+        CascadiaSettings settings{ til::u8u16(settingsJson) };
+
+        { // just a profile (profile wins)
+            NewTerminalArgs args{};
+            args.Profile(L"profile0");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"profile0", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // profile and command line -> no promotion (profile wins)
+            NewTerminalArgs args{};
+            args.Profile(L"profile0");
+            args.Commandline(L"foo.exe");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"profile0", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // just a title -> it is propagated
+            NewTerminalArgs args{};
+            args.TabTitle(L"Analog Kid");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"Analog Kid", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // title and command line -> no promotion
+            NewTerminalArgs args{};
+            args.TabTitle(L"Digital Man");
+            args.Commandline(L"foo.exe");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"Digital Man", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        { // just a commandline -> promotion
+            NewTerminalArgs args{};
+            args.Commandline(L"foo.exe");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"foo.exe", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        // various typesof commandline follow
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L"foo.exe bar");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"foo.exe", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L"\"foo exe.exe\" bar");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"foo exe.exe", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L"\"\" grand designs");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"", settingsStruct.DefaultSettings().StartingTitle());
+        }
+        {
+            NewTerminalArgs args{};
+            args.Commandline(L" imagine a man");
+            const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, args, nullptr) };
+            VERIFY_ARE_EQUAL(L"", settingsStruct.DefaultSettings().StartingTitle());
+        }
     }
 }

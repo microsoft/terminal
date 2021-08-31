@@ -55,11 +55,17 @@
                             <!--  Define resources for Dark mode here  -->
                             <SolidColorBrush x:Key="TabViewBackground"
                                              Color="#FF333333" />
+
+                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
+                                             Color="#FF333333" />
                         </ResourceDictionary>
 
                         <ResourceDictionary x:Key="Light">
                             <!--  Define resources for Light mode here  -->
                             <SolidColorBrush x:Key="TabViewBackground"
+                                             Color="#FFCCCCCC" />
+
+                            <SolidColorBrush x:Key="UnfocusedBorderBrush"
                                              Color="#FFCCCCCC" />
                         </ResourceDictionary>
 

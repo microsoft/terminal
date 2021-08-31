@@ -282,7 +282,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return til::u8u16(Detail::GetStringView(json));
         }
 
-        bool CanConvert(const Json::Value& json)
+        bool CanConvert(const Json::Value& json) const
         {
             return json.isString();
         }
@@ -456,7 +456,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return til::u16u8(val);
         }
 
-        bool CanConvert(const Json::Value& json)
+        bool CanConvert(const Json::Value& json) const
         {
             // hstring has a specific behavior for null, so it can convert it
             return ConversionTrait<std::wstring>::CanConvert(json) || json.isNull();

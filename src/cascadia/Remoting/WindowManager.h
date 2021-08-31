@@ -45,8 +45,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> GetPeasantNames();
         uint64_t GetNumberOfPeasants();
 
-        void RequestShowTrayIcon();
-        void RequestHideTrayIcon();
+        winrt::fire_and_forget RequestShowTrayIcon();
+        winrt::fire_and_forget RequestHideTrayIcon();
         bool DoesQuakeWindowExist();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
