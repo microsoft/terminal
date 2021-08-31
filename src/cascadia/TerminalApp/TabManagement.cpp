@@ -235,8 +235,44 @@ namespace winrt::TerminalApp::implementation
     // - profile: profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
-    void TerminalPage::_CreateNewTabWithProfileAndSettings(const Profile& profile, const TerminalSettingsCreateResult& settings, TerminalConnection::ITerminalConnection existingConnection)
+    winrt::fire_and_forget TerminalPage::_CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, TerminalConnection::ITerminalConnection existingConnection)
     {
+        if (_isElevated())
+        {
+            auto cmdline{ settings.DefaultSettings().Commandline() };
+            auto allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() };
+            bool commandlineWasAllowed = false;
+
+            if (allowedCommandlines)
+            {
+                for (const auto& approved : allowedCommandlines)
+                {
+                    if (approved == cmdline)
+                    {
+                        commandlineWasAllowed = true;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
+            }
+            if (!commandlineWasAllowed)
+            {
+                ContentDialogResult warningResult = co_await _ShowCommandlineApproveWarning();
+                if (warningResult != ContentDialogResult::Primary)
+                {
+                    co_return;
+                }
+                else
+                {
+                    allowedCommandlines.Append(cmdline);
+                }
+                ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
+            }
+        }
+
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, settings.DefaultSettings());

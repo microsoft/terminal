@@ -49,6 +49,23 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
+    bool TerminalPage::_isElevated() const noexcept
+    {
+        // GH#2455 - Make sure to try/catch calls to Application::Current,
+        // because that _won't_ be an instance of TerminalApp::App in the
+        // LocalTests
+        try
+        {
+            // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
+            // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
+            // but that process is running at a different IL than us.
+            // For now, we're disabling elevated drag.
+            return ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+        }
+        CATCH_LOG();
+        return false;
+    }
+
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
@@ -128,19 +145,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // GH#2455 - Make sure to try/catch calls to Application::Current,
-        // because that _won't_ be an instance of TerminalApp::App in the
-        // LocalTests
-        auto isElevated = false;
-        try
-        {
-            // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
-            // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
-            // but that process is running at a different IL than us.
-            // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
-        }
-        CATCH_LOG();
+        const auto isElevated = _isElevated();
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
@@ -570,6 +575,15 @@ namespace winrt::TerminalApp::implementation
         if (auto presenter{ _dialogPresenter.get() })
         {
             co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
+    }
+
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCommandlineApproveWarning()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"ApproveCommandlineWarning").try_as<WUX::Controls::ContentDialog>());
         }
         co_return ContentDialogResult::None;
     }
