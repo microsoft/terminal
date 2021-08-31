@@ -1255,6 +1255,23 @@ namespace winrt::TerminalApp::implementation
             splitTabMenuItem.Icon(splitTabSymbol);
         }
 
+        Controls::MenuFlyoutItem exportTabMenuItem;
+        {
+            // "Split Tab"
+            Controls::FontIcon exportTabSymbol;
+            exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            exportTabSymbol.Glyph(L"\xE74E"); // Save
+
+            exportTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_ExportTabRequestedHandlers();
+                }
+            });
+            exportTabMenuItem.Text(RS_(L"ExportTabText"));
+            exportTabMenuItem.Icon(exportTabSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
@@ -1262,6 +1279,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
+        contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
@@ -1636,4 +1654,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, ExportTabRequested, _ExportTabRequestedHandlers, winrt::delegate<>);
 }

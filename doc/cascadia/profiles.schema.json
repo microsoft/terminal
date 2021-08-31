@@ -268,6 +268,7 @@
         "movePane",
         "swapPane",
         "moveTab",
+        "multipleActions",
         "newTab",
         "newWindow",
         "nextTab",
@@ -825,6 +826,24 @@
       ],
       "required": [ "direction" ]
     },
+    "MultipleActionsAction": {
+      "description": "Arguments for the multiple actions command",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "multipleActions" },
+            "actions" : {
+              "$ref": "#/definitions/ShortcutAction",
+              "type": "array",
+              "minItems": 1,
+              "description": "A list of other actions."
+            }
+          }
+        }
+      ],
+      "required": [ "actions" ]
+    }, 
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
       "allOf": [

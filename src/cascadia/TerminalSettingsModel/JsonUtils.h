@@ -382,6 +382,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
+
     struct ConversionTrait<std::unordered_map<std::string, T>>
     {
         std::unordered_map<std::string, T> FromJson(const Json::Value& json) const

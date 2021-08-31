@@ -56,6 +56,9 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.Provider.h>
+#include <winrt/Windows.Storage.Pickers.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
