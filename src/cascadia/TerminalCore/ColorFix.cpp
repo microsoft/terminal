@@ -5,20 +5,20 @@
 #include <math.h>
 #include "ColorFix.hpp"
 
-const double g_min_thrashold = 12.0;
-const double g_exp_thrashold = 20.0;
-const double g_L_step = 5.0;
+const double gMinThreshold = 12.0;
+const double gExpThreshold = 20.0;
+const double gLStep = 5.0;
 
 // DeltaE 2000
 // Source: https://github.com/zschuessler/DeltaE
-dE00::dE00(ColorFix ax1, ColorFix ax2, double weight_lightness, double weight_chroma, double weight_hue)
+dE00::dE00(ColorFix x1, ColorFix x2, double weightLightness, double weightChroma, double weightHue)
 {
-    _x1 = ax1;
-    _x2 = ax2;
+    _x1 = x1;
+    _x2 = x2;
 
-    _kSubL = weight_lightness;
-    _kSubC = weight_chroma;
-    _kSubH = weight_hue;
+    _kSubL = weightLightness;
+    _kSubC = weightChroma;
+    _kSubH = weightHue;
 
     // Delta L Prime
     _deltaLPrime = _x2.L - _x1.L;
@@ -26,7 +26,7 @@ dE00::dE00(ColorFix ax1, ColorFix ax2, double weight_lightness, double weight_ch
     // L Bar
     _lBar = (_x1.L + _x2.L) / 2;
 
-    // _c1 & _c2
+    // C1 & C2
     _c1 = sqrt(pow(_x1.A, 2) + pow(_x1.B, 2));
     _c2 = sqrt(pow(_x2.A, 2) + pow(_x2.B, 2));
 
@@ -418,26 +418,26 @@ ColorFix::ColorFix()
     B = 0;
 }
 
-ColorFix::ColorFix(COLORREF a_rgb)
+ColorFix::ColorFix(COLORREF color)
 {
-    rgb = a_rgb;
+    rgb = color;
     ToLab();
 }
 
-ColorFix::ColorFix(double a_L, double a_a, double a_b)
+ColorFix::ColorFix(double l, double a, double b)
 {
-    L = a_L;
-    A = a_a;
-    B = a_b;
+    L = l;
+    A = a;
+    B = b;
     ToRGB();
 }
 
-ColorFix::ColorFix(const ColorFix& clr)
+ColorFix::ColorFix(const ColorFix& color)
 {
-    L = clr.L;
-    A = clr.A;
-    B = clr.B;
-    rgb = clr.rgb;
+    L = color.L;
+    A = color.A;
+    B = color.B;
+    rgb = color.rgb;
 }
 
 void ColorFix::ToLab()
@@ -455,7 +455,7 @@ double ColorFix::DeltaE(ColorFix color)
     return ColorSpace::DeltaE(*this, color);
 }
 
-bool ColorFix::PerceivableColor(COLORREF back /*, COLORREF alt*/, ColorFix& pColor, double* oldDE /*= NULL*/, double* newDE /*= NULL*/)
+bool ColorFix::PerceivableColor(COLORREF back, ColorFix& pColor, double* oldDE, double* newDE)
 {
     bool bChanged = false;
     ColorFix backLab(back);
@@ -464,11 +464,11 @@ bool ColorFix::PerceivableColor(COLORREF back /*, COLORREF alt*/, ColorFix& pCol
         *oldDE = de1;
     if (newDE)
         *newDE = de1;
-    if (de1 < g_min_thrashold)
+    if (de1 < gMinThreshold)
     {
         for (int i = 0; i <= 1; i++)
         {
-            double step = (i == 0) ? g_L_step : -g_L_step;
+            double step = (i == 0) ? gLStep : -gLStep;
             pColor.L = L + step;
             pColor.A = A;
             pColor.B = B;
@@ -476,7 +476,7 @@ bool ColorFix::PerceivableColor(COLORREF back /*, COLORREF alt*/, ColorFix& pCol
             while (((i == 0) && (pColor.L <= 100)) || ((i == 1) && (pColor.L >= 0)))
             {
                 double de2 = pColor.DeltaE(backLab);
-                if (de2 >= g_exp_thrashold)
+                if (de2 >= gExpThreshold)
                 {
                     if (newDE)
                         *newDE = de2;

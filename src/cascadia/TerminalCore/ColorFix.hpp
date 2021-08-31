@@ -9,16 +9,16 @@
 struct ColorFix
 {
     ColorFix();
-    ColorFix(COLORREF a_rgb);
-    ColorFix(double a_L, double a_a, double a_b);
-    ColorFix(const ColorFix& clr);
+    ColorFix(COLORREF color);
+    ColorFix(double l, double a, double b);
+    ColorFix(const ColorFix& color);
 
     void ToLab();
     void ToRGB();
 
     double DeltaE(ColorFix color);
 
-    bool PerceivableColor(COLORREF back /*, COLORREF alt*/, ColorFix& pColor, double* oldDE = NULL, double* newDE = NULL);
+    bool PerceivableColor(COLORREF back, ColorFix& pColor, double* oldDE = NULL, double* newDE = NULL);
 
     // RGB
     union
@@ -40,7 +40,7 @@ struct ColorFix
 struct dE00
 {
 public:
-    dE00(ColorFix ax1, ColorFix ax2, double weight_lightness = 1, double weight_chroma = 1, double weight_hue = 1);
+    dE00(ColorFix x1, ColorFix x2, double weightLightness = 1, double weightChroma = 1, double weightHue = 1);
     double GetDeltaE();
 
 private:

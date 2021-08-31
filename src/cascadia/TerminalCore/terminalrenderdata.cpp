@@ -4,6 +4,8 @@
 #include "pch.h"
 #include "Terminal.hpp"
 #include <DefaultSettings.h>
+#include "ColorFix.hpp"
+
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
@@ -59,7 +61,10 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
     {
         colors.second |= 0xff000000;
     }
-    return colors;
+    ColorFix colorFix{ colors.first };
+    ColorFix result{};
+    colorFix.PerceivableColor(colors.second, result);
+    return std::pair<COLORREF, COLORREF>(result.rgb, colors.second);
 }
 
 COORD Terminal::GetCursorPosition() const noexcept
