@@ -1255,7 +1255,7 @@ namespace winrt::TerminalApp::implementation
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
         // If there aren't and recent commands already in the state, then we
         // don't need to copy any.
-        const auto countToCopy = std::min(recentCommands? recentCommands.Size() : 0, CommandLineHistoryLength - 1);
+        const auto countToCopy = std::min(recentCommands ? recentCommands.Size() : 0, CommandLineHistoryLength - 1);
         std::vector<hstring> newRecentCommands{ countToCopy + 1 };
         til::at(newRecentCommands, 0) = command;
         if (countToCopy)
