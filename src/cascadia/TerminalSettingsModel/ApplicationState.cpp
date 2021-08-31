@@ -135,6 +135,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {                                                   \
             auto state = _state.lock();                     \
             state->name.emplace(value);                     \
+            state->name##Changed = true;                    \
         }                                                   \
                                                             \
         _throttler();                                       \
@@ -142,27 +143,38 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
+    Json::Value ApplicationState::_getRoot() const noexcept
+    {
+        Json::Value root;
+        try
+        {
+            const auto data = ReadUTF8FileIfExists(_path).value_or(std::string{});
+            if (data.empty())
+            {
+                return root;
+            }
+
+            std::string errs;
+            std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+            if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+            {
+                throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+            }
+        }
+        CATCH_LOG()
+
+        return root;
+    }
+
     // Deserializes the state.json at _path into this ApplicationState.
     // * ANY errors during app state will result in the creation of a new empty state.
     // * ANY errors during runtime will result in changes being partially ignored.
     void ApplicationState::_read() const noexcept
     try
     {
-        const auto data = ReadUTF8FileIfExists(_path).value_or(std::string{});
-        if (data.empty())
-        {
-            return;
-        }
-
-        std::string errs;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-
-        Json::Value root;
-        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
-        {
-            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-        }
-
+       
+        auto root = _getRoot();
         auto state = _state.lock();
         // GetValueForKey() comes in two variants:
         // * take a std::optional<T> reference
@@ -182,11 +194,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ApplicationState::_write() const noexcept
     try
     {
-        Json::Value root{ Json::objectValue };
+        // re-read the state so that we can only update the properties that were changed.
+        auto root = _getRoot();
 
         {
-            auto state = _state.lock_shared();
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) JsonUtils::SetValueForKey(root, key, state->name);
+            auto state = _state.lock();
+#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)            \
+            if (state->name##Changed) {                             \
+                JsonUtils::SetValueForKey(root, key, state->name);  \
+                state->name##Changed = false;                       \
+            }
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         }
