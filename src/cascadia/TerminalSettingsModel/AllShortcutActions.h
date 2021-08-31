@@ -78,7 +78,8 @@
     ON_ALL_ACTIONS(OpenWindowRenamer)      \
     ON_ALL_ACTIONS(GlobalSummon)           \
     ON_ALL_ACTIONS(QuakeMode)              \
-    ON_ALL_ACTIONS(FocusPane)
+    ON_ALL_ACTIONS(FocusPane)              \
+    ON_ALL_ACTIONS(MultipleActions)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
@@ -109,4 +110,5 @@
     ON_ALL_ACTIONS_WITH_ARGS(SplitPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \
-    ON_ALL_ACTIONS_WITH_ARGS(FocusPane)
+    ON_ALL_ACTIONS_WITH_ARGS(FocusPane)            \
+    ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)
