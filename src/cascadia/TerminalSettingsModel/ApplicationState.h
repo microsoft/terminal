@@ -25,8 +25,8 @@ Abstract:
 //   (type, function name, JSON key, ...variadic construction arguments)
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-#define MTSM_APPLICATION_STATE_FIELDS(X)                                       \
-    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles") \
+#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                \
+    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                          \
     X(Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts") \
     X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")
 
