@@ -55,6 +55,48 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return fmt::format("{}[]", ConversionTrait<GUID>{}.TypeDescription());
         }
     };
+
+    template<typename T>
+    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
+    {
+        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json) const
+        {
+            ConversionTrait<T> trait;
+            std::vector<T> val;
+            val.reserve(json.size());
+
+            for (const auto& element : json)
+            {
+                val.push_back(trait.FromJson(element));
+            }
+
+            return winrt::single_threaded_vector(move(val));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<T> trait;
+            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) -> bool { return trait.CanConvert(json); });
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
+        {
+            ConversionTrait<T> trait;
+            Json::Value json{ Json::arrayValue };
+
+            for (const auto& key : val)
+            {
+                json.append(trait.ToJson(key));
+            }
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return fmt::format("vector ({})", ConversionTrait<T>{}.TypeDescription());
+        }
+    };
 }
 
 using namespace ::Microsoft::Terminal::Settings::Model;

@@ -350,8 +350,10 @@ namespace winrt::TerminalApp::implementation
             // current control's live settings (which will include changes
             // made through VT).
 
-            if (const auto profile = tab.GetFocusedProfile())
+            if (auto profile = tab.GetFocusedProfile())
             {
+                // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+                profile = GetClosestProfileForDuplicationOfProfile(profile);
                 const auto settingsCreateResult{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
                 const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
                 const auto validWorkingDirectory = !workingDirectory.empty();

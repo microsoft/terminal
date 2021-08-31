@@ -198,4 +198,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             globals.Language(currentLanguage);
         }
     }
+
+    bool GlobalAppearance::FeatureTrayIconEnabled() const noexcept
+    {
+        return Feature_TrayIcon::IsEnabled();
+    }
 }

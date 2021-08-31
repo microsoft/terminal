@@ -65,7 +65,7 @@ namespace SettingsModelLocalTests
         const std::string settingsJson{ R"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-            "profiles": [
+            "profiles": { "list": [
                 {
                     "name": "profile0",
                     "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
@@ -84,6 +84,9 @@ namespace SettingsModelLocalTests
                     "commandline": "wsl.exe"
                 }
             ],
+            "defaults": {
+                "historySize": 29
+            } },
             "keybindings": [
                 { "keys": ["ctrl+a"], "command": { "action": "splitPane", "split": "vertical" } },
                 { "keys": ["ctrl+b"], "command": { "action": "splitPane", "split": "vertical", "profile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}" } },
@@ -219,9 +222,18 @@ namespace SettingsModelLocalTests
             const auto profile{ settings.GetProfileForArgs(realArgs.TerminalArgs()) };
             const auto settingsStruct{ TerminalSettings::CreateWithNewTerminalArgs(settings, realArgs.TerminalArgs(), nullptr) };
             const auto termSettings = settingsStruct.DefaultSettings();
-            VERIFY_ARE_EQUAL(guid0, profile.Guid());
+            if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
+            {
+                // This action specified a command but no profile; it gets reassigned to the base profile
+                VERIFY_ARE_EQUAL(settings.ProfileDefaults(), profile);
+                VERIFY_ARE_EQUAL(29, termSettings.HistorySize());
+            }
+            else
+            {
+                VERIFY_ARE_EQUAL(guid0, profile.Guid());
+                VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
+            }
             VERIFY_ARE_EQUAL(L"foo.exe", termSettings.Commandline());
-            VERIFY_ARE_EQUAL(1, termSettings.HistorySize());
         }
         {
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('F'), 0 };

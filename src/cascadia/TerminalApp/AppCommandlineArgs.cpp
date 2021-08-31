@@ -399,8 +399,10 @@ static const std::map<std::string, FocusDirection> focusDirectionMap = {
     { "right", FocusDirection::Right },
     { "up", FocusDirection::Up },
     { "down", FocusDirection::Down },
+    { "previous", FocusDirection::Previous },
     { "nextInOrder", FocusDirection::NextInOrder },
     { "previousInOrder", FocusDirection::PreviousInOrder },
+    { "first", FocusDirection::First },
 };
 
 // Method Description:
