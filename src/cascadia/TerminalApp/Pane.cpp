@@ -1014,6 +1014,11 @@ TermControl Pane::GetTerminalControl() const
     return _IsLeaf() ? _control.try_as<TermControl>() : nullptr;
 }
 
+Controls::UserControl Pane::GetUserControl() const
+{
+    return _IsLeaf() ? _control : nullptr;
+}
+
 // Method Description:
 // - Recursively remove the "Active" state from this Pane and all it's children.
 // - Updates our visuals to match our new state, including highlighting our borders.

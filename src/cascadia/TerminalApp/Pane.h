@@ -52,6 +52,7 @@ public:
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
+    winrt::Windows::UI::Xaml::Controls::UserControl GetUserControl() const;
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl() const;
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
 
