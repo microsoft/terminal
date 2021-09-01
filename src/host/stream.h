@@ -17,7 +17,7 @@ Revision History:
 #pragma once
 
 #include "cmdline.h"
-#include "..\server\IWaitRoutine.h"
+#include "../server/IWaitRoutine.h"
 #include "readData.hpp"
 
 #define IS_CONTROL_CHAR(wch) ((wch) < L' ')

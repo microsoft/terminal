@@ -21,7 +21,7 @@ Write-Host "Checking test results..."
 $queryUri = GetQueryTestRunsUri -CollectionUri $CollectionUri -TeamProject $TeamProject -BuildUri $BuildUri -IncludeRunDetails
 Write-Host "queryUri = $queryUri"
 
-$testRuns = Invoke-RestMethod -Uri $queryUri -Method Get -Headers $azureDevOpsRestApiHeaders
+$testRuns = Invoke-RestMethodWithRetries $queryUri -Headers $azureDevOpsRestApiHeaders
 [System.Collections.Generic.List[string]]$failingTests = @()
 [System.Collections.Generic.List[string]]$unreliableTests = @()
 [System.Collections.Generic.List[string]]$unexpectedResultTest = @()
@@ -50,7 +50,7 @@ foreach ($testRun in ($testRuns.value | Sort-Object -Property "completedDate" -D
     $totalTestsExecutedCount += $testRun.totalTests
 
     $testRunResultsUri = "$($testRun.url)/results?api-version=5.0"
-    $testResults = Invoke-RestMethod -Uri "$($testRun.url)/results?api-version=5.0" -Method Get -Headers $azureDevOpsRestApiHeaders
+    $testResults = Invoke-RestMethodWithRetries "$($testRun.url)/results?api-version=5.0" -Headers $azureDevOpsRestApiHeaders
         
     foreach ($testResult in $testResults.value)
     {

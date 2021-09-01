@@ -14,26 +14,26 @@ using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
 // clang-format off
-const BYTE BLUE_ATTR      = 0x01;
-const BYTE GREEN_ATTR     = 0x02;
-const BYTE RED_ATTR       = 0x04;
-const BYTE BRIGHT_ATTR    = 0x08;
-const BYTE DARK_BLACK     = 0;
-const BYTE DARK_RED       = RED_ATTR;
-const BYTE DARK_GREEN     = GREEN_ATTR;
-const BYTE DARK_YELLOW    = RED_ATTR | GREEN_ATTR;
-const BYTE DARK_BLUE      = BLUE_ATTR;
-const BYTE DARK_MAGENTA   = RED_ATTR | BLUE_ATTR;
-const BYTE DARK_CYAN      = GREEN_ATTR | BLUE_ATTR;
-const BYTE DARK_WHITE     = RED_ATTR | GREEN_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_BLACK   = BRIGHT_ATTR;
-const BYTE BRIGHT_RED     = BRIGHT_ATTR | RED_ATTR;
-const BYTE BRIGHT_GREEN   = BRIGHT_ATTR | GREEN_ATTR;
-const BYTE BRIGHT_YELLOW  = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR;
-const BYTE BRIGHT_BLUE    = BRIGHT_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_MAGENTA = BRIGHT_ATTR | RED_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_CYAN    = BRIGHT_ATTR | GREEN_ATTR | BLUE_ATTR;
-const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BLUE_ATTR      = 0x01;
+constexpr BYTE GREEN_ATTR     = 0x02;
+constexpr BYTE RED_ATTR       = 0x04;
+constexpr BYTE BRIGHT_ATTR    = 0x08;
+constexpr BYTE DARK_BLACK     = 0;
+constexpr BYTE DARK_RED       = RED_ATTR;
+constexpr BYTE DARK_GREEN     = GREEN_ATTR;
+constexpr BYTE DARK_YELLOW    = RED_ATTR | GREEN_ATTR;
+constexpr BYTE DARK_BLUE      = BLUE_ATTR;
+constexpr BYTE DARK_MAGENTA   = RED_ATTR | BLUE_ATTR;
+constexpr BYTE DARK_CYAN      = GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE DARK_WHITE     = RED_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_BLACK   = BRIGHT_ATTR;
+constexpr BYTE BRIGHT_RED     = BRIGHT_ATTR | RED_ATTR;
+constexpr BYTE BRIGHT_GREEN   = BRIGHT_ATTR | GREEN_ATTR;
+constexpr BYTE BRIGHT_YELLOW  = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR;
+constexpr BYTE BRIGHT_BLUE    = BRIGHT_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_MAGENTA = BRIGHT_ATTR | RED_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_CYAN    = BRIGHT_ATTR | GREEN_ATTR | BLUE_ATTR;
+constexpr BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // clang-format on
 
 // Routine Description:
@@ -47,43 +47,39 @@ const BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
 // - isForeground - Whether or not the parsed color is for the foreground.
 // Return Value:
 // - The number of options consumed, not including the initial 38/48.
-size_t AdaptDispatch::_SetRgbColorsHelper(const gsl::span<const DispatchTypes::GraphicsOptions> options,
+size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
                                           TextAttribute& attr,
                                           const bool isForeground) noexcept
 {
-    size_t optionsConsumed = 0;
-    if (options.size() >= 1)
+    size_t optionsConsumed = 1;
+    const DispatchTypes::GraphicsOptions typeOpt = options.at(0);
+    if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint)
     {
-        optionsConsumed = 1;
-        const auto typeOpt = til::at(options, 0);
-        if (typeOpt == DispatchTypes::GraphicsOptions::RGBColorOrFaint && options.size() >= 4)
+        optionsConsumed = 4;
+        const size_t red = options.at(1).value_or(0);
+        const size_t green = options.at(2).value_or(0);
+        const size_t blue = options.at(3).value_or(0);
+        // ensure that each value fits in a byte
+        if (red <= 255 && green <= 255 && blue <= 255)
         {
-            optionsConsumed = 4;
-            const size_t red = til::at(options, 1);
-            const size_t green = til::at(options, 2);
-            const size_t blue = til::at(options, 3);
-            // ensure that each value fits in a byte
-            if (red <= 255 && green <= 255 && blue <= 255)
-            {
-                const COLORREF rgbColor = RGB(red, green, blue);
-                attr.SetColor(rgbColor, isForeground);
-            }
+            const COLORREF rgbColor = RGB(red, green, blue);
+            attr.SetColor(rgbColor, isForeground);
         }
-        else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index && options.size() >= 2)
+    }
+    else if (typeOpt == DispatchTypes::GraphicsOptions::BlinkOrXterm256Index)
+    {
+        optionsConsumed = 2;
+        const size_t tableIndex = options.at(1).value_or(0);
+        if (tableIndex <= 255)
         {
-            optionsConsumed = 2;
-            const size_t tableIndex = til::at(options, 1);
-            if (tableIndex <= 255)
+            const auto adjustedIndex = gsl::narrow_cast<BYTE>(::Xterm256ToWindowsIndex(tableIndex));
+            if (isForeground)
             {
-                const auto adjustedIndex = gsl::narrow_cast<BYTE>(::Xterm256ToWindowsIndex(tableIndex));
-                if (isForeground)
-                {
-                    attr.SetIndexedForeground256(adjustedIndex);
-                }
-                else
-                {
-                    attr.SetIndexedBackground256(adjustedIndex);
-                }
+                attr.SetIndexedForeground256(adjustedIndex);
+            }
+            else
+            {
+                attr.SetIndexedBackground256(adjustedIndex);
             }
         }
     }
@@ -100,7 +96,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const gsl::span<const DispatchTypes::G
 //   one at a time by setting or removing flags in the font style properties.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::GraphicsOptions> options)
+bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
 {
     TextAttribute attr;
     bool success = _pConApi->PrivateGetTextAttributes(attr);
@@ -110,7 +106,7 @@ bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::Gr
         // Run through the graphics options and apply them
         for (size_t i = 0; i < options.size(); i++)
         {
-            const auto opt = til::at(options, i);
+            const GraphicsOptions opt = options.at(i);
             switch (opt)
             {
             case Off:
@@ -286,6 +282,51 @@ bool AdaptDispatch::SetGraphicsRendition(const gsl::span<const DispatchTypes::Gr
             }
         }
         success = _pConApi->PrivateSetTextAttributes(attr);
+    }
+
+    return success;
+}
+
+// Method Description:
+// - Saves the current text attributes to an internal stack.
+// Arguments:
+// - options: if not empty, specify which portions of the current text attributes should
+//   be saved. Options that are not supported are ignored. If no options are specified,
+//   all attributes are stored.
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PushGraphicsRendition(const VTParameters options)
+{
+    bool success = true;
+    TextAttribute currentAttributes;
+
+    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+
+    if (success)
+    {
+        _sgrStack.Push(currentAttributes, options);
+    }
+
+    return success;
+}
+
+// Method Description:
+// - Restores text attributes from the internal stack. If only portions of text attributes
+//   were saved, combines those with the current attributes.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::PopGraphicsRendition()
+{
+    bool success = true;
+    TextAttribute currentAttributes;
+
+    success = _pConApi->PrivateGetTextAttributes(currentAttributes);
+
+    if (success)
+    {
+        success = _pConApi->PrivateSetTextAttributes(_sgrStack.Pop(currentAttributes));
     }
 
     return success;

@@ -26,15 +26,15 @@ WORD XtermToWindowsIndex(const size_t index) noexcept;
 WORD Xterm256ToWindowsIndex(const size_t index) noexcept;
 WORD XtermToLegacy(const size_t xtermForeground, const size_t xtermBackground);
 
-const WORD WINDOWS_RED_ATTR = FOREGROUND_RED;
-const WORD WINDOWS_GREEN_ATTR = FOREGROUND_GREEN;
-const WORD WINDOWS_BLUE_ATTR = FOREGROUND_BLUE;
-const WORD WINDOWS_BRIGHT_ATTR = FOREGROUND_INTENSITY;
+constexpr WORD WINDOWS_RED_ATTR = FOREGROUND_RED;
+constexpr WORD WINDOWS_GREEN_ATTR = FOREGROUND_GREEN;
+constexpr WORD WINDOWS_BLUE_ATTR = FOREGROUND_BLUE;
+constexpr WORD WINDOWS_BRIGHT_ATTR = FOREGROUND_INTENSITY;
 
-const WORD XTERM_RED_ATTR = 0x01;
-const WORD XTERM_GREEN_ATTR = 0x02;
-const WORD XTERM_BLUE_ATTR = 0x04;
-const WORD XTERM_BRIGHT_ATTR = 0x08;
+constexpr WORD XTERM_RED_ATTR = 0x01;
+constexpr WORD XTERM_GREEN_ATTR = 0x02;
+constexpr WORD XTERM_BLUE_ATTR = 0x04;
+constexpr WORD XTERM_BRIGHT_ATTR = 0x08;
 
 enum class CursorType : unsigned int
 {
@@ -42,7 +42,8 @@ enum class CursorType : unsigned int
     VerticalBar = 0x1, // A single vertical line, '|'
     Underscore = 0x2, // a single horizontal underscore, smaller that the min height legacy cursor.
     EmptyBox = 0x3, // Just the outline of a full box
-    FullBox = 0x4 // a full box, similar to legacy with height=100%
+    FullBox = 0x4, // a full box, similar to legacy with height=100%
+    DoubleUnderscore = 0x5 // a double horizontal underscore
 };
 
 // Valid COLORREFs are of the pattern 0x00bbggrr. -1 works as an invalid color,

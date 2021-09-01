@@ -35,7 +35,8 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool WriteString(const std::wstring_view string) = 0;
 
         virtual bool WindowManipulation(const DispatchTypes::WindowManipulationType function,
-                                        const gsl::span<const size_t> parameters) = 0;
+                                        const VTParameter parameter1,
+                                        const VTParameter parameter2) = 0;
 
         virtual bool MoveCursor(const size_t row,
                                 const size_t col) = 0;

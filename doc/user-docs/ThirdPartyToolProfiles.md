@@ -96,7 +96,9 @@ Assuming that you've installed MSYS2 into `C:\\msys64`:
     "icon": "C:\\msys64\\msys2.ico",
     "startingDirectory": "C:\\msys64\\home\\user"
 }
-````
+```
+
+For more details, see [this page](https://www.msys2.org/docs/terminals/#windows-terminal) on the MSYS2 documentation.
 
 ## Developer Command Prompt for Visual Studio
 

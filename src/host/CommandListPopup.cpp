@@ -12,7 +12,7 @@
 #include "dbcs.h"
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 static constexpr size_t COMMAND_NUMBER_SIZE = 8; // size of command number buffer
 

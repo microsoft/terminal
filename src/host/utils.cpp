@@ -5,7 +5,7 @@
 
 #include "utils.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #include "srvinit.h"
 

@@ -11,18 +11,15 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\AttrRow.cpp" />
-    <ClCompile Include="..\AttrRowIterator.cpp" />
     <ClCompile Include="..\cursor.cpp" />
     <ClCompile Include="..\OutputCell.cpp" />
     <ClCompile Include="..\OutputCellIterator.cpp" />
     <ClCompile Include="..\OutputCellRect.cpp" />
     <ClCompile Include="..\OutputCellView.cpp" />
     <ClCompile Include="..\Row.cpp" />
-    <ClCompile Include="..\RowCellIterator.cpp" />
     <ClCompile Include="..\search.cpp" />
     <ClCompile Include="..\TextColor.cpp" />
     <ClCompile Include="..\TextAttribute.cpp" />
-    <ClCompile Include="..\TextAttributeRun.cpp" />
     <ClCompile Include="..\textBuffer.cpp" />
     <ClCompile Include="..\textBufferCellIterator.cpp" />
     <ClCompile Include="..\textBufferTextIterator.cpp" />
@@ -36,20 +33,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\AttrRow.hpp" />
-    <ClInclude Include="..\AttrRowIterator.hpp" />
     <ClInclude Include="..\cursor.h" />
     <ClInclude Include="..\DbcsAttribute.hpp" />
     <ClInclude Include="..\ICharRow.hpp" />
+    <ClInclude Include="..\LineRendition.hpp" />
     <ClInclude Include="..\OutputCell.hpp" />
     <ClInclude Include="..\OutputCellIterator.hpp" />
     <ClInclude Include="..\OutputCellRect.hpp" />
     <ClInclude Include="..\OutputCellView.hpp" />
     <ClInclude Include="..\Row.hpp" />
-    <ClInclude Include="..\RowCellIterator.hpp" />
     <ClInclude Include="..\search.h" />
     <ClInclude Include="..\TextColor.h" />
-    <ClInclude Include="..\TextAttribute.h" />
-    <ClInclude Include="..\TextAttributeRun.h" />
+    <ClInclude Include="..\TextAttribute.hpp" />
     <ClInclude Include="..\textBuffer.hpp" />
     <ClInclude Include="..\textBufferCellIterator.hpp" />
     <ClInclude Include="..\textBufferTextIterator.hpp" />

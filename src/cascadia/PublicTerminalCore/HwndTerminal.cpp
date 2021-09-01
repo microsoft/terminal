@@ -172,7 +172,6 @@ HwndTerminal::HwndTerminal(HWND parentHwnd) :
     _desiredFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8 },
     _actualFont{ L"Consolas", 0, DEFAULT_FONT_WEIGHT, { 0, 14 }, CP_UTF8, false },
     _uiaProvider{ nullptr },
-    _uiaProviderInitialized{ false },
     _currentDpi{ USER_DEFAULT_SCREEN_DPI },
     _pfnWriteCallback{ nullptr },
     _multiClickTime{ 500 } // this will be overwritten by the windows system double-click time
@@ -324,26 +323,22 @@ void HwndTerminal::_UpdateFont(int newDpi)
 
 IRawElementProviderSimple* HwndTerminal::_GetUiaProvider() noexcept
 {
-    if (nullptr == _uiaProvider && !_uiaProviderInitialized)
+    // If TermControlUiaProvider throws during construction,
+    // we don't want to try constructing an instance again and again.
+    // _uiaProviderInitialized helps us prevent this.
+    if (!_uiaProviderInitialized)
     {
-        std::unique_lock<std::shared_mutex> lock;
         try
         {
-#pragma warning(suppress : 26441) // The lock is named, this appears to be a false positive
-            lock = _terminal->LockForWriting();
-            if (_uiaProviderInitialized)
-            {
-                return _uiaProvider.Get();
-            }
-
+            auto lock = _terminal->LockForWriting();
             LOG_IF_FAILED(::Microsoft::WRL::MakeAndInitialize<::Microsoft::Terminal::TermControlUiaProvider>(&_uiaProvider, this->GetUiaData(), this));
+            _uiaProviderInitialized = true;
         }
         catch (...)
         {
             LOG_HR(wil::ResultFromCaughtException());
             _uiaProvider = nullptr;
         }
-        _uiaProviderInitialized = true;
     }
 
     return _uiaProvider.Get();
@@ -433,7 +428,15 @@ void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data)
     publicTerminal->SendOutput(data);
 }
 
-HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions)
+/// <summary>
+/// Triggers a terminal resize using the new width and height in pixel.
+/// </summary>
+/// <param name="terminal">Terminal pointer.</param>
+/// <param name="width">New width of the terminal in pixels.</param>
+/// <param name="height">New height of the terminal in pixels</param>
+/// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
+/// <returns>HRESULT of the attempted resize.</returns>
+HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
 {
     const auto publicTerminal = static_cast<HwndTerminal*>(terminal);
 
@@ -446,8 +449,53 @@ HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double heig
         static_cast<int>(height),
         0));
 
-    const SIZE windowSize{ static_cast<short>(width), static_cast<short>(height) };
+    const SIZE windowSize{ width, height };
     return publicTerminal->Refresh(windowSize, dimensions);
+}
+
+/// <summary>
+/// Helper method for resizing the terminal using character column and row counts
+/// </summary>
+/// <param name="terminal">Pointer to the terminal object.</param>
+/// <param name="dimensionsInCharacters">New terminal size in row and column count.</param>
+/// <param name="dimensionsInPixels">Out parameter with the new size of the renderer.</param>
+/// <returns>HRESULT of the attempted resize.</returns>
+HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensionsInCharacters, _Out_ SIZE* dimensionsInPixels)
+{
+    RETURN_HR_IF_NULL(E_INVALIDARG, dimensionsInPixels);
+
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    const auto viewInCharacters = Viewport::FromDimensions({ 0, 0 }, { (dimensionsInCharacters.X), (dimensionsInCharacters.Y) });
+    const auto viewInPixels = publicTerminal->_renderEngine->GetViewportInPixels(viewInCharacters);
+
+    dimensionsInPixels->cx = viewInPixels.Width();
+    dimensionsInPixels->cy = viewInPixels.Height();
+
+    COORD unused{ 0, 0 };
+
+    return TerminalTriggerResize(terminal, viewInPixels.Width(), viewInPixels.Height(), &unused);
+}
+
+/// <summary>
+/// Calculates the amount of rows and columns that fit in the provided width and height.
+/// </summary>
+/// <param name="terminal">Terminal pointer</param>
+/// <param name="width">Width of the terminal area to calculate.</param>
+/// <param name="height">Height of the terminal area to calculate.</param>
+/// <param name="dimensions">Out parameter containing the columns and rows that fit the new size.</param>
+/// <returns>HRESULT of the calculation.</returns>
+HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions)
+{
+    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
+
+    const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, { width, height });
+    const auto viewInCharacters = publicTerminal->_renderEngine->GetViewportInCharacters(viewInPixels);
+
+    dimensions->X = viewInCharacters.Width();
+    dimensions->Y = viewInCharacters.Height();
+
+    return S_OK;
 }
 
 void _stdcall TerminalDpiChanged(void* terminal, int newDpi)
@@ -745,7 +793,7 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
         }
     }
 
-    publicTerminal->_terminal->SetCursorStyle(theme.CursorStyle);
+    publicTerminal->_terminal->SetCursorStyle(static_cast<DispatchTypes::CursorStyle>(theme.CursorStyle));
 
     publicTerminal->_desiredFont = { fontFamily, 0, DEFAULT_FONT_WEIGHT, { 0, fontSize }, CP_UTF8 };
     publicTerminal->_UpdateFont(newDpi);
@@ -758,18 +806,6 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     COORD dimensions = {};
     const SIZE windowSize{ windowRect.right - windowRect.left, windowRect.bottom - windowRect.top };
     publicTerminal->Refresh(windowSize, &dimensions);
-}
-
-// Resizes the terminal to the specified rows and columns.
-HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions)
-{
-    const auto publicTerminal = static_cast<const HwndTerminal*>(terminal);
-
-    auto lock = publicTerminal->_terminal->LockForWriting();
-    publicTerminal->_terminal->ClearSelection();
-    publicTerminal->_renderer->TriggerRedrawAll();
-
-    return publicTerminal->_terminal->UserResize(dimensions);
 }
 
 void _stdcall TerminalBlinkCursor(void* terminal)

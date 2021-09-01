@@ -17,7 +17,7 @@ Revision History:
 
 #pragma once
 
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 namespace OneCoreDelay
 {

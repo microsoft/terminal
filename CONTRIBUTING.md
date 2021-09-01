@@ -14,7 +14,7 @@ The point of doing all this work in public is to ensure that we are holding ours
 
 The team triages new issues several times a week. During triage, the team uses labels to categorize, manage, and drive the project workflow.
 
-We employ [a bot engine](https://github.com/microsoft/terminal/blob/master/doc/bot.md) to help us automate common processes within our workflow.
+We employ [a bot engine](https://github.com/microsoft/terminal/blob/main/doc/bot.md) to help us automate common processes within our workflow.
 
 We drive the bot by tagging issues with specific labels which cause the bot engine to close issues, merge branches, etc. This bot engine helps us keep the repo clean by automating the process of notifying appropriate parties if/when information/follow-up is needed, and closing stale issues/PRs after reminders have remained unanswered for several days.
 
@@ -43,7 +43,7 @@ If no existing item describes your issue/feature, great - please file a new issu
 * Have a question that you don't see answered in docs, videos, etc.? File an issue
 * Want to know if we're planning on building a particular feature? File an issue
 * Got a great idea for a new feature? File an issue/request/idea
-* Don't understand how to do something? File an issue/Community Guidance Request
+* Don't understand how to do something? File an issue
 * Found an existing issue that describes yours? Great - upvote and add additional commentary / info / repro-steps / etc.
 
 When you hit "New Issue", select the type of issue closest to what you want to report/ask/request:
@@ -111,13 +111,13 @@ However, some issues/features will require careful thought & formal design befor
 
 Specs help collaborators discuss different approaches to solve a problem, describe how the feature will behave, how the feature will impact the user, what happens if something goes wrong, etc. Driving towards agreement in a spec, before any code is written, often results in simpler code, and less wasted effort in the long run.
 
-Specs will be managed in a very similar manner as code contributions so please follow the "Fork, Branch and Create your PR" below.
+Specs will be managed in a very similar manner as code contributions so please follow the "[Fork, Branch and Create your PR](CONTRIBUTING.md#fork-clone-branch-and-create-your-pr)" section below.
 
 ### Writing / Contributing-to a Spec
 
 To write/contribute to a spec: fork, branch and commit via PRs, as you would with any code changes.
 
-Specs are written in markdown, stored under the `\doc\spec` folder and named `[issue id] - [spec description].md`.
+Specs are written in markdown, stored under the [`\doc\specs`](./doc/specs) folder and named `[issue id] - [spec description].md`.
 
 👉 **It is important to follow the spec templates and complete the requested information**. The available spec templates will help ensure that specs contain the minimum information & decisions necessary to permit development to begin. In particular, specs require you to confirm that you've already discussed the issue/idea with the team in an issue and that you provide the issue ID for reference.
 
@@ -140,6 +140,13 @@ Once you've discussed your proposed feature/fix/etc. with a team member, and you
 1. Create & push a feature branch
 1. Create a [Draft Pull Request (PR)](https://github.blog/2019-02-14-introducing-draft-pull-requests/)
 1. Work on your changes
+1. Build and see if it works. Consult [How to build OpenConsole](./doc/building.md) if you have problems.
+
+### Testing
+
+Testing is a key component in the development workflow. Both Windows Terminal and Windows Console use TAEF(the Test Authoring and Execution Framework) as the main framework for testing.
+
+If your changes affect existing test cases, or you're working on brand new features and also the accompanying test cases, see [TAEF](./doc/TAEF.md) for more information about how to validate your work locally.
 
 ### Code Review
 
@@ -149,7 +156,7 @@ When you'd like the team to take a look, (even if the work is not yet fully-comp
 
 ### Merge
 
-Once your code has been reviewed and approved by the requisite number of team members, it will be merged into the master branch. Once merged, your PR will be automatically closed.
+Once your code has been reviewed and approved by the requisite number of team members, it will be merged into the main branch. Once merged, your PR will be automatically closed.
 
 ---
 

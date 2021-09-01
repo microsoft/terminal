@@ -6,6 +6,8 @@
 #include "OptionsPage.h" // For InitializeCursorSize
 #include "ColorControl.h"
 #include <functional>
+#include "../propslib/DelegationConfig.hpp"
+#include "../types/inc/User32Utils.hpp"
 
 // From conattrs.h
 const COLORREF INVALID_COLOR = 0xffffffff;
@@ -85,6 +87,41 @@ void _UpdateTextAndScroll(const HWND hDlg,
 {
     UpdateItem(hDlg, textItem, value);
     SendDlgItemMessage(hDlg, scrollItem, UDM_SETPOS, 0, MAKELONG(value, 0));
+}
+
+void _PrepDefAppCombo(const HWND hDlg,
+                      const int dlgItem,
+                      const std::vector<DelegationConfig::DelegationPackage>& list,
+                      const DelegationConfig::DelegationPackage& selected)
+{
+    const HWND hCombo = GetDlgItem(hDlg, dlgItem);
+    ComboBox_ResetContent(hCombo);
+
+    DWORD selectedIndex = 0;
+    for (DWORD i = 0; i < gsl::narrow<DWORD>(list.size()); ++i)
+    {
+        auto& item = list[i];
+
+        // An empty CLSID is a sentinel for the inbox console.
+        if (item.terminal.clsid == CLSID{ 0 })
+        {
+            const auto name = GetStringResource(IDS_TERMINAL_DEF_INBOX);
+            ComboBox_AddString(hCombo, name.c_str());
+        }
+        else
+        {
+            ComboBox_AddString(hCombo, item.terminal.name.c_str());
+        }
+        ComboBox_SetItemData(hCombo, i, &item);
+        if (selected == item)
+        {
+            selectedIndex = i;
+        }
+    }
+
+    ComboBox_SetCurSel(hCombo, selectedIndex);
+
+    ComboBox_Enable(hCombo, TRUE);
 }
 
 bool InitTerminalDialog(const HWND hDlg) noexcept
@@ -180,6 +217,11 @@ bool InitTerminalDialog(const HWND hDlg) noexcept
                      IDD_TERMINAL_LEGACY_CURSOR + gpStateInfo->CursorType);
 
     CheckDlgButton(hDlg, IDD_DISABLE_SCROLLFORWARD, gpStateInfo->TerminalScrolling);
+
+    _PrepDefAppCombo(hDlg,
+                     IDD_TERMINAL_COMBO_DEFTERM,
+                     g_availablePackages,
+                     g_selectedPackage);
 
     return true;
 }
@@ -341,10 +383,26 @@ bool TerminalDlgCommand(const HWND hDlg, const WORD item, const WORD command) no
         break;
     }
     case IDD_DISABLE_SCROLLFORWARD:
+    {
         gpStateInfo->TerminalScrolling = IsDlgButtonChecked(hDlg, IDD_DISABLE_SCROLLFORWARD);
         UpdateApplyButton(hDlg);
         handled = true;
         break;
+    }
+    case IDD_TERMINAL_COMBO_DEFTERM:
+    {
+        if (CBN_SELCHANGE == command)
+        {
+            const HWND hCombo = GetDlgItem(hDlg, IDD_TERMINAL_COMBO_DEFTERM);
+            const DWORD comboItem = ComboBox_GetCurSel(hCombo);
+            if (CB_ERR != comboItem)
+            {
+                const auto pPackage = reinterpret_cast<const DelegationConfig::DelegationPackage* const>(ComboBox_GetItemData(hCombo, comboItem));
+                g_selectedPackage = *pPackage;
+            }
+        }
+        break;
+    }
     }
 
     return handled;

@@ -95,4 +95,29 @@ class StaticMapTests
         VERIFY_THROWS(unused = intIntMap[7], std::runtime_error);
     }
 #pragma warning(pop)
+
+    TEST_METHOD(Presort)
+    {
+        static constexpr til::presorted_static_map intIntMap{
+            std::pair{ 1, 100 },
+            std::pair{ 3, 300 },
+            std::pair{ 5, 500 },
+        };
+
+        VERIFY_ARE_EQUAL(100, intIntMap.at(1));
+        VERIFY_ARE_EQUAL(300, intIntMap.at(3));
+        VERIFY_ARE_EQUAL(500, intIntMap.at(5));
+
+        int unused{};
+        VERIFY_THROWS(unused = intIntMap.at(0), std::runtime_error);
+        VERIFY_THROWS(unused = intIntMap.at(4), std::runtime_error);
+        VERIFY_THROWS(unused = intIntMap.at(7), std::runtime_error);
+
+#pragma warning(push)
+#pragma warning(disable : 26446) // Suppress bounds.4 check for subscript operator.
+        VERIFY_ARE_EQUAL(500, intIntMap[5]);
+        VERIFY_THROWS(unused = intIntMap[4], std::runtime_error);
+        VERIFY_THROWS(unused = intIntMap[7], std::runtime_error);
+#pragma warning(pop)
+    }
 };

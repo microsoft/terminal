@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "..\types\inc\viewport.hpp"
+#include "../types/inc/viewport.hpp"
 
 #include <thread>
 #include <vector>

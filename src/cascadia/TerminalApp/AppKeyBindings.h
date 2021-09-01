@@ -4,16 +4,13 @@
 #pragma once
 
 #include "AppKeyBindings.g.h"
-#include "ActionArgs.h"
 #include "ShortcutActionDispatch.h"
-#include "..\inc\cppwinrt_utils.h"
+#include "../inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
 {
     class SettingsTests;
-    class KeyBindingsTests;
-    class TestUtils;
 }
 
 namespace winrt::TerminalApp::implementation
@@ -22,19 +19,18 @@ namespace winrt::TerminalApp::implementation
     {
         AppKeyBindings() = default;
 
-        bool TryKeyChord(winrt::Microsoft::Terminal::TerminalControl::KeyChord const& kc);
+        bool TryKeyChord(winrt::Microsoft::Terminal::Control::KeyChord const& kc);
+        bool IsKeyChordExplicitlyUnbound(winrt::Microsoft::Terminal::Control::KeyChord const& kc);
 
         void SetDispatch(const winrt::TerminalApp::ShortcutActionDispatch& dispatch);
-        void SetKeyMapping(const winrt::TerminalApp::KeyMapping& keymap);
+        void SetActionMap(const Microsoft::Terminal::Settings::Model::IActionMapView& actionMap);
 
     private:
-        winrt::TerminalApp::KeyMapping _keymap{ nullptr };
+        winrt::Microsoft::Terminal::Settings::Model::IActionMapView _actionMap{ nullptr };
 
         winrt::TerminalApp::ShortcutActionDispatch _dispatch{ nullptr };
 
         friend class TerminalAppLocalTests::SettingsTests;
-        friend class TerminalAppLocalTests::KeyBindingsTests;
-        friend class TerminalAppLocalTests::TestUtils;
     };
 }
 

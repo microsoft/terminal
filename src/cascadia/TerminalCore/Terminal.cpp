@@ -6,18 +6,20 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/DefaultSettings.h"
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
+#include "../../types/inc/colorTable.hpp"
 
-#include <winrt/Microsoft.Terminal.TerminalControl.h>
+#include <winrt/Microsoft.Terminal.Core.h>
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
+
+using PointTree = interval_tree::IntervalTree<til::point, size_t>;
 
 static std::wstring _KeyEventsToText(std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite)
 {
@@ -47,7 +49,11 @@ Terminal::Terminal() :
     _snapOnInput{ true },
     _altGrAliasing{ true },
     _blockSelection{ false },
-    _selection{ std::nullopt }
+    _selection{ std::nullopt },
+    _taskbarState{ 0 },
+    _taskbarProgress{ 0 },
+    _trimBlockSelection{ false },
+    _intenseIsBright{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -103,11 +109,80 @@ void Terminal::CreateFromSettings(ICoreSettings settings,
 // - settings: an ICoreSettings with new settings values for us to use.
 void Terminal::UpdateSettings(ICoreSettings settings)
 {
-    _defaultFg = settings.DefaultForeground();
-    _defaultBg = settings.DefaultBackground();
+    UpdateAppearance(settings);
+
+    _snapOnInput = settings.SnapOnInput();
+    _altGrAliasing = settings.AltGrAliasing();
+    _wordDelimiters = settings.WordDelimiters();
+    _suppressApplicationTitle = settings.SuppressApplicationTitle();
+    _startingTitle = settings.StartingTitle();
+    _trimBlockSelection = settings.TrimBlockSelection();
+
+    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
+
+    if (settings.TabColor() == nullptr)
+    {
+        _tabColor = std::nullopt;
+    }
+    else
+    {
+        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
+    }
+
+    if (!_startingTabColor && settings.StartingTabColor())
+    {
+        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
+    }
+
+    if (_pfnTabColorChanged)
+    {
+        _pfnTabColorChanged(GetTabColor());
+    }
+
+    // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
+    // have a smaller scrollback. We should do this carefully - if the new buffer
+    // size is smaller than where the mutable viewport currently is, we'll want
+    // to make sure to rotate the buffer contents upwards, so the mutable viewport
+    // remains at the bottom of the buffer.
+    if (_buffer)
+    {
+        // Clear the patterns first
+        _buffer->ClearPatternRecognizers();
+        if (settings.DetectURLs())
+        {
+            // Add regex pattern recognizers to the buffer
+            // For now, we only add the URI regex pattern
+            _hyperlinkPatternId = _buffer->AddPatternRecognizer(linkPattern);
+            UpdatePatternsUnderLock();
+        }
+        else
+        {
+            ClearPatternTree();
+        }
+    }
+}
+
+// Method Description:
+// - Update our internal properties to match the new values in the provided
+//   CoreAppearance object.
+// Arguments:
+// - appearance: an ICoreAppearance with new settings values for us to use.
+void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
+{
+    // Set the default background as transparent to prevent the
+    // DX layer from overwriting the background image or acrylic effect
+    til::color newBackgroundColor{ appearance.DefaultBackground() };
+    _defaultBg = newBackgroundColor.with_alpha(0);
+    _defaultFg = appearance.DefaultForeground();
+    _intenseIsBright = appearance.IntenseIsBright();
+
+    for (int i = 0; i < 16; i++)
+    {
+        _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
+    }
 
     CursorType cursorShape = CursorType::VerticalBar;
-    switch (settings.CursorShape())
+    switch (appearance.CursorShape())
     {
     case CursorStyle::Underscore:
         cursorShape = CursorType::Underscore;
@@ -121,6 +196,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     case CursorStyle::Vintage:
         cursorShape = CursorType::Legacy;
         break;
+    case CursorStyle::DoubleUnderscore:
+        cursorShape = CursorType::DoubleUnderscore;
+        break;
     default:
     case CursorStyle::Bar:
         cursorShape = CursorType::VerticalBar;
@@ -129,44 +207,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
     if (_buffer)
     {
-        _buffer->GetCursor().SetStyle(settings.CursorHeight(),
-                                      settings.CursorColor(),
+        _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
+                                      til::color{ appearance.CursorColor() },
                                       cursorShape);
     }
 
     _defaultCursorShape = cursorShape;
-
-    for (int i = 0; i < 16; i++)
-    {
-        _colorTable.at(i) = settings.GetColorTableEntry(i);
-    }
-
-    _snapOnInput = settings.SnapOnInput();
-    _altGrAliasing = settings.AltGrAliasing();
-    _wordDelimiters = settings.WordDelimiters();
-    _suppressApplicationTitle = settings.SuppressApplicationTitle();
-    _startingTitle = settings.StartingTitle();
-
-    _terminalInput->ForceDisableWin32InputMode(settings.ForceVTInput());
-
-    if (settings.TabColor() == nullptr)
-    {
-        _tabColor = std::nullopt;
-    }
-    else
-    {
-        _tabColor = til::color(settings.TabColor().Value() | 0xff000000);
-    }
-    if (_pfnTabColorChanged)
-    {
-        _pfnTabColorChanged(_tabColor);
-    }
-
-    // TODO:MSFT:21327402 - if HistorySize has changed, resize the buffer so we
-    // have a smaller scrollback. We should do this carefully - if the new buffer
-    // size is smaller than where the mutable viewport currently is, we'll want
-    // to make sure to rotate the buffer contents upwards, so the mutable viewport
-    // remains at the bottom of the buffer.
 }
 
 // Method Description:
@@ -186,15 +232,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
 
     const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
-
-    const auto oldTop = _mutableViewport.Top();
-
     const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
     COORD bufferSize{ viewportSize.X, newBufferHeight };
-
-    // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
@@ -214,8 +254,14 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     std::unique_ptr<TextBuffer> newTextBuffer;
     try
     {
+        // GH#3848 - Stash away the current attributes the old text buffer is
+        // using. We'll initialize the new buffer with the default attributes,
+        // but after the resize, we'll want to make sure that the new buffer's
+        // current attributes (the ones used for printing new text) match the
+        // old buffer's.
+        const auto oldBufferAttributes = _buffer->GetCurrentAttributes();
         newTextBuffer = std::make_unique<TextBuffer>(bufferSize,
-                                                     _buffer->GetCurrentAttributes(),
+                                                     TextAttribute{},
                                                      0, // temporarily set size to 0 so it won't render.
                                                      _buffer->GetRenderTarget());
 
@@ -243,6 +289,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 
         newViewportTop = oldRows.mutableViewportTop;
         newVisibleTop = oldRows.visibleViewportTop;
+
+        // Restore the active text attributes
+        newTextBuffer->SetCurrentAttributes(oldBufferAttributes);
     }
     CATCH_RETURN();
 
@@ -314,8 +363,8 @@ void Terminal::UpdateSettings(ICoreSettings settings)
             {
                 try
                 {
-                    auto row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
-                    if (row.GetCharRow().WasWrapForced())
+                    auto& row = newTextBuffer->GetRowByOffset(::base::ClampSub(proposedTop, 1));
+                    if (row.WasWrapForced())
                     {
                         proposedTop--;
                     }
@@ -379,6 +428,24 @@ void Terminal::Write(std::wstring_view stringView)
     _stateMachine->ProcessString(stringView);
 }
 
+void Terminal::WritePastedText(std::wstring_view stringView)
+{
+    auto option = ::Microsoft::Console::Utils::FilterOption::CarriageReturnNewline |
+                  ::Microsoft::Console::Utils::FilterOption::ControlCodes;
+
+    std::wstring filtered = ::Microsoft::Console::Utils::FilterStringForPaste(stringView, option);
+    if (IsXtermBracketedPasteModeEnabled())
+    {
+        filtered.insert(0, L"\x1b[200~");
+        filtered.append(L"\x1b[201~");
+    }
+
+    if (_pfnWriteInput)
+    {
+        _pfnWriteInput(filtered);
+    }
+}
+
 // Method Description:
 // - Attempts to snap to the bottom of the buffer, if SnapOnInput is true. Does
 //   nothing if SnapOnInput is set to false, or we're already at the bottom of
@@ -409,15 +476,31 @@ bool Terminal::IsTrackingMouseInput() const noexcept
 }
 
 // Method Description:
-// - If the clicked text is a hyperlink, open it
+// - Given a coord, get the URI at that location
 // Arguments:
-// - The position of the clicked text
+// - The position
 std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 {
     auto attr = _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr();
     if (attr.IsHyperlink())
     {
         auto uri = _buffer->GetHyperlinkUriFromId(attr.GetHyperlinkId());
+        return uri;
+    }
+    // also look through our known pattern locations in our pattern interval tree
+    const auto result = GetHyperlinkIntervalFromPosition(position);
+    if (result.has_value() && result->value == _hyperlinkPatternId)
+    {
+        const auto start = result->start;
+        const auto end = result->stop;
+        std::wstring uri;
+
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        for (auto iter = startIter; iter != endIter; ++iter)
+        {
+            uri += iter->Chars();
+        }
         return uri;
     }
     return {};
@@ -432,6 +515,28 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
 uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 {
     return _buffer->GetCellDataAt(_ConvertToBufferCell(position))->TextAttr().GetHyperlinkId();
+}
+
+// Method description:
+// - Given a position in a URI pattern, gets the start and end coordinates of the URI
+// Arguments:
+// - The position
+// Return value:
+// - The interval representing the start and end coordinates
+std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
+{
+    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
+    if (results.size() > 0)
+    {
+        for (const auto& result : results)
+        {
+            if (result.value == _hyperlinkPatternId)
+            {
+                return result;
+            }
+        }
+    }
+    return std::nullopt;
 }
 
 // Method Description:
@@ -471,28 +576,25 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
     _StoreKeyEvent(vkey, scanCode);
 
-    // As a Terminal we're mostly interested in getting key events from physical hardware (mouse & keyboard).
-    // We're thus ignoring events whose values are outside the valid range and unlikely to be generated by the current keyboard.
-    // It's very likely that a proper followup character event will be sent to us.
-    // This prominently happens using AutoHotKey's keyboard remapping feature,
-    // which sends input events whose vkey is 0xff and scanCode is 0.
-    // We need to check for this early, as _CharacterFromKeyEvent() always returns 0 for such invalid values,
-    // making us believe that this is an actual non-character input, while it usually isn't.
+    // Certain applications like AutoHotKey and its keyboard remapping feature,
+    // send us key events using SendInput() whose values are outside of the valid range.
     // GH#7064
-    if (vkey == 0 || vkey >= 0xff || scanCode == 0)
+    if (vkey == 0 || vkey >= 0xff)
+    {
+        return false;
+    }
+
+    // While not explicitly permitted, a wide range of software, including Windows' own touch keyboard,
+    // sets the wScan member of the KEYBDINPUT structure to 0, resulting in scanCode being 0 as well.
+    // --> Alternatively get the scanCode from the vkey if possible.
+    // GH#7495
+    const auto sc = scanCode ? scanCode : _ScanCodeFromVirtualKey(vkey);
+    if (sc == 0)
     {
         return false;
     }
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
-
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    // (This doesn't apply to Ctrl+Alt+Space.)
-    if (isAltOnlyPressed && vkey == VK_SPACE)
-    {
-        return false;
-    }
 
     // By default Windows treats Ctrl+Alt as an alias for AltGr.
     // When the altGrAliasing setting is set to false, this behaviour should be disabled.
@@ -505,7 +607,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
     // is the underlying ASCII character (e.g. A-Z) on the keyboard in our case.
     // See GH#5525/GH#6211 for more details
     const auto isSuppressedAltGrAlias = !_altGrAliasing && states.IsAltPressed() && states.IsCtrlPressed() && !states.IsAltGrPressed();
-    const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, scanCode, states);
+    const auto ch = isSuppressedAltGrAlias ? UNICODE_NULL : _CharacterFromKeyEvent(vkey, sc, states);
 
     // Delegate it to the character event handler if this key event can be
     // mapped to one (see method description above). For Alt+key combinations
@@ -520,7 +622,7 @@ bool Terminal::SendKeyEvent(const WORD vkey,
         return false;
     }
 
-    KeyEvent keyEv{ keyDown, 1, vkey, scanCode, ch, states.Value() };
+    KeyEvent keyEv{ keyDown, 1, vkey, sc, ch, states.Value() };
     return _terminalInput->HandleKey(&keyEv);
 }
 
@@ -564,13 +666,6 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
 // - false otherwise.
 bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
-    {
-        return false;
-    }
-
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
     {
@@ -590,6 +685,53 @@ bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const Contro
     const auto handledDown = _terminalInput->HandleKey(&keyDown);
     const auto handledUp = _terminalInput->HandleKey(&keyUp);
     return handledDown || handledUp;
+}
+
+// Method Description:
+// - Invalidates the regions described in the given pattern tree for the rendering purposes
+// Arguments:
+// - The interval tree containing regions that need to be invalidated
+void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, size_t>& tree)
+{
+    const auto vis = _VisibleStartIndex();
+    auto invalidate = [=](const PointTree::interval& interval) {
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
+        _InvalidateFromCoords(startCoord, endCoord);
+    };
+    tree.visit_all(invalidate);
+}
+
+// Method Description:
+// - Given start and end coords, invalidates all the regions between them
+// Arguments:
+// - The start and end coords
+void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
+{
+    if (start.Y == end.Y)
+    {
+        SMALL_RECT region{ start.X, start.Y, end.X, end.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
+    else
+    {
+        const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
+
+        // invalidate the first line
+        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+
+        if ((end.Y - start.Y) > 1)
+        {
+            // invalidate the lines in between the first and last line
+            region = til::rectangle(0, start.Y + 1, rowSize - 1, end.Y - 1);
+            _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+        }
+
+        // invalidate the last line
+        region = til::rectangle(0, end.Y, end.X, end.Y);
+        _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
+    }
 }
 
 // Method Description:
@@ -637,8 +779,6 @@ WORD Terminal::_VirtualKeyFromCharacter(const wchar_t ch) noexcept
 wchar_t Terminal::_CharacterFromKeyEvent(const WORD vkey, const WORD scanCode, const ControlKeyStates states) noexcept
 try
 {
-    const auto sc = scanCode != 0 ? scanCode : _ScanCodeFromVirtualKey(vkey);
-
     // We might want to use GetKeyboardState() instead of building our own keyState.
     // The question is whether that's necessary though. For now it seems to work fine as it is.
     std::array<BYTE, 256> keyState = {};
@@ -657,7 +797,7 @@ try
     // * If bit 0 is set, a menu is active.
     //   If this flag is not specified ToUnicodeEx will send us character events on certain Alt+Key combinations (e.g. Alt+Arrow-Up).
     // * If bit 2 is set, keyboard state is not changed (Windows 10, version 1607 and newer)
-    const auto result = ToUnicodeEx(vkey, sc, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b101, nullptr);
+    const auto result = ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b101, nullptr);
 
     // TODO:GH#2853 We're only handling single UTF-16 code points right now, since that's the only thing KeyEvent supports.
     return result == 1 || result == -1 ? buffer.at(0) : 0;
@@ -707,9 +847,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
 {
-    return std::shared_lock<std::shared_mutex>(_readWriteLock);
+    return std::unique_lock{ _readWriteLock };
 }
 
 // Method Description:
@@ -717,9 +857,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
 {
-    return std::unique_lock<std::shared_mutex>(_readWriteLock);
+    return std::unique_lock{ _readWriteLock };
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept
@@ -851,7 +991,35 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
+
+            // Update our selection too, so it doesn't move as the buffer is cycled
+            if (_selection)
+            {
+                // If the start of the selection is above 0, we can reduce both the start and end by 1
+                if (_selection->start.Y > 0)
+                {
+                    _selection->start.Y -= 1;
+                    _selection->end.Y -= 1;
+                }
+                else
+                {
+                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
+                    if (_selection->end.Y > 0)
+                    {
+                        _selection->start.X = 0;
+                        _selection->end.Y -= 1;
+                    }
+                    else
+                    {
+                        // Both the start and end of the selection are at 0, clear the selection
+                        _selection.reset();
+                    }
+                }
+            }
         }
+
+        // manually erase our pattern intervals since the locations have changed now
+        _patternIntervalTree = {};
     }
 
     // Update Cursor Position
@@ -908,7 +1076,12 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
-    _NotifyTerminalCursorPositionChanged();
+    // Firing the CursorPositionChanged event is very expensive so we try not to do that when
+    // the cursor does not need to be redrawn.
+    if (!cursor.IsDeferDrawing())
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
@@ -965,7 +1138,12 @@ void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noe
     _pfnWriteInput.swap(pfn);
 }
 
-void Terminal::SetTitleChangedCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+void Terminal::SetWarningBellCallback(std::function<void()> pfn) noexcept
+{
+    _pfnWarningBell.swap(pfn);
+}
+
+void Terminal::SetTitleChangedCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnTitleChanged.swap(pfn);
 }
@@ -975,7 +1153,7 @@ void Terminal::SetTabColorChangedCallback(std::function<void(const std::optional
     _pfnTabColorChanged.swap(pfn);
 }
 
-void Terminal::SetCopyToClipboardCallback(std::function<void(const std::wstring_view&)> pfn) noexcept
+void Terminal::SetCopyToClipboardCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnCopyToClipboard.swap(pfn);
 }
@@ -993,10 +1171,20 @@ void Terminal::SetCursorPositionChangedCallback(std::function<void()> pfn) noexc
 // Method Description:
 // - Allows setting a callback for when the background color is changed
 // Arguments:
-// - pfn: a function callback that takes a uint32 (DWORD COLORREF) color in the format 0x00BBGGRR
-void Terminal::SetBackgroundCallback(std::function<void(const COLORREF)> pfn) noexcept
+// - pfn: a function callback that takes a color
+void Terminal::SetBackgroundCallback(std::function<void(const til::color)> pfn) noexcept
 {
     _pfnBackgroundColorChanged.swap(pfn);
+}
+
+// Method Description:
+// - Allows settings a callback for settings the taskbar progress indicator
+// Arguments:
+// - pfn: a function callback that takes 2 size_t parameters, one indicating the progress state
+//        and the other indicating the progress value
+void Microsoft::Terminal::Core::Terminal::TaskbarProgressChangedCallback(std::function<void()> pfn) noexcept
+{
+    _pfnTaskbarProgressChanged.swap(pfn);
 }
 
 void Terminal::_InitializeColorTable()
@@ -1032,12 +1220,57 @@ bool Terminal::IsCursorBlinkingAllowed() const noexcept
     return cursor.IsBlinkingAllowed();
 }
 
+// Method Description:
+// - Update our internal knowledge about where regex patterns are on the screen
+// - This is called by TerminalControl (through a throttled function) when the visible
+//   region changes (for example by text entering the buffer or scrolling)
+// - INVARIANT: this function can only be called if the caller has the writing lock on the terminal
+void Terminal::UpdatePatternsUnderLock() noexcept
+{
+    auto oldTree = _patternIntervalTree;
+    _patternIntervalTree = _buffer->GetPatterns(_VisibleStartIndex(), _VisibleEndIndex());
+    _InvalidatePatternTree(oldTree);
+    _InvalidatePatternTree(_patternIntervalTree);
+}
+
+// Method Description:
+// - Clears and invalidates the interval pattern tree
+// - This is called to prevent the renderer from rendering patterns while the
+//   visible region is changing
+void Terminal::ClearPatternTree() noexcept
+{
+    auto oldTree = _patternIntervalTree;
+    _patternIntervalTree = {};
+    _InvalidatePatternTree(oldTree);
+}
+
+// Method Description:
+// - Returns the tab color
+// If the starting color exits, it's value is preferred
 const std::optional<til::color> Terminal::GetTabColor() const noexcept
 {
-    return _tabColor;
+    return _startingTabColor.has_value() ? _startingTabColor : _tabColor;
 }
 
 BlinkingState& Terminal::GetBlinkingState() const noexcept
 {
     return _blinkingState;
+}
+
+// Method Description:
+// - Gets the internal taskbar state value
+// Return Value:
+// - The taskbar state
+const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexcept
+{
+    return _taskbarState;
+}
+
+// Method Description:
+// - Gets the internal taskbar progress value
+// Return Value:
+// - The taskbar progress
+const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
+{
+    return _taskbarProgress;
 }

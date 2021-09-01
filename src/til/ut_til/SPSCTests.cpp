@@ -50,11 +50,43 @@ class SPSCTests
         TEST_CLASS_PROPERTY(L"TestTimeout", L"0:0:10") // 10s timeout
     END_TEST_CLASS()
 
+    TEST_METHOD(SmokeTest);
     TEST_METHOD(DropEmptyTest);
     TEST_METHOD(DropSameRevolutionTest);
     TEST_METHOD(DropDifferentRevolutionTest);
     TEST_METHOD(IntegrationTest);
 };
+
+void SPSCTests::SmokeTest()
+{
+    // This test mostly ensures that the API wasn't broken.
+
+    // construction
+    auto [tx, rx] = til::spsc::channel<int>(32);
+    std::array<int, 3> data{};
+
+    // move constructor
+    til::spsc::producer tx2(std::move(tx));
+    til::spsc::consumer rx2(std::move(rx));
+
+    // move assignment operator
+    tx = std::move(tx2);
+    rx = std::move(rx2);
+
+    // push
+    tx.emplace(0);
+    tx.push(data.begin(), data.end());
+    tx.push(til::spsc::block_initially, data.begin(), data.end());
+    tx.push(til::spsc::block_forever, data.begin(), data.end());
+    tx.push_n(data.begin(), data.size());
+    tx.push_n(til::spsc::block_initially, data.begin(), data.size());
+    tx.push_n(til::spsc::block_forever, data.begin(), data.size());
+
+    // pop
+    std::optional<int> x = rx.pop();
+    rx.pop_n(til::spsc::block_initially, data.begin(), data.size());
+    rx.pop_n(til::spsc::block_forever, data.begin(), data.size());
+}
 
 void SPSCTests::DropEmptyTest()
 {

@@ -11,10 +11,10 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <ClCompile Include="..\BlinkingState.cpp" />
-    <ClCompile Include="..\Cluster.cpp" />
     <ClCompile Include="..\FontInfo.cpp" />
     <ClCompile Include="..\FontInfoBase.cpp" />
     <ClCompile Include="..\FontInfoDesired.cpp" />
+    <ClCompile Include="..\FontResource.cpp" />
     <ClCompile Include="..\RenderEngineBase.cpp" />
     <ClCompile Include="..\renderer.cpp" />
     <ClCompile Include="..\thread.cpp" />
@@ -28,6 +28,7 @@
     <ClInclude Include="..\..\inc\FontInfo.hpp" />
     <ClInclude Include="..\..\inc\FontInfoBase.hpp" />
     <ClInclude Include="..\..\inc\FontInfoDesired.hpp" />
+    <ClInclude Include="..\..\inc\FontResource.hpp" />
     <ClInclude Include="..\..\inc\IFontDefaultList.hpp" />
     <ClInclude Include="..\..\inc\IRenderData.hpp" />
     <ClInclude Include="..\..\inc\IRenderEngine.hpp" />

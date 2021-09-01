@@ -59,7 +59,7 @@ std::vector<SMALL_RECT> Selection::GetSelectionRects() const
     endSelectionAnchor.Y = (_coordSelectionAnchor.Y == _srSelectionRect.Top) ? _srSelectionRect.Bottom : _srSelectionRect.Top;
 
     const auto blockSelection = !IsLineSelection();
-    return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection);
+    return screenInfo.GetTextBuffer().GetTextRects(_coordSelectionAnchor, endSelectionAnchor, blockSelection, false);
 }
 
 // Routine Description:
@@ -160,7 +160,11 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
     }
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    if (pNotifier)
+    {
+        pNotifier->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    }
 }
 
 // Routine Description:
@@ -258,7 +262,11 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     _PaintSelection();
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    if (pNotifier)
+    {
+        pNotifier->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    }
     LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
 }
 
@@ -417,7 +425,7 @@ void Selection::ColorSelection(const COORD coordSelectionStart, const COORD coor
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
         const auto& screenInfo = gci.GetActiveOutputBuffer();
 
-        const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd);
+        const auto rectangles = screenInfo.GetTextBuffer().GetTextRects(coordSelectionStart, coordSelectionEnd, false, true);
         for (const auto& rect : rectangles)
         {
             ColorSelection(rect, attr);

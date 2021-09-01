@@ -18,7 +18,7 @@
 
 #include "ApiRoutines.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -334,6 +334,8 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
+        const auto oldQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
+
         if (WI_IsAnyFlagSet(mode, PRIVATE_MODES))
         {
             WI_SetFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
@@ -355,6 +357,19 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         else
         {
             WI_ClearFlag(gci.Flags, CONSOLE_USE_PRIVATE_FLAGS);
+        }
+
+        const auto newQuickEditMode{ WI_IsFlagSet(gci.Flags, CONSOLE_QUICK_EDIT_MODE) };
+
+        // Mouse input should be received when mouse mode is on and quick edit mode is off
+        // (for more information regarding the quirks of mouse mode and why/how it relates
+        //  to quick edit mode, see GH#9970)
+        const auto oldMouseMode{ !oldQuickEditMode && WI_IsFlagSet(context.InputMode, ENABLE_MOUSE_INPUT) };
+        const auto newMouseMode{ !newQuickEditMode && WI_IsFlagSet(mode, ENABLE_MOUSE_INPUT) };
+
+        if (oldMouseMode != newMouseMode)
+        {
+            gci.GetActiveInputBuffer()->PassThroughWin32MouseRequest(newMouseMode);
         }
 
         context.InputMode = mode;
@@ -524,7 +539,24 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         COORD const coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
         if (size.X != coordScreenBufferSize.X || size.Y != coordScreenBufferSize.Y)
         {
-            RETURN_NTSTATUS(screenInfo.ResizeScreenBuffer(size, TRUE));
+            RETURN_IF_NTSTATUS_FAILED(screenInfo.ResizeScreenBuffer(size, TRUE));
+        }
+
+        // Make sure the viewport doesn't now overflow the buffer dimensions.
+        auto overflow = screenInfo.GetViewport().BottomRightExclusive() - screenInfo.GetBufferSize().Dimensions();
+        if (overflow.X > 0 || overflow.Y > 0)
+        {
+            overflow = { std::max<SHORT>(overflow.X, 0), std::max<SHORT>(overflow.Y, 0) };
+            RETURN_IF_NTSTATUS_FAILED(screenInfo.SetViewportOrigin(false, -overflow, false));
+        }
+
+        // And also that the cursor position is clamped within the buffer boundaries.
+        auto& cursor = screenInfo.GetTextBuffer().GetCursor();
+        auto clampedCursorPosition = cursor.GetPosition();
+        screenInfo.GetBufferSize().Clamp(clampedCursorPosition);
+        if (clampedCursorPosition != cursor.GetPosition())
+        {
+            cursor.SetPosition(clampedCursorPosition);
         }
 
         return S_OK;
@@ -620,6 +652,23 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
         //  (see https://msdn.microsoft.com/en-us/library/windows/desktop/ms686125(v=vs.85).aspx and DoSrvSetConsoleWindowInfo)
         // Note that it also doesn't set cursor position.
 
+        // However, we do need to make sure the viewport doesn't now overflow the buffer dimensions.
+        auto overflow = context.GetViewport().BottomRightExclusive() - context.GetBufferSize().Dimensions();
+        if (overflow.X > 0 || overflow.Y > 0)
+        {
+            overflow = { std::max<SHORT>(overflow.X, 0), std::max<SHORT>(overflow.Y, 0) };
+            RETURN_IF_NTSTATUS_FAILED(context.SetViewportOrigin(false, -overflow, false));
+        }
+
+        // And also that the cursor position is clamped within the buffer boundaries.
+        auto& cursor = context.GetTextBuffer().GetCursor();
+        auto clampedCursorPosition = cursor.GetPosition();
+        context.GetBufferSize().Clamp(clampedCursorPosition);
+        if (clampedCursorPosition != cursor.GetPosition())
+        {
+            cursor.SetPosition(clampedCursorPosition);
+        }
+
         return S_OK;
     }
     CATCH_RETURN();
@@ -670,13 +719,18 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
                                                buffer.GetViewport().ToInclusive();
         COORD delta{ 0 };
         {
-            if (currentViewport.Left > position.X)
+            // When evaluating the X offset, we must convert the buffer position to
+            // equivalent screen coordinates, taking line rendition into account.
+            const auto lineRendition = buffer.GetTextBuffer().GetLineRendition(position.Y);
+            const auto screenPosition = BufferToScreenLine({ position.X, position.Y, position.X, position.Y }, lineRendition);
+
+            if (currentViewport.Left > screenPosition.Left)
             {
-                delta.X = position.X - currentViewport.Left;
+                delta.X = screenPosition.Left - currentViewport.Left;
             }
-            else if (currentViewport.Right < position.X)
+            else if (currentViewport.Right < screenPosition.Right)
             {
-                delta.X = position.X - currentViewport.Right;
+                delta.X = screenPosition.Right - currentViewport.Right;
             }
 
             if (currentViewport.Top > position.Y)
@@ -1369,12 +1423,16 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
     textBuffer.GetCursor().SetIsOn(true);
 
     // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
-    textBuffer.GetRowByOffset(cursorPosition.Y).GetCharRow().SetWrapForced(false);
+    textBuffer.GetRowByOffset(cursorPosition.Y).SetWrapForced(false);
 
     cursorPosition.Y += 1;
     if (withReturn)
     {
         cursorPosition.X = 0;
+    }
+    else
+    {
+        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
     }
 
     return AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr);
@@ -1393,7 +1451,8 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 
     const SMALL_RECT viewport = screenInfo.GetActiveBuffer().GetViewport().ToInclusive();
     const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
-    const COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    newCursorPosition = screenInfo.GetTextBuffer().ClampPositionWithinLine(newCursorPosition);
 
     // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
     // We want it to stay exactly where it is.
@@ -1567,7 +1626,7 @@ void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view params)
 {
     auto attr = screenInfo.GetAttributes();
-    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(params);
+    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(uri, params);
     attr.SetHyperlinkId(id);
     screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
     screenInfo.GetTextBuffer().AddHyperlinkToMap(uri, id);
@@ -1578,6 +1637,30 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
     auto attr = screenInfo.GetAttributes();
     attr.SetHyperlinkId(0);
     screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
+}
+
+// Routine Description:
+// - A private API call for updating the active soft font.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                          const SIZE cellSize,
+                                          const size_t centeringHint) noexcept
+{
+    try
+    {
+        auto* pRender = ServiceLocator::LocateGlobals().pRender;
+        if (pRender)
+        {
+            pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -1626,33 +1709,21 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
         }
 
         // Get the appropriate title and length depending on the mode.
-        const wchar_t* pwszTitle;
-        size_t cchTitleLength;
-
-        if (isOriginal)
-        {
-            pwszTitle = gci.GetOriginalTitle().c_str();
-            cchTitleLength = gci.GetOriginalTitle().length();
-        }
-        else
-        {
-            pwszTitle = gci.GetTitle().c_str();
-            cchTitleLength = gci.GetTitle().length();
-        }
+        const std::wstring_view storedTitle = isOriginal ? gci.GetOriginalTitle() : gci.GetTitle();
 
         // Always report how much space we would need.
-        needed = cchTitleLength;
+        needed = storedTitle.size();
 
         // If we have a pointer to receive the data, then copy it out.
         if (title.has_value())
         {
-            HRESULT const hr = StringCchCopyNW(title->data(), title->size(), pwszTitle, cchTitleLength);
+            HRESULT const hr = StringCchCopyNW(title->data(), title->size(), storedTitle.data(), storedTitle.size());
 
             // Insufficient buffer is allowed. If we return a partial string, that's still OK by historical/compat standards.
             // Just say how much we managed to return.
             if (SUCCEEDED(hr) || STRSAFE_E_INSUFFICIENT_BUFFER == hr)
             {
-                written = std::min(title->size(), cchTitleLength);
+                written = std::min(title->size(), storedTitle.size());
             }
         }
         return S_OK;
@@ -1884,15 +1955,11 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     //      to embed control characters in that string.
     if (gci.IsInVtIoMode())
     {
-        std::wstring sanitized;
-        sanitized.reserve(title.size());
-        for (size_t i = 0; i < title.size(); i++)
-        {
-            if (title.at(i) >= UNICODE_SPACE)
-            {
-                sanitized.push_back(title.at(i));
-            }
-        }
+        std::wstring sanitized{ title };
+        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](auto ch) {
+                            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                        }),
+                        sanitized.end());
 
         gci.SetTitle({ sanitized });
     }
@@ -2163,10 +2230,14 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         screenInfo.Write(fillData, startPosition, false);
 
         // Notify accessibility
-        auto endPosition = startPosition;
-        const auto bufferSize = screenInfo.GetBufferSize();
-        bufferSize.MoveInBounds(fillLength - 1, endPosition);
-        screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+        if (screenInfo.HasAccessibilityEventing())
+        {
+            auto endPosition = startPosition;
+            const auto bufferSize = screenInfo.GetBufferSize();
+            bufferSize.MoveInBounds(fillLength - 1, endPosition);
+            screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+        }
+
         return S_OK;
     }
     CATCH_RETURN();

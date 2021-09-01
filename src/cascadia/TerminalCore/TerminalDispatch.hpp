@@ -4,6 +4,9 @@
 #include "../../terminal/adapter/termDispatch.hpp"
 #include "ITerminalApi.hpp"
 
+static constexpr size_t TaskbarMaxState{ 4 };
+static constexpr size_t TaskbarMaxProgress{ 100 };
+
 class TerminalDispatch : public Microsoft::Console::VirtualTerminal::TermDispatch
 {
 public:
@@ -13,7 +16,10 @@ public:
     void Print(const wchar_t wchPrintable) noexcept override;
     void PrintString(const std::wstring_view string) noexcept override;
 
-    bool SetGraphicsRendition(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions> options) noexcept override;
+    bool SetGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
+
+    bool PushGraphicsRendition(const ::Microsoft::Console::VirtualTerminal::VTParameters options) noexcept override;
+    bool PopGraphicsRendition() noexcept override;
 
     bool CursorPosition(const size_t line,
                         const size_t column) noexcept override; // CUP
@@ -30,8 +36,14 @@ public:
     bool LineFeed(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::LineFeedType lineFeedType) noexcept override;
 
     bool EraseCharacters(const size_t numChars) noexcept override;
+    bool WarningBell() noexcept override;
     bool CarriageReturn() noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
+
+    bool HorizontalTabSet() noexcept override; // HTS
+    bool ForwardTab(const size_t numTabs) noexcept override; // CHT, HT
+    bool BackwardsTab(const size_t numTabs) noexcept override; // CBT
+    bool TabClear(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::TabClearType clearType) noexcept override; // TBC
 
     bool SetColorTableEntry(const size_t tableIndex, const DWORD color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
@@ -59,20 +71,30 @@ public:
     bool EnableButtonEventMouseMode(const bool enabled) noexcept override; // ?1002
     bool EnableAnyEventMouseMode(const bool enabled) noexcept override; // ?1003
     bool EnableAlternateScroll(const bool enabled) noexcept override; // ?1007
+    bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override; // ?2004
 
-    bool SetPrivateModes(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> /*params*/) noexcept override; // DECSET
-    bool ResetPrivateModes(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> /*params*/) noexcept override; // DECRST
+    bool SetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECSET
+    bool ResetMode(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams /*param*/) noexcept override; // DECRST
 
     bool AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept override;
     bool EndHyperlink() noexcept override;
 
+    bool DoConEmuAction(const std::wstring_view string) noexcept override;
+
 private:
     ::Microsoft::Terminal::Core::ITerminalApi& _terminalApi;
 
-    size_t _SetRgbColorsHelper(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::GraphicsOptions> options,
+    std::vector<bool> _tabStopColumns;
+    bool _initDefaultTabStops = true;
+
+    size_t _SetRgbColorsHelper(const ::Microsoft::Console::VirtualTerminal::VTParameters options,
                                TextAttribute& attr,
                                const bool isForeground) noexcept;
 
-    bool _SetResetPrivateModes(const gsl::span<const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams> params, const bool enable) noexcept;
-    bool _PrivateModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::PrivateModeParams param, const bool enable) noexcept;
+    bool _ModeParamsHelper(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::ModeParams param, const bool enable) noexcept;
+
+    bool _ClearSingleTabStop() noexcept;
+    bool _ClearAllTabStops() noexcept;
+    void _ResetTabStops() noexcept;
+    void _InitTabStopsForWidth(const size_t width);
 };

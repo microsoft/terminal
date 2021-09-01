@@ -23,7 +23,7 @@ Revision History:
 #include "ConsoleShimPolicy.h"
 
 #include <memory>
-#include <wil\resource.h>
+#include <wil/resource.h>
 
 class ConsoleProcessHandle
 {
@@ -40,7 +40,7 @@ public:
     const ConsoleProcessPolicy GetPolicy() const;
     const ConsoleShimPolicy GetShimPolicy() const;
 
-    CD_CONNECTION_INFORMATION GetConnectionInformation() const;
+    CD_CONNECTION_INFORMATION GetConnectionInformation(IDeviceComm* deviceComm) const;
 
 private:
     ConsoleProcessHandle(const DWORD dwProcessId,

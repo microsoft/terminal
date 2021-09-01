@@ -1,48 +1,487 @@
+# This build should never run as CI or against a pull request.
 trigger: none
 pr: none
 
+pool: 
+  name: WinDevPool-L
+  demands: ImageOverride -equals WinDevVS16-latest
+
+parameters:
+  - name: branding
+    displayName: "Branding (Build Type)"
+    type: string
+    default: Release
+    values:
+      - Release
+      - Preview
+  - name: buildTerminal
+    displayName: "Build Windows Terminal MSIX"
+    type: boolean
+    default: true
+  - name: buildTerminalVPack
+    displayName: "Build Windows Terminal VPack"
+    type: boolean
+    default: false
+  - name: buildWPF
+    displayName: "Build Terminal WPF Control"
+    type: boolean
+    default: false
+  - name: pgoBuildMode
+    displayName: "PGO Build Mode"
+    type: string
+    default: Optimize
+    values:
+      - Optimize
+      - Instrument
+      - None
+
+  - name: buildConfigurations
+    type: object
+    default:
+      - Release
+  - name: buildPlatforms
+    type: object
+    default:
+      - x64
+      - x86
+      - arm64
+
 variables:
-  baseYearForVersioning: 2019 # Used by build-console-int
-  versionMajor: 0
-  versionMinor: 1
+  TerminalInternalPackageVersion: "0.0.7"
 
-# When we move off PackageES for Versioning, we'll need to switch
-# name to this format. For now, though, we need to use DayOfYear.Rev
-# to unique our builds, as mandated by PackageES's Setup task.
-# name: '$(versionMajor).$(versionMinor).$(DayOfYear)$(Rev:r).0'
-#
-# Build name/version number above must end with .0 to make the
-# store publication machinery happy.
-name: 'Terminal_$(date:yyMM).$(date:dd)$(rev:rrr)'
-
-# Build Arguments:
-#   WindowsTerminalOfficialBuild=[true,false]
-#     true - this is running on our build agent
-#     false - running locally
-#   WindowsTerminalBranding=[Dev,Preview,Release]
-#     <none>  - Development build resources (default)
-#     Preview - Preview build resources
-#     Release - regular build resources
+name: $(BuildDefinitionName)_$(date:yyMM).$(date:dd)$(rev:rrr)
+resources:
+  repositories:
+  - repository: self
+    type: git
+    ref: main
 jobs:
-  - template: ./templates/build-console-audit-job.yml
-    parameters:
-      platform: x64
+- job: Build
+  strategy:
+    matrix:
+      ${{ each config in parameters.buildConfigurations }}:
+        ${{ each platform in parameters.buildPlatforms }}:
+          ${{ config }}_${{ platform }}:
+            BuildConfiguration: ${{ config }}
+            BuildPlatform: ${{ platform }}
+  displayName: Build
+  cancelTimeoutInMinutes: 1
+  steps:
+  - checkout: self
+    clean: true
+    submodules: true
+    persistCredentials: True
+  - task: PkgESSetupBuild@12
+    displayName: Package ES - Setup Build
+    inputs:
+      disableOutputRedirect: true
+  - task: PowerShell@2
+    displayName: Rationalize Build Platform
+    inputs:
+      targetType: inline
+      script: >-
+        $Arch = "$(BuildPlatform)"
 
-  - template: ./templates/build-console-int.yml
-    parameters:
-      platform: x64
-      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
+        If ($Arch -Eq "x86") { $Arch = "Win32" }
 
-  - template: ./templates/build-console-int.yml
-    parameters:
-      platform: x86
-      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
+        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+  - task: NuGetToolInstaller@1
+    displayName: Use NuGet 5.10
+    inputs:
+      versionSpec: 5.10
+  - task: NuGetCommand@2
+    displayName: NuGet custom
+    inputs:
+      command: custom
+      selectOrConfig: config
+      nugetConfigPath: NuGet.Config
+      arguments: restore OpenConsole.sln -SolutionDirectory $(Build.SourcesDirectory)
+  - task: UniversalPackages@0
+    displayName: Download terminal-internal Universal Package
+    inputs:
+      feedListDownload: 2b3f8893-a6e8-411f-b197-a9e05576da48
+      packageListDownload: e82d490c-af86-4733-9dc4-07b772033204
+      versionListDownload: $(TerminalInternalPackageVersion)
+  - task: TouchdownBuildTask@1
+    displayName: Download Localization Files
+    inputs:
+      teamId: 7105
+      authId: $(TouchdownAppId)
+      authKey: $(TouchdownAppKey)
+      resourceFilePath: >-
+        src\cascadia\TerminalApp\Resources\en-US\Resources.resw
 
-  - template: ./templates/build-console-int.yml
-    parameters:
-      platform: arm64
-      additionalBuildArguments: /p:WindowsTerminalOfficialBuild=true;WindowsTerminalBranding=Preview
+        src\cascadia\TerminalControl\Resources\en-US\Resources.resw
 
-  - template: ./templates/check-formatting.yml
+        src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
 
-  - template: ./templates/release-sign-and-bundle.yml
+        src\cascadia\TerminalSettingsModel\Resources\en-US\Resources.resw
+
+        src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
+
+        src\cascadia\WindowsTerminalUniversal\Resources\en-US\Resources.resw
+
+        src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
+      appendRelativeDir: true
+      localizationTarget: false
+      pseudoSetting: Included
+  - task: PowerShell@2
+    displayName: Move Loc files one level up
+    inputs:
+      targetType: inline
+      script: >-
+        $Files = Get-ChildItem . -R -Filter 'Resources.resw' | ? FullName -Like '*en-US\*\Resources.resw'
+
+        $Files | % { Move-Item -Verbose $_.Directory $_.Directory.Parent.Parent -EA:Ignore }
+      pwsh: true
+  - task: PowerShell@2
+    displayName: Generate NOTICE.html from NOTICE.md
+    inputs:
+      filePath: .\build\scripts\Generate-ThirdPartyNotices.ps1
+      arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
+      pwsh: true
+  - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
+    - task: PowerShell@2
+      displayName: Restore PGO Database
+      inputs:
+        filePath: tools/PGODatabase/restore-pgodb.ps1
+        workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
+  - ${{ if eq(parameters.buildTerminal, true) }}:
+    - task: VSBuild@1
+      displayName: Build solution **\OpenConsole.sln
+      inputs:
+        solution: '**\OpenConsole.sln'
+        vsVersion: 16.0
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        platform: $(BuildPlatform)
+        configuration: $(BuildConfiguration)
+        clean: true
+        maximumCpuCount: true
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: binlog'
+      condition: failed()
+      continueOnError: True
+      inputs:
+        PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
+        ArtifactName: binlog-$(BuildPlatform)
+    - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
+      - task: PowerShell@2
+        displayName: Validate binaries are optimized
+        condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+        inputs:
+          targetType: inline
+          script: >-
+            $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
+
+            foreach ($BinFile in $Binaries) {
+
+              & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile"
+
+            }
+    - task: PowerShell@2
+      displayName: Check MSIX for common regressions
+      inputs:
+        targetType: inline
+        script: >-
+          $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
+
+          .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
+        pwsh: true
+  - ${{ if eq(parameters.buildWPF, true) }}:
+    - task: VSBuild@1
+      displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
+      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+      inputs:
+        solution: '**\OpenConsole.sln'
+        vsVersion: 16.0
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
+        platform: $(BuildPlatform)
+        configuration: $(BuildConfiguration)
+  - task: PowerShell@2
+    displayName: Source Index PDBs
+    inputs:
+      filePath: build\scripts\Index-Pdbs.ps1
+      arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+      errorActionPreference: silentlyContinue
+  - task: ComponentGovernanceComponentDetection@0
+    displayName: Component Detection
+  - task: PowerShell@2
+    displayName: Run Unit Tests
+    condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+    enabled: False
+    inputs:
+      filePath: build\scripts\Run-Tests.ps1
+      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+  - task: PowerShell@2
+    displayName: Run Feature Tests
+    condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+    enabled: False
+    inputs:
+      filePath: build\scripts\Run-Tests.ps1
+      arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+  - ${{ if eq(parameters.buildTerminal, true) }}:
+    - task: CopyFiles@2
+      displayName: Copy *.appx/*.msix to Artifacts
+      inputs:
+        Contents: >-
+          **/*.appx
+
+          **/*.msix
+
+          **/*.appxsym
+
+          !**/Microsoft.VCLibs*.appx
+        TargetFolder: $(Build.ArtifactStagingDirectory)/appx
+        OverWrite: true
+        flattenFolders: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact (appx)
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
+        ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
+  - ${{ if eq(parameters.buildWPF, true) }}:
+    - task: CopyFiles@2
+      displayName: Copy PublicTerminalCore.dll to Artifacts
+      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+      inputs:
+        Contents: >-
+          **/PublicTerminalCore.dll
+
+          **/api-ms-win-core-synch-l1-2-0.dll
+        TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
+        OverWrite: true
+        flattenFolders: true
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact (PublicTerminalCore)
+      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
+        ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
+  - task: PublishSymbols@2
+    displayName: Publish symbols path
+    continueOnError: True
+    inputs:
+      SearchPattern: '**/*.pdb'
+      IndexSources: false
+      SymbolServerType: TeamServices
+
+- ${{ if eq(parameters.buildTerminal, true) }}:
+  - job: BundleAndSign
+    displayName: Create and sign AppX/MSIX bundles
+    dependsOn: Build
+    steps:
+    - checkout: self
+      clean: true
+      submodules: true
+      persistCredentials: True
+    - task: PkgESSetupBuild@12
+      displayName: Package ES - Setup Build
+      inputs:
+        disableOutputRedirect: true
+    - task: DownloadBuildArtifacts@0
+      displayName: Download Artifacts (*.appx, *.msix)
+      inputs:
+        downloadType: specific
+        itemPattern: >-
+          **/*.msix
+
+          **/*.appx
+        extractTars: false
+    - task: PowerShell@2
+      displayName: Create WindowsTerminal*.msixbundle
+      inputs:
+        filePath: build\scripts\Create-AppxBundle.ps1
+        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+    - task: PowerShell@2
+      displayName: Create WindowsTerminalUniversal*.msixbundle
+      inputs:
+        filePath: build\scripts\Create-AppxBundle.ps1
+        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName WindowsTerminalUniversal -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalUniversal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+    - task: EsrpCodeSigning@1
+      displayName: Submit *.msixbundle to ESRP for code signing
+      inputs:
+        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        FolderPath: $(System.ArtifactsDirectory)
+        Pattern: Microsoft.WindowsTerminal*.msixbundle
+        UseMinimatch: true
+        signConfigType: inlineSignParams
+        inlineOperation: >-
+          [
+              {
+                  "KeyCode": "Dynamic",
+                  "CertTemplateName": "WINMSAPP1ST",
+                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                  "OperationCode": "SigntoolSign",
+                  "Parameters": {
+                      "OpusName": "Microsoft",
+                      "OpusInfo": "http://www.microsoft.com",
+                      "FileDigest": "/fd \"SHA256\"",
+                      "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                  },
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0"
+              },
+              {
+                  "KeyCode": "Dynamic",
+                  "CertTemplateName": "WINMSAPP1ST",
+                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+                  "OperationCode": "SigntoolVerify",
+                  "Parameters": {},
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0"
+              }
+          ]
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: appxbundle-signed'
+      inputs:
+        PathtoPublish: $(System.ArtifactsDirectory)
+        ArtifactName: appxbundle-signed
+
+- ${{ if eq(parameters.buildWPF, true) }}:
+  - job: PackageAndSignWPF
+    strategy:
+      matrix:
+        ${{ each config in parameters.buildConfigurations }}:
+          ${{ config }}:
+            BuildConfiguration: ${{ config }}
+    displayName: Create NuGet Package (WPF Terminal Control)
+    dependsOn: Build
+    steps:
+    - checkout: self
+      clean: true
+      submodules: true
+      persistCredentials: True
+    - task: PkgESSetupBuild@12
+      displayName: Package ES - Setup Build
+      inputs:
+        disableOutputRedirect: true
+    - task: DownloadBuildArtifacts@0
+      displayName: Download x86 PublicTerminalCore
+      inputs:
+        artifactName: wpf-dll-x86-$(BuildConfiguration)
+        itemPattern: '**/*.dll'
+        downloadPath: bin\Win32\$(BuildConfiguration)\
+        extractTars: false
+    - task: DownloadBuildArtifacts@0
+      displayName: Download x64 PublicTerminalCore
+      inputs:
+        artifactName: wpf-dll-x64-$(BuildConfiguration)
+        itemPattern: '**/*.dll'
+        downloadPath: bin\x64\$(BuildConfiguration)\
+        extractTars: false
+    - task: PowerShell@2
+      displayName: Move downloaded artifacts up a level
+      inputs:
+        targetType: inline
+        # Find all artifact files and move them up a directory. Ugh.
+        script: >-
+          Get-ChildItem bin -Recurse -Directory -Filter wpf-dll-* | % {
+            $_ | Get-ChildItem -Recurse -File | % {
+              Move-Item -Verbose $_.FullName $_.Directory.Parent.FullName
+            }
+          }
+    - task: NuGetToolInstaller@1
+      displayName: Use NuGet 5.10.0
+      inputs:
+        versionSpec: 5.10.0
+    - task: NuGetCommand@2
+      displayName: NuGet restore copy
+      inputs:
+        selectOrConfig: config
+        nugetConfigPath: NuGet.Config
+    - task: VSBuild@1
+      displayName: Build solution **\OpenConsole.sln for WPF Control
+      inputs:
+        solution: '**\OpenConsole.sln'
+        vsVersion: 16.0
+        msbuildArgs: /p:WindowsTerminalReleaseBuild=$(UseReleaseBranding);Version=$(XES_PACKAGEVERSIONNUMBER) /t:Pack
+        platform: Any CPU
+        configuration: $(BuildConfiguration)
+        maximumCpuCount: true
+    - task: PublishSymbols@2
+      displayName: Publish symbols path
+      continueOnError: True
+      inputs:
+        SearchPattern: '**/*.pdb'
+        IndexSources: false
+        SymbolServerType: TeamServices
+        SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
+    - task: CopyFiles@2
+      displayName: Copy *.nupkg to Artifacts
+      inputs:
+        Contents: '**/*Wpf*.nupkg'
+        TargetFolder: $(Build.ArtifactStagingDirectory)/nupkg
+        OverWrite: true
+        flattenFolders: true
+    - task: EsrpCodeSigning@1
+      displayName: Submit *.nupkg to ESRP for code signing
+      inputs:
+        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+        FolderPath: $(Build.ArtifactStagingDirectory)/nupkg
+        Pattern: '*.nupkg'
+        UseMinimatch: true
+        signConfigType: inlineSignParams
+        inlineOperation: >-
+          [
+              {
+                  "KeyCode": "CP-401405",
+                  "OperationCode": "NuGetSign",
+                  "Parameters": {},
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0"
+              },
+              {
+                  "KeyCode": "CP-401405",
+                  "OperationCode": "NuGetVerify",
+                  "Parameters": {},
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0"
+              }
+          ]
+    - task: PublishBuildArtifacts@1
+      displayName: Publish Artifact (nupkg)
+      inputs:
+        PathtoPublish: $(Build.ArtifactStagingDirectory)\nupkg
+        ArtifactName: wpf-nupkg-$(BuildConfiguration)
+
+- ${{ if eq(parameters.buildTerminalVPack, true) }}:
+  - job: VPack
+    displayName: Create Windows vPack
+    dependsOn: BundleAndSign
+    steps:
+    - checkout: self
+      clean: true
+      submodules: true
+    - task: PkgESSetupBuild@12
+      displayName: Package ES - Setup Build
+    - task: DownloadBuildArtifacts@0
+      displayName: Download Build Artifacts
+      inputs:
+        artifactName: appxbundle-signed
+        extractTars: false
+    - task: PowerShell@2
+      displayName: Rename and stage packages for vpack
+      inputs:
+        targetType: inline
+        script: >-
+          # Rename to known/fixed name for Windows build system
+
+          Get-ChildItem Microsoft.WindowsTerminal_*.msixbundle | Rename-Item -NewName { 'Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle' }
+
+
+          # Create vpack directory and place item inside
+
+          mkdir WindowsTerminal.app
+
+          mv Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle .\WindowsTerminal.app\
+        workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed
+    - task: PkgESVPack@12
+      displayName: 'Package ES - VPack'
+      env:
+        SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      inputs:
+        sourceDirectory: $(System.ArtifactsDirectory)\appxbundle-signed\WindowsTerminal.app
+        description: Windows Terminal pre-install application
+        pushPkgName: WindowsTerminal.app
+        owner: condev
+...

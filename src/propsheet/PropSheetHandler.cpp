@@ -3,9 +3,9 @@
 
 #include "precomp.h"
 
-#include <wrl\implements.h>
-#include <wrl\module.h>
-#include <wil\resource.h>
+#include <wrl/implements.h>
+#include <wrl/module.h>
+#include <wil/resource.h>
 
 #include <shlwapi.h>
 #include <shellapi.h>

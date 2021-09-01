@@ -14,7 +14,7 @@ Author(s):
 
 #pragma once
 
-#include "..\inc\IWindowMetrics.hpp"
+#include "../inc/IWindowMetrics.hpp"
 
 #pragma hdrstop
 

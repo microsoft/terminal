@@ -27,8 +27,6 @@ Revision History:
 #include "WexTestClass.h"
 #endif
 
-#pragma pack(push, 1)
-
 class TextAttribute final
 {
 public:
@@ -66,11 +64,12 @@ public:
     static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
-    std::pair<COLORREF, COLORREF> CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
+    std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
                                                      const COLORREF defaultFgColor,
                                                      const COLORREF defaultBgColor,
                                                      const bool reverseScreenMode = false,
-                                                     const bool blinkingIsFaint = false) const noexcept;
+                                                     const bool blinkingIsFaint = false,
+                                                     const bool boldIsBright = true) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
@@ -152,6 +151,8 @@ public:
         return !IsAnyGridLineEnabled() && // grid lines have a visual representation
                // crossed out, doubly and singly underlined have a visual representation
                WI_AreAllFlagsClear(_extendedAttrs, ExtendedAttributes::CrossedOut | ExtendedAttributes::DoublyUnderlined | ExtendedAttributes::Underlined) &&
+               // hyperlinks have a visual representation
+               !IsHyperlink() &&
                // all other attributes do not have a visual representation
                (_wAttrLegacy & META_ATTRS) == (other._wAttrLegacy & META_ATTRS) &&
                ((checkForeground && _foreground == other._foreground) ||
@@ -174,12 +175,11 @@ private:
     static BYTE s_legacyDefaultForeground;
     static BYTE s_legacyDefaultBackground;
 
-    WORD _wAttrLegacy;
-    TextColor _foreground;
-    TextColor _background;
-    ExtendedAttributes _extendedAttrs;
-
-    uint16_t _hyperlinkId;
+    uint16_t _wAttrLegacy; // sizeof: 2, alignof: 2
+    uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
+    TextColor _foreground; // sizeof: 4, alignof: 1
+    TextColor _background; // sizeof: 4, alignof: 1
+    ExtendedAttributes _extendedAttrs; // sizeof: 1, alignof: 1
 
 #ifdef UNIT_TESTING
     friend class TextBufferTests;
@@ -188,13 +188,6 @@ private:
     friend class WEX::TestExecution::VerifyOutputTraits;
 #endif
 };
-
-#pragma pack(pop)
-// 2 for _wAttrLegacy
-// 4 for _foreground
-// 4 for _background
-// 1 for _extendedAttrs
-static_assert(sizeof(TextAttribute) <= 13 * sizeof(BYTE), "We should only need 13B for an entire TextAttribute. We may need to increment this in the future as we add additional attributes");
 
 enum class TextAttributeBehavior
 {
@@ -220,7 +213,7 @@ constexpr bool operator!=(const TextAttribute& a, const TextAttribute& b) noexce
 #ifdef UNIT_TESTING
 
 #define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format( \
-    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
+    L## #attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX
 {

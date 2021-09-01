@@ -50,6 +50,9 @@ constexpr std::array<BYTE, 256> Index256ToIndex16 = {
 
 // clang-format on
 
+// We should only need 4B for TextColor. Any more than that is just waste.
+static_assert(sizeof(TextColor) == 4);
+
 bool TextColor::CanBeBrightened() const noexcept
 {
     return IsIndex16() || IsDefault();
@@ -138,15 +141,12 @@ void TextColor::SetDefault() noexcept
 // - brighten: if true, we'll brighten a dark color table index.
 // Return Value:
 // - a COLORREF containing the real value of this TextColor.
-COLORREF TextColor::GetColor(gsl::span<const COLORREF> colorTable,
-                             const COLORREF defaultColor,
-                             bool brighten) const noexcept
+COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten) const noexcept
 {
     if (IsDefault())
     {
         if (brighten)
         {
-            FAIL_FAST_IF(colorTable.size() < 16);
             // See MSFT:20266024 for context on this fix.
             //      Additionally todo MSFT:20271956 to fix this better for 19H2+
             // If we're a default color, check to see if the defaultColor exists
@@ -156,6 +156,61 @@ COLORREF TextColor::GetColor(gsl::span<const COLORREF> colorTable,
             //      (Settings::_DefaultForeground==INVALID_COLOR, and the index
             //      from _wFillAttribute is being used instead.)
             // If we find a match, return instead the bright version of this color
+
+            static_assert(sizeof(COLORREF) * 8 == 32, "The vectorized code broke. If you can't fix COLORREF, just remove the vectorized code.");
+
+#pragma warning(push)
+#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+#pragma warning(disable : 26490) // Don't use reinterpret_cast (type.1).
+#ifdef __AVX2__
+            // I wrote this vectorized code one day, because the sun was shining so nicely.
+            // There's no other reason for this to exist here, except for being pretty.
+            // This code implements the exact same for loop you can find below, but is ~3x faster.
+            //
+            // A brief explanation for people unfamiliar with vectorized instructions:
+            //   Vectorized instructions, like "SSE" or "AVX", allow you to run
+            //   common operations like additions, multiplications, comparisons,
+            //   or bitwise operations concurrently on multiple values at once.
+            //
+            // We want to find the given defaultColor in the first 8 values of colorTable.
+            // Coincidentally a COLORREF is a DWORD and 8 of them are exactly 256 bits.
+            // -- The size of a single AVX register.
+            //
+            // Thus, the code works like this:
+            // 1. Load all 8 DWORDs at once into one register
+            // 2. Set the same defaultColor 8 times in another register
+            // 3. Compare all 8 values at once
+            //    The result is either 0xffffffff or 0x00000000.
+            // 4. Extract the most significant bit of each DWORD
+            //    Assuming that no duplicate colors exist in colorTable,
+            //    the result will be something like 0b00100000.
+            // 5. Use BitScanForward (bsf) to find the index of the most significant 1 bit.
+            const auto haystack = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(colorTable.data())); // 1.
+            const auto needle = _mm256_set1_epi32(__builtin_bit_cast(int, defaultColor)); // 2.
+            const auto result = _mm256_cmpeq_epi32(haystack, needle); // 3.
+            const auto mask = _mm256_movemask_ps(_mm256_castsi256_ps(result)); // 4.
+            unsigned long index;
+            return _BitScanForward(&index, mask) ? til::at(colorTable, static_cast<size_t>(index) + 8) : defaultColor; // 5.
+#elif _M_AMD64
+            // If you look closely this SSE2 algorithm is the same as the AVX one.
+            // The two differences are that we need to:
+            // * do everything twice, because SSE is limited to 128 bits and not 256.
+            // * use _mm_packs_epi32 to merge two 128 bits vectors into one in step 3.5.
+            //   _mm_packs_epi32 takes two SSE registers and truncates all 8 DWORDs into 8 WORDs,
+            //   the latter of which fits into a single register (which is then used in the identical step 4).
+            // * since the result are now 8 WORDs, we need to use _mm_movemask_epi8 (there's no 16-bit variant),
+            //   which unlike AVX's step 4 results in in something like 0b0000110000000000.
+            //   --> the index returned by _BitScanForward must be divided by 2.
+            const auto haystack1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 0));
+            const auto haystack2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 4));
+            const auto needle = _mm_set1_epi32(__builtin_bit_cast(int, defaultColor));
+            const auto result1 = _mm_cmpeq_epi32(haystack1, needle);
+            const auto result2 = _mm_cmpeq_epi32(haystack2, needle);
+            const auto result = _mm_packs_epi32(result1, result2); // 3.5
+            const auto mask = _mm_movemask_epi8(result);
+            unsigned long index;
+            return _BitScanForward(&index, mask) ? til::at(colorTable, static_cast<size_t>(index / 2) + 8) : defaultColor;
+#else
             for (size_t i = 0; i < 8; i++)
             {
                 if (til::at(colorTable, i) == defaultColor)
@@ -163,6 +218,8 @@ COLORREF TextColor::GetColor(gsl::span<const COLORREF> colorTable,
                     return til::at(colorTable, i + 8);
                 }
             }
+#endif
+#pragma warning(pop)
         }
 
         return defaultColor;
@@ -199,7 +256,7 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
     }
     else if (IsIndex256())
     {
-        return Index256ToIndex16.at(GetIndex());
+        return til::at(Index256ToIndex16, GetIndex());
     }
     else
     {
@@ -208,7 +265,7 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
         const BYTE compressedRgb = (_red & 0b11100000) +
                                    ((_green >> 3) & 0b00011100) +
                                    ((_blue >> 6) & 0b00000011);
-        return CompressedRgbToIndex16.at(compressedRgb);
+        return til::at(CompressedRgbToIndex16, compressedRgb);
     }
 }
 

@@ -54,7 +54,7 @@ std::vector<SMALL_RECT> Terminal::_GetSelectionRects() const noexcept
 
     try
     {
-        return _buffer->GetTextRects(_selection->start, _selection->end, _blockSelection);
+        return _buffer->GetTextRects(_selection->start, _selection->end, _blockSelection, false);
     }
     CATCH_LOG();
     return result;
@@ -249,16 +249,22 @@ void Terminal::ClearSelection()
 // - singleLine: collapse all of the text to one line
 // Return Value:
 // - wstring text from buffer. If extended to multiple lines, each line is separated by \r\n
-const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine) const
+const TextBuffer::TextAndColor Terminal::RetrieveSelectedTextFromBuffer(bool singleLine)
 {
+    auto lock = LockForReading();
+
     const auto selectionRects = _GetSelectionRects();
 
     const auto GetAttributeColors = std::bind(&Terminal::GetAttributeColors, this, std::placeholders::_1);
 
-    return _buffer->GetText(!singleLine,
-                            !singleLine,
-                            selectionRects,
-                            GetAttributeColors);
+    // GH#6740: Block selection should preserve the visual structure:
+    // - CRLFs need to be added - so the lines structure is preserved
+    // - We should apply formatting above to wrapped rows as well (newline should be added).
+    // GH#9706: Trimming of trailing white-spaces in block selection is configurable.
+    const auto includeCRLF = !singleLine || _blockSelection;
+    const auto trimTrailingWhitespace = !singleLine && (!_blockSelection || _trimBlockSelection);
+    const auto formatWrappedRows = _blockSelection;
+    return _buffer->GetText(includeCRLF, trimTrailingWhitespace, selectionRects, GetAttributeColors, formatWrappedRows);
 }
 
 // Method Description:

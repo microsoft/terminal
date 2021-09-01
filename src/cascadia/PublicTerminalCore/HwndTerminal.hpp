@@ -19,7 +19,7 @@ typedef struct _TerminalTheme
     COLORREF DefaultForeground;
     COLORREF DefaultSelectionBackground;
     float SelectionBackgroundAlpha;
-    DispatchTypes::CursorStyle CursorStyle;
+    uint32_t CursorStyle; // This will be converted to DispatchTypes::CursorStyle (size_t), but C# cannot marshal an enum type and have it fit in a size_t.
     COLORREF ColorTable[16];
 } TerminalTheme, *LPTerminalTheme;
 
@@ -27,8 +27,9 @@ extern "C" {
 __declspec(dllexport) HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
 __declspec(dllexport) void _stdcall TerminalSendOutput(void* terminal, LPCWSTR data);
 __declspec(dllexport) void _stdcall TerminalRegisterScrollCallback(void* terminal, void __stdcall callback(int, int, int));
-__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(void* terminal, double width, double height, _Out_ COORD* dimensions);
-__declspec(dllexport) HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
+__declspec(dllexport) HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensions, _Out_ SIZE* dimensionsInPixels);
+__declspec(dllexport) HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
 __declspec(dllexport) void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
 __declspec(dllexport) void _stdcall TerminalUserScroll(void* terminal, int viewTop);
 __declspec(dllexport) void _stdcall TerminalClearSelection(void* terminal);
@@ -72,7 +73,6 @@ private:
     FontInfoDesired _desiredFont;
     FontInfo _actualFont;
     int _currentDpi;
-    bool _uiaProviderInitialized;
     std::function<void(wchar_t*)> _pfnWriteCallback;
     ::Microsoft::WRL::ComPtr<::Microsoft::Terminal::TermControlUiaProvider> _uiaProvider;
 
@@ -82,6 +82,7 @@ private:
     std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine;
 
     bool _focused{ false };
+    bool _uiaProviderInitialized{ false };
 
     std::chrono::milliseconds _multiClickTime;
     unsigned int _multiClickCounter{};
@@ -90,7 +91,9 @@ private:
     std::optional<til::point> _singleClickTouchdownPos;
 
     friend HRESULT _stdcall CreateTerminal(HWND parentHwnd, _Out_ void** hwnd, _Out_ void** terminal);
-    friend HRESULT _stdcall TerminalResize(void* terminal, COORD dimensions);
+    friend HRESULT _stdcall TerminalTriggerResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
+    friend HRESULT _stdcall TerminalTriggerResizeWithDimension(_In_ void* terminal, _In_ COORD dimensions, _Out_ SIZE* dimensionsInPixels);
+    friend HRESULT _stdcall TerminalCalculateResize(_In_ void* terminal, _In_ short width, _In_ short height, _Out_ COORD* dimensions);
     friend void _stdcall TerminalDpiChanged(void* terminal, int newDpi);
     friend void _stdcall TerminalUserScroll(void* terminal, int viewTop);
     friend void _stdcall TerminalClearSelection(void* terminal);

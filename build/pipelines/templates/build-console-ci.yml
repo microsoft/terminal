@@ -11,12 +11,23 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
-  pool: { vmImage: windows-2019 }
+  pool: 
+    ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPoolOSS-L
+    ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPool-L
+    demands: ImageOverride -equals WinDevVS16-latest
 
   steps:
   - template: build-console-steps.yml
     parameters:
       additionalBuildArguments: ${{ parameters.additionalBuildArguments }}
+
+  # It appears that the Component Governance build task that gets automatically injected stopped working
+  # when we renamed our main branch.
+  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
+    displayName: 'Component Detection'
+    condition: and(succeededOrFailed(), not(eq(variables['Build.Reason'], 'PullRequest')))
 
 - template: helix-runtests-job.yml
   parameters:
@@ -24,6 +35,8 @@ jobs:
     dependsOn: Build${{ parameters.platform }}${{ parameters.configuration }}
     condition: and(succeeded(), and(eq('${{ parameters.platform }}', 'x64'), not(eq(variables['Build.Reason'], 'PullRequest')))) 
     testSuite: 'DevTestSuite'
+    platform: ${{ parameters.platform }}
+    configuration: ${{ parameters.configuration }}
     rerunPassesRequiredToAvoidFailure: ${{ parameters.rerunPassesRequiredToAvoidFailure }}
     
 - template: helix-processtestresults-job.yml

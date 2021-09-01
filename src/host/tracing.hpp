@@ -50,7 +50,7 @@ public:
     static void s_TraceApi(_In_ const void* const buffer, const CONSOLE_WRITECONSOLE_MSG* const a);
 
     static void s_TraceApi(const CONSOLE_SCREENBUFFERINFO_MSG* const a);
-    static void s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring& handleType);
+    static void s_TraceApi(const CONSOLE_MODE_MSG* const a, const std::wstring_view handleType);
     static void s_TraceApi(const CONSOLE_SETTEXTATTRIBUTE_MSG* const a);
     static void s_TraceApi(const CONSOLE_WRITECONSOLEOUTPUTSTRING_MSG* const a);
 
@@ -61,6 +61,8 @@ public:
 
     static void s_TraceWindowMessage(const MSG& msg);
     static void s_TraceInputRecord(const INPUT_RECORD& inputRecord);
+
+    static void s_TraceCookedRead(_In_z_ const wchar_t* pwszCookedBuffer);
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
