@@ -486,16 +486,16 @@
   <data name="MultiLinePasteDialog.Title" xml:space="preserve">
     <value>Warning</value>
   </data>
-  <data name="ApproveCommandlineWarning.CloseButtonText" xml:space="preserve">
+  <data name="ApproveCommandlineWarning_CancelButton.Text" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="ApproveCommandlineWarning.Content" xml:space="preserve">
+  <data name="ApproveCommandlineWarningTextBlock.Content" xml:space="preserve">
     <value>You are about t execute the following commandline. {TODO! format this}. Do you wish to continue?</value>
   </data>
-  <data name="ApproveCommandlineWarning.PrimaryButtonText" xml:space="preserve">
+  <data name="ApproveCommandlineWarning_PrimaryButton.Text" xml:space="preserve">
     <value>Allow Commandline</value>
   </data>
-  <data name="ApproveCommandlineWarning.Title" xml:space="preserve">
+  <data name="ApproveCommandlineWarningTitle.Content" xml:space="preserve">
     <value>Warning</value>
   </data>
   <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
