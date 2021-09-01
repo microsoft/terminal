@@ -1248,8 +1248,13 @@ namespace winrt::TerminalApp::implementation
             return single_threaded_vector<TerminalApp::FilteredCommand>();
         }
 
+        const auto numRecentCommands = std::min(recentCommands.Size(), CommandLineHistoryLength);
+
         std::vector<TerminalApp::FilteredCommand> parsedCommands;
-        parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
+        parsedCommands.reserve(numRecentCommands);
+
+        std::unordered_set<hstring> uniqueCommands;
+        uniqueCommands.reserve(numRecentCommands);
 
         for (const auto& c : recentCommands)
         {
@@ -1258,6 +1263,13 @@ namespace winrt::TerminalApp::implementation
                 // Don't load more than CommandLineHistoryLength commands
                 break;
             }
+
+            if (uniqueCommands.count(c) > 0)
+            {
+                continue;
+            }
+
+            uniqueCommands.insert(c);
 
             if (const auto parsedCommand = _buildCommandLineCommand(c))
             {
@@ -1277,13 +1289,35 @@ namespace winrt::TerminalApp::implementation
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
         // If there aren't and recent commands already in the state, then we
         // don't need to copy any.
-        const auto countToCopy = std::min(recentCommands ? recentCommands.Size() : 0, CommandLineHistoryLength - 1);
-        std::vector<hstring> newRecentCommands{ countToCopy + 1 };
-        til::at(newRecentCommands, 0) = command;
-        if (countToCopy)
+        const auto numRecentCommands = recentCommands ? recentCommands.Size() : 0;
+        const auto numNewRecentCommands = std::min(numRecentCommands + 1, CommandLineHistoryLength);
+
+        std::vector<hstring> newRecentCommands;
+        newRecentCommands.reserve(numNewRecentCommands);
+
+        std::unordered_set<hstring> uniqueCommands;
+        uniqueCommands.reserve(numNewRecentCommands);
+
+        newRecentCommands.push_back(command);
+        uniqueCommands.insert(command);
+
+        for (const auto& c : recentCommands)
         {
-            recentCommands.GetMany(0, { newRecentCommands.data() + 1, countToCopy });
+            if (newRecentCommands.size() >= CommandLineHistoryLength)
+            {
+                // Don't store more than CommandLineHistoryLength commands
+                break;
+            }
+
+            if (uniqueCommands.count(c) > 0)
+            {
+                continue;
+            }
+
+            uniqueCommands.insert(c);
+            newRecentCommands.push_back(c);
         }
+
         ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 }
