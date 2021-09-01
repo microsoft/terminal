@@ -437,7 +437,10 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalTab::Scroll(const int delta)
     {
         auto control = GetActiveTerminalControl();
-
+        if (!control)
+        {
+            co_return;
+        }
         co_await winrt::resume_foreground(control.Dispatcher());
 
         const auto currentOffset = control.ScrollOffset();
@@ -1341,6 +1344,13 @@ namespace winrt::TerminalApp::implementation
     // - The tab's color, if any
     std::optional<winrt::Windows::UI::Color> TerminalTab::GetTabColor()
     {
+        const auto& termControl{ GetActiveTerminalControl() };
+        if (!termControl)
+        {
+            return std::nullopt;
+        }
+
+        const auto currControlColor{ termControl.TabColor() };
         std::optional<winrt::Windows::UI::Color> controlTabColor;
         if (const auto& control = GetActiveTerminalControl())
         {

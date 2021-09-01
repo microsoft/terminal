@@ -66,9 +66,10 @@ public:
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
-    winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
+    winrt::Windows::UI::Xaml::Controls::UserControl GetUserControl() const;
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl() const;
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
+    winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
 
     // Method Description:
     // - If this is a leaf pane, return its profile.
