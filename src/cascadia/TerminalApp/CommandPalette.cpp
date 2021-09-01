@@ -1287,10 +1287,15 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateRecentCommands(const hstring& command)
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        // If there aren't and recent commands already in the state, then we
-        // don't need to copy any.
-        const auto numRecentCommands = recentCommands ? recentCommands.Size() : 0;
-        const auto numNewRecentCommands = std::min(numRecentCommands + 1, CommandLineHistoryLength);
+        // If this is the first time we've opened the commandline mode and
+        // there aren't any recent commands, then just store the new command.
+        if (!recentCommands)
+        {
+            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(std::vector{ command })));
+            return;
+        }
+
+        const auto numNewRecentCommands = std::min(recentCommands.Size() + 1, CommandLineHistoryLength);
 
         std::vector<hstring> newRecentCommands;
         newRecentCommands.reserve(numNewRecentCommands);
