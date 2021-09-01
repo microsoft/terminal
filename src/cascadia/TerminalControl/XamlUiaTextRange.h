@@ -24,7 +24,7 @@ Author(s):
 #include <UIAutomationCore.h>
 #include "../types/TermControlUiaTextRange.hpp"
 
-namespace winrt::Microsoft::Terminal::TerminalControl::implementation
+namespace winrt::Microsoft::Terminal::Control::implementation
 {
     class XamlUiaTextRange :
         public winrt::implements<XamlUiaTextRange, Windows::UI::Xaml::Automation::Provider::ITextRangeProvider>

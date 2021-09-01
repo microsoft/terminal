@@ -7,7 +7,6 @@ namespace Microsoft.Terminal.Wpf
 {
     using System;
     using System.Runtime.InteropServices;
-    using System.Windows.Automation.Provider;
 
 #pragma warning disable SA1600 // Elements should be documented
     internal static class NativeMethods
@@ -187,10 +186,13 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalSendOutput(IntPtr terminal, string lpdata);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalTriggerResize(IntPtr terminal, double width, double height, out COORD dimensions);
+        public static extern uint TerminalTriggerResize(IntPtr terminal, short width, short height, out COORD dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalResize(IntPtr terminal, COORD dimensions);
+        public static extern uint TerminalTriggerResizeWithDimension(IntPtr terminal, [MarshalAs(UnmanagedType.Struct)] COORD dimensions, out SIZE dimensionsInPixels);
+
+        [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
+        public static extern uint TerminalCalculateResize(IntPtr terminal, short width, short height, out COORD dimensions);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalDpiChanged(IntPtr terminal, int newDpi);
@@ -205,10 +207,10 @@ namespace Microsoft.Terminal.Wpf
         public static extern void TerminalUserScroll(IntPtr terminal, int viewTop);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalStartSelection(IntPtr terminal, NativeMethods.COORD cursorPosition, bool altPressed);
+        public static extern uint TerminalStartSelection(IntPtr terminal, COORD cursorPosition, bool altPressed);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
-        public static extern uint TerminalMoveSelection(IntPtr terminal, NativeMethods.COORD cursorPosition);
+        public static extern uint TerminalMoveSelection(IntPtr terminal, COORD cursorPosition);
 
         [DllImport("PublicTerminalCore.dll", CharSet = CharSet.Unicode, CallingConvention = CallingConvention.StdCall)]
         public static extern void TerminalClearSelection(IntPtr terminal);
@@ -278,9 +280,23 @@ namespace Microsoft.Terminal.Wpf
             public short X;
 
             /// <summary>
-            /// The x-coordinate of the point.
+            /// The y-coordinate of the point.
             /// </summary>
             public short Y;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SIZE
+        {
+            /// <summary>
+            ///  The x size.
+            /// </summary>
+            public int cx;
+
+            /// <summary>
+            /// The y size.
+            /// </summary>
+            public int cy;
         }
     }
 #pragma warning restore SA1600 // Elements should be documented

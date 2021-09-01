@@ -1,0 +1,42 @@
+---
+###########################
+###########################
+## Markdown Linter rules ##
+###########################
+###########################
+
+# Linter rules doc:
+# - https://github.com/DavidAnson/markdownlint
+#
+# Note:
+# To comment out a single error:
+#   <!-- markdownlint-disable -->
+#   any violations you want
+#   <!-- markdownlint-restore -->
+#
+# To run the linter locally:
+# 1. install the npm package:
+#    `npm install -g markdownlint-cli`
+# 2. Then run it in the root of the repo with
+#    `markdownlint -c .github\linters\.markdown-lint.yml ./*.md`
+
+###############
+# Rules by id #
+###############
+MD004: false                  # Unordered list style
+MD007:
+  indent: 2                   # Unordered list indentation
+MD013:
+  line_length: 400            # Line length 80 is far to short
+MD024: false                  # Allow multiple headings with same content
+MD026:
+  punctuation: ".,;:!。，；:"  # List of not allowed
+MD029: false                  # Ordered list item prefix
+MD033: false                  # Allow inline HTML
+MD036: false                  # Emphasis used instead of a heading
+MD040: false                  # Allow ``` blocks in md files with no language specified
+
+#################
+# Rules by tags #
+#################
+blank_lines: false  # Error on blank lines

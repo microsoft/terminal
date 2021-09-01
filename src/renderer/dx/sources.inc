@@ -33,6 +33,8 @@ INCLUDES = \
 SOURCES = \
     $(SOURCES) \
     ..\DxRenderer.cpp \
+    ..\DxFontInfo.cpp \
+    ..\DxFontRenderData.cpp \
     ..\CustomTextRenderer.cpp \
     ..\CustomTextLayout.cpp \
 

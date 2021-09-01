@@ -37,8 +37,10 @@ namespace Microsoft::Console::Interactivity
         //       In case the on-demand creation fails, the return value
         //       is nullptr and a message is logged.
 
+        [[nodiscard]] static HRESULT CreateAccessibilityNotifier();
         static IAccessibilityNotifier* LocateAccessibilityNotifier();
 
+        [[nodiscard]] static NTSTATUS SetConsoleControlInstance(_In_ std::unique_ptr<IConsoleControl>&& control);
         static IConsoleControl* LocateConsoleControl();
         template<typename T>
         static T* LocateConsoleControl()

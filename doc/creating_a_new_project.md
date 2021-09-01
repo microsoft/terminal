@@ -19,7 +19,7 @@ When creating a new DLL, it was really helpful to reference an existing DLL's `.
 - [ ] Add a `<Reference>` to `TerminalAppLib.vcxproj` similar to this:
 ```
     <Reference Include="Microsoft.Terminal.NewDLL">
-      <HintPath>$(_BinRoot)TerminalNewDLL\Microsoft.Terminal.NewDLL.winmd</HintPath>
+      <HintPath>$(OpenConsoleCommonOutDir)\TerminalNewDLL\Microsoft.Terminal.NewDLL.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
       <Private>false</Private>
       <CopyLocalSatelliteAssemblies>false</CopyLocalSatelliteAssemblies>

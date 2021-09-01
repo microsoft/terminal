@@ -15,7 +15,7 @@
 
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 
@@ -706,8 +706,6 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
         {
             return STATUS_BUFFER_TOO_SMALL;
         }
-
-        const size_t OutputBufferSize = buffer.size_bytes();
 
         if (readHandleState.IsInputPending())
         {

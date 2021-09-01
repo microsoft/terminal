@@ -8,6 +8,9 @@
 #pragma once
 
 #define WIN32_LEAN_AND_MEAN
+#define NOMCX
+#define NOHELP
+#define NOCOMM
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #define BLOCK_TIL
@@ -45,10 +48,17 @@
 #include <winrt/Windows.ApplicationModel.DataTransfer.h>
 #include <winrt/Windows.Storage.h>
 
+#include <winrt/Microsoft.Terminal.TerminalConnection.h>
+#include <winrt/Microsoft.Terminal.Core.h>
+
 #include <windows.ui.xaml.media.dxinterop.h>
 
 #include <TraceLoggingProvider.h>
 TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include <telemetry/ProjectTelemetry.h>
 
+#include <WinUser.h>
+
 #include "til.h"
+
+#include "ThrottledFunc.h"

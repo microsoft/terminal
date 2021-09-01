@@ -97,7 +97,12 @@ bool Search::FindNext()
 // - Takes the found word and selects it in the screen buffer
 void Search::Select() const
 {
-    _uiaData.SelectNewRegion(_coordSelStart, _coordSelEnd);
+    // Convert buffer selection offsets into the equivalent screen coordinates
+    // required by SelectNewRegion, taking line renditions into account.
+    const auto& textBuffer = _uiaData.GetTextBuffer();
+    const auto selStart = textBuffer.BufferToScreenPosition(_coordSelStart);
+    const auto selEnd = textBuffer.BufferToScreenPosition(_coordSelEnd);
+    _uiaData.SelectNewRegion(selStart, selEnd);
 }
 
 // Routine Description:
@@ -141,7 +146,10 @@ COORD Search::s_GetInitialAnchor(IUiaData& uiaData, const Direction direction)
     const COORD textBufferEndPosition = uiaData.GetTextBufferEndPosition();
     if (uiaData.IsSelectionActive())
     {
-        auto anchor = uiaData.GetSelectionAnchor();
+        // Convert the screen position of the selection anchor into an equivalent
+        // buffer position to start searching, taking line rendition into account.
+        auto anchor = textBuffer.ScreenToBufferPosition(uiaData.GetSelectionAnchor());
+
         if (direction == Direction::Forward)
         {
             textBuffer.GetSize().IncrementInBoundsCircular(anchor);

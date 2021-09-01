@@ -330,7 +330,7 @@ namespace Conhost.UIA.Tests.Common.NativeMethods
 
     /// <summary>
     /// The definitions within this file match the winconp.h file that is generated from wincon.w
-    /// Please see \windows\published\main\wincon.w
+    /// Please see /windows/published/main/wincon.w
     /// </summary>
     public static class WinConP
     {

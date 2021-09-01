@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include "WexTestClass.h"
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "CommonState.hpp"
 
@@ -12,7 +12,7 @@
 #include "selection.hpp"
 #include "cmdline.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -333,7 +333,7 @@ class SelectionTests
 
         COORD startPos{ sTargetX, sTargetY };
         COORD endPos{ base::ClampAdd(sTargetX, sLength), sTargetY };
-        const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos);
+        const auto selectionRects = screenInfo.GetTextBuffer().GetTextRects(startPos, endPos, false, false);
 
         VERIFY_ARE_EQUAL(static_cast<size_t>(1), selectionRects.size());
         srSelection = selectionRects.at(0);

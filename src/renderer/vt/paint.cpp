@@ -598,7 +598,7 @@ using namespace Microsoft::Console::Types;
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::_DoUpdateTitle(const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT VtEngine::_DoUpdateTitle(const std::wstring_view /*newTitle*/) noexcept
 {
     return S_OK;
 }

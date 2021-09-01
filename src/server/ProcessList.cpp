@@ -5,11 +5,11 @@
 
 #include "ProcessList.h"
 
-#include "..\host\conwinuserrefs.h"
-#include "..\host\globals.h"
-#include "..\host\telemetry.hpp"
+#include "../host/conwinuserrefs.h"
+#include "../host/globals.h"
+#include "../host/telemetry.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity;
 

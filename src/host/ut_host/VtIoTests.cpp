@@ -3,17 +3,17 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
-#include "..\..\types\inc\Viewport.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
+#include "../../types/inc/Viewport.hpp"
 
-#include "..\..\renderer\vt\Xterm256Engine.hpp"
-#include "..\..\renderer\vt\XtermEngine.hpp"
-#include "..\..\renderer\base\Renderer.hpp"
-#include "..\Settings.hpp"
-#include "..\VtIo.hpp"
+#include "../../renderer/vt/Xterm256Engine.hpp"
+#include "../../renderer/vt/XtermEngine.hpp"
+#include "../../renderer/base/Renderer.hpp"
+#include "../Settings.hpp"
+#include "../VtIo.hpp"
 
-#ifndef __INSIDE_WINDOWS
-#include "..\..\renderer\dx\DxRenderer.hpp"
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+#include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
 using namespace WEX::Common;
@@ -38,7 +38,7 @@ class Microsoft::Console::VirtualTerminal::VtIoTests
 
     TEST_METHOD(RendererDtorAndThread);
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
     TEST_METHOD(RendererDtorAndThreadAndDx);
 #endif
 
@@ -355,9 +355,9 @@ public:
         return false;
     }
 
-    const std::wstring GetConsoleTitle() const noexcept override
+    const std::wstring_view GetConsoleTitle() const noexcept override
     {
-        return std::wstring{};
+        return std::wstring_view{};
     }
 
     const bool IsSelectionActive() const override
@@ -401,6 +401,11 @@ public:
     {
         return {};
     }
+
+    const std::vector<size_t> GetPatternId(const COORD /*location*/) const noexcept
+    {
+        return {};
+    }
 };
 
 void VtIoTests::RendererDtorAndThread()
@@ -428,7 +433,7 @@ void VtIoTests::RendererDtorAndThread()
     }
 }
 
-#ifndef __INSIDE_WINDOWS
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
 void VtIoTests::RendererDtorAndThreadAndDx()
 {
     Log::Comment(NoThrowString().Format(
@@ -451,6 +456,7 @@ void VtIoTests::RendererDtorAndThreadAndDx()
         // which is what CI uses.
         /*Sleep(500);*/
 
+        (void)dxEngine->Enable();
         pThread->EnablePainting();
         pRenderer->TriggerTeardown();
         pRenderer.reset();

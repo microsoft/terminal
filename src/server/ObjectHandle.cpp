@@ -5,12 +5,12 @@
 
 #include "ObjectHandle.h"
 
-#include "..\host\globals.h"
-#include "..\host\inputReadHandleData.h"
-#include "..\host\input.h"
-#include "..\host\screenInfo.hpp"
+#include "../host/globals.h"
+#include "../host/inputReadHandleData.h"
+#include "../host/input.h"
+#include "../host/screenInfo.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 ConsoleHandleData::ConsoleHandleData(const ACCESS_MASK amAccess,
                                      const ULONG ulShareAccess) :

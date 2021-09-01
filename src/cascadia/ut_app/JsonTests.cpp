@@ -3,18 +3,18 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/ColorScheme.h"
-#include "../TerminalApp/Profile.h"
-#include "../TerminalApp/CascadiaSettings.h"
-#include "../LocalTests_TerminalApp/JsonTestClass.h"
+#include "../TerminalSettingsModel/ColorScheme.h"
+#include "../TerminalSettingsModel/Profile.h"
+#include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../LocalTests_SettingsModel/JsonTestClass.h"
+#include "../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console;
-using namespace TerminalApp;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using namespace winrt::TerminalApp;
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Control;
 
 namespace TerminalAppUnitTests
 {
@@ -36,26 +36,27 @@ namespace TerminalAppUnitTests
             return true;
         }
 
-        Json::Value VerifyParseSucceeded(std::string content);
-        void VerifyParseFailed(std::string content);
+        Json::Value VerifyParseSucceeded(std::string_view content);
+        void VerifyParseFailed(std::string_view content);
 
     private:
         Json::StreamWriterBuilder _builder;
     };
 
-    Json::Value JsonTests::VerifyParseSucceeded(std::string content)
+    Json::Value JsonTests::VerifyParseSucceeded(std::string_view content)
     {
         Json::Value root;
         std::string errs;
-        const bool parseResult = _reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
+        const bool parseResult = _reader->parse(content.data(), content.data() + content.size(), &root, &errs);
         VERIFY_IS_TRUE(parseResult, winrt::to_hstring(errs).c_str());
         return root;
     }
-    void JsonTests::VerifyParseFailed(std::string content)
+
+    void JsonTests::VerifyParseFailed(std::string_view content)
     {
         Json::Value root;
         std::string errs;
-        const bool parseResult = _reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
+        const bool parseResult = _reader->parse(content.data(), content.data() + content.size(), &root, &errs);
         VERIFY_IS_FALSE(parseResult);
     }
 
@@ -120,7 +121,7 @@ namespace TerminalAppUnitTests
     {
         // Parse some profiles without guids. We should NOT generate new guids
         // for them. If a profile doesn't have a GUID, we'll leave its _guid
-        // set to nullopt. CascadiaSettings::_ValidateProfilesHaveGuid will
+        // set to nullopt. The Profile::Guid() getter will
         // ensure all profiles have a GUID that's actually set.
         // The null guid _is_ a valid guid, so we won't re-generate that
         // guid. null is _not_ a valid guid, so we'll leave that nullopt

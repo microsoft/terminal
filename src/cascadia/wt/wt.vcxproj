@@ -7,7 +7,6 @@
     <ProjectName>wt</ProjectName>
     <TargetName>wt</TargetName>
     <ConfigurationType>Application</ConfigurationType>
-    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
 
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
@@ -33,4 +32,3 @@
     </Link>
   </ItemDefinitionGroup>
 </Project>
-

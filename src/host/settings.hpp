@@ -159,8 +159,12 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    gsl::span<const COLORREF> Get16ColorTable() const;
-    gsl::span<const COLORREF> Get256ColorTable() const;
+    // The first 16 items of the color table are the same as the 16-color palette.
+    inline const std::array<COLORREF, XTERM_COLOR_TABLE_SIZE>& GetColorTable() const noexcept
+    {
+        return _colorTable;
+    }
+
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
 

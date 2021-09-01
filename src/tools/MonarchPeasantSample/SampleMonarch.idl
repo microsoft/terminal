@@ -1,0 +1,12 @@
+import "SamplePeasant.idl";
+
+namespace MonarchPeasantSample
+{
+    [default_interface] runtimeclass Monarch {
+        Monarch();
+
+        UInt64 GetPID();
+        UInt64 AddPeasant(IPeasant peasant);
+        Boolean ProposeCommandline(String[] args, String cwd);
+    };
+}

@@ -1,15 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 import "ShortcutActionDispatch.idl";
-import "KeyMapping.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.TerminalControl.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Control.IKeyBindings
     {
         AppKeyBindings();
 
         void SetDispatch(ShortcutActionDispatch dispatch);
-        void SetKeyMapping(KeyMapping keymap);
+        void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
     }
 }

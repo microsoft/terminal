@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass EnumEntry : Windows.UI.Xaml.Data.INotifyPropertyChanged, Windows.Foundation.IStringable
+    {
+        String EnumName { get; };
+        IInspectable EnumValue { get; };
+    }
+}

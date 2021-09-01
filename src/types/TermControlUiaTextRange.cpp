@@ -80,12 +80,6 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
     return S_OK;
 }
 
-void TermControlUiaTextRange::_ChangeViewport(const SMALL_RECT NewWindow)
-{
-    const gsl::not_null<TermControlUiaProvider*> provider = static_cast<TermControlUiaProvider*>(_pProvider);
-    provider->ChangeViewport(NewWindow);
-}
-
 // Method Description:
 // - Transform coordinates relative to the client to relative to the screen
 // Arguments:

@@ -45,27 +45,25 @@ namespace Microsoft::Console::Utils
 
     std::string ColorToHexString(const til::color color);
     til::color ColorFromHexString(const std::string_view wstr);
+    std::optional<til::color> ColorFromXTermColor(const std::wstring_view wstr) noexcept;
+    std::optional<til::color> ColorFromXParseColorSpec(const std::wstring_view wstr) noexcept;
 
-    void InitializeCampbellColorTable(const gsl::span<COLORREF> table);
-    void InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table);
-    void SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table);
-    void Initialize256ColorTable(const gsl::span<COLORREF> table);
+    bool HexToUint(const wchar_t wch, unsigned int& value) noexcept;
+    bool StringToUint(const std::wstring_view wstr, unsigned int& value);
+    std::vector<std::wstring_view> SplitString(const std::wstring_view wstr, const wchar_t delimiter) noexcept;
 
-    // Function Description:
-    // - Fill the alpha byte of the colors in a given color table with the given value.
-    // Arguments:
-    // - table: a color table
-    // - newAlpha: the new value to use as the alpha for all the entries in that table.
-    // Return Value:
-    // - <none>
-    constexpr void SetColorTableAlpha(const gsl::span<COLORREF> table, const BYTE newAlpha) noexcept
+    enum FilterOption
     {
-        const auto shiftedAlpha = newAlpha << 24;
-        for (auto& color : table)
-        {
-            WI_UpdateFlagsInMask(color, 0xff000000, shiftedAlpha);
-        }
-    }
+        None = 0,
+        // Convert CR+LF and LF-only line endings to CR-only.
+        CarriageReturnNewline = 1u << 0,
+        // For security reasons, remove most control characters.
+        ControlCodes = 1u << 1,
+    };
+
+    DEFINE_ENUM_FLAG_OPERATORS(FilterOption)
+
+    std::wstring FilterStringForPaste(const std::wstring_view wstr, const FilterOption option);
 
     constexpr uint16_t EndianSwap(uint16_t value)
     {

@@ -425,6 +425,7 @@ namespace til::spsc
         {
             drop();
             _arc = std::exchange(other._arc, nullptr);
+            return *this;
         }
 
         ~producer()
@@ -543,6 +544,7 @@ namespace til::spsc
         {
             drop();
             _arc = std::exchange(other._arc, nullptr);
+            return *this;
         }
 
         ~consumer()

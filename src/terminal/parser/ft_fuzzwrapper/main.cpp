@@ -4,8 +4,8 @@
 #include "precomp.h"
 
 #include "echoDispatch.hpp"
-#include "..\stateMachine.hpp"
-#include "..\OutputStateMachineEngine.hpp"
+#include "../stateMachine.hpp"
+#include "../OutputStateMachineEngine.hpp"
 
 using namespace Microsoft::Console::VirtualTerminal;
 

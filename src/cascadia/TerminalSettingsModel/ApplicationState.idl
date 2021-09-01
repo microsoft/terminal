@@ -1,0 +1,15 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace Microsoft.Terminal.Settings.Model
+{
+    [default_interface] runtimeclass ApplicationState {
+        static ApplicationState SharedInstance();
+
+        void Reload();
+
+        String FilePath { get; };
+
+        Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
+    }
+}

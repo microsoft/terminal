@@ -14,7 +14,7 @@ Author(s):
 --*/
 
 #include "precomp.h"
-#include "..\inc\conattrs.hpp"
+#include "../inc/conattrs.hpp"
 #include <cmath>
 
 // Function Description:

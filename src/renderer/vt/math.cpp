@@ -13,13 +13,14 @@ using namespace Microsoft::Console::Types;
 // Routine Description:
 // - Gets the size in characters of the current dirty portion of the frame.
 // Arguments:
-// - <none>
+// - area - The character dimensions of the current dirty area of the frame.
+//          This is an Inclusive rect.
 // Return Value:
-// - The character dimensions of the current dirty area of the frame.
-//      This is an Inclusive rect.
-std::vector<til::rectangle> VtEngine::GetDirtyArea()
+// - S_OK.
+[[nodiscard]] HRESULT VtEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
 {
-    return _invalidMap.runs();
+    area = _invalidMap.runs();
+    return S_OK;
 }
 
 // Routine Description:

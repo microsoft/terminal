@@ -7,16 +7,8 @@
 
 #include "output.h"
 #include "handle.h"
-#include "..\interactivity\inc\ServiceLocator.hpp"
-#include "..\terminal\adapter\DispatchCommon.hpp"
-
-#define PTY_SIGNAL_RESIZE_WINDOW 8u
-
-struct PTY_SIGNAL_RESIZE
-{
-    unsigned short sx;
-    unsigned short sy;
-};
+#include "../interactivity/inc/ServiceLocator.hpp"
+#include "../terminal/adapter/DispatchCommon.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::Interactivity;
@@ -26,7 +18,7 @@ using namespace Microsoft::Console::VirtualTerminal;
 // - Creates the PTY Signal Input Thread.
 // Arguments:
 // - hPipe - a handle to the file representing the read end of the VT pipe.
-PtySignalInputThread::PtySignalInputThread(_In_ wil::unique_hfile hPipe) :
+PtySignalInputThread::PtySignalInputThread(wil::unique_hfile hPipe) :
     _hFile{ std::move(hPipe) },
     _hThread{},
     _pConApi{ std::make_unique<ConhostInternalGetSet>(ServiceLocator::LocateGlobals().getConsoleInformation()) },
@@ -63,6 +55,8 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 //      do something with the messages we receive now. Before this is set, there
 //      is no guarantee that a client has attached, so most parts of the console
 //      (in and screen buffers) haven't yet been initialized.
+// - NOTE: Call under LockConsole() to ensure other threads have an opportunity
+//         to set early-work state.
 // Arguments:
 // - <none>
 // Return Value:
@@ -70,47 +64,43 @@ DWORD WINAPI PtySignalInputThread::StaticThreadProc(_In_ LPVOID lpParameter)
 void PtySignalInputThread::ConnectConsole() noexcept
 {
     _consoleConnected = true;
+    if (_earlyResize)
+    {
+        _DoResizeWindow(*_earlyResize);
+    }
 }
 
 // Method Description:
 // - The ThreadProc for the PTY Signal Input Thread.
 // Return Value:
 // - S_OK if the thread runs to completion.
-// - Otherwise it may cause an application termination another route and never return.
+// - Otherwise it may cause an application termination and never return.
 [[nodiscard]] HRESULT PtySignalInputThread::_InputThread()
 {
-    unsigned short signalId;
+    PtySignal signalId;
     while (_GetData(&signalId, sizeof(signalId)))
     {
         switch (signalId)
         {
-        case PTY_SIGNAL_RESIZE_WINDOW:
+        case PtySignal::ResizeWindow:
         {
-            PTY_SIGNAL_RESIZE resizeMsg = { 0 };
+            ResizeWindowData resizeMsg = { 0 };
             _GetData(&resizeMsg, sizeof(resizeMsg));
 
             LockConsole();
             auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
+
             // If the client app hasn't yet connected, stash the new size in the launchArgs.
             // We'll later use the value in launchArgs to set up the console buffer
+            // We must be under lock here to ensure that someone else doesn't come in
+            // and set with `ConnectConsole` while we're looking and modifying this.
             if (!_consoleConnected)
             {
-                short sColumns = 0;
-                short sRows = 0;
-                if (SUCCEEDED(UShortToShort(resizeMsg.sx, &sColumns)) &&
-                    SUCCEEDED(UShortToShort(resizeMsg.sy, &sRows)) &&
-                    (sColumns > 0 && sRows > 0))
-                {
-                    ServiceLocator::LocateGlobals().launchArgs.SetExpectedSize({ sColumns, sRows });
-                }
-                break;
+                _earlyResize = resizeMsg;
             }
             else
             {
-                if (DispatchCommon::s_ResizeWindow(*_pConApi, resizeMsg.sx, resizeMsg.sy))
-                {
-                    DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
-                }
+                _DoResizeWindow(resizeMsg);
             }
 
             break;
@@ -122,6 +112,20 @@ void PtySignalInputThread::ConnectConsole() noexcept
         }
     }
     return S_OK;
+}
+
+// Method Description:
+// - Dispatches a resize window message to the rest of the console code
+// Arguments:
+// - data - Packet information containing width/height (size) information
+// Return Value:
+// - <none>
+void PtySignalInputThread::_DoResizeWindow(const ResizeWindowData& data)
+{
+    if (DispatchCommon::s_ResizeWindow(*_pConApi, data.sx, data.sy))
+    {
+        DispatchCommon::s_SuppressResizeRepaint(*_pConApi);
+    }
 }
 
 // Method Description:
@@ -182,6 +186,7 @@ bool PtySignalInputThread::_GetData(_Out_writes_bytes_(cbBuffer) void* const pBu
     RETURN_LAST_ERROR_IF_NULL(hThread);
     _hThread.reset(hThread);
     _dwThreadId = dwThreadId;
+    LOG_IF_FAILED(SetThreadDescription(hThread, L"ConPTY Signal Handler Thread"));
 
     return S_OK;
 }

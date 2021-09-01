@@ -9,7 +9,7 @@
 #include "../renderer/inc/DummyRenderTarget.hpp"
 #include "consoletaeftemplates.hpp"
 
-using namespace winrt::Microsoft::Terminal::TerminalControl;
+using namespace winrt::Microsoft::Terminal::Core;
 using namespace Microsoft::Terminal::Core;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -18,7 +18,7 @@ using namespace WEX::Common;
 namespace TerminalCoreUnitTests
 {
 #define WCS(x) WCSHELPER(x)
-#define WCSHELPER(x) L#x
+#define WCSHELPER(x) L## #x
 
     class ScreenSizeLimitsTest
     {

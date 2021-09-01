@@ -1,0 +1,14 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass PaletteItemTemplateSelector : Windows.UI.Xaml.Controls.DataTemplateSelector
+    {
+        PaletteItemTemplateSelector();
+
+        Windows.UI.Xaml.DataTemplate TabItemTemplate;
+        Windows.UI.Xaml.DataTemplate NestedItemTemplate;
+        Windows.UI.Xaml.DataTemplate GeneralItemTemplate;
+    }
+}

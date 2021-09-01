@@ -32,8 +32,8 @@ public:
     }
 
     ~CharRowCellReference() = default;
-    CharRowCellReference(const CharRowCellReference&) = default;
-    CharRowCellReference(CharRowCellReference&&) = default;
+    CharRowCellReference(const CharRowCellReference&) noexcept = default;
+    CharRowCellReference(CharRowCellReference&&) noexcept = default;
 
     void operator=(const CharRowCellReference&) = delete;
     void operator=(CharRowCellReference&&) = delete;
