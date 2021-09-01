@@ -253,6 +253,22 @@ double dE00::_DegreesToRadians(double degrees)
 namespace ColorSpace
 {
     // Method Description:
+    // - Clamps the given value to be between 0-255 inclusive
+    // Arguments:
+    // - v: the value to clamp
+    // Return Value:
+    // - The clamped value
+    BYTE min_max(double v)
+    {
+        if (v <= 0)
+            return 0;
+        else if (v >= 255)
+            return 255;
+        else
+            return (BYTE)v;
+    }
+
+    // Method Description:
     // - Converts a color in rgb format to a color in lab format
     // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
     // Arguments:
@@ -389,22 +405,6 @@ namespace ColorSpace
         double de = delta.GetDeltaE();
         return de;
     };
-
-    // Method Description:
-    // - Clamps the given value to be between 0-255 inclusive
-    // Arguments:
-    // - v: the value to clamp
-    // Return Value:
-    // - The clamped value
-    BYTE min_max(double v)
-    {
-        if (v <= 0)
-            return 0;
-        else if (v >= 255)
-            return 255;
-        else
-            return (BYTE)v;
-    }
 };
 
 ColorFix::ColorFix()
