@@ -10,7 +10,9 @@ using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
-    AdminWarningPlaceholder::AdminWarningPlaceholder()
+    AdminWarningPlaceholder::AdminWarningPlaceholder(const winrt::Microsoft::Terminal::Control::TermControl& control, const winrt::hstring& cmdline) :
+        _control{ control },
+        _cmdline{ cmdline }
     {
         InitializeComponent();
     }
@@ -24,4 +26,9 @@ namespace winrt::TerminalApp::implementation
     {
         _CancelButtonClickedHandlers(*this, e);
     }
+    winrt::Windows::UI::Xaml::Controls::UserControl AdminWarningPlaceholder::Control()
+    {
+        return _control;
+    }
+
 }

@@ -16,6 +16,7 @@
 #include <LibraryResources.h>
 
 #include "TabRowControl.h"
+#include "AdminWarningPlaceholder.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
@@ -250,10 +251,10 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
     void TerminalPage::_CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, TerminalConnection::ITerminalConnection existingConnection)
     {
-        bool doAdminWarning = false;
+        bool doAdminWarning = true;;
+        const auto& cmdline{ settings.DefaultSettings().Commandline() };
         if (_isElevated())
         {
-            auto cmdline{ settings.DefaultSettings().Commandline() };
             auto allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() };
             bool commandlineWasAllowed = false;
 
@@ -317,8 +318,33 @@ namespace winrt::TerminalApp::implementation
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
         auto term = _InitControl(settings, connection);
+        WUX::Controls::UserControl controlToAdd{ term };
+        if (doAdminWarning)
+        {
+            auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(term, cmdline) };
+            warningControl->PrimaryButtonClicked([weakThis = get_weak(), warningControl](auto&&, auto&&) {
+                if (auto page{ weakThis.get() })
+                {
+                    for (const auto& tab : page->_tabs)
+                    {
+                        if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
+                        {
+                            tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
+                                if (pane->GetUserControl() == *warningControl)
+                                {
+                                    pane->ReplaceControl(warningControl->Control());
+                                    return true;
+                                }
+                                return false;
+                            });
+                        }
+                    }
+                }
+            });
+            controlToAdd = *warningControl;
+        }
 
-        auto newTabImpl = winrt::make_self<TerminalTab>(profile, term);
+        auto newTabImpl = winrt::make_self<TerminalTab>(profile, controlToAdd);
         _RegisterTerminalEvents(term);
         _InitializeTab(newTabImpl);
 

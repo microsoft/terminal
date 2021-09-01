@@ -101,6 +101,8 @@ public:
                                      winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
     std::shared_ptr<Pane> DetachPane(std::shared_ptr<Pane> pane);
 
+    winrt::Windows::UI::Xaml::Controls::UserControl ReplaceControl(const winrt::Windows::UI::Xaml::Controls::UserControl& control);
+
     int GetLeafPaneCount() const noexcept;
 
     void Maximize(std::shared_ptr<Pane> zoomedPane);

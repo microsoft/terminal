@@ -544,6 +544,33 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
     return false;
 }
 
+winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt::Windows::UI::Xaml::Controls::UserControl& control)
+{
+    if (!_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    const auto& oldControl = _control;
+    const auto& oldTermControl{ _control.try_as<TermControl>() };
+    if (oldTermControl)
+    {
+        oldTermControl.ConnectionStateChanged(_connectionStateChangedToken);
+        oldTermControl.WarningBell(_warningBellToken);
+    }
+
+    _control = control;
+    _border.Child(_control);
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (termControl)
+    {
+        _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
+        _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    }
+
+    return oldControl;
+}
+
 // Method Description:
 // - Given two panes, test whether the `direction` side of first is adjacent to second.
 // Arguments:
