@@ -25,7 +25,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const Profile& profile, const WUX::Controls::UserControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
@@ -449,7 +449,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::SplitPane(SplitState splitType,
                                 const float splitSize,
                                 const Profile& profile,
-                                TermControl& control)
+                                const WUX::Controls::UserControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
@@ -471,7 +471,8 @@ namespace winrt::TerminalApp::implementation
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToControl(second->Id().value(), control);
+        const auto& termControl{ control.try_as<TermControl>() };
+        _AttachEventHandlersToControl(second->Id().value(), termControl);
         _AttachEventHandlersToPane(first);
         _AttachEventHandlersToPane(second);
 
@@ -804,6 +805,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_AttachEventHandlersToControl(const uint32_t paneId, const TermControl& control)
     {
+        if (!control)
+        {
+            return;
+        }
         auto weakThis{ get_weak() };
         auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};

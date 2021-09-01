@@ -248,8 +248,9 @@ namespace winrt::TerminalApp::implementation
     // - profile: profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
-    winrt::fire_and_forget TerminalPage::_CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, TerminalConnection::ITerminalConnection existingConnection)
+    void TerminalPage::_CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, TerminalConnection::ITerminalConnection existingConnection)
     {
+        bool doAdminWarning = false;
         if (_isElevated())
         {
             auto cmdline{ settings.DefaultSettings().Commandline() };
@@ -271,19 +272,20 @@ namespace winrt::TerminalApp::implementation
             {
                 allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
             }
-            if (!commandlineWasAllowed)
-            {
-                ContentDialogResult warningResult = co_await _ShowCommandlineApproveWarning();
-                if (warningResult != ContentDialogResult::Primary)
-                {
-                    co_return;
-                }
-                else
-                {
-                    allowedCommandlines.Append(cmdline);
-                }
-                ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
-            }
+            doAdminWarning = !commandlineWasAllowed;
+            // if (!commandlineWasAllowed)
+            // {
+            //     ContentDialogResult warningResult = co_await _ShowCommandlineApproveWarning();
+            //     if (warningResult != ContentDialogResult::Primary)
+            //     {
+            //         co_return;
+            //     }
+            //     else
+            //     {
+            //         allowedCommandlines.Append(cmdline);
+            //     }
+            //     ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
+            // }
         }
 
         // Initialize the new tab
