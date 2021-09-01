@@ -71,11 +71,10 @@ dE00::dE00(ColorFix x1, ColorFix x2, double weightLightness, double weightChroma
     _sSubC = 1 + 0.045 * _cBarPrime;
 }
 
-/**
-	* Returns the deltaE value.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Calculates and returns the deltaE value.
+// Return Value:
+// - The deltaE value
 double dE00::GetDeltaE()
 {
     // h Prime 1
@@ -111,11 +110,10 @@ double dE00::GetDeltaE()
         _rSubT * chroma * hue);
 };
 
-/**
-	* Returns the RT variable calculation.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Calculates and returns the RT variable
+// Return Value:
+// - The RT variable
 double dE00::_GetRSubT()
 {
     return -2 *
@@ -130,11 +128,10 @@ double dE00::_GetRSubT()
                             (_hBarPrime - 275) / 25, 2)))));
 };
 
-/**
-	* Returns the T variable calculation.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Calculates and returns the T variable
+// Return Value:
+// - The T variable
 double dE00::_GetT()
 {
     return 1 -
@@ -144,11 +141,10 @@ double dE00::_GetT()
             0.20 * cos(_DegreesToRadians(4 * _hBarPrime - 63));
 };
 
-/**
-	* Returns the H Bar Prime variable calculation.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Calculates and returns the HBarPrime variable
+// Return Value:
+// - The HBarPrime variable
 double dE00::_GetHBarPrime()
 {
     if (abs(_hPrime1 - _hPrime2) > 180)
@@ -159,11 +155,10 @@ double dE00::_GetHBarPrime()
     return (_hPrime1 + _hPrime2) / 2;
 };
 
-/**
-	* Returns the Delta h Prime variable calculation.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Calculates and returns the Delta h prime variable
+// Return Value:
+// - The Delta h prime variable
 double dE00::_GetDeltaHPrime()
 {
     // When either _c1 prime or _c2 prime is zero, then deltaH prime is irrelevant and may be set to
@@ -188,32 +183,28 @@ double dE00::_GetDeltaHPrime()
     }
 };
 
-/**
-	* Returns the h Prime 1 variable calculation.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Calculates and returns the h Prime 1 variable
+// Return Value:
+// - The h Prime 1 variable
 double dE00::_GetHPrime1()
 {
     return _GetHPrimeFn(_x1.B, _aPrime1);
 }
 
-/**
-	* Returns the h Prime 2 variable calculation.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Calculates and returns the h Prime 2 variable
+// Return Value:
+// - The h Prime 2 variable
 double dE00::_GetHPrime2()
 {
     return _GetHPrimeFn(_x2.B, _aPrime2);
 };
 
-/**
-	* A helper function to calculate the h Prime 1 and h Prime 2 values.
-	* @method
-	* @private
-	* @returns {number}
-	*/
+// Method Description:
+// - Helper function to calculate the h Prime values
+// Return Value:
+// - The h Prime value
 double dE00::_GetHPrimeFn(double x, double y)
 {
     double hueAngle;
@@ -235,32 +226,38 @@ double dE00::_GetHPrimeFn(double x, double y)
     }
 };
 
-/**
-	* Gives the radian equivalent of a specified degree angle.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Converts radians to degrees
+// Arguments:
+// - radians: the angle in radians
+// Return Value:
+// - the given angle, converted to degrees
 double dE00::_RadiansToDegrees(double radians)
 {
     return radians * (180 / M_PI);
 };
 
-/**
-	* Gives the degree equivalent of a specified radian.
-	* @method
-	* @returns {number}
-	*/
+// Method Description:
+// - Converts degrees to radians
+// Arguments:
+// - degrees: the angle in degrees
+// Return Value:
+// - the given angle, converted to radians
 double dE00::_DegreesToRadians(double degrees)
 {
     return degrees * (M_PI / 180);
 };
 
-// RGB <--> Lab
 // http://stackoverflow.com/a/8433985/1405560
 // http://www.easyrgb.com/index.php?X=MATH&H=08#text8
 namespace ColorSpace
 {
-    // using http://www.easyrgb.com/index.php?X=MATH&H=01#text1
+    // Method Description:
+    // - Converts a color in rgb format to a color in lab format
+    // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
+    // Arguments:
+    // R, G, B: the rgb values of the input color
+    // l_s, a_s, b_s: where the output lab format should be stored
     void rgb2lab(double R, double G, double B, double& l_s, double& a_s, double& b_s)
     {
         double var_R = R / 255.0;
@@ -311,7 +308,12 @@ namespace ColorSpace
         b_s = 200. * (var_Y - var_Z);
     };
 
-    // http://www.easyrgb.com/index.php?X=MATH&H=01#text1
+    // Method Description:
+    // - Converts a color in lab format to a color in rgb format
+    // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
+    // Arguments:
+    // l_s, a_s, b_s: the lab values of the input color
+    // R, G, B: where the output rgb format should be stored
     void lab2rgb(double l_s, double a_s, double b_s, double& R, double& G, double& B)
     {
         double var_Y = (l_s + 16.) / 116.;
@@ -361,6 +363,26 @@ namespace ColorSpace
         B = var_B * 255.;
     };
 
+    // Method Description:
+    // - Converts a color in lab format to a color in rgb format
+    // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
+    // Arguments:
+    // l_s, a_s, b_s: the lab values of the input color
+    // rgb: where the output rgb format should be stored
+    void lab2rgb(double l_s, double a_s, double b_s, COLORREF& rgb)
+    {
+        double _r = 0, _g = 0, _b = 0;
+        lab2rgb(l_s, a_s, b_s, _r, _g, _b);
+        rgb = RGB(min_max(_r), min_max(_g), min_max(_b));
+    };
+
+    // Method Description:
+    // - Given 2 colors, computes the DeltaE value between them
+    // Arguments:
+    // - lab1: the foreground color
+    // - lab2: the background color
+    // Return Value:
+    // - the DeltaE value
     double DeltaE(ColorFix lab1, ColorFix lab2)
     {
         dE00 delta(lab1, lab2);
@@ -368,6 +390,12 @@ namespace ColorSpace
         return de;
     };
 
+    // Method Description:
+    // - Clamps the given value to be between 0-255 inclusive
+    // Arguments:
+    // - v: the value to clamp
+    // Return Value:
+    // - The clamped value
     BYTE min_max(double v)
     {
         if (v <= 0)
@@ -377,16 +405,7 @@ namespace ColorSpace
         else
             return (BYTE)v;
     }
-
-    void lab2rgb(double l_s, double a_s, double b_s, COLORREF& rgb)
-    {
-        double _r = 0, _g = 0, _b = 0;
-        lab2rgb(l_s, a_s, b_s, _r, _g, _b);
-        rgb = RGB(min_max(_r), min_max(_g), min_max(_b));
-    };
 };
-
-// The ColorFix implementation
 
 ColorFix::ColorFix()
 {
@@ -418,21 +437,38 @@ ColorFix::ColorFix(const ColorFix& color)
     rgb = color.rgb;
 }
 
+// Method Description:
+// - Populates our L, A, B values, based on our r, g, b values
 void ColorFix::ToLab()
 {
     ColorSpace::rgb2lab(r, g, b, L, A, B);
 }
 
+// Method Description:
+// - Populates our r, g, b values, based on our L, A, B values
 void ColorFix::ToRGB()
 {
     ColorSpace::lab2rgb(L, A, B, rgb);
 }
 
+// Method Description:
+// - Given a color, computes the DeltaE between us and that color
+// - Arguments:
+// - color: the color to compare against
+// - Return Value:
+// - The DeltaE value between us and that color
 double ColorFix::DeltaE(ColorFix color)
 {
     return ColorSpace::DeltaE(*this, color);
 }
 
+// Method Description:
+// - Given a background color, change our own color to make it more perceivable if necessary
+// - Arguments:
+// - back: the color to compare against
+// - pColor: where to store the resulting color
+// - Return Value:
+// - True if we changed our color, false otherwise
 bool ColorFix::PerceivableColor(COLORREF back, ColorFix& pColor, double* oldDE, double* newDE)
 {
     bool bChanged = false;
