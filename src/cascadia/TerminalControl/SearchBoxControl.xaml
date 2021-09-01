@@ -243,6 +243,7 @@
                  Margin="0,0,6,0"
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center"
+                 KeyDown="TextBoxKeyDown"
                  PlaceholderForeground="{ThemeResource TextBoxPlaceholderTextThemeBrush}" />
 
         <ToggleButton x:Name="GoBackwardButton"
