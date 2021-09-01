@@ -1248,13 +1248,8 @@ namespace winrt::TerminalApp::implementation
             return single_threaded_vector<TerminalApp::FilteredCommand>();
         }
 
-        const auto numRecentCommands = std::min(recentCommands.Size(), CommandLineHistoryLength);
-
         std::vector<TerminalApp::FilteredCommand> parsedCommands;
-        parsedCommands.reserve(numRecentCommands);
-
-        std::unordered_set<hstring> uniqueCommands;
-        uniqueCommands.reserve(numRecentCommands);
+        parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
 
         for (const auto& c : recentCommands)
         {
@@ -1263,13 +1258,6 @@ namespace winrt::TerminalApp::implementation
                 // Don't load more than CommandLineHistoryLength commands
                 break;
             }
-
-            if (uniqueCommands.count(c) > 0)
-            {
-                continue;
-            }
-
-            uniqueCommands.insert(c);
 
             if (const auto parsedCommand = _buildCommandLineCommand(c))
             {
@@ -1314,13 +1302,10 @@ namespace winrt::TerminalApp::implementation
                 break;
             }
 
-            if (uniqueCommands.count(c) > 0)
+            if (uniqueCommands.emplace(c).second)
             {
-                continue;
+                newRecentCommands.push_back(c);
             }
-
-            uniqueCommands.insert(c);
-            newRecentCommands.push_back(c);
         }
 
         ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
