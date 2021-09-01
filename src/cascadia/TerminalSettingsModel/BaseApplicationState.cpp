@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "BaseApplicationState.h"
 #include "CascadiaSettings.h"
-// #include "ApplicationState.g.cpp"
 
 #include "JsonUtils.h"
 #include "FileUtils.h"
@@ -12,13 +11,14 @@
 constexpr std::wstring_view stateFileName{ L"state.json" };
 using namespace ::Microsoft::Terminal::Settings::Model;
 
-// namespace winrt::Microsoft::Terminal::Settings::Model::implementation
-// {
 BaseApplicationState::BaseApplicationState(std::filesystem::path path) noexcept :
     _path{ std::move(path) },
     _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
 {
-    // _read();
+    // DON'T _read() here! _read() will call FromJson, which is virtual, and
+    // needs to be implemented in a derived class. Classes that derive from
+    // BaseApplicationState should make sure to call Reload() after construction
+    // to ensure the data is loaded.
 }
 
 // The destructor ensures that the last write is flushed to disk before returning.
@@ -80,4 +80,3 @@ try
     WriteUTF8FileAtomic(_path, content);
 }
 CATCH_LOG()
-// }
