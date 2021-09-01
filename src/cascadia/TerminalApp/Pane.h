@@ -48,11 +48,11 @@ class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
     Pane(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-         const winrt::Microsoft::Terminal::Control::TermControl& control,
+         const winrt::Windows::UI::Xaml::Controls::UserControl& control,
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
-    winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
+    winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl() const;
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
 
     // Method Description:
@@ -84,7 +84,7 @@ public:
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
                                                                   const float splitSize,
                                                                   const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                                                                  const winrt::Microsoft::Terminal::Control::TermControl& control);
+                                                                  const winrt::Windows::UI::Xaml::Controls::UserControl& control);
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
@@ -155,7 +155,7 @@ private:
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _border{};
-    winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
+    winrt::Windows::UI::Xaml::Controls::UserControl _control{ nullptr };
     winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
