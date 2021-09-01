@@ -69,28 +69,6 @@ dE00::dE00(ColorFix x1, ColorFix x2, double weightLightness, double weightChroma
 
     // S sub C
     _sSubC = 1 + 0.045 * _cBarPrime;
-
-	// Properties set in GetDeltaE method, for access to convenience functions
-    // h Prime 1
-    _hPrime1 = 0;
-
-    // h Prime 2
-    _hPrime2 = 0;
-
-    // Delta H Prime
-    _deltaHPrime = 0;
-
-    // H Bar Prime
-    _hBarPrime = 0;
-
-    // T
-    _t = 0;
-
-    // S sub H
-    _sSubH = 0;
-
-    // R sub T
-    _rSubT = 0;
 }
 
 /**
