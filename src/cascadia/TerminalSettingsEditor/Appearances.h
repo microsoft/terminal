@@ -93,6 +93,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_SETTING(_appearance, BackgroundImageAlignment);
         OBSERVABLE_PROJECTED_SETTING(_appearance, IntenseTextStyle);
+        OBSERVABLE_PROJECTED_SETTING(_appearance, PerceptualColorNudging);
 
     private:
         Model::AppearanceConfig _appearance;

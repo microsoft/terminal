@@ -283,6 +283,7 @@ private:
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
     bool _intenseIsBright;
+    bool _perceptualColorNudging;
 
     size_t _taskbarState;
     size_t _taskbarProgress;

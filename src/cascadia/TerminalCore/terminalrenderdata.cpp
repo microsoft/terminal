@@ -61,10 +61,19 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
     {
         colors.second |= 0xff000000;
     }
-    ColorFix colorFix{ colors.first };
-    ColorFix result{};
-    colorFix.PerceivableColor(colors.second, result);
-    return std::pair<COLORREF, COLORREF>(result.rgb, colors.second);
+    std::pair<COLORREF, COLORREF> result;
+    if (_perceptualColorNudging)
+    {
+        ColorFix colorFix{ colors.first };
+        ColorFix fixResult{};
+        colorFix.PerceivableColor(colors.second, fixResult);
+        result = std::pair<COLORREF, COLORREF>(fixResult.rgb, colors.second);
+    }
+    else
+    {
+        result = colors;
+    }
+    return result;
 }
 
 COORD Terminal::GetCursorPosition() const noexcept

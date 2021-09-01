@@ -165,6 +165,10 @@
           ],
           "type": "string"
         },
+        "perceptualColorNudging": {
+          "description": "When set to true, we will (when necessary) 'nudge' the foreground color to make it more visible, based on the background color.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -1589,6 +1593,10 @@
               "type": "integer"
             }
           ]
+        },
+        "perceptualColorNudging": {
+          "description": "When set to true, we will (when necessary) 'nudge' the foreground color to make it more visible, based on the background color.",
+          "type": "boolean"
         },
         "scrollbarState": {
           "default": "visible",

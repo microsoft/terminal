@@ -343,6 +343,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, RetroTerminalEffect);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorShape);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorHeight);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, PerceptualColorNudging);
     }
 
     // UnfocusedAppearance is treated as a single setting,

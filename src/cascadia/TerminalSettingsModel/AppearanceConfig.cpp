@@ -26,6 +26,7 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 static constexpr std::string_view IntenseTextStyleKey{ "intenseTextStyle" };
+static constexpr std::string_view PerceptualColorNudgingKey{ "perceptualColorNudging" };
 
 winrt::Microsoft::Terminal::Settings::Model::implementation::AppearanceConfig::AppearanceConfig(const winrt::weak_ref<Profile> sourceProfile) :
     _sourceProfile(sourceProfile)
@@ -50,6 +51,7 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::c
     appearance->_RetroTerminalEffect = sourceAppearance->_RetroTerminalEffect;
     appearance->_PixelShaderPath = sourceAppearance->_PixelShaderPath;
     appearance->_IntenseTextStyle = sourceAppearance->_IntenseTextStyle;
+    appearance->_PerceptualColorNudging = sourceAppearance->_PerceptualColorNudging;
     return appearance;
 }
 
@@ -71,6 +73,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::SetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::SetValueForKey(json, PerceptualColorNudgingKey, _PerceptualColorNudging);
 
     return json;
 }
@@ -102,6 +105,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::GetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::GetValueForKey(json, PerceptualColorNudgingKey, _PerceptualColorNudging);
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()

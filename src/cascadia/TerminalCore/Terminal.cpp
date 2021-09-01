@@ -53,7 +53,8 @@ Terminal::Terminal() :
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
     _trimBlockSelection{ false },
-    _intenseIsBright{ true }
+    _intenseIsBright{ true },
+    _perceptualColorNudging{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -175,6 +176,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
     _intenseIsBright = appearance.IntenseIsBright();
+    _perceptualColorNudging = appearance.PerceptualColorNudging();
 
     for (int i = 0; i < 16; i++)
     {
