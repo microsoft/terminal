@@ -232,8 +232,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <StackPanel Padding="8"
-                Margin="8"
+    <StackPanel Margin="8"
+                Padding="8"
                 CornerRadius="{ThemeResource OverlayCornerRadius}"
                 Orientation="Horizontal"
                 Style="{ThemeResource SearchBoxBackground}">
