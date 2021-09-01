@@ -13,6 +13,7 @@ namespace winrt::TerminalApp::implementation
         AdminWarningPlaceholder(const winrt::Microsoft::Terminal::Control::TermControl& control, const winrt::hstring& cmdline);
 
         winrt::Windows::UI::Xaml::Controls::UserControl Control();
+        winrt::hstring Commandline();
 
         TYPED_EVENT(PrimaryButtonClicked, TerminalApp::AdminWarningPlaceholder, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(CancelButtonClicked, TerminalApp::AdminWarningPlaceholder, winrt::Windows::UI::Xaml::RoutedEventArgs);

@@ -30,5 +30,6 @@ namespace winrt::TerminalApp::implementation
     {
         return _control;
     }
+    winrt::hstring AdminWarningPlaceholder::Commandline() { return _cmdline; }
 
 }

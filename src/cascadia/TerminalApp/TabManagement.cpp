@@ -251,7 +251,8 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
     void TerminalPage::_CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, TerminalConnection::ITerminalConnection existingConnection)
     {
-        bool doAdminWarning = true;;
+        bool doAdminWarning = true;
+        ;
         const auto& cmdline{ settings.DefaultSettings().Commandline() };
         if (_isElevated())
         {
@@ -322,25 +323,8 @@ namespace winrt::TerminalApp::implementation
         if (doAdminWarning)
         {
             auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(term, cmdline) };
-            warningControl->PrimaryButtonClicked([weakThis = get_weak(), warningControl](auto&&, auto&&) {
-                if (auto page{ weakThis.get() })
-                {
-                    for (const auto& tab : page->_tabs)
-                    {
-                        if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
-                        {
-                            tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
-                                if (pane->GetUserControl() == *warningControl)
-                                {
-                                    pane->ReplaceControl(warningControl->Control());
-                                    return true;
-                                }
-                                return false;
-                            });
-                        }
-                    }
-                }
-            });
+            warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
+            warningControl->CancelButtonClicked({ get_weak(), &TerminalPage::_adminWarningCancelClicked });
             controlToAdd = *warningControl;
         }
 
@@ -354,6 +338,56 @@ namespace winrt::TerminalApp::implementation
             _RegisterTerminalEvents(newControl);
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profile, newControl);
+        }
+    }
+
+    void TerminalPage::_adminWarningPrimaryClicked(const TerminalApp::AdminWarningPlaceholder& sender,
+                                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
+
+        for (const auto& tab : _tabs)
+        {
+            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
+                    if (pane->GetUserControl() == *warningControl)
+                    {
+                        pane->ReplaceControl(warningControl->Control());
+                        return true;
+                    }
+                    return false;
+                });
+            }
+        }
+
+        auto allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() };
+        if (!allowedCommandlines)
+        {
+            allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
+        }
+        allowedCommandlines.Append(warningControl->Commandline());
+        ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
+    }
+
+    void TerminalPage::_adminWarningCancelClicked(const TerminalApp::AdminWarningPlaceholder& sender,
+                                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
+
+        for (const auto& tab : _tabs)
+        {
+            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
+                    if (pane->GetUserControl() == *warningControl)
+                    {
+                        pane->Close();
+                        return true;
+                    }
+                    return false;
+                });
+            }
         }
     }
 
