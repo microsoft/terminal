@@ -35,17 +35,17 @@ dE00::dE00(ColorFix x1, ColorFix x2, double weightLightness, double weightChroma
 
     // A Prime 1
     _aPrime1 = _x1.A +
-                    (_x1.A / 2) *
-                        (1 - sqrt(
-                                    pow(_cBar, 7) /
-                                    (pow(_cBar, 7) + pow((double)25, 7))));
+               (_x1.A / 2) *
+                   (1 - sqrt(
+                            pow(_cBar, 7) /
+                            (pow(_cBar, 7) + pow((double)25, 7))));
 
     // A Prime 2
     _aPrime2 = _x2.A +
-                    (_x2.A / 2) *
-                        (1 - sqrt(
-                                    pow(_cBar, 7) /
-                                    (pow(_cBar, 7) + pow((double)25, 7))));
+               (_x2.A / 2) *
+                   (1 - sqrt(
+                            pow(_cBar, 7) /
+                            (pow(_cBar, 7) + pow((double)25, 7))));
 
     // C Prime 1
     _cPrime1 = sqrt(
@@ -65,7 +65,7 @@ dE00::dE00(ColorFix x1, ColorFix x2, double weightLightness, double weightChroma
 
     // S sub L
     _sSubL = 1 + ((0.015 * pow(_lBar - 50, 2)) /
-                        sqrt(20 + pow(_lBar - 50, 2)));
+                  sqrt(20 + pow(_lBar - 50, 2)));
 
     // S sub C
     _sSubC = 1 + 0.045 * _cBarPrime;
@@ -117,15 +117,15 @@ double dE00::GetDeltaE()
 double dE00::_GetRSubT()
 {
     return -2 *
-            sqrt(
-                pow(_cBarPrime, 7) /
-                (pow(_cBarPrime, 7) + pow((double)25, 7))) *
-            sin(_DegreesToRadians(
-                60 *
-                exp(
-                    -(
-                        pow(
-                            (_hBarPrime - 275) / 25, 2)))));
+           sqrt(
+               pow(_cBarPrime, 7) /
+               (pow(_cBarPrime, 7) + pow((double)25, 7))) *
+           sin(_DegreesToRadians(
+               60 *
+               exp(
+                   -(
+                       pow(
+                           (_hBarPrime - 275) / 25, 2)))));
 };
 
 // Method Description:
@@ -135,10 +135,10 @@ double dE00::_GetRSubT()
 double dE00::_GetT()
 {
     return 1 -
-            0.17 * cos(_DegreesToRadians(_hBarPrime - 30)) +
-            0.24 * cos(_DegreesToRadians(2 * _hBarPrime)) +
-            0.32 * cos(_DegreesToRadians(3 * _hBarPrime + 6)) -
-            0.20 * cos(_DegreesToRadians(4 * _hBarPrime - 63));
+           0.17 * cos(_DegreesToRadians(_hBarPrime - 30)) +
+           0.24 * cos(_DegreesToRadians(2 * _hBarPrime)) +
+           0.32 * cos(_DegreesToRadians(3 * _hBarPrime + 6)) -
+           0.20 * cos(_DegreesToRadians(4 * _hBarPrime - 63));
 };
 
 // Method Description:
@@ -167,7 +167,7 @@ double dE00::_GetDeltaHPrime()
     {
         return 0;
     }
-        
+
     if (abs(_hPrime1 - _hPrime2) <= 180)
     {
         return _hPrime2 - _hPrime1;
