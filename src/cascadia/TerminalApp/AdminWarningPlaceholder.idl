@@ -3,8 +3,9 @@
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass AdminWarningPlaceholder : Windows.UI.Xaml.Controls.UserControl
+    [default_interface] runtimeclass AdminWarningPlaceholder : Windows.UI.Xaml.Controls.UserControl,
+                                                               Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
-        // AdminWarningPlaceholder();
+        String Commandline { get; };
     }
 }

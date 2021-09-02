@@ -489,8 +489,11 @@
   <data name="ApproveCommandlineWarning_CancelButton.Content" xml:space="preserve">
     <value>Cancel</value>
   </data>
-  <data name="ApproveCommandlineWarningTextBlock.Text" xml:space="preserve">
-    <value>You are about t execute the following commandline. {TODO! format this}. Do you wish to continue?</value>
+  <data name="ApproveCommandlineWarningPrefixTextBlock.Text" xml:space="preserve">
+    <value>You are about to execute the following commandline:</value>
+  </data>
+  <data name="ApproveCommandlineWarningSuffixTextBlock.Text" xml:space="preserve">
+    <value>Do you wish to continue?</value>
   </data>
   <data name="ApproveCommandlineWarning_PrimaryButton.Content" xml:space="preserve">
     <value>Allow Commandline</value>

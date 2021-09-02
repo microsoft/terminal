@@ -14,26 +14,45 @@
     <Grid HorizontalAlignment="Center"
           VerticalAlignment="Center">
         <Border Margin="8,8,8,8"
-                Padding="8,8,8,8"
+                Padding="16,8,16,8"
                 Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
                 BorderBrush="{ThemeResource SystemAccentColor}"
                 BorderThickness="2,2,2,2"
                 CornerRadius="{ThemeResource OverlayCornerRadius}">
-            <StackPanel>
+            <StackPanel Orientation="Vertical">
                 <TextBlock x:Uid="ApproveCommandlineWarningTitle"
+                           Padding="0,0,0,16"
                            HorizontalAlignment="Left"
+                           FontSize="20"
+                           FontWeight="Normal"
                            TextWrapping="WrapWholeWords" />
-                <TextBlock x:Uid="ApproveCommandlineWarningTextBlock"
+
+                <TextBlock x:Uid="ApproveCommandlineWarningPrefixTextBlock"
                            HorizontalAlignment="Center"
                            TextWrapping="WrapWholeWords" />
-                <Button x:Name="PrimaryButton"
-                        x:Uid="ApproveCommandlineWarning_PrimaryButton"
-                        HorizontalAlignment="Right"
-                        Click="_primaryButtonClick" />
-                <Button x:Name="CancelButton"
-                        x:Uid="ApproveCommandlineWarning_CancelButton"
-                        HorizontalAlignment="Right"
-                        Click="_cancelButtonClick" />
+
+                <TextBlock Margin="0,8,0,8"
+                           HorizontalAlignment="Center"
+                           FontFamily="Cascadia Code"
+                           Text="{x:Bind Commandline, Mode=OneWay}"
+                           TextWrapping="WrapWholeWords" />
+
+                <TextBlock x:Uid="ApproveCommandlineWarningSuffixTextBlock"
+                           HorizontalAlignment="Left"
+                           TextWrapping="WrapWholeWords" />
+                <StackPanel HorizontalAlignment="Right"
+                            Orientation="Horizontal">
+                    <Button x:Name="PrimaryButton"
+                            x:Uid="ApproveCommandlineWarning_PrimaryButton"
+                            Margin="8"
+                            HorizontalAlignment="Right"
+                            Click="_primaryButtonClick"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <Button x:Name="CancelButton"
+                            x:Uid="ApproveCommandlineWarning_CancelButton"
+                            HorizontalAlignment="Right"
+                            Click="_cancelButtonClick" />
+                </StackPanel>
             </StackPanel>
         </Border>
     </Grid>

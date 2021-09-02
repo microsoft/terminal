@@ -12,7 +12,7 @@ namespace winrt::TerminalApp::implementation
 {
     AdminWarningPlaceholder::AdminWarningPlaceholder(const winrt::Microsoft::Terminal::Control::TermControl& control, const winrt::hstring& cmdline) :
         _control{ control },
-        _cmdline{ cmdline }
+        _Commandline{ cmdline }
     {
         InitializeComponent();
     }
@@ -30,6 +30,4 @@ namespace winrt::TerminalApp::implementation
     {
         return _control;
     }
-    winrt::hstring AdminWarningPlaceholder::Commandline() { return _cmdline; }
-
 }

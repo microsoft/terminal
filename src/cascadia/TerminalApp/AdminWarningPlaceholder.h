@@ -13,8 +13,8 @@ namespace winrt::TerminalApp::implementation
         AdminWarningPlaceholder(const winrt::Microsoft::Terminal::Control::TermControl& control, const winrt::hstring& cmdline);
 
         winrt::Windows::UI::Xaml::Controls::UserControl Control();
-        winrt::hstring Commandline();
-
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Commandline, _PropertyChangedHandlers);
         TYPED_EVENT(PrimaryButtonClicked, TerminalApp::AdminWarningPlaceholder, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(CancelButtonClicked, TerminalApp::AdminWarningPlaceholder, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
@@ -22,7 +22,6 @@ namespace winrt::TerminalApp::implementation
         friend struct AdminWarningPlaceholderT<AdminWarningPlaceholder>; // friend our parent so it can bind private event handlers
 
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
-        winrt::hstring _cmdline;
 
         void _primaryButtonClick(winrt::Windows::Foundation::IInspectable const& sender,
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
