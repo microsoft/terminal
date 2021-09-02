@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
         void SummonAllWindows();
-        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetAllPeasantInfo();
+        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
         winrt::fire_and_forget RequestShowTrayIcon();
         winrt::fire_and_forget RequestHideTrayIcon();

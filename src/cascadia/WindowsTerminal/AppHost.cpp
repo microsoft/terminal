@@ -1036,7 +1036,7 @@ void AppHost::_CreateTrayIcon()
         // Hookup the handlers, save the tokens for revoking if settings change.
         _ReAddTrayIconToken = _window->NotifyReAddTrayIcon([this]() { _trayIcon->ReAddTrayIcon(); });
         _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
-        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetAllPeasantInfo()); });
+        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantInfos()); });
         _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
         _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
     }

@@ -519,11 +519,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         }
     }
 
-    Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetAllPeasantInfo()
+    Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetPeasantInfos()
     {
         // We should only get called when we're the monarch since the monarch
         // is the only one that knows about all peasants.
-        return _monarch.GetAllPeasantInfo();
+        return _monarch.GetPeasantInfos();
     }
 
     // Method Description:
@@ -558,6 +558,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::UpdateActiveTabTitle(winrt::hstring title)
     {
-        _peasant.ActiveTabTitle(title);
+        winrt::get_self<implementation::Peasant>(_peasant)->ActiveTabTitle(title);
     }
 }

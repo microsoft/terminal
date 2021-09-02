@@ -17,7 +17,7 @@ namespace Microsoft.Terminal.Remoting
         void RequestHideTrayIcon();
         void UpdateActiveTabTitle(String title);
         Boolean DoesQuakeWindowExist();
-        Windows.Foundation.Collections.IVectorView<PeasantInfo> GetAllPeasantInfo();
+        Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos();
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;

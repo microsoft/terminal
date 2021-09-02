@@ -109,8 +109,8 @@ void TrayIcon::CreateTrayIcon()
 // - peasants: The map of all peasants that should be available in the context menu.
 // Return Value:
 // - <none>
-void TrayIcon::ShowTrayContextMenu(const til::point coord,
-                                   IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> peasants)
+void TrayIcon::ShowTrayContextMenu(const til::point& coord,
+                                   const IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants)
 {
     if (const auto hMenu = _CreateTrayContextMenu(peasants))
     {
@@ -142,7 +142,7 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
 // - peasants: A map of all peasants' ID to their window name.
 // Return Value:
 // - The handle to the newly created context menu.
-HMENU TrayIcon::_CreateTrayContextMenu(IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> peasants)
+HMENU TrayIcon::_CreateTrayContextMenu(const IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants)
 {
     auto hMenu = CreatePopupMenu();
     if (hMenu)
@@ -163,19 +163,20 @@ HMENU TrayIcon::_CreateTrayContextMenu(IVectorView<winrt::Microsoft::Terminal::R
         {
             for (const auto& p : peasants)
             {
-                winrt::hstring displayText{ fmt::format(L"#{} : ", p.Id) };
+                std::wstringstream displayText;
+                displayText << "#" << p.Id;
 
                 if (!p.TabTitle.empty())
                 {
-                    displayText = fmt::format(L"{} {}", displayText, p.TabTitle);
+                    displayText << ":" << p.TabTitle.c_str();
                 }
 
                 if (!p.Name.empty())
                 {
-                    displayText = fmt::format(L"{} [{}]", displayText, p.Name);
+                    displayText << " [" << p.Name.c_str() << "]";
                 }
 
-                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(p.Id), displayText.c_str());
+                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(p.Id), displayText.str().c_str());
             }
 
             MENUINFO submenuInfo{};
