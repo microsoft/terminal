@@ -3009,6 +3009,15 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
             sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
         }
     }
+    else if (_IsLeaf())
+    {
+        // If we're a leaf that didn't have a TermControl, then just increment
+        // by one. We have to increment by _some_ value, because this is used in
+        // a while() loop to find the next bigger size we can snap to. But since
+        // a non-terminal control doesn't really care what size it's snapped to,
+        // we can just say "one pixel larger is the next snap point"
+        sizeNode.size += 1;
+    }
     else if (!_IsLeaf())
     {
         // We're a parent pane, so we have to advance dimension of our children panes. In
@@ -3299,7 +3308,9 @@ std::optional<SplitDirection> Pane::PreCalculateAutoSplit(const std::shared_ptr<
 bool Pane::ContainsReadOnly() const
 {
     const auto& termControl{ GetTerminalControl() };
-    return termControl ? termControl.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+    return termControl ?
+               termControl.ReadOnly() :
+               (_IsLeaf() ? false : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly()));
 }
 
 // Method Description:
