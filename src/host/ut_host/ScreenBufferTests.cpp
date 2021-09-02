@@ -89,6 +89,8 @@ class ScreenBufferTests
 
     TEST_METHOD(MultipleAlternateBuffersFromMainCreationTest);
 
+    TEST_METHOD(AlternateBufferCursorInheritanceTest);
+
     TEST_METHOD(TestReverseLineFeed);
 
     TEST_METHOD(TestResetClearTabStops);
@@ -342,6 +344,71 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
             VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
         }
     }
+}
+
+void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Set the cursor attributes in the main buffer.");
+    auto mainCursorPos = COORD{ 3, 5 };
+    auto mainCursorVisible = false;
+    auto mainCursorSize = 33u;
+    auto mainCursorColor = RGB(1, 2, 3);
+    auto mainCursorType = CursorType::DoubleUnderscore;
+    auto mainCursorBlinking = false;
+    mainCursor.SetPosition(mainCursorPos);
+    mainCursor.SetIsVisible(mainCursorVisible);
+    mainCursor.SetStyle(mainCursorSize, mainCursorColor, mainCursorType);
+    mainCursor.SetBlinkingAllowed(mainCursorBlinking);
+
+    Log::Comment(L"Switch to the alternate buffer.");
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    auto& altBuffer = gci.GetActiveOutputBuffer();
+    auto& altCursor = altBuffer.GetTextBuffer().GetCursor();
+    auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
+
+    Log::Comment(L"Confirm the cursor position is inherited from the main buffer.");
+    VERIFY_ARE_EQUAL(mainCursorPos, altCursor.GetPosition());
+    Log::Comment(L"Confirm the cursor visibility is inherited from the main buffer.");
+    VERIFY_ARE_EQUAL(mainCursorVisible, altCursor.IsVisible());
+    Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
+    VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
+    VERIFY_ARE_EQUAL(mainCursorColor, altCursor.GetColor());
+    VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
+    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinkingAllowed());
+
+    Log::Comment(L"Set the cursor attributes in the alt buffer.");
+    auto altCursorPos = COORD{ 5, 3 };
+    auto altCursorVisible = true;
+    auto altCursorSize = 66u;
+    auto altCursorColor = RGB(3, 2, 1);
+    auto altCursorType = CursorType::EmptyBox;
+    auto altCursorBlinking = true;
+    altCursor.SetPosition(altCursorPos);
+    altCursor.SetIsVisible(altCursorVisible);
+    altCursor.SetStyle(altCursorSize, altCursorColor, altCursorType);
+    altCursor.SetBlinkingAllowed(altCursorBlinking);
+
+    Log::Comment(L"Switch back to the main buffer.");
+    useMain.release();
+    altBuffer.UseMainScreenBuffer();
+    VERIFY_ARE_EQUAL(&mainBuffer, &gci.GetActiveOutputBuffer());
+
+    Log::Comment(L"Confirm the cursor position is restored to what it was.");
+    VERIFY_ARE_EQUAL(mainCursorPos, mainCursor.GetPosition());
+    Log::Comment(L"Confirm the cursor visibility is inherited from the alt buffer.");
+    VERIFY_ARE_EQUAL(altCursorVisible, mainCursor.IsVisible());
+    Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
+    VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
+    VERIFY_ARE_EQUAL(altCursorColor, mainCursor.GetColor());
+    VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
+    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinkingAllowed());
 }
 
 void ScreenBufferTests::TestReverseLineFeed()
@@ -4947,6 +5014,9 @@ void ScreenBufferTests::ClearAlternateBuffer()
         VERIFY_ARE_EQUAL(altBuffer._viewport.BottomInclusive(), altBuffer._virtualBottom);
 
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
+
+        // Set the position to home, otherwise it's inherited from the main buffer.
+        VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }, true));
 
         WriteText(altBuffer.GetTextBuffer());
         VerifyText(altBuffer.GetTextBuffer());

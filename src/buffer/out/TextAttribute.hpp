@@ -64,7 +64,7 @@ public:
     static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
-    std::pair<COLORREF, COLORREF> CalculateRgbColors(const gsl::span<const COLORREF> colorTable,
+    std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
                                                      const COLORREF defaultFgColor,
                                                      const COLORREF defaultBgColor,
                                                      const bool reverseScreenMode = false,
@@ -201,7 +201,7 @@ enum class TextAttributeBehavior
 #ifdef UNIT_TESTING
 
 #define LOG_ATTR(attr) (Log::Comment(NoThrowString().Format( \
-    L#attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
+    L## #attr L"=%s", VerifyOutputTraits<TextAttribute>::ToString(attr).GetBuffer())))
 
 namespace WEX
 {

@@ -5,7 +5,7 @@
 #include "MyPage.h"
 #include <LibraryResources.h>
 #include "MyPage.g.cpp"
-#include "..\..\..\src\cascadia\UnitTests_Control\MockControlSettings.h"
+#include "MySettings.h"
 
 using namespace std::chrono_literals;
 using namespace winrt::Microsoft::Terminal;
@@ -26,17 +26,24 @@ namespace winrt::SampleApp::implementation
 
     void MyPage::Create()
     {
-        TerminalConnection::EchoConnection conn{};
-        auto settings = winrt::make_self<ControlUnitTests::MockControlSettings>();
+        auto settings = winrt::make_self<implementation::MySettings>();
 
+        auto connectionSettings{ TerminalConnection::ConptyConnection::CreateSettings(L"cmd.exe /k echo This TermControl is hosted in-proc...",
+                                                                                      winrt::hstring{},
+                                                                                      L"",
+                                                                                      nullptr,
+                                                                                      32,
+                                                                                      80,
+                                                                                      winrt::guid()) };
+
+        // "Microsoft.Terminal.TerminalConnection.ConptyConnection"
+        winrt::hstring myClass{ winrt::name_of<TerminalConnection::ConptyConnection>() };
+        TerminalConnection::ConnectionInformation connectInfo{ myClass, connectionSettings };
+
+        TerminalConnection::ITerminalConnection conn{ TerminalConnection::ConnectionInformation::CreateConnection(connectInfo) };
         Control::TermControl control{ *settings, conn };
 
         InProcContent().Children().Append(control);
-
-        // Once the control loads (and not before that), write some text for debugging:
-        control.Initialized([conn](auto&&, auto&&) {
-            conn.WriteInput(L"This TermControl is hosted in-proc...");
-        });
     }
 
     // Method Description:

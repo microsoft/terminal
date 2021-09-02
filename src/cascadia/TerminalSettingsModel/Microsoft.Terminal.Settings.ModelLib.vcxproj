@@ -15,8 +15,8 @@
 
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="DefaultTerminal.h" >
-        <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    <ClInclude Include="DefaultTerminal.h">
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
@@ -82,8 +82,8 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="DefaultTerminal.cpp">
-        <DependentUpon>DefaultTerminal.idl</DependentUpon>
-      </ClCompile>
+      <DependentUpon>DefaultTerminal.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="IconPathConverter.cpp">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>

@@ -7,11 +7,19 @@ namespace Microsoft.Terminal.TerminalConnection
 {
     [default_interface] runtimeclass ConptyConnection : ITerminalConnection
     {
-        ConptyConnection(String cmdline, String startingDirectory, String startingTitle, IMapView<String, String> environment, UInt32 rows, UInt32 columns, Guid guid);
+        ConptyConnection();
         Guid Guid { get; };
 
         static event NewConnectionHandler NewConnection;
         static void StartInboundListener();
         static void StopInboundListener();
+
+        static Windows.Foundation.Collections.ValueSet CreateSettings(String cmdline,
+                                                                      String startingDirectory,
+                                                                      String startingTitle,
+                                                                      IMapView<String, String> environment,
+                                                                      UInt32 rows,
+                                                                      UInt32 columns,
+                                                                      Guid guid);
     };
 }

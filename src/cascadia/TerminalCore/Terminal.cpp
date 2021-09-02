@@ -6,7 +6,6 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/DefaultSettings.h"
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
@@ -231,15 +230,9 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
-
-    const auto oldTop = _mutableViewport.Top();
-
     const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
     COORD bufferSize{ viewportSize.X, newBufferHeight };
-
-    // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
@@ -867,9 +860,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
 {
-    return std::shared_lock<std::shared_mutex>(_readWriteLock);
+    return std::unique_lock{ _readWriteLock };
 }
 
 // Method Description:
@@ -877,9 +870,9 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
 {
-    return std::unique_lock<std::shared_mutex>(_readWriteLock);
+    return std::unique_lock{ _readWriteLock };
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept
@@ -1071,7 +1064,12 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
-    _NotifyTerminalCursorPositionChanged();
+    // Firing the CursorPositionChanged event is very expensive so we try not to do that when
+    // the cursor does not need to be redrawn.
+    if (!cursor.IsDeferDrawing())
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

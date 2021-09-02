@@ -24,6 +24,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _TerminalOutputHandlers(PreviewText);
     }
 
+    void PreviewConnection::Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) noexcept
+    {
+    }
+
     void PreviewConnection::WriteInput(hstring const& /*data*/)
     {
     }

@@ -60,6 +60,9 @@
     <ClInclude Include="InvertedBooleanToVisibilityConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="KeyChordListener.h">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="PercentageSignConverter.h">
       <DependentUpon>Converters.idl</DependentUpon>
     </ClInclude>
@@ -99,6 +102,13 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
+    <ClInclude Include="Appearances.h">
+      <DependentUpon>Appearances.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ReadOnlyActions.h">
+      <DependentUpon>ReadOnlyActions.xaml</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Rendering.h">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClInclude>
@@ -128,6 +138,9 @@
     <Page Include="Interaction.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="KeyChordListener.xaml">
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Launch.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -135,6 +148,12 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Profiles.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="ReadOnlyActions.xaml">
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Appearances.xaml">
       <SubType>Designer</SubType>
     </Page>
     <Page Include="Rendering.xaml">
@@ -169,6 +188,9 @@
     </ClCompile>
     <ClCompile Include="InvertedBooleanToVisibilityConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="KeyChordListener.cpp">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
     </ClCompile>
     <ClCompile Include="PercentageSignConverter.cpp">
       <DependentUpon>Converters.idl</DependentUpon>
@@ -209,6 +231,13 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="Appearances.cpp">
+      <DependentUpon>Appearances.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
+    <ClCompile Include="ReadOnlyActions.cpp">
+      <DependentUpon>ReadOnlyActions.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="Rendering.cpp">
       <DependentUpon>Rendering.xaml</DependentUpon>
     </ClCompile>
@@ -240,12 +269,20 @@
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="KeyChordListener.idl">
+      <DependentUpon>KeyChordListener.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
     <Midl Include="Launch.idl">
       <DependentUpon>Launch.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Interaction.idl">
       <DependentUpon>Interaction.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="ReadOnlyActions.idl">
+      <DependentUpon>ReadOnlyActions.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="Rendering.idl">
@@ -257,6 +294,10 @@
     </Midl>
     <Midl Include="Profiles.idl">
       <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="Appearances.idl">
+      <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="SettingContainer.idl">

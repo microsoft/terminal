@@ -59,6 +59,27 @@ Profile::Profile(guid guid) :
 {
 }
 
+void Profile::CreateUnfocusedAppearance()
+{
+    if (!_UnfocusedAppearance)
+    {
+        auto unfocusedAppearance{ winrt::make_self<implementation::AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
+
+        // If an unfocused appearance is defined in this profile, any undefined parameters are
+        // taken from this profile's default appearance, so add it as a parent
+        com_ptr<AppearanceConfig> parentCom;
+        parentCom.copy_from(winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance));
+        unfocusedAppearance->InsertParent(parentCom);
+
+        _UnfocusedAppearance = *unfocusedAppearance;
+    }
+}
+
+void Profile::DeleteUnfocusedAppearance()
+{
+    _UnfocusedAppearance = std::nullopt;
+}
+
 winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };
@@ -215,8 +236,6 @@ Json::Value Profile::GenerateStub() const
     {
         stub[JsonKey(SourceKey)] = winrt::to_string(source);
     }
-
-    stub[JsonKey(HiddenKey)] = Hidden();
 
     return stub;
 }
@@ -429,11 +448,6 @@ winrt::Microsoft::Terminal::Settings::Model::FontConfig Profile::FontInfo()
 // - the function returns an evaluated version of %userprofile% to avoid blocking the session from starting.
 std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
 {
-    // First expand path
-    DWORD numCharsInput = ExpandEnvironmentStrings(directory.c_str(), nullptr, 0);
-    std::unique_ptr<wchar_t[]> evaluatedPath = std::make_unique<wchar_t[]>(numCharsInput);
-    THROW_LAST_ERROR_IF(0 == ExpandEnvironmentStrings(directory.c_str(), evaluatedPath.get(), numCharsInput));
-
     // Prior to GH#9541, we'd validate that the user's startingDirectory existed
     // here. If it was invalid, we'd gracefully fall back to %USERPROFILE%.
     //
@@ -444,7 +458,7 @@ std::wstring Profile::EvaluateStartingDirectory(const std::wstring& directory)
     //
     // If the path is eventually invalid, we'll display warning in the
     // ConptyConnection when the process fails to launch.
-    return std::wstring(evaluatedPath.get(), numCharsInput);
+    return wil::ExpandEnvironmentStringsW<std::wstring>(directory.c_str());
 }
 
 // Function Description:

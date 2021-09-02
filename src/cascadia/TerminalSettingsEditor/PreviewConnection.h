@@ -22,6 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         PreviewConnection() noexcept;
 
+        void Initialize(const Windows::Foundation::Collections::ValueSet& settings) noexcept;
         void Start() noexcept;
         void WriteInput(hstring const& data);
         void Resize(uint32_t rows, uint32_t columns) noexcept;

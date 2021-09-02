@@ -76,6 +76,17 @@ try
         }
     }
 
+    // Create the accessibility notifier early in the startup process.
+    // Only create if we're not in PTY mode.
+    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
+    // for the terminal user interface, so we should set ourselves up to skip all
+    // those notifications and the mathematical calculations required to send those events
+    // for performance reasons.
+    if (!args->InConptyMode())
+    {
+        RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier());
+    }
+
     // Removed allocation of scroll buffer here.
     return S_OK;
 }
@@ -325,8 +336,27 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
         RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
     }
 
+    // Ensure that whatever we're giving to the new thread is on the heap so it cannot
+    // go out of scope by the time that thread starts.
+    // (e.g. if someone sent us a pointer to stack memory... that could happen
+    //  ask me how I know... :| )
+    std::unique_ptr<CONSOLE_API_MSG> heapConnectMessage;
+    if (connectMessage)
+    {
+        // Allocate and copy onto the heap
+        heapConnectMessage = std::make_unique<CONSOLE_API_MSG>(*connectMessage);
+
+        // Set the pointer that `CreateThread` uses to the heap space
+        connectMessage = heapConnectMessage.get();
+    }
+
     HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
+
+    // If we successfully started the other thread, it's that guy's problem to free the connect message.
+    // (If we didn't make one, it should be no problem to release the empty unique_ptr.)
+    heapConnectMessage.release();
+
     LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
@@ -860,7 +890,11 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
     // If we were given a message on startup, process that in our context and then continue with the IO loop normally.
     if (lpParameter)
     {
-        ReceiveMsg = *(PCONSOLE_API_MSG)lpParameter;
+        // Capture the incoming lpParameter into a unique_ptr so we can appropriately
+        // free the heap memory when we're done getting the important bits out of it below.
+        std::unique_ptr<CONSOLE_API_MSG> capturedMessage{ static_cast<PCONSOLE_API_MSG>(lpParameter) };
+
+        ReceiveMsg = *capturedMessage.get();
         ReceiveMsg._pApiRoutines = &globals.api;
         ReceiveMsg._pDeviceComm = globals.pDeviceComm;
         IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);

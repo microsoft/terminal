@@ -13,12 +13,6 @@
 
 
 # -------------------------------------
-# Preprocessor Settings
-# -------------------------------------
-
-C_DEFINES               = $(C_DEFINES) -DFE_IME
-
-# -------------------------------------
 # Compiler Settings
 # -------------------------------------
 
@@ -38,7 +32,6 @@ TARGET_DESTINATION      = retail
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # Defines IME and Codepage support
-W32_SB                  = 1
 
 
 # -------------------------------------

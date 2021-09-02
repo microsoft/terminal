@@ -3,9 +3,7 @@
 
 #pragma once
 
-// Custom window messages
-#define CM_UPDATE_TITLE (WM_USER)
-
+#include "CustomWindowMessages.h"
 #include <wil/resource.h>
 
 template<typename T>

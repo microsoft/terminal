@@ -71,11 +71,13 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return (AzureClientID != L"0");
     }
 
-    AzureConnection::AzureConnection(const uint32_t initialRows, const uint32_t initialCols) :
-        _initialRows{ initialRows },
-        _initialCols{ initialCols },
-        _expiry{}
+    void AzureConnection::Initialize(const Windows::Foundation::Collections::ValueSet& settings)
     {
+        if (settings)
+        {
+            _initialRows = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialRows").try_as<Windows::Foundation::IPropertyValue>(), _initialRows);
+            _initialCols = winrt::unbox_value_or<uint32_t>(settings.TryLookup(L"initialCols").try_as<Windows::Foundation::IPropertyValue>(), _initialCols);
+        }
     }
 
     // Method description:

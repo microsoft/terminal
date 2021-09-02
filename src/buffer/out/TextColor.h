@@ -93,10 +93,7 @@ public:
     void SetIndex(const BYTE index, const bool isIndex256) noexcept;
     void SetDefault() noexcept;
 
-    COLORREF GetColor(gsl::span<const COLORREF> colorTable,
-                      const COLORREF defaultColor,
-                      const bool brighten = false) const noexcept;
-
+    COLORREF GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept

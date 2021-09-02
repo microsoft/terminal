@@ -106,8 +106,9 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
         THROW_HR_IF_NULL(E_FAIL, pMetrics);
 
         IAccessibilityNotifier* pNotifier = ServiceLocator::LocateAccessibilityNotifier();
-        THROW_HR_IF_NULL(E_FAIL, pNotifier);
-
+        // It is possible for pNotifier to be null and that's OK.
+        // For instance, the PTY doesn't need to send events. Just pass it along
+        // and be sure that `SCREEN_INFORMATION` bypasses all event work if it's not there.
         SCREEN_INFORMATION* const pScreen = new SCREEN_INFORMATION(pMetrics, pNotifier, popupAttributes, fontInfo);
 
         // Set up viewport
@@ -564,6 +565,19 @@ void SCREEN_INFORMATION::UpdateFont(const FontInfo* const pfiNewFont)
     }
 }
 
+// Routine Description:
+// - Informs clients whether we have accessibility eventing so they can
+//   save themselves the work of performing math or lookups before calling
+//   `NotifyAccessibilityEventing`.
+// Arguments:
+// - <none>
+// Return Value:
+// - True if we have an accessibility listener. False otherwise.
+bool SCREEN_INFORMATION::HasAccessibilityEventing() const noexcept
+{
+    return _pAccessibilityNotifier;
+}
+
 // NOTE: This method was historically used to notify accessibility apps AND
 // to aggregate drawing metadata to determine whether or not to use PolyTextOut.
 // After the Nov 2015 graphics refactor, the metadata drawing flag calculation is no longer necessary.
@@ -573,8 +587,7 @@ void SCREEN_INFORMATION::NotifyAccessibilityEventing(const short sStartX,
                                                      const short sEndX,
                                                      const short sEndY)
 {
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.IsInVtIoMode())
+    if (!_pAccessibilityNotifier)
     {
         return;
     }
@@ -680,7 +693,10 @@ VOID SCREEN_INFORMATION::InternalUpdateScrollBars()
     }
 
     // Fire off an event to let accessibility apps know the layout has changed.
-    _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    if (_pAccessibilityNotifier)
+    {
+        _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
+    }
 
     ResizingWindow--;
 }
@@ -1526,7 +1542,10 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
 
     if (NT_SUCCESS(status))
     {
-        NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        if (HasAccessibilityEventing())
+        {
+            NotifyAccessibilityEventing(0, 0, (SHORT)(coordNewScreenSize.X - 1), (SHORT)(coordNewScreenSize.Y - 1));
+        }
 
         if ((!ConvScreenInfo))
         {
@@ -1538,7 +1557,7 @@ bool SCREEN_INFORMATION::IsMaximizedY() const
         }
 
         // Fire off an event to let accessibility apps know the layout has changed.
-        if (IsActiveScreenBuffer())
+        if (_pAccessibilityNotifier && IsActiveScreenBuffer())
         {
             _pAccessibilityNotifier->NotifyConsoleLayoutEvent();
         }
@@ -1885,10 +1904,17 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
                                                          ppsiNewScreenBuffer);
     if (NT_SUCCESS(Status))
     {
-        // Update the alt buffer's cursor style to match our own.
+        // Update the alt buffer's cursor style, visibility, and position to match our own.
         auto& myCursor = GetTextBuffer().GetCursor();
         auto* const createdBuffer = *ppsiNewScreenBuffer;
-        createdBuffer->GetTextBuffer().GetCursor().SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
+        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        altCursor.SetIsVisible(myCursor.IsVisible());
+        altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
+        // The new position should match the viewport-relative position of the main buffer.
+        auto altCursorPos = myCursor.GetPosition();
+        altCursorPos.Y -= GetVirtualViewport().Top();
+        altCursor.SetPosition(altCursorPos);
 
         s_InsertScreenBuffer(createdBuffer);
 
@@ -1978,6 +2004,13 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         psiMain->_psiAlternateBuffer = nullptr;
         s_RemoveScreenBuffer(psiAlt); // this will also delete the alt buffer
         // deleting the alt buffer will give the GetSet back to its main
+
+        // Copy the alt buffer's cursor style and visibility back to the main buffer.
+        const auto& altCursor = psiAlt->GetTextBuffer().GetCursor();
+        auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
+        mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetColor(), altCursor.GetType());
+        mainCursor.SetIsVisible(altCursor.IsVisible());
+        mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
 
         // Tell the VT MouseInput handler that we're in the main buffer now
         gci.GetActiveInputBuffer()->GetTerminalInput().UseMainScreenBuffer();
