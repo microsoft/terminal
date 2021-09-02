@@ -2144,11 +2144,14 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     std::unique_lock lock{ _createCloseLock };
 
     const auto& termControl{ _control.try_as<TermControl>() };
-    // revoke our handler - the child will take care of the control now.
-    termControl.ConnectionStateChanged(_connectionStateChangedToken);
-    _connectionStateChangedToken.value = 0;
-    termControl.WarningBell(_warningBellToken);
-    _warningBellToken.value = 0;
+    if (termControl)
+    {
+        // revoke our handler - the child will take care of the control now.
+        termControl.ConnectionStateChanged(_connectionStateChangedToken);
+        termControl.WarningBell(_warningBellToken);
+        _connectionStateChangedToken.value = 0;
+        _warningBellToken.value = 0;
+    }
 
     // Remove our old GotFocus handler from the control. We don't what the
     // control telling us that it's now focused, we want it telling its new
@@ -2584,6 +2587,15 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
             sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
         }
     }
+    else if (_IsLeaf())
+    {
+        // If we're a leaf that didn't have a TermControl, then just increment
+        // by one. We have to increment by _some_ value, because this is used in
+        // a while() loop to find the next bigger size we can snap to. But since
+        // a non-terminal control doesn't really care what size it's snapped to,
+        // we can just say "one pixel larger is the next snap point"
+        sizeNode.size += 1;
+    }
     else if (!_IsLeaf())
     {
         // We're a parent pane, so we have to advance dimension of our children panes. In
@@ -2877,7 +2889,9 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
 bool Pane::ContainsReadOnly() const
 {
     const auto& termControl{ GetTerminalControl() };
-    return termControl ? termControl.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+    return termControl ?
+               termControl.ReadOnly() :
+               (_IsLeaf() ? false : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly()));
 }
 
 // Method Description:
