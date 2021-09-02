@@ -648,26 +648,21 @@ namespace winrt::TerminalApp::implementation
     //   to the terminal when no other panes are present (GH#6219)
     bool TerminalTab::NavigateFocus(const FocusDirection& direction)
     {
-        if (direction == FocusDirection::Previous)
+        // NOTE: This _must_ be called on the root pane, so that it can propagate
+        // throughout the entire tree.
+        if (const auto newFocus = _rootPane->NavigateDirection(_activePane, direction, _mruPanes))
         {
-            if (_mruPanes.size() < 2)
+            const auto res = _rootPane->FocusPane(newFocus);
+
+            if (_zoomedPane)
             {
-                return false;
-            }
-            // To get to the previous pane, get the id of the previous pane and focus to that
-            return _rootPane->FocusPane(_mruPanes.at(1));
-        }
-        else
-        {
-            // NOTE: This _must_ be called on the root pane, so that it can propagate
-            // throughout the entire tree.
-            if (auto newFocus = _rootPane->NavigateDirection(_activePane, direction))
-            {
-                return _rootPane->FocusPane(newFocus);
+                UpdateZoom(newFocus);
             }
 
-            return false;
+            return res;
         }
+
+        return false;
     }
 
     // Method Description:
@@ -680,27 +675,11 @@ namespace winrt::TerminalApp::implementation
     // - true if two panes were swapped.
     bool TerminalTab::SwapPane(const FocusDirection& direction)
     {
-        if (direction == FocusDirection::Previous)
+        // NOTE: This _must_ be called on the root pane, so that it can propagate
+        // throughout the entire tree.
+        if (auto neighbor = _rootPane->NavigateDirection(_activePane, direction, _mruPanes))
         {
-            if (_mruPanes.size() < 2)
-            {
-                return false;
-            }
-            if (auto lastPane = _rootPane->FindPane(_mruPanes.at(1)))
-            {
-                return _rootPane->SwapPanes(_activePane, lastPane);
-            }
-        }
-        else
-        {
-            // NOTE: This _must_ be called on the root pane, so that it can propagate
-            // throughout the entire tree.
-            if (auto neighbor = _rootPane->NavigateDirection(_activePane, direction))
-            {
-                return _rootPane->SwapPanes(_activePane, neighbor);
-            }
-
-            return false;
+            return _rootPane->SwapPanes(_activePane, neighbor);
         }
 
         return false;
@@ -1211,6 +1190,23 @@ namespace winrt::TerminalApp::implementation
             splitTabMenuItem.Icon(splitTabSymbol);
         }
 
+        Controls::MenuFlyoutItem exportTabMenuItem;
+        {
+            // "Split Tab"
+            Controls::FontIcon exportTabSymbol;
+            exportTabSymbol.FontFamily(Media::FontFamily{ L"Segoe MDL2 Assets" });
+            exportTabSymbol.Glyph(L"\xE74E"); // Save
+
+            exportTabMenuItem.Click([weakThis](auto&&, auto&&) {
+                if (auto tab{ weakThis.get() })
+                {
+                    tab->_ExportTabRequestedHandlers();
+                }
+            });
+            exportTabMenuItem.Text(RS_(L"ExportTabText"));
+            exportTabMenuItem.Icon(exportTabSymbol);
+        }
+
         // Build the menu
         Controls::MenuFlyout contextMenuFlyout;
         Controls::MenuFlyoutSeparator menuSeparator;
@@ -1218,6 +1214,7 @@ namespace winrt::TerminalApp::implementation
         contextMenuFlyout.Items().Append(renameTabMenuItem);
         contextMenuFlyout.Items().Append(duplicateTabMenuItem);
         contextMenuFlyout.Items().Append(splitTabMenuItem);
+        contextMenuFlyout.Items().Append(exportTabMenuItem);
         contextMenuFlyout.Items().Append(menuSeparator);
 
         // GH#5750 - When the context menu is dismissed with ESC, toss the focus
@@ -1489,6 +1486,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Updates the zoomed pane when the focus changes
+    // Arguments:
+    // - newFocus: the new pane to be zoomed
+    // Return Value:
+    // - <none>
+    void TerminalTab::UpdateZoom(std::shared_ptr<Pane> newFocus)
+    {
+        // clear the existing content so the old zoomed pane can be added back to the root tree
+        Content(nullptr);
+        _rootPane->Restore(_zoomedPane);
+        _zoomedPane = newFocus;
+        _rootPane->Maximize(_zoomedPane);
+        Content(_zoomedPane->GetRootElement());
+    }
+
+    // Method Description:
     // - Toggle our zoom state.
     //   * If we're not zoomed, then zoom the active pane, making it take the
     //     full size of the tab. We'll achieve this by changing our response to
@@ -1592,4 +1605,5 @@ namespace winrt::TerminalApp::implementation
     DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
     DEFINE_EVENT(TerminalTab, SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
+    DEFINE_EVENT(TerminalTab, ExportTabRequested, _ExportTabRequestedHandlers, winrt::delegate<>);
 }

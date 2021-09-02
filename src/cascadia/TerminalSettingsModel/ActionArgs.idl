@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     interface IActionArgs
@@ -307,5 +309,17 @@ namespace Microsoft.Terminal.Settings.Model
     {
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
+    };
+
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs
+    {
+        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
+        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     };
 }

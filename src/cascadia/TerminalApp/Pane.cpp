@@ -223,10 +223,11 @@ bool Pane::ResizePane(const ResizeDirection& direction)
 // Arguments:
 // - sourcePane: the pane to navigate from
 // - direction: which direction to go in
+// - mruPanes: the list of most recently used panes, in order
 // Return Value:
 // - The result of navigating from source according to direction, which may be
 //   nullptr (i.e. no pane was found in that direction).
-std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> sourcePane, const FocusDirection& direction)
+std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> sourcePane, const FocusDirection& direction, const std::vector<uint32_t>& mruPanes)
 {
     // Can't navigate anywhere if we are a leaf
     if (_IsLeaf())
@@ -234,9 +235,20 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return nullptr;
     }
 
-    // If the MRU previous pane is requested we can't move; the tab handles MRU
-    if (direction == FocusDirection::None || direction == FocusDirection::Previous)
+    if (direction == FocusDirection::None)
     {
+        return nullptr;
+    }
+
+    // Previous movement relies on the last used panes
+    if (direction == FocusDirection::Previous)
+    {
+        // If there is actually a previous pane.
+        if (mruPanes.size() > 1)
+        {
+            // This could return nullptr if the id is not actually in the tree.
+            return FindPane(mruPanes.at(1));
+        }
         return nullptr;
     }
 
@@ -277,11 +289,11 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // and its neighbor must necessarily be contained within the same child.
     if (!DirectionMatchesSplit(direction, _splitState))
     {
-        if (auto p = _firstChild->NavigateDirection(sourcePane, direction))
+        if (const auto p = _firstChild->NavigateDirection(sourcePane, direction, mruPanes))
         {
             return p;
         }
-        return _secondChild->NavigateDirection(sourcePane, direction);
+        return _secondChild->NavigateDirection(sourcePane, direction, mruPanes);
     }
 
     // Since the direction is the same as our split, it is possible that we must
@@ -541,16 +553,14 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
 }
 
 // Method Description:
-// - Given two panes, test whether the `direction` side of first is adjacent to second.
+// - Given two panes' offsets, test whether the `direction` side of first is adjacent to second.
 // Arguments:
-// - first: The reference pane.
-// - second: the pane to test adjacency with.
+// - firstOffset: The offset for the reference pane
+// - secondOffset: the offset to test adjacency with.
 // - direction: The direction to search in from the reference pane.
 // Return Value:
 // - true if the two panes are adjacent.
-bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
-                       const PanePoint firstOffset,
-                       const std::shared_ptr<Pane> second,
+bool Pane::_IsAdjacent(const PanePoint firstOffset,
                        const PanePoint secondOffset,
                        const FocusDirection& direction) const
 {
@@ -560,25 +570,11 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
         return abs(left - right) < 1e-4F;
     };
 
-    auto getXMax = [](PanePoint offset, std::shared_ptr<Pane> pane) {
-        // If we are past startup panes should have real dimensions
-        if (pane->GetRootElement().ActualWidth() > 0)
-        {
-            return offset.x + gsl::narrow_cast<float>(pane->GetRootElement().ActualWidth());
-        }
-
-        // If we have simulated dimensions we rely on the calculated scale
+    auto getXMax = [](PanePoint offset) {
         return offset.x + offset.scaleX;
     };
 
-    auto getYMax = [](PanePoint offset, std::shared_ptr<Pane> pane) {
-        // If we are past startup panes should have real dimensions
-        if (pane->GetRootElement().ActualHeight() > 0)
-        {
-            return offset.y + gsl::narrow_cast<float>(pane->GetRootElement().ActualHeight());
-        }
-
-        // If we have simulated dimensions we rely on the calculated scale
+    auto getYMax = [](PanePoint offset) {
         return offset.y + offset.scaleY;
     };
 
@@ -588,8 +584,8 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // corner of the first element is within the second element's height
     if (direction == FocusDirection::Left)
     {
-        auto sharesBorders = floatEqual(firstOffset.x, getXMax(secondOffset, second));
-        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset, second));
+        const auto sharesBorders = floatEqual(firstOffset.x, getXMax(secondOffset));
+        const auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset));
 
         return sharesBorders && withinHeight;
     }
@@ -598,8 +594,8 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // corner of the first element is within the second element's height
     else if (direction == FocusDirection::Right)
     {
-        auto sharesBorders = floatEqual(getXMax(firstOffset, first), secondOffset.x);
-        auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset, second));
+        const auto sharesBorders = floatEqual(getXMax(firstOffset), secondOffset.x);
+        const auto withinHeight = (firstOffset.y >= secondOffset.y) && (firstOffset.y < getYMax(secondOffset));
 
         return sharesBorders && withinHeight;
     }
@@ -608,8 +604,8 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // corner of the first element is within the second element's width
     else if (direction == FocusDirection::Up)
     {
-        auto sharesBorders = floatEqual(firstOffset.y, getYMax(secondOffset, second));
-        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset, second));
+        const auto sharesBorders = floatEqual(firstOffset.y, getYMax(secondOffset));
+        const auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset));
 
         return sharesBorders && withinWidth;
     }
@@ -618,8 +614,8 @@ bool Pane::_IsAdjacent(const std::shared_ptr<Pane> first,
     // corner of the first element is within the second element's width
     else if (direction == FocusDirection::Down)
     {
-        auto sharesBorders = floatEqual(getYMax(firstOffset, first), secondOffset.y);
-        auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset, second));
+        const auto sharesBorders = floatEqual(getYMax(firstOffset), secondOffset.y);
+        const auto withinWidth = (firstOffset.x >= secondOffset.x) && (firstOffset.x < getXMax(secondOffset));
 
         return sharesBorders && withinWidth;
     }
@@ -640,51 +636,25 @@ std::pair<Pane::PanePoint, Pane::PanePoint> Pane::_GetOffsetsForPane(const PaneP
     auto firstOffset = parentOffset;
     auto secondOffset = parentOffset;
 
-    // When panes are initialized they don't have dimensions yet.
-    if (_firstChild->GetRootElement().ActualHeight() > 0)
+    // Make up fake dimensions using an exponential layout. This is useful
+    // since we might need to navigate when there are panes not attached  to
+    // the ui tree, such as initialization, command running, and zoom.
+    // Basically create the tree layout on the fly by partitioning [0,1].
+    // This could run into issues if the tree depth is >127 (or other
+    // degenerate splits) as a float's mantissa only has so many bits of
+    // precision.
+
+    if (_splitState == SplitState::Horizontal)
     {
-        // The second child has an offset depending on the split
-        if (_splitState == SplitState::Horizontal)
-        {
-            const auto diff = gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualHeight());
-            secondOffset.y += diff;
-            // However, if a command is run in an existing window that opens multiple new panes
-            // the parent will have a size (triggering  this) and then the children will go
-            // to the other branch.
-            firstOffset.scaleY = diff;
-            secondOffset.scaleY = parentOffset.scaleY - diff;
-        }
-        else
-        {
-            const auto diff = gsl::narrow_cast<float>(_firstChild->GetRootElement().ActualWidth());
-            secondOffset.x += diff;
-            firstOffset.scaleX = diff;
-            secondOffset.scaleX = parentOffset.scaleX - diff;
-        }
+        secondOffset.y += (1 - _desiredSplitPosition) * parentOffset.scaleY;
+        firstOffset.scaleY *= _desiredSplitPosition;
+        secondOffset.scaleY *= (1 - _desiredSplitPosition);
     }
     else
     {
-        // Since we don't have real dimensions make up fake ones using an
-        // exponential layout. Basically create the tree layout on the fly by
-        // partitioning [0,1].
-        // This could run into issues if the tree depth is >127 (or other
-        // degenerate splits) as a float's mantissa only has so many bits of
-        // precision.
-
-        // In theory this could always be used, but there might be edge cases
-        // where using the actual sizing information provides a better result.
-        if (_splitState == SplitState::Horizontal)
-        {
-            secondOffset.y += (1 - _desiredSplitPosition) * parentOffset.scaleY;
-            firstOffset.scaleY *= _desiredSplitPosition;
-            secondOffset.scaleY *= (1 - _desiredSplitPosition);
-        }
-        else
-        {
-            secondOffset.x += (1 - _desiredSplitPosition) * parentOffset.scaleX;
-            firstOffset.scaleX *= _desiredSplitPosition;
-            secondOffset.scaleX *= (1 - _desiredSplitPosition);
-        }
+        secondOffset.x += (1 - _desiredSplitPosition) * parentOffset.scaleX;
+        firstOffset.scaleX *= _desiredSplitPosition;
+        secondOffset.scaleX *= (1 - _desiredSplitPosition);
     }
 
     return { firstOffset, secondOffset };
@@ -721,7 +691,7 @@ Pane::PaneNeighborSearch Pane::_FindNeighborForPane(const FocusDirection& direct
     // If we are a leaf node test if we adjacent to the focus node
     if (_IsLeaf())
     {
-        if (_IsAdjacent(searchResult.source, searchResult.sourceOffset, shared_from_this(), offset, direction))
+        if (_IsAdjacent(searchResult.sourceOffset, offset, direction))
         {
             searchResult.neighbor = shared_from_this();
         }

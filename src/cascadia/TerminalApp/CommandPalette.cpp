@@ -244,6 +244,17 @@ namespace winrt::TerminalApp::implementation
                 _PreviewActionHandlers(*this, actionPaletteItem.Command());
             }
         }
+        else if (_currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            if (filteredCommand)
+            {
+                SearchBoxPlaceholderText(filteredCommand.Item().Name());
+            }
+            else
+            {
+                SearchBoxPlaceholderText(RS_(L"CmdPalCommandlinePrompt"));
+            }
+        }
     }
 
     void CommandPalette::_previewKeyDownHandler(IInspectable const& /*sender*/,
@@ -363,6 +374,17 @@ namespace winrt::TerminalApp::implementation
         {
             _searchBox().PasteFromClipboard();
             e.Handled(true);
+        }
+        else if (key == VirtualKey::Right && _currentMode == CommandPaletteMode::CommandlineMode)
+        {
+            if (const auto command{ _filteredActionsView().SelectedItem().try_as<winrt::TerminalApp::FilteredCommand>() })
+            {
+                _searchBox().Text(command.Item().Name());
+                _searchBox().Select(_searchBox().Text().size(), 0);
+                _searchBox().Focus(FocusState::Programmatic);
+                _filteredActionsView().SelectedIndex(-1);
+                e.Handled(true);
+            }
         }
     }
 
@@ -1219,6 +1241,13 @@ namespace winrt::TerminalApp::implementation
     IVector<TerminalApp::FilteredCommand> CommandPalette::_loadRecentCommands()
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
+        // If this is the first time we've opened the commandline mode and
+        // there aren't any recent commands, then just return an empty vector.
+        if (!recentCommands)
+        {
+            return single_threaded_vector<TerminalApp::FilteredCommand>();
+        }
+
         std::vector<TerminalApp::FilteredCommand> parsedCommands;
         parsedCommands.reserve(std::min(recentCommands.Size(), CommandLineHistoryLength));
 
@@ -1246,13 +1275,39 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_updateRecentCommands(const hstring& command)
     {
         const auto recentCommands = ApplicationState::SharedInstance().RecentCommands();
-        const auto countToCopy = std::min(recentCommands.Size(), CommandLineHistoryLength - 1);
-        std::vector<hstring> newRecentCommands{ countToCopy + 1 };
-        til::at(newRecentCommands, 0) = command;
-        if (countToCopy)
+        // If this is the first time we've opened the commandline mode and
+        // there aren't any recent commands, then just store the new command.
+        if (!recentCommands)
         {
-            recentCommands.GetMany(0, { newRecentCommands.data() + 1, countToCopy });
+            ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(std::vector{ command })));
+            return;
         }
+
+        const auto numNewRecentCommands = std::min(recentCommands.Size() + 1, CommandLineHistoryLength);
+
+        std::vector<hstring> newRecentCommands;
+        newRecentCommands.reserve(numNewRecentCommands);
+
+        std::unordered_set<hstring> uniqueCommands;
+        uniqueCommands.reserve(numNewRecentCommands);
+
+        newRecentCommands.push_back(command);
+        uniqueCommands.insert(command);
+
+        for (const auto& c : recentCommands)
+        {
+            if (newRecentCommands.size() >= CommandLineHistoryLength)
+            {
+                // Don't store more than CommandLineHistoryLength commands
+                break;
+            }
+
+            if (uniqueCommands.emplace(c).second)
+            {
+                newRecentCommands.push_back(c);
+            }
+        }
+
         ApplicationState::SharedInstance().RecentCommands(single_threaded_vector(std::move(newRecentCommands)));
     }
 }
