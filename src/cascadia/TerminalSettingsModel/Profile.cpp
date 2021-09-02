@@ -47,6 +47,7 @@ static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
 static constexpr std::string_view BellStyleKey{ "bellStyle" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
+static constexpr std::string_view ElevateKey{ "elevate" };
 
 static constexpr std::wstring_view DesktopWallpaperEnum{ L"desktopWallpaper" };
 
@@ -373,6 +374,7 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
+    JsonUtils::GetValueForKey(json, ElevateKey, _Elevate);
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
@@ -574,6 +576,8 @@ Json::Value Profile::ToJson() const
     {
         json[JsonKey(UnfocusedAppearanceKey)] = winrt::get_self<AppearanceConfig>(_UnfocusedAppearance.value())->ToJson();
     }
+
+    JsonUtils::SetValueForKey(json, ElevateKey, _Elevate);
 
     return json;
 }

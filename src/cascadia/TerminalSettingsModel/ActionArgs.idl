@@ -117,14 +117,16 @@ namespace Microsoft.Terminal.Settings.Model
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
-
         Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
-
         String ColorScheme;
+        // This needs to be an optional so that the default value (null) does
+        // not modifiy whatever the profile's value is (either true or false)
+        Windows.Foundation.IReference<Boolean> Elevate { get; };
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
         String ToCommandline();
+
         UInt64 Hash();
     };
 

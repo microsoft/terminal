@@ -320,7 +320,7 @@ namespace winrt::TerminalApp::implementation
 
         void _StartInboundListener();
 
-        void _CompleteInitialization();
+        winrt::fire_and_forget _CompleteInitialization();
 
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 
@@ -360,6 +360,9 @@ namespace winrt::TerminalApp::implementation
         void _SetFocusMode(const bool inFocusMode);
 
         winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
+
+        bool _isElevated() const noexcept;
+        winrt::fire_and_forget _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
