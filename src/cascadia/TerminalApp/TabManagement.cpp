@@ -251,45 +251,6 @@ namespace winrt::TerminalApp::implementation
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
     void TerminalPage::_CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, TerminalConnection::ITerminalConnection existingConnection)
     {
-        bool doAdminWarning = true;
-        ;
-        const auto& cmdline{ settings.DefaultSettings().Commandline() };
-        if (_isElevated())
-        {
-            auto allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() };
-            bool commandlineWasAllowed = false;
-
-            if (allowedCommandlines)
-            {
-                for (const auto& approved : allowedCommandlines)
-                {
-                    if (approved == cmdline)
-                    {
-                        commandlineWasAllowed = true;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
-            }
-            doAdminWarning = !commandlineWasAllowed;
-            // if (!commandlineWasAllowed)
-            // {
-            //     ContentDialogResult warningResult = co_await _ShowCommandlineApproveWarning();
-            //     if (warningResult != ContentDialogResult::Primary)
-            //     {
-            //         co_return;
-            //     }
-            //     else
-            //     {
-            //         allowedCommandlines.Append(cmdline);
-            //     }
-            //     ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
-            // }
-        }
-
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
         auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, settings.DefaultSettings());
@@ -320,6 +281,9 @@ namespace winrt::TerminalApp::implementation
         // This way, when we do a settings reload we just update the parent and the overrides remain
         auto term = _InitControl(settings, connection);
         WUX::Controls::UserControl controlToAdd{ term };
+
+        const auto& cmdline{ settings.DefaultSettings().Commandline() };
+        const bool doAdminWarning = _shouldPromptForCommandline(cmdline);
         if (doAdminWarning)
         {
             auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(term, cmdline) };

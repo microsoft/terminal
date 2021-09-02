@@ -363,6 +363,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
 
+        bool _shouldPromptForCommandline(const winrt::hstring& cmdline) const;
         void _adminWarningPrimaryClicked(const winrt::TerminalApp::AdminWarningPlaceholder& sender,
                                          const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         void _adminWarningCancelClicked(const winrt::TerminalApp::AdminWarningPlaceholder& sender,

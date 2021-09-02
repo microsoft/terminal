@@ -17,6 +17,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
 #include "RenameWindowRequestedArgs.g.cpp"
+#include "AdminWarningPlaceholder.h"
 #include "../inc/WindowingBehavior.h"
 
 #include <til/latch.h>
@@ -1310,6 +1311,29 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    bool TerminalPage::_shouldPromptForCommandline(const winrt::hstring& cmdline) const
+    {
+        bool doAdminWarning = true;
+        if (_isElevated())
+        {
+            bool commandlineWasAllowed = false;
+
+            if (const auto& allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() })
+            {
+                for (const auto& approved : allowedCommandlines)
+                {
+                    if (approved == cmdline)
+                    {
+                        commandlineWasAllowed = true;
+                        break;
+                    }
+                }
+            }
+            doAdminWarning = !commandlineWasAllowed;
+        }
+        return doAdminWarning;
+    }
+
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
@@ -1425,13 +1449,24 @@ namespace winrt::TerminalApp::implementation
             }
 
             auto newControl = _InitControl(controlSettings, controlConnection);
+            WUX::Controls::UserControl controlToAdd{ newControl };
+
+            const auto& cmdline{ controlSettings.DefaultSettings().Commandline() };
+            const bool doAdminWarning = _shouldPromptForCommandline(cmdline);
+            if (doAdminWarning)
+            {
+                auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(newControl, cmdline) };
+                warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
+                warningControl->CancelButtonClicked({ get_weak(), &TerminalPage::_adminWarningCancelClicked });
+                controlToAdd = *warningControl;
+            }
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl);
 
             _UnZoomIfNeeded();
 
-            tab.SplitPane(realSplitType, splitSize, profile, newControl);
+            tab.SplitPane(realSplitType, splitSize, profile, controlToAdd);
 
             // After GH#6586, the control will no longer focus itself
             // automatically when it's finished being laid out. Manually focus
