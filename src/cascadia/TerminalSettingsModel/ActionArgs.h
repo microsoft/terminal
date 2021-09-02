@@ -125,7 +125,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool Equals(const Model::NewTerminalArgs& other)
         {
-
             auto otherAsUs = other.try_as<NewTerminalArgs>();
             if (otherAsUs)
             {
