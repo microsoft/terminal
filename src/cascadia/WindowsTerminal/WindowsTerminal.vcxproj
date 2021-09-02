@@ -47,6 +47,7 @@
     <ClInclude Include="CustomWindowMessages.h" />
     <ClInclude Include="IslandWindow.h" />
     <ClInclude Include="NonClientIslandWindow.h" />
+    <ClInclude Include="TrayIcon.h" />
     <ClInclude Include="VirtualDesktopUtils.h" />
   </ItemGroup>
   <ItemGroup>
@@ -57,6 +58,7 @@
     <ClCompile Include="AppHost.cpp" />
     <ClCompile Include="IslandWindow.cpp" />
     <ClCompile Include="NonClientIslandWindow.cpp" />
+    <ClCompile Include="TrayIcon.cpp" />
     <ClCompile Include="VirtualDesktopUtils.cpp" />
     <ClCompile Include="icon.cpp" />
   </ItemGroup>

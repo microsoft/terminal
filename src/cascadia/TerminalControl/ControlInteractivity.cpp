@@ -614,7 +614,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Control::InteractivityAutomationPeer ControlInteractivity::OnCreateAutomationPeer()
     try
     {
-        auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
+        const auto autoPeer = winrt::make_self<implementation::InteractivityAutomationPeer>(this);
 
         _uiaEngine = std::make_unique<::Microsoft::Console::Render::UiaEngine>(autoPeer.get());
         _core->AttachUiaEngine(_uiaEngine.get());

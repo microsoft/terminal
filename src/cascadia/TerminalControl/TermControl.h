@@ -109,6 +109,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
         static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
 
+        hstring ReadEntireBuffer() const;
+
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);
@@ -187,8 +189,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         inline bool _IsClosing() const noexcept
         {
+#ifndef NDEBUG
             // _closing isn't atomic and may only be accessed from the main thread.
-            assert(Dispatcher().HasThreadAccess());
+            if (const auto dispatcher = Dispatcher())
+            {
+                assert(dispatcher.HasThreadAccess());
+            }
+#endif
             return _closing;
         }
 

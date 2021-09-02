@@ -143,6 +143,20 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        {
+            auto moved = _MovePane(realArgs.TabIndex());
+            args.Handled(moved);
+        }
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
@@ -323,10 +337,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSwapPane(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        if (const auto& realArgs = args.ActionArgs().try_as<SwapPaneArgs>())
         {
             if (realArgs.Direction() == FocusDirection::None)
             {
@@ -335,8 +349,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MovePane(realArgs.Direction());
-                args.Handled(true);
+                auto swapped = _SwapPane(realArgs.Direction());
+                args.Handled(swapped);
             }
         }
     }
@@ -739,11 +753,10 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
 
         // Manually fill in the evaluated profile.
-        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
         _OpenNewWindow(false, newTerminalArgs);
         actionArgs.Handled(true);
     }
@@ -874,6 +887,23 @@ namespace winrt::TerminalApp::implementation
                     termControl.ClearBuffer(realArgs.Clear());
                     args.Handled(true);
                 }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleMultipleActions(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<MultipleActionsArgs>())
+            {
+                for (const auto& action : realArgs.Actions())
+                {
+                    _actionDispatch->DoAction(action);
+                }
+
+                args.Handled(true);
             }
         }
     }

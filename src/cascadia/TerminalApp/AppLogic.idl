@@ -70,6 +70,9 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
 
+        Boolean GetMinimizeToTray();
+        Boolean GetAlwaysShowTrayIcon();
+
         FindTargetWindowResult FindTargetWindow(String[] args);
 
         Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();

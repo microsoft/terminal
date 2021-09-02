@@ -129,6 +129,7 @@ namespace Microsoft::Console::Render
         void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
         void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
+        void SetIntenseIsBold(const bool opacity) noexcept;
 
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
 
@@ -257,6 +258,7 @@ namespace Microsoft::Console::Render
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
         float _defaultTextBackgroundOpacity;
+        bool _intenseIsBold;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.
         __declspec(align(16)) struct

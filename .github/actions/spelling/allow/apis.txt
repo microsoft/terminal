@@ -2,11 +2,13 @@ ACCEPTFILES
 ACCESSDENIED
 alignas
 alignof
+APPLYTOSUBMENUS
 bitfield
 bitfields
 BUILDBRANCH
 BUILDMSG
 BUILDNUMBER
+BYPOSITION
 charconv
 CLASSNOTAVAILABLE
 cmdletbinding
@@ -78,7 +80,11 @@ llu
 localtime
 lround
 LSHIFT
+MENUCOMMAND
+MENUDATA
+MENUINFO
 memicmp
+mptt
 mov
 msappx
 MULTIPLEUSE
@@ -93,6 +99,7 @@ NOCHANGEDIR
 NOPROGRESS
 NOREDIRECTIONBITMAP
 NOREPEAT
+NOTIFYBYPOS
 NOTIFYICON
 NOTIFYICONDATA
 ntprivapi
@@ -140,6 +147,7 @@ Stubless
 Subheader
 Subpage
 syscall
+TASKBARCREATED
 TBPF
 THEMECHANGED
 tlg
@@ -172,6 +180,7 @@ xlocmes
 xlocmon
 xlocnum
 xloctime
+XMax
 xmemory
 XParse
 xpath
@@ -180,3 +189,4 @@ xstring
 xtree
 xutility
 YIcon
+YMax

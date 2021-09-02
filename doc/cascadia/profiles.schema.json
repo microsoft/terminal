@@ -154,6 +154,17 @@
           "description": "Sets how the background image aligns to the boundaries of the window when unfocused. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
           "type": "string"
         },
+        "intenseTextStyle": {
+          "default": "bright",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -204,6 +215,22 @@
               "type": "integer"
             }
           ]
+        },
+        "features": {
+          "description": "Sets the DWrite font features for the given font. For example, { \"ss01\": 1, \"liga\":0 } will enable ss01 and disable ligatures.",
+          "type": "object",
+          "patternProperties": {
+            "^(([A-Za-z0-9]){4})$": { "type": "integer" }
+          },
+          "additionalProperties": false
+        },
+        "axes": {
+          "description": "Sets the DWrite font axes for the given font. For example, { \"wght\": 200 } will set the font weight to 200.",
+          "type": "object",
+          "patternProperties": {
+            "^([A-Za-z]{4})$": { "type": "number" }
+          },
+          "additionalProperties": false
         }
       },
       "type": "object"
@@ -239,7 +266,9 @@
         "identifyWindows",
         "moveFocus",
         "movePane",
+        "swapPane",
         "moveTab",
+        "multipleActions",
         "newTab",
         "newWindow",
         "nextTab",
@@ -285,7 +314,10 @@
         "right",
         "up",
         "down",
-        "previous"
+        "previous",
+        "nextInOrder",
+        "previousInOrder",
+        "first"
       ],
       "type": "string"
     },
@@ -493,6 +525,23 @@
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+          }
+        }
+      }
+    ],
+    "required": [ "index" ]
+  },
+  "MovePaneAction": {
+      "description": "Arguments corresponding to a Move Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "movePane" },
+            "index": {
+              "type": "integer",
+              "default": 0,
+              "description": "Which tab to move the pane to, with the first being 0"
             }
           }
         }
@@ -509,24 +558,24 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane."
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
             }
           }
         }
       ],
       "required": [ "direction" ]
     },
-    "MovePaneAction": {
-      "description": "Arguments corresponding to a Move Pane Action",
+    "SwapPaneAction": {
+      "description": "Arguments corresponding to a Swap Pane Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "movePane" },
+            "action": { "type": "string", "pattern": "swapPane" },
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane."
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
             }
           }
         }
@@ -777,6 +826,24 @@
       ],
       "required": [ "direction" ]
     },
+    "MultipleActionsAction": {
+      "description": "Arguments for the multiple actions command",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "multipleActions" },
+            "actions" : {
+              "$ref": "#/definitions/ShortcutAction",
+              "type": "array",
+              "minItems": 1,
+              "description": "A list of other actions."
+            }
+          }
+        }
+      ],
+      "required": [ "actions" ]
+    }, 
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
       "allOf": [
@@ -972,6 +1039,7 @@
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
               { "$ref": "#/definitions/MovePaneAction" },
+              { "$ref": "#/definitions/SwapPaneAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
@@ -1182,6 +1250,16 @@
           "minimum": 0,
           "type": [ "integer", "string" ],
           "deprecated": true
+        },
+        "minimizeToTray": {
+          "default": "false",
+          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the system tray through which the user can access their windows.",
+          "type": "boolean"
+        },
+        "alwaysShowTrayIcon": {
+          "default": "false",
+          "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "type": "boolean"
         },
 		"actions": {
 			"description": "Properties are specific to each custom action.",

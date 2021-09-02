@@ -123,15 +123,16 @@ namespace winrt::TerminalApp::implementation
         void _dispatchCommand(winrt::TerminalApp::FilteredCommand const& command);
         void _dispatchCommandline(winrt::TerminalApp::FilteredCommand const& command);
         void _switchToTab(winrt::TerminalApp::FilteredCommand const& command);
-        std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(std::wstring const& commandLine);
+        static std::optional<winrt::TerminalApp::FilteredCommand> _buildCommandLineCommand(const winrt::hstring& commandLine);
 
         void _dismissPalette();
 
         void _scrollToIndex(uint32_t index);
         uint32_t _getNumVisibleItems();
 
-        static constexpr int CommandLineHistoryLength = 10;
-        Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _commandLineHistory{ nullptr };
+        static constexpr uint32_t CommandLineHistoryLength = 20;
+        static Windows::Foundation::Collections::IVector<winrt::TerminalApp::FilteredCommand> _loadRecentCommands();
+        static void _updateRecentCommands(const winrt::hstring& command);
         ::TerminalApp::AppCommandlineArgs _appArgs;
 
         void _choosingItemContainer(Windows::UI::Xaml::Controls::ListViewBase const& sender, Windows::UI::Xaml::Controls::ChoosingItemContainerEventArgs const& args);

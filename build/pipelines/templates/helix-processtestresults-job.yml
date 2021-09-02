@@ -22,6 +22,7 @@ jobs:
     condition: succeededOrFailed()
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      HelixAccessToken: $(HelixApiAccessToken)
     inputs:
       targetType: filePath
       filePath: build\Helix\UpdateUnreliableTests.ps1
@@ -32,6 +33,7 @@ jobs:
     condition: succeededOrFailed()
     env:
       SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+      HelixAccessToken: $(HelixApiAccessToken)
     inputs:
       targetType: filePath
       filePath: build\Helix\OutputTestResults.ps1

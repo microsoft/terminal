@@ -29,6 +29,7 @@ static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTi
 static constexpr std::string_view LanguageKey{ "language" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
+static constexpr std::string_view UseAcrylicInTabRowKey{ "useAcrylicInTabRow" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view InputServiceWarningKey{ "inputServiceWarning" };
@@ -48,6 +49,8 @@ static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
+static constexpr std::string_view AlwaysShowTrayIconKey{ "alwaysShowTrayIcon" };
+static constexpr std::string_view MinimizeToTrayKey{ "minimizeToTray" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -105,6 +108,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_Language = _Language;
     globals->_Theme = _Theme;
     globals->_TabWidthMode = _TabWidthMode;
+    globals->_UseAcrylicInTabRow = _UseAcrylicInTabRow;
     globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
     globals->_WordDelimiters = _WordDelimiters;
     globals->_InputServiceWarning = _InputServiceWarning;
@@ -129,6 +133,8 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_WindowingBehavior = _WindowingBehavior;
     globals->_TrimBlockSelection = _TrimBlockSelection;
     globals->_DetectURLs = _DetectURLs;
+    globals->_MinimizeToTray = _MinimizeToTray;
+    globals->_AlwaysShowTrayIcon = _AlwaysShowTrayIcon;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
@@ -287,6 +293,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
 
+    JsonUtils::GetValueForKey(json, UseAcrylicInTabRowKey, _UseAcrylicInTabRow);
+
     JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
     // GetValueForKey will only override the current value if the key exists
@@ -318,6 +326,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
 
     JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
+
+    JsonUtils::GetValueForKey(json, MinimizeToTrayKey, _MinimizeToTray);
+
+    JsonUtils::GetValueForKey(json, AlwaysShowTrayIconKey, _AlwaysShowTrayIcon);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
@@ -400,6 +412,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, LanguageKey,                    _Language);
     JsonUtils::SetValueForKey(json, ThemeKey,                       _Theme);
     JsonUtils::SetValueForKey(json, TabWidthModeKey,                _TabWidthMode);
+    JsonUtils::SetValueForKey(json, UseAcrylicInTabRowKey,          _UseAcrylicInTabRow);
     JsonUtils::SetValueForKey(json, SnapToGridOnResizeKey,          _SnapToGridOnResize);
     JsonUtils::SetValueForKey(json, DebugFeaturesKey,               _DebugFeaturesEnabled);
     JsonUtils::SetValueForKey(json, ForceFullRepaintRenderingKey,   _ForceFullRepaintRendering);
@@ -414,6 +427,8 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
     JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
     JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
+    JsonUtils::SetValueForKey(json, MinimizeToTrayKey,              _MinimizeToTray);
+    JsonUtils::SetValueForKey(json, AlwaysShowTrayIconKey,          _AlwaysShowTrayIcon);
     // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();

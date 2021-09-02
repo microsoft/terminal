@@ -101,7 +101,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
     public:
         DeserializationError(const Json::Value& value) :
-            runtime_error("failed to deserialize"),
+            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asCString())),
             jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)
@@ -161,7 +161,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return til::u8u16(Detail::GetStringView(json));
         }
 
-        bool CanConvert(const Json::Value& json)
+        bool CanConvert(const Json::Value& json) const
         {
             return json.isString();
         }
@@ -174,6 +174,47 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::string TypeDescription() const
         {
             return "string";
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<std::vector<T>>
+    {
+        std::vector<T> FromJson(const Json::Value& json)
+        {
+            std::vector<T> val;
+            val.reserve(json.size());
+
+            ConversionTrait<T> trait;
+            for (const auto& element : json)
+            {
+                val.push_back(trait.FromJson(element));
+            }
+
+            return val;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<T> trait;
+            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); });
+        }
+
+        Json::Value ToJson(const std::vector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            ConversionTrait<T> trait;
+            for (const auto& v : val)
+            {
+                json.append(trait.ToJson(v));
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{}[]", ConversionTrait<T>{}.TypeDescription());
         }
     };
 
@@ -252,10 +293,46 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return til::u16u8(val);
         }
 
-        bool CanConvert(const Json::Value& json)
+        bool CanConvert(const Json::Value& json) const
         {
             // hstring has a specific behavior for null, so it can convert it
             return ConversionTrait<std::wstring>::CanConvert(json) || json.isNull();
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
+    {
+        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
+        {
+            ConversionTrait<std::vector<T>> trait;
+            return winrt::single_threaded_vector<T>(std::move(trait.FromJson(json)));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<std::vector<T>> trait;
+            return trait.CanConvert(json);
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            if (val)
+            {
+                ConversionTrait<T> trait;
+                for (const auto& v : val)
+                {
+                    json.append(trait.ToJson(v));
+                }
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{}[]", ConversionTrait<T>{}.TypeDescription());
         }
     };
 

@@ -801,8 +801,18 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         rcRest.top = topBorderHeight;
 
         const auto backgroundBrush = _titlebar.Background();
-        const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-        const til::color backgroundColor = backgroundSolidBrush.Color();
+        const auto backgroundSolidBrush = backgroundBrush.try_as<Media::SolidColorBrush>();
+        const auto backgroundAcrylicBrush = backgroundBrush.try_as<Media::AcrylicBrush>();
+
+        til::color backgroundColor = Colors::Black();
+        if (backgroundSolidBrush)
+        {
+            backgroundColor = backgroundSolidBrush.Color();
+        }
+        else if (backgroundAcrylicBrush)
+        {
+            backgroundColor = backgroundAcrylicBrush.FallbackColor();
+        }
 
         if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
         {

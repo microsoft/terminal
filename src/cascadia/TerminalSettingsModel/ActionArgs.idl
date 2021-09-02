@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     interface IActionArgs
@@ -33,7 +35,10 @@ namespace Microsoft.Terminal.Settings.Model
         Right,
         Up,
         Down,
-        Previous
+        Previous,
+        PreviousInOrder,
+        NextInOrder,
+        First
     };
 
     enum SplitState
@@ -141,6 +146,12 @@ namespace Microsoft.Terminal.Settings.Model
         NewTerminalArgs TerminalArgs { get; };
     };
 
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    {
+        MovePaneArgs(UInt32 tabIndex);
+        UInt32 TabIndex;
+    };
+
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
         SwitchToTabArgs(UInt32 tabIndex);
@@ -158,9 +169,9 @@ namespace Microsoft.Terminal.Settings.Model
         FocusDirection FocusDirection { get; };
     };
 
-    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    [default_interface] runtimeclass SwapPaneArgs : IActionArgs
     {
-        MovePaneArgs(FocusDirection direction);
+        SwapPaneArgs(FocusDirection direction);
         FocusDirection Direction { get; };
     };
 
@@ -268,11 +279,15 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass PrevTabArgs : IActionArgs
     {
+        PrevTabArgs();
+        PrevTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
     [default_interface] runtimeclass NextTabArgs : IActionArgs
     {
+        NextTabArgs();
+        NextTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
@@ -300,5 +315,11 @@ namespace Microsoft.Terminal.Settings.Model
     {
         ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
         Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     };
 }

@@ -92,6 +92,9 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::TaskbarState TaskbarState();
 
+        bool GetMinimizeToTray();
+        bool GetAlwaysShowTrayIcon();
+
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();

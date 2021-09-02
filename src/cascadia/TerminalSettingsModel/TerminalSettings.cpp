@@ -84,25 +84,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Method Description:
-    // - Create a TerminalSettingsCreateResult for the provided profile guid. We'll
-    //   use the guid to look up the profile that should be used to
-    //   create these TerminalSettings. Then, we'll apply settings contained in the
-    //   global and profile settings to the instance.
-    // Arguments:
-    // - appSettings: the set of settings being used to construct the new terminal
-    // - profileGuid: the unique identifier (guid) of the profile
-    // - keybindings: the keybinding handler
-    // Return Value:
-    // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
-    //   one for when the terminal is focused and the other for when the terminal is unfocused
-    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
-    {
-        const auto profile = appSettings.FindProfile(profileGuid);
-        THROW_HR_IF_NULL(E_INVALIDARG, profile);
-        return CreateWithProfile(appSettings, profile, keybindings);
-    }
-
-    // Method Description:
     // - Create a TerminalSettings object for the provided newTerminalArgs. We'll
     //   use the newTerminalArgs to look up the profile that should be used to
     //   create these TerminalSettings. Then, we'll apply settings contained in the
@@ -124,8 +105,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                                     const NewTerminalArgs& newTerminalArgs,
                                                                                     const IKeyBindings& keybindings)
     {
-        const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
+        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
+        auto settingsPair{ CreateWithProfile(appSettings, profile, keybindings) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
@@ -142,6 +123,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (!newTerminalArgs.TabTitle().empty())
             {
                 defaultSettings.StartingTitle(newTerminalArgs.TabTitle());
+            }
+            else
+            {
+                // There was no title, and no profile from which to infer the title.
+                // Per GH#6776, promote the first component of the command line to the title.
+                // This will ensure that the tab we spawn has a name (since it didn't get one from its profile!)
+                if (newTerminalArgs.Profile().empty() && !newTerminalArgs.Commandline().empty())
+                {
+                    const std::wstring_view commandLine{ newTerminalArgs.Commandline() };
+                    const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+                    const auto terminator{ commandLine.find_first_of(start ? L'"' : L' ', start) }; // look past the first character if it starts with "
+                    // We have to take a copy here; winrt::param::hstring requires a null-terminated string
+                    const std::wstring firstComponent{ commandLine.substr(start, terminator - start) };
+                    defaultSettings.StartingTitle(firstComponent);
+                }
             }
             if (newTerminalArgs.TabColor())
             {
@@ -202,6 +198,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
         _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
+
+        _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
+        _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
     }
 
     // Method Description:

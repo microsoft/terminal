@@ -29,8 +29,8 @@ Below is the schedule for when milestones will be included in release builds of 
 | 2021-03-01 | [1.7] in Windows Terminal Preview<br>[1.6] in Windows Terminal | [Windows Terminal Preview 1.7 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-7-release/) |
 | 2021-04-14 | [1.8] in Windows Terminal Preview<br>[1.7] in Windows Terminal | [Windows Terminal Preview 1.8 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-8-release/) |
 | 2021-05-31 | [1.9] in Windows Terminal Preview<br>[1.8] in Windows Terminal | [Windows Terminal Preview 1.9 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-9-release/) |
-| 2021-07-31 | 1.10 in Windows Terminal Preview<br>[1.9] in Windows Terminal | |
-| 2021-08-30 | 1.11 in Windows Terminal Preview<br>1.10 in Windows Terminal | |
+| 2021-07-14 | [1.10] in Windows Terminal Preview<br>[1.9] in Windows Terminal | [Windows Terminal Preview 1.10 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-10-release/) |
+| 2021-08-31 | [1.11] in Windows Terminal Preview<br>[1.10] in Windows Terminal | [Windows Terminal Preview 1.11 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-11-release/) |
 | 2021-10-31 | 1.12 in Windows Terminal Preview<br>1.11 in Windows Terminal | |
 | 2021-11-30 | 2.0 RC in Windows Terminal Preview<br>2.0 RC in Windows Terminal | |
 | 2021-12-31 | [2.0] in Windows Terminal Preview<br>[2.0] in Windows Terminal | |
@@ -89,6 +89,8 @@ Feature Notes:
 [1.7]: https://github.com/microsoft/terminal/milestone/32
 [1.8]: https://github.com/microsoft/terminal/milestone/33
 [1.9]: https://github.com/microsoft/terminal/milestone/34
+[1.10]: https://github.com/microsoft/terminal/milestone/35
+[1.11]: https://github.com/microsoft/terminal/milestone/36
 [2.0]: https://github.com/microsoft/terminal/milestone/22
 [#1564]: https://github.com/microsoft/terminal/issues/1564
 [#6720]: https://github.com/microsoft/terminal/pull/6720
