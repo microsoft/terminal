@@ -204,11 +204,11 @@
     <comment>This is shorthand for "no". The user must enter this character to DECLINE a prompt.</comment>
   </data>
   <data name="ProcessExited" xml:space="preserve">
-    <value>[process exited with code {0}]</value>
-    <comment>The first argument {0} is the (positive) error code of the process. When there is no error, the number ZERO will be displayed.</comment>
+    <value>[process exited with code {0:#010x})]</value>
+    <comment>The first argument {0...} is the hexadecimal error code of the process. When there is no error, the number ZERO will be displayed. </comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
-    <value>[error {0:#08x} when launching `{1}']</value>
+    <value>[error {0:#010x} when launching `{1}']</value>
     <comment>The first argument {0...} is the hexadecimal error code. The second argument {1} is the user-specified path to a program.
       If this string is broken to multiple lines, it will not be displayed properly.</comment>
   </data>
