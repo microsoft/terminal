@@ -215,6 +215,22 @@
               "type": "integer"
             }
           ]
+        },
+        "features": {
+          "description": "Sets the DWrite font features for the given font. For example, { \"ss01\": 1, \"liga\":0 } will enable ss01 and disable ligatures.",
+          "type": "object",
+          "patternProperties": {
+            "^(([A-Za-z0-9]){4})$": { "type": "integer" }
+          },
+          "additionalProperties": false
+        },
+        "axes": {
+          "description": "Sets the DWrite font axes for the given font. For example, { \"wght\": 200 } will set the font weight to 200.",
+          "type": "object",
+          "patternProperties": {
+            "^([A-Za-z]{4})$": { "type": "number" }
+          },
+          "additionalProperties": false
         }
       },
       "type": "object"
@@ -253,6 +269,7 @@
         "movePane",
         "swapPane",
         "moveTab",
+        "multipleActions",
         "newTab",
         "newWindow",
         "nextTab",
@@ -300,7 +317,8 @@
         "down",
         "previous",
         "nextInOrder",
-        "previousInOrder"
+        "previousInOrder",
+        "first"
       ],
       "type": "string"
     },
@@ -809,6 +827,24 @@
       ],
       "required": [ "direction" ]
     },
+    "MultipleActionsAction": {
+      "description": "Arguments for the multiple actions command",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "multipleActions" },
+            "actions" : {
+              "$ref": "#/definitions/ShortcutAction",
+              "type": "array",
+              "minItems": 1,
+              "description": "A list of other actions."
+            }
+          }
+        }
+      ],
+      "required": [ "actions" ]
+    }, 
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
       "allOf": [
@@ -1236,6 +1272,11 @@
         "alwaysShowTrayIcon": {
           "default": "false",
           "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "type": "boolean"
+        },
+        "useAcrylicInTabRow": {
+          "default": "false",
+          "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
           "type": "boolean"
         },
 		"actions": {

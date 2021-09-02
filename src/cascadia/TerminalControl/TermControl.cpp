@@ -361,6 +361,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.SendInput(wstr);
     }
+    void TermControl::ClearBuffer(Control::ClearBufferType clearType)
+    {
+        _core.ClearBuffer(clearType);
+    }
 
     void TermControl::ToggleShaderEffects()
     {
@@ -2653,5 +2657,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_coreWarningBell(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _playWarningBell->Run();
+    }
+
+    hstring TermControl::ReadEntireBuffer() const
+    {
+        return _core.ReadEntireBuffer();
     }
 }

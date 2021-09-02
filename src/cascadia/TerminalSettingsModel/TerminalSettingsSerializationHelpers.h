@@ -337,7 +337,7 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
 // Possible FocusDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
 {
-    JSON_MAPPINGS(7) = {
+    JSON_MAPPINGS(8) = {
         pair_type{ "left", ValueType::Left },
         pair_type{ "right", ValueType::Right },
         pair_type{ "up", ValueType::Up },
@@ -345,6 +345,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
         pair_type{ "previous", ValueType::Previous },
         pair_type{ "previousInOrder", ValueType::PreviousInOrder },
         pair_type{ "nextInOrder", ValueType::NextInOrder },
+        pair_type{ "first", ValueType::First },
     };
 };
 
@@ -471,6 +472,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ClearBufferType)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "all", ValueType::All },
+        pair_type{ "screen", ValueType::Screen },
+        pair_type{ "scrollback", ValueType::Scrollback },
+    };
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
 {
     static constexpr std::array<pair_type, 4> mappings = {
@@ -478,5 +488,6 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
         pair_type{ "bold", ValueType::Bold },
         pair_type{ "bright", ValueType::Bright },
         pair_type{ "all", AllSet },
+
     };
 };

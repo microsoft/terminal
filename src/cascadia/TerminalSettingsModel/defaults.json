@@ -348,6 +348,7 @@
         { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left"},
         { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
         { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
+        { "command": { "action": "moveFocus", "direction": "first" } },
         { "command": { "action": "swapPane", "direction": "down" } },
         { "command": { "action": "swapPane", "direction": "left" } },
         { "command": { "action": "swapPane", "direction": "right" } },
@@ -355,6 +356,7 @@
         { "command": { "action": "swapPane", "direction": "previous"} },
         { "command": { "action": "swapPane", "direction": "previousInOrder"} },
         { "command": { "action": "swapPane", "direction": "nextInOrder"} },
+        { "command": { "action": "swapPane", "direction": "first" } },
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
@@ -381,6 +383,7 @@
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
+        { "command": { "action": "clearBuffer", "clear": "all" } },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },

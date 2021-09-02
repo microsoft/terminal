@@ -1,6 +1,6 @@
 function MakeVersion ( $major, $minor, $datetimeStamp )
 {
-    $revision, $branch = $datetimeStamp.Split("-")
+    $revision, $branch = $datetimeStamp.Split("-", 2)
 
     if ( $branch -eq $null )
     {
@@ -71,5 +71,5 @@ function GetDatetimeStamp ( $pgoBranch )
         throw "FAILED: Get forkDate"
     }
 
-    return $forkDate + "-" + $pgoBranch.Replace("/", "_").Replace("-", "_").Replace(".", "_")
+    return $forkDate + "-" + ( $pgoBranch -replace "(/|\.|@|>|<)", "-" )
 }

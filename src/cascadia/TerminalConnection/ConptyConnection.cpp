@@ -513,6 +513,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         }
     }
 
+    void ConptyConnection::ClearBuffer()
+    {
+        // If we haven't connected yet, then we really don't need to do
+        // anything. The connection should already start clear!
+        if (_isConnected())
+        {
+            THROW_IF_FAILED(ConptyClearPseudoConsole(_hPC.get()));
+        }
+    }
+
     void ConptyConnection::Close() noexcept
     try
     {

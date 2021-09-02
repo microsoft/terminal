@@ -20,11 +20,29 @@ function Generate-File-Links
         Out-File -FilePath $helixLinkFile -Append -InputObject "<ul>"
         foreach($file in $files)
         {
-            Out-File -FilePath $helixLinkFile -Append -InputObject "<li><a href=$($file.Link)>$($file.Name)</a></li>"
+            $url = Append-HelixAccessTokenToUrl $file.Link "{Your-Helix-Access-Token-Here}"
+            Out-File -FilePath $helixLinkFile -Append -InputObject "<li>$($url)</li>"
         }
         Out-File -FilePath $helixLinkFile -Append -InputObject "</ul>"
         Out-File -FilePath $helixLinkFile -Append -InputObject "</div>"
     }
+}
+
+function Append-HelixAccessTokenToUrl
+{
+    Param ([string]$url, [string]$token)
+    if($token)
+    {
+        if($url.Contains("?"))
+        {
+            $url = "$($url)&access_token=$($token)"
+        }
+        else
+        {
+            $url = "$($url)?access_token=$($token)"
+        }
+    }
+    return $url
 }
 
 #Create output directory
@@ -63,7 +81,8 @@ foreach ($testRun in $testRuns.value)
         if (-not $workItems.Contains($workItem))
         {
             $workItems.Add($workItem)
-            $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files$accessTokenParam"
+            $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files"
+            $filesQueryUri = Append-HelixAccessTokenToUrl $filesQueryUri $helixAccessToken
             $files = Invoke-RestMethodWithRetries $filesQueryUri
 
             $screenShots = $files | where { $_.Name.EndsWith(".jpg") }
@@ -102,6 +121,7 @@ foreach ($testRun in $testRuns.value)
 
                     Write-Host "Downloading $link to $destination"
 
+                    $link = Append-HelixAccessTokenToUrl $link $HelixAccessToken
                     Download-FileWithRetries $link $destination
                 }
             }

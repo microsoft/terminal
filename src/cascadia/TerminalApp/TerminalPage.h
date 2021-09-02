@@ -220,6 +220,7 @@ namespace winrt::TerminalApp::implementation
         void _DuplicateTab(const TerminalTab& tab);
 
         void _SplitTab(TerminalTab& tab);
+        winrt::fire_and_forget _ExportTab(const TerminalTab& tab);
 
         winrt::Windows::Foundation::IAsyncAction _HandleCloseTabRequested(winrt::TerminalApp::TabBase tab);
         void _CloseTabAtIndex(uint32_t index);
@@ -357,6 +358,8 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
 
         void _SetFocusMode(const bool inFocusMode);
+
+        winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
