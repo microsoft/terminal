@@ -14,9 +14,6 @@ public:
     ColorFix(double l, double a, double b);
     ColorFix(const ColorFix& color);
 
-    void ToLab();
-    void ToRGB();
-
     double DeltaE(ColorFix color);
 
     bool PerceivableColor(COLORREF back, ColorFix& pColor, double* oldDE = NULL, double* newDE = NULL);
@@ -38,6 +35,8 @@ public:
     };
 
 private:
+    void _ToLab();
+    void _ToRGB();
     BYTE _Clamp(double v);
 };
 

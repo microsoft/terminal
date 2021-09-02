@@ -259,7 +259,7 @@ ColorFix::ColorFix()
 ColorFix::ColorFix(COLORREF color)
 {
     rgb = color;
-    ToLab();
+    _ToLab();
 }
 
 ColorFix::ColorFix(double l, double a, double b)
@@ -267,7 +267,7 @@ ColorFix::ColorFix(double l, double a, double b)
     L = l;
     A = a;
     B = b;
-    ToRGB();
+    _ToRGB();
 }
 
 ColorFix::ColorFix(const ColorFix& color)
@@ -282,7 +282,7 @@ ColorFix::ColorFix(const ColorFix& color)
 // - Populates our L, A, B values, based on our r, g, b values
 // - Converts a color in rgb format to a color in lab format
 // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
-void ColorFix::ToLab()
+void ColorFix::_ToLab()
 {
     //dE00::RGBToLAB(r, g, b, L, A, B);
     double var_R = r / 255.0;
@@ -337,7 +337,7 @@ void ColorFix::ToLab()
 // - Populates our r, g, b values, based on our L, A, B values
 // - Converts a color in lab format to a color in rgb format
 // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
-void ColorFix::ToRGB()
+void ColorFix::_ToRGB()
 {
     double var_Y = (L + 16.) / 116.;
     double var_X = A / 500. + var_Y;
@@ -399,7 +399,7 @@ double ColorFix::DeltaE(ColorFix color)
 }
 
 // Method Description:
-// - Given a background color, change our own color to make it more perceivable if necessary
+// - Given a background color, change the foreground color to make it more perceivable if necessary
 // - Arguments:
 // - back: the color to compare against
 // - pColor: where to store the resulting color
@@ -439,7 +439,7 @@ bool ColorFix::PerceivableColor(COLORREF back, ColorFix& pColor, double* oldDE, 
     }
 wrap:
     if (bChanged)
-        pColor.ToRGB();
+        pColor._ToRGB();
     else
         pColor = *this;
     return bChanged;
