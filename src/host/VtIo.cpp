@@ -49,10 +49,6 @@ VtIo::VtIo() :
     {
         ioMode = VtIoMode::XTERM_256;
     }
-    else if (VtMode == XTERM_256_STRING_PT)
-    {
-        ioMode = VtIoMode::XTERM_256_PT;
-    }
     else if (VtMode == XTERM_STRING)
     {
         ioMode = VtIoMode::XTERM;
@@ -77,6 +73,7 @@ VtIo::VtIo() :
     _lookingForCursorPosition = pArgs->GetInheritCursor();
     _resizeQuirk = pArgs->IsResizeQuirkEnabled();
     _win32InputMode = pArgs->IsWin32InputModeEnabled();
+    _passthroughMode = pArgs->IsPassthroughMode();
 
     // If we were already given VT handles, set up the VT IO engine to use those.
     if (pArgs->InConptyMode())
@@ -161,51 +158,64 @@ VtIo::VtIo() :
                                                                 gci.GetWindowSize().Y);
             switch (_IoMode)
             {
-            case VtIoMode::XTERM_256_PT:
+            case VtIoMode::XTERM_256:
             {
-                auto xtermEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
+                auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
                                                                     initialViewport);
-
-                auto vtapi = new VtApiRoutines();
-                vtapi->m_pVtEngine = xtermEngine.get();
-                if (globals.api)
+                if (_passthroughMode)
                 {
-                    vtapi->m_pUsualRoutines = globals.api;
+                    auto vtapi = new VtApiRoutines();
+                    vtapi->m_pVtEngine = xterm256Engine.get();
+                    if (globals.api)
+                    {
+                        vtapi->m_pUsualRoutines = globals.api;
+                    }
+                    else
+                    {
+                        vtapi->m_pUsualRoutines = new ApiRoutines();
+                    }
+
+                    xterm256Engine->SetPassthroughMode(true);
+
+                    if (_pVtInputThread)
+                    {
+                        auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
+                        xterm256Engine->SetLookingForDSRCallback(pfnSetListenForDSR);
+                    }
+
+                    globals.api = vtapi;
                 }
-                else
-                {
-                    vtapi->m_pUsualRoutines = new ApiRoutines();
-                }
 
-                xtermEngine->SetPassthroughMode(true);
-
-                if (_pVtInputThread)
-                {
-                    auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
-                    xtermEngine->SetLookingForDSRCallback(pfnSetListenForDSR);
-                }
-
-                globals.api = vtapi;
-
-                _pVtRenderEngine = std::move(xtermEngine);
+                _pVtRenderEngine = std::move(xterm256Engine);
                 break;
             }
-            case VtIoMode::XTERM_256:
-                _pVtRenderEngine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                    initialViewport);
-                break;
             case VtIoMode::XTERM:
+            {
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  false);
+                if (_passthroughMode)
+                {
+                    return E_NOTIMPL;
+                }
                 break;
+            }
             case VtIoMode::XTERM_ASCII:
+            {
                 _pVtRenderEngine = std::make_unique<XtermEngine>(std::move(_hOutput),
                                                                  initialViewport,
                                                                  true);
+
+                if (_passthroughMode)
+                {
+                    return E_NOTIMPL;
+                }
                 break;
+            }
             default:
+            {
                 return E_FAIL;
+            }
             }
             if (_pVtRenderEngine)
             {
