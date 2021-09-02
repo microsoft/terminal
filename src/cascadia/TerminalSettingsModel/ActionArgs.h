@@ -36,6 +36,7 @@
 #include "RenameWindowArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
+#include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
@@ -1755,6 +1756,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
+    struct ClearBufferArgs : public ClearBufferArgsT<ClearBufferArgs>
+    {
+        ClearBufferArgs() = default;
+        ClearBufferArgs(winrt::Microsoft::Terminal::Control::ClearBufferType clearType) :
+            _Clear{ clearType } {};
+        WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, winrt::Microsoft::Terminal::Control::ClearBufferType::All);
+        static constexpr std::string_view ClearKey{ "clear" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<ClearBufferArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Clear == _Clear;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<ClearBufferArgs>();
+            JsonUtils::GetValueForKey(json, ClearKey, args->_Clear);
+            return { *args, {} };
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<ClearBufferArgs>(val) };
+            JsonUtils::SetValueForKey(json, ClearKey, args->_Clear);
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<ClearBufferArgs>() };
+            copy->_Clear = _Clear;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Clear);
+        }
+    };
+
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
     {
         MultipleActionsArgs() = default;
@@ -1787,6 +1838,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 return {};
             }
             Json::Value json{ Json::ValueType::objectValue };
+
             const auto args{ get_self<MultipleActionsArgs>(val) };
             JsonUtils::SetValueForKey(json, ActionsKey, args->_Actions);
             return json;
@@ -1826,5 +1878,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(FocusPaneArgs);
     BASIC_FACTORY(PrevTabArgs);
     BASIC_FACTORY(NextTabArgs);
+    BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
 }

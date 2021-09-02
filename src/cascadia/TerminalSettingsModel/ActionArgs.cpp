@@ -34,6 +34,7 @@
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
+#include "ClearBufferArgs.g.cpp"
 #include "MultipleActionsArgs.g.cpp"
 
 #include <LibraryResources.h>
@@ -687,6 +688,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"FocusPaneCommandKey")),
                         Id())
         };
+    }
+    winrt::hstring ClearBufferArgs::GenerateName() const
+    {
+        // "Clear Buffer"
+        // "Clear Viewport"
+        // "Clear Scrollback"
+        switch (Clear())
+        {
+        case Control::ClearBufferType::All:
+            return RS_(L"ClearAllCommandKey");
+        case Control::ClearBufferType::Screen:
+            return RS_(L"ClearViewportCommandKey");
+        case Control::ClearBufferType::Scrollback:
+            return RS_(L"ClearScrollbackCommandKey");
+        }
+
+        // Return the empty string - the Clear() should be one of these values
+        return winrt::hstring{ L"" };
     }
 
     winrt::hstring MultipleActionsArgs::GenerateName() const

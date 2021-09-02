@@ -446,6 +446,18 @@
     <value>Focus pane {0}</value>
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
+  <data name="ClearAllCommandKey" xml:space="preserve">
+    <value>Clear Buffer</value>
+    <comment>A command to clear the entirety of the Terminal output buffer</comment>
+  </data>
+  <data name="ClearViewportCommandKey" xml:space="preserve">
+    <value>Clear Viewport</value>
+    <comment>A command to clear the active viewport of the Terminal</comment>
+  </data>
+  <data name="ClearScrollbackCommandKey" xml:space="preserve">
+    <value>Clear Scrollback</value>
+    <comment>A command to clear the part of the buffer above the viewport</comment>
+  </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
     <value>Microsoft Corporation</value>
     <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
