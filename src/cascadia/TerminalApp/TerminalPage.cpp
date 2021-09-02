@@ -1330,6 +1330,93 @@ namespace winrt::TerminalApp::implementation
         return true; // TODO! Change this to false. This is defaulted to true for testing.
     }
 
+    void TerminalPage::_adminWarningPrimaryClicked(const TerminalApp::AdminWarningPlaceholder& sender,
+                                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
+        const auto& cmdline{ warningControl->Commandline() };
+        // Look through the tabs and panes to look for us. Whichever pane had us
+        // as content - replace their content with the TermControl we were
+        // holding on to.
+        for (const auto& tab : _tabs)
+        {
+            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                tabImpl->GetRootPane()->WalkTree([warningControl, cmdline](std::shared_ptr<Pane> pane) -> bool {
+                    if (pane->GetUserControl() == *warningControl)
+                    {
+                        // Hooray, we found us!
+                        pane->ReplaceControl(warningControl->Control());
+                        // Don't return true here. We want to make sure to chekc
+                        // all the panes for the same commandline we just
+                        // approved.
+                    }
+                    else if (const auto& otherWarning{ winrt::get_self<AdminWarningPlaceholder>(pane->GetUserControl().try_as<TerminalApp::AdminWarningPlaceholder>()) })
+                    {
+                        // This pane wasn't us, but it did have a warning in it.
+                        // Was it a warning for the same commandline that we
+                        // just approved?
+                        if (otherWarning->Commandline() == cmdline)
+                        {
+                            // Go ahead and allow them as well.
+                            pane->ReplaceControl(otherWarning->Control());
+                        }
+                    }
+                    return false;
+                });
+            }
+        }
+
+        // Update the list of approved commandlines.
+        auto allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() };
+        if (!allowedCommandlines)
+        {
+            allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
+        }
+
+        // But of course, we don't need to add this commandline if it's already
+        // in the list of approved commandlines.
+        bool foundCopy = false;
+        for (const auto& approved : allowedCommandlines)
+        {
+            if (approved == cmdline)
+            {
+                foundCopy = true;
+                break;
+            }
+        }
+        if (!foundCopy)
+        {
+            allowedCommandlines.Append(cmdline);
+        }
+        ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
+    }
+
+    void TerminalPage::_adminWarningCancelClicked(const TerminalApp::AdminWarningPlaceholder& sender,
+                                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
+
+        for (const auto& tab : _tabs)
+        {
+            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
+                    if (pane->GetUserControl() == *warningControl)
+                    {
+                        pane->Close();
+                        return true;
+                    }
+                    // We're not going to auto-close all the other panes with
+                    // the same commandline warning, akin to what we're doing in
+                    // the approve handler. If they want to reject one pane, but
+                    // accept the next one, that's okay.
+                    return false;
+                });
+            }
+        }
+    }
+
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.

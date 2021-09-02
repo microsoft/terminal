@@ -34,12 +34,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         virtual void FromJson(const Json::Value& root) const noexcept override;
         virtual Json::Value ToJson() const noexcept override;
 
-        // // Methods
-        // void Reload() const noexcept;
-
-        // // General getters/setters
-        // winrt::hstring FilePath() const noexcept;
-
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
     type name() const noexcept;                          \
@@ -55,12 +49,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef MTSM_APPLICATION_STATE_GEN
         };
         til::shared_mutex<state_t> _state;
-
-        // void _write() const noexcept;
-        // void _read() const noexcept;
-
-        // std::filesystem::path _path;
-        // til::throttled_func_trailing<> _throttler;
     };
 }
 

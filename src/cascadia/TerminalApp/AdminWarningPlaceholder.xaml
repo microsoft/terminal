@@ -28,7 +28,7 @@
                            TextWrapping="WrapWholeWords" />
 
                 <TextBlock x:Uid="ApproveCommandlineWarningPrefixTextBlock"
-                           HorizontalAlignment="Center"
+                           HorizontalAlignment="Left"
                            TextWrapping="WrapWholeWords" />
 
                 <TextBlock Margin="0,8,0,8"

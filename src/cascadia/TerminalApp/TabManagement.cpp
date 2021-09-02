@@ -305,56 +305,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_adminWarningPrimaryClicked(const TerminalApp::AdminWarningPlaceholder& sender,
-                                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
-    {
-        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
-
-        for (const auto& tab : _tabs)
-        {
-            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
-            {
-                tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
-                    if (pane->GetUserControl() == *warningControl)
-                    {
-                        pane->ReplaceControl(warningControl->Control());
-                        return true;
-                    }
-                    return false;
-                });
-            }
-        }
-
-        auto allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() };
-        if (!allowedCommandlines)
-        {
-            allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
-        }
-        allowedCommandlines.Append(warningControl->Commandline());
-        ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
-    }
-
-    void TerminalPage::_adminWarningCancelClicked(const TerminalApp::AdminWarningPlaceholder& sender,
-                                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
-    {
-        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
-
-        for (const auto& tab : _tabs)
-        {
-            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
-            {
-                tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
-                    if (pane->GetUserControl() == *warningControl)
-                    {
-                        pane->Close();
-                        return true;
-                    }
-                    return false;
-                });
-            }
-        }
-    }
-
     // Method Description:
     // - Get the icon of the currently focused terminal control, and set its
     //   tab's icon to that icon.
