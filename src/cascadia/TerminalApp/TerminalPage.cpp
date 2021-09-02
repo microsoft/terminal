@@ -278,7 +278,7 @@ namespace winrt::TerminalApp::implementation
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
-        _tabRow.ShowUacShield(IsElevated());
+        _tabRow.ShowUacShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
 
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
@@ -2100,7 +2100,7 @@ namespace winrt::TerminalApp::implementation
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
 
-        _tabRow.ShowUacShield(IsElevated());
+        _tabRow.ShowUacShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.

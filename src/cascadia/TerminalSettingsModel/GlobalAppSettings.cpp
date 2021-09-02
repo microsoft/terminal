@@ -51,6 +51,7 @@ static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
 static constexpr std::string_view AlwaysShowTrayIconKey{ "alwaysShowTrayIcon" };
 static constexpr std::string_view MinimizeToTrayKey{ "minimizeToTray" };
+static constexpr std::string_view ShowAdminShieldKey{ "showAdminShield" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -135,6 +136,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_DetectURLs = _DetectURLs;
     globals->_MinimizeToTray = _MinimizeToTray;
     globals->_AlwaysShowTrayIcon = _AlwaysShowTrayIcon;
+    globals->_ShowAdminShield = _ShowAdminShield;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
@@ -331,6 +333,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, AlwaysShowTrayIconKey, _AlwaysShowTrayIcon);
 
+    JsonUtils::GetValueForKey(json, ShowAdminShieldKey, _ShowAdminShield);
+
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
@@ -429,6 +433,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
     JsonUtils::SetValueForKey(json, MinimizeToTrayKey,              _MinimizeToTray);
     JsonUtils::SetValueForKey(json, AlwaysShowTrayIconKey,          _AlwaysShowTrayIcon);
+    JsonUtils::SetValueForKey(json, ShowAdminShieldKey,             _ShowAdminShield);
     // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
