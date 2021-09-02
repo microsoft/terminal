@@ -40,6 +40,8 @@ namespace Microsoft.Terminal.Settings.Model
 
         String IconPath;
 
+        String ExternalID;
+
         Boolean HasNestedCommands { get; };
         Windows.Foundation.Collections.IMapView<String, Command> NestedCommands { get; };
 

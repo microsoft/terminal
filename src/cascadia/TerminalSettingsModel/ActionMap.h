@@ -62,6 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action, IActionArgs const& actionArgs) const;
+        Model::Command GetActionByExternalID(winrt::hstring const& externalId) const;
 
         // population
         void AddAction(const Model::Command& cmd);
@@ -100,6 +101,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::vector<Model::Command> _IterableCommands;
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
+        std::unordered_map<winrt::hstring, InternalActionID> _ExternalIDMap;
 
         // Masking Actions:
         // These are actions that were introduced in an ancestor,

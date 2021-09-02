@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_PROPERTY(ExpandCommandType, IterateOn, ExpandCommandType::None);
         WINRT_PROPERTY(Model::ActionAndArgs, ActionAndArgs);
+        WINRT_PROPERTY(winrt::hstring, ExternalID);
 
     private:
         Json::Value _originalJson;

@@ -27,6 +27,7 @@ static constexpr std::string_view ArgsKey{ "args" };
 static constexpr std::string_view IterateOnKey{ "iterateOn" };
 static constexpr std::string_view CommandsKey{ "commands" };
 static constexpr std::string_view KeysKey{ "keys" };
+static constexpr std::string_view IdKey{ "id" };
 
 static constexpr std::string_view ProfileNameToken{ "${profile.name}" };
 static constexpr std::string_view ProfileIconToken{ "${profile.icon}" };
@@ -292,6 +293,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // If we're a nested command, we can ignore the current action.
         if (!nested)
         {
+            if (const auto idJson{ json[JsonKey(IdKey)] })
+            {
+                if (idJson.isString())
+                {
+                    result->ExternalID(to_hstring(idJson.asCString()));
+                }
+            }
+
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
                 result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);

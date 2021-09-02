@@ -482,8 +482,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ActionMap::_TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& maskingCmd)
     {
         // Example:
-        //   { "command": "copy", "keys": "ctrl+c" }       --> add the action in for the first time
-        //   { "command": "copy", "keys": "ctrl+shift+c" } --> update oldCmd
+        //   { "id": "MyAction", "command": "copy", "keys": "ctrl+c" }  --> add the action in for the first time
+        //   { "command": "copy", "keys": "ctrl+shift+c" }              --> update oldCmd
+        //   { "id": "MyAction", "keys": "ctrl+f" }                     --> look for the action named "MyAction", update keys.
+        if (!cmd.ExternalID().empty())
+        {
+            const auto action = GetActionByExternalID(cmd.ExternalID());
+
+        }
+
         const auto actionID{ Hash(cmd.ActionAndArgs()) };
         const auto& actionPair{ _ActionMap.find(actionID) };
         if (actionPair == _ActionMap.end())
@@ -789,6 +796,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         // This key binding does not exist
+        return nullptr;
+    }
+
+    Model::Command ActionMap::GetActionByExternalID(winrt::hstring const& externalID) const
+    {
+        const auto idMapPair{ _ExternalIDMap.find(externalID) };
+        if (idMapPair != _ExternalIDMap.end())
+        {
+            // Really there should be no scenario where an ExternalID mapping to InternalID
+            // mapping exists but the InternalID doesn't have an action associated to it right?
+            return _GetActionByID(idMapPair->second).value_or(nullptr);
+        }
+
         return nullptr;
     }
 
