@@ -26,8 +26,8 @@
             </Style>
             <Style x:Key="ButtonStyle"
                    TargetType="Button">
-                <Setter Property="Width" Value="32" />
-                <Setter Property="Height" Value="32" />
+                <Setter Property="Width" Value="24" />
+                <Setter Property="Height" Value="24" />
                 <Setter Property="Background" Value="Transparent" />
                 <Setter Property="BorderBrush" Value="Transparent" />
                 <Setter Property="Padding" Value="0" />
