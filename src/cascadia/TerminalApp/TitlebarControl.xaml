@@ -28,33 +28,21 @@
 
     <Grid.ColumnDefinitions>
         <ColumnDefinition Width="Auto" />
-        <ColumnDefinition Width="Auto" />
         <ColumnDefinition Width="*" />
         <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
 
-    <ContentPresenter x:Name="ElevatedShield"
-                      Grid.Column="0">
-
-        <!--  EA18 is the "Shield" glyph  -->
-        <FontIcon Margin="9,4,0,0"
-                  FontFamily="Segoe MDL2 Assets"
-                  FontSize="16"
-                  Glyph="&#xEA18;"
-                  Visibility="Visible" />
-
-    </ContentPresenter>
 
     <ContentPresenter x:Name="ContentRoot"
-                      Grid.Column="1" />
+                      Grid.Column="0" />
 
     <Border x:Name="DragBar"
-            Grid.Column="2"
+            Grid.Column="1"
             MinWidth="45.0"
             DoubleTapped="DragBar_DoubleTapped" />
 
     <local:MinMaxCloseControl x:Name="MinMaxCloseControl"
-                              Grid.Column="3"
+                              Grid.Column="2"
                               HorizontalAlignment="Right" />
 </Grid>
 
