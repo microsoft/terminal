@@ -1313,25 +1313,21 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::_shouldPromptForCommandline(const winrt::hstring& cmdline) const
     {
-        bool doAdminWarning = true;
         if (_isElevated())
         {
-            bool commandlineWasAllowed = false;
-
             if (const auto& allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() })
             {
                 for (const auto& approved : allowedCommandlines)
                 {
                     if (approved == cmdline)
                     {
-                        commandlineWasAllowed = true;
-                        break;
+                        return false;
                     }
                 }
             }
-            doAdminWarning = !commandlineWasAllowed;
         }
-        return doAdminWarning;
+
+        return true; // TODO! Change this to false. This is defaulted to true for testing.
     }
 
     // Method Description:
