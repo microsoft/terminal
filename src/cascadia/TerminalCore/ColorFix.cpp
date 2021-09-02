@@ -248,33 +248,46 @@ double dE00::_DegreesToRadians(double degrees)
     return degrees * (M_PI / 180);
 };
 
-// Method Description:
-// - Clamps the given value to be between 0-255 inclusive
-// Arguments:
-// - v: the value to clamp
-// Return Value:
-// - The clamped value
-BYTE dE00::Clamp(double v)
+ColorFix::ColorFix()
 {
-    if (v <= 0)
-        return 0;
-    else if (v >= 255)
-        return 255;
-    else
-        return (BYTE)v;
+    rgb = 0;
+    L = 0;
+    A = 0;
+    B = 0;
+}
+
+ColorFix::ColorFix(COLORREF color)
+{
+    rgb = color;
+    ToLab();
+}
+
+ColorFix::ColorFix(double l, double a, double b)
+{
+    L = l;
+    A = a;
+    B = b;
+    ToRGB();
+}
+
+ColorFix::ColorFix(const ColorFix& color)
+{
+    L = color.L;
+    A = color.A;
+    B = color.B;
+    rgb = color.rgb;
 }
 
 // Method Description:
+// - Populates our L, A, B values, based on our r, g, b values
 // - Converts a color in rgb format to a color in lab format
 // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
-// Arguments:
-// R, G, B: the rgb values of the input color
-// l_s, a_s, b_s: where the output lab format should be stored
-void dE00::RGBToLAB(double R, double G, double B, double& l_s, double& a_s, double& b_s)
+void ColorFix::ToLab()
 {
-    double var_R = R / 255.0;
-    double var_G = G / 255.0;
-    double var_B = B / 255.0;
+    //dE00::RGBToLAB(r, g, b, L, A, B);
+    double var_R = r / 255.0;
+    double var_G = g / 255.0;
+    double var_B = b / 255.0;
 
     if (var_R > 0.04045)
         var_R = pow(((var_R + 0.055) / 1.055), 2.4);
@@ -315,22 +328,20 @@ void dE00::RGBToLAB(double R, double G, double B, double& l_s, double& a_s, doub
     else
         var_Z = (7.787 * var_Z) + (16. / 116.);
 
-    l_s = (116. * var_Y) - 16.;
-    a_s = 500. * (var_X - var_Y);
-    b_s = 200. * (var_Y - var_Z);
-};
+    L = (116. * var_Y) - 16.;
+    A = 500. * (var_X - var_Y);
+    B = 200. * (var_Y - var_Z);
+}
 
 // Method Description:
+// - Populates our r, g, b values, based on our L, A, B values
 // - Converts a color in lab format to a color in rgb format
 // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
-// Arguments:
-// l_s, a_s, b_s: the lab values of the input color
-// R, G, B: where the output rgb format should be stored
-void dE00::LABToRGB(double l_s, double a_s, double b_s, double& R, double& G, double& B)
+void ColorFix::ToRGB()
 {
-    double var_Y = (l_s + 16.) / 116.;
-    double var_X = a_s / 500. + var_Y;
-    double var_Z = var_Y - b_s / 200.;
+    double var_Y = (L + 16.) / 116.;
+    double var_X = A / 500. + var_Y;
+    double var_Z = var_Y - B / 200.;
 
     if (pow(var_Y, 3) > 0.008856)
         var_Y = pow(var_Y, 3);
@@ -370,66 +381,9 @@ void dE00::LABToRGB(double l_s, double a_s, double b_s, double& R, double& G, do
     else
         var_B = 12.92 * var_B;
 
-    R = var_R * 255.;
-    G = var_G * 255.;
-    B = var_B * 255.;
-};
-
-// Method Description:
-// - Converts a color in lab format to a color in rgb format
-// - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
-// Arguments:
-// - l_s, a_s, b_s: the lab values of the input color
-// - rgb: where the output rgb format should be stored
-void dE00::LABToRGB(double l_s, double a_s, double b_s, COLORREF& rgb)
-{
-    double _r = 0, _g = 0, _b = 0;
-    LABToRGB(l_s, a_s, b_s, _r, _g, _b);
-    rgb = RGB(Clamp(_r), Clamp(_g), Clamp(_b));
-};
-
-ColorFix::ColorFix()
-{
-    rgb = 0;
-    L = 0;
-    A = 0;
-    B = 0;
-}
-
-ColorFix::ColorFix(COLORREF color)
-{
-    rgb = color;
-    ToLab();
-}
-
-ColorFix::ColorFix(double l, double a, double b)
-{
-    L = l;
-    A = a;
-    B = b;
-    ToRGB();
-}
-
-ColorFix::ColorFix(const ColorFix& color)
-{
-    L = color.L;
-    A = color.A;
-    B = color.B;
-    rgb = color.rgb;
-}
-
-// Method Description:
-// - Populates our L, A, B values, based on our r, g, b values
-void ColorFix::ToLab()
-{
-    dE00::RGBToLAB(r, g, b, L, A, B);
-}
-
-// Method Description:
-// - Populates our r, g, b values, based on our L, A, B values
-void ColorFix::ToRGB()
-{
-    dE00::LABToRGB(L, A, B, rgb);
+    r = _Clamp(var_R * 255.);
+    g = _Clamp(var_G * 255.);
+    b = _Clamp(var_B * 255.);
 }
 
 // Method Description:
@@ -489,4 +443,21 @@ wrap:
     else
         pColor = *this;
     return bChanged;
+}
+
+// Method Description:
+// - Clamps the given value to be between 0-255 inclusive
+// - Converts the result to BYTE
+// Arguments:
+// - v: the value to clamp
+// Return Value:
+// - The clamped value
+BYTE ColorFix::_Clamp(double v)
+{
+    if (v <= 0)
+        return 0;
+    else if (v >= 255)
+        return 255;
+    else
+        return (BYTE)v;
 }

@@ -8,6 +8,7 @@
 
 struct ColorFix
 {
+public:
     ColorFix();
     ColorFix(COLORREF color);
     ColorFix(double l, double a, double b);
@@ -35,6 +36,9 @@ struct ColorFix
     {
         double L, A, B;
     };
+
+private:
+    BYTE _Clamp(double v);
 };
 
 struct dE00
@@ -42,11 +46,6 @@ struct dE00
 public:
     dE00(ColorFix x1, ColorFix x2, double weightLightness = 1, double weightChroma = 1, double weightHue = 1);
     double GetDeltaE();
-
-    static void RGBToLAB(double R, double G, double B, double& l_s, double& a_s, double& b_s);
-    static void LABToRGB(double R, double G, double B, double& l_s, double& a_s, double& b_s);
-    static void LABToRGB(double l_s, double a_s, double b_s, COLORREF& rgb);
-    static BYTE Clamp(double v);
 
 private:
     double _GetRSubT();
