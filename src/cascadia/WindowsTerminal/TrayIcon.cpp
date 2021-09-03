@@ -164,16 +164,16 @@ HMENU TrayIcon::_CreateTrayContextMenu(const IVectorView<winrt::Microsoft::Termi
             for (const auto& p : peasants)
             {
                 std::wstringstream displayText;
-                displayText << "#" << p.Id;
+                displayText << L"#" << p.Id;
 
                 if (!p.TabTitle.empty())
                 {
-                    displayText << ":" << p.TabTitle.c_str();
+                    displayText << L": " << std::wstring_view{ p.TabTitle };
                 }
 
                 if (!p.Name.empty())
                 {
-                    displayText << " [" << p.Name.c_str() << "]";
+                    displayText << L" [" << std::wstring_view{ p.Name } << L"]";
                 }
 
                 AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(p.Id), displayText.str().c_str());
