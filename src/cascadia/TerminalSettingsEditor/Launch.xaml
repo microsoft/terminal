@@ -134,7 +134,8 @@
                 </local:SettingContainer>
 
                 <!--  First Window Behavior  -->
-                <local:SettingContainer x:Uid="Globals_FirstWindowPreference">
+                <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
+                                        Visibility="{x:Bind ShowFirstWindowPreference}">
                     <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind FirstWindowPreferenceList}"
                                        SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />

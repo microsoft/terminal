@@ -286,7 +286,9 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
         // If the setting is enabled, and we are the only window.
-        return settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout && _numOpenWindows == 1;
+        return Feature_PersistedWindowLayout::IsEnabled() &&
+               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout &&
+               _numOpenWindows == 1;
     }
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
