@@ -1316,7 +1316,7 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    fire_and_forget TerminalPage::CloseWindow(LaunchPosition pos)
+    fire_and_forget TerminalPage::CloseWindow()
     {
         if (_HasMultipleTabs() &&
             _settings.GlobalSettings().ConfirmCloseAllTabs() &&
@@ -1334,19 +1334,6 @@ namespace winrt::TerminalApp::implementation
 
         if (ShouldUsePersistedLayout(_settings))
         {
-            // If persisted layout is enabled and we are the last window closing
-            // we should save our state.
-            if (_numOpenWindows == 1)
-            {
-                auto layout = GetWindowLayout();
-                if (pos.X || pos.Y)
-                {
-                    layout.InitialPosition(pos);
-                }
-                auto state = ApplicationState::SharedInstance();
-                state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
-            }
-
             // Don't delete the ApplicationState when all of the tabs are removed.
             // If there is still a monarch living they will get the event that
             // a window closed and trigger a new save without this window.

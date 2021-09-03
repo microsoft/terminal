@@ -69,7 +69,7 @@ namespace TerminalApp
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
-        void WindowCloseButtonClicked(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position);
 
         TaskbarState TaskbarState{ get; };
 
@@ -103,5 +103,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
     }
 }

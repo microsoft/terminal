@@ -311,7 +311,13 @@ void AppHost::Initialize()
     // tabs opened, this is consistent with Alt+F4 closing
     _window->WindowCloseButtonClicked([this]() {
         const auto pos = _GetWindowLaunchPosition();
-        _logic.WindowCloseButtonClicked(pos);
+        _logic.CloseWindow(pos);
+    });
+    // If the user requests a close in another way handle the same as if the 'X'
+    // was clicked.
+    _logic.CloseRequested([this](auto&&, auto&&) {
+        const auto pos = _GetWindowLaunchPosition();
+        _logic.CloseWindow(pos);
     });
 
     // Add an event handler to plumb clicks in the titlebar area down to the

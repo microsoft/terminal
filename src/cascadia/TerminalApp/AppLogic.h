@@ -94,7 +94,7 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void WindowCloseButtonClicked(Microsoft::Terminal::Settings::Model::LaunchPosition position);
+        void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
 
@@ -125,6 +125,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _settingsLoadExceptionText;
         HRESULT _settingsLoadedResult = S_OK;
         bool _loadedInitialSettings = false;
+
+        uint64_t _numOpenWindows{ 0 };
 
         std::shared_mutex _dialogLock;
 
@@ -178,6 +180,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
         FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
+        FORWARDED_TYPED_EVENT(CloseRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, CloseRequested);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

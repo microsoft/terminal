@@ -1152,11 +1152,21 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void AppLogic::WindowCloseButtonClicked(LaunchPosition pos)
+    void AppLogic::CloseWindow(LaunchPosition pos)
     {
         if (_root)
         {
-            _root->CloseWindow(pos);
+            // If persisted layout is enabled and we are the last window closing
+            // we should save our state.
+            if (_root->ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
+            {
+                auto layout = _root->GetWindowLayout();
+                layout.InitialPosition(pos);
+                auto state = ApplicationState::SharedInstance();
+                state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
+            }
+
+            _root->CloseWindow();
         }
     }
 
@@ -1511,6 +1521,7 @@ namespace winrt::TerminalApp::implementation
 
     void AppLogic::SetNumberOfOpenWindows(const uint64_t num)
     {
+        _numOpenWindows = num;
         if (_root)
         {
             _root->SetNumberOfOpenWindows(num);

@@ -66,9 +66,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         struct state_t
         {
 #define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
-    std::optional<type> name{ __VA_ARGS__ }; \
+    std::optional<type> name{ __VA_ARGS__ };             \
     bool name##Changed = false;
-            
+
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         };

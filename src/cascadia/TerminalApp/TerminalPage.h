@@ -73,7 +73,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
-        winrt::fire_and_forget CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition pos = {});
+        winrt::fire_and_forget CloseWindow();
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -133,6 +133,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+        TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events

@@ -173,7 +173,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ApplicationState::_read() const noexcept
     try
     {
-       
         auto root = _getRoot();
         auto state = _state.lock();
         // GetValueForKey() comes in two variants:
@@ -200,11 +199,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto state = _state.lock();
             root = _getRoot();
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)            \
-            if (state->name##Changed) {                             \
-                JsonUtils::SetValueForKey(root, key, state->name);  \
-                state->name##Changed = false;                       \
-            }
+#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)   \
+    if (state->name##Changed)                              \
+    {                                                      \
+        JsonUtils::SetValueForKey(root, key, state->name); \
+        state->name##Changed = false;                      \
+    }
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         }
