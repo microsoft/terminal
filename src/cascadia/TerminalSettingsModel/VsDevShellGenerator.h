@@ -31,7 +31,7 @@ namespace Microsoft::Terminal::Settings::Model
 
         inline bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance instance) const override
         {
-            return instance.VersionInRange(L"[16.2.0.0,)");
+            return instance.VersionInRange(L"[16.2,)");
         }
 
         inline std::wstring GetProfileIconPath() const override

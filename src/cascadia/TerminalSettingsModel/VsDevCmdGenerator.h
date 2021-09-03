@@ -31,7 +31,10 @@ namespace Microsoft::Terminal::Settings::Model
 
         inline bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance instance) const override
         {
-            return instance.VersionInRange(L"[15.0.0.0,)");
+            // We only support version of VS from 15.0.
+            // Per heaths: The [ISetupConfiguration] COM server only supports Visual Studio 15.0 and newer anyway.
+            // Eliding the version range will improve the discovery performance by not having to parse or compare the versions.
+            return true;
         }
 
         inline std::wstring GetProfileIconPath() const override

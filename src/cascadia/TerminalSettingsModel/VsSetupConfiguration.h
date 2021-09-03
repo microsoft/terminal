@@ -28,15 +28,16 @@ namespace Microsoft::Terminal::Settings::Model
         typedef wil::com_ptr<ISetupConfiguration2> ComPtrSetupQuery;
         typedef wil::com_ptr<ISetupHelper> ComPtrSetupHelper;
         typedef wil::com_ptr<ISetupInstance> ComPtrSetupInstance;
+        typedef wil::com_ptr<ISetupInstance2> ComPtrSetupInstance2;
         typedef wil::com_ptr<ISetupPropertyStore> ComPtrPropertyStore;
         typedef wil::com_ptr<ISetupPackageReference> ComPtrPackageReference;
         typedef wil::com_ptr<ISetupInstanceCatalog> ComPtrInstanceCatalog;
+        typedef ComPtrPropertyStore ComPtrCustomPropertyStore;
+        typedef ComPtrPropertyStore ComPtrCatalogPropertyStore;
 
     public:
         struct VsSetupInstance
         {
-            inline const static std::wstring_view Version16_3{ L"16.3.0.0" };
-
             inline std::wstring ResolvePath(std::wstring_view relativePath) const
             {
                 return VsSetupConfiguration::ResolvePath(inst, relativePath);
@@ -44,13 +45,8 @@ namespace Microsoft::Terminal::Settings::Model
 
             inline std::wstring GetDevShellModulePath() const
             {
-                unsigned long long ullInstanceVersion{ 0 };
-                THROW_IF_FAILED(helper->ParseVersion(GetVersion().data(), &ullInstanceVersion));
-
-                unsigned long long ullVersion16_3{ 0 };
-                THROW_IF_FAILED(helper->ParseVersion(Version16_3.data(), &ullVersion16_3));
-
-                if (ullInstanceVersion >= ullVersion16_3)
+                // The path of Microsoft.VisualStudio.DevShell.dll changed in 16.3
+                if (VersionInRange(L"[16.3,"))
                 {
                     return ResolvePath(L"Common7\\Tools\\Microsoft.VisualStudio.DevShell.dll");
                 }
@@ -83,18 +79,109 @@ namespace Microsoft::Terminal::Settings::Model
                 return VsSetupConfiguration::GetInstanceId(inst);
             }
 
-            inline std::wstring GetChannelId() const
+            inline ComPtrPropertyStore GetInstancePropertyStore() const
             {
-                ComPtrPropertyStore properties = inst.query<ISetupPropertyStore>();
-                return VsSetupConfiguration::GetStringProperty(properties, L"channelId");
+                return inst.query<ISetupPropertyStore>();
             }
 
-            inline std::wstring GetChannelName() const
+            inline ComPtrCustomPropertyStore GetCustomPropertyStore() const
+            {
+                ComPtrCustomPropertyStore properties;
+                ComPtrSetupInstance2 instance2 = inst.query<ISetupInstance2>();
+                THROW_IF_FAILED(instance2->GetProperties(&properties));
+                return properties;
+            }
+
+            inline ComPtrCatalogPropertyStore GetCatalogPropertyStore() const
+            {
+                ComPtrCatalogPropertyStore properties;
+                ComPtrInstanceCatalog instanceCatalog = inst.query<ISetupInstanceCatalog>();
+                THROW_IF_FAILED(instanceCatalog->GetCatalogInfo(&properties));
+                return properties;
+            }
+
+            inline std::wstring GetProfileNameSuffix() const
+            {
+                return profileNameSuffix;
+            }
+
+        private:
+            friend class VsSetupConfiguration;
+
+            VsSetupInstance(const ComPtrSetupQuery pQuery, const ComPtrSetupInstance pInstance) :
+                query(pQuery),
+                helper(pQuery.query<ISetupHelper>()),
+                inst(pInstance),
+                profileNameSuffix(BuildProfileNameSuffix())
+            {
+            }
+
+            const ComPtrSetupQuery query;
+            const ComPtrSetupHelper helper;
+            const ComPtrSetupInstance inst;
+
+            std::wstring profileNameSuffix;
+
+            inline std::wstring BuildProfileNameSuffix() const
+            {
+                if (VersionInRange(L"[15.3,"))
+                {
+                    std::wstring suffix;
+
+                    ComPtrCatalogPropertyStore catalogProperties = GetCatalogPropertyStore();
+                    std::wstring productLine{ GetProductLineVersion(catalogProperties) };
+                    suffix.append(productLine);
+
+                    try
+                    {
+                        ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
+                        std::wstring nickname{ GetNickname(customProperties) };
+                        if (!nickname.empty())
+                        {
+                            suffix.append(L" (" + nickname + L")");
+                        }
+                        else
+                        {
+                            ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
+                            suffix.append(GetChannelNameSuffixTag(instanceProperties));
+                        }
+                    }
+                    catch (...)
+                    {
+                        ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
+                        suffix.append(GetChannelNameSuffixTag(instanceProperties));
+                    }
+
+                    return suffix;
+                }
+
+                return GetVersion();
+            }
+
+            inline std::wstring GetChannelNameSuffixTag(ComPtrPropertyStore instanceProperties) const
+            {
+                std::wstring tag;
+                std::wstring channelName{ GetChannelName(instanceProperties) };
+
+                if (channelName != L"Release")
+                {
+                    tag.append(L" [" + channelName + L"]");
+                }
+
+                return tag;
+            }
+
+            inline std::wstring GetChannelId(ComPtrPropertyStore pPropertyStore) const
+            {
+                return VsSetupConfiguration::GetStringProperty(pPropertyStore, L"channelId");
+            }
+
+            inline std::wstring GetChannelName(ComPtrPropertyStore pPropertyStore) const
             {
                 std::wstring channelName;
 
                 // channelId is in the format  <ProductName>.<MajorVersion>.<ChannelName>
-                std::wstring channelId{ GetChannelId() };
+                std::wstring channelId{ GetChannelId(pPropertyStore) };
                 size_t pos = channelId.rfind(L".");
                 if (pos != std::wstring::npos)
                 {
@@ -104,27 +191,15 @@ namespace Microsoft::Terminal::Settings::Model
                 return channelName;
             }
 
-            inline std::wstring GetProductLineVersion() const
+            inline std::wstring GetNickname(ComPtrCustomPropertyStore pPropertyStore) const
             {
-                ComPtrPropertyStore properties;
-                ComPtrInstanceCatalog instanceCatalog = inst.query<ISetupInstanceCatalog>();
-                THROW_IF_FAILED(instanceCatalog->GetCatalogInfo(&properties));
-                return VsSetupConfiguration::GetStringProperty(properties, L"productLineVersion");
+                return VsSetupConfiguration::GetStringProperty(pPropertyStore, L"nickname");
             }
 
-        private:
-            friend class VsSetupConfiguration;
-
-            VsSetupInstance(const ComPtrSetupQuery pQuery, const ComPtrSetupInstance pInstance) :
-                query(pQuery),
-                helper(pQuery.query<ISetupHelper>()),
-                inst(pInstance)
+            inline std::wstring GetProductLineVersion(ComPtrCatalogPropertyStore pPropertyStore) const
             {
+                return VsSetupConfiguration::GetStringProperty(pPropertyStore, L"productLineVersion");
             }
-
-            const ComPtrSetupQuery query;
-            const ComPtrSetupHelper helper;
-            const ComPtrSetupInstance inst;
         };
 
         static std::vector<VsSetupConfiguration::VsSetupInstance> QueryInstances();

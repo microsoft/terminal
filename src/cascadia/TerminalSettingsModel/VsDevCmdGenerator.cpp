@@ -9,15 +9,7 @@ using namespace Microsoft::Terminal::Settings::Model;
 std::wstring VsDevCmdGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const
 {
     std::wstring name{ L"Developer Command Prompt for VS " };
-    name.append(instance.GetProductLineVersion());
-
-    std::wstring channelName{ instance.GetChannelName() };
-
-    if (channelName != L"Release")
-    {
-        name.append(L" [" + channelName + L"]");
-    }
-
+    name.append(instance.GetProfileNameSuffix());
     return name;
 }
 

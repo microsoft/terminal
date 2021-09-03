@@ -12,15 +12,7 @@ using namespace Microsoft::Terminal::Settings::Model;
 std::wstring VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const
 {
     std::wstring name{ L"Developer PowerShell for VS " };
-    name.append(instance.GetProductLineVersion());
-
-    std::wstring channelName{ instance.GetChannelName() };
-
-    if (channelName != L"Release")
-    {
-        name.append(L" [" + channelName + L"]");
-    }
-
+    name.append(instance.GetProfileNameSuffix());
     return name;
 }
 
