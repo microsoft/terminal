@@ -81,22 +81,34 @@ namespace Microsoft::Terminal::Settings::Model
 
             inline ComPtrPropertyStore GetInstancePropertyStore() const
             {
-                return inst.query<ISetupPropertyStore>();
+                ComPtrPropertyStore properties;
+                inst.query_to<ISetupPropertyStore>(&properties);
+                return properties;
             }
 
             inline ComPtrCustomPropertyStore GetCustomPropertyStore() const
             {
+                ComPtrSetupInstance2 instance2;
+                inst.query_to<ISetupInstance2>(&instance2);
                 ComPtrCustomPropertyStore properties;
-                ComPtrSetupInstance2 instance2 = inst.query<ISetupInstance2>();
-                THROW_IF_FAILED(instance2->GetProperties(&properties));
+                if (FAILED(instance2->GetProperties(&properties)))
+                {
+                    return nullptr;
+                }
+
                 return properties;
             }
 
             inline ComPtrCatalogPropertyStore GetCatalogPropertyStore() const
             {
+                ComPtrInstanceCatalog instanceCatalog;
+                inst.query_to<ISetupInstanceCatalog>(&instanceCatalog);
                 ComPtrCatalogPropertyStore properties;
-                ComPtrInstanceCatalog instanceCatalog = inst.query<ISetupInstanceCatalog>();
-                THROW_IF_FAILED(instanceCatalog->GetCatalogInfo(&properties));
+                if (FAILED(instanceCatalog->GetCatalogInfo(&properties)))
+                {
+                    return nullptr;
+                }
+
                 return properties;
             }
 
@@ -124,17 +136,18 @@ namespace Microsoft::Terminal::Settings::Model
 
             inline std::wstring BuildProfileNameSuffix() const
             {
-                if (VersionInRange(L"[15.3,"))
+                ComPtrCatalogPropertyStore catalogProperties = GetCatalogPropertyStore();
+                if (catalogProperties != nullptr)
                 {
                     std::wstring suffix;
 
-                    ComPtrCatalogPropertyStore catalogProperties = GetCatalogPropertyStore();
                     std::wstring productLine{ GetProductLineVersion(catalogProperties) };
                     suffix.append(productLine);
 
-                    try
+
+                    ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
+                    if (customProperties != nullptr)
                     {
-                        ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
                         std::wstring nickname{ GetNickname(customProperties) };
                         if (!nickname.empty())
                         {
@@ -146,7 +159,7 @@ namespace Microsoft::Terminal::Settings::Model
                             suffix.append(GetChannelNameSuffixTag(instanceProperties));
                         }
                     }
-                    catch (...)
+                    else
                     {
                         ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
                         suffix.append(GetChannelNameSuffixTag(instanceProperties));
@@ -163,6 +176,11 @@ namespace Microsoft::Terminal::Settings::Model
                 std::wstring tag;
                 std::wstring channelName{ GetChannelName(instanceProperties) };
 
+                if (channelName.empty())
+                {
+                    return channelName;
+                }
+
                 if (channelName != L"Release")
                 {
                     tag.append(L" [" + channelName + L"]");
@@ -171,17 +189,22 @@ namespace Microsoft::Terminal::Settings::Model
                 return tag;
             }
 
-            inline std::wstring GetChannelId(ComPtrPropertyStore pPropertyStore) const
+            inline std::wstring GetChannelId(ComPtrPropertyStore instanceProperties) const
             {
-                return VsSetupConfiguration::GetStringProperty(pPropertyStore, L"channelId");
+                return VsSetupConfiguration::GetStringProperty(instanceProperties, L"channelId");
             }
 
-            inline std::wstring GetChannelName(ComPtrPropertyStore pPropertyStore) const
+            inline std::wstring GetChannelName(ComPtrPropertyStore instanceProperties) const
             {
+                std::wstring channelId{ GetChannelId(instanceProperties) };
+                if (channelId.empty())
+                {
+                    return channelId;
+                }
+
                 std::wstring channelName;
 
                 // channelId is in the format  <ProductName>.<MajorVersion>.<ChannelName>
-                std::wstring channelId{ GetChannelId(pPropertyStore) };
                 size_t pos = channelId.rfind(L".");
                 if (pos != std::wstring::npos)
                 {
@@ -191,14 +214,14 @@ namespace Microsoft::Terminal::Settings::Model
                 return channelName;
             }
 
-            inline std::wstring GetNickname(ComPtrCustomPropertyStore pPropertyStore) const
+            inline std::wstring GetNickname(ComPtrCustomPropertyStore customProperties) const
             {
-                return VsSetupConfiguration::GetStringProperty(pPropertyStore, L"nickname");
+                return VsSetupConfiguration::GetStringProperty(customProperties, L"nickname");
             }
 
-            inline std::wstring GetProductLineVersion(ComPtrCatalogPropertyStore pPropertyStore) const
+            inline std::wstring GetProductLineVersion(ComPtrCatalogPropertyStore customProperties) const
             {
-                return VsSetupConfiguration::GetStringProperty(pPropertyStore, L"productLineVersion");
+                return VsSetupConfiguration::GetStringProperty(customProperties, L"productLineVersion");
             }
         };
 

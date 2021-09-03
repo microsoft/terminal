@@ -5,11 +5,10 @@
 #include "BaseVisualStudioGenerator.h"
 #include "DefaultProfileUtils.h"
 
-using namespace Microsoft::Terminal::Settings;
+using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-std::vector<Profile>
-    Model::BaseVisualStudioGenerator::GenerateProfiles()
+std::vector<Profile> BaseVisualStudioGenerator::GenerateProfiles()
 {
     std::vector<Profile> profiles;
 
@@ -28,7 +27,8 @@ std::vector<Profile>
             if (!IsInstanceValid(instance))
                 continue;
 
-            auto DevShell{ CreateDefaultProfile(GetProfileName(instance)) };
+            auto DevShell{ CreateProfile(GetProfileGuidSeed(instance)) };
+            DevShell.Name(GetProfileName(instance));
             DevShell.Commandline(GetProfileCommandLine(instance));
             DevShell.StartingDirectory(instance.GetInstallationPath());
             DevShell.Icon(GetProfileIconPath());
@@ -39,4 +39,15 @@ std::vector<Profile>
     }
 
     return profiles;
+}
+
+Profile BaseVisualStudioGenerator::CreateProfile(const std::wstring_view seed)
+{
+    const winrt::guid profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
+                                                                           gsl::as_bytes(gsl::make_span(seed))) };
+
+    auto newProfile = winrt::make_self<implementation::Profile>(profileGuid);
+    newProfile->Origin(OriginTag::Generated);
+
+    return *newProfile;
 }

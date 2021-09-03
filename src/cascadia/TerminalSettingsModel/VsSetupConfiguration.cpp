@@ -97,7 +97,16 @@ std::wstring VsSetupConfiguration::GetInstanceId(ComPtrSetupInstance pInst)
 
 std::wstring VsSetupConfiguration::GetStringProperty(ComPtrPropertyStore pProps, std::wstring_view name)
 {
+    if (pProps == nullptr)
+    {
+        return std::wstring{};
+    }
+
     wil::unique_variant var;
-    THROW_IF_FAILED(pProps->GetValue(name.data(), &var));
+    if (FAILED(pProps->GetValue(name.data(), &var)))
+    {
+        return std::wstring{};
+    }
+
     return var.bstrVal;
 }

@@ -25,6 +25,7 @@ namespace Microsoft::Terminal::Settings::Model
         virtual bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance instance) const = 0;
         virtual std::wstring GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const = 0;
         virtual std::wstring GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance instance) const = 0;
+        virtual std::wstring GetProfileGuidSeed(const VsSetupConfiguration::VsSetupInstance instance) const = 0;
         virtual std::wstring GetProfileIconPath() const = 0;
 
         // Inherited via IDynamicProfileGenerator
@@ -34,5 +35,7 @@ namespace Microsoft::Terminal::Settings::Model
     private:
         inline static bool hasQueried = false;
         inline static std::vector<VsSetupConfiguration::VsSetupInstance> instances;
+
+        winrt::Microsoft::Terminal::Settings::Model::Profile CreateProfile(const std::wstring_view instanceId);
     };
 };
