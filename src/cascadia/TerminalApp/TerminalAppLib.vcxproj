@@ -21,7 +21,6 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <ItemDefinitionGroup>
-
     <ClCompile>
       <!-- For CLI11: It uses dynamic_cast to cast types around, which depends
       on being compiled with RTTI (/GR). -->
@@ -70,7 +69,6 @@
     <ClInclude Include="ActionPaletteItem.h" />
     <ClInclude Include="App.base.h" />
     <ClInclude Include="AppCommandlineArgs.h" />
-    <ClInclude Include="BaseVisualStudioGenerator.h" />
     <ClInclude Include="Commandline.h" />
     <ClInclude Include="CommandLinePaletteItem.h" />
     <ClInclude Include="Jumplist.h" />
@@ -128,9 +126,6 @@
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="Pane.h" />
-    <ClInclude Include="VsDevCmdGenerator.h" />
-    <ClInclude Include="VsDevShellGenerator.h" />
-    <ClInclude Include="VsSetupConfiguration.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ShortcutActionDispatch.h">
@@ -152,7 +147,6 @@
   <ItemGroup>
     <ClCompile Include="ActionPaletteItem.cpp" />
     <ClCompile Include="CommandLinePaletteItem.cpp" />
-    <ClCompile Include="BaseVisualStudioGenerator.cpp" />
     <ClCompile Include="init.cpp" />
     <ClCompile Include="AppCommandlineArgs.cpp" />
     <ClCompile Include="Commandline.cpp" />
@@ -219,9 +213,6 @@
       <DependentUpon>EmptyStringVisibilityConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="Pane.cpp" />
-    <ClCompile Include="VsDevCmdGenerator.cpp" />
-    <ClCompile Include="VsDevShellGenerator.cpp" />
-    <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="Pane.LayoutSizeNode.cpp" />
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
@@ -245,7 +236,6 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
-
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
@@ -389,7 +379,6 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.targets')" />
-  <Import Project="..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="Exists('..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
@@ -417,6 +406,5 @@
       </PackagingOutputs>
     </ItemGroup>
   </Target>
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

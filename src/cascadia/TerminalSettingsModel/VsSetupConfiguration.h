@@ -18,7 +18,7 @@ Author(s):
 #include <wil/resource.h>
 #include "Setup.Configuration.h"
 
-namespace TerminalApp
+namespace Microsoft::Terminal::Settings::Model
 {
     /// <summary>
     /// See https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.setup.configuration?view=visualstudiosdk-2019
@@ -112,7 +112,7 @@ namespace TerminalApp
             }
 
         private:
-            friend class TerminalApp::VsSetupConfiguration;
+            friend class VsSetupConfiguration;
 
             VsSetupInstance(const ComPtrSetupQuery pQuery, const ComPtrSetupInstance pInstance) :
                 mp_query(pQuery),

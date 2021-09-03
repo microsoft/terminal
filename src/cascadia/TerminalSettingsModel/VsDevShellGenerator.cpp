@@ -7,7 +7,9 @@
 #include "DefaultProfileUtils.h"
 #include "VsSetupConfiguration.h"
 
-std::wstring TerminalApp::VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const
+using namespace Microsoft::Terminal::Settings::Model;
+
+std::wstring VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const
 {
     std::wstring name{ L"Developer PowerShell for VS " };
     name.append(instance.GetProductLineVersion());
@@ -22,7 +24,7 @@ std::wstring TerminalApp::VsDevShellGenerator::GetProfileName(const VsSetupConfi
     return name;
 }
 
-std::wstring TerminalApp::VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance instance) const
+std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance instance) const
 {
     // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
     // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatially setting the shell path

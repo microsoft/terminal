@@ -4,7 +4,9 @@
 #include "pch.h"
 #include "VsDevCmdGenerator.h"
 
-std::wstring TerminalApp::VsDevCmdGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const
+using namespace Microsoft::Terminal::Settings::Model;
+
+std::wstring VsDevCmdGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const
 {
     std::wstring name{ L"Developer Command Prompt for VS " };
     name.append(instance.GetProductLineVersion());
@@ -19,7 +21,7 @@ std::wstring TerminalApp::VsDevCmdGenerator::GetProfileName(const VsSetupConfigu
     return name;
 }
 
-std::wstring TerminalApp::VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance instance) const
+std::wstring VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance instance) const
 {
     std::wstring commandLine{ L"cmd.exe /k \"" + instance.GetDevCmdScriptPath() + L"\"" };
 

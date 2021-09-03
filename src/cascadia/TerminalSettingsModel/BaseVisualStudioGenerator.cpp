@@ -5,9 +5,13 @@
 #include "BaseVisualStudioGenerator.h"
 #include "DefaultProfileUtils.h"
 
-std::vector<winrt::TerminalApp::Profile> TerminalApp::BaseVisualStudioGenerator::GenerateProfiles()
+using namespace Microsoft::Terminal::Settings;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+std::vector<Profile>
+    Model::BaseVisualStudioGenerator::GenerateProfiles()
 {
-    std::vector<winrt::TerminalApp::Profile> profiles;
+    std::vector<Profile> profiles;
 
     // There's no point in enumerating valid Visual Studio instances more than once,
     // so cache them for use by both Visual Studio profile generators.
@@ -27,7 +31,7 @@ std::vector<winrt::TerminalApp::Profile> TerminalApp::BaseVisualStudioGenerator:
             auto DevShell{ CreateDefaultProfile(GetProfileName(instance)) };
             DevShell.Commandline(GetProfileCommandLine(instance));
             DevShell.StartingDirectory(instance.GetInstallationPath());
-            DevShell.IconPath(GetProfileIconPath());
+            DevShell.Icon(GetProfileIconPath());
 
             profiles.emplace_back(DevShell);
         }

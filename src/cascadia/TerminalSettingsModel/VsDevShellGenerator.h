@@ -16,10 +16,9 @@ Author(s):
 #pragma once
 #include "BaseVisualStudioGenerator.h"
 
-namespace TerminalApp
+namespace Microsoft::Terminal::Settings::Model
 {
-    class VsDevShellGenerator :
-        public TerminalApp::BaseVisualStudioGenerator
+    class VsDevShellGenerator : public BaseVisualStudioGenerator
     {
     public:
         VsDevShellGenerator() = default;

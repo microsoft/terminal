@@ -21,9 +21,6 @@
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="Jumplist.cpp" />
-    <ClCompile Include="Tab.cpp">
-      <Filter>tab</Filter>
-    </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
@@ -45,18 +42,6 @@
     <ClCompile Include="HighlightedText.cpp">
       <Filter>highlightedText</Filter>
     </ClCompile>
-    <ClCompile Include="VsSetupConfiguration.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
-    <ClCompile Include="VsDevShellGenerator.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
-    <ClCompile Include="VsDevCmdGenerator.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
-    <ClCompile Include="BaseVisualStudioGenerator.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
     <ClCompile Include="Toast.cpp" />
     <ClCompile Include="LanguageProfileNotifier.cpp" />
   </ItemGroup>
@@ -73,9 +58,6 @@
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="Jumplist.h" />
-    <ClInclude Include="Tab.h">
-      <Filter>tab</Filter>
-    </ClInclude>
     <ClInclude Include="SettingsTab.h">
       <Filter>tab</Filter>
     </ClInclude>
@@ -96,18 +78,6 @@
     </ClInclude>
     <ClInclude Include="HighlightedText.h">
       <Filter>highlightedText</Filter>
-    </ClInclude>
-    <ClInclude Include="VsSetupConfiguration.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="VsDevShellGenerator.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="BaseVisualStudioGenerator.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="VsDevCmdGenerator.h">
-      <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="Toast.h" />
     <ClInclude Include="LanguageProfileNotifier.h" />
@@ -141,6 +111,7 @@
     <Midl Include="PaletteItemTemplateSelector.idl" />
     <Midl Include="TabBase.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
+    <Midl Include="TaskbarState.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

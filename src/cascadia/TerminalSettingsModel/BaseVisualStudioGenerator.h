@@ -18,9 +18,9 @@ Author(s):
 #include "IDynamicProfileGenerator.h"
 #include "VsSetupConfiguration.h"
 
-namespace TerminalApp
+namespace Microsoft::Terminal::Settings::Model
 {
-    class BaseVisualStudioGenerator : public TerminalApp::IDynamicProfileGenerator
+    class BaseVisualStudioGenerator : public IDynamicProfileGenerator
     {
         virtual bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance instance) const = 0;
         virtual std::wstring GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const = 0;
@@ -29,7 +29,7 @@ namespace TerminalApp
 
         // Inherited via IDynamicProfileGenerator
         virtual std::wstring_view GetNamespace() override = 0;
-        std::vector<winrt::TerminalApp::Profile> GenerateProfiles() override;
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> GenerateProfiles() override;
 
     private:
         inline static bool hasQueried = false;
