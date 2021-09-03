@@ -82,6 +82,7 @@
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                                         IsSpellCheckEnabled="False"
                                          Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_CommandlineBrowse"
                                         Click="Commandline_Click"
@@ -100,6 +101,7 @@
                                 <StackPanel Orientation="Horizontal">
                                     <TextBox IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                              Style="{StaticResource TextBoxSettingStyle}"
+                                             IsSpellCheckEnabled="False"
                                              Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" />
                                     <Button x:Name="StartingDirectoryBrowse"
                                             x:Uid="Profile_StartingDirectoryBrowse"
@@ -121,6 +123,7 @@
                             <StackPanel Orientation="Horizontal">
                                 <TextBox FontFamily="Segoe UI, Segoe MDL2 Assets"
                                          Style="{StaticResource TextBoxSettingStyle}"
+                                         IsSpellCheckEnabled="False"
                                          Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_IconBrowse"
                                         Click="Icon_Click"

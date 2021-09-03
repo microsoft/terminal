@@ -240,6 +240,7 @@
                  CornerRadius="2"
                  FontSize="15"
                  KeyDown="TextBoxKeyDown"
+                 IsSpellCheckEnabled="False"
                  PlaceholderForeground="{ThemeResource TextBoxPlaceholderTextThemeBrush}" />
 
         <ToggleButton x:Name="GoBackwardButton"
