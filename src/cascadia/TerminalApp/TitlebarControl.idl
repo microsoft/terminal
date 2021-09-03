@@ -14,6 +14,8 @@ namespace TerminalApp
     {
         TitlebarControl(UInt64 parentWindowHandle);
         void SetWindowVisualState(WindowVisualState visualState);
+        void MaxButtonEntered();
+        void MaxButtonExited();
 
         IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };

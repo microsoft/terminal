@@ -24,6 +24,16 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
     }
 
+    void TitlebarControl::MaxButtonEntered()
+    {
+        MinMaxCloseControl().Opacity(.5);
+    }
+
+    void TitlebarControl::MaxButtonExited()
+    {
+        MinMaxCloseControl().Opacity(1.0);
+    }
+
     IInspectable TitlebarControl::Content()
     {
         return ContentRoot().Content();
