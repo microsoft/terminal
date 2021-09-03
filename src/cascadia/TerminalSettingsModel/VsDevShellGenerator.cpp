@@ -27,7 +27,7 @@ std::wstring VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsS
 std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance instance) const
 {
     // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
-    // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatially setting the shell path
+    // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
     // so the path in the profile will be used instead.
     std::wstring commandLine{ L"powershell.exe -NoExit -Command \"& {" };
     commandLine.append(L"Import-Module \"\"\"" + instance.GetDevShellModulePath() + L"\"\"\";");
