@@ -61,6 +61,7 @@ namespace Microsoft.Terminal.Remoting
         void DisplayWindowId(); // Tells us to display its own ID (which causes a DisplayWindowIdRequested to be raised)
 
         String WindowName { get; };
+        String ActiveTabTitle { get; };
         void RequestIdentifyWindows(); // Tells us to raise a IdentifyWindowsRequested
         void RequestRename(RenameRequestArgs args); // Tells us to raise a RenameRequested
         void Summon(SummonWindowBehavior behavior);

@@ -42,12 +42,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SignalClose();
 
         void SummonAllWindows();
-        Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> GetPeasantNames();
         uint64_t GetNumberOfPeasants();
+        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
         winrt::fire_and_forget RequestShowTrayIcon();
         winrt::fire_and_forget RequestHideTrayIcon();
         bool DoesQuakeWindowExist();
+        void UpdateActiveTabTitle(winrt::hstring title);
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);

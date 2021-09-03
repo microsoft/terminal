@@ -31,6 +31,12 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.IReference<UInt64> WindowID;
     }
 
+    struct PeasantInfo
+    {
+        UInt64 Id;
+        String Name;
+        String TabTitle;
+    };
 
     [default_interface] runtimeclass Monarch {
         Monarch();
@@ -44,7 +50,8 @@ namespace Microsoft.Terminal.Remoting
         void SignalClose(UInt64 peasantId);
 
         void SummonAllWindows();
-        Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames { get; };
+        Boolean DoesQuakeWindowExist();
+        Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;

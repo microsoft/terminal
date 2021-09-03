@@ -418,6 +418,12 @@ public:
         return TRUE;
     }
 
+    bool PrivateClearBuffer() override
+    {
+        Log::Comment(L"PrivateClearBuffer MOCK called...");
+        return TRUE;
+    }
+
     bool GetUserDefaultCursorStyle(CursorType& style) override
     {
         style = CursorType::Legacy;
