@@ -209,6 +209,8 @@ namespace winrt::TerminalApp::implementation
 
         void _OpenNewTerminal(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
+        bool _IsElevated() const noexcept;
+
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
         void _CommandPaletteButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);
