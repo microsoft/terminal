@@ -34,8 +34,5 @@ std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfigurati
     commandLine.append(L"Enter-VsDevShell " + instance.GetInstanceId() + L" -SkipAutomaticLocation");
     commandLine.append(L"}\"");
 
-    OutputDebugString(commandLine.c_str());
-    OutputDebugString(L"\n");
-
     return commandLine;
 }

@@ -25,8 +25,5 @@ std::wstring VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration
 {
     std::wstring commandLine{ L"cmd.exe /k \"" + instance.GetDevCmdScriptPath() + L"\"" };
 
-    OutputDebugString(commandLine.c_str());
-    OutputDebugString(L"\n");
-
     return commandLine;
 }
