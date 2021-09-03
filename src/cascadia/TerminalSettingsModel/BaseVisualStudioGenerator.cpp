@@ -35,10 +35,7 @@ std::vector<Profile>
 
             profiles.emplace_back(DevShell);
         }
-        catch (const wil::ResultException&)
-        {
-            continue;
-        }
+        CATCH_LOG();
     }
 
     return profiles;

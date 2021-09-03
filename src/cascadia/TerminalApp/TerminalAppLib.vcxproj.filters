@@ -21,6 +21,9 @@
     <ClCompile Include="ColorHelper.cpp" />
     <ClCompile Include="DebugTapConnection.cpp" />
     <ClCompile Include="Jumplist.cpp" />
+    <ClCompile Include="Tab.cpp">
+      <Filter>tab</Filter>
+    </ClCompile>
     <ClCompile Include="SettingsTab.cpp">
       <Filter>tab</Filter>
     </ClCompile>
@@ -58,6 +61,9 @@
     <ClInclude Include="DebugTapConnection.h" />
     <ClInclude Include="ColorHelper.h" />
     <ClInclude Include="Jumplist.h" />
+    <ClInclude Include="Tab.h">
+      <Filter>tab</Filter>
+    </ClInclude>
     <ClInclude Include="SettingsTab.h">
       <Filter>tab</Filter>
     </ClInclude>
@@ -111,7 +117,6 @@
     <Midl Include="PaletteItemTemplateSelector.idl" />
     <Midl Include="TabBase.idl" />
     <Midl Include="EmptyStringVisibilityConverter.idl" />
-    <Midl Include="TaskbarState.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
