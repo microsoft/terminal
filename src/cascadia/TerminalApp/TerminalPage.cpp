@@ -1275,7 +1275,7 @@ namespace winrt::TerminalApp::implementation
             if (auto terminalTab = _GetTerminalTabImpl(tab))
             {
                 auto tabActions = terminalTab->BuildStartupActions();
-                actions.insert(actions.end(), tabActions.begin(), tabActions.end());
+                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
             }
             else if (tab.try_as<SettingsTab>())
             {
@@ -1284,7 +1284,7 @@ namespace winrt::TerminalApp::implementation
                 OpenSettingsArgs args{ SettingsTarget::SettingsUI };
                 action.Args(args);
 
-                actions.push_back(action);
+                actions.emplace_back(std::move(action));
             }
         }
 
@@ -1297,7 +1297,18 @@ namespace winrt::TerminalApp::implementation
             SwitchToTabArgs switchToTabArgs{ idx.value() };
             action.Args(switchToTabArgs);
 
-            actions.push_back(action);
+            actions.emplace_back(std::move(action));
+        }
+
+        // If the user set a custom name, save it
+        if (_WindowName != L"")
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::RenameWindow);
+            RenameWindowArgs args{ _WindowName };
+            action.Args(args);
+
+            actions.emplace_back(std::move(action));
         }
 
         WindowLayout layout{};

@@ -704,6 +704,7 @@ void AppCommandlineArgs::_resetStateToDefault()
     _swapPaneDirection = FocusDirection::None;
 
     _focusPaneTarget = -1;
+    _loadPersistedLayoutIdx = -1;
 
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
