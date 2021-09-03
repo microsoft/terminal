@@ -3,6 +3,12 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum InfoBarMessage
+    {
+        CloseOnExitInfo = 0,
+        KeyboardServiceWarning
+    };
+
     [default_interface] runtimeclass ApplicationState {
         static ApplicationState SharedInstance();
 
@@ -11,5 +17,7 @@ namespace Microsoft.Terminal.Settings.Model
         String FilePath { get; };
 
         Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
+
+        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages { get; set; };
     }
 }
