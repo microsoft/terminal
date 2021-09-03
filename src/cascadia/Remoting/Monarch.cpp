@@ -130,8 +130,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     uint64_t Monarch::GetNumberOfPeasants()
     {
         auto num = 0;
-        auto callback = [&](const auto& /*id*/, const auto& p)
-        {
+        auto callback = [&](const auto& /*id*/, const auto& p) {
             // Check that the peasant is alive, and if so increment the count
             p.GetID();
             num += 1;
