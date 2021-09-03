@@ -284,7 +284,6 @@ ColorFix::ColorFix(const ColorFix& color)
 // - Reference: http://www.easyrgb.com/index.php?X=MATH&H=01#text1
 void ColorFix::_ToLab()
 {
-    //dE00::RGBToLAB(r, g, b, L, A, B);
     double var_R = r / 255.0;
     double var_G = g / 255.0;
     double var_B = b / 255.0;
