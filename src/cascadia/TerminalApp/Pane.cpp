@@ -144,7 +144,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     auto buildSplitPane = [&](auto newPane) {
         ActionAndArgs actionAndArgs;
         actionAndArgs.Action(ShortcutAction::SplitPane);
-        auto terminalArgs{ newPane->GetTerminalArgsForPane() };
+        const auto terminalArgs{ newPane->GetTerminalArgsForPane() };
         // When creating a pane the split size is the size of the new pane
         // and not position.
         SplitPaneArgs args{ SplitType::Manual, _splitState, 1. - _desiredSplitPosition, terminalArgs };

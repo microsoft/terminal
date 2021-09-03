@@ -266,8 +266,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // done when we become the king. This will be called both for the first
         // window, and when the current monarch dies.
 
-        auto weakThis{ get_weak() };
-
         _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
         _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });

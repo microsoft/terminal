@@ -601,7 +601,7 @@ namespace winrt::TerminalApp::implementation
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
         if (_root->ShouldUsePersistedLayout(_settings))
         {
-            auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
 
             if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialSize())
             {
@@ -705,7 +705,7 @@ namespace winrt::TerminalApp::implementation
 
         if (_root->ShouldUsePersistedLayout(_settings))
         {
-            auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
 
             if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialPosition())
             {
