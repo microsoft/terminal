@@ -232,7 +232,7 @@ private:
     LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
-    winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType) const;
+    winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType) const;
 
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 

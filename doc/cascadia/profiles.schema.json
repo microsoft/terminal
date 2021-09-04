@@ -348,7 +348,11 @@
       "enum": [
         "vertical",
         "horizontal",
-        "auto"
+        "auto",
+        "up",
+        "right",
+        "down",
+        "left"
       ],
       "type": "string"
     },
@@ -629,7 +633,7 @@
             "split": {
               "$ref": "#/definitions/SplitState",
               "default": "auto",
-              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"horizontal\" (think [-])\n -\"vertical\" (think [|])"
+              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"horizontal\" (think [-])\n -\"vertical\" (think [|])\n-\"up\" (like \"horizontal\" but above)\n -\"right\" (same as \"vertical\")\n -\"down\" (same as \"horizontal\")\n -\"left\" (like \"vertical\" but to the left)"
             },
             "splitMode": {
               "default": "duplicate",

@@ -46,7 +46,11 @@ namespace Microsoft.Terminal.Settings.Model
         Automatic = -1,
         None = 0,
         Vertical = 1,
-        Horizontal = 2
+        Horizontal = 2,
+        Up = 3,
+        Right = 4,
+        Down = 5,
+        Left = 6
     };
 
     enum SplitType

@@ -407,6 +407,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         case SplitState::Horizontal:
             ss << L"split: horizontal, ";
             break;
+        case SplitState::Up:
+            ss << L"split: up, ";
+            break;
+        case SplitState::Right:
+            ss << L"split: right, ";
+            break;
+        case SplitState::Down:
+            ss << L"split: down, ";
+            break;
+        case SplitState::Left:
+            ss << L"split: left, ";
+            break;
         }
 
         if (SplitSize() != .5f)

@@ -1873,7 +1873,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                 return { false };
             }
 
-            else if (splitType == SplitState::Vertical)
+            else if (splitType == SplitState::Vertical || splitType == SplitState::Left || splitType == SplitState::Right)
             {
                 const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
                 const auto newFirstWidth = widthMinusSeparator * firstPrecent;
@@ -1882,7 +1882,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                 return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
             }
 
-            else if (splitType == SplitState::Horizontal)
+            else if (splitType == SplitState::Horizontal || splitType == SplitState::Up || splitType == SplitState::Down)
             {
                 const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
                 const auto newFirstHeight = heightMinusSeparator * firstPrecent;
@@ -1935,7 +1935,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 // - profile: The profile to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
-// - The two newly created Panes
+// - The two newly created Panes, with the original pane first
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType,
                                                                     const float splitSize,
                                                                     const Profile& profile,
@@ -1999,13 +1999,15 @@ bool Pane::ToggleSplitOrientation()
 // Method Description:
 // - Converts an "automatic" split type into either Vertical or Horizontal,
 //   based upon the current dimensions of the Pane.
+// - Similarly, if Up/Down or Left/Right are provided a Horizontal or Vertical
+//   split type will be returned.
 // - If any of the other SplitState values are passed in, they're returned
 //   unmodified.
 // Arguments:
 // - splitType: The SplitState to attempt to convert
 // Return Value:
 // - None if splitType was None, otherwise one of Horizontal or Vertical
-SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
+SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitState& splitType) const
 {
     // Careful here! If the pane doesn't yet have a size, these dimensions will
     // be 0, and we'll always return Vertical.
@@ -2018,6 +2020,14 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
                                gsl::narrow_cast<float>(_root.ActualHeight()) };
         return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
     }
+    if (splitType == SplitState::Up || splitType == SplitState::Down)
+    {
+        return SplitState::Horizontal;
+    }
+    if (splitType == SplitState::Left || splitType == SplitState::Right)
+    {
+        return SplitState::Vertical;
+    }
     return splitType;
 }
 
@@ -2029,7 +2039,7 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
 // - splitSize: what fraction of the pane the new pane should get
 // - newPane: the pane to add as a child
 // Return Value:
-// - The two newly created Panes
+// - The two newly created Panes, with the original pane as the first pane.
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
                                                                      const float splitSize,
                                                                      std::shared_ptr<Pane> newPane)
@@ -2039,7 +2049,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
         return { nullptr, nullptr };
     }
 
-    auto actualSplitType = _convertAutomaticSplitState(splitType);
+    auto actualSplitType = _convertAutomaticOrDirectionalSplitState(splitType);
 
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -2070,9 +2080,16 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     //   Move the new guid, control into the second.
     _firstChild = std::make_shared<Pane>(_profile, _control);
     _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
+    _secondChild = newPane;
+
+    // If we want the new pane to be the first child, swap the children
+    if (splitType == SplitState::Up || splitType == SplitState::Left)
+    {
+        std::swap(_firstChild, _secondChild);
+    }
+
     _profile = nullptr;
     _control = { nullptr };
-    _secondChild = newPane;
 
     _CreateRowColDefinitions();
 
@@ -2091,6 +2108,12 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // Clear out our ID, only leaves should have IDs
     _id = {};
 
+    // Regardless of which child the new child is, we want to return the
+    // original one first.
+    if (splitType == SplitState::Up || splitType == SplitState::Left)
+    {
+        return { _secondChild, _firstChild };
+    }
     return { _firstChild, _secondChild };
 }
 

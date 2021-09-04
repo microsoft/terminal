@@ -453,33 +453,36 @@ namespace winrt::TerminalApp::implementation
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
-        auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
+        // Depending on which direction will be split, the new pane can be
+        // either the first or second child, but this will always return the
+        // original pane first.
+        auto [original, newPane] = _activePane->Split(splitType, splitSize, profile, control);
         if (activePaneId)
         {
-            first->Id(activePaneId.value());
-            second->Id(_nextPaneId);
+            original->Id(activePaneId.value());
+            newPane->Id(_nextPaneId);
             ++_nextPaneId;
         }
         else
         {
-            first->Id(_nextPaneId);
+            original->Id(_nextPaneId);
             ++_nextPaneId;
-            second->Id(_nextPaneId);
+            newPane->Id(_nextPaneId);
             ++_nextPaneId;
         }
-        _activePane = first;
+        _activePane = original;
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToControl(second->Id().value(), control);
-        _AttachEventHandlersToPane(first);
-        _AttachEventHandlersToPane(second);
+        _AttachEventHandlersToControl(newPane->Id().value(), control);
+        _AttachEventHandlersToPane(original);
+        _AttachEventHandlersToPane(newPane);
 
         // Immediately update our tracker of the focused pane now. If we're
         // splitting panes during startup (from a commandline), then it's
         // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
-        _UpdateActivePane(second);
+        _UpdateActivePane(newPane);
     }
 
     // Method Description:
