@@ -80,7 +80,8 @@
     ON_ALL_ACTIONS(QuakeMode)              \
     ON_ALL_ACTIONS(FocusPane)              \
     ON_ALL_ACTIONS(ClearBuffer)            \
-    ON_ALL_ACTIONS(MultipleActions)
+    ON_ALL_ACTIONS(MultipleActions)        \
+    ON_ALL_ACTIONS(Quit)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
