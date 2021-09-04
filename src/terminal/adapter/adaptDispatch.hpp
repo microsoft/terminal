@@ -140,6 +140,8 @@ namespace Microsoft::Console::VirtualTerminal
                                    const VTParameter cellHeight,
                                    const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
 
+        StringHandler RequestSetting() override; // DECRQSS
+
     private:
         enum class ScrollDirection
         {

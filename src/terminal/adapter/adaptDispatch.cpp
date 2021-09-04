@@ -2527,6 +2527,46 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber
     };
 }
 
+// Method Description:
+// - DECRQSS - Requests the state of a VT setting. The value being queried is
+//   identified by the intermediate and final characters of its control
+//   sequence, which are passed to the string handler.
+// Arguments:
+// - None
+// Return Value:
+// - a function to receive the VTID of the setting being queried
+ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
+{
+    // We use a VTIDBuilder to parse the characters in the control string into
+    // an ID which represents the setting being queried. If the given ID isn't
+    // supported, we respond with an error sequence: DCS 0 $ r ST. Note that
+    // this is the opposite of what is documented in most DEC manuals, which
+    // say that 0 is for a valid response, and 1 is for an error. The correct
+    // interpretation is documented in the DEC STD 070 reference.
+    const auto idBuilder = std::make_shared<VTIDBuilder>();
+    return [=](const auto ch) {
+        if (ch >= '\x40' && ch <= '\x7e')
+        {
+            const auto id = idBuilder->Finalize(ch);
+            switch (id)
+            {
+            default:
+                _WriteResponse(L"\033P0$r\033\\");
+                break;
+            }
+            return false;
+        }
+        else
+        {
+            if (ch >= '\x20' && ch <= '\x2f')
+            {
+                idBuilder->AddIntermediate(ch);
+            }
+            return true;
+        }
+    };
+}
+
 // Routine Description:
 // - Determines whether we should pass any sequence that manipulates
 //   TerminalInput's input generator through the PTY. It encapsulates
