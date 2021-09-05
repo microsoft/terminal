@@ -2550,6 +2550,9 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             const auto id = idBuilder->Finalize(ch);
             switch (id)
             {
+            case VTID('r'):
+                _ReportDECSTBMSetting();
+                break;
             default:
                 _WriteResponse(L"\033P0$r\033\\");
                 break;
@@ -2565,6 +2568,40 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
             return true;
         }
     };
+}
+
+// Method Description:
+// - Reports the DECSTBM margin range in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSTBMSetting() const
+{
+    // A valid response always starts with DCS 1 $ r.
+    std::wstring response = L"\033P1$r";
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    if (_pConApi->GetConsoleScreenBufferInfoEx(csbiex))
+    {
+        auto marginTop = _scrollMargins.Top + 1;
+        auto marginBottom = _scrollMargins.Bottom + 1;
+        // If the margin top is greater than or equal to the bottom, then the
+        // margins aren't actually set, so we need to return the full height
+        // of the window for the margin range.
+        if (marginTop >= marginBottom)
+        {
+            marginTop = 1;
+            marginBottom = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+        }
+        const auto iterator = std::back_insert_iterator(response);
+        fmt::format_to(iterator, FMT_STRING(L"{};{}"), marginTop, marginBottom);
+    }
+
+    // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
+    response += L"r\033\\";
+    _WriteResponse(response);
 }
 
 // Routine Description:

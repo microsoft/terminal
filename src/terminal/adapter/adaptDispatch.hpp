@@ -191,6 +191,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
 
+        void _ReportDECSTBMSetting() const;
+
         bool _ShouldPassThroughInputModeChange() const;
 
         std::vector<bool> _tabStopColumns;
