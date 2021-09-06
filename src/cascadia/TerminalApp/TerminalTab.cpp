@@ -183,7 +183,7 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Returns nullptr if no children of this tab were the last control to be
-    //   focused, the active control of the current pane, or the first-most control
+    //   focused, the active control of the current pane, or the last active child control
     //   of the active pane if it is a parent.
     // - This control might not currently be focused, if the tab itself is not
     //   currently focused.
@@ -196,7 +196,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_activePane)
         {
-            return _activePane->GetFirstTerminalControl();
+            return _activePane->GetLastFocusedTerminalControl();
         }
         return nullptr;
     }
@@ -1013,9 +1013,11 @@ namespace winrt::TerminalApp::implementation
                         return pane->_firstChild == sender || pane->_secondChild == sender;
                     });
 
-                    // Only move focus if we the program moved focus, or the user moved with their mouse.
-                    // This is a problem because a pane isn't a control itself, and if we have the parent focused
-                    // we don't want focus immediately going back to the child terminal.
+                    // Only move focus if we the program moved focus, or the
+                    // user moved with their mouse. This is a problem because a
+                    // pane isn't a control itself, and if we have the parent
+                    // focused we are fine if the terminal control is focused,
+                    // but we don't want to update the active pane.
 
                     if (!senderIsChild ||
                         (focus == WUX::FocusState::Programmatic && tab->_changingActivePane) ||

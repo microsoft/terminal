@@ -311,14 +311,34 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // Check if moving up or down the tree
     if (direction == FocusDirection::Parent)
     {
-        return _FindParentOfPane(sourcePane);
+        const auto parent = _FindParentOfPane(sourcePane);
+
+        // Capture a weak reference to the source pane if it is a leaf so that
+        // we can keep the same terminal focused and take the same path back down
+        // if a child movement is requested.
+        parent->_previouslyFocusedTerminal = sourcePane->_IsLeaf() ? sourcePane->weak_from_this() : sourcePane->_previouslyFocusedTerminal;
+
+        return parent;
     }
 
     if (direction == FocusDirection::Child)
     {
         if (!sourcePane->_IsLeaf())
         {
-            return sourcePane->_firstChild;
+            auto child = sourcePane->_firstChild;
+            // If we've recorded an originally focused terminal try to find it
+            if (const auto prevFocus = sourcePane->_previouslyFocusedTerminal.lock())
+            {
+                // We default to the first child, so just check if the second child
+                // has the terminal we are looking for.
+                if (const auto p = sourcePane->_secondChild->FindPane(prevFocus->_id.value()))
+                {
+                    child = sourcePane->_secondChild;
+                }
+            }
+            // clean up references
+            sourcePane->_previouslyFocusedTerminal.reset();
+            return child;
         }
         return nullptr;
     }
@@ -720,7 +740,7 @@ std::pair<Pane::PanePoint, Pane::PanePoint> Pane::_GetOffsetsForPane(const PaneP
 
     if (_splitState == SplitState::Horizontal)
     {
-        secondOffset.y +=  _desiredSplitPosition * parentOffset.scaleY;
+        secondOffset.y += _desiredSplitPosition * parentOffset.scaleY;
         firstOffset.scaleY *= _desiredSplitPosition;
         secondOffset.scaleY *= (1 - _desiredSplitPosition);
     }
@@ -1042,17 +1062,25 @@ std::shared_ptr<Pane> Pane::GetActivePane()
 }
 
 // Method Description:
-// - Gets the TermControl of this pane. If this Pane is not a leaf this will
-//   return the control of the first-most child.
+// - Gets the TermControl of this pane. If this Pane is not a leaf but is
+//   focused, this will return the control of the last leaf pane that had focus.
+//   Otherwise, this will return the control of the first child of this pane.
 // Arguments:
 // - <none>
 // Return Value:
 // - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
-TermControl Pane::GetFirstTerminalControl()
+TermControl Pane::GetLastFocusedTerminalControl()
 {
     if (!_IsLeaf())
     {
-        return _firstChild->GetFirstTerminalControl();
+        if (_lastActive)
+        {
+            if (const auto p = _previouslyFocusedTerminal.lock())
+            {
+                return p->_control;
+            }
+        }
+        return _firstChild->GetLastFocusedTerminalControl();
     }
     return _control;
 }
@@ -1185,7 +1213,7 @@ void Pane::UpdateVisuals()
 void Pane::_Focus()
 {
     _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
-    if (const auto& control = GetFirstTerminalControl())
+    if (const auto& control = GetLastFocusedTerminalControl())
     {
         control.Focus(FocusState::Programmatic);
     }

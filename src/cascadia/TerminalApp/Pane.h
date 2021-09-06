@@ -59,7 +59,7 @@ public:
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
-    winrt::Microsoft::Terminal::Control::TermControl GetFirstTerminalControl();
+    winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
 
@@ -180,6 +180,7 @@ private:
     float _desiredSplitPosition;
 
     std::optional<uint32_t> _id;
+    std::weak_ptr<Pane> _previouslyFocusedTerminal;
 
     bool _lastActive{ false };
     winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
