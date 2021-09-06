@@ -720,13 +720,13 @@ std::pair<Pane::PanePoint, Pane::PanePoint> Pane::_GetOffsetsForPane(const PaneP
 
     if (_splitState == SplitState::Horizontal)
     {
-        secondOffset.y += (1 - _desiredSplitPosition) * parentOffset.scaleY;
+        secondOffset.y +=  _desiredSplitPosition * parentOffset.scaleY;
         firstOffset.scaleY *= _desiredSplitPosition;
         secondOffset.scaleY *= (1 - _desiredSplitPosition);
     }
     else
     {
-        secondOffset.x += (1 - _desiredSplitPosition) * parentOffset.scaleX;
+        secondOffset.x += _desiredSplitPosition * parentOffset.scaleX;
         firstOffset.scaleX *= _desiredSplitPosition;
         secondOffset.scaleX *= (1 - _desiredSplitPosition);
     }
