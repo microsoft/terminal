@@ -40,7 +40,8 @@ enum class Borders : int
     Top = 0x1,
     Bottom = 0x2,
     Left = 0x4,
-    Right = 0x8
+    Right = 0x8,
+    All = 0xF
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
 
@@ -51,7 +52,14 @@ public:
          const winrt::Microsoft::Terminal::Control::TermControl& control,
          const bool lastFocused = false);
 
+    Pane(std::shared_ptr<Pane> first,
+         std::shared_ptr<Pane> second,
+         const winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+         const float splitPosition,
+         const bool lastFocused = false);
+
     std::shared_ptr<Pane> GetActivePane();
+    winrt::Microsoft::Terminal::Control::TermControl GetFirstTerminalControl();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
 
@@ -143,7 +151,10 @@ public:
     void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
-    DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+
+    using gotFocusArgs = winrt::delegate<std::shared_ptr<Pane>, winrt::Windows::UI::Xaml::FocusState>;
+
+    DECLARE_EVENT(GotFocus, _GotFocusHandlers, gotFocusArgs);
     DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
     DECLARE_EVENT(Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -156,7 +167,8 @@ private:
     struct LayoutSizeNode;
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
-    winrt::Windows::UI::Xaml::Controls::Border _border{};
+    winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
+    winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
     winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
     winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
@@ -215,6 +227,7 @@ private:
     void _CloseChild(const bool closeFirst, const bool isDetaching);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
 
+    void _Focus();
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,

@@ -300,6 +300,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"MoveFocusPreviousInOrder");
         case FocusDirection::First:
             return RS_(L"MoveFocusFirstPane");
+        case FocusDirection::Parent:
+            return RS_(L"MoveFocusParentPane");
+        case FocusDirection::Child:
+            return RS_(L"MoveFocusChildPane");
         }
 
         return winrt::hstring{
