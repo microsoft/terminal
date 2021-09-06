@@ -584,7 +584,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         // Make sure that the right event handlers are set, and the children
         // are placed in the appropriate locations in the grid.
         auto updateParent = [](auto& parent) {
-            // just always revoke the old heleprs since we are making new ones.
+            // just always revoke the old helpers since we are making new ones.
             parent->_firstChild->Closed(parent->_firstClosedToken);
             parent->_secondChild->Closed(parent->_secondClosedToken);
             parent->_SetupChildCloseHandlers();
