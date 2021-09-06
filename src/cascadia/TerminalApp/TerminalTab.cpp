@@ -1563,6 +1563,11 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalTab::EnterZoom()
     {
+        // Clear the content first, because with parent focusing it is possible
+        // to zoom the root pane, but setting the content will not trigger the
+        // property changed event since it is the same and you would end up with
+        // an empty tab.
+        Content(nullptr);
         _zoomedPane = _activePane;
         _rootPane->Maximize(_zoomedPane);
         // Update the tab header to show the magnifying glass
@@ -1571,6 +1576,7 @@ namespace winrt::TerminalApp::implementation
     }
     void TerminalTab::ExitZoom()
     {
+        Content(nullptr);
         _rootPane->Restore(_zoomedPane);
         _zoomedPane = nullptr;
         // Update the tab header to hide the magnifying glass
