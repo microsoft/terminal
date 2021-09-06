@@ -1004,21 +1004,13 @@ namespace winrt::TerminalApp::implementation
             {
                 if (sender != tab->_activePane)
                 {
-                    auto senderIsChild = tab->_activePane->WalkTree([&](auto pane) {
-                        if (pane->_IsLeaf())
-                        {
-                            return false;
-                        }
-
-                        return pane->_firstChild == sender || pane->_secondChild == sender;
-                    });
+                    auto senderIsChild = tab->_activePane->_HasChild(sender);
 
                     // Only move focus if we the program moved focus, or the
                     // user moved with their mouse. This is a problem because a
                     // pane isn't a control itself, and if we have the parent
                     // focused we are fine if the terminal control is focused,
                     // but we don't want to update the active pane.
-
                     if (!senderIsChild ||
                         (focus == WUX::FocusState::Programmatic && tab->_changingActivePane) ||
                         focus == WUX::FocusState::Pointer)

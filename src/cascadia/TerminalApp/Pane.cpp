@@ -1090,7 +1090,7 @@ std::shared_ptr<Pane> Pane::GetActivePane()
 // Arguments:
 // - <none>
 // Return Value:
-// - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
+// - nullptr if this Pane is an unfocused parent, otherwise the TermControl of this Pane.
 TermControl Pane::GetLastFocusedTerminalControl()
 {
     if (!_IsLeaf())
@@ -1129,7 +1129,6 @@ TermControl Pane::GetTerminalControl()
 void Pane::ClearActive()
 {
     _lastActive = false;
-
     if (!_IsLeaf())
     {
         _firstChild->ClearActive();
@@ -1226,8 +1225,9 @@ void Pane::UpdateVisuals()
 }
 
 // Method Description:
-// - Focus the current pane. Also trigger focus of the first-most child control
-//   to make sure that focus exists within the tab (since panes aren't proper controls)
+// - Focus the current pane. Also trigger focus on the control, or if not a leaf
+//   the control belonging to the last focused leaf.
+//   This makes sure that focus exists within the tab (since panes aren't proper controls)
 // Arguments:
 // - <none>
 // Return Value:
