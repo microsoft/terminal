@@ -584,6 +584,9 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         // Make sure that the right event handlers are set, and the children
         // are placed in the appropriate locations in the grid.
         auto updateParent = [](auto& parent) {
+            // just always revoke the old heleprs since we are making new ones.
+            parent->_firstChild->Closed(parent->_firstClosedToken);
+            parent->_secondChild->Closed(parent->_secondClosedToken);
             parent->_SetupChildCloseHandlers();
             parent->_root.Children().Clear();
             parent->_borderFirst.Child(nullptr);
@@ -598,7 +601,6 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             parent->_root.ColumnDefinitions().Clear();
             parent->_root.RowDefinitions().Clear();
             parent->_CreateRowColDefinitions();
-            parent->_ApplySplitDefinitions();
         };
 
         // If the firstParent and secondParent are the same, then we are just
@@ -610,6 +612,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             std::swap(firstParent->_firstChild, firstParent->_secondChild);
 
             updateParent(firstParent);
+            firstParent->_ApplySplitDefinitions();
         }
         else
         {
@@ -619,6 +622,25 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             replaceChild(secondParent, second, first);
             updateParent(firstParent);
             updateParent(secondParent);
+
+            // If one of the two parents is a child of the other we only want
+            // to apply the split definitions to the greatest parent to make
+            // sure that all panes get the correct borders. if this is not done
+            // and the ordering happens to be bad one parent's children will lose
+            // a border.
+            if (firstParent->_HasChild(secondParent))
+            {
+                firstParent->_ApplySplitDefinitions();
+            }
+            else if (secondParent->_HasChild(firstParent))
+            {
+                secondParent->_ApplySplitDefinitions();
+            }
+            else
+            {
+                firstParent->_ApplySplitDefinitions();
+                secondParent->_ApplySplitDefinitions();
+            }
         }
 
         // Refocus the last pane if there was a pane focused
@@ -2429,6 +2451,27 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
         }
     }
     return false;
+}
+
+// Method Description:
+// - Check if this pane contains the the argument as a child anywhere along the tree.
+// Arguments:
+// - child: the child to search for.
+// Return Value:
+// - true if the child was found.
+bool Pane::_HasChild(const std::shared_ptr<Pane> child)
+{
+    if (_IsLeaf())
+    {
+        return false;
+    }
+
+    if (_firstChild == child || _secondChild == child)
+    {
+        return true;
+    }
+
+    return _firstChild->_HasChild(child) || _secondChild->_HasChild(child);
 }
 
 // Method Description:
