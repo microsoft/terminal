@@ -678,7 +678,8 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     // These events are coming from peasants that become or un-become quake windows.
     _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
     _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });
-    // If a peasants requests
+    // If the monarch receives a QuitAll event it will signal this event to be
+    // ran before each peasant is closed.
     _windowManager.QuitAllRequested({ this, &AppHost::_QuitAllRequested });
 }
 
@@ -1032,7 +1033,7 @@ void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
 void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::Windows::Foundation::IInspectable&)
 {
-    // For now, nothing needs to be done before the monarch closes all windows.
+    // TODO: GH#9800: For now, nothing needs to be done before the monarch closes all windows.
     // Later when we have state saving that should go here.
 }
 
