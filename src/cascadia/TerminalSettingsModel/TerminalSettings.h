@@ -118,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, Opacity, UseAcrylic() ? 50 : 100);
+        INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, 0.5);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
