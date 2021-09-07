@@ -13,7 +13,7 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
         Boolean IntenseIsBold;
         // IntenseIsBright is in Core Appearance
-        Double Opacity;
+        UInt32 Opacity;
 
         // Experimental settings
         Boolean RetroTerminalEffect;

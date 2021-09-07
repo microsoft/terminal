@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetAcrylicOpacityPercentageValue(double value)
         {
-            _profile.DefaultAppearance().Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+            _profile.DefaultAppearance().Opacity(value);
         };
 
         void SetPadding(double value)
