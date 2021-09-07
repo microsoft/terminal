@@ -311,9 +311,15 @@ namespace Microsoft.Terminal.Settings.Model
         UInt32 Id { get; };
     };
 
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs
+    {
+        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
+        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
     [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
     {
         MultipleActionsArgs();
         Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
-    }
+    };
 }
