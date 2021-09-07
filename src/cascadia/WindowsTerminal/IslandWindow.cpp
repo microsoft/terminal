@@ -61,7 +61,14 @@ void IslandWindow::MakeWindow() noexcept
     // Create the window with the default size here - During the creation of the
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
-    WINRT_VERIFY(CreateWindowEx(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP | (_alwaysOnTop ? WS_EX_TOPMOST : 0),
+    //
+    // We need WS_EX_NOREDIRECTIONBITMAP for vintage style opacity, GH#603
+    //
+    // WS_EX_LAYERED acts REAL WEIRD with TerminalTrySetTransparentBackground,
+    // but it works just fine when the window is in the TOPMOST group. But if
+    // you enable it always, activating the window will remove our DWM frame
+    // entirely. Weird.
+    WINRT_VERIFY(CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP | (_alwaysOnTop ? WS_EX_LAYERED | WS_EX_TOPMOST : 0),
                                 wc.lpszClassName,
                                 L"Windows Terminal",
                                 WS_OVERLAPPEDWINDOW,
@@ -313,6 +320,10 @@ void IslandWindow::Initialize()
             _taskbar = std::move(taskbar);
         }
     }
+
+    // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
+    auto hr = TerminalTrySetTransparentBackground(true);
+    LOG_IF_FAILED(hr);
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
@@ -425,21 +436,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         if (LOWORD(wparam) != 0)
         {
             _WindowActivatedHandlers();
-
-            if (_rootGrid)
-            {
-                // BOOL set = TRUE;
-                // DwmSetWindowAttribute(_window.get(), DWMWA_USE_HOSTBACKDROPBRUSH, &set, sizeof(set));
-                // auto iSupportBackdrop{ _source.try_as<winrt::Windows::UI::Composition::ICompositionSupportsSystemBackdrop>() };
-                // auto brush = Window::Current().Compositor().CreateColorBrush(winrt::Windows::UI::Colors::Goldenrod());
-                // auto brush = Window::Current().Compositor().CreateBackdropBrush();
-                // Alas, this didn't magically work
-                auto hr = TerminalTrySetTransparentBackground(true);
-
-                LOG_IF_FAILED(hr);
-                // auto brush = Window::Current().Compositor().CreateColorBrush(winrt::Windows::UI::Colors::Transparent());
-                // iSupportBackdrop.SystemBackdrop(brush);
-            }
         }
 
         break;
