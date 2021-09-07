@@ -460,6 +460,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         else
         {
             Media::SolidColorBrush solidColor{};
+            solidColor.Opacity(_settings.Opacity());
             RootGrid().Background(solidColor);
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
@@ -497,6 +498,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 auto originalOpacity = solidColor.Opacity();
                 solidColor.Color(bg);
                 solidColor.Opacity(originalOpacity);
+                // solidColor.Color(til::color{bg.r, bg.g, bg.b, base::saturated_cast<uint8_t>(255 * originalOpacity)})
             }
         }
     }
