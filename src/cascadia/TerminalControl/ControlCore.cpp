@@ -428,38 +428,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto newOpacity = std::clamp(_settings.Opacity() + adjustment,
                                      0.0,
                                      1.0);
-        if (_settings.UseAcrylic())
-        {
-            try
-            {
-                _settings.Opacity(newOpacity);
+        // if (_settings.UseAcrylic())
+        // {
+        //     try
+        //     {
+        //         _settings.Opacity(newOpacity);
 
-                if (newOpacity >= 1.0)
-                {
-                    _settings.UseAcrylic(false);
-                }
-                else
-                {
-                    // GH#5098: Inform the engine of the new opacity of the default text background.
-                    SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
-                }
+        // if (newOpacity >= 1.0)
+        // {
+        //     //             _settings.UseAcrylic(false);
+        // }
+        // else
+        // {
+        //     // GH#5098: Inform the engine of the new opacity of the default text background.
+        //     SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
+        // }
+        SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
 
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-                _TransparencyChangedHandlers(*this, *eventArgs);
-            }
-            CATCH_LOG();
-        }
-        else if (adjustment < 0)
-        {
-            _settings.UseAcrylic(true);
+        //         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
+        //         _TransparencyChangedHandlers(*this, *eventArgs);
+        //     }
+        //     CATCH_LOG();
+        // }
+        // else if (adjustment < 0)
+        // {
+        //     _settings.UseAcrylic(true);
 
-            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            newOpacity = std::clamp(1.0 + adjustment, 0.0, 1.0);
-            _settings.Opacity(newOpacity);
+        //     //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
+        //     newOpacity = std::clamp(1.0 + adjustment, 0.0, 1.0);
+        // }
+        _settings.Opacity(newOpacity);
 
-            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-            _TransparencyChangedHandlers(*this, *eventArgs);
-        }
+        auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
+        _TransparencyChangedHandlers(*this, *eventArgs);
     }
 
     void ControlCore::ToggleShaderEffects()
