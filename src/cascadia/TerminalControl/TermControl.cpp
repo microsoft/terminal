@@ -486,15 +486,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         if (auto control{ weakThis.get() })
         {
-            // if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
-            // {
-            //     acrylic.FallbackColor(bg);
-            //     acrylic.TintColor(bg);
-            // }
-            // else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
-            // {
-            //     solidColor.Color(bg);
-            // }
+            if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+            {
+                acrylic.FallbackColor(bg);
+                acrylic.TintColor(bg);
+            }
+            else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+            {
+                til::color withOpacity{bg.r, bg.g, bg.b, 100};
+                solidColor.Color(withOpacity);
+            }
         }
     }
 

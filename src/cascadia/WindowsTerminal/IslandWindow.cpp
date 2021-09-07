@@ -61,7 +61,7 @@ void IslandWindow::MakeWindow() noexcept
     // Create the window with the default size here - During the creation of the
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
-    WINRT_VERIFY(CreateWindowEx(_alwaysOnTop ? WS_EX_TOPMOST | WS_EX_LAYERED : WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP,
+    WINRT_VERIFY(CreateWindowEx(WS_EX_LAYERED | WS_EX_NOREDIRECTIONBITMAP | (_alwaysOnTop ? WS_EX_TOPMOST : 0),
                                 wc.lpszClassName,
                                 L"Windows Terminal",
                                 WS_OVERLAPPEDWINDOW,
@@ -429,7 +429,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             if (_rootGrid)
             {
                 // BOOL set = TRUE;
-                // DwmSetWindowAttribute(_window.get(), DWMWA_USE_HOSTBACKDROPBRUSH, &set, sizeof(set)); 
+                // DwmSetWindowAttribute(_window.get(), DWMWA_USE_HOSTBACKDROPBRUSH, &set, sizeof(set));
                 // auto iSupportBackdrop{ _source.try_as<winrt::Windows::UI::Composition::ICompositionSupportsSystemBackdrop>() };
                 // auto brush = Window::Current().Compositor().CreateColorBrush(winrt::Windows::UI::Colors::Goldenrod());
                 // auto brush = Window::Current().Compositor().CreateBackdropBrush();
