@@ -6,6 +6,8 @@
 #include <winrt/TerminalApp.h>
 #include "../../cascadia/inc/cppwinrt_utils.h"
 
+void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
+
 class IslandWindow :
     public BaseWindow<IslandWindow>
 {
