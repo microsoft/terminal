@@ -74,7 +74,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::SetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
-    JsonUtils::SetValueForKey(json, OpacityKey, _Opacity);
+    JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 
     return json;
 }
@@ -107,7 +107,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::GetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
-    JsonUtils::GetValueForKey(json, OpacityKey, _Opacity);
+    JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()
