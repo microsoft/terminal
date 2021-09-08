@@ -495,10 +495,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
-                auto originalOpacity = solidColor.Opacity();
+                const auto originalOpacity = solidColor.Opacity();
                 solidColor.Color(bg);
                 solidColor.Opacity(originalOpacity);
-                // solidColor.Color(til::color{bg.r, bg.g, bg.b, base::saturated_cast<uint8_t>(255 * originalOpacity)})
             }
         }
     }
