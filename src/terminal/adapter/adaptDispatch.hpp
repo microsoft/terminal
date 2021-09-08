@@ -140,6 +140,8 @@ namespace Microsoft::Console::VirtualTerminal
                                    const VTParameter cellHeight,
                                    const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
 
+        StringHandler RequestSetting() override; // DECRQSS
+
     private:
         enum class ScrollDirection
         {
@@ -188,6 +190,9 @@ namespace Microsoft::Console::VirtualTerminal
         bool _ClearAllTabStops() noexcept;
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
+
+        void _ReportSGRSetting() const;
+        void _ReportDECSTBMSetting() const;
 
         bool _ShouldPassThroughInputModeChange() const;
 
