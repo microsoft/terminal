@@ -1312,7 +1312,7 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalPage::_shouldPromptForCommandline(const winrt::hstring& cmdline) const
     {
-        if (_isElevated())
+        if (true || _isElevated())
         {
             if (const auto& allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() })
             {

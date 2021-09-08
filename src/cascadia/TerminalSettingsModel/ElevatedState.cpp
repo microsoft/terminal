@@ -9,6 +9,8 @@
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
+#include <aclapi.h>
+
 constexpr std::wstring_view stateFileName{ L"elevated-state.json" };
 
 using namespace ::Microsoft::Terminal::Settings::Model;
@@ -24,6 +26,44 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // TODO! place in a totally different file! and path!
         static auto state = winrt::make_self<ElevatedState>(GetBaseSettingsPath() / stateFileName);
         state->Reload();
+
+        const auto testPath{ GetBaseSettingsPath() / L"test.json" };
+
+        PSID pEveryoneSID = NULL;
+        SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_NT_AUTHORITY;
+        BOOL success = AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSID);
+
+        EXPLICIT_ACCESS ea[1];
+        ZeroMemory(&ea, 1 * sizeof(EXPLICIT_ACCESS));
+        ea[0].grfAccessPermissions = KEY_READ;
+        ea[0].grfAccessMode = SET_ACCESS;
+        ea[0].grfInheritance = NO_INHERITANCE;
+        ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+        ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+        ea[0].Trustee.ptstrName = (LPTSTR)pEveryoneSID;
+
+        ACL acl;
+        PACL pAcl = &acl;
+        DWORD dwRes = SetEntriesInAcl(1, ea, NULL, &pAcl);
+        dwRes;
+
+        SECURITY_DESCRIPTOR sd;
+        success = InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+        success = SetSecurityDescriptorDacl(&sd,
+                                            TRUE, // bDaclPresent flag
+                                            pAcl,
+                                            FALSE);
+
+        SECURITY_ATTRIBUTES sa;
+        // Initialize a security attributes structure.
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = &sd;
+        sa.bInheritHandle = FALSE;
+        success;
+
+        wil::unique_hfile file{ CreateFileW(testPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+        THROW_LAST_ERROR_IF(!file);
+
         return *state;
     }
 
