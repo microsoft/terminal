@@ -351,6 +351,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.SendInput(wstr);
     }
+    void TermControl::ClearBuffer(Control::ClearBufferType clearType)
+    {
+        _core.ClearBuffer(clearType);
+    }
 
     void TermControl::ToggleShaderEffects()
     {

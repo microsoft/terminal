@@ -1261,6 +1261,11 @@
           "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
           "type": "boolean"
         },
+        "useAcrylicInTabRow": {
+          "default": "false",
+          "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
+          "type": "boolean"
+        },
 		"actions": {
 			"description": "Properties are specific to each custom action.",
 			"items": {

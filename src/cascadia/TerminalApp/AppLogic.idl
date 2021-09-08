@@ -72,6 +72,7 @@ namespace TerminalApp
 
         Boolean GetMinimizeToTray();
         Boolean GetAlwaysShowTrayIcon();
+        Boolean GetShowTitleInTitlebar();
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 

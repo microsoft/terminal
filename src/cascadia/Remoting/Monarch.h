@@ -53,7 +53,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonWindow(const Remoting::SummonWindowSelectionArgs& args);
 
         void SummonAllWindows();
-        Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> GetPeasantNames();
+        bool DoesQuakeWindowExist();
+        Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
@@ -88,6 +89,67 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
                               const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
+
+        // Method Description:
+        // - Helper for doing something on each and every peasant.
+        // - We'll try calling func on every peasant.
+        // - If the return type of func is void, it will perform it for all peasants.
+        // - If the return type is a boolean, we'll break out of the loop once func
+        //   returns false.
+        // - If any single peasant is dead, then we'll call onError and then add it to a
+        //   list of peasants to clean up once the loop ends.
+        // Arguments:
+        // - func: The function to call on each peasant
+        // - onError: The function to call if a peasant is dead.
+        // Return Value:
+        // - <none>
+        template<typename F, typename T>
+        void _forEachPeasant(F&& func, T&& onError)
+        {
+            using Map = decltype(_peasants);
+            using R = std::invoke_result_t<F, Map::key_type, Map::mapped_type>;
+            static constexpr auto IsVoid = std::is_void_v<R>;
+
+            std::vector<uint64_t> peasantsToErase;
+
+            for (const auto& [id, p] : _peasants)
+            {
+                try
+                {
+                    if constexpr (IsVoid)
+                    {
+                        func(id, p);
+                    }
+                    else
+                    {
+                        if (!func(id, p))
+                        {
+                            break;
+                        }
+                    }
+                }
+                catch (const winrt::hresult_error& exception)
+                {
+                    onError(id);
+
+                    if (exception.code() == 0x800706ba) // The RPC server is unavailable.
+                    {
+                        peasantsToErase.emplace_back(id);
+                    }
+                    else
+                    {
+                        LOG_CAUGHT_EXCEPTION();
+                        throw;
+                    }
+                }
+            }
+
+            for (const auto& id : peasantsToErase)
+            {
+                _peasants.erase(id);
+                _clearOldMruEntries(id);
+            }
+        }
 
         friend class RemotingUnitTests::RemotingTests;
     };

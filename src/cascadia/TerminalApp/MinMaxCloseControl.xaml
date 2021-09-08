@@ -9,7 +9,7 @@
             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
             HorizontalAlignment="Left"
             VerticalAlignment="Top"
-            d:DesignHeight="36"
+            d:DesignHeight="40"
             d:DesignWidth="400"
             Background="Transparent"
             Orientation="Horizontal"
@@ -124,8 +124,9 @@
                 tabs will be flush with the top of the window. See GH#2541 for
                 details.
             -->
-            <x:Double x:Key="CaptionButtonHeightWindowed">36.0</x:Double>
-            <x:Double x:Key="CaptionButtonHeightMaximized">32.0</x:Double>
+            <x:Double x:Key="CaptionButtonHeightWindowed">40.0</x:Double>
+            <!--  32 + 1 to compensate for GH#10746  -->
+            <x:Double x:Key="CaptionButtonHeightMaximized">33.0</x:Double>
 
             <Style x:Key="CaptionButton"
                    TargetType="Button">

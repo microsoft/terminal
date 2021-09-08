@@ -875,6 +875,22 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ClearBufferArgs>())
+            {
+                if (const auto termControl{ _GetActiveControl() })
+                {
+                    termControl.ClearBuffer(realArgs.Clear());
+                    args.Handled(true);
+                }
+            }
+        }
+    }
+
     void TerminalPage::_HandleMultipleActions(const IInspectable& /*sender*/,
                                               const ActionEventArgs& args)
     {
