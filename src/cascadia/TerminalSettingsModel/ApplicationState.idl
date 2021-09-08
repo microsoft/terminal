@@ -9,5 +9,7 @@ namespace Microsoft.Terminal.Settings.Model
         void Reload();
 
         String FilePath { get; };
+
+        Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
     }
 }

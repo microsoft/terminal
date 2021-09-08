@@ -545,6 +545,11 @@ bool ConhostInternalGetSet::PrivateEraseAll()
     return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
 }
 
+bool ConhostInternalGetSet::PrivateClearBuffer()
+{
+    return SUCCEEDED(DoSrvPrivateClearBuffer(_io.GetActiveOutputBuffer()));
+}
+
 // Method Description:
 // - Retrieves the current user default cursor style.
 // Arguments:
@@ -817,4 +822,19 @@ bool ConhostInternalGetSet::PrivateEndHyperlink() const
 {
     DoSrvEndHyperlink(_io.GetActiveOutputBuffer());
     return true;
+}
+
+// Routine Description:
+// - Replaces the active soft font with the given bit pattern.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - true if successful (see DoSrvUpdateSoftFont). false otherwise.
+bool ConhostInternalGetSet::PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                                  const SIZE cellSize,
+                                                  const size_t centeringHint) noexcept
+{
+    return SUCCEEDED(DoSrvUpdateSoftFont(bitPattern, cellSize, centeringHint));
 }

@@ -24,11 +24,11 @@ PRECOMPILED_CXX         = 1
 PRECOMPILED_INCLUDE     = ..\precomp.h
 
 SOURCES = \
-    ..\Cluster.cpp \
     ..\BlinkingState.cpp \
     ..\FontInfo.cpp \
     ..\FontInfoBase.cpp \
     ..\FontInfoDesired.cpp \
+    ..\FontResource.cpp \
     ..\RenderEngineBase.cpp \
     ..\renderer.cpp \
     ..\thread.cpp \

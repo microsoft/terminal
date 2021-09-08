@@ -645,9 +645,26 @@ bool OutputStateMachineEngine::ActionCsiDispatch(const VTID id, const VTParamete
 // - parameters - set of numeric parameters collected while parsing the sequence.
 // Return Value:
 // - the data string handler function or nullptr if the sequence is not supported
-IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(const VTID /*id*/, const VTParameters /*parameters*/) noexcept
+IStateMachineEngine::StringHandler OutputStateMachineEngine::ActionDcsDispatch(const VTID id, const VTParameters parameters)
 {
     StringHandler handler = nullptr;
+
+    switch (id)
+    {
+    case DcsActionCodes::DECDLD_DownloadDRCS:
+        handler = _dispatch->DownloadDRCS(parameters.at(0),
+                                          parameters.at(1),
+                                          parameters.at(2),
+                                          parameters.at(3),
+                                          parameters.at(4),
+                                          parameters.at(5),
+                                          parameters.at(6),
+                                          parameters.at(7));
+        break;
+    default:
+        handler = nullptr;
+        break;
+    }
 
     _ClearLastChar();
 

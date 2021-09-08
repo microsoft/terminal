@@ -10,16 +10,11 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="PercentageSignConverter.cpp">
-      <Filter>Converters</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
     <ClInclude Include="Utils.h" />
-    <ClInclude Include="PercentageSignConverter.h">
-      <Filter>Converters</Filter>
-    </ClInclude>
+    <ClInclude Include="PreviewConnection.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="EnumEntry.idl" />
@@ -44,10 +39,8 @@
     <Page Include="Rendering.xaml" />
     <Page Include="Actions.xaml" />
     <Page Include="SettingContainerStyle.xaml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Converters">
-      <UniqueIdentifier>{00f725c8-41b4-40a8-995e-8ee2e49a4a4c}</UniqueIdentifier>
-    </Filter>
+    <Page Include="AddProfile.xaml" />
+    <Page Include="ReadOnlyActions.xaml" />
+    <Page Include="KeyChordListener.xaml" />
   </ItemGroup>
 </Project>

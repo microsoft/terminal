@@ -43,6 +43,7 @@ void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable);
 void DoSrvPrivateEnableAlternateScroll(const bool fEnable);
 
 [[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
+[[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo);
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType);
@@ -54,6 +55,10 @@ void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view params);
 
 void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
+
+[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                          const SIZE cellSize,
+                                          const size_t centeringHint) noexcept;
 
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 

@@ -2,11 +2,13 @@ ACCEPTFILES
 ACCESSDENIED
 alignas
 alignof
+APPLYTOSUBMENUS
 bitfield
 bitfields
 BUILDBRANCH
 BUILDMSG
 BUILDNUMBER
+BYPOSITION
 charconv
 CLASSNOTAVAILABLE
 cmdletbinding
@@ -63,6 +65,7 @@ IObject
 iosfwd
 IPackage
 IPeasant
+isspace
 IStorage
 istream
 IStringable
@@ -77,6 +80,11 @@ llu
 localtime
 lround
 LSHIFT
+MENUCOMMAND
+MENUDATA
+MENUINFO
+memicmp
+mptt
 mov
 msappx
 MULTIPLEUSE
@@ -91,6 +99,7 @@ NOCHANGEDIR
 NOPROGRESS
 NOREDIRECTIONBITMAP
 NOREPEAT
+NOTIFYBYPOS
 NOTIFYICON
 NOTIFYICONDATA
 ntprivapi
@@ -131,16 +140,20 @@ SRWLOCK
 STDCPP
 STDMETHOD
 strchr
+strcpy
 streambuf
+strtoul
 Stubless
 Subheader
 Subpage
 syscall
+TASKBARCREATED
 TBPF
 THEMECHANGED
 tlg
 tmp
 tolower
+toupper
 TTask
 TVal
 UChar
@@ -149,6 +162,7 @@ userenv
 wcsstr
 wcstoui
 winmain
+wmemcmp
 wpc
 wsregex
 wwinmain
@@ -166,6 +180,7 @@ xlocmes
 xlocmon
 xlocnum
 xloctime
+XMax
 xmemory
 XParse
 xpath
@@ -174,3 +189,4 @@ xstring
 xtree
 xutility
 YIcon
+YMax

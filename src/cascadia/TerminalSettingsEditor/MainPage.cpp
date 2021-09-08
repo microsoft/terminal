@@ -387,14 +387,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_InitializeProfilesList()
     {
+        const auto menuItems = SettingsNav().MenuItems();
+
         // Manually create a NavigationViewItem for each profile
         // and keep a reference to them in a map so that we
         // can easily modify the correct one when the associated
         // profile changes.
         for (const auto& profile : _settingsClone.AllProfiles())
         {
-            auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile, _settingsClone));
-            SettingsNav().MenuItems().Append(navItem);
+            if (!profile.Deleted())
+            {
+                auto navItem = _CreateProfileNavViewItem(_viewModelForProfile(profile, _settingsClone));
+                menuItems.Append(navItem);
+            }
         }
 
         // Top off (the end of the nav view) with the Add Profile item
@@ -407,7 +412,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         icon.Glyph(L"\xE710");
         addProfileItem.Icon(icon);
 
-        SettingsNav().MenuItems().Append(addProfileItem);
+        menuItems.Append(addProfileItem);
     }
 
     void MainPage::_CreateAndNavigateToNewProfile(const uint32_t index, const Model::Profile& profile)

@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _FinalizeInheritance() override;
 
+        WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
 
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));

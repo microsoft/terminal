@@ -6,6 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
 #include "icon.h"
+#include "TrayIcon.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -21,6 +22,8 @@ using namespace ::Microsoft::Console::Types;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
+
+const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
 IslandWindow::IslandWindow() noexcept :
     _interopWindowHandle{ nullptr },
@@ -274,7 +277,9 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
 LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 {
     LPRECT winRect = reinterpret_cast<LPRECT>(lParam);
-    // If we're the quake window, prevent moving the window
+
+    // If we're the quake window, prevent moving the window. If we don't do
+    // this, then Alt+Space...Move will still be able to move the window.
     if (IsQuakeWindow())
     {
         // Stuff our current window into the lParam, and return true. This
@@ -287,8 +292,6 @@ LRESULT IslandWindow::_OnMoving(const WPARAM /*wParam*/, const LPARAM lParam)
 
 void IslandWindow::Initialize()
 {
-    const bool initialized = (_interopWindowHandle != nullptr);
-
     _source = DesktopWindowXamlSource{};
 
     auto interop = _source.as<IDesktopWindowXamlSourceNative>();
@@ -453,7 +456,6 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
-            _NotifyWindowHiddenHandlers();
             ShowWindow(GetHandle(), SW_HIDE);
             return 0;
         }
@@ -462,6 +464,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_MOVING:
     {
         return _OnMoving(wparam, lparam);
+    }
+    case WM_MOVE:
+    {
+        _WindowMovedHandlers();
+        break;
     }
     case WM_CLOSE:
     {
@@ -508,6 +515,61 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_THEMECHANGED:
         UpdateWindowIconForActiveMetrics(_window.get());
         return 0;
+    case WM_WINDOWPOSCHANGING:
+    {
+        // GH#10274 - if the quake window gets moved to another monitor via aero
+        // snap (win+shift+arrows), then re-adjust the size for the new monitor.
+        if (IsQuakeWindow())
+        {
+            // Retrieve the suggested dimensions and make a rect and size.
+            LPWINDOWPOS lpwpos = (LPWINDOWPOS)lparam;
+
+            // We only need to apply restrictions if the position is changing.
+            // The SWP_ flags are confusing to read. This is
+            // "if we're not moving the window, do nothing."
+            if (WI_IsFlagSet(lpwpos->flags, SWP_NOMOVE))
+            {
+                break;
+            }
+            // Figure out the suggested dimensions and position.
+            RECT rcSuggested;
+            rcSuggested.left = lpwpos->x;
+            rcSuggested.top = lpwpos->y;
+            rcSuggested.right = rcSuggested.left + lpwpos->cx;
+            rcSuggested.bottom = rcSuggested.top + lpwpos->cy;
+
+            // Find the bounds of the current monitor, and the monitor that
+            // we're suggested to be on.
+
+            HMONITOR current = MonitorFromWindow(_window.get(), MONITOR_DEFAULTTONEAREST);
+            MONITORINFO currentInfo;
+            currentInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfo(current, &currentInfo);
+
+            HMONITOR proposed = MonitorFromRect(&rcSuggested, MONITOR_DEFAULTTONEAREST);
+            MONITORINFO proposedInfo;
+            proposedInfo.cbSize = sizeof(MONITORINFO);
+            GetMonitorInfo(proposed, &proposedInfo);
+
+            // If the monitor changed...
+            if (til::rectangle{ proposedInfo.rcMonitor } !=
+                til::rectangle{ currentInfo.rcMonitor })
+            {
+                const auto newWindowRect{ _getQuakeModeSize(proposed) };
+
+                // Inform User32 that we want to be placed at the position
+                // and dimensions that _getQuakeModeSize returned. When we
+                // snap across monitor boundaries, this will re-evaluate our
+                // size for the new monitor.
+                lpwpos->x = newWindowRect.left<int>();
+                lpwpos->y = newWindowRect.top<int>();
+                lpwpos->cx = newWindowRect.width<int>();
+                lpwpos->cy = newWindowRect.height<int>();
+
+                return 0;
+            }
+        }
+    }
     case CM_NOTIFY_FROM_TRAY:
     {
         switch (LOWORD(lparam))
@@ -518,9 +580,30 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             _NotifyTrayIconPressedHandlers();
             return 0;
         }
+        case WM_CONTEXTMENU:
+        {
+            const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
+            _NotifyShowTrayContextMenuHandlers(eventPoint);
+            return 0;
+        }
         }
         break;
     }
+    case WM_MENUCOMMAND:
+    {
+        _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
+        return 0;
+    }
+    default:
+        // We'll want to receive this message when explorer.exe restarts
+        // so that we can re-add our icon to the tray.
+        // This unfortunately isn't a switch case because we register the
+        // message at runtime.
+        if (message == WM_TASKBARCREATED)
+        {
+            _NotifyReAddTrayIconHandlers();
+            return 0;
+        }
     }
 
     // TODO: handle messages here...
@@ -545,6 +628,10 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 void IslandWindow::OnMinimize()
 {
     // TODO GH#1989 Stop rendering island content when the app is minimized.
+    if (_minimizeToTray)
+    {
+        HideWindow();
+    }
 }
 
 // Method Description:
@@ -561,12 +648,20 @@ void IslandWindow::SetContent(winrt::Windows::UI::Xaml::UIElement content)
 }
 
 // Method Description:
-// - Gets the difference between window and client area size.
+// - Get the dimensions of our non-client area, as a rect where each component
+//   represents that side.
+// - The .left will be a negative number, to represent that the actual side of
+//   the non-client area is outside the border of our window. It's roughly 8px (
+//   * DPI scaling) to the left of the visible border.
+// - The .right component will be positive, indicating that the nonclient border
+//   is in the positive-x direction from the edge of our client area.
+// - This will also include our titlebar! It's in the nonclient area for us.
 // Arguments:
-// - dpi: dpi of a monitor on which the window is placed
-// Return Value
-// - The size difference
-SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
+// - dpi: the scaling that we should use to calculate the border sizes.
+// Return Value:
+// - a RECT whose components represent the margins of the nonclient area,
+//   relative to the client area.
+RECT IslandWindow::GetNonClientFrame(const UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
@@ -575,7 +670,18 @@ SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
     // the error and go on. We'll use whatever the control proposed as the
     // size of our window, which will be at least close.
     LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
+    return islandFrame;
+}
 
+// Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpi: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE IslandWindow::GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept
+{
+    const auto islandFrame{ GetNonClientFrame(dpi) };
     return {
         islandFrame.right - islandFrame.left,
         islandFrame.bottom - islandFrame.top
@@ -702,7 +808,12 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
             _taskbar->SetProgressValue(_window.get(), progress, 100);
             break;
         case 3:
-            // sets the progress indicator to an indeterminate state
+            // sets the progress indicator to an indeterminate state.
+            // FIRST, set the progress to "no progress". That'll clear out any
+            // progress value from the previous state. Otherwise, a transition
+            // from (error,x%) or (warning,x%) to indeterminate will leave the
+            // progress value unchanged, and not show the spinner.
+            _taskbar->SetProgressState(_window.get(), TBPF_NOPROGRESS);
             _taskbar->SetProgressState(_window.get(), TBPF_INDETERMINATE);
             break;
         case 4:
@@ -886,23 +997,39 @@ void IslandWindow::_RestoreFullscreenPosition(const RECT rcWork)
                rcWork.left - _rcWorkBeforeFullscreen.left,
                rcWork.top - _rcWorkBeforeFullscreen.top);
 
+    const til::size ncSize{ GetTotalNonClientExclusiveSize(dpiWindow) };
+
+    RECT rcWorkAdjusted = rcWork;
+
+    // GH#10199 - adjust the size of the "work" rect by the size of our borders.
+    // We want to make sure the window is restored within the bounds of the
+    // monitor we're on, but it's totally fine if the invisible borders are
+    // outside the monitor.
+    const auto halfWidth{ ncSize.width<long>() / 2 };
+    const auto halfHeight{ ncSize.height<long>() / 2 };
+
+    rcWorkAdjusted.left -= halfWidth;
+    rcWorkAdjusted.right += halfWidth;
+    rcWorkAdjusted.top -= halfHeight;
+    rcWorkAdjusted.bottom += halfHeight;
+
     // Enforce that our position is entirely within the bounds of our work area.
     // Prefer the top-left be on-screen rather than bottom-right (right before left, bottom before top).
-    if (rcRestore.right > rcWork.right)
+    if (rcRestore.right > rcWorkAdjusted.right)
     {
-        OffsetRect(&rcRestore, rcWork.right - rcRestore.right, 0);
+        OffsetRect(&rcRestore, rcWorkAdjusted.right - rcRestore.right, 0);
     }
-    if (rcRestore.left < rcWork.left)
+    if (rcRestore.left < rcWorkAdjusted.left)
     {
-        OffsetRect(&rcRestore, rcWork.left - rcRestore.left, 0);
+        OffsetRect(&rcRestore, rcWorkAdjusted.left - rcRestore.left, 0);
     }
-    if (rcRestore.bottom > rcWork.bottom)
+    if (rcRestore.bottom > rcWorkAdjusted.bottom)
     {
-        OffsetRect(&rcRestore, 0, rcWork.bottom - rcRestore.bottom);
+        OffsetRect(&rcRestore, 0, rcWorkAdjusted.bottom - rcRestore.bottom);
     }
-    if (rcRestore.top < rcWork.top)
+    if (rcRestore.top < rcWorkAdjusted.top)
     {
-        OffsetRect(&rcRestore, 0, rcWork.top - rcRestore.top);
+        OffsetRect(&rcRestore, 0, rcWorkAdjusted.top - rcRestore.top);
     }
 
     // Show the window at the computed position.
@@ -968,62 +1095,63 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 }
 
 // Method Description:
-// - Call UnregisterHotKey once for each entry in hotkeyList, to unset all the bound global hotkeys.
-// Arguments:
-// - hotkeyList: a list of hotkeys to unbind
+// - Call UnregisterHotKey once for each previously registered hotkey.
 // Return Value:
 // - <none>
-void IslandWindow::UnsetHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+void IslandWindow::UnregisterHotKey(const int index) noexcept
 {
-    TraceLoggingWrite(g_hWindowsTerminalProvider,
-                      "UnsetHotkeys",
-                      TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
-                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to unset"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    TraceLoggingWrite(
+        g_hWindowsTerminalProvider,
+        "UnregisterHotKey",
+        TraceLoggingDescription("Emitted when clearing previously set hotkeys"),
+        TraceLoggingInt64(index, "index", "the index of the hotkey to remove"),
+        TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+        TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-    for (int i = 0; i < ::base::saturated_cast<int>(hotkeyList.size()); i++)
-    {
-        LOG_IF_WIN32_BOOL_FALSE(UnregisterHotKey(_window.get(), i));
-    }
+    LOG_IF_WIN32_BOOL_FALSE(::UnregisterHotKey(_window.get(), index));
 }
 
 // Method Description:
-// - Call RegisterHotKey once for each entry in hotkeyList, to attempt to
-//   register that keybinding as a global hotkey.
+// - Call RegisterHotKey to attempt to register that keybinding as a global hotkey.
 // - When these keys are pressed, we'll get a WM_HOTKEY message with the payload
 //   containing the index we registered here.
+// - Call UnregisterHotKey() before registering your hotkeys.
+//   See: https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey#remarks
 // Arguments:
-// - hotkeyList: a list of hotkeys to bind
+// - hotkey: The key-combination to register.
 // Return Value:
 // - <none>
-void IslandWindow::SetGlobalHotkeys(const std::vector<winrt::Microsoft::Terminal::Control::KeyChord>& hotkeyList)
+bool IslandWindow::RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept
 {
-    TraceLoggingWrite(g_hWindowsTerminalProvider,
-                      "SetGlobalHotkeys",
-                      TraceLoggingDescription("Emitted when setting hotkeys"),
-                      TraceLoggingInt64(hotkeyList.size(), "numHotkeys", "The number of hotkeys to set"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-    int index = 0;
-    for (const auto& hotkey : hotkeyList)
+    const auto vkey = hotkey.Vkey();
+    auto hotkeyFlags = MOD_NOREPEAT;
     {
         const auto modifiers = hotkey.Modifiers();
-        const auto hotkeyFlags = MOD_NOREPEAT |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows) ? MOD_WIN : 0) |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu) ? MOD_ALT : 0) |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control) ? MOD_CONTROL : 0) |
-                                 (WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift) ? MOD_SHIFT : 0);
-
-        // TODO GH#8888: We should display a warning of some kind if this fails.
-        // This can fail if something else already bound this hotkey.
-        LOG_IF_WIN32_BOOL_FALSE(RegisterHotKey(_window.get(),
-                                               index,
-                                               hotkeyFlags,
-                                               hotkey.Vkey()));
-
-        index++;
+        WI_SetFlagIf(hotkeyFlags, MOD_WIN, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Windows));
+        WI_SetFlagIf(hotkeyFlags, MOD_ALT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Menu));
+        WI_SetFlagIf(hotkeyFlags, MOD_CONTROL, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Control));
+        WI_SetFlagIf(hotkeyFlags, MOD_SHIFT, WI_IsFlagSet(modifiers, VirtualKeyModifiers::Shift));
     }
+
+    // TODO GH#8888: We should display a warning of some kind if this fails.
+    // This can fail if something else already bound this hotkey.
+    const auto result = ::RegisterHotKey(_window.get(), index, hotkeyFlags, vkey);
+    LOG_IF_WIN32_BOOL_FALSE(result);
+
+    TraceLoggingWrite(g_hWindowsTerminalProvider,
+                      "RegisterHotKey",
+                      TraceLoggingDescription("Emitted when setting hotkeys"),
+                      TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+                      TraceLoggingUInt64(vkey, "vkey", "the key"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_WIN), "win", "is WIN in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_ALT), "alt", "is ALT in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_CONTROL), "control", "is CONTROL in the modifiers"),
+                      TraceLoggingUInt64(WI_IsFlagSet(hotkeyFlags, MOD_SHIFT), "shift", "is SHIFT in the modifiers"),
+                      TraceLoggingBool(result, "succeeded", "true if we succeeded"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    return result;
 }
 
 // Method Description:
@@ -1406,6 +1534,13 @@ void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
                      currentWindowRect.width<int>(),
                      currentWindowRect.height<int>(),
                      SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
+
+        // GH#10274, GH#10182: Re-evaluate the size of the quake window when we
+        // move to another monitor.
+        if (IsQuakeWindow())
+        {
+            _enterQuakeMode();
+        }
     }
 }
 
@@ -1427,6 +1562,13 @@ void IslandWindow::IsQuakeWindow(bool isQuakeWindow) noexcept
     }
 }
 
+// Method Description:
+// - Enter quake mode for the monitor this window is currently on. This involves
+//   resizing it to the top half of the monitor.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
 void IslandWindow::_enterQuakeMode()
 {
     if (!_window)
@@ -1436,6 +1578,29 @@ void IslandWindow::_enterQuakeMode()
 
     RECT windowRect = GetWindowRect();
     HMONITOR hmon = MonitorFromRect(&windowRect, MONITOR_DEFAULTTONEAREST);
+
+    // Get the size and position of the window that we should occupy
+    const auto newRect{ _getQuakeModeSize(hmon) };
+
+    SetWindowPos(GetHandle(),
+                 HWND_TOP,
+                 newRect.left<int>(),
+                 newRect.top<int>(),
+                 newRect.width<int>(),
+                 newRect.height<int>(),
+                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+}
+
+// Method Description:
+// - Get the size and position of the window that a "quake mode" should occupy
+//   on the given monitor.
+// - The window will occupy the top half of the monitor.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
+{
     MONITORINFO nearestMonitorInfo;
 
     UINT dpix = USER_DEFAULT_SCREEN_DPI;
@@ -1455,23 +1620,29 @@ void IslandWindow::_enterQuakeMode()
     const til::size ncSize{ GetTotalNonClientExclusiveSize(dpix) };
     const til::size availableSpace = desktopDimensions + ncSize;
 
+    // GH#10201 - The borders are still visible in quake mode, so make us 1px
+    // smaller on either side to account for that, so they don't hang onto
+    // adjacent monitors.
     const til::point origin{
-        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)),
+        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)) + 1,
         (nearestMonitorInfo.rcWork.top)
     };
     const til::size dimensions{
-        availableSpace.width(),
+        availableSpace.width() - 2,
         availableSpace.height() / 2
     };
 
-    const til::rectangle newRect{ origin, dimensions };
-    SetWindowPos(GetHandle(),
-                 HWND_TOP,
-                 newRect.left<int>(),
-                 newRect.top<int>(),
-                 newRect.width<int>(),
-                 newRect.height<int>(),
-                 SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
+    return til::rectangle{ origin, dimensions };
+}
+
+void IslandWindow::HideWindow()
+{
+    ShowWindow(GetHandle(), SW_HIDE);
+}
+
+void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
+{
+    _minimizeToTray = minimizeToTray;
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

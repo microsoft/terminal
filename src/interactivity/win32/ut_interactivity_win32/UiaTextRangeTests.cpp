@@ -11,6 +11,8 @@
 #include "../../../buffer/out/textBuffer.hpp"
 #include "../types/UiaTracing.h"
 
+#include <IDataSource.h>
+
 using namespace WEX::Common;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -19,13 +21,193 @@ using namespace Microsoft::WRL;
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
+static constexpr til::point point_offset_by_char(const til::point start, const til::rectangle bounds, ptrdiff_t amt)
+{
+    ptrdiff_t pos_x = start.x();
+    ptrdiff_t pos_y = start.y();
+    while (amt != 0)
+    {
+        if (amt > 0)
+        {
+            if (pos_x == bounds.left() && pos_y == bounds.bottom())
+            {
+                // end exclusive --> can't move any more
+                break;
+            }
+            else if (pos_x == bounds.right() - 1)
+            {
+                // right boundary --> wrap
+                pos_x = bounds.left();
+                ++pos_y;
+            }
+            else
+            {
+                // standard move
+                ++pos_x;
+            }
+            --amt;
+        }
+        else
+        {
+            if (pos_x == bounds.left() && pos_y == bounds.top())
+            {
+                // origin --> can't move any more
+                break;
+            }
+            else if (pos_x == bounds.left())
+            {
+                // left boundary --> wrap
+                pos_x = bounds.right() - 1;
+                --pos_y;
+            }
+            else
+            {
+                // standard move
+                --pos_x;
+            }
+            ++amt;
+        }
+    }
+    return { pos_x, pos_y };
+}
+
+static constexpr til::point point_offset_by_line(const til::point start, const til::rectangle bounds, ptrdiff_t amt)
+{
+    // X = left boundary for UIA
+    ptrdiff_t pos_x = bounds.left();
+    ptrdiff_t pos_y = start.y();
+    while (amt != 0)
+    {
+        if (amt > 0)
+        {
+            if (pos_y == bounds.bottom() + 1)
+            {
+                break;
+            }
+            else
+            {
+                ++pos_y;
+            }
+            --amt;
+        }
+        else
+        {
+            if (pos_y == bounds.top())
+            {
+                break;
+            }
+            else
+            {
+                --pos_y;
+            }
+            ++amt;
+        }
+    }
+    return { pos_x, pos_y };
+}
+
+// IMPORTANT: reference this _after_ defining point_offset_by_XXX. We need it for some definitions
+#include "GeneratedUiaTextRangeMovementTests.g.cpp"
+
+namespace
+{
+#pragma region TAEF hookup for the test case array above
+    struct ArrayIndexTaefAdapterRow : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataRow>
+    {
+        HRESULT RuntimeClassInitialize(const size_t index)
+        {
+            _index = index;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestData(BSTR /*pszName*/, SAFEARRAY** ppData) override
+        {
+            const auto indexString{ wil::str_printf<std::wstring>(L"%zu", _index) };
+            auto safeArray{ SafeArrayCreateVector(VT_BSTR, 0, 1) };
+            LONG index{ 0 };
+            auto indexBstr{ wil::make_bstr(indexString.c_str()) };
+            (void)SafeArrayPutElement(safeArray, &index, indexBstr.release());
+            *ppData = safeArray;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetMetadataNames(SAFEARRAY** ppMetadataNames) override
+        {
+            *ppMetadataNames = nullptr;
+            return S_FALSE;
+        }
+
+        STDMETHODIMP GetMetadata(BSTR /*pszName*/, SAFEARRAY** ppData) override
+        {
+            *ppData = nullptr;
+            return S_FALSE;
+        }
+
+        STDMETHODIMP GetName(BSTR* ppszRowName) override
+        {
+            *ppszRowName = wil::make_bstr(s_movementTests[_index].name.data()).release();
+            return S_OK;
+        }
+
+    private:
+        size_t _index;
+    };
+
+    struct ArrayIndexTaefAdapterSource : public Microsoft::WRL::RuntimeClass<Microsoft::WRL::RuntimeClassFlags<Microsoft::WRL::ClassicCom | Microsoft::WRL::InhibitFtmBase>, IDataSource>
+    {
+        STDMETHODIMP Advance(IDataRow** ppDataRow) override
+        {
+            if (_index < s_movementTests.size())
+            {
+                Microsoft::WRL::MakeAndInitialize<ArrayIndexTaefAdapterRow>(ppDataRow, _index++);
+            }
+            else
+            {
+                *ppDataRow = nullptr;
+            }
+            return S_OK;
+        }
+
+        STDMETHODIMP Reset() override
+        {
+            _index = 0;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestDataNames(SAFEARRAY** names) override
+        {
+            auto safeArray{ SafeArrayCreateVector(VT_BSTR, 0, 1) };
+            LONG index{ 0 };
+            auto dataNameBstr{ wil::make_bstr(L"index") };
+            (void)SafeArrayPutElement(safeArray, &index, dataNameBstr.release());
+            *names = safeArray;
+            return S_OK;
+        }
+
+        STDMETHODIMP GetTestDataType(BSTR /*name*/, BSTR* type) override
+        {
+            *type = nullptr;
+            return S_OK;
+        }
+
+    private:
+        size_t _index{ 0 };
+    };
+#pragma endregion
+}
+
+extern "C" HRESULT __declspec(dllexport) __cdecl GeneratedMovementTestDataSource(IDataSource** ppDataSource, void*)
+{
+    auto source{ Microsoft::WRL::Make<ArrayIndexTaefAdapterSource>() };
+    return source.CopyTo(ppDataSource);
+}
+
 // UiaTextRange takes an object that implements
 // IRawElementProviderSimple as a constructor argument. Making a real
 // one would involve setting up the window which we don't want to do
 // for unit tests so instead we'll use this one. We don't care about
 // it not doing anything for its implementation because it is not used
 // during the unit tests below.
-
 class DummyElementProvider final : public ScreenInfoUiaProviderBase
 {
 public:
@@ -197,9 +379,6 @@ class UiaTextRangeTests
 
     TEST_METHOD(DegenerateRangesDetected)
     {
-        const auto bufferSize = _pTextBuffer->GetSize();
-        const auto origin = bufferSize.Origin();
-
         // make a degenerate range and verify that it reports degenerate
         Microsoft::WRL::ComPtr<UiaTextRange> degenerate;
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&degenerate,
@@ -211,7 +390,7 @@ class UiaTextRangeTests
         VERIFY_ARE_EQUAL(degenerate->_start, degenerate->_end);
 
         // make a non-degenerate range and verify that it reports as such
-        const COORD end = { origin.X + 1, origin.Y };
+        const auto end{ point_offset_by_char(origin, bufferSize, 1) };
         Microsoft::WRL::ComPtr<UiaTextRange> notDegenerate;
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&notDegenerate,
                                                                         _pUiaData,
@@ -224,9 +403,6 @@ class UiaTextRangeTests
 
     TEST_METHOD(CompareRange)
     {
-        const auto bufferSize = _pTextBuffer->GetSize();
-        const auto origin = bufferSize.Origin();
-
         Microsoft::WRL::ComPtr<UiaTextRange> utr1;
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr1,
                                                                         _pUiaData,
@@ -244,7 +420,7 @@ class UiaTextRangeTests
         VERIFY_IS_TRUE(comparison);
 
         // utr2 redefined to have different end from utr1
-        const COORD end = { origin.X + 2, origin.Y };
+        const auto end{ point_offset_by_char(origin, bufferSize, 2) };
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr2,
                                                                         _pUiaData,
                                                                         &_dummyProvider,
@@ -258,9 +434,6 @@ class UiaTextRangeTests
 
     TEST_METHOD(CompareEndpoints)
     {
-        const auto bufferSize = _pTextBuffer->GetSize();
-        const auto origin = bufferSize.Origin();
-
         Microsoft::WRL::ComPtr<UiaTextRange> utr1;
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr1,
                                                                         _pUiaData,
@@ -283,7 +456,7 @@ class UiaTextRangeTests
         VERIFY_IS_TRUE(comparison == 0);
 
         // utr2 redefined to have different end from utr1
-        const COORD end = { origin.X + 2, origin.Y };
+        const auto end{ point_offset_by_char(origin, bufferSize, 2) };
         THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr2,
                                                                         _pUiaData,
                                                                         &_dummyProvider,
@@ -465,8 +638,6 @@ class UiaTextRangeTests
                                                                         start,
                                                                         end));
 
-        const auto bufferSize = _pTextBuffer->GetSize();
-        const auto origin = bufferSize.Origin();
         Microsoft::WRL::ComPtr<UiaTextRange> target;
 
         auto resetTargetUTR = [&]() {
@@ -555,18 +726,6 @@ class UiaTextRangeTests
         const std::vector<MoveTest> testData
         {
             MoveTest{
-                L"can't move backward from (0, 0)",
-                { 0, 0 },
-                { 2, 0 },
-                -1,
-                {
-                    0,
-                    {0,0},
-                    {2,0}
-                }
-            },
-
-            MoveTest{
                 L"can move backward within a row",
                 { 1, 0 },
                 { 2, 0 },
@@ -587,18 +746,6 @@ class UiaTextRangeTests
                     5,
                     {6,2},
                     {7,2}
-                }
-            },
-
-            MoveTest{
-                L"can't move past the last column in the last row",
-                { lastColumnIndex, bottomRow },
-                { lastColumnIndex, bottomRow },
-                5,
-                {
-                    0,
-                    { lastColumnIndex, bottomRow },
-                    { lastColumnIndex, bottomRow },
                 }
             },
 
@@ -652,18 +799,6 @@ class UiaTextRangeTests
         const std::vector<MoveTest> testData
         {
             MoveTest{
-                L"can't move backward from top row",
-                {0, 0},
-                {0, lastColumnIndex},
-                -4,
-                {
-                    0,
-                    {0, 0},
-                    {0, lastColumnIndex}
-                }
-            },
-
-            MoveTest{
                 L"can move forward from top row",
                 {0, 0},
                 {0, lastColumnIndex},
@@ -676,18 +811,6 @@ class UiaTextRangeTests
             },
 
             MoveTest{
-                L"can't move forward from bottom row",
-                {0, bottomRow},
-                {lastColumnIndex, bottomRow},
-                3,
-                {
-                    0,
-                    {0, bottomRow},
-                    {lastColumnIndex, bottomRow},
-                }
-            },
-
-            MoveTest{
                 L"can move backward from bottom row",
                 {0, bottomRow},
                 {lastColumnIndex, bottomRow},
@@ -696,30 +819,6 @@ class UiaTextRangeTests
                     -3,
                     {0, bottomRow - 3},
                     {0, bottomRow - 2}
-                }
-            },
-
-            MoveTest{
-                L"can't move backward when part of the top row is in the range",
-                {5, 0},
-                {lastColumnIndex, 0},
-                -1,
-                {
-                    0,
-                    {5, 0},
-                    {lastColumnIndex, 0},
-                }
-            },
-
-            MoveTest{
-                L"can't move forward when part of the bottom row is in the range",
-                {0, bottomRow},
-                {0, bottomRow},
-                1,
-                {
-                    0,
-                    {0, bottomRow},
-                    {0, bottomRow}
                 }
             },
 
@@ -1137,9 +1236,7 @@ class UiaTextRangeTests
         // at the end exclusive, the UTR should refuse to move past
         // the end.
 
-        const auto bufferSize{ _pTextBuffer->GetSize() };
-        const til::point endInclusive{ bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
-        const auto endExclusive{ bufferSize.EndExclusive() };
+        const til::point endInclusive{ bufferEnd };
 
         // Iterate over each TextUnit. If the we don't support
         // the given TextUnit, we're supposed to fallback
@@ -1153,7 +1250,7 @@ class UiaTextRangeTests
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, endInclusive, endExclusive));
             THROW_IF_FAILED(utr->ExpandToEnclosingUnit(static_cast<TextUnit>(unit)));
 
-            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(endExclusive, til::point{ utr->_end });
         }
     }
 
@@ -1162,12 +1259,14 @@ class UiaTextRangeTests
         // GH#7663: When attempting to move from end exclusive,
         // the UTR should refuse to move past the end.
 
-        const auto bufferSize{ _pTextBuffer->GetSize() };
-        const COORD origin{ bufferSize.Origin() };
-        const COORD lastLineStart{ bufferSize.Left(), bufferSize.BottomInclusive() };
-        const COORD secondToLastCharacterPos{ bufferSize.RightInclusive() - 1, bufferSize.BottomInclusive() };
-        const COORD endInclusive{ bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
-        const COORD endExclusive{ bufferSize.EndExclusive() };
+        const auto lastLineStart{ bufferEndLeft };
+        const auto secondToLastLinePos{ point_offset_by_line(lastLineStart, bufferSize, -1) };
+        const auto secondToLastCharacterPos{ point_offset_by_char(bufferEnd, bufferSize, -1) };
+        const auto endInclusive{ bufferEnd };
+
+        // write "temp" at (2,2)
+        const til::point writeTarget{ 2, 2 };
+        _pTextBuffer->Write({ L"temp" }, writeTarget);
 
         // Iterate over each TextUnit. If we don't support
         // the given TextUnit, we're supposed to fallback
@@ -1198,35 +1297,31 @@ class UiaTextRangeTests
         }
         THROW_IF_FAILED(utr->Move(textUnit, 1, &moveAmt));
 
-        VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+        VERIFY_ARE_EQUAL(endExclusive, til::point{ utr->_end });
         VERIFY_ARE_EQUAL(0, moveAmt);
-
-        // write "temp" at (2,2)
-        const COORD writeTarget{ 2, 2 };
-        _pTextBuffer->Write({ L"temp" }, writeTarget);
 
         // Verify expansion works properly
         Log::Comment(NoThrowString().Format(L"Expand by %s", toString(textUnit)));
         THROW_IF_FAILED(utr->ExpandToEnclosingUnit(textUnit));
         if (textUnit <= TextUnit::TextUnit_Character)
         {
-            VERIFY_ARE_EQUAL(endInclusive, utr->_start);
-            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(endInclusive, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(endExclusive, til::point{ utr->_end });
         }
         else if (textUnit <= TextUnit::TextUnit_Word)
         {
-            VERIFY_ARE_EQUAL(writeTarget, utr->_start);
-            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(writeTarget, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(endExclusive, til::point{ utr->_end });
         }
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
-            VERIFY_ARE_EQUAL(lastLineStart, utr->_start);
-            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(lastLineStart, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(endExclusive, til::point{ utr->_end });
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
-            VERIFY_ARE_EQUAL(origin, utr->_start);
-            VERIFY_ARE_EQUAL(endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(endExclusive, til::point{ utr->_end });
         }
 
         // reset the UTR
@@ -1242,7 +1337,6 @@ class UiaTextRangeTests
         // Verify that moving backwards still works properly
         Log::Comment(NoThrowString().Format(L"Backwards by %s", toString(textUnit)));
         THROW_IF_FAILED(utr->Move(textUnit, -1, &moveAmt));
-        VERIFY_ARE_EQUAL(-1, moveAmt);
 
         // NOTE: If the range is degenerate, _start == _end before AND after the move.
         if (textUnit <= TextUnit::TextUnit_Character)
@@ -1250,23 +1344,27 @@ class UiaTextRangeTests
             // Special case: _end will always be endInclusive, because...
             // -  degenerate --> it moves with _start to stay degenerate
             // - !degenerate --> it excludes the last char, to select the second to last char
-            VERIFY_ARE_EQUAL(degenerate ? endInclusive : secondToLastCharacterPos, utr->_start);
-            VERIFY_ARE_EQUAL(endInclusive, utr->_end);
+            VERIFY_ARE_EQUAL(-1, moveAmt);
+            VERIFY_ARE_EQUAL(degenerate ? endInclusive : secondToLastCharacterPos, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(endInclusive, til::point{ utr->_end });
         }
         else if (textUnit <= TextUnit::TextUnit_Word)
         {
-            VERIFY_ARE_EQUAL(origin, utr->_start);
-            VERIFY_ARE_EQUAL(degenerate ? origin : writeTarget, utr->_end);
+            VERIFY_ARE_EQUAL(-1, moveAmt);
+            VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(degenerate ? origin : writeTarget, til::point{ utr->_end });
         }
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
-            VERIFY_ARE_EQUAL(lastLineStart, utr->_start);
-            VERIFY_ARE_EQUAL(degenerate ? lastLineStart : endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(-1, moveAmt);
+            VERIFY_ARE_EQUAL(degenerate ? lastLineStart : secondToLastLinePos, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(lastLineStart, til::point{ utr->_end });
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
-            VERIFY_ARE_EQUAL(origin, utr->_start);
-            VERIFY_ARE_EQUAL(degenerate ? origin : endExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(degenerate ? -1 : 0, moveAmt);
+            VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(degenerate ? origin : endExclusive, til::point{ utr->_end });
         }
     }
 
@@ -1274,9 +1372,7 @@ class UiaTextRangeTests
     {
         // See GH#7742 for more details.
 
-        const auto bufferSize{ _pTextBuffer->GetSize() };
-        const COORD origin{ bufferSize.Origin() };
-        const COORD originExclusive{ origin.X, origin.Y + 1 };
+        const auto originExclusive{ point_offset_by_char(origin, bufferSize, 1) };
 
         _pTextBuffer->Write({ L"My name is Carlos" }, origin);
 
@@ -1314,21 +1410,20 @@ class UiaTextRangeTests
 
     TEST_METHOD(ScrollIntoView)
     {
-        const auto bufferSize{ _pTextBuffer->GetSize() };
         const auto viewportSize{ _pUiaData->GetViewport() };
 
         const std::vector<ScrollTest> testData{
-            { L"Origin", bufferSize.Top() },
-            { L"ViewportHeight From Top - 1", bufferSize.Top() + viewportSize.Height() - 1 },
-            { L"ViewportHeight From Top", bufferSize.Top() + viewportSize.Height() },
-            { L"ViewportHeight From Top + 1", bufferSize.Top() + viewportSize.Height() + 1 },
-            { L"ViewportHeight From Bottom - 1", bufferSize.BottomInclusive() - viewportSize.Height() - 1 },
-            { L"ViewportHeight From Bottom", bufferSize.BottomInclusive() - viewportSize.Height() },
-            { L"ViewportHeight From Bottom + 1", bufferSize.BottomInclusive() - viewportSize.Height() + 1 },
+            { L"Origin", gsl::narrow<short>(bufferSize.top()) },
+            { L"ViewportHeight From Top - 1", base::ClampedNumeric<short>(bufferSize.top()) + viewportSize.Height() - 1 },
+            { L"ViewportHeight From Top", base::ClampedNumeric<short>(bufferSize.top()) + viewportSize.Height() },
+            { L"ViewportHeight From Top + 1", base::ClampedNumeric<short>(bufferSize.top()) + viewportSize.Height() + 1 },
+            { L"ViewportHeight From Bottom - 1", base::ClampedNumeric<short>(bufferSize.bottom()) - viewportSize.Height() - 2 },
+            { L"ViewportHeight From Bottom", base::ClampedNumeric<short>(bufferSize.bottom()) - viewportSize.Height() - 1 },
+            { L"ViewportHeight From Bottom + 1", base::ClampedNumeric<short>(bufferSize.bottom()) - viewportSize.Height() + 1 },
 
             // GH#7839: ExclusiveEnd is a non-existent space,
             // so scrolling to it when !alignToTop used to crash
-            { L"Exclusive End", bufferSize.BottomExclusive() }
+            { L"Exclusive End", gsl::narrow<short>(bufferSize.bottom()) }
         };
 
         BEGIN_TEST_METHOD_PROPERTIES()
@@ -1342,7 +1437,7 @@ class UiaTextRangeTests
         for (const auto test : testData)
         {
             Log::Comment(test.comment.c_str());
-            const til::point pos{ bufferSize.Left(), test.yPos };
+            const til::point pos{ bufferSize.left(), test.yPos };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, pos, pos));
             VERIFY_SUCCEEDED(utr->ScrollIntoView(alignToTop));
         }
@@ -1662,5 +1757,141 @@ class UiaTextRangeTests
         cloneUtr1->Clone(&clone2);
         UiaTextRange* cloneUtr2 = static_cast<UiaTextRange*>(clone2.Get());
         VERIFY_IS_TRUE(cloneUtr2->_blockRange);
+    }
+
+    TEST_METHOD(Movement)
+    {
+        // Helpful variables
+        const auto firstChar{ point_offset_by_char(origin, bufferSize, 1) };
+        const auto secondChar{ point_offset_by_char(origin, bufferSize, 2) };
+        const auto fifthChar{ point_offset_by_char(origin, bufferSize, 5) };
+        const auto sixthChar{ point_offset_by_char(origin, bufferSize, 6) };
+        const til::point documentEnd{ bufferSize.left(), (bufferSize.height() / 2) + 1 };
+
+        // Populate buffer
+        //   Split the line into 5 segments alternating between "X" and whitespace
+        //   _________________
+        //   |XXX   XXX   XXX|
+        //   |XXX   XXX   XXX|
+        //   |XXX   XXX   XXX|
+        //   |XXX   XXX   XXX|
+        //   |_______________|
+        {
+            short i = 0;
+            auto iter{ _pTextBuffer->GetCellDataAt(origin) };
+            const auto segment{ bufferSize.width() / 5 };
+            while (iter.Pos() != documentEnd)
+            {
+                bool fill{ true };
+                if (i % segment == 0)
+                {
+                    fill = !fill;
+                }
+
+                if (fill)
+                {
+                    _pTextBuffer->Write({ L"X" }, iter.Pos());
+                }
+
+                ++i;
+                ++iter;
+            }
+        }
+
+        // Define tests
+        struct TestInput
+        {
+            TextUnit unit;
+            int moveAmt;
+            til::point start;
+            til::point end;
+        };
+
+        struct TestOutput
+        {
+            int moveAmt;
+            til::point start;
+            til::point end;
+        };
+
+        struct MyTest
+        {
+            std::wstring name;
+            TestInput input;
+            TestOutput output;
+        };
+
+        const std::vector<MyTest> tests{
+            MyTest{ L"Degenerate at origin", TestInput{ TextUnit_Character, -5, origin, origin }, TestOutput{ 0, origin, origin } }
+        };
+    }
+
+    TEST_METHOD(GeneratedMovementTests)
+    {
+        // Populate the buffer with...
+        // - 9 segments of alternating text
+        // - up to half of the buffer (vertically)
+        // It'll look something like this
+        // +---------------------------+
+        // |XXX   XXX   XXX   XXX   XXX|
+        // |XXX   XXX   XXX   XXX   XXX|
+        // |XXX   XXX   XXX   XXX   XXX|
+        // |XXX   XXX   XXX   XXX   XXX|
+        // |XXX   XXX   XXX   XXX   XXX|
+        // |                           |
+        // |                           |
+        // |                           |
+        // |                           |
+        // |                           |
+        // +---------------------------+
+        {
+            short i = 0;
+            auto iter{ _pTextBuffer->GetCellDataAt(bufferSize.origin()) };
+            const auto segment{ bufferSize.width() / 9 };
+            while (iter.Pos() != docEnd)
+            {
+                bool fill{ true };
+                if (i % segment == 0)
+                {
+                    fill = !fill;
+                }
+
+                if (fill)
+                {
+                    _pTextBuffer->Write({ L"X" }, iter.Pos());
+                }
+
+                ++i;
+                ++iter;
+            }
+        }
+
+        BEGIN_TEST_METHOD_PROPERTIES()
+            TEST_METHOD_PROPERTY(L"DataSource", L"Export:GeneratedMovementTestDataSource")
+        END_TEST_METHOD_PROPERTIES()
+
+        WEX::TestExecution::DisableVerifyExceptions disableVerifyExceptions{};
+        WEX::TestExecution::SetVerifyOutput verifyOutputScope{ WEX::TestExecution::VerifyOutputSettings::LogOnlyFailures };
+
+        unsigned int i{};
+        TestData::TryGetValue(L"index", i); // index is produced by the ArrayIndexTaefAdapterSource above
+        const auto& testCase{ s_movementTests[i] };
+
+        Log::Comment(NoThrowString().Format(L"[%zu.0] Test case \"%.*s\"", i, testCase.name.size(), testCase.name.data()));
+        if (testCase.skip)
+        {
+            Log::Result(WEX::Logging::TestResults::Result::Skipped);
+        }
+        else
+        {
+            Microsoft::WRL::ComPtr<UiaTextRange> utr;
+            int amountMoved;
+            THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, testCase.input.start, testCase.input.end));
+            THROW_IF_FAILED(utr->Move(testCase.input.unit, testCase.input.moveAmount, &amountMoved));
+
+            VERIFY_ARE_EQUAL(testCase.expected.moveAmount, amountMoved);
+            VERIFY_ARE_EQUAL(testCase.expected.start, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(testCase.expected.end, til::point{ utr->_end });
+        }
     }
 };

@@ -4,7 +4,7 @@ This was originally imported by @PankajBhojwani in September 2020.
 
 The provenance information (where it came from and which commit) is stored in the file `cgmanifest.json` in the same directory as this readme.
 Please update the provenance information in that file when ingesting an updated version of the dependent library.
-That provenance file is automatically read and inventoried by Microsoft systems to ensure compliance with appropiate governance standards.
+That provenance file is automatically read and inventoried by Microsoft systems to ensure compliance with appropriate governance standards.
 
 ## What should be done to update this in the future?
 

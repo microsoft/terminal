@@ -6,6 +6,7 @@ import "IControlSettings.idl";
 import "IDirectKeyListener.idl";
 import "EventArgs.idl";
 import "ICoreState.idl";
+import "ControlCore.idl";
 
 namespace Microsoft.Terminal.Control
 {
@@ -46,6 +47,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
+        void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
@@ -67,5 +69,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean ReadOnly { get; };
         void ToggleReadOnly();
+
+        String ReadEntireBuffer();
     }
 }

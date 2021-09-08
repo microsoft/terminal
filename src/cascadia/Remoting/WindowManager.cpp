@@ -254,6 +254,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // window, and when the current monarch dies.
 
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
+        _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
+        _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
 
         _BecameMonarchHandlers(*this, nullptr);
     }
@@ -509,4 +511,53 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.SummonWindow(args);
     }
 
+    void WindowManager::SummonAllWindows()
+    {
+        if constexpr (Feature_TrayIcon::IsEnabled())
+        {
+            _monarch.SummonAllWindows();
+        }
+    }
+
+    Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> WindowManager::GetPeasantInfos()
+    {
+        // We should only get called when we're the monarch since the monarch
+        // is the only one that knows about all peasants.
+        return _monarch.GetPeasantInfos();
+    }
+
+    // Method Description:
+    // - Ask the monarch to show a tray icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestShowTrayIcon()
+    {
+        co_await winrt::resume_background();
+        _peasant.RequestShowTrayIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to hide its tray icon.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestHideTrayIcon()
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        _peasant.RequestHideTrayIcon();
+    }
+
+    bool WindowManager::DoesQuakeWindowExist()
+    {
+        return _monarch.DoesQuakeWindowExist();
+    }
+
+    void WindowManager::UpdateActiveTabTitle(winrt::hstring title)
+    {
+        winrt::get_self<implementation::Peasant>(_peasant)->ActiveTabTitle(title);
+    }
 }

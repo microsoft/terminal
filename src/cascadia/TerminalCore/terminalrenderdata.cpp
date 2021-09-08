@@ -45,11 +45,13 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
     _blinkingState.RecordBlinkingUsage(attr);
-    auto colors = attr.CalculateRgbColors({ _colorTable.data(), _colorTable.size() },
-                                          _defaultFg,
-                                          _defaultBg,
-                                          _screenReversed,
-                                          _blinkingState.IsBlinkingFaint());
+    auto colors = attr.CalculateRgbColors(
+        _colorTable,
+        _defaultFg,
+        _defaultBg,
+        _screenReversed,
+        _blinkingState.IsBlinkingFaint(),
+        _intenseIsBright);
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
@@ -230,14 +232,14 @@ catch (...)
 //      they're done with any querying they need to do.
 void Terminal::LockConsole() noexcept
 {
-    _readWriteLock.lock_shared();
+    _readWriteLock.lock();
 }
 
 // Method Description:
 // - Unlocks the terminal after a call to Terminal::LockConsole.
 void Terminal::UnlockConsole() noexcept
 {
-    _readWriteLock.unlock_shared();
+    _readWriteLock.unlock();
 }
 
 // Method Description:

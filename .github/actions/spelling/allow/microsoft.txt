@@ -25,6 +25,7 @@ DWINRT
 enablewttlogging
 Intelli
 LKG
+Lxss
 mfcribbon
 microsoft
 microsoftonline

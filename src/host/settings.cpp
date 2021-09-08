@@ -726,16 +726,6 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-gsl::span<const COLORREF> Settings::Get16ColorTable() const
-{
-    return Get256ColorTable().subspan(0, 16);
-}
-
-gsl::span<const COLORREF> Settings::Get256ColorTable() const
-{
-    return { _colorTable.data(), _colorTable.size() };
-}
-
 void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
 {
     _colorTable.at(index) = ColorValue;

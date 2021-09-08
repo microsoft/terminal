@@ -243,6 +243,9 @@
                  Margin="0,0,6,0"
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center"
+                 CornerRadius="2"
+                 FontSize="15"
+                 IsSpellCheckEnabled="False"
                  KeyDown="TextBoxKeyDown"
                  PlaceholderForeground="{ThemeResource TextBoxPlaceholderTextThemeBrush}" />
 
