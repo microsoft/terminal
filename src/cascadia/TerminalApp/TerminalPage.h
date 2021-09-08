@@ -164,10 +164,10 @@ namespace winrt::TerminalApp::implementation
         uint64_t _WindowId{ 0 };
         uint64_t _numOpenWindows{ 0 };
 
-        bool _maintainStateOnTabClose;
-        bool _rearranging;
-        std::optional<int> _rearrangeFrom;
-        std::optional<int> _rearrangeTo;
+        bool _maintainStateOnTabClose{ false };
+        bool _rearranging{ false };
+        std::optional<int> _rearrangeFrom{};
+        std::optional<int> _rearrangeTo{};
         bool _removing{ false };
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
