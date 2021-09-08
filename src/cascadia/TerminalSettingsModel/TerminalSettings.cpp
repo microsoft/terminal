@@ -340,6 +340,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // settings.
         if (scheme == nullptr)
         {
+            ClearAppliedColorScheme();
             ClearDefaultForeground();
             ClearDefaultBackground();
             ClearSelectionBackground();
@@ -348,6 +349,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
+            AppliedColorScheme(scheme);
             _DefaultForeground = til::color{ scheme.Foreground() };
             _DefaultBackground = til::color{ scheme.Background() };
             _SelectionBackground = til::color{ scheme.SelectionBackground() };

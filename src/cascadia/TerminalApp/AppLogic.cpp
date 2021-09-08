@@ -596,12 +596,30 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        // Use the default profile to determine how big of a window we need.
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
-
-        auto proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+        winrt::Windows::Foundation::Size proposedSize{};
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        if (_root->ShouldUsePersistedLayout(_settings))
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialSize())
+            {
+                proposedSize = layouts.GetAt(0).InitialSize().Value();
+                // The size is saved as a non-scaled real pixel size,
+                // so we need to scale it appropriately.
+                proposedSize.Height = proposedSize.Height * scale;
+                proposedSize.Width = proposedSize.Width * scale;
+            }
+        }
+
+        if (proposedSize.Width == 0 && proposedSize.Height == 0)
+        {
+            // Use the default profile to determine how big of a window we need.
+            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
+
+            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+        }
 
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
@@ -683,7 +701,18 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
+        auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
+
+        if (_root->ShouldUsePersistedLayout(_settings))
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialPosition())
+            {
+                initialPosition = layouts.GetAt(0).InitialPosition().Value();
+            }
+        }
+
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
@@ -1426,6 +1455,14 @@ namespace winrt::TerminalApp::implementation
         if (_root)
         {
             _root->WindowId(id);
+        }
+    }
+
+    void AppLogic::SetNumberOfOpenWindows(const uint64_t num)
+    {
+        if (_root)
+        {
+            _root->SetNumberOfOpenWindows(num);
         }
     }
 

@@ -69,6 +69,7 @@ namespace winrt::TerminalApp::implementation
         void WindowName(const winrt::hstring& name);
         uint64_t WindowId();
         void WindowId(const uint64_t& id);
+        void SetNumberOfOpenWindows(const uint64_t num);
         bool IsQuakeWindow() const noexcept;
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);

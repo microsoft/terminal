@@ -499,6 +499,14 @@ namespace winrt::TerminalApp::implementation
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
         {
+            // If we are supposed to save state, make sure we clear it out
+            // if the user manually closed all tabs.
+            if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings))
+            {
+                auto state = ApplicationState::SharedInstance();
+                state.PersistedWindowLayouts(nullptr);
+            }
+
             _LastTabClosedHandlers(*this, nullptr);
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))

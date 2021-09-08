@@ -276,6 +276,21 @@ namespace winrt::TerminalApp::implementation
         CATCH_LOG();
     }
 
+    // Method Description;
+    // - Checks if the current terminal window should load or save its layout information.
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - true if the ApplicationState should be used.
+    bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
+    {
+        // If the setting is enabled, and we are the only window.
+        return Feature_PersistedWindowLayout::IsEnabled() &&
+               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout &&
+               _numOpenWindows == 1;
+    }
+
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
@@ -358,6 +373,34 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
+
+            // If the user selected to save their tab layout, we are the first
+            // window opened, and wt was not run with any other arguments, then
+            // we should use the saved settings.
+            auto firstActionIsDefault = [](ActionAndArgs action) {
+                if (action.Action() != ShortcutAction::NewTab)
+                {
+                    return false;
+                }
+
+                // If no commands were given, we will have default args
+                if (const auto args = action.Args().try_as<NewTabArgs>())
+                {
+                    NewTerminalArgs defaultArgs{};
+                    return args.TerminalArgs() == nullptr || args.TerminalArgs().Equals(defaultArgs);
+                }
+
+                return false;
+            };
+            if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
+            {
+                auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+                if (layouts && layouts.Size() > 0 && layouts.GetAt(0).TabLayout() && layouts.GetAt(0).TabLayout().Size() > 0)
+                {
+                    _startupActions = layouts.GetAt(0).TabLayout();
+                }
+            }
+
             ProcessStartupActions(_startupActions, true);
 
             // If we were told that the COM server needs to be started to listen for incoming
@@ -1196,6 +1239,85 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Saves the window position and tab layout to the application state
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::PersistWindowLayout()
+    {
+        std::vector<ActionAndArgs> actions;
+
+        for (auto tab : _tabs)
+        {
+            if (auto terminalTab = _GetTerminalTabImpl(tab))
+            {
+                auto tabActions = terminalTab->BuildStartupActions();
+                actions.insert(actions.end(), tabActions.begin(), tabActions.end());
+            }
+            else if (tab.try_as<SettingsTab>())
+            {
+                ActionAndArgs action;
+                action.Action(ShortcutAction::OpenSettings);
+                OpenSettingsArgs args{ SettingsTarget::SettingsUI };
+                action.Args(args);
+
+                actions.push_back(action);
+            }
+        }
+
+        // if the focused tab was not the last tab, restore that
+        auto idx = _GetFocusedTabIndex();
+        if (idx && idx != _tabs.Size() - 1)
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::SwitchToTab);
+            SwitchToTabArgs switchToTabArgs{ idx.value() };
+            action.Args(switchToTabArgs);
+
+            actions.push_back(action);
+        }
+
+        WindowLayout layout{};
+        layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+
+        // Only save the content size because the tab size will be added on load.
+        const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+        const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
+
+        layout.InitialSize(windowSize);
+
+        if (_hostingHwnd)
+        {
+            // Get the position of the current window. This includes the
+            // non-client already.
+            RECT window{};
+            GetWindowRect(_hostingHwnd.value(), &window);
+
+            // We want to remove the non-client area so calculate that.
+            // We don't have access to the (NonClient)IslandWindow directly so
+            // just replicate the logic.
+            const auto windowStyle = static_cast<DWORD>(GetWindowLong(_hostingHwnd.value(), GWL_STYLE));
+
+            auto dpi = GetDpiForWindow(_hostingHwnd.value());
+            RECT nonClientArea{};
+            LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&nonClientArea, windowStyle, false, 0, dpi));
+
+            // The nonClientArea adjustment is negative, so subtract that out.
+            // This way we save the user-visible location of the terminal.
+            LaunchPosition pos{};
+            pos.X = window.left - nonClientArea.left;
+            pos.Y = window.top;
+
+            layout.InitialPosition(pos);
+        }
+
+        auto state = ApplicationState::SharedInstance();
+        state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
+    }
+
+    // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
     fire_and_forget TerminalPage::CloseWindow()
@@ -1212,6 +1334,13 @@ namespace winrt::TerminalApp::implementation
             {
                 co_return;
             }
+        }
+
+        if (ShouldUsePersistedLayout(_settings))
+        {
+            PersistWindowLayout();
+            // don't delete the ApplicationState when all of the tabs are removed.
+            _maintainStateOnTabClose = true;
         }
 
         _RemoveAllTabs();
@@ -2930,6 +3059,11 @@ namespace winrt::TerminalApp::implementation
             _WindowId = value;
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
         }
+    }
+
+    void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
+    {
+        _numOpenWindows = num;
     }
 
     // Method Description:

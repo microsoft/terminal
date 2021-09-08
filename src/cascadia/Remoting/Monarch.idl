@@ -43,9 +43,11 @@ namespace Microsoft.Terminal.Remoting
 
         UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
+        UInt64 GetNumberOfPeasants();
         ProposeCommandlineResult ProposeCommandline(CommandlineArgs args);
         void HandleActivatePeasant(WindowActivatedArgs args);
         void SummonWindow(SummonWindowSelectionArgs args);
+        void SignalClose(UInt64 peasantId);
 
         void SummonAllWindows();
         Boolean DoesQuakeWindowExist();
@@ -54,5 +56,7 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
     };
 }

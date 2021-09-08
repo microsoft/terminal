@@ -1231,6 +1231,15 @@
           "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
           "type": "boolean"
         },
+        "firstWindowPreference": {
+          "default": "defaultProfile",
+          "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",
+          "enum": [
+            "defaultProfile",
+            "persistedWindowLayout"
+          ],
+          "type": "string"
+        },
         "launchMode": {
           "default": "default",
           "description": "Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to \"focus\" is equivalent to launching the terminal in the \"default\" mode, but with the focus mode enabled. Similar, setting this to \"maximizedFocus\" will result in launching the terminal in a maximized window with the focus mode enabled.",

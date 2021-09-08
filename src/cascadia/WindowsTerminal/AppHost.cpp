@@ -214,6 +214,13 @@ void AppHost::_HandleCommandlineArgs()
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
 
+        // We need this property to be set before we get the InitialSize/Position
+        // and BecameMonarch which normally sets it is only run after the window
+        // is created.
+        if (_windowManager.IsMonarch())
+        {
+            _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+        }
         _logic.WindowName(peasant.WindowName());
         _logic.WindowId(peasant.GetID());
     }
@@ -672,6 +679,13 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     {
         _CreateTrayIcon();
     }
+
+    // Set the number of open windows (so we know if we are the last window)
+    // and subscribe for updates if there are any changes to that number.
+    _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+
+    _windowManager.WindowCreated([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+    _windowManager.WindowClosed([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
 
     // These events are coming from peasants that become or un-become quake windows.
     _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
