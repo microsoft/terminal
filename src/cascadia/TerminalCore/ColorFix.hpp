@@ -9,7 +9,6 @@
 struct ColorFix
 {
 public:
-    ColorFix();
     ColorFix(COLORREF color);
 
     static double GetDeltaE(ColorFix x1, ColorFix x2);
@@ -32,6 +31,7 @@ public:
     };
 
 private:
+    static double _GetHPrimeFn(double x, double y);
     void _ToLab();
     void _ToRGB();
     BYTE _Clamp(double v);

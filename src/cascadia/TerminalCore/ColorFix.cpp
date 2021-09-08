@@ -17,7 +17,15 @@ constexpr double rad180 = 3.141592653589793238;
 constexpr double rad275 = 4.799655442984406336;
 constexpr double rad360 = 6.283185307179586476;
 
-double GetHPrimeFn(double x, double y)
+ColorFix::ColorFix(COLORREF color)
+{
+    rgb = color;
+    _ToLab();
+}
+
+// Method Description:
+// - Helper function to calculate HPrime
+double ColorFix::_GetHPrimeFn(double x, double y)
 {
     if (x == 0 && y == 0)
     {
@@ -28,8 +36,13 @@ double GetHPrimeFn(double x, double y)
     return hueAngle >= 0 ? hueAngle : hueAngle + rad360;
 }
 
-// DeltaE 2000
-// Source: https://github.com/zschuessler/DeltaE
+// Method Description:
+// - Given 2 colors, computes the DeltaE value between them
+// Arguments:
+// - x1: the first color
+// - x2: the second color
+// Return Value:
+// - The DeltaE value between x1 and x2
 double ColorFix::GetDeltaE(ColorFix x1, ColorFix x2)
 {
     constexpr double kSubL = 1;
@@ -74,10 +87,10 @@ double ColorFix::GetDeltaE(ColorFix x1, ColorFix x2)
     const double sSubC = 1 + 0.045 * cBarPrime;
 
     // h Prime 1
-    const double hPrime1 = GetHPrimeFn(x1.B, aPrime1);
+    const double hPrime1 = _GetHPrimeFn(x1.B, aPrime1);
 
     // h Prime 2
-    const double hPrime2 = GetHPrimeFn(x2.B, aPrime2);
+    const double hPrime2 = _GetHPrimeFn(x2.B, aPrime2);
 
     // Delta H Prime
     const double deltaHPrime = 0 == c1 || 0 == c2 ? 0 : 2 * sqrt(cPrime1 * cPrime2) * sin(abs(hPrime1 - hPrime2) <= rad180 ? hPrime2 - hPrime1 : (hPrime2 <= hPrime1 ? hPrime2 - hPrime1 + rad360 : hPrime2 - hPrime1 - rad360) / 2);
@@ -100,20 +113,6 @@ double ColorFix::GetDeltaE(ColorFix x1, ColorFix x2)
     const double hue = deltaHPrime / (kSubH * sSubH);
 
     return sqrt(pow(lightness, 2) + pow(chroma, 2) + pow(hue, 2) + rSubT * chroma * hue);
-}
-
-ColorFix::ColorFix()
-{
-    rgb = 0;
-    L = 0;
-    A = 0;
-    B = 0;
-}
-
-ColorFix::ColorFix(COLORREF color)
-{
-    rgb = color;
-    _ToLab();
 }
 
 // Method Description:
@@ -224,12 +223,13 @@ void ColorFix::_ToRGB()
 }
 
 // Method Description:
-// - Given a background color, change the foreground color to make it more perceivable if necessary
+// - Given foreground and background colors, change the foreground color to
+//   make it more perceivable if necessary
 // - Arguments:
-// - back: the color to compare against
-// - pColor: where to store the resulting color
+// - fg: the foreground color
+// - bg: the background color
 // - Return Value:
-// - True if we changed our color, false otherwise
+// - The foreground color after performing any necessary changes to make it more perceivable
 COLORREF ColorFix::GetPerceivableColor(COLORREF fg, COLORREF bg)
 {
     ColorFix backLab(bg);
