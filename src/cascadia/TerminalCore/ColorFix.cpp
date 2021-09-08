@@ -1,6 +1,5 @@
 #include "pch.h"
 
-#define _USE_MATH_DEFINES
 #include <Windows.h>
 #include <math.h>
 #include "ColorFix.hpp"
@@ -9,244 +8,99 @@ const double gMinThreshold = 12.0;
 const double gExpThreshold = 20.0;
 const double gLStep = 5.0;
 
-// DeltaE 2000
-// Source: https://github.com/zschuessler/DeltaE
-dE00::dE00(ColorFix x1, ColorFix x2, double weightLightness, double weightChroma, double weightHue)
+constexpr double rad006 = 0.104719755119659774;
+constexpr double rad025 = 0.436332312998582394;
+constexpr double rad030 = 0.523598775598298873;
+constexpr double rad060 = 1.047197551196597746;
+constexpr double rad063 = 1.099557428756427633;
+constexpr double rad180 = 3.141592653589793238;
+constexpr double rad275 = 4.799655442984406336;
+constexpr double rad360 = 6.283185307179586476;
+
+double GetHPrimeFn(double x, double y)
 {
-    _x1 = x1;
-    _x2 = x2;
-
-    _kSubL = weightLightness;
-    _kSubC = weightChroma;
-    _kSubH = weightHue;
-
-    // Delta L Prime
-    _deltaLPrime = _x2.L - _x1.L;
-
-    // L Bar
-    _lBar = (_x1.L + _x2.L) / 2;
-
-    // C1 & C2
-    _c1 = sqrt(pow(_x1.A, 2) + pow(_x1.B, 2));
-    _c2 = sqrt(pow(_x2.A, 2) + pow(_x2.B, 2));
-
-    // C Bar
-    _cBar = (_c1 + _c2) / 2;
-
-    // A Prime 1
-    _aPrime1 = _x1.A +
-               (_x1.A / 2) *
-                   (1 - sqrt(
-                            pow(_cBar, 7) /
-                            (pow(_cBar, 7) + pow((double)25, 7))));
-
-    // A Prime 2
-    _aPrime2 = _x2.A +
-               (_x2.A / 2) *
-                   (1 - sqrt(
-                            pow(_cBar, 7) /
-                            (pow(_cBar, 7) + pow((double)25, 7))));
-
-    // C Prime 1
-    _cPrime1 = sqrt(
-        pow(_aPrime1, 2) +
-        pow(_x1.B, 2));
-
-    // C Prime 2
-    _cPrime2 = sqrt(
-        pow(_aPrime2, 2) +
-        pow(_x2.B, 2));
-
-    // C Bar Prime
-    _cBarPrime = (_cPrime1 + _cPrime2) / 2;
-
-    // Delta C Prime
-    _deltaCPrime = _cPrime2 - _cPrime1;
-
-    // S sub L
-    _sSubL = 1 + ((0.015 * pow(_lBar - 50, 2)) /
-                  sqrt(20 + pow(_lBar - 50, 2)));
-
-    // S sub C
-    _sSubC = 1 + 0.045 * _cBarPrime;
-}
-
-// Method Description:
-// - Calculates and returns the deltaE value.
-// Return Value:
-// - The deltaE value
-double dE00::GetDeltaE()
-{
-    // h Prime 1
-    _hPrime1 = _GetHPrime1();
-
-    // h Prime 2
-    _hPrime2 = _GetHPrime2();
-
-    // Delta H Prime
-    _deltaHPrime = 2 * sqrt(_cPrime1 * _cPrime2) * sin(_DegreesToRadians(_GetDeltaHPrime()) / 2);
-
-    // H Bar Prime
-    _hBarPrime = _GetHBarPrime();
-
-    // T
-    _t = _GetT();
-
-    // S sub H
-    _sSubH = 1 + 0.015 * _cBarPrime * _t;
-
-    // R sub T
-    _rSubT = _GetRSubT();
-
-    // Put it all together!
-    double lightness = _deltaLPrime / (_kSubL * _sSubL);
-    double chroma = _deltaCPrime / (_kSubC * _sSubC);
-    double hue = _deltaHPrime / (_kSubH * _sSubH);
-
-    return sqrt(
-        pow(lightness, 2) +
-        pow(chroma, 2) +
-        pow(hue, 2) +
-        _rSubT * chroma * hue);
-};
-
-// Method Description:
-// - Calculates and returns the RT variable
-// Return Value:
-// - The RT variable
-double dE00::_GetRSubT()
-{
-    return -2 *
-           sqrt(
-               pow(_cBarPrime, 7) /
-               (pow(_cBarPrime, 7) + pow((double)25, 7))) *
-           sin(_DegreesToRadians(
-               60 *
-               exp(
-                   -(
-                       pow(
-                           (_hBarPrime - 275) / 25, 2)))));
-};
-
-// Method Description:
-// - Calculates and returns the T variable
-// Return Value:
-// - The T variable
-double dE00::_GetT()
-{
-    return 1 -
-           0.17 * cos(_DegreesToRadians(_hBarPrime - 30)) +
-           0.24 * cos(_DegreesToRadians(2 * _hBarPrime)) +
-           0.32 * cos(_DegreesToRadians(3 * _hBarPrime + 6)) -
-           0.20 * cos(_DegreesToRadians(4 * _hBarPrime - 63));
-};
-
-// Method Description:
-// - Calculates and returns the HBarPrime variable
-// Return Value:
-// - The HBarPrime variable
-double dE00::_GetHBarPrime()
-{
-    if (abs(_hPrime1 - _hPrime2) > 180)
-    {
-        return (_hPrime1 + _hPrime2 + 360) / 2;
-    }
-
-    return (_hPrime1 + _hPrime2) / 2;
-};
-
-// Method Description:
-// - Calculates and returns the Delta h prime variable
-// Return Value:
-// - The Delta h prime variable
-double dE00::_GetDeltaHPrime()
-{
-    // When either _c1 prime or _c2 prime is zero, then deltaH prime is irrelevant and may be set to
-    // zero.
-    if (0 == _c1 || 0 == _c2)
-    {
-        return 0;
-    }
-
-    if (abs(_hPrime1 - _hPrime2) <= 180)
-    {
-        return _hPrime2 - _hPrime1;
-    }
-
-    if (_hPrime2 <= _hPrime1)
-    {
-        return _hPrime2 - _hPrime1 + 360;
-    }
-    else
-    {
-        return _hPrime2 - _hPrime1 - 360;
-    }
-};
-
-// Method Description:
-// - Calculates and returns the h Prime 1 variable
-// Return Value:
-// - The h Prime 1 variable
-double dE00::_GetHPrime1()
-{
-    return _GetHPrimeFn(_x1.B, _aPrime1);
-}
-
-// Method Description:
-// - Calculates and returns the h Prime 2 variable
-// Return Value:
-// - The h Prime 2 variable
-double dE00::_GetHPrime2()
-{
-    return _GetHPrimeFn(_x2.B, _aPrime2);
-};
-
-// Method Description:
-// - Helper function to calculate the h Prime values
-// Return Value:
-// - The h Prime value
-double dE00::_GetHPrimeFn(double x, double y)
-{
-    double hueAngle;
-
     if (x == 0 && y == 0)
     {
         return 0;
     }
 
-    hueAngle = _RadiansToDegrees(atan2(x, y));
+    const auto hueAngle = atan2(x, y);
+    return hueAngle >= 0 ? hueAngle : hueAngle + rad360;
+}
 
-    if (hueAngle >= 0)
-    {
-        return hueAngle;
-    }
-    else
-    {
-        return hueAngle + 360;
-    }
-};
-
-// Method Description:
-// - Converts radians to degrees
-// Arguments:
-// - radians: the angle in radians
-// Return Value:
-// - the given angle, converted to degrees
-double dE00::_RadiansToDegrees(double radians)
+// DeltaE 2000
+// Source: https://github.com/zschuessler/DeltaE
+double ColorFix::GetDeltaE(ColorFix x1, ColorFix x2)
 {
-    return radians * (180 / M_PI);
-};
+    constexpr double kSubL = 1;
+    constexpr double kSubC = 1;
+    constexpr double kSubH = 1;
 
-// Method Description:
-// - Converts degrees to radians
-// Arguments:
-// - degrees: the angle in degrees
-// Return Value:
-// - the given angle, converted to radians
-double dE00::_DegreesToRadians(double degrees)
-{
-    return degrees * (M_PI / 180);
-};
+    // Delta L Prime
+    const double deltaLPrime = x2.L - x1.L;
+
+    // L Bar
+    const double lBar = (x1.L + x2.L) / 2;
+
+    // C1 & C2
+    const double c1 = sqrt(pow(x1.A, 2) + pow(x1.B, 2));
+    const double c2 = sqrt(pow(x2.A, 2) + pow(x2.B, 2));
+
+    // C Bar
+    const double cBar = (c1 + c2) / 2;
+
+    // A Prime 1
+    const double aPrime1 = x1.A + (x1.A / 2) * (1 - sqrt(pow(cBar, 7) / (pow(cBar, 7) + pow(25.0, 7))));
+
+    // A Prime 2
+    const double aPrime2 = x2.A + (x2.A / 2) * (1 - sqrt(pow(cBar, 7) / (pow(cBar, 7) + pow(25.0, 7))));
+
+    // C Prime 1
+    const double cPrime1 = sqrt(pow(aPrime1, 2) + pow(x1.B, 2));
+
+    // C Prime 2
+    const double cPrime2 = sqrt(pow(aPrime2, 2) + pow(x2.B, 2));
+
+    // C Bar Prime
+    const double cBarPrime = (cPrime1 + cPrime2) / 2;
+
+    // Delta C Prime
+    const double deltaCPrime = cPrime2 - cPrime1;
+
+    // S sub L
+    const double sSubL = 1 + ((0.015 * pow(lBar - 50, 2)) / sqrt(20 + pow(lBar - 50, 2)));
+
+    // S sub C
+    const double sSubC = 1 + 0.045 * cBarPrime;
+
+    // h Prime 1
+    const double hPrime1 = GetHPrimeFn(x1.B, aPrime1);
+
+    // h Prime 2
+    const double hPrime2 = GetHPrimeFn(x2.B, aPrime2);
+
+    // Delta H Prime
+    const double deltaHPrime = 0 == c1 || 0 == c2 ? 0 : 2 * sqrt(cPrime1 * cPrime2) * sin(abs(hPrime1 - hPrime2) <= rad180 ? hPrime2 - hPrime1 : (hPrime2 <= hPrime1 ? hPrime2 - hPrime1 + rad360 : hPrime2 - hPrime1 - rad360) / 2);
+
+    // H Bar Prime
+    const double hBarPrime = (abs(hPrime1 - hPrime2) > rad180) ? (hPrime1 + hPrime2 + rad360) / 2 : (hPrime1 + hPrime2) / 2;
+
+    // T
+    const double t = 1 - 0.17 * cos(hBarPrime - rad030) + 0.24 * cos(2 * hBarPrime) + 0.32 * cos(3 * hBarPrime + rad006) - 0.20 * cos(4 * hBarPrime - rad063);
+
+    // S sub H
+    const double sSubH = 1 + 0.015 * cBarPrime * t;
+
+    // R sub T
+    const double rSubT = -2 * sqrt(pow(cBarPrime, 7) / (pow(cBarPrime, 7) + pow(25.0, 7))) * sin(rad060 * exp(-pow((hBarPrime - rad275) / rad025, 2)));
+
+    // Put it all together!
+    const double lightness = deltaLPrime / (kSubL * sSubL);
+    const double chroma = deltaCPrime / (kSubC * sSubC);
+    const double hue = deltaHPrime / (kSubH * sSubH);
+
+    return sqrt(pow(lightness, 2) + pow(chroma, 2) + pow(hue, 2) + rSubT * chroma * hue);
+}
 
 ColorFix::ColorFix()
 {
@@ -260,22 +114,6 @@ ColorFix::ColorFix(COLORREF color)
 {
     rgb = color;
     _ToLab();
-}
-
-ColorFix::ColorFix(double l, double a, double b)
-{
-    L = l;
-    A = a;
-    B = b;
-    _ToRGB();
-}
-
-ColorFix::ColorFix(const ColorFix& color)
-{
-    L = color.L;
-    A = color.A;
-    B = color.B;
-    rgb = color.rgb;
 }
 
 // Method Description:
@@ -386,62 +224,37 @@ void ColorFix::_ToRGB()
 }
 
 // Method Description:
-// - Given a color, computes the DeltaE between us and that color
-// - Arguments:
-// - color: the color to compare against
-// - Return Value:
-// - The DeltaE value between us and that color
-double ColorFix::DeltaE(ColorFix color)
-{
-    dE00 delta{ *this, color };
-    return delta.GetDeltaE();
-}
-
-// Method Description:
 // - Given a background color, change the foreground color to make it more perceivable if necessary
 // - Arguments:
 // - back: the color to compare against
 // - pColor: where to store the resulting color
 // - Return Value:
 // - True if we changed our color, false otherwise
-bool ColorFix::PerceivableColor(COLORREF back, ColorFix& pColor, double* oldDE, double* newDE)
+COLORREF ColorFix::GetPerceivableColor(COLORREF fg, COLORREF bg)
 {
-    bool bChanged = false;
-    ColorFix backLab(back);
-    double de1 = DeltaE(backLab);
-    if (oldDE)
-        *oldDE = de1;
-    if (newDE)
-        *newDE = de1;
+    ColorFix backLab(bg);
+    ColorFix frontLab(fg);
+    double de1 = GetDeltaE(frontLab, backLab);
     if (de1 < gMinThreshold)
     {
         for (int i = 0; i <= 1; i++)
         {
             double step = (i == 0) ? gLStep : -gLStep;
-            pColor.L = L + step;
-            pColor.A = A;
-            pColor.B = B;
+            frontLab.L += step;
 
-            while (((i == 0) && (pColor.L <= 100)) || ((i == 1) && (pColor.L >= 0)))
+            while (((i == 0) && (frontLab.L <= 100)) || ((i == 1) && (frontLab.L >= 0)))
             {
-                double de2 = pColor.DeltaE(backLab);
+                double de2 = GetDeltaE(frontLab, backLab);
                 if (de2 >= gExpThreshold)
                 {
-                    if (newDE)
-                        *newDE = de2;
-                    bChanged = true;
-                    goto wrap;
+                    frontLab._ToRGB();
+                    return frontLab.rgb;
                 }
-                pColor.L += step;
+                frontLab.L += step;
             }
         }
     }
-wrap:
-    if (bChanged)
-        pColor._ToRGB();
-    else
-        pColor = *this;
-    return bChanged;
+    return frontLab.rgb;
 }
 
 // Method Description:

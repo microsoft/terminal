@@ -64,10 +64,7 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
     std::pair<COLORREF, COLORREF> result;
     if (_perceptualColorNudging)
     {
-        ColorFix colorFix{ colors.first };
-        ColorFix fixResult{};
-        colorFix.PerceivableColor(colors.second, fixResult);
-        result = std::pair<COLORREF, COLORREF>(fixResult.rgb, colors.second);
+        result = std::pair<COLORREF, COLORREF>(ColorFix::GetPerceivableColor(colors.first, colors.second), colors.second);
     }
     else
     {
