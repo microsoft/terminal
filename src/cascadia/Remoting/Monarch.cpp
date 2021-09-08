@@ -895,7 +895,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     Windows::Foundation::Collections::IVector<winrt::hstring> Monarch::GetAllWindowLayouts()
     {
         auto vec = winrt::single_threaded_vector<winrt::hstring>();
-        auto callback = [&](auto&& p, auto&& /*id*/) {
+        auto callback = [&](const auto& /*id*/, const auto& p) {
             auto layout = p.GetWindowLayout();
             vec.Append(layout);
         };
@@ -906,7 +906,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         };
-        _forAllPeasantsIgnoringTheDead(callback, onError);
+        _forEachPeasant(callback, onError);
 
         return vec;
     }
