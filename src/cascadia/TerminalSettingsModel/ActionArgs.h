@@ -126,14 +126,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         bool Equals(const Model::NewTerminalArgs& other)
         {
-            return other.Commandline() == _Commandline &&
-                   other.StartingDirectory() == _StartingDirectory &&
-                   other.TabTitle() == _TabTitle &&
-                   other.TabColor() == _TabColor &&
-                   other.ProfileIndex() == _ProfileIndex &&
-                   other.Profile() == _Profile &&
-                   other.SuppressApplicationTitle() == _SuppressApplicationTitle &&
-                   other.ColorScheme() == _ColorScheme;
+            auto otherAsUs = other.try_as<NewTerminalArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Commandline == _Commandline &&
+                       otherAsUs->_StartingDirectory == _StartingDirectory &&
+                       otherAsUs->_TabTitle == _TabTitle &&
+                       otherAsUs->_TabColor == _TabColor &&
+                       otherAsUs->_ProfileIndex == _ProfileIndex &&
+                       otherAsUs->_Profile == _Profile &&
+                       otherAsUs->_SuppressApplicationTitle == _SuppressApplicationTitle &&
+                       otherAsUs->_ColorScheme == _ColorScheme;
+            }
+            return false;
         };
         static Model::NewTerminalArgs FromJson(const Json::Value& json)
         {

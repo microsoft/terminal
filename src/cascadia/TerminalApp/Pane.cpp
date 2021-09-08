@@ -72,6 +72,154 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
 }
 
 // Method Description:
+// - Extract the terminal settings from the current (leaf) pane's control
+//   to be used to create an equivalent control
+// Arguments:
+// - <none>
+// Return Value:
+// - Arguments appropriate for a SplitPane or NewTab action
+NewTerminalArgs Pane::GetTerminalArgsForPane() const
+{
+    // Leaves are the only things that have controls
+    assert(_IsLeaf());
+
+    NewTerminalArgs args{};
+    auto controlSettings = _control.Settings().as<TerminalSettings>();
+
+    args.Profile(controlSettings.ProfileName());
+    args.StartingDirectory(controlSettings.StartingDirectory());
+    args.TabTitle(controlSettings.StartingTitle());
+    args.Commandline(controlSettings.Commandline());
+    args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
+    if (controlSettings.TabColor() || controlSettings.StartingTabColor())
+    {
+        til::color c;
+        // StartingTabColor is prioritized over other colors
+        if (const auto color = controlSettings.StartingTabColor())
+        {
+            c = til::color(color.Value());
+        }
+        else
+        {
+            c = til::color(controlSettings.TabColor().Value());
+        }
+
+        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
+    }
+
+    if (controlSettings.AppliedColorScheme())
+    {
+        auto name = controlSettings.AppliedColorScheme().Name();
+        args.ColorScheme(name);
+    }
+
+    return args;
+}
+
+// Method Description:
+// - Serializes the state of this tab as a series of commands that can be
+//   executed to recreate it.
+// - This will always result in the right-most child being the focus
+//   after the commands finish executing.
+// Arguments:
+// - currentId: the id to use for the current/first pane
+// - nextId: the id to use for a new pane if we split
+// Return Value:
+// - The state from building the startup actions, includes a vector of commands,
+//   the original root pane, the id of the focused pane, and the number of panes
+//   created.
+Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t nextId)
+{
+    // if we are a leaf then all there is to do is defer to the parent.
+    if (_IsLeaf())
+    {
+        if (_lastActive)
+        {
+            return { {}, shared_from_this(), currentId, 0 };
+        }
+
+        return { {}, shared_from_this(), std::nullopt, 0 };
+    }
+
+    auto buildSplitPane = [&](auto newPane) {
+        ActionAndArgs actionAndArgs;
+        actionAndArgs.Action(ShortcutAction::SplitPane);
+        const auto terminalArgs{ newPane->GetTerminalArgsForPane() };
+        // When creating a pane the split size is the size of the new pane
+        // and not position.
+        SplitPaneArgs args{ SplitType::Manual, _splitState, 1. - _desiredSplitPosition, terminalArgs };
+        actionAndArgs.Args(args);
+
+        return actionAndArgs;
+    };
+
+    auto buildMoveFocus = [](auto direction) {
+        MoveFocusArgs args{ direction };
+
+        ActionAndArgs actionAndArgs{};
+        actionAndArgs.Action(ShortcutAction::MoveFocus);
+        actionAndArgs.Args(args);
+
+        return actionAndArgs;
+    };
+
+    // Handle simple case of a single split (a minor optimization for clarity)
+    // Here we just create the second child (by splitting) and return the first
+    // child for the parent to deal with.
+    if (_firstChild->_IsLeaf() && _secondChild->_IsLeaf())
+    {
+        auto actionAndArgs = buildSplitPane(_secondChild);
+        std::optional<uint32_t> focusedPaneId = std::nullopt;
+        if (_firstChild->_lastActive)
+        {
+            focusedPaneId = currentId;
+        }
+        else if (_secondChild->_lastActive)
+        {
+            focusedPaneId = nextId;
+        }
+
+        return { { actionAndArgs }, _firstChild, focusedPaneId, 1 };
+    }
+
+    // We now need to execute the commands for each side of the tree
+    // We've done one split, so the first-most child will have currentId, and the
+    // one after it will be incremented.
+    auto firstState = _firstChild->BuildStartupActions(currentId, nextId + 1);
+    // the next id for the second branch depends on how many splits were in the
+    // first child.
+    auto secondState = _secondChild->BuildStartupActions(nextId, nextId + firstState.panesCreated + 1);
+
+    std::vector<ActionAndArgs> actions{};
+    actions.reserve(firstState.args.size() + secondState.args.size() + 3);
+
+    // first we make our split
+    const auto newSplit = buildSplitPane(secondState.firstPane);
+    actions.emplace_back(std::move(newSplit));
+
+    if (firstState.args.size() > 0)
+    {
+        // Then move to the first child and execute any actions on the left branch
+        // then move back
+        actions.emplace_back(buildMoveFocus(FocusDirection::PreviousInOrder));
+        actions.insert(actions.end(), std::make_move_iterator(std::begin(firstState.args)), std::make_move_iterator(std::end(firstState.args)));
+        actions.emplace_back(buildMoveFocus(FocusDirection::NextInOrder));
+    }
+
+    // And if there are any commands to run on the right branch do so
+    if (secondState.args.size() > 0)
+    {
+        actions.insert(actions.end(), std::make_move_iterator(secondState.args.begin()), std::make_move_iterator(secondState.args.end()));
+    }
+
+    // if the tree is well-formed then f1.has_value and f2.has_value are
+    // mutually exclusive.
+    const auto focusedPaneId = firstState.focusedPaneId.has_value() ? firstState.focusedPaneId : secondState.focusedPaneId;
+
+    return { actions, firstState.firstPane, focusedPaneId, firstState.panesCreated + secondState.panesCreated + 1 };
+}
+
+// Method Description:
 // - Update the size of this pane. Resizes each of our columns so they have the
 //   same relative sizes, given the newSize.
 // - Because we're just manually setting the row/column sizes in pixels, we have

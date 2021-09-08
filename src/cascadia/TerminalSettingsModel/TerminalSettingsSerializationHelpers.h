@@ -209,6 +209,14 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "defaultProfile", ValueType::DefaultProfile },
+        pair_type{ "persistedWindowLayout", ValueType::PersistedWindowLayout },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
 {
     JSON_MAPPINGS(5) = {
@@ -373,7 +381,8 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitState)
 // Possible SplitType values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitType)
 {
-    JSON_MAPPINGS(1) = {
+    JSON_MAPPINGS(2) = {
+        pair_type{ "manual", ValueType::Manual },
         pair_type{ "duplicate", ValueType::Duplicate },
     };
 };

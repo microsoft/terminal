@@ -8,6 +8,7 @@ namespace Microsoft.Terminal.Remoting
     {
         WindowManager();
         void ProposeCommandline(CommandlineArgs args);
+        void SignalClose();
         Boolean ShouldCreateWindow { get; };
         IPeasant CurrentWindow();
         Boolean IsMonarch { get; };
@@ -15,12 +16,15 @@ namespace Microsoft.Terminal.Remoting
         void SummonAllWindows();
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
+        UInt64 GetNumberOfPeasants();
         void RequestQuitAll();
         void UpdateActiveTabTitle(String title);
         Boolean DoesQuakeWindowExist();
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos();
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
