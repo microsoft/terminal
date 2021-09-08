@@ -1759,7 +1759,7 @@ void Pane::_SetupEntranceAnimation()
     // window.
     // * If we don't give it a background, then the BG will be entirely transparent.
     // * If we give the parent (us) root BG a color, then a transparent pane
-    //   will flash opaque quring the animation, then back to transparent, which
+    //   will flash opaque during the animation, then back to transparent, which
     //   looks bad.
     _secondChild->_root.Background(s_unfocusedBorderBrush);
 
