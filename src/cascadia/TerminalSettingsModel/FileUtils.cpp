@@ -128,14 +128,27 @@ namespace Microsoft::Terminal::Settings::Model
             // while elevated, which isn't what we want.
 
             PSID pEveryoneSid = nullptr;
+            PSID pAdminGroupSid = nullptr;
             PSID pAdminSid = nullptr;
             SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
             SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
 
+            // I thought DOMAIN_USER_RID_ADMIN might be the Builtin\Admin sid, but that returned garbage
             // Create a SID for the BUILTIN\Administrators group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminSid));
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminGroupSid));
+            // ?
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 1, DOMAIN_USER_RID_ADMIN, 0, 0, 0, 0, 0, 0, 0, &pAdminSid));
             // Create a well-known SID for the Everyone group.
             THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid));
+
+            // wil::unique_sid adminSid{};
+            // DWORD cbSize = sizeof(SID);
+            // THROW_IF_WIN32_BOOL_FALSE(CreateWellKnownSid(WinAccountAdministratorSid, nullptr, adminSid.put(), &cbSize));
+
+            // BYTE adminSid[SECURITY_MAX_SID_SIZE] = { 0 };
+            // DWORD adminSize = ARRAYSIZE(adminSid);
+            // auto success = CreateWellKnownSid(WinAccountAdministratorSid, nullptr, adminSid, &adminSize);
+            // THROW_IF_WIN32_BOOL_FALSE(success);
 
             EXPLICIT_ACCESS ea[2];
             ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
