@@ -113,20 +113,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_ELEVATED_STATE_FIELDS(MTSM_ELEVATED_STATE_GEN)
 #undef MTSM_ELEVATED_STATE_GEN
 
-    // Serialized this ApplicationState (in `context`) into the state.json at _path.
-    // * Errors are only logged.
-    // * _state->_writeScheduled is set to false, signaling our
-    //   setters that _synchronize() needs to be called again.
-    void ElevatedState::_write() const noexcept
-    try
+    void ElevatedState::_writeFileContents(const std::string_view content) const
     {
-        Json::Value root{ this->ToJson() };
-
-        Json::StreamWriterBuilder wbuilder;
-        const auto content = Json::writeString(wbuilder, root);
         // WriteUTF8FileAtomic(_path, content, true);
         WriteUTF8File(_path, content, true);
     }
-    CATCH_LOG()
 
+    std::optional<std::string> ElevatedState::_readFileContents() const
+    {
+        return ReadUTF8FileIfExists(_path, true);
+    }
 }

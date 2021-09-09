@@ -48,7 +48,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef MTSM_ELEVATED_STATE_GEN
         };
         til::shared_mutex<state_t> _state;
-        virtual void _write() const noexcept override;
+
+        virtual std::optional<std::string> _readFileContents() const override;
+        virtual void _writeFileContents(const std::string_view content) const override;
     };
 }
 

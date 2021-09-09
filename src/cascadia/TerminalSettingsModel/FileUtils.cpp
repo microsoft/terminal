@@ -43,8 +43,73 @@ namespace Microsoft::Terminal::Settings::Model
 
     // Tries to read a file somewhat atomically without locking it.
     // Strips the UTF8 BOM if it exists.
-    std::string ReadUTF8File(const std::filesystem::path& path)
+    std::string ReadUTF8File(const std::filesystem::path& path, const bool elevatedOnly)
     {
+        if (elevatedOnly)
+        {
+            // If we want to only open the file if it's elevated, check the
+            // permissions on this file. We want to make sure that:
+            // * Everyone has permission to read
+            // * admins can do anything
+            // * no one else can do anything.
+            PACL pAcl{ nullptr };
+            PSECURITY_DESCRIPTOR pSD{ nullptr };
+
+            auto status = GetNamedSecurityInfo(path.c_str(),
+                                               SE_FILE_OBJECT,
+                                               DACL_SECURITY_INFORMATION,
+                                               nullptr,
+                                               nullptr,
+                                               &pAcl,
+                                               nullptr,
+                                               &pSD);
+            THROW_IF_WIN32_ERROR(status);
+            pSD;
+            pAcl;
+
+            PEXPLICIT_ACCESS pEA{ nullptr };
+            DWORD count = 0;
+            status = GetExplicitEntriesFromAcl(pAcl, &count, &pEA);
+            THROW_IF_WIN32_ERROR(status);
+            THROW_HR_IF(E_FAIL, count != 2);
+
+            PSID pEveryoneSid = nullptr;
+            PSID pAdminGroupSid = nullptr;
+            SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+            SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
+
+            // Create a SID for the BUILTIN\Administrators group.
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminGroupSid));
+
+            // Create a well-known SID for the Everyone group.
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid));
+
+            THROW_HR_IF(E_FAIL, pEA[0].grfAccessPermissions != GENERIC_ALL);
+            THROW_HR_IF(E_FAIL, pEA[0].grfInheritance != NO_INHERITANCE);
+            THROW_HR_IF(E_FAIL, pEA[0].Trustee.TrusteeForm != TRUSTEE_IS_SID);
+            THROW_HR_IF(E_FAIL, pEA[0].Trustee.TrusteeType != TRUSTEE_IS_WELL_KNOWN_GROUP);
+            THROW_HR_IF(E_FAIL, pEA[0].Trustee.ptstrName != pAdminGroupSid);
+
+            THROW_HR_IF(E_FAIL, pEA[1].grfAccessPermissions != GENERIC_READ);
+            THROW_HR_IF(E_FAIL, pEA[1].grfInheritance != NO_INHERITANCE);
+            THROW_HR_IF(E_FAIL, pEA[1].Trustee.TrusteeForm != TRUSTEE_IS_SID);
+            THROW_HR_IF(E_FAIL, pEA[1].Trustee.TrusteeType != TRUSTEE_IS_WELL_KNOWN_GROUP);
+            THROW_HR_IF(E_FAIL, pEA[1].Trustee.ptstrName != pEveryoneSid);
+            // // Grant Admins all permissions on this file
+            // ea[0].grfAccessPermissions = GENERIC_ALL;
+            // ea[0].grfAccessMode = SET_ACCESS;
+            // ea[0].grfInheritance = NO_INHERITANCE;
+            // ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+            // ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+            // ea[0].Trustee.ptstrName = (LPTSTR)pAdminGroupSid;
+            // ea[1].grfAccessPermissions = GENERIC_READ;
+            // ea[1].grfAccessMode = SET_ACCESS;
+            // ea[1].grfInheritance = NO_INHERITANCE;
+            // ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+            // ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+            // ea[1].Trustee.ptstrName = (LPTSTR)pEveryoneSid;
+        }
+
         // From some casual observations we can determine that:
         // * ReadFile() always returns the requested amount of data (unless the file is smaller)
         // * It's unlikely that the file was changed between GetFileSize() and ReadFile()
@@ -91,11 +156,11 @@ namespace Microsoft::Terminal::Settings::Model
     }
 
     // Same as ReadUTF8File, but returns an empty optional, if the file couldn't be opened.
-    std::optional<std::string> ReadUTF8FileIfExists(const std::filesystem::path& path)
+    std::optional<std::string> ReadUTF8FileIfExists(const std::filesystem::path& path, const bool elevatedOnly)
     {
         try
         {
-            return { ReadUTF8File(path) };
+            return { ReadUTF8File(path, elevatedOnly) };
         }
         catch (const wil::ResultException& exception)
         {

@@ -47,7 +47,7 @@ winrt::hstring BaseApplicationState::FilePath() const noexcept
 void BaseApplicationState::_read() const noexcept
 try
 {
-    const auto data = ReadUTF8FileIfExists(_path).value_or(std::string{});
+    const auto data = _readFileContents().value_or(std::string{});
     if (data.empty())
     {
         return;
@@ -80,3 +80,13 @@ try
     WriteUTF8FileAtomic(_path, content);
 }
 CATCH_LOG()
+
+std::optional<std::string> BaseApplicationState::_readFileContents() const
+{
+    return ReadUTF8FileIfExists(_path);
+}
+
+void BaseApplicationState::_writeFileContents(const std::string_view content) const
+{
+    WriteUTF8FileAtomic(_path, content);
+}
