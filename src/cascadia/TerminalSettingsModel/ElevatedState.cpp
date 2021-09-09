@@ -124,8 +124,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Json::StreamWriterBuilder wbuilder;
         const auto content = Json::writeString(wbuilder, root);
-        // WriteUTF8FileAtomic(_path, content, true);
-        WriteUTF8File(_path, content, true);
+        WriteUTF8FileAtomic(_path, content, true);
+        // WriteUTF8File(_path, content, true);
     }
     CATCH_LOG()
 
