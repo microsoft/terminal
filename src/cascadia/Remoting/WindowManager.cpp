@@ -271,6 +271,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
         _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
         _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
+        _monarch.QuitAllRequested([this](auto&&, auto&&) { _QuitAllRequestedHandlers(*this, nullptr); });
 
         _BecameMonarchHandlers(*this, nullptr);
     }
@@ -577,6 +578,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto strongThis{ get_strong() };
         co_await winrt::resume_background();
         _peasant.RequestHideTrayIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to quit all windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestQuitAll()
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        _peasant.RequestQuitAll();
     }
 
     bool WindowManager::DoesQuakeWindowExist()

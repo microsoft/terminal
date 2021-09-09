@@ -58,5 +58,6 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
     };
 }

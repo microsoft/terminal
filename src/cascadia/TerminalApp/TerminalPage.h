@@ -71,7 +71,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
-        winrt::fire_and_forget CloseWindow();
+        winrt::fire_and_forget RequestQuit();
+        winrt::fire_and_forget CloseWindow(bool bypassDialog);
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -131,6 +132,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+        TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -189,6 +191,7 @@ namespace winrt::TerminalApp::implementation
         std::shared_ptr<Toast> _windowRenameFailedToast{ nullptr };
 
         void _ShowAboutDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowQuitDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();

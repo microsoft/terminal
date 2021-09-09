@@ -30,6 +30,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void RequestRename(const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
+        void RequestQuitAll();
+        void Quit();
 
         winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs GetLastActivatedArgs();
 
@@ -45,6 +47,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior);
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
         Peasant(const uint64_t testPID);

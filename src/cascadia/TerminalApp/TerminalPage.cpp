@@ -559,6 +559,21 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Displays a dialog to warn the user that they are about to close all open windows.
+    //   Once the user clicks the OK button, shut down the application.
+    //   If cancel is clicked, the dialog will close.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"QuitDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
+    }
+
+    // Method Description:
     // - Displays a dialog for warnings found while closing the terminal app using
     //   key binding with multiple tabs opened. Display messages to warn user
     //   that more than 1 tab is opened, and once the user clicks the OK button, remove
@@ -1237,6 +1252,25 @@ namespace winrt::TerminalApp::implementation
         }
         return nullptr;
     }
+    // Method Description:
+    // - Warn the user that they are about to close all open windows, then
+    //   signal that we want to close everything.
+    fire_and_forget TerminalPage::RequestQuit()
+    {
+        if (!_displayingCloseDialog)
+        {
+            _displayingCloseDialog = true;
+            ContentDialogResult warningResult = co_await _ShowQuitDialog();
+            _displayingCloseDialog = false;
+
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                co_return;
+            }
+
+            _QuitRequestedHandlers(nullptr, nullptr);
+        }
+    }
 
     // Method Description:
     // - Saves the window position and tab layout to the application state
@@ -1320,9 +1354,14 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    fire_and_forget TerminalPage::CloseWindow()
+    // Arguments:
+    // - bypassDialog: if true a dialog won't be shown even if the user would
+    //   normally get confirmation. This is used in the case where the user
+    //   has already been prompted by the Quit action.
+    fire_and_forget TerminalPage::CloseWindow(bool bypassDialog)
     {
-        if (_HasMultipleTabs() &&
+        if (!bypassDialog &&
+            _HasMultipleTabs() &&
             _settings.GlobalSettings().ConfirmCloseAllTabs() &&
             !_displayingCloseDialog)
         {

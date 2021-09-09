@@ -184,6 +184,9 @@
   <data name="CloseAll" xml:space="preserve">
     <value>Close all</value>
   </data>
+  <data name="Quit" xml:space="preserve">
+    <value>Quit</value>
+  </data>
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
@@ -440,6 +443,15 @@
   <data name="AboutDialog_ThirdPartyNoticesLink.Content" xml:space="preserve">
     <value>Third-Party Notices</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
+  </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>Do you want to close all windows?</value>
   </data>
   <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
