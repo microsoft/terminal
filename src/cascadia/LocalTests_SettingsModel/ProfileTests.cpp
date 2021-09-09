@@ -7,6 +7,8 @@
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "JsonTestClass.h"
 
+#include <defaults.h>
+
 using namespace Microsoft::Console;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace WEX::Logging;
@@ -32,11 +34,73 @@ namespace SettingsModelLocalTests
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
+        TEST_METHOD(ProfileGeneratesGuid);
         TEST_METHOD(LayerProfileProperties);
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
         TEST_METHOD(DuplicateProfileTest);
+
+        // Make sure we gen GUIDs for profiles without guids
+        TEST_METHOD(TestGenGuidsForProfiles);
+        // Make sure disabledProfileSources removes profiles with any of the given sources.
+        TEST_METHOD(TestDisabledProfileSources);
     };
+
+    void ProfileTests::ProfileGeneratesGuid()
+    {
+        // Parse some profiles without guids. We should NOT generate new guids
+        // for them. If a profile doesn't have a GUID, we'll leave its _guid
+        // set to nullopt. The Profile::Guid() getter will
+        // ensure all profiles have a GUID that's actually set.
+        // The null guid _is_ a valid guid, so we won't re-generate that
+        // guid. null is _not_ a valid guid, so we'll leave that nullopt
+
+        // See SettingsTests::ValidateProfilesGenerateGuids for a version of
+        // this test that includes synthesizing GUIDS for profiles without GUIDs
+        // set
+
+        const std::string profileWithoutGuid{ R"({
+                                              "name" : "profile0"
+                                              })" };
+        const std::string secondProfileWithoutGuid{ R"({
+                                              "name" : "profile1"
+                                              })" };
+        const std::string profileWithNullForGuid{ R"({
+                                              "name" : "profile2",
+                                              "guid" : null
+                                              })" };
+        const std::string profileWithNullGuid{ R"({
+                                              "name" : "profile3",
+                                              "guid" : "{00000000-0000-0000-0000-000000000000}"
+                                              })" };
+        const std::string profileWithGuid{ R"({
+                                              "name" : "profile4",
+                                              "guid" : "{6239a42c-1de4-49a3-80bd-e8fdd045185c}"
+                                              })" };
+
+        const auto profile0Json = VerifyParseSucceeded(profileWithoutGuid);
+        const auto profile1Json = VerifyParseSucceeded(secondProfileWithoutGuid);
+        const auto profile2Json = VerifyParseSucceeded(profileWithNullForGuid);
+        const auto profile3Json = VerifyParseSucceeded(profileWithNullGuid);
+        const auto profile4Json = VerifyParseSucceeded(profileWithGuid);
+
+        const auto profile0 = implementation::Profile::FromJson(profile0Json);
+        const auto profile1 = implementation::Profile::FromJson(profile1Json);
+        const auto profile2 = implementation::Profile::FromJson(profile2Json);
+        const auto profile3 = implementation::Profile::FromJson(profile3Json);
+        const auto profile4 = implementation::Profile::FromJson(profile4Json);
+        const winrt::guid cmdGuid = Utils::GuidFromString(L"{6239a42c-1de4-49a3-80bd-e8fdd045185c}");
+        const winrt::guid nullGuid{};
+
+        VERIFY_IS_FALSE(profile0->HasGuid());
+        VERIFY_IS_FALSE(profile1->HasGuid());
+        VERIFY_IS_FALSE(profile2->HasGuid());
+        VERIFY_IS_TRUE(profile3->HasGuid());
+        VERIFY_IS_TRUE(profile4->HasGuid());
+
+        VERIFY_ARE_EQUAL(profile3->Guid(), nullGuid);
+        VERIFY_ARE_EQUAL(profile4->Guid(), cmdGuid);
+    }
 
     void ProfileTests::LayerProfileProperties()
     {
@@ -232,5 +296,81 @@ namespace SettingsModelLocalTests
         const auto json = winrt::get_self<implementation::Profile>(profile)->ToJson();
         const auto duplicatedJson = winrt::get_self<implementation::Profile>(duplicatedProfile)->ToJson();
         VERIFY_ARE_EQUAL(json, duplicatedJson, til::u8u16(toString(duplicatedJson)).c_str());
+    }
+
+    void ProfileTests::TestGenGuidsForProfiles()
+    {
+        // We'll generate GUIDs in the Profile::Guid getter. We should make sure that
+        // the GUID generated for a dynamic profile (with a source) is different
+        // than that of a profile without a source.
+
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "source": "Terminal.App.UnitTest.0",
+                },
+                {
+                    "name": "profile0"
+                }
+            ]
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, DefaultJson);
+
+        VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
+
+        VERIFY_ARE_EQUAL(L"profile0", settings->AllProfiles().GetAt(0).Name());
+        VERIFY_IS_TRUE(settings->AllProfiles().GetAt(0).HasGuid());
+        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(0).Source().empty());
+
+        VERIFY_ARE_EQUAL(L"profile0", settings->AllProfiles().GetAt(1).Name());
+        VERIFY_IS_TRUE(settings->AllProfiles().GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->AllProfiles().GetAt(1).Source().empty());
+
+        VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(0).Guid(), settings->AllProfiles().GetAt(1).Guid());
+    }
+
+    void ProfileTests::TestDisabledProfileSources()
+    {
+        static constexpr std::string_view inboxSettings{ R"({
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "source": "Terminal.App.UnitTest.0"
+                },
+                {
+                    "name": "profile1",
+                    "source": "Terminal.App.UnitTest.1"
+                },
+                {
+                    "name": "profile2",
+                    "source": "Terminal.App.UnitTest.1"
+                },
+                {
+                    "name": "profile3",
+                    "source": "Terminal.App.UnitTest.2"
+                }
+            ]
+        })" };
+        static constexpr std::string_view userSettings{ R"({
+            "disabledProfileSources": ["Terminal.App.UnitTest.0", "Terminal.App.UnitTest.2"],
+            "profiles": [
+                {
+                    "name": "profile4",
+                    "source": "Terminal.App.UnitTest.2"
+                }
+            ]
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, inboxSettings);
+
+        VERIFY_ARE_EQUAL(2u, settings->AllProfiles().Size());
+        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(0).Source().empty());
+        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(1).Source().empty());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->AllProfiles().GetAt(0).Source());
+        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->AllProfiles().GetAt(1).Source());
+        VERIFY_ARE_EQUAL(L"profile1", settings->AllProfiles().GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"profile2", settings->AllProfiles().GetAt(1).Name());
     }
 }

@@ -29,9 +29,9 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ColorHelperTests.cpp" />
-    <ClCompile Include="JsonTests.cpp" />
+
     <ClCompile Include="JsonUtilsTests.cpp" />
-    <ClCompile Include="DynamicProfileTests.cpp" />
+
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

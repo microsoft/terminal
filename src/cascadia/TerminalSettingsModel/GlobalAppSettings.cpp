@@ -230,8 +230,9 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
     // `keybindings` key, and again on the newer `bindings` key.
-    static constexpr std::array bindingsKeys{LegacyKeybindingsKey, ActionsKey};
-    for (const auto& jsonKey : bindingsKeys) {
+    static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
+    for (const auto& jsonKey : bindingsKeys)
+    {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
             auto warnings = _actionMap->LayerJson(bindings);

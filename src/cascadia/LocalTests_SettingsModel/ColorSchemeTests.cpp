@@ -5,6 +5,7 @@
 
 #include "../TerminalSettingsModel/ColorScheme.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../types/inc/colorTable.hpp"
 #include "JsonTestClass.h"
 
 using namespace Microsoft::Console;
@@ -33,6 +34,7 @@ namespace SettingsModelLocalTests
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
+        TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(LayerColorSchemesOnArray);
         TEST_METHOD(UpdateSchemeReferences);
 
@@ -41,6 +43,57 @@ namespace SettingsModelLocalTests
             return Core::Color{ r, g, b, 255 };
         }
     };
+
+    void ColorSchemeTests::ParseSimpleColorScheme()
+    {
+        const std::string campbellScheme{ "{"
+                                          "\"background\" : \"#0C0C0C\","
+                                          "\"black\" : \"#0C0C0C\","
+                                          "\"blue\" : \"#0037DA\","
+                                          "\"brightBlack\" : \"#767676\","
+                                          "\"brightBlue\" : \"#3B78FF\","
+                                          "\"brightCyan\" : \"#61D6D6\","
+                                          "\"brightGreen\" : \"#16C60C\","
+                                          "\"brightPurple\" : \"#B4009E\","
+                                          "\"brightRed\" : \"#E74856\","
+                                          "\"brightWhite\" : \"#F2F2F2\","
+                                          "\"brightYellow\" : \"#F9F1A5\","
+                                          "\"cursorColor\" : \"#FFFFFF\","
+                                          "\"cyan\" : \"#3A96DD\","
+                                          "\"foreground\" : \"#F2F2F2\","
+                                          "\"green\" : \"#13A10E\","
+                                          "\"name\" : \"Campbell\","
+                                          "\"purple\" : \"#881798\","
+                                          "\"red\" : \"#C50F1F\","
+                                          "\"selectionBackground\" : \"#131313\","
+                                          "\"white\" : \"#CCCCCC\","
+                                          "\"yellow\" : \"#C19C00\""
+                                          "}" };
+
+        const auto schemeObject = VerifyParseSucceeded(campbellScheme);
+        auto scheme = ColorScheme::FromJson(schemeObject);
+        VERIFY_ARE_EQUAL(L"Campbell", scheme->Name());
+        VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 255), til::color{ scheme->Foreground() });
+        VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 255), til::color{ scheme->Background() });
+        VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 255), til::color{ scheme->SelectionBackground() });
+        VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), til::color{ scheme->CursorColor() });
+
+        std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
+        const auto campbellSpan = gsl::make_span(expectedCampbellTable);
+        Utils::InitializeCampbellColorTable(campbellSpan);
+        Utils::SetColorTableAlpha(campbellSpan, 0);
+
+        for (size_t i = 0; i < expectedCampbellTable.size(); i++)
+        {
+            const auto& expected = expectedCampbellTable.at(i);
+            const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
+
+        Log::Comment(L"Roundtrip Test for Color Scheme");
+        Json::Value outJson{ scheme->ToJson() };
+        VERIFY_ARE_EQUAL(schemeObject, outJson);
+    }
 
     void ColorSchemeTests::LayerColorSchemesOnArray()
     {
