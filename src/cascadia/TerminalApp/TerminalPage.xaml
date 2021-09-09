@@ -123,7 +123,7 @@
                          Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
                          Severity="Warning">
                 <mux:InfoBar.ActionButton>
-                    <Button x:Uid="KeyboardServiceWarningInfoBarDismissButton"
+                    <Button x:Uid="InfoBarDismissButton"
                             Click="_KeyboardServiceWarningInfoDismissHandler" />
                 </mux:InfoBar.ActionButton>
             </mux:InfoBar>
@@ -136,7 +136,7 @@
                          IsOpen="False"
                          Severity="Informational">
                 <mux:InfoBar.ActionButton>
-                    <Button x:Uid="CloseOnExitInfoBarDismissButton"
+                    <Button x:Uid="InfoBarDismissButton"
                             Click="_CloseOnExitInfoDismissHandler" />
                 </mux:InfoBar.ActionButton>
             </mux:InfoBar>

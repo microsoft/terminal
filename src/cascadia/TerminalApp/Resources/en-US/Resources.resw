@@ -710,12 +710,9 @@
     <value>Plain Text</value>
   </data>
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
-    <value>Termination behavior can be configured in advanced profile settings</value>
+    <value>Termination behavior can be configured in advanced profile settings.</value>
   </data>
-  <data name="CloseOnExitInfoBarDismissButton.Content" xml:space="preserve">
-    <value>Don't show again</value>
-  </data>
-  <data name="KeyboardServiceWarningInfoBarDismissButton.Content" xml:space="preserve">
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Don't show again</value>
   </data>
 </root>
