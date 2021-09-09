@@ -298,9 +298,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             if (otherName == name)
             {
                 result = id;
-                return true;
+                return false;
             }
-            return false;
+            return true;
         };
 
         const auto onError = [&](const auto& id) {
