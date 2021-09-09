@@ -3,7 +3,6 @@
 
 import "GlobalAppSettings.idl";
 import "Profile.idl";
-import "ApplicationState.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
@@ -24,8 +23,5 @@ namespace Microsoft.Terminal.Settings.Model
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Core.CursorStyle> CursorStyle { get; };
         static Windows.Foundation.Collections.IMap<String, UInt16> FontWeight { get; };
         static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.IntenseStyle> IntenseTextStyle { get; };
-
-        // Application State
-        static Windows.Foundation.Collections.IMap<String, Microsoft.Terminal.Settings.Model.InfoBarMessage> InfoBarMessage { get; };
     }
 }
