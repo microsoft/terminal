@@ -28,12 +28,12 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-static const winrt::hstring StartupTaskName = L"StartTerminalOnLoginTask";
+static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
 // clang-format off
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
+static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
@@ -49,11 +49,14 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
 };
-static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
+static const std::array settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
 // clang-format on
+
+static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));
+static_assert(settingsLoadErrorsLabels.size() == static_cast<size_t>(SettingsLoadErrors::ERRORS_SIZE));
 
 // Function Description:
 // - General-purpose helper for looking up a localized string for a
@@ -66,12 +69,12 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErr
 // - map: A map of keys->Resource keys.
 // Return Value:
 // - the localized string for the given type, if it exists.
-template<std::size_t N>
-static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys)
+template<typename T>
+winrt::hstring _GetMessageText(uint32_t index, const T& keys)
 {
     if (index < keys.size())
     {
-        return GetLibraryResourceString(keys.at(index));
+        return GetLibraryResourceString(til::at(keys, index));
     }
     return {};
 }
@@ -757,7 +760,10 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
+            const auto beg = std::chrono::high_resolution_clock::now();
             auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
+            const auto end = std::chrono::high_resolution_clock::now();
+            OutputDebugStringA(fmt::format("{:.6f}\n", std::chrono::duration<double>(end - beg).count()).c_str());
             _settings = newSettings;
 
             if (_settings.GetLoadingError())

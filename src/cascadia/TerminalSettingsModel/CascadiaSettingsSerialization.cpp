@@ -68,22 +68,6 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     return finalVal.value();
 }
 
-template<typename T>
-static void executeGenerator(const std::unordered_set<std::wstring_view>& ignoredNamespaces, std::vector<winrt::com_ptr<Profile>>& generatedProfiles)
-{
-    T generator;
-    const auto generatorNamespace = generator.GetNamespace();
-
-    if (!ignoredNamespaces.count(generatorNamespace))
-    {
-        try
-        {
-            generator.GenerateProfiles(generatedProfiles);
-        }
-        CATCH_LOG_MSG("Dynamic Profile Namespace: \"%s\"", generatorNamespace.data());
-    }
-}
-
 std::filesystem::path buildPath(const std::wstring_view& lhs, const std::wstring_view& rhs)
 {
     std::wstring buffer;
@@ -140,7 +124,7 @@ void SettingsLoader::GenerateProfiles()
             {
                 generator.GenerateProfiles(inboxSettings.profiles);
             }
-            CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", generatorNamespace.data(), generatorNamespace.size())
+            CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
         }
     };
 
@@ -485,6 +469,15 @@ void SettingsLoader::_parse(const OriginTag origin, const std::string_view& cont
             {
                 auto profile = Profile::FromJson(profileJson);
                 profile->Origin(origin);
+
+                // The Guid() getter generates one from Name() and Source() if none exists otherwise.
+                // We want to ensure that every profile has a GUID no matter what, not just to
+                // cache the value, but also to make them consistently identifiable later on.
+                if (!profile->HasGuid())
+                {
+                    profile->Guid(profile->Guid());
+                }
+
                 _appendProfile(std::move(profile), settings);
             }
         }
@@ -524,7 +517,7 @@ try
     const auto firstTimeSetup = settingsString.empty();
     const auto settingsStringView = firstTimeSetup ? UserSettingsJson : settingsString;
 
-    SettingsLoader loader{ DefaultJson, settingsStringView };
+    SettingsLoader loader{ settingsStringView, DefaultJson };
 
     // Generate dynamic profiles and add them as parents of user profiles.
     // That way the user profiles will get appropriate defaults from the generators (like icons and such).

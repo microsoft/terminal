@@ -355,33 +355,55 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SelectionBackground = til::color{ scheme.SelectionBackground() };
             _CursorColor = til::color{ scheme.CursorColor() };
 
-            const auto schemeTable = scheme.Table();
-            auto& colorTable = _ColorTable.emplace();
-            assert(schemeTable.size() == colorTable.size());
-            std::copy_n(schemeTable.data(), schemeTable.size(), colorTable.begin());
+            const auto table = scheme.Table();
+            std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
+            std::transform(table.cbegin(), table.cend(), colorTable.begin(), [](auto&& color) {
+                return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
+            });
+            ColorTable(colorTable);
         }
     }
 
-    Core::Color TerminalSettings::GetColorTableEntry(int32_t index) noexcept
+    winrt::Microsoft::Terminal::Core::Color TerminalSettings::GetColorTableEntry(int32_t index) noexcept
     {
-        if (const auto table = _getColorTableImpl())
-        {
-            return table->get().at(index);
-        }
-        return CampbellColorTable()[index];
+        return ColorTable().at(index);
     }
 
-    std::optional<std::reference_wrapper<const std::array<Core::Color, COLOR_TABLE_SIZE>>> TerminalSettings::_getColorTableImpl()
+    void TerminalSettings::ColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> colors)
     {
-        if (_ColorTable)
+        _ColorTable = colors;
+    }
+
+    std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> TerminalSettings::ColorTable()
+    {
+        auto span = _getColorTableImpl();
+        std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> colorTable{};
+        if (span.size() > 0)
         {
-            return *_ColorTable;
+            std::copy(span.begin(), span.end(), colorTable.begin());
+        }
+        else
+        {
+            const auto campbellSpan = CampbellColorTable();
+            std::transform(campbellSpan.begin(), campbellSpan.end(), colorTable.begin(), [](auto&& color) {
+                return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
+            });
+        }
+        return colorTable;
+    }
+
+    gsl::span<winrt::Microsoft::Terminal::Core::Color> TerminalSettings::_getColorTableImpl()
+    {
+        if (_ColorTable.has_value())
+        {
+            return gsl::make_span(*_ColorTable);
         }
         for (auto&& parent : _parents)
         {
-            if (const auto table = parent->_getColorTableImpl())
+            auto parentSpan = parent->_getColorTableImpl();
+            if (parentSpan.size() > 0)
             {
-                return table;
+                return parentSpan;
             }
         }
         return {};

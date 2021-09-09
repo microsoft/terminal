@@ -39,11 +39,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
         TEST_METHOD(DuplicateProfileTest);
-
-        // Make sure we gen GUIDs for profiles without guids
         TEST_METHOD(TestGenGuidsForProfiles);
-        // Make sure disabledProfileSources removes profiles with any of the given sources.
-        TEST_METHOD(TestDisabledProfileSources);
     };
 
     void ProfileTests::ProfileGeneratesGuid()
@@ -329,48 +325,5 @@ namespace SettingsModelLocalTests
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(1).Source().empty());
 
         VERIFY_ARE_NOT_EQUAL(settings->AllProfiles().GetAt(0).Guid(), settings->AllProfiles().GetAt(1).Guid());
-    }
-
-    void ProfileTests::TestDisabledProfileSources()
-    {
-        static constexpr std::string_view inboxSettings{ R"({
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "source": "Terminal.App.UnitTest.0"
-                },
-                {
-                    "name": "profile1",
-                    "source": "Terminal.App.UnitTest.1"
-                },
-                {
-                    "name": "profile2",
-                    "source": "Terminal.App.UnitTest.1"
-                },
-                {
-                    "name": "profile3",
-                    "source": "Terminal.App.UnitTest.2"
-                }
-            ]
-        })" };
-        static constexpr std::string_view userSettings{ R"({
-            "disabledProfileSources": ["Terminal.App.UnitTest.0", "Terminal.App.UnitTest.2"],
-            "profiles": [
-                {
-                    "name": "profile4",
-                    "source": "Terminal.App.UnitTest.2"
-                }
-            ]
-        })" };
-
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, inboxSettings);
-
-        VERIFY_ARE_EQUAL(2u, settings->AllProfiles().Size());
-        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(0).Source().empty());
-        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(1).Source().empty());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->AllProfiles().GetAt(0).Source());
-        VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest.1", settings->AllProfiles().GetAt(1).Source());
-        VERIFY_ARE_EQUAL(L"profile1", settings->AllProfiles().GetAt(0).Name());
-        VERIFY_ARE_EQUAL(L"profile2", settings->AllProfiles().GetAt(1).Name());
     }
 }

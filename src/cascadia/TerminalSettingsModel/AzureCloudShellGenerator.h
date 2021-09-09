@@ -17,11 +17,11 @@ Author(s):
 
 #pragma once
 
-#include "Profile.h"
+#include "IDynamicProfileGenerator.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class AzureCloudShellGenerator
+    class AzureCloudShellGenerator final : public IDynamicProfileGenerator
     {
     public:
         std::wstring_view GetNamespace() const noexcept;

@@ -547,7 +547,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(0).HasGuid());
-        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->AllProfiles().GetAt(1).HasGuid());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(3).HasGuid());
         VERIFY_ARE_EQUAL(L"profile0", settings->AllProfiles().GetAt(0).Name());
@@ -625,7 +625,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, settings->Warnings().Size());
         VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(0).HasGuid());
-        VERIFY_IS_FALSE(settings->AllProfiles().GetAt(1).HasGuid());
+        VERIFY_IS_TRUE(settings->AllProfiles().GetAt(1).HasGuid());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(2).HasGuid());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(3).HasGuid());
         VERIFY_ARE_EQUAL(L"Command Prompt", settings->AllProfiles().GetAt(0).Name());

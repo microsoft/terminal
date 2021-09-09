@@ -409,10 +409,12 @@ namespace SettingsModelLocalTests
                     },
                     {
                         "hidden": true,
+                        "guid": "{c08b0496-e71c-5503-b84e-3af7a7a6d2a7}",
                         "name": "BhojwaniShell"
                     },
                     {
                         "antialiasingMode": "aliased",
+                        "guid": "{fe9df758-ac22-5c20-922d-c7766cdd13af}",
                         "name": "NiksaShell"
                     }
                 ]

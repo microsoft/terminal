@@ -78,6 +78,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // GetColorTableEntry needs to be implemented manually, to get a
         // particular value from the array.
         Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept;
+        void ColorTable(std::array<Microsoft::Terminal::Core::Color, 16> colors);
+        std::array<Microsoft::Terminal::Core::Color, 16> ColorTable();
 
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
@@ -154,8 +156,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
 
     private:
-        std::optional<std::array<Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
-        std::optional<std::reference_wrapper<const std::array<Core::Color, COLOR_TABLE_SIZE>>> _getColorTableImpl();
+        std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;
+        gsl::span<Microsoft::Terminal::Core::Color> _getColorTableImpl();
         void _ApplyProfileSettings(const Model::Profile& profile);
 
         void _ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept;

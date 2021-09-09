@@ -16,11 +16,11 @@ Author(s):
 
 #pragma once
 
-#include "Profile.h"
+#include "IDynamicProfileGenerator.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class PowershellCoreProfileGenerator
+    class PowershellCoreProfileGenerator final : public IDynamicProfileGenerator
     {
     public:
         static const std::wstring_view GetPreferredPowershellProfileName();

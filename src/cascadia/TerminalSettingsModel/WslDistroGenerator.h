@@ -16,11 +16,11 @@ Author(s):
 
 #pragma once
 
-#include "Profile.h"
+#include "IDynamicProfileGenerator.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class WslDistroGenerator
+    class WslDistroGenerator final : public IDynamicProfileGenerator
     {
     public:
         std::wstring_view GetNamespace() const noexcept;

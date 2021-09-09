@@ -40,6 +40,9 @@
     <ClInclude Include="AzureCloudShellGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
+    <ClInclude Include="IDynamicProfileGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
     <ClInclude Include="PowershellCoreProfileGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>

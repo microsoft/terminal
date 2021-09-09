@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct ApplicationState : ApplicationStateT<ApplicationState>
     {
-        static Model::ApplicationState SharedInstance();
+        static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
 
         ApplicationState(std::filesystem::path path) noexcept;
         ~ApplicationState();

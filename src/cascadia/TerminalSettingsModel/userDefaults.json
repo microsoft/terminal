@@ -1,5 +1,4 @@
 {
-    "$schema": "https://aka.ms/terminal-profiles-schema",
     "defaultProfile": "",
     "copyOnSelect": false,
     "copyFormatting": false,
