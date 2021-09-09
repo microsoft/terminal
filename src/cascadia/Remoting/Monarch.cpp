@@ -88,7 +88,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             auto newPeasantsId = peasant.GetID();
 
             // Keep track of which peasant we are
-            // SAFETY: this is only true for one peasant, and each peasant 
+            // SAFETY: this is only true for one peasant, and each peasant
             // is only added to a monarch once, so we do not need synchronization here.
             if (peasant.GetPID() == _ourPID)
             {
@@ -305,7 +305,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         const auto onError = [&](const auto& id) {
             TraceLoggingWrite(g_hRemotingProvider,
-                              "Monarch_lookekupPeasantIdForName_Failed",
+                              "Monarch_lookupPeasantIdForName_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not get the name of"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
