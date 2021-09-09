@@ -115,19 +115,25 @@ namespace Microsoft::Terminal::Settings::Model
         SECURITY_ATTRIBUTES sa;
         if (elevatedOnly)
         {
-            // sa = _setupAttributes();
+            // This is very vaguely taken from
+            // https://docs.microsoft.com/en-us/windows/win32/secauthz/creating-a-security-descriptor-for-a-new-object-in-c--
+            // With using https://docs.microsoft.com/en-us/windows/win32/secauthz/well-known-sids
+            // to find out that
+            // SECURITY_NT_AUTHORITY+SECURITY_LOCAL_SYSTEM_RID == NT AUTHORITY\\SYSTEM
+            // and
+            // SECURITY_WORLD_SID_AUTHORITY+SECURITY_WORLD_RID == Everyone
 
-            PSID pSytemSid = NULL;
-            PSID pEveryoneSid = NULL;
+            PSID pSytemSid = nullptr;
+            PSID pEveryoneSid = nullptr;
             SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
             SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-            BOOL success = AllocateAndInitializeSid(&SIDAuthNT, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pSytemSid);
-            THROW_LAST_ERROR_IF(!success);
-            success = AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid);
-            THROW_LAST_ERROR_IF(!success);
+
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pSytemSid));
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid));
 
             EXPLICIT_ACCESS ea[2];
             ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
+            // Grant SYSTEM all permissions on this file
             ea[0].grfAccessPermissions = GENERIC_ALL;
             ea[0].grfAccessMode = SET_ACCESS;
             ea[0].grfInheritance = NO_INHERITANCE;
@@ -135,6 +141,7 @@ namespace Microsoft::Terminal::Settings::Model
             ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
             ea[0].Trustee.ptstrName = (LPTSTR)pSytemSid;
 
+            // Grant Everyone the permission or read this file
             ea[1].grfAccessPermissions = GENERIC_READ;
             ea[1].grfAccessMode = SET_ACCESS;
             ea[1].grfInheritance = NO_INHERITANCE;
@@ -144,23 +151,24 @@ namespace Microsoft::Terminal::Settings::Model
 
             ACL acl;
             PACL pAcl = &acl;
-            DWORD dwRes = SetEntriesInAcl(2, ea, NULL, &pAcl);
-            dwRes;
+            THROW_IF_WIN32_ERROR(SetEntriesInAcl(2, ea, nullptr, &pAcl));
 
             SECURITY_DESCRIPTOR sd;
-            success = InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
-            success = SetSecurityDescriptorDacl(&sd,
-                                                TRUE, // bDaclPresent flag
-                                                pAcl,
-                                                FALSE);
+            THROW_IF_WIN32_BOOL_FALSE(InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION));
+            THROW_IF_WIN32_BOOL_FALSE(SetSecurityDescriptorDacl(&sd, true, pAcl, false));
 
             // Initialize a security attributes structure.
             sa.nLength = sizeof(SECURITY_ATTRIBUTES);
             sa.lpSecurityDescriptor = &sd;
-            sa.bInheritHandle = FALSE;
-            success;
+            sa.bInheritHandle = false;
         }
-        wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, elevatedOnly ? &sa : nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+        wil::unique_hfile file{ CreateFileW(path.c_str(),
+                                            GENERIC_WRITE,
+                                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                            elevatedOnly ? &sa : nullptr,
+                                            CREATE_ALWAYS,
+                                            FILE_ATTRIBUTE_NORMAL,
+                                            nullptr) };
         THROW_LAST_ERROR_IF(!file);
 
         const auto fileSize = gsl::narrow<DWORD>(content.size());
