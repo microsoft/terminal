@@ -6,16 +6,14 @@
 #include "AzureCloudShellGenerator.h"
 #include "LegacyProfileGeneratorNamespaces.h"
 
-#include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
-#include "Utils.h"
 #include "DefaultProfileUtils.h"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 
-std::wstring_view AzureCloudShellGenerator::GetNamespace()
+std::wstring_view AzureCloudShellGenerator::GetNamespace() const noexcept
 {
     return AzureGeneratorNamespace;
 }
@@ -27,19 +25,15 @@ std::wstring_view AzureCloudShellGenerator::GetNamespace()
 // - <none>
 // Return Value:
 // - a vector with the Azure Cloud Shell connection profile, if available.
-std::vector<Profile> AzureCloudShellGenerator::GenerateProfiles()
+void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
-    std::vector<Profile> profiles;
-
     if (AzureConnection::IsAzureConnectionAvailable())
     {
-        auto azureCloudShellProfile{ CreateDefaultProfile(L"Azure Cloud Shell") };
-        azureCloudShellProfile.Commandline(L"Azure");
-        azureCloudShellProfile.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        azureCloudShellProfile.DefaultAppearance().ColorSchemeName(L"Vintage");
-        azureCloudShellProfile.ConnectionType(AzureConnection::ConnectionType());
-        profiles.emplace_back(azureCloudShellProfile);
+        auto azureCloudShellProfile{ CreateDefaultProfile(AzureGeneratorNamespace, L"Azure Cloud Shell") };
+        azureCloudShellProfile->Commandline(L"Azure");
+        azureCloudShellProfile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
+        azureCloudShellProfile->DefaultAppearance().ColorSchemeName(L"Vintage");
+        azureCloudShellProfile->ConnectionType(AzureConnection::ConnectionType());
+        profiles.emplace_back(std::move(azureCloudShellProfile));
     }
-
-    return profiles;
 }

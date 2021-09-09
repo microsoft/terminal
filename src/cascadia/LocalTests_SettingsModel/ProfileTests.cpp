@@ -32,81 +32,28 @@ namespace SettingsModelLocalTests
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
-        TEST_METHOD(CanLayerProfile);
         TEST_METHOD(LayerProfileProperties);
         TEST_METHOD(LayerProfileIcon);
         TEST_METHOD(LayerProfilesOnArray);
         TEST_METHOD(DuplicateProfileTest);
-
-        TEST_CLASS_SETUP(ClassSetup)
-        {
-            InitializeJsonReader();
-            return true;
-        }
     };
-
-    void ProfileTests::CanLayerProfile()
-    {
-        const std::string profile0String{ R"({
-            "name" : "profile0",
-            "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
-        })" };
-        const std::string profile1String{ R"({
-            "name" : "profile1",
-            "guid" : "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
-        })" };
-        const std::string profile2String{ R"({
-            "name" : "profile2",
-            "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
-        })" };
-        const std::string profile3String{ R"({
-            "name" : "profile3"
-        })" };
-
-        const auto profile0Json = VerifyParseSucceeded(profile0String);
-        const auto profile1Json = VerifyParseSucceeded(profile1String);
-        const auto profile2Json = VerifyParseSucceeded(profile2String);
-        const auto profile3Json = VerifyParseSucceeded(profile3String);
-
-        const auto profile0 = implementation::Profile::FromJson(profile0Json);
-
-        VERIFY_IS_FALSE(profile0->ShouldBeLayered(profile1Json));
-        VERIFY_IS_TRUE(profile0->ShouldBeLayered(profile2Json));
-        VERIFY_IS_FALSE(profile0->ShouldBeLayered(profile3Json));
-
-        const auto profile1 = implementation::Profile::FromJson(profile1Json);
-
-        VERIFY_IS_FALSE(profile1->ShouldBeLayered(profile0Json));
-        // A profile _can_ be layered with itself, though what's the point?
-        VERIFY_IS_TRUE(profile1->ShouldBeLayered(profile1Json));
-        VERIFY_IS_FALSE(profile1->ShouldBeLayered(profile2Json));
-        VERIFY_IS_FALSE(profile1->ShouldBeLayered(profile3Json));
-
-        const auto profile3 = implementation::Profile::FromJson(profile3Json);
-
-        VERIFY_IS_FALSE(profile3->ShouldBeLayered(profile0Json));
-        // A profile _can_ be layered with itself, though what's the point?
-        VERIFY_IS_FALSE(profile3->ShouldBeLayered(profile1Json));
-        VERIFY_IS_FALSE(profile3->ShouldBeLayered(profile2Json));
-        VERIFY_IS_TRUE(profile3->ShouldBeLayered(profile3Json));
-    }
 
     void ProfileTests::LayerProfileProperties()
     {
-        const std::string profile0String{ R"({
+        static constexpr std::string_view profile0String{ R"({
             "name": "profile0",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "foreground": "#000000",
             "background": "#010101",
             "selectionBackground": "#010101"
         })" };
-        const std::string profile1String{ R"({
+        static constexpr std::string_view profile1String{ R"({
             "name": "profile1",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "foreground": "#020202",
             "startingDirectory": "C:/"
         })" };
-        const std::string profile2String{ R"({
+        static constexpr std::string_view profile2String{ R"({
             "name": "profile2",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "foreground": "#030303",
@@ -172,21 +119,21 @@ namespace SettingsModelLocalTests
 
     void ProfileTests::LayerProfileIcon()
     {
-        const std::string profile0String{ R"({
+        static constexpr std::string_view profile0String{ R"({
             "name": "profile0",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "icon": "not-null.png"
         })" };
-        const std::string profile1String{ R"({
+        static constexpr std::string_view profile1String{ R"({
             "name": "profile1",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "icon": null
         })" };
-        const std::string profile2String{ R"({
+        static constexpr std::string_view profile2String{ R"({
             "name": "profile2",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
         })" };
-        const std::string profile3String{ R"({
+        static constexpr std::string_view profile3String{ R"({
             "name": "profile3",
             "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "icon": "another-real.png"
@@ -228,102 +175,62 @@ namespace SettingsModelLocalTests
 
     void ProfileTests::LayerProfilesOnArray()
     {
-        const std::string profile0String{ R"({
-            "name" : "profile0",
-            "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+        static constexpr std::string_view inboxProfiles{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }, {
+                    "name" : "profile1",
+                    "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                }, {
+                    "name" : "profile2",
+                    "guid" : "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
+                }
+            ]
         })" };
-        const std::string profile1String{ R"({
-            "name" : "profile1",
-            "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
-        })" };
-        const std::string profile2String{ R"({
-            "name" : "profile2",
-            "guid" : "{6239a42c-2222-49a3-80bd-e8fdd045185c}"
-        })" };
-        const std::string profile3String{ R"({
-            "name" : "profile3",
-            "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
-        })" };
-        const std::string profile4String{ R"({
-            "name" : "profile4",
-            "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+        static constexpr std::string_view userProfiles{ R"({
+            "profiles": [
+                {
+                    "name" : "profile3",
+                    "guid" : "{6239a42c-0000-49a3-80bd-e8fdd045185c}"
+                }, {
+                    "name" : "profile4",
+                    "guid" : "{6239a42c-1111-49a3-80bd-e8fdd045185c}"
+                }
+            ]
         })" };
 
-        const auto profile0Json = VerifyParseSucceeded(profile0String);
-        const auto profile1Json = VerifyParseSucceeded(profile1String);
-        const auto profile2Json = VerifyParseSucceeded(profile2String);
-        const auto profile3Json = VerifyParseSucceeded(profile3String);
-        const auto profile4Json = VerifyParseSucceeded(profile4String);
-
-        auto settings = winrt::make_self<implementation::CascadiaSettings>();
-
-        VERIFY_ARE_EQUAL(0u, settings->_allProfiles.Size());
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile0Json));
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile1Json));
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile2Json));
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile3Json));
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile4Json));
-
-        settings->_LayerOrCreateProfile(profile0Json);
-        VERIFY_ARE_EQUAL(1u, settings->_allProfiles.Size());
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile1Json));
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
-
-        settings->_LayerOrCreateProfile(profile1Json);
-        VERIFY_ARE_EQUAL(2u, settings->_allProfiles.Size());
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
-        VERIFY_IS_NULL(settings->_FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
-
-        settings->_LayerOrCreateProfile(profile2Json);
-        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
-        VERIFY_ARE_EQUAL(L"profile0", settings->_allProfiles.GetAt(0).Name());
-
-        settings->_LayerOrCreateProfile(profile3Json);
-        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
-        VERIFY_ARE_EQUAL(L"profile3", settings->_allProfiles.GetAt(0).Name());
-
-        settings->_LayerOrCreateProfile(profile4Json);
-        VERIFY_ARE_EQUAL(3u, settings->_allProfiles.Size());
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile0Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile1Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile2Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile3Json));
-        VERIFY_IS_NOT_NULL(settings->_FindMatchingProfile(profile4Json));
-        VERIFY_ARE_EQUAL(L"profile4", settings->_allProfiles.GetAt(0).Name());
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userProfiles, inboxProfiles);
+        const auto allProfiles = settings->AllProfiles();
+        VERIFY_ARE_EQUAL(3u, allProfiles.Size());
+        VERIFY_ARE_EQUAL(L"profile3", allProfiles.GetAt(0).Name());
+        VERIFY_ARE_EQUAL(L"profile4", allProfiles.GetAt(1).Name());
+        VERIFY_ARE_EQUAL(L"profile2", allProfiles.GetAt(2).Name());
     }
 
     void ProfileTests::DuplicateProfileTest()
     {
-        const std::string profile0String{ R"({
-            "name" : "profile0",
-            "backgroundImage" : "some//path"
+        static constexpr std::string_view userProfiles{ R"({
+            "profiles": [
+                {
+                    "name": "profile0",
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "backgroundImage": "file:///some/path",
+                    "hidden": false,
+                }
+            ]
         })" };
 
-        const auto profile0Json = VerifyParseSucceeded(profile0String);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userProfiles);
+        const auto profile = settings->AllProfiles().GetAt(0);
+        const auto duplicatedProfile = settings->DuplicateProfile(profile);
 
-        auto settings = winrt::make_self<implementation::CascadiaSettings>();
+        duplicatedProfile.Guid(profile.Guid());
+        duplicatedProfile.Name(profile.Name());
 
-        settings->_LayerOrCreateProfile(profile0Json);
-        auto duplicatedProfile = settings->DuplicateProfile(*settings->_FindMatchingProfile(profile0Json));
-        duplicatedProfile.Name(L"profile0");
-
+        const auto json = winrt::get_self<implementation::Profile>(profile)->ToJson();
         const auto duplicatedJson = winrt::get_self<implementation::Profile>(duplicatedProfile)->ToJson();
-        VERIFY_ARE_EQUAL(profile0Json, duplicatedJson);
+        VERIFY_ARE_EQUAL(json, duplicatedJson, til::u8u16(toString(duplicatedJson)).c_str());
     }
 }

@@ -16,19 +16,16 @@ Author(s):
 
 #pragma once
 
-#include "IDynamicProfileGenerator.h"
+#include "Profile.h"
 
-namespace Microsoft::Terminal::Settings::Model
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class PowershellCoreProfileGenerator : public Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator
+    class PowershellCoreProfileGenerator
     {
     public:
         static const std::wstring_view GetPreferredPowershellProfileName();
 
-        PowershellCoreProfileGenerator() = default;
-        ~PowershellCoreProfileGenerator() = default;
-        std::wstring_view GetNamespace() override;
-
-        std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> GenerateProfiles() override;
+        std::wstring_view GetNamespace() const noexcept;
+        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const;
     };
 };

@@ -30,23 +30,24 @@ namespace SettingsModelLocalTests
 // Use this macro to quick implement both the getter and setter for a color property.
 // This should only be used for color types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.
-// This takes advantage of til::color
-#define WINRT_TERMINAL_COLOR_PROPERTY(name, ...)                                                  \
-public:                                                                                           \
-    winrt::Microsoft::Terminal::Core::Color name() const noexcept { return _##name; }             \
-    void name(const winrt::Microsoft::Terminal::Core::Color& value) noexcept { _##name = value; } \
-                                                                                                  \
-private:                                                                                          \
-    til::color _##name{ __VA_ARGS__ };
+#define WINRT_TERMINAL_COLOR_PROPERTY(name, ...)                      \
+public:                                                               \
+    Core::Color name() const noexcept { return _##name; }             \
+    void name(const Core::Color& value) noexcept { _##name = value; } \
+                                                                      \
+private:                                                              \
+    Core::Color _##name{ __VA_ARGS__ };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ColorScheme : ColorSchemeT<ColorScheme>
     {
     public:
-        ColorScheme();
+        // This default constructor creates an instance with an
+        // uninitialized color table. Use FromJson() instead.
+        ColorScheme() noexcept;
+
         ColorScheme(hstring name);
-        ColorScheme(hstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor);
         com_ptr<ColorScheme> Copy() const;
 
         hstring ToString()
@@ -55,17 +56,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
-        bool ShouldBeLayered(const Json::Value& json) const;
-        void LayerJson(const Json::Value& json);
-
         Json::Value ToJson() const;
 
-        static std::optional<std::wstring> GetNameFromJson(const Json::Value& json);
-
-        com_array<winrt::Microsoft::Terminal::Core::Color> Table() const noexcept;
-        void SetColorTableEntry(uint8_t index, const winrt::Microsoft::Terminal::Core::Color& value) noexcept;
-
-        static bool ValidateColorScheme(const Json::Value& scheme);
+        const std::array<Core::Color, COLOR_TABLE_SIZE>& TableReference() const noexcept;
+        com_array<Core::Color> Table() const noexcept;
+        void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
 
         WINRT_PROPERTY(winrt::hstring, Name);
         WINRT_TERMINAL_COLOR_PROPERTY(Foreground); // defined in constructor
@@ -74,10 +69,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_TERMINAL_COLOR_PROPERTY(CursorColor); // defined in constructor
 
     private:
-        std::array<til::color, COLOR_TABLE_SIZE> _table;
+        bool LayerJson(const Json::Value& json);
 
-        friend class SettingsModelLocalTests::SettingsTests;
-        friend class SettingsModelLocalTests::ColorSchemeTests;
+        std::array<Core::Color, COLOR_TABLE_SIZE> _table;
     };
 }
 

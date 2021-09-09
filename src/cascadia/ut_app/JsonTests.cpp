@@ -30,7 +30,6 @@ namespace TerminalAppUnitTests
 
         TEST_CLASS_SETUP(ClassSetup)
         {
-            InitializeJsonReader();
             // Use 4 spaces to indent instead of \t
             _builder.settings_["indentation"] = "    ";
             return true;

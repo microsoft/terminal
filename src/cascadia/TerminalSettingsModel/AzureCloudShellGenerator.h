@@ -16,17 +16,15 @@ Author(s):
 --*/
 
 #pragma once
-#include "IDynamicProfileGenerator.h"
 
-namespace Microsoft::Terminal::Settings::Model
+#include "Profile.h"
+
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class AzureCloudShellGenerator : public IDynamicProfileGenerator
+    class AzureCloudShellGenerator
     {
     public:
-        AzureCloudShellGenerator() = default;
-        ~AzureCloudShellGenerator() = default;
-        std::wstring_view GetNamespace() override;
-
-        std::vector<winrt::Microsoft::Terminal::Settings::Model::Profile> GenerateProfiles() override;
+        std::wstring_view GetNamespace() const noexcept;
+        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const;
     };
 };

@@ -784,6 +784,7 @@ FINDSTRINGEXACT
 FINDUP
 FIter
 FIXEDCONVERTED
+FIXEDFILEINFO
 Flg
 flyout
 fmodern
@@ -1992,6 +1993,7 @@ resx
 retval
 rfa
 rfc
+rfid
 rftp
 rgb
 rgba

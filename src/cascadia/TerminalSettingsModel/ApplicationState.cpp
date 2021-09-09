@@ -61,10 +61,10 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     // Returns the application-global ApplicationState object.
-    Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
+    Model::ApplicationState ApplicationState::SharedInstance()
     {
-        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / stateFileName);
-        return *state;
+        static const auto state = winrt::make<ApplicationState>(GetBaseSettingsPath() / stateFileName);
+        return state;
     }
 
     ApplicationState::ApplicationState(std::filesystem::path path) noexcept :

@@ -5,10 +5,8 @@
 
 #include "WslDistroGenerator.h"
 #include "LegacyProfileGeneratorNamespaces.h"
-
-#include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
-#include "Utils.h"
+
 #include <io.h>
 #include <fcntl.h>
 #include "DefaultProfileUtils.h"
@@ -31,9 +29,19 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 //   - Alpine       1777cdf0-b2c4-5a63-a204-eb60f349ea7c
 //   - Ubuntu-18.04 c6eaf9f4-32a7-5fdc-b5cf-066e8a4b1e40
 
-std::wstring_view WslDistroGenerator::GetNamespace()
+std::wstring_view WslDistroGenerator::GetNamespace() const noexcept
 {
     return WslGeneratorNamespace;
+}
+
+static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
+{
+    const auto WSLDistro{ CreateDefaultProfile(WslGeneratorNamespace, distName) };
+    WSLDistro->Commandline(winrt::hstring{ L"wsl.exe -d " + distName });
+    WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
+    WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
+    WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
+    return WSLDistro;
 }
 
 // Method Description:
@@ -42,10 +50,8 @@ std::wstring_view WslDistroGenerator::GetNamespace()
 // - <none>
 // Return Value:
 // - a vector with all distros for all the installed WSL distros
-static std::vector<Profile> legacyGenerate()
+static void legacyGenerate(std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
-    std::vector<Profile> profiles;
-
     wil::unique_handle readPipe;
     wil::unique_handle writePipe;
     SECURITY_ATTRIBUTES sa{ sizeof(sa), nullptr, true };
@@ -77,7 +83,7 @@ static std::vector<Profile> legacyGenerate()
         break;
     case WAIT_ABANDONED:
     case WAIT_TIMEOUT:
-        return profiles;
+        return;
     case WAIT_FAILED:
         THROW_LAST_ERROR();
     default:
@@ -90,7 +96,7 @@ static std::vector<Profile> legacyGenerate()
     }
     else if (exitCode != 0)
     {
-        return profiles;
+        return;
     }
     DWORD bytesAvailable;
     THROW_IF_WIN32_BOOL_FALSE(PeekNamedPipe(readPipe.get(), nullptr, NULL, nullptr, &bytesAvailable, nullptr));
@@ -117,7 +123,7 @@ static std::vector<Profile> legacyGenerate()
             std::wstring distName;
             std::getline(wlinestream, distName, L'\r');
 
-            if (distName.substr(0, std::min(distName.size(), DockerDistributionPrefix.size())) == DockerDistributionPrefix)
+            if (til::starts_with(distName, DockerDistributionPrefix))
             {
                 // Docker for Windows creates some utility distributions to handle Docker commands.
                 // Pursuant to GH#3556, because they are _not_ user-facing we want to hide them.
@@ -131,17 +137,10 @@ static std::vector<Profile> legacyGenerate()
             {
                 distName.resize(firstChar);
             }
-            auto WSLDistro{ CreateDefaultProfile(distName) };
 
-            WSLDistro.Commandline(L"wsl.exe -d " + distName);
-            WSLDistro.DefaultAppearance().ColorSchemeName(L"Campbell");
-            WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
-            WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
-            profiles.emplace_back(WSLDistro);
+            profiles.emplace_back(makeProfile(distName));
         }
     }
-
-    return profiles;
 }
 
 // Function Description:
@@ -151,9 +150,8 @@ static std::vector<Profile> legacyGenerate()
 // - names: a list of distro names to turn into profiles
 // Return Value:
 // - the list of profiles we've generated.
-static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& names)
+static void namesToProfiles(const std::vector<std::wstring>& names, std::vector<winrt::com_ptr<implementation::Profile>>& profiles)
 {
-    std::vector<Profile> profiles;
     for (const auto& distName : names)
     {
         if (til::starts_with(distName, DockerDistributionPrefix))
@@ -163,15 +161,8 @@ static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& nam
             continue;
         }
 
-        auto WSLDistro{ CreateDefaultProfile(distName) };
-
-        WSLDistro.Commandline(L"wsl.exe -d " + distName);
-        WSLDistro.DefaultAppearance().ColorSchemeName(L"Campbell");
-        WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
-        WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
-        profiles.emplace_back(WSLDistro);
+        profiles.emplace_back(makeProfile(distName));
     }
-    return profiles;
 }
 
 // Function Description:
@@ -304,7 +295,7 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 // - <none>
 // Return Value:
 // - A list of WSL profiles.
-std::vector<Profile> WslDistroGenerator::GenerateProfiles()
+void WslDistroGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
     wil::unique_hkey wslRootKey{ openWslRegKey() };
     if (wslRootKey)
@@ -316,10 +307,10 @@ std::vector<Profile> WslDistroGenerator::GenerateProfiles()
             names.reserve(guidStrings.size());
             if (getWslNames(wslRootKey, guidStrings, names))
             {
-                return namesToProfiles(names);
+                return namesToProfiles(names, profiles);
             }
         }
     }
 
-    return legacyGenerate();
+    legacyGenerate(profiles);
 }

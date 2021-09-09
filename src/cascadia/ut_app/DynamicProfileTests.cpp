@@ -26,12 +26,6 @@ namespace TerminalAppUnitTests
             TEST_CLASS_PROPERTY(L"ActivationContext", L"TerminalApp.Unit.Tests.manifest")
         END_TEST_CLASS()
 
-        TEST_CLASS_SETUP(ClassSetup)
-        {
-            InitializeJsonReader();
-            return true;
-        }
-
         TEST_METHOD(TestSimpleGenerate);
 
         // Simple test of CascadiaSettings generating profiles with _LoadDynamicProfiles
@@ -59,17 +53,15 @@ namespace TerminalAppUnitTests
 
     void DynamicProfileTests::TestSimpleGenerate()
     {
-        TestDynamicProfileGenerator gen{ L"Terminal.App.UnitTest" };
-        gen.pfnGenerate = []() {
-            std::vector<Profile> profiles;
-            Profile p0;
-            p0.Name(L"profile0");
-            profiles.push_back(p0);
-            return profiles;
-        };
+        TestDynamicProfileGenerator gen{ L"Terminal.App.UnitTest", [](std::vector<Profile>& profiles) {
+                                            auto p0 = winrt::make_self<Profile>();
+                                            p0.Name(L"profile0");
+                                            profiles.emplace_back(std::move(p0));
+                                        } };
 
         VERIFY_ARE_EQUAL(L"Terminal.App.UnitTest", gen.GetNamespace());
-        std::vector<Profile> profiles = gen.GenerateProfiles();
+        std::vector<Profile> profiles;
+        gen.GenerateProfiles(profiles);
         VERIFY_ARE_EQUAL(1u, profiles.size());
         VERIFY_ARE_EQUAL(L"profile0", profiles.at(0).Name());
         VERIFY_IS_FALSE(profiles.at(0).HasGuid());
