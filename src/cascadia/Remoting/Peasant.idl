@@ -72,6 +72,8 @@ namespace Microsoft.Terminal.Remoting
         void Summon(SummonWindowBehavior behavior);
         void RequestShowTrayIcon();
         void RequestHideTrayIcon();
+        void RequestQuitAll();
+        void Quit();
         String GetWindowLayout();
 
         event Windows.Foundation.TypedEventHandler<Object, WindowActivatedArgs> WindowActivated;
@@ -83,6 +85,8 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
     };
 
     [default_interface] runtimeclass Peasant : IPeasant

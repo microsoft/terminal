@@ -259,6 +259,38 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
+    void Peasant::RequestQuitAll()
+    {
+        try
+        {
+            _QuitAllRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_RequestQuit",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
+    void Peasant::Quit()
+    {
+        try
+        {
+            _QuitRequestedHandlers(*this, nullptr);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+        }
+        TraceLoggingWrite(g_hRemotingProvider,
+                          "Peasant_Quit",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+    }
+
     // Method Description:
     // - Request and return the window layout from the current TerminalPage
     // Arguments:

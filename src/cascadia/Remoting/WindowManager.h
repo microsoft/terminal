@@ -47,6 +47,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         winrt::fire_and_forget RequestShowTrayIcon();
         winrt::fire_and_forget RequestHideTrayIcon();
+        winrt::fire_and_forget RequestQuitAll();
         bool DoesQuakeWindowExist();
         void UpdateActiveTabTitle(winrt::hstring title);
         Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
@@ -57,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs);
 
     private:

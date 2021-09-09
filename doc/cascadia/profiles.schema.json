@@ -304,6 +304,7 @@
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
+        "quit",
         "unbound"
       ],
       "type": "string"

@@ -82,6 +82,13 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleQuit(const IInspectable& /*sender*/,
+                                   const ActionEventArgs& args)
+    {
+        RequestQuit();
+        args.Handled(true);
+    }
+
     void TerminalPage::_HandleScrollUp(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {

@@ -19,6 +19,7 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
 
         UInt64 GetNumberOfPeasants();
+        void RequestQuitAll();
         void UpdateActiveTabTitle(String title);
         Boolean DoesQuakeWindowExist();
         Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos();
@@ -28,6 +29,7 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
         event Windows.Foundation.TypedEventHandler<Object, GetWindowLayoutArgs> GetWindowLayoutRequested;
     };
 }

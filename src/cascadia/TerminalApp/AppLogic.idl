@@ -40,6 +40,8 @@ namespace TerminalApp
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
+        void Quit();
+
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
@@ -104,5 +106,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
     }
 }

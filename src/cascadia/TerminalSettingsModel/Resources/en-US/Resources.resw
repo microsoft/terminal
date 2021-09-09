@@ -469,4 +469,7 @@
   <data name="MinimizeToTrayCommandKey" xml:space="preserve">
     <value>Minimize current window to tray</value>
   </data>
+  <data name="QuitCommandKey" xml:space="preserve">
+    <value>Quit the Terminal</value>
+  </data>
 </root>
