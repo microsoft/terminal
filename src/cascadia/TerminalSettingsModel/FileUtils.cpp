@@ -129,26 +129,14 @@ namespace Microsoft::Terminal::Settings::Model
 
             PSID pEveryoneSid = nullptr;
             PSID pAdminGroupSid = nullptr;
-            PSID pAdminSid = nullptr;
             SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
             SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
 
-            // I thought DOMAIN_USER_RID_ADMIN might be the Builtin\Admin sid, but that returned garbage
             // Create a SID for the BUILTIN\Administrators group.
             THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminGroupSid));
-            // ?
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 1, DOMAIN_USER_RID_ADMIN, 0, 0, 0, 0, 0, 0, 0, &pAdminSid));
+
             // Create a well-known SID for the Everyone group.
             THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid));
-
-            // wil::unique_sid adminSid{};
-            // DWORD cbSize = sizeof(SID);
-            // THROW_IF_WIN32_BOOL_FALSE(CreateWellKnownSid(WinAccountAdministratorSid, nullptr, adminSid.put(), &cbSize));
-
-            // BYTE adminSid[SECURITY_MAX_SID_SIZE] = { 0 };
-            // DWORD adminSize = ARRAYSIZE(adminSid);
-            // auto success = CreateWellKnownSid(WinAccountAdministratorSid, nullptr, adminSid, &adminSize);
-            // THROW_IF_WIN32_BOOL_FALSE(success);
 
             EXPLICIT_ACCESS ea[2];
             ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
@@ -158,7 +146,7 @@ namespace Microsoft::Terminal::Settings::Model
             ea[0].grfInheritance = NO_INHERITANCE;
             ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
             ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[0].Trustee.ptstrName = (LPTSTR)pAdminSid;
+            ea[0].Trustee.ptstrName = (LPTSTR)pAdminGroupSid;
 
             // Grant Everyone the permission or read this file
             ea[1].grfAccessPermissions = GENERIC_READ;
@@ -202,8 +190,7 @@ namespace Microsoft::Terminal::Settings::Model
     }
 
     void WriteUTF8FileAtomic(const std::filesystem::path& path,
-                             const std::string_view content,
-                             const bool elevatedOnly)
+                             const std::string_view content)
     {
         // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
         // It's thus important that we first resolve them before generating temporary path.
@@ -221,7 +208,7 @@ namespace Microsoft::Terminal::Settings::Model
             //   * resolve the link manually, which might be less accurate and more prone to race conditions
             //   * write to the file directly, which lets the system resolve the symbolic link but leaves the write non-atomic
             // The latter is chosen, as this is an edge case and our 'atomic' writes are only best-effort.
-            WriteUTF8File(path, content, elevatedOnly);
+            WriteUTF8File(path, content);
             return;
         }
 
@@ -229,7 +216,7 @@ namespace Microsoft::Terminal::Settings::Model
         tmpPath += L".tmp";
 
         // Writing to a file isn't atomic, but...
-        WriteUTF8File(tmpPath, content, elevatedOnly);
+        WriteUTF8File(tmpPath, content);
 
         // renaming one is (supposed to be) atomic.
         // Wait... "supposed to be"!? Well it's technically not always atomic,
