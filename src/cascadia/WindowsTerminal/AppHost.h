@@ -33,7 +33,8 @@ private:
     bool _useNonClientArea{ false };
 
     std::optional<til::throttled_func_trailing<>> _getWindowLayoutThrottler;
-    winrt::fire_and_forget _SaveWindowLayouts();
+    winrt::Windows::Foundation::IAsyncAction _SaveWindowLayouts();
+    winrt::fire_and_forget _SaveWindowLayoutsRepeat();
 
     void _HandleCommandlineArgs();
     winrt::Microsoft::Terminal::Settings::Model::LaunchPosition _GetWindowLaunchPosition();
@@ -99,7 +100,7 @@ private:
                          const winrt::Windows::Foundation::IInspectable& args);
 
     void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
-                           const winrt::Windows::Foundation::IInspectable& args);
+                           const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args);
 
     void _CreateTrayIcon();
     void _DestroyTrayIcon();

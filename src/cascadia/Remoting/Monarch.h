@@ -65,7 +65,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
 
     private:
         uint64_t _ourPID;
@@ -97,8 +97,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
                               const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
-        void _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
-                            const winrt::Windows::Foundation::IInspectable& args);
+        winrt::fire_and_forget _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                                              const winrt::Windows::Foundation::IInspectable& args);
 
         // Method Description:
         // - Helper for doing something on each and every peasant.

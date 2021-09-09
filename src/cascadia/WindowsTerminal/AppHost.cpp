@@ -811,12 +811,12 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     {
         // We want at least some delay to prevent the first save from overwriting
         // the data as we try load windows initially.
-        _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _SaveWindowLayouts(); }));
+        _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _SaveWindowLayoutsRepeat(); }));
         _getWindowLayoutThrottler.value()();
     }
 }
 
-winrt::fire_and_forget AppHost::_SaveWindowLayouts()
+winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
 {
     // Make sure we run on a background thread to not block anything.
     co_await winrt::resume_background();
@@ -826,6 +826,16 @@ winrt::fire_and_forget AppHost::_SaveWindowLayouts()
         auto layoutJsons = _windowManager.GetAllWindowLayouts();
         _logic.SaveWindowLayoutJsons(layoutJsons);
     }
+
+    co_return;
+}
+
+winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
+{
+    // Make sure we run on a background thread to not block anything.
+    co_await winrt::resume_background();
+
+    co_await _SaveWindowLayouts();
 
     if (_getWindowLayoutThrottler.has_value())
     {
@@ -1183,10 +1193,11 @@ void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
 }
 
 void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::Windows::Foundation::IInspectable&)
+                                const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
 {
-    // TODO: GH#9800: For now, nothing needs to be done before the monarch closes all windows.
-    // Later when we have state saving that should go here.
+    // Tell the monarch to wait for the window layouts to save before
+    // everyone quits.
+    args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,

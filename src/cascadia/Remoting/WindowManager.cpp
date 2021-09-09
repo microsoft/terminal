@@ -271,7 +271,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
         _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
         _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
-        _monarch.QuitAllRequested([this](auto&&, auto&&) { _QuitAllRequestedHandlers(*this, nullptr); });
+        _monarch.QuitAllRequested({ get_weak(), &WindowManager::_QuitAllRequestedHandlers });
 
         _BecameMonarchHandlers(*this, nullptr);
     }
