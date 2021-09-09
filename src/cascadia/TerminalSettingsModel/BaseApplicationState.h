@@ -10,8 +10,6 @@ Abstract:
 --*/
 #pragma once
 
-// namespace winrt::Microsoft::Terminal::Settings::Model::implementation
-// {
 struct BaseApplicationState
 {
     BaseApplicationState(std::filesystem::path path) noexcept;
@@ -33,4 +31,3 @@ protected:
     std::filesystem::path _path;
     til::throttled_func_trailing<> _throttler;
 };
-// }

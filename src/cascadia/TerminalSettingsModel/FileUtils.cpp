@@ -107,42 +107,7 @@ namespace Microsoft::Terminal::Settings::Model
             throw;
         }
     }
-    void _setupAttributes(SECURITY_ATTRIBUTES& sa)
-    {
-        PSID pEveryoneSID = NULL;
-        SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_NT_AUTHORITY;
-        BOOL success = AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSID);
 
-        EXPLICIT_ACCESS ea[1];
-        ZeroMemory(&ea, 1 * sizeof(EXPLICIT_ACCESS));
-        ea[0].grfAccessPermissions = KEY_READ;
-        ea[0].grfAccessMode = SET_ACCESS;
-        ea[0].grfInheritance = NO_INHERITANCE;
-        ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-        ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-        ea[0].Trustee.ptstrName = (LPTSTR)pEveryoneSID;
-
-        ACL acl;
-        PACL pAcl = &acl;
-        DWORD dwRes = SetEntriesInAcl(1, ea, NULL, &pAcl);
-        dwRes;
-
-        SECURITY_DESCRIPTOR sd;
-        success = InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
-        success = SetSecurityDescriptorDacl(&sd,
-                                            TRUE, // bDaclPresent flag
-                                            pAcl,
-                                            FALSE);
-
-        // Initialize a security attributes structure.
-        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-        sa.lpSecurityDescriptor = &sd;
-        sa.bInheritHandle = FALSE;
-        success;
-        // return sa;
-        // wil::unique_hfile file{ CreateFileW(testPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
-        // THROW_LAST_ERROR_IF(!file);
-    }
     void WriteUTF8File(const std::filesystem::path& path,
                        const std::string_view content,
                        const bool elevatedOnly)
@@ -152,22 +117,34 @@ namespace Microsoft::Terminal::Settings::Model
         {
             // sa = _setupAttributes();
 
-            PSID pEveryoneSID = NULL;
-            SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_NT_AUTHORITY;
-            BOOL success = AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSID);
+            PSID pSytemSid = NULL;
+            PSID pEveryoneSid = NULL;
+            SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+            SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
+            BOOL success = AllocateAndInitializeSid(&SIDAuthNT, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pSytemSid);
+            THROW_LAST_ERROR_IF(!success);
+            success = AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid);
+            THROW_LAST_ERROR_IF(!success);
 
-            EXPLICIT_ACCESS ea[1];
-            ZeroMemory(&ea, 1 * sizeof(EXPLICIT_ACCESS));
-            ea[0].grfAccessPermissions = KEY_READ;
+            EXPLICIT_ACCESS ea[2];
+            ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
+            ea[0].grfAccessPermissions = GENERIC_ALL;
             ea[0].grfAccessMode = SET_ACCESS;
             ea[0].grfInheritance = NO_INHERITANCE;
             ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
             ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[0].Trustee.ptstrName = (LPTSTR)pEveryoneSID;
+            ea[0].Trustee.ptstrName = (LPTSTR)pSytemSid;
+
+            ea[1].grfAccessPermissions = GENERIC_READ;
+            ea[1].grfAccessMode = SET_ACCESS;
+            ea[1].grfInheritance = NO_INHERITANCE;
+            ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+            ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+            ea[1].Trustee.ptstrName = (LPTSTR)pEveryoneSid;
 
             ACL acl;
             PACL pAcl = &acl;
-            DWORD dwRes = SetEntriesInAcl(1, ea, NULL, &pAcl);
+            DWORD dwRes = SetEntriesInAcl(2, ea, NULL, &pAcl);
             dwRes;
 
             SECURITY_DESCRIPTOR sd;
