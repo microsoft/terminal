@@ -324,6 +324,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
+        // If the peasant asks us to quit we should not try to act in future elections.
+        _peasant.QuitRequested([this](auto&&, auto&&) {
+            _monarchWaitInterrupt.SetEvent();
+        });
+
         return _peasant;
     }
 

@@ -69,12 +69,31 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
             else
             {
+                uint64_t old = 0;
+
                 // Peasant already had an ID (from an older monarch). Leave that one
                 // be. Make sure that the next peasant's ID is higher than it.
-                _nextPeasantID = providedID >= _nextPeasantID ? providedID + 1 : _nextPeasantID;
+                // If multiple peasants are added concurrently we keep trying to update
+                // until we get to set the new id.
+                while (!_nextPeasantID.compare_exchange_strong(old, providedID + 1))
+                {
+                    old = _nextPeasantID.load();
+                    if (providedID < old)
+                    {
+                        break;
+                    }
+                }
             }
 
             auto newPeasantsId = peasant.GetID();
+
+            // Keep track of which peasant we are
+            // SAFETY: this is only true for one peasant, and each peasant 
+            // is only added to a monarch once, so we do not need synchronization here.
+            if (peasant.GetPID() == _ourPID)
+            {
+                _ourPeasantId = newPeasantsId;
+            }
             // Add an event listener to the peasant's WindowActivated event.
             peasant.WindowActivated({ this, &Monarch::_peasantWindowActivated });
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
@@ -84,7 +103,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             peasant.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
             peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
-            _peasants[newPeasantsId] = peasant;
+            {
+                std::unique_lock lock{ _peasantsMutex };
+                _peasants[newPeasantsId] = peasant;
+            }
 
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_AddPeasant",
@@ -124,9 +146,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // closing all windows.
         _QuitAllRequestedHandlers(*this, nullptr);
 
+        _quitting.store(true);
         // Tell all peasants to exit.
-        const auto callback = [&](const auto& /*id*/, const auto& p) {
-            p.Quit();
+        const auto callback = [&](const auto& id, const auto& p) {
+            // We want to tell our peasant to quit last, so that we don't try
+            // to perform a bunch of elections on quit.
+            if (id != _ourPeasantId)
+            {
+                p.Quit();
+            }
         };
         const auto onError = [&](const auto& id) {
             TraceLoggingWrite(g_hRemotingProvider,
@@ -137,6 +165,22 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         };
 
         _forEachPeasant(callback, onError);
+
+        {
+            std::shared_lock lock{ _peasantsMutex };
+            const auto peasantSearch = _peasants.find(_ourPeasantId);
+            if (peasantSearch != _peasants.end())
+            {
+                const auto p = peasantSearch->second;
+                p.Quit();
+            }
+            else
+            {
+                // Somehow we don't have our own peasant, but we are trying to quit
+                // so just blow up.
+                FAIL_FAST();
+            }
+        }
     }
 
     // Method Description:
@@ -147,7 +191,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::SignalClose(const uint64_t peasantId)
     {
-        _peasants.erase(peasantId);
+        // If we are quitting we don't care about maintaining our list of
+        // peasants anymore, and don't need to notify the host that something
+        // changed.
+        if (_quitting.load(std::memory_order_acquire))
+        {
+            return;
+        }
+
+        {
+            std::unique_lock lock{ _peasantsMutex };
+            _peasants.erase(peasantId);
+        }
         _WindowClosedHandlers(nullptr, nullptr);
     }
 
@@ -159,23 +214,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - the number of active peasants.
     uint64_t Monarch::GetNumberOfPeasants()
     {
-        auto num = 0;
-        auto callback = [&](const auto& /*id*/, const auto& p) {
-            // Check that the peasant is alive, and if so increment the count
-            p.GetID();
-            num += 1;
-        };
-        auto onError = [](const auto& id) {
-            TraceLoggingWrite(g_hRemotingProvider,
-                              "Monarch_GetNumberOfPeasants_Failed",
-                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not enumerate"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-        };
-
-        _forEachPeasant(callback, onError);
-
-        return num;
+        std::shared_lock lock{ _peasantsMutex };
+        return _peasants.size();
     }
 
     // Method Description:
@@ -204,8 +244,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         try
         {
-            const auto peasantSearch = _peasants.find(peasantID);
-            auto maybeThePeasant = peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
+            IPeasant maybeThePeasant = nullptr;
+            {
+                std::shared_lock lock{ _peasantsMutex };
+                const auto peasantSearch = _peasants.find(peasantID);
+                maybeThePeasant = peasantSearch == _peasants.end() ? nullptr : peasantSearch->second;
+            }
             // Ask the peasant for their PID. This will validate that they're
             // actually still alive.
             if (maybeThePeasant)
@@ -217,8 +261,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         catch (...)
         {
             LOG_CAUGHT_EXCEPTION();
+
             // Remove the peasant from the list of peasants
-            _peasants.erase(peasantID);
+            {
+                std::unique_lock lock{ _peasantsMutex };
+                _peasants.erase(peasantID);
+            }
 
             // Remove the peasant from the list of MRU windows. They're dead.
             // They can't be the MRU anymore.
@@ -243,39 +291,27 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             return 0;
         }
 
-        std::vector<uint64_t> peasantsToErase{};
         uint64_t result = 0;
-        for (const auto& [id, p] : _peasants)
-        {
-            try
-            {
-                auto otherName = p.WindowName();
-                if (otherName == name)
-                {
-                    result = id;
-                    break;
-                }
-            }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                // Normally, we'd just erase the peasant here. However, we can't
-                // erase from the map while we're iterating over it like this.
-                // Instead, pull a good ole Java and collect this id for removal
-                // later.
-                peasantsToErase.push_back(id);
-            }
-        }
 
-        // Remove the dead peasants we came across while iterating.
-        for (const auto& id : peasantsToErase)
-        {
-            // Remove the peasant from the list of peasants
-            _peasants.erase(id);
-            // Remove the peasant from the list of MRU windows. They're dead.
-            // They can't be the MRU anymore.
-            _clearOldMruEntries(id);
-        }
+        const auto callback = [&](const auto& id, const auto& p) {
+            auto otherName = p.WindowName();
+            if (otherName == name)
+            {
+                result = id;
+                return true;
+            }
+            return false;
+        };
+
+        const auto onError = [&](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_lookekupPeasantIdForName_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not get the name of"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forEachPeasant(callback, onError);
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_lookupPeasantIdForName",
@@ -333,6 +369,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::_clearOldMruEntries(const uint64_t peasantID)
     {
+        std::lock_guard lock{ _mruPeasantsMutex };
         auto result = std::find_if(_mruPeasants.begin(),
                                    _mruPeasants.end(),
                                    [peasantID](auto&& other) {
@@ -369,14 +406,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // * If the current desktop doesn't have a vector, add one.
         const auto desktopGuid{ localArgs->DesktopID() };
 
-        // * Add this args list. By using lower_bound with insert, we can get it
-        //   into exactly the right spot, without having to re-sort the whole
-        //   array.
-        _mruPeasants.insert(std::lower_bound(_mruPeasants.begin(),
-                                             _mruPeasants.end(),
-                                             *localArgs,
-                                             [](const auto& first, const auto& second) { return first.ActivatedTime() > second.ActivatedTime(); }),
-                            *localArgs);
+        {
+            std::lock_guard lock{ _mruPeasantsMutex };
+            // * Add this args list. By using lower_bound with insert, we can get it
+            //   into exactly the right spot, without having to re-sort the whole
+            //   array.
+            _mruPeasants.insert(std::lower_bound(_mruPeasants.begin(),
+                                                 _mruPeasants.end(),
+                                                 *localArgs,
+                                                 [](const auto& first, const auto& second) { return first.ActivatedTime() > second.ActivatedTime(); }),
+                                *localArgs);
+        }
 
         TraceLoggingWrite(g_hRemotingProvider,
                           "Monarch_SetMostRecentPeasant",
@@ -402,8 +442,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - the ID of the most recent peasant, otherwise 0 if we could not find one.
     uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop, const bool ignoreQuakeWindow)
     {
+        std::lock_guard lock{ _mruPeasantsMutex };
         if (_mruPeasants.empty())
         {
+            // Only need a shared lock for read
+            std::shared_lock lock{ _peasantsMutex };
             // We haven't yet been told the MRU peasant. Just use the first one.
             // This is just gonna be a random one, but really shouldn't happen
             // in practice. The WindowManager should set the MRU peasant
@@ -854,7 +897,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     Windows::Foundation::Collections::IVectorView<PeasantInfo> Monarch::GetPeasantInfos()
     {
         std::vector<PeasantInfo> names;
-        names.reserve(_peasants.size());
+        {
+            std::shared_lock lock{ _peasantsMutex };
+            names.reserve(_peasants.size());
+        }
 
         const auto func = [&](const auto& id, const auto& p) -> void {
             names.push_back({ id, p.WindowName(), p.ActiveTabTitle() });

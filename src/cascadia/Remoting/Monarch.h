@@ -7,6 +7,7 @@
 #include "Peasant.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 #include "WindowActivatedArgs.h"
+#include <atomic>
 
 // We sure different GUIDs here depending on whether we're running a Release,
 // Preview, or Dev build. This ensures that different installs don't
@@ -69,14 +70,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     private:
         uint64_t _ourPID;
 
-        uint64_t _nextPeasantID{ 1 };
-        uint64_t _thisPeasantID{ 0 };
+        std::atomic<uint64_t> _nextPeasantID{ 1 };
+        uint64_t _ourPeasantId{ 0 };
+
+        // When we're quitting we do not care as much about handling some events that we know will be triggered
+        std::atomic<bool> _quitting{ false };
 
         winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
+        std::shared_mutex _peasantsMutex{};
 
         std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
+        std::recursive_mutex _mruPeasantsMutex{};
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
         uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop, const bool ignoreQuakeWindow);
@@ -121,42 +127,50 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             std::vector<uint64_t> peasantsToErase;
 
-            for (const auto& [id, p] : _peasants)
             {
-                try
+                std::shared_lock lock{ _peasantsMutex };
+
+                for (const auto& [id, p] : _peasants)
                 {
-                    if constexpr (IsVoid)
+                    try
                     {
-                        func(id, p);
-                    }
-                    else
-                    {
-                        if (!func(id, p))
+                        if constexpr (IsVoid)
                         {
-                            break;
+                            func(id, p);
+                        }
+                        else
+                        {
+                            if (!func(id, p))
+                            {
+                                break;
+                            }
                         }
                     }
-                }
-                catch (const winrt::hresult_error& exception)
-                {
-                    onError(id);
+                    catch (const winrt::hresult_error& exception)
+                    {
+                        onError(id);
 
-                    if (exception.code() == 0x800706ba) // The RPC server is unavailable.
-                    {
-                        peasantsToErase.emplace_back(id);
-                    }
-                    else
-                    {
-                        LOG_CAUGHT_EXCEPTION();
-                        throw;
+                        if (exception.code() == 0x800706ba) // The RPC server is unavailable.
+                        {
+                            peasantsToErase.emplace_back(id);
+                        }
+                        else
+                        {
+                            LOG_CAUGHT_EXCEPTION();
+                            throw;
+                        }
                     }
                 }
             }
 
-            for (const auto& id : peasantsToErase)
+            if (peasantsToErase.size() > 0)
             {
-                _peasants.erase(id);
-                _clearOldMruEntries(id);
+                std::unique_lock lock{ _peasantsMutex };
+                for (const auto& id : peasantsToErase)
+                {
+                    _peasants.erase(id);
+                    _clearOldMruEntries(id);
+                }
             }
         }
 
