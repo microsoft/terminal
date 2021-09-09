@@ -119,27 +119,33 @@ namespace Microsoft::Terminal::Settings::Model
             // https://docs.microsoft.com/en-us/windows/win32/secauthz/creating-a-security-descriptor-for-a-new-object-in-c--
             // With using https://docs.microsoft.com/en-us/windows/win32/secauthz/well-known-sids
             // to find out that
-            // SECURITY_NT_AUTHORITY+SECURITY_LOCAL_SYSTEM_RID == NT AUTHORITY\\SYSTEM
-            // and
-            // SECURITY_WORLD_SID_AUTHORITY+SECURITY_WORLD_RID == Everyone
+            // * SECURITY_NT_AUTHORITY+SECURITY_LOCAL_SYSTEM_RID == NT AUTHORITY\SYSTEM
+            // * SECURITY_NT_AUTHORITY+SECURITY_BUILTIN_DOMAIN_RID+DOMAIN_ALIAS_RID_ADMINS == BUILTIN\Administrators
+            // * SECURITY_WORLD_SID_AUTHORITY+SECURITY_WORLD_RID == Everyone
+            //
+            // Raymond Chen recommended that I make this file only writable by
+            // SYSTEM, but if I did that, then even we can't write the file
+            // while elevated, which isn't what we want.
 
-            PSID pSytemSid = nullptr;
             PSID pEveryoneSid = nullptr;
+            PSID pAdminSid = nullptr;
             SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
             SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
 
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pSytemSid));
+            // Create a SID for the BUILTIN\Administrators group.
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminSid));
+            // Create a well-known SID for the Everyone group.
             THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid));
 
             EXPLICIT_ACCESS ea[2];
             ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
-            // Grant SYSTEM all permissions on this file
+            // Grant Admins all permissions on this file
             ea[0].grfAccessPermissions = GENERIC_ALL;
             ea[0].grfAccessMode = SET_ACCESS;
             ea[0].grfInheritance = NO_INHERITANCE;
             ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
             ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[0].Trustee.ptstrName = (LPTSTR)pSytemSid;
+            ea[0].Trustee.ptstrName = (LPTSTR)pAdminSid;
 
             // Grant Everyone the permission or read this file
             ea[1].grfAccessPermissions = GENERIC_READ;
@@ -162,6 +168,7 @@ namespace Microsoft::Terminal::Settings::Model
             sa.lpSecurityDescriptor = &sd;
             sa.bInheritHandle = false;
         }
+
         wil::unique_hfile file{ CreateFileW(path.c_str(),
                                             GENERIC_WRITE,
                                             FILE_SHARE_READ | FILE_SHARE_WRITE,
