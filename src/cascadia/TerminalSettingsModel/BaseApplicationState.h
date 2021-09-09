@@ -27,7 +27,7 @@ struct BaseApplicationState
     virtual Json::Value ToJson() const noexcept = 0;
 
 protected:
-    void _write() const noexcept;
+    virtual void _write() const noexcept;
     void _read() const noexcept;
 
     std::filesystem::path _path;

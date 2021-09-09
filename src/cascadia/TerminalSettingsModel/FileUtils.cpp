@@ -8,6 +8,8 @@
 #include <shlobj.h>
 #include <WtExeUtils.h>
 
+#include <aclapi.h>
+
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
@@ -105,10 +107,83 @@ namespace Microsoft::Terminal::Settings::Model
             throw;
         }
     }
-
-    void WriteUTF8File(const std::filesystem::path& path, const std::string_view content)
+    void _setupAttributes(SECURITY_ATTRIBUTES& sa)
     {
-        wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+        PSID pEveryoneSID = NULL;
+        SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_NT_AUTHORITY;
+        BOOL success = AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSID);
+
+        EXPLICIT_ACCESS ea[1];
+        ZeroMemory(&ea, 1 * sizeof(EXPLICIT_ACCESS));
+        ea[0].grfAccessPermissions = KEY_READ;
+        ea[0].grfAccessMode = SET_ACCESS;
+        ea[0].grfInheritance = NO_INHERITANCE;
+        ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+        ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+        ea[0].Trustee.ptstrName = (LPTSTR)pEveryoneSID;
+
+        ACL acl;
+        PACL pAcl = &acl;
+        DWORD dwRes = SetEntriesInAcl(1, ea, NULL, &pAcl);
+        dwRes;
+
+        SECURITY_DESCRIPTOR sd;
+        success = InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+        success = SetSecurityDescriptorDacl(&sd,
+                                            TRUE, // bDaclPresent flag
+                                            pAcl,
+                                            FALSE);
+
+        // Initialize a security attributes structure.
+        sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+        sa.lpSecurityDescriptor = &sd;
+        sa.bInheritHandle = FALSE;
+        success;
+        // return sa;
+        // wil::unique_hfile file{ CreateFileW(testPath.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, &sa, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+        // THROW_LAST_ERROR_IF(!file);
+    }
+    void WriteUTF8File(const std::filesystem::path& path,
+                       const std::string_view content,
+                       const bool elevatedOnly)
+    {
+        SECURITY_ATTRIBUTES sa;
+        if (elevatedOnly)
+        {
+            // sa = _setupAttributes();
+
+            PSID pEveryoneSID = NULL;
+            SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_NT_AUTHORITY;
+            BOOL success = AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_LOCAL_SYSTEM_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSID);
+
+            EXPLICIT_ACCESS ea[1];
+            ZeroMemory(&ea, 1 * sizeof(EXPLICIT_ACCESS));
+            ea[0].grfAccessPermissions = KEY_READ;
+            ea[0].grfAccessMode = SET_ACCESS;
+            ea[0].grfInheritance = NO_INHERITANCE;
+            ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+            ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+            ea[0].Trustee.ptstrName = (LPTSTR)pEveryoneSID;
+
+            ACL acl;
+            PACL pAcl = &acl;
+            DWORD dwRes = SetEntriesInAcl(1, ea, NULL, &pAcl);
+            dwRes;
+
+            SECURITY_DESCRIPTOR sd;
+            success = InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+            success = SetSecurityDescriptorDacl(&sd,
+                                                TRUE, // bDaclPresent flag
+                                                pAcl,
+                                                FALSE);
+
+            // Initialize a security attributes structure.
+            sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+            sa.lpSecurityDescriptor = &sd;
+            sa.bInheritHandle = FALSE;
+            success;
+        }
+        wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, elevatedOnly ? &sa : nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
         THROW_LAST_ERROR_IF(!file);
 
         const auto fileSize = gsl::narrow<DWORD>(content.size());
@@ -121,7 +196,9 @@ namespace Microsoft::Terminal::Settings::Model
         }
     }
 
-    void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view content)
+    void WriteUTF8FileAtomic(const std::filesystem::path& path,
+                             const std::string_view content,
+                             const bool elevatedOnly)
     {
         // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
         // It's thus important that we first resolve them before generating temporary path.
@@ -139,7 +216,7 @@ namespace Microsoft::Terminal::Settings::Model
             //   * resolve the link manually, which might be less accurate and more prone to race conditions
             //   * write to the file directly, which lets the system resolve the symbolic link but leaves the write non-atomic
             // The latter is chosen, as this is an edge case and our 'atomic' writes are only best-effort.
-            WriteUTF8File(path, content);
+            WriteUTF8File(path, content, elevatedOnly);
             return;
         }
 
@@ -147,7 +224,7 @@ namespace Microsoft::Terminal::Settings::Model
         tmpPath += L".tmp";
 
         // Writing to a file isn't atomic, but...
-        WriteUTF8File(tmpPath, content);
+        WriteUTF8File(tmpPath, content, elevatedOnly);
 
         // renaming one is (supposed to be) atomic.
         // Wait... "supposed to be"!? Well it's technically not always atomic,
