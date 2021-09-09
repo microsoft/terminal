@@ -9,3 +9,5 @@
 #endif
 
 #include <LibraryIncludes.h>
+#define CPPWINRT_VERSION "2.0.210309.3"
+#include "winrt/Microsoft.Terminal.Core.h"

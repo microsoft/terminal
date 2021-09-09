@@ -44,6 +44,13 @@
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
   </ItemDefinitionGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(SolutionDir)src\cascadia\TerminalCore\lib\Generated Files\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
   <Import Project="$(SolutionDir)src\common.build.post.props" />
 
   <!-- LATE LINK LINE OVERRIDES. This project must link named forwarders

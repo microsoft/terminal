@@ -549,11 +549,11 @@ try
 
     if (multiClickMapper == 3)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Line);
+        _terminal->MultiClickSelection(cursorPosition / fontSize, winrt::Microsoft::Terminal::Core::SelectionExpansion::Line);
     }
     else if (multiClickMapper == 2)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansionMode::Word);
+        _terminal->MultiClickSelection(cursorPosition / fontSize, winrt::Microsoft::Terminal::Core::SelectionExpansion::Word);
     }
     else
     {
