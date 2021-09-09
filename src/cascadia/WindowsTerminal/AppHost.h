@@ -85,6 +85,15 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
+    winrt::fire_and_forget _QuitRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const winrt::Windows::Foundation::IInspectable& args);
+
+    void _RequestQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                         const winrt::Windows::Foundation::IInspectable& args);
+
+    void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                           const winrt::Windows::Foundation::IInspectable& args);
+
     void _CreateTrayIcon();
     void _DestroyTrayIcon();
     void _ShowTrayIconRequested();

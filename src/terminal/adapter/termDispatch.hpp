@@ -132,4 +132,6 @@ public:
                                const DispatchTypes::DrcsFontUsage /*fontUsage*/,
                                const VTParameter /*cellHeight*/,
                                const DispatchTypes::DrcsCharsetSize /*charsetSize*/) noexcept override { return nullptr; }
+
+    StringHandler RequestSetting() noexcept override { return nullptr; }; // DECRQSS
 };

@@ -213,7 +213,15 @@ void AppHost::_HandleCommandlineArgs()
         peasant.SummonRequested({ this, &AppHost::_HandleSummon });
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
+        peasant.QuitRequested({ this, &AppHost::_QuitRequested });
 
+        // We need this property to be set before we get the InitialSize/Position
+        // and BecameMonarch which normally sets it is only run after the window
+        // is created.
+        if (_windowManager.IsMonarch())
+        {
+            _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+        }
         _logic.WindowName(peasant.WindowName());
         _logic.WindowId(peasant.GetID());
     }
@@ -271,6 +279,7 @@ void AppHost::Initialize()
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
+    _logic.QuitRequested({ this, &AppHost::_RequestQuitAll });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -299,8 +308,9 @@ void AppHost::Initialize()
 }
 
 // Method Description:
-// - Called when the app's title changes. Fires off a window message so we can
-//   update the window's title on the main thread.
+// - Called everytime when the active tab's title changes. We'll also fire off
+//   a window message so we can update the window's title on the main thread,
+//   though we'll only do so if the settings are configured for that.
 // Arguments:
 // - sender: unused
 // - newTitle: the string to use as the new window title
@@ -308,7 +318,11 @@ void AppHost::Initialize()
 // - <none>
 void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
-    _window->UpdateTitle(newTitle);
+    if (_logic.GetShowTitleInTitlebar())
+    {
+        _window->UpdateTitle(newTitle);
+    }
+    _windowManager.UpdateActiveTabTitle(newTitle);
 }
 
 // Method Description:
@@ -668,9 +682,19 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
         _CreateTrayIcon();
     }
 
+    // Set the number of open windows (so we know if we are the last window)
+    // and subscribe for updates if there are any changes to that number.
+    _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+
+    _windowManager.WindowCreated([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+    _windowManager.WindowClosed([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+
     // These events are coming from peasants that become or un-become quake windows.
     _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
     _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });
+    // If the monarch receives a QuitAll event it will signal this event to be
+    // ran before each peasant is closed.
+    _windowManager.QuitAllRequested({ this, &AppHost::_QuitAllRequested });
 }
 
 void AppHost::_listenForInboundConnections()
@@ -1005,6 +1029,28 @@ void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectab
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
 }
 
+winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
+                                               const winrt::Windows::Foundation::IInspectable&)
+{
+    // Need to be on the main thread to close out all of the tabs.
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+
+    _logic.Quit();
+}
+
+void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
+                              const winrt::Windows::Foundation::IInspectable&)
+{
+    _windowManager.RequestQuitAll();
+}
+
+void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Windows::Foundation::IInspectable&)
+{
+    // TODO: GH#9800: For now, nothing needs to be done before the monarch closes all windows.
+    // Later when we have state saving that should go here.
+}
+
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Windows::Foundation::IInspectable&)
 {
@@ -1031,7 +1077,7 @@ void AppHost::_CreateTrayIcon()
         // Hookup the handlers, save the tokens for revoking if settings change.
         _ReAddTrayIconToken = _window->NotifyReAddTrayIcon([this]() { _trayIcon->ReAddTrayIcon(); });
         _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
-        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantNames()); });
+        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantInfos()); });
         _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
         _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
     }

@@ -62,6 +62,8 @@ namespace RemotingUnitTests
         void AssignID(uint64_t /*id*/) { throw winrt::hresult_error{}; };
         uint64_t GetID() { throw winrt::hresult_error{}; };
         winrt::hstring WindowName() { throw winrt::hresult_error{}; };
+        winrt::hstring ActiveTabTitle() { throw winrt::hresult_error{}; };
+        void ActiveTabTitle(const winrt::hstring& /*value*/) { throw winrt::hresult_error{}; };
         uint64_t GetPID() { throw winrt::hresult_error{}; };
         bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
         void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }
@@ -73,6 +75,8 @@ namespace RemotingUnitTests
         void Summon(const Remoting::SummonWindowBehavior& /*args*/) { throw winrt::hresult_error{}; };
         void RequestShowTrayIcon() { throw winrt::hresult_error{}; };
         void RequestHideTrayIcon() { throw winrt::hresult_error{}; };
+        void RequestQuitAll() { throw winrt::hresult_error{}; };
+        void Quit() { throw winrt::hresult_error{}; };
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
         TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
@@ -81,6 +85,8 @@ namespace RemotingUnitTests
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, Remoting::SummonWindowBehavior);
         TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     };
 
     class RemotingTests

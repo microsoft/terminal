@@ -47,6 +47,11 @@
             </StackPanel>
         </ContentDialog>
 
+        <ContentDialog x:Name="QuitDialog"
+                       x:Uid="QuitDialog"
+                       x:Load="False"
+                       DefaultButton="Primary" />
+
         <ContentDialog x:Name="CloseAllDialog"
                        x:Uid="CloseAllDialog"
                        x:Load="False"
