@@ -334,8 +334,6 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
-// struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<float>
-// template<>
 struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<double>
 {
     double FromJson(const Json::Value& json)

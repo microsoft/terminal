@@ -322,8 +322,8 @@ void IslandWindow::Initialize()
     }
 
     // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
-    auto hr = TerminalTrySetTransparentBackground(true);
-    LOG_IF_FAILED(hr);
+    // We don't really care if this failed or not.
+    TerminalTrySetTransparentBackground(true);
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
