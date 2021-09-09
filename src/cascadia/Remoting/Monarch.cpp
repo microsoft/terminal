@@ -171,13 +171,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             const auto peasantSearch = _peasants.find(_ourPeasantId);
             if (peasantSearch != _peasants.end())
             {
-                const auto p = peasantSearch->second;
-                p.Quit();
+                peasantSearch->second.Quit();
             }
             else
             {
-                // Somehow we don't have our own peasant, but we are trying to quit
-                // so just blow up.
+                // Somehow we don't have our own peasant, this should never happen.
+                // We are trying to quit anyways so just fail here.
                 FAIL_FAST();
             }
         }
