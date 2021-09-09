@@ -4,7 +4,6 @@
 #include "pch.h"
 #include "Terminal.hpp"
 #include <DefaultSettings.h>
-#include "ColorFix.hpp"
 
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
@@ -54,6 +53,10 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
         _screenReversed,
         _blinkingState.IsBlinkingFaint(),
         _intenseIsBright);
+    if (_perceptualColorNudging && _adjustedColorMap.find(colors) != _adjustedColorMap.end())
+    {
+        colors.first = _adjustedColorMap.at(colors);
+    }
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
@@ -61,16 +64,7 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
     {
         colors.second |= 0xff000000;
     }
-    std::pair<COLORREF, COLORREF> result;
-    if (_perceptualColorNudging)
-    {
-        result = std::pair<COLORREF, COLORREF>(ColorFix::GetPerceivableColor(colors.first, colors.second), colors.second);
-    }
-    else
-    {
-        result = colors;
-    }
-    return result;
+    return colors;
 }
 
 COORD Terminal::GetCursorPosition() const noexcept

@@ -232,6 +232,11 @@ void ColorFix::_ToRGB()
 // - The foreground color after performing any necessary changes to make it more perceivable
 COLORREF ColorFix::GetPerceivableColor(COLORREF fg, COLORREF bg)
 {
+    // If the colors are the same, don't do any adjusting
+    if (fg == bg)
+    {
+        return fg;
+    }
     ColorFix backLab(bg);
     ColorFix frontLab(fg);
     double de1 = GetDeltaE(frontLab, backLab);

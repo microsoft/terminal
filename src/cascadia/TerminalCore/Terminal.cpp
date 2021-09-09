@@ -9,6 +9,7 @@
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
+#include "ColorFix.hpp"
 
 #include <winrt/Microsoft.Terminal.Core.h>
 
@@ -182,6 +183,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     {
         _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
     }
+    _MakeAdjustedColorMap();
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
@@ -1275,4 +1277,16 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexce
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;
+}
+
+void Terminal::_MakeAdjustedColorMap()
+{
+    // for each pair of <fg, bg>, map it to the adjusted fg
+    for (const auto fg : _colorTable)
+    {
+        for (const auto bg : _colorTable)
+        {
+            _adjustedColorMap[std::pair<COLORREF, COLORREF>(fg, bg)] = ColorFix::GetPerceivableColor(fg, bg);
+        }
+    }
 }
