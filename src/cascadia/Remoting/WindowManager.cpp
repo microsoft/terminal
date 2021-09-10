@@ -328,7 +328,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _peasant.QuitRequested([weakThis{ get_weak() }](auto&&, auto&&) {
             if (auto wm = weakThis.get())
             {
-                wm._monarchWaitInterrupt.SetEvent();
+                wm->_monarchWaitInterrupt.SetEvent();
             }
         });
 
