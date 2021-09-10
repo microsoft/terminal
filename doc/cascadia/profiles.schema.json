@@ -279,6 +279,7 @@
         "paste",
         "prevTab",
         "renameTab",
+        "openSystemMenu",
         "openTabRenamer",
         "quakeMode",
         "resetFontSize",
