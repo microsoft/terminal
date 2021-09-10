@@ -46,17 +46,21 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
     _blinkingState.RecordBlinkingUsage(attr);
-    auto colors = attr.CalculateRgbColors(
-        _colorTable,
-        _defaultFg,
-        _defaultBg,
-        _screenReversed,
-        _blinkingState.IsBlinkingFaint(),
-        _intenseIsBright);
-    if (_perceptualColorNudging && _adjustedColorMap.find(colors) != _adjustedColorMap.end())
-    {
-        colors.first = _adjustedColorMap.at(colors);
-    }
+    auto colors = _perceptualColorNudging ? attr.CalculateRgbColors(
+                                                    _colorTable,
+                                                    _defaultFg,
+                                                    _defaultBg,
+                                                    _screenReversed,
+                                                    _blinkingState.IsBlinkingFaint(),
+                                                    _intenseIsBright,
+                                                    _adjustedForegroundColors) :
+                                            attr.CalculateRgbColors(
+                                                    _colorTable,
+                                                    _defaultFg,
+                                                    _defaultBg,
+                                                    _screenReversed,
+                                                    _blinkingState.IsBlinkingFaint(),
+                                                    _intenseIsBright);
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.

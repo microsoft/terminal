@@ -69,7 +69,8 @@ public:
                                                      const COLORREF defaultBgColor,
                                                      const bool reverseScreenMode = false,
                                                      const bool blinkingIsFaint = false,
-                                                     const bool boldIsBright = true) const noexcept;
+                                                     const bool boldIsBright = true,
+                                                     const std::optional<std::array<std::array<COLORREF, 18>, 18>>& adjustedForegroundColors = std::nullopt) const noexcept;
 
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;

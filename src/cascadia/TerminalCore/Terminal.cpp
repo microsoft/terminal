@@ -183,7 +183,10 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     {
         _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
     }
-    _MakeAdjustedColorMap();
+    if (_perceptualColorNudging)
+    {
+        _MakeAdjustedColorArray();
+    }
 
     CursorType cursorShape = CursorType::VerticalBar;
     switch (appearance.CursorShape())
@@ -1279,14 +1282,22 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
-void Terminal::_MakeAdjustedColorMap()
+void Terminal::_MakeAdjustedColorArray()
 {
-    // for each pair of <fg, bg>, map it to the adjusted fg
-    for (const auto fg : _colorTable)
+    std::array<COLORREF, 18> colorTableWithDefaults;
+    for (auto index = 0; index < 16; ++index)
     {
-        for (const auto bg : _colorTable)
+        colorTableWithDefaults[index] = _colorTable.at(index);
+    }
+    colorTableWithDefaults[16] = _defaultBg;
+    colorTableWithDefaults[17] = _defaultFg;
+    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
+    {
+        auto fg = colorTableWithDefaults.at(fgIndex);
+        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
         {
-            _adjustedColorMap[std::pair<COLORREF, COLORREF>(fg, bg)] = ColorFix::GetPerceivableColor(fg, bg);
+            auto bg = colorTableWithDefaults.at(bgIndex);
+            _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
         }
     }
 }

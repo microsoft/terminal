@@ -370,8 +370,8 @@ private:
 
     void _NotifyTerminalCursorPositionChanged() noexcept;
 
-    std::map<std::pair<COLORREF, COLORREF>, COLORREF> _adjustedColorMap;
-    void _MakeAdjustedColorMap();
+    std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
+    void _MakeAdjustedColorArray();
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
