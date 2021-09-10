@@ -100,15 +100,15 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
 
     if (const auto sources = userSettings.globals->DisabledProfileSources())
     {
-        ignoredNamespaces.reserve(sources.Size());
+        _ignoredNamespaces.reserve(sources.Size());
         for (const auto& id : sources)
         {
-            ignoredNamespaces.emplace(id);
+            _ignoredNamespaces.emplace(id);
         }
     }
 
-    // See member description of userProfileCount.
-    userProfileCount = userSettings.profiles.size();
+    // See member description of _userProfileCount.
+    _userProfileCount = userSettings.profiles.size();
 }
 
 // Generate dynamic profiles and add them as parents of user profiles.
@@ -118,7 +118,7 @@ void SettingsLoader::GenerateProfiles()
     const auto executeGenerator = [&](const auto& generator) {
         const auto generatorNamespace = generator.GetNamespace();
 
-        if (!ignoredNamespaces.count(generatorNamespace))
+        if (!_ignoredNamespaces.count(generatorNamespace))
         {
             try
             {
@@ -137,7 +137,7 @@ void SettingsLoader::GenerateProfiles()
 // 1. The default profile is a PowerShell 7+ one, if one was generated,
 //    and falls back to the standard PowerShell 5 profile otherwise.
 // 2. cmd.exe gets a localized name.
-void SettingsLoader::FillBlanksInDefaultsJson()
+void SettingsLoader::ApplyRuntimeInitialSettings()
 {
     // 1.
     {
@@ -179,7 +179,7 @@ void SettingsLoader::MergeInboxIntoUserProfiles()
         }
         else
         {
-            userSettings.profiles.emplace_back(ReproduceProfile(generatedProfile));
+            userSettings.profiles.emplace_back(CreateChild(generatedProfile));
         }
     }
 }
@@ -212,7 +212,7 @@ void SettingsLoader::MergeFragmentsIntoUserProfiles()
                         {
                             // TODO: GUID uniqueness?
                             fragmentProfile->Source(source);
-                            _appendProfile(ReproduceProfile(fragmentProfile), userSettings);
+                            _appendProfile(CreateChild(fragmentProfile), userSettings);
                         }
                     }
 
@@ -240,7 +240,7 @@ void SettingsLoader::MergeFragmentsIntoUserProfiles()
                 const auto filename = fragmentExtFolder.path().filename();
                 const auto& source = filename.native();
 
-                if (!ignoredNamespaces.count(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
+                if (!_ignoredNamespaces.count(std::wstring_view{ source }) && fragmentExtFolder.is_directory())
                 {
                     parseAndLayerFragmentFiles(fragmentExtFolder.path(), winrt::hstring{ source });
                 }
@@ -256,7 +256,7 @@ void SettingsLoader::MergeFragmentsIntoUserProfiles()
     for (const auto& ext : extensions)
     {
         const auto packageName = ext.Package().Id().FamilyName();
-        if (ignoredNamespaces.count(std::wstring_view{ packageName }))
+        if (_ignoredNamespaces.count(std::wstring_view{ packageName }))
         {
             continue;
         }
@@ -288,8 +288,8 @@ void SettingsLoader::DisableDeletedProfiles()
     auto generatedProfileIds = state->GeneratedProfiles();
     bool newGeneratedProfiles = false;
 
-    // See member description of userProfileCount.
-    for (const auto& profile : gsl::make_span(userSettings.profiles).subspan(userProfileCount))
+    // See member description of _userProfileCount.
+    for (const auto& profile : gsl::make_span(userSettings.profiles).subspan(_userProfileCount))
     {
         // Let's say a user doesn't know that they need to write `"hidden": true` in
         // order to prevent a profile from showing up (and a settings UI doesn't exist).
@@ -486,7 +486,7 @@ void SettingsLoader::_parse(const OriginTag origin, const std::string_view& cont
 
 void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, ParsedSettings& settings)
 {
-    // FYI: The static_cast ensures we don't move don't move the profile into
+    // FYI: The static_cast ensures we don't move the profile into
     // `profilesByGuid`, even though we still need it later for `profiles`.
     if (settings.profilesByGuid.emplace(profile->Guid(), static_cast<const winrt::com_ptr<Profile>&>(profile)).second)
     {
@@ -525,7 +525,7 @@ try
 
     if (firstTimeSetup)
     {
-        loader.FillBlanksInDefaultsJson();
+        loader.ApplyRuntimeInitialSettings();
     }
 
     loader.MergeInboxIntoUserProfiles();

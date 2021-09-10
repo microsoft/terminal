@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ColorScheme.h"
-#include "DefaultSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 #include "Utils.h"
@@ -42,19 +41,12 @@ static constexpr std::array<std::string_view, 16> TableColors = {
 };
 
 ColorScheme::ColorScheme() noexcept :
-    _Foreground(DEFAULT_FOREGROUND),
-    _Background(DEFAULT_BACKGROUND),
-    _SelectionBackground(DEFAULT_FOREGROUND),
-    _CursorColor(DEFAULT_CURSOR_COLOR)
+    ColorScheme{ winrt::hstring{} }
 {
 }
 
-ColorScheme::ColorScheme(winrt::hstring name) :
-    _Name{ std::move(name) },
-    _Foreground(DEFAULT_FOREGROUND),
-    _Background(DEFAULT_BACKGROUND),
-    _SelectionBackground(DEFAULT_FOREGROUND),
-    _CursorColor(DEFAULT_CURSOR_COLOR)
+ColorScheme::ColorScheme(const winrt::hstring& name) noexcept :
+    _Name{ name }
 {
     const auto table = Utils::CampbellColorTable();
     std::copy_n(table.data(), table.size(), _table.data());
@@ -80,8 +72,8 @@ winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
 // - Returns nullptr for invalid JSON.
 winrt::com_ptr<ColorScheme> ColorScheme::FromJson(const Json::Value& json)
 {
-    auto result = winrt::make_self<ColorScheme>();
-    return result->LayerJson(json) ? result : nullptr;
+    auto result = winrt::make_self<ColorScheme>(uninitialized_t{});
+    return result->_layerJson(json) ? result : nullptr;
 }
 
 // Method Description:
@@ -93,23 +85,25 @@ winrt::com_ptr<ColorScheme> ColorScheme::FromJson(const Json::Value& json)
 // Arguments:
 // - json: an object which should be a full serialization of a ColorScheme object.
 // Return Value:
-// <none>
-bool ColorScheme::LayerJson(const Json::Value& json)
+// - Returns true if the given JSON was valid.
+bool ColorScheme::_layerJson(const Json::Value& json)
 {
-    bool good = true;
+    // Required fields
+    auto isValid = JsonUtils::GetValueForKey(json, NameKey, _Name);
 
-    good &= JsonUtils::GetValueForKey(json, NameKey, _Name);
+    // Optional fields (they have defaults in ColorScheme.h)
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
 
+    // Required fields
     for (unsigned int i = 0; i < TableColors.size(); ++i)
     {
-        good &= JsonUtils::GetValueForKey(json, til::at(TableColors, i), til::at(_table, i));
+        isValid &= JsonUtils::GetValueForKey(json, til::at(TableColors, i), til::at(_table, i));
     }
 
-    return good;
+    return isValid;
 }
 
 // Method Description:
@@ -134,11 +128,6 @@ Json::Value ColorScheme::ToJson() const
     }
 
     return json;
-}
-
-const std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>& ColorScheme::TableReference() const noexcept
-{
-    return _table;
 }
 
 winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() const noexcept

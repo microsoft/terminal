@@ -29,7 +29,7 @@ void AzureCloudShellGenerator::GenerateProfiles(std::vector<winrt::com_ptr<imple
 {
     if (AzureConnection::IsAzureConnectionAvailable())
     {
-        auto azureCloudShellProfile{ CreateDefaultProfile(AzureGeneratorNamespace, L"Azure Cloud Shell") };
+        auto azureCloudShellProfile{ CreateDynamicProfile(AzureGeneratorNamespace, L"Azure Cloud Shell") };
         azureCloudShellProfile->Commandline(L"Azure");
         azureCloudShellProfile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
         azureCloudShellProfile->DefaultAppearance().ColorSchemeName(L"Vintage");

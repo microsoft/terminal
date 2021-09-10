@@ -15,39 +15,28 @@ Author(s):
 
 --*/
 #pragma once
+
 #include "../../inc/conattrs.hpp"
 #include "inc/cppwinrt_utils.h"
+#include "DefaultSettings.h"
 
 #include "ColorScheme.g.h"
-
-// fwdecl unittest classes
-namespace SettingsModelLocalTests
-{
-    class SettingsTests;
-    class ColorSchemeTests;
-};
-
-// Use this macro to quick implement both the getter and setter for a color property.
-// This should only be used for color types where there's no logic in the
-// getter/setter beyond just accessing/updating the value.
-#define WINRT_TERMINAL_COLOR_PROPERTY(name, ...)                      \
-public:                                                               \
-    Core::Color name() const noexcept { return _##name; }             \
-    void name(const Core::Color& value) noexcept { _##name = value; } \
-                                                                      \
-private:                                                              \
-    Core::Color _##name{ __VA_ARGS__ };
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     struct ColorScheme : ColorSchemeT<ColorScheme>
     {
-    public:
-        // This default constructor creates an instance with an
-        // uninitialized color table. Use FromJson() instead.
-        ColorScheme() noexcept;
+        // A ColorScheme constructed with uninitialized_t
+        // leaves _table uninitialized.
+        struct uninitialized_t
+        {
+        };
 
-        ColorScheme(hstring name);
+    public:
+        ColorScheme() noexcept;
+        explicit ColorScheme(uninitialized_t) noexcept {}
+        explicit ColorScheme(const winrt::hstring& name) noexcept;
+
         com_ptr<ColorScheme> Copy() const;
 
         hstring ToString()
@@ -58,18 +47,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
 
-        const std::array<Core::Color, COLOR_TABLE_SIZE>& TableReference() const noexcept;
         com_array<Core::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
 
         WINRT_PROPERTY(winrt::hstring, Name);
-        WINRT_TERMINAL_COLOR_PROPERTY(Foreground); // defined in constructor
-        WINRT_TERMINAL_COLOR_PROPERTY(Background); // defined in constructor
-        WINRT_TERMINAL_COLOR_PROPERTY(SelectionBackground); // defined in constructor
-        WINRT_TERMINAL_COLOR_PROPERTY(CursorColor); // defined in constructor
+        WINRT_PROPERTY(Core::Color, Foreground, static_cast<Core::Color>(DEFAULT_FOREGROUND)); // defined in constructor
+        WINRT_PROPERTY(Core::Color, Background, static_cast<Core::Color>(DEFAULT_BACKGROUND)); // defined in constructor
+        WINRT_PROPERTY(Core::Color, SelectionBackground, static_cast<Core::Color>(DEFAULT_FOREGROUND)); // defined in constructor
+        WINRT_PROPERTY(Core::Color, CursorColor, static_cast<Core::Color>(DEFAULT_CURSOR_COLOR)); // defined in constructor
 
     private:
-        bool LayerJson(const Json::Value& json);
+        bool _layerJson(const Json::Value& json);
 
         std::array<Core::Color, COLOR_TABLE_SIZE> _table;
     };

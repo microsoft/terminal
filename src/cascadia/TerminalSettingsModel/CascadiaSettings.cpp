@@ -15,7 +15,7 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
-winrt::com_ptr<Profile> Model::implementation::ReproduceProfile(const winrt::com_ptr<Profile>& parent)
+winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
     const auto profile = winrt::make_self<Profile>();
     profile->Origin(OriginTag::User);
@@ -365,7 +365,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
     GUID guid{};
     LOG_IF_FAILED(CoCreateGuid(&guid));
 
-    const auto profile = ReproduceProfile(_baseLayerProfile);
+    const auto profile = CreateChild(_baseLayerProfile);
     profile->Guid(guid);
     profile->Name(winrt::hstring{ name });
     return profile;
@@ -642,9 +642,6 @@ Model::Profile CascadiaSettings::GetProfileByIndex(uint32_t index) const
 //   set a keybinding without all the required args for an action.
 //   Display a warning if an action didn't have a required arg.
 //   This will also catch other keybinding warnings, like from GH#4239.
-// - TODO: GH#2548 ensure there's at least one key bound.
-//   Display a warning if there's _NO_ keys bound to any actions.
-//   That's highly irregular, and likely an indication of an error somehow.
 // Arguments:
 // - <none>
 // Return Value:

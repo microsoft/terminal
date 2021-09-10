@@ -36,7 +36,7 @@ std::wstring_view WslDistroGenerator::GetNamespace() const noexcept
 
 static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
 {
-    const auto WSLDistro{ CreateDefaultProfile(WslGeneratorNamespace, distName) };
+    const auto WSLDistro{ CreateDynamicProfile(WslGeneratorNamespace, distName) };
     WSLDistro->Commandline(winrt::hstring{ L"wsl.exe -d " + distName });
     WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
     WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });

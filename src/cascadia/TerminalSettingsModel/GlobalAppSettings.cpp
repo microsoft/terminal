@@ -227,9 +227,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, AlwaysShowTrayIconKey, _AlwaysShowTrayIcon);
     JsonUtils::GetValueForKey(json, DisabledProfileSourcesKey, _DisabledProfileSources);
 
-    // This is a helper lambda to get the keybindings and commands out of both
-    // and array of objects. We'll use this twice, once on the legacy
-    // `keybindings` key, and again on the newer `bindings` key.
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
     for (const auto& jsonKey : bindingsKeys)
     {

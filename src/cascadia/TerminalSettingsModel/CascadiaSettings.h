@@ -26,7 +26,7 @@ Author(s):
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    winrt::com_ptr<Profile> ReproduceProfile(const winrt::com_ptr<Profile>& parent);
+    winrt::com_ptr<Profile> CreateChild(const winrt::com_ptr<Profile>& parent);
 
     class SettingsTypedDeserializationException final : public std::runtime_error
     {
@@ -49,7 +49,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         SettingsLoader(const std::string_view& userJSON, const std::string_view& inboxJSON);
 
         void GenerateProfiles();
-        void FillBlanksInDefaultsJson();
+        void ApplyRuntimeInitialSettings();
         void MergeInboxIntoUserProfiles();
         void MergeFragmentsIntoUserProfiles();
         void DisableDeletedProfiles();
@@ -68,12 +68,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _parse(const OriginTag origin, const std::string_view& content, ParsedSettings& settings);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
 
-        std::unordered_set<std::wstring_view> ignoredNamespaces;
+        std::unordered_set<std::wstring_view> _ignoredNamespaces;
         // We treat userSettings.profiles as an append-only array and will
         // append profiles into the userSettings as necessary in this function.
         // We can thus get the gsl::span of user-given profiles, by preserving the size here
-        // and restoring it with gsl::make_span(userSettings.profiles).subspan(userProfileCount).
-        size_t userProfileCount = 0;
+        // and restoring it with gsl::make_span(userSettings.profiles).subspan(_userProfileCount).
+        size_t _userProfileCount = 0;
     };
 
     struct CascadiaSettings : CascadiaSettingsT<CascadiaSettings>
