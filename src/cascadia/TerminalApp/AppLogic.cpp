@@ -760,10 +760,7 @@ namespace winrt::TerminalApp::implementation
 
         try
         {
-            const auto beg = std::chrono::high_resolution_clock::now();
             auto newSettings = _isUwp ? CascadiaSettings::LoadUniversal() : CascadiaSettings::LoadAll();
-            const auto end = std::chrono::high_resolution_clock::now();
-            OutputDebugStringA(fmt::format("{:.6f}\n", std::chrono::duration<double>(end - beg).count()).c_str());
             _settings = newSettings;
 
             if (_settings.GetLoadingError())

@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     public:
         static const std::wstring_view GetPreferredPowershellProfileName();
 
-        std::wstring_view GetNamespace() const noexcept;
-        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const;
+        std::wstring_view GetNamespace() const noexcept override;
+        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
     };
 };

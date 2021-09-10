@@ -1,5 +1,6 @@
 {
-    "defaultProfile": "",
+    // "defaultProfile" is filled in by CascadiaSettings, depending on
+    // what dynamic profiles are present during the first launch.
     "copyOnSelect": false,
     "copyFormatting": false,
     "profiles":
@@ -13,14 +14,13 @@
                 "hidden": false
             },
             {
+                // "name" is filled in by CascadiaSettings as a localized string.
                 "guid": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
-                "name": "",
                 "commandline": "cmd.exe",
                 "hidden": false
             }
         ]
     },
-    "schemes": [],
     "actions":
     [
         { "command": {"action": "copy", "singleLine": false }, "keys": "ctrl+c" },

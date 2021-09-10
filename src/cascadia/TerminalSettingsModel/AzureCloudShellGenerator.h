@@ -24,7 +24,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     class AzureCloudShellGenerator final : public IDynamicProfileGenerator
     {
     public:
-        std::wstring_view GetNamespace() const noexcept;
-        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const;
+        std::wstring_view GetNamespace() const noexcept override;
+        void GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
     };
 };
