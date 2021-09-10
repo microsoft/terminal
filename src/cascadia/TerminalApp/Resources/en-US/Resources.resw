@@ -685,4 +685,7 @@
   <data name="DropPathTabSplit.Text" xml:space="preserve">
     <value>Split the window and start in given directory</value>
   </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Don't show again</value>
+  </data>
 </root>

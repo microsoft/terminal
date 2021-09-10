@@ -3,11 +3,18 @@
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum InfoBarMessage
+    {
+        KeyboardServiceWarning = 0
+    };
+
     [default_interface] runtimeclass ApplicationState {
         static ApplicationState SharedInstance();
 
         void Reload();
 
         String FilePath { get; };
+
+        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages { get; set; };
     }
 }

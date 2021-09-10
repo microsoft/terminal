@@ -2709,11 +2709,14 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Displays a dialog stating the "Touch Keyboard and Handwriting Panel
     //   Service" is disabled.
-    void TerminalPage::ShowKeyboardServiceWarning()
+    void TerminalPage::ShowKeyboardServiceWarning() const
     {
-        if (auto keyboardWarningInfoBar = FindName(L"KeyboardWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+        if (!_IsMessageDismissed(InfoBarMessage::KeyboardServiceWarning))
         {
-            keyboardWarningInfoBar.IsOpen(true);
+            if (const auto keyboardServiceWarningInfoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+            {
+                keyboardServiceWarningInfoBar.IsOpen(true);
+            }
         }
     }
 
@@ -3069,5 +3072,60 @@ namespace winrt::TerminalApp::implementation
             return _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
         }
         return profile;
+    }
+
+    // Method Description:
+    // - Persists the user's choice not to show information bar warning about "Touch keyboard and Handwriting Panel Service" disabled
+    // Then hides this information buffer.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_KeyboardServiceWarningInfoDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
+    {
+        _DismissMessage(InfoBarMessage::KeyboardServiceWarning);
+        if (const auto infoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+    }
+
+    // Method Description:
+    // - Checks whether information bar message was dismissed earlier (in the application state)
+    // Arguments:
+    // - message: message to look for in the state
+    // Return Value:
+    // - true, if the message was dismissed
+    bool TerminalPage::_IsMessageDismissed(const InfoBarMessage& message)
+    {
+        if (const auto dismissedMessages{ ApplicationState::SharedInstance().DismissedMessages() })
+        {
+            for (const auto& dismissedMessage : dismissedMessages)
+            {
+                if (dismissedMessage == message)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Method Description:
+    // - Persists the user's choice to dismiss information bar message (in application state)
+    // Arguments:
+    // - message: message to dismiss
+    // Return Value:
+    // - <none>
+    void TerminalPage::_DismissMessage(const InfoBarMessage& message)
+    {
+        auto dismissedMessages = ApplicationState::SharedInstance().DismissedMessages();
+        if (!dismissedMessages)
+        {
+            dismissedMessages = winrt::single_threaded_vector<InfoBarMessage>();
+        }
+
+        dismissedMessages.Append(message);
+        ApplicationState::SharedInstance().DismissedMessages(dismissedMessages);
     }
 }

@@ -481,3 +481,10 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
         pair_type{ "all", AllSet },
     };
 };
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
+{
+    JSON_MAPPINGS(1) = {
+        pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
+    };
+};

@@ -22,7 +22,8 @@ Abstract:
 // It provides X with the following arguments:
 //   (type, function name, JSON key, ...variadic construction arguments)
 #define MTSM_APPLICATION_STATE_FIELDS(X) \
-    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")
+    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
+    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages")
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
