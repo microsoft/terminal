@@ -279,6 +279,7 @@ void AppHost::Initialize()
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
+    _logic.OpenSystemMenu({ this, &AppHost::_OpenSystemMenu });
     _logic.QuitRequested({ this, &AppHost::_RequestQuitAll });
 
     _window->UpdateTitle(_logic.Title());
@@ -1060,6 +1061,12 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
     summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
     _HandleSummon(sender, summonArgs);
+}
+
+void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
+                              const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->OpenSystemMenu(std::nullopt, std::nullopt);
 }
 
 // Method Description:

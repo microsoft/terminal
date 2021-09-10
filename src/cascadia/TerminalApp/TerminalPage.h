@@ -132,6 +132,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+        TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
 
     private:
