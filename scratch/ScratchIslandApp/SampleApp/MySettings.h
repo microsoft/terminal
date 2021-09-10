@@ -90,10 +90,8 @@ namespace winrt::SampleApp::implementation
 
         MySettings()
         {
-            const auto campbellSpan = ::Microsoft::Console::Utils::CampbellColorTable();
-            std::transform(campbellSpan.begin(), campbellSpan.end(), _ColorTable.begin(), [](auto&& color) {
-                return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
-            });
+            const auto& campbellSpan = ::Microsoft::Console::Utils::CampbellColorTable();
+            std::copy(campbellSpan.begin(), campbellSpan.end(), _ColorTable.begin());
         }
     };
 }

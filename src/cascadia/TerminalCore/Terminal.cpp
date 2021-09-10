@@ -176,9 +176,14 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _defaultFg = appearance.DefaultForeground();
     _intenseIsBright = appearance.IntenseIsBright();
 
-    for (int i = 0; i < 16; i++)
     {
-        _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
+        const auto table = appearance.ColorTable();
+        Expects(table.size() == 16);
+
+        for (uint32_t i = 0; i < 16; ++i)
+        {
+            _colorTable[i] = til::color{ table[i] };
+        }
     }
 
     CursorType cursorShape = CursorType::VerticalBar;

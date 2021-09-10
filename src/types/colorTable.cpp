@@ -475,9 +475,9 @@ void Utils::InitializeCampbellColorTable(const gsl::span<til::color> table)
     std::copy(campbellColorTable.begin(), campbellColorTable.end(), table.begin());
 }
 
-gsl::span<const til::color> Utils::CampbellColorTable()
+const std::array<til::color, 16>& Utils::CampbellColorTable()
 {
-    return gsl::make_span(campbellColorTable);
+    return campbellColorTable;
 }
 
 // Function Description:
