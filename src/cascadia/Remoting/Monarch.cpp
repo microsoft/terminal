@@ -177,7 +177,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 // Somehow we don't have our own peasant, this should never happen.
                 // We are trying to quit anyways so just fail here.
-                FAIL_FAST();
+                assert(peasantSearch != _peasants.end());
             }
         }
     }
