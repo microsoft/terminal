@@ -69,20 +69,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
             else
             {
-                uint64_t old = 0;
-
                 // Peasant already had an ID (from an older monarch). Leave that one
                 // be. Make sure that the next peasant's ID is higher than it.
                 // If multiple peasants are added concurrently we keep trying to update
                 // until we get to set the new id.
-                while (!_nextPeasantID.compare_exchange_strong(old, providedID + 1))
+                uint64_t current;
+                do
                 {
-                    old = _nextPeasantID.load();
-                    if (providedID < old)
-                    {
-                        break;
-                    }
-                }
+                    current = _nextPeasantID.load(std::memory_order_relaxed);
+                } while (current <= providedID && !_nextPeasantID.compare_exchange_weak(current, providedID + 1, std::memory_order_relaxed));
             }
 
             auto newPeasantsId = peasant.GetID();
