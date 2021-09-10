@@ -47,20 +47,20 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
 {
     _blinkingState.RecordBlinkingUsage(attr);
     auto colors = _perceptualColorNudging ? attr.CalculateRgbColors(
-                                                    _colorTable,
-                                                    _defaultFg,
-                                                    _defaultBg,
-                                                    _screenReversed,
-                                                    _blinkingState.IsBlinkingFaint(),
-                                                    _intenseIsBright,
-                                                    _adjustedForegroundColors) :
+                                                _colorTable,
+                                                _defaultFg,
+                                                _defaultBg,
+                                                _screenReversed,
+                                                _blinkingState.IsBlinkingFaint(),
+                                                _intenseIsBright,
+                                                _adjustedForegroundColors) :
                                             attr.CalculateRgbColors(
-                                                    _colorTable,
-                                                    _defaultFg,
-                                                    _defaultBg,
-                                                    _screenReversed,
-                                                    _blinkingState.IsBlinkingFaint(),
-                                                    _intenseIsBright);
+                                                _colorTable,
+                                                _defaultFg,
+                                                _defaultBg,
+                                                _screenReversed,
+                                                _blinkingState.IsBlinkingFaint(),
+                                                _intenseIsBright);
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
