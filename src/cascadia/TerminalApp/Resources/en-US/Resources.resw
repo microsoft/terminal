@@ -709,4 +709,10 @@
   <data name="PlainText" xml:space="preserve">
     <value>Plain Text</value>
   </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>Termination behavior can be configured in advanced profile settings.</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Don't show again</value>
+  </data>
 </root>
