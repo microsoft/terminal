@@ -116,11 +116,15 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array
     {
         auto bgIndex = _background.IsDefault() ? 16 : _background.GetIndex();
         auto fgIndex = _foreground.IsDefault() ? 17 : _foreground.GetIndex();
-        fg = adjustedForegroundColors.value()[bgIndex][fgIndex];
         if (IsReverseVideo() ^ reverseScreenMode)
         {
-            std::swap(fg, bg);
+            bg = _foreground.GetColor(colorTable, defaultFgColor);
+            fg = adjustedForegroundColors.value()[fgIndex][bgIndex];
             reversed = true;
+        }
+        else
+        {
+            fg = adjustedForegroundColors.value()[bgIndex][fgIndex];
         }
     }
     else
