@@ -46,7 +46,8 @@
 
             <!--  Word Delimiters  -->
             <local:SettingContainer x:Uid="Globals_WordDelimiters">
-                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" />
             </local:SettingContainer>
 
