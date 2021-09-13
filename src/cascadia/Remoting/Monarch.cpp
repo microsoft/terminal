@@ -147,6 +147,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::SignalClose(const uint64_t peasantId)
     {
+        _clearOldMruEntries(peasantId);
         _peasants.erase(peasantId);
         _WindowClosedHandlers(nullptr, nullptr);
     }
