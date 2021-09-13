@@ -1262,14 +1262,14 @@
           "type": [ "integer", "string" ],
           "deprecated": true
         },
-        "minimizeToTray": {
+        "minimizeToNotificationArea": {
           "default": "false",
-          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the system tray through which the user can access their windows.",
+          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the notification area through which the user can access their windows.",
           "type": "boolean"
         },
-        "alwaysShowTrayIcon": {
+        "alwaysShowNotificationIcon": {
           "default": "false",
-          "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
         "useAcrylicInTabRow": {
