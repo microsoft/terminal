@@ -57,8 +57,8 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
         (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
         (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
     {
-        auto bgIndex = bgTextColor.IsDefault() ? 16 : bgTextColor.GetIndex();
-        auto fgIndex = fgTextColor.IsDefault() ? 17 : fgTextColor.GetIndex();
+        auto bgIndex = bgTextColor.IsDefault() ? DefaultBgIndex : bgTextColor.GetIndex();
+        auto fgIndex = fgTextColor.IsDefault() ? DefaultFgIndex : fgTextColor.GetIndex();
 
         if (fgTextColor.IsIndex16() && (fgIndex < 8) && attr.IsBold() && _intenseIsBright)
         {

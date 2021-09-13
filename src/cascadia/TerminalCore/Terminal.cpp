@@ -1282,15 +1282,23 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noe
     return _taskbarProgress;
 }
 
+// Method Description:
+// - Creates the adjusted color array, which contains the possible foreground colors,
+//   adjusted for perceivability
+// - The adjusted color array is 2-d, and effectively maps a background and foreground
+//   color pair to the adjusted foreground for that color pair
 void Terminal::_MakeAdjustedColorArray()
 {
+    // The color table has 16 colors, but the adjusted color table needs to be 18
+    // to include the default background and default foreground colors
     std::array<COLORREF, 18> colorTableWithDefaults;
     for (auto index = 0; index < 16; ++index)
     {
         colorTableWithDefaults[index] = _colorTable.at(index);
     }
-    colorTableWithDefaults[16] = _defaultBg;
-    colorTableWithDefaults[17] = _defaultFg;
+
+    colorTableWithDefaults[DefaultBgIndex] = _defaultBg;
+    colorTableWithDefaults[DefaultFgIndex] = _defaultFg;
     for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
     {
         auto fg = colorTableWithDefaults.at(fgIndex);
