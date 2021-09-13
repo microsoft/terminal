@@ -606,7 +606,7 @@ try
     *ppRetVal = nullptr;
 
     const std::wstring queryText{ text, SysStringLen(text) };
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = _getOptimizedBufferSize();
     const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
 
     auto searchDirection = Search::Direction::Forward;
@@ -1325,7 +1325,7 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 // - <none>
 // Return Value:
 // - A viewport representing the portion of the TextBuffer that has valid text
-const Viewport UiaTextRangeBase::_getBufferSize() const noexcept
+const Viewport UiaTextRangeBase::_getOptimizedBufferSize() const noexcept
 {
     // we need to add 1 to the X/Y of textBufferEnd
     // because we want the returned viewport to include this COORD
@@ -1336,13 +1336,18 @@ const Viewport UiaTextRangeBase::_getBufferSize() const noexcept
     return Viewport::FromDimensions({ 0, 0 }, width, height);
 }
 
+// We consider the "document end" to be the line beneath the cursor or
+// last legible character (whichever is further down). In the event where
+// the last legible character is on the last line of the buffer,
+// we use the "end exclusive" position (left-most point on a line one past the end of the buffer).
+// NOTE: "end exclusive" is naturally computed using the heuristic above.
 const til::point UiaTextRangeBase::_getDocumentEnd() const noexcept
 {
-    const auto optBufferSize{ _getBufferSize() };
+    const auto optimizedBufferSize{ _getOptimizedBufferSize() };
     const auto& buffer{ _pData->GetTextBuffer() };
-    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(optBufferSize) };
+    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(optimizedBufferSize) };
     const auto cursorPos{ buffer.GetCursor().GetPosition() };
-    return { optBufferSize.Left(), std::max(lastCharPos.Y, cursorPos.Y) + 1 };
+    return { optimizedBufferSize.Left(), std::max(lastCharPos.Y, cursorPos.Y) + 1 };
 }
 
 // Routine Description:
@@ -1556,7 +1561,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 
     const bool allowBottomExclusive = !preventBoundary;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = _getOptimizedBufferSize();
     const auto documentEnd{ _getDocumentEnd() };
 
     bool success = true;
@@ -1657,7 +1662,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     }
 
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = _getOptimizedBufferSize();
 
     const auto target = GetEndpoint(endpoint);
     switch (moveDirection)

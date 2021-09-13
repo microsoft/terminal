@@ -1084,7 +1084,7 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
     }
     else if (limit && bufferSize.CompareInBounds(target, *limit, true) >= 0)
     {
-        copy = { limit->operator COORD() };
+        copy = *limit;
     }
     else if (target == bufferSize.EndExclusive())
     {
@@ -1184,10 +1184,10 @@ const COORD TextBuffer::_GetWordStartForSelection(const COORD target, const std:
 // - accessibilityMode - when enabled, we continue expanding right until we are at the beginning of the next READABLE word
 //                        Otherwise, expand right until a character of a new delimiter class is found
 //                        (or a row boundary is encountered)
-// - limit - (optional) the last possible position that could be populated. This can be used to improve performance.
+// - limitOptional - (optional) the last possible position that could be populated. This can be used to improve performance.
 // Return Value:
 // - The COORD for the last character on the "word" (inclusive)
-const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limit) const
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
     // Consider a buffer with this text in it:
     // "  word   other  "
@@ -1200,19 +1200,16 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
     // NOTE: the end anchor (this one) is exclusive, whereas the start anchor (GetWordStart) is inclusive
 
     // Already at the end. Can't move forward.
-    if (limit && GetSize().CompareInBounds(target, *limit, true) >= 0)
-    {
-        return target;
-    }
-    else if (target == GetSize().EndExclusive())
+    const auto bufferSize{ GetSize() };
+    const auto limit = limitOptional ? *limitOptional : bufferSize.EndExclusive();
+    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
         return target;
     }
 
     if (accessibilityMode)
     {
-        const auto lastCharPosLimit{ limit ? *limit : GetLastNonSpaceCharacter(GetSize()) };
-        return _GetWordEndForAccessibility(target, wordDelimiters, lastCharPosLimit);
+        return _GetWordEndForAccessibility(target, wordDelimiters, limit);
     }
     else
     {
@@ -1225,19 +1222,19 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 // Arguments:
 // - target - a COORD on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
-// - lastCharPos - the position of the last nonspace character in the text buffer (to improve performance)
+// - limit - the last "valid" position in the text buffer (to improve performance)
 // Return Value:
 // - The COORD for the first character of the next readable "word". If no next word, return one past the end of the buffer
-const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD lastCharPos) const
+const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD limit) const
 {
     const auto bufferSize{ GetSize() };
     COORD result{ target };
 
-    if (bufferSize.CompareInBounds(target, lastCharPos, true) >= 0)
+    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
         // if we're already on/past the last RegularChar,
         // clamp result to that position
-        result = lastCharPos;
+        result = limit;
 
         // make the result exclusive
         bufferSize.IncrementInBounds(result, true);
@@ -1245,13 +1242,13 @@ const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const st
     else
     {
         auto iter{ GetCellDataAt(result, bufferSize) };
-        while (iter && iter.Pos() != lastCharPos && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) == DelimiterClass::RegularChar)
+        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) == DelimiterClass::RegularChar)
         {
             // Iterate through readable text
             iter++;
         }
 
-        while (iter && iter.Pos() != lastCharPos && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) != DelimiterClass::RegularChar)
+        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) != DelimiterClass::RegularChar)
         {
             // expand to the beginning of the NEXT word
             iter++;
@@ -1349,7 +1346,7 @@ void TextBuffer::_PruneHyperlinks()
 // Arguments:
 // - pos - a COORD on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
-// - lastCharPos - the position of the last nonspace character in the text buffer (to improve performance)
+// - limitOptional - the last "valid" position in the text buffer (to improve performance)
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
 // - pos - The COORD for the first character on the "word" (inclusive)
@@ -1358,10 +1355,11 @@ bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimite
     // move to the beginning of the next word
     // NOTE: _GetWordEnd...() returns the exclusive position of the "end of the word"
     //       This is also the inclusive start of the next word.
-    const auto limit{ limitOptional ? *limitOptional : GetLastNonSpaceCharacter() };
-    auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
+    const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional ? *limitOptional : bufferSize.EndExclusive() };
+    const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
 
-    if (GetSize().CompareInBounds(copy, limit, true) >= 0)
+    if (bufferSize.CompareInBounds(copy, limit, true) >= 0)
     {
         return false;
     }
