@@ -206,16 +206,16 @@ namespace Microsoft::Terminal::Settings::Model
             // SYSTEM, but if I did that, then even we can't write the file
             // while elevated, which isn't what we want.
 
-            PSID pEveryoneSid = nullptr;
-            PSID pAdminGroupSid = nullptr;
+            wil::unique_sid everyoneSid{};
+            wil::unique_sid adminGroupSid{};
             SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
             SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
 
             // Create a SID for the BUILTIN\Administrators group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminGroupSid));
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
 
             // Create a well-known SID for the Everyone group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid));
+            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &everyoneSid));
 
             EXPLICIT_ACCESS ea[2];
             ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
@@ -225,7 +225,7 @@ namespace Microsoft::Terminal::Settings::Model
             ea[0].grfInheritance = NO_INHERITANCE;
             ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
             ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[0].Trustee.ptstrName = (LPTSTR)pAdminGroupSid;
+            ea[0].Trustee.ptstrName = (LPWSTR)(adminGroupSid.get());
 
             // Grant Everyone the permission or read this file
             ea[1].grfAccessPermissions = GENERIC_READ;
@@ -233,7 +233,7 @@ namespace Microsoft::Terminal::Settings::Model
             ea[1].grfInheritance = NO_INHERITANCE;
             ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
             ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[1].Trustee.ptstrName = (LPTSTR)pEveryoneSid;
+            ea[1].Trustee.ptstrName = (LPWSTR)(everyoneSid.get());
 
             ACL acl;
             PACL pAcl = &acl;

@@ -115,7 +115,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ElevatedState::_writeFileContents(const std::string_view content) const
     {
-        // WriteUTF8FileAtomic(_path, content, true);
+        // DON'T use WriteUTF8FileAtomic, which will write to a temporary file
+        // then rename that file to the final filename. That actually lets us
+        // overwrite the elevate file's contents even when unelevated, because
+        // we're effectively deleting the original file, then renaming a
+        // different file in it's place.
+        //
+        // We're not worried about someone else doing that though, if they do
+        // that with the wrong permissions, then we'll just ignore the file and
+        // start over.
         WriteUTF8File(_path, content, true);
     }
 

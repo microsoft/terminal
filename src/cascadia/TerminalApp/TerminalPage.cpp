@@ -1480,9 +1480,21 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Method Description:
+    // - For a given commandline, determines if we should prompt the user for
+    //   approval. We only do this check when elevated. This will check the
+    //   AllowedCommandlines in `elevated-state.json`, to see if the commandline
+    //   already exists in that list.
+    // Arguments:
+    // - cmdline: The commandline to check
+    // Return Value:
+    // - true if we should prompt the user for approval.
     bool TerminalPage::_shouldPromptForCommandline(const winrt::hstring& cmdline) const
     {
-        if (true || _isElevated())
+        // NOTE: For debugging purposes, changing this to `true ||
+        // _isElevated()` is a handy way of forcing the elevation logic, even
+        // when unelevated.
+        if (_isElevated())
         {
             if (const auto& allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() })
             {
@@ -1494,9 +1506,12 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             }
+
+            // TODO! If the cmdline starts with (case-insensitive)
+            // `C:\WINDOWS\System32`, then ignore this check.
         }
 
-        return true; // TODO! Change this to false. This is defaulted to true for testing.
+        return false;
     }
 
     void TerminalPage::_adminWarningPrimaryClicked(const TerminalApp::AdminWarningPlaceholder& sender,
