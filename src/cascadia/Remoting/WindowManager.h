@@ -45,8 +45,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         uint64_t GetNumberOfPeasants();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
 
-        winrt::fire_and_forget RequestShowTrayIcon();
-        winrt::fire_and_forget RequestHideTrayIcon();
+        winrt::fire_and_forget RequestShowNotificationIcon();
+        winrt::fire_and_forget RequestHideNotificationIcon();
         winrt::fire_and_forget RequestQuitAll();
         bool DoesQuakeWindowExist();
         void UpdateActiveTabTitle(winrt::hstring title);
@@ -55,8 +55,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
