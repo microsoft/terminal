@@ -29,8 +29,3 @@ namespace winrt::TerminalApp::implementation
                                 winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
     };
 }
-
-// namespace winrt::TerminalApp::factory_implementation
-// {
-//     BASIC_FACTORY(AdminWarningPlaceholder);
-// }

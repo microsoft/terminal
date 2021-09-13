@@ -54,6 +54,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // monarch!
         CoRevokeClassObject(_registrationHostClass);
         _registrationHostClass = 0;
+        SignalClose();
         _monarchWaitInterrupt.SetEvent();
 
         // A thread is joinable once it's been started. Basically this just
@@ -61,6 +62,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         if (_electionThread.joinable())
         {
             _electionThread.join();
+        }
+    }
+
+    void WindowManager::SignalClose()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                _monarch.SignalClose(_peasant.GetID());
+            }
+            CATCH_LOG()
         }
     }
 
@@ -250,12 +263,15 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         // Here, we're the king!
         //
         // This is where you should do any additional setup that might need to be
-        // done when we become the king. THis will be called both for the first
+        // done when we become the king. This will be called both for the first
         // window, and when the current monarch dies.
 
+        _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
+        _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
         _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
         _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
+        _monarch.QuitAllRequested([this](auto&&, auto&&) { _QuitAllRequestedHandlers(*this, nullptr); });
 
         _BecameMonarchHandlers(*this, nullptr);
     }
@@ -526,6 +542,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         return _monarch.GetPeasantInfos();
     }
 
+    uint64_t WindowManager::GetNumberOfPeasants()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                return _monarch.GetNumberOfPeasants();
+            }
+            CATCH_LOG()
+        }
+        return 0;
+    }
+
     // Method Description:
     // - Ask the monarch to show a tray icon.
     // Arguments:
@@ -549,6 +578,19 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         auto strongThis{ get_strong() };
         co_await winrt::resume_background();
         _peasant.RequestHideTrayIcon();
+    }
+
+    // Method Description:
+    // - Ask the monarch to quit all windows.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget WindowManager::RequestQuitAll()
+    {
+        auto strongThis{ get_strong() };
+        co_await winrt::resume_background();
+        _peasant.RequestQuitAll();
     }
 
     bool WindowManager::DoesQuakeWindowExist()

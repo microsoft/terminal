@@ -82,6 +82,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             peasant.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
             peasant.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
+            peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
             _peasants[newPeasantsId] = peasant;
 
@@ -91,6 +92,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingUInt64(newPeasantsId, "peasantID", "the ID of the new peasant"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            _WindowCreatedHandlers(nullptr, nullptr);
             return newPeasantsId;
         }
         catch (...)
@@ -105,6 +108,74 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // get it.
             return -1;
         }
+    }
+
+    // Method Description:
+    // - Gives the host process an opportunity to run any pre-close logic then
+    //   requests all peasants to close.
+    // Arguments:
+    // - <none> used
+    // Return Value:
+    // - <none>
+    void Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
+    {
+        // Let the process hosting the monarch run any needed logic before
+        // closing all windows.
+        _QuitAllRequestedHandlers(*this, nullptr);
+
+        // Tell all peasants to exit.
+        const auto callback = [&](const auto& /*id*/, const auto& p) {
+            p.Quit();
+        };
+        const auto onError = [&](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_handleQuitAll_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not close"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forEachPeasant(callback, onError);
+    }
+
+    // Method Description:
+    // - Tells the monarch that a peasant is being closed.
+    // Arguments:
+    // - peasantId: the id of the peasant
+    // Return Value:
+    // - <none>
+    void Monarch::SignalClose(const uint64_t peasantId)
+    {
+        _peasants.erase(peasantId);
+        _WindowClosedHandlers(nullptr, nullptr);
+    }
+
+    // Method Description:
+    // - Counts the number of living peasants.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the number of active peasants.
+    uint64_t Monarch::GetNumberOfPeasants()
+    {
+        auto num = 0;
+        auto callback = [&](const auto& /*id*/, const auto& p) {
+            // Check that the peasant is alive, and if so increment the count
+            p.GetID();
+            num += 1;
+        };
+        auto onError = [](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_GetNumberOfPeasants_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not enumerate"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forEachPeasant(callback, onError);
+
+        return num;
     }
 
     // Method Description:

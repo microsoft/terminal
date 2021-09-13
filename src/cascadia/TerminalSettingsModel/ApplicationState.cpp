@@ -5,11 +5,56 @@
 #include "ApplicationState.h"
 #include "CascadiaSettings.h"
 #include "ApplicationState.g.cpp"
-
+#include "WindowLayout.g.cpp"
+#include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
-constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::string_view TabLayoutKey{ "tabLayout" };
+static constexpr std::string_view InitialPositionKey{ "initialPosition" };
+static constexpr std::string_view InitialSizeKey{ "initialSize" };
+
+namespace Microsoft::Terminal::Settings::Model::JsonUtils
+{
+    using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<WindowLayout>
+    {
+        WindowLayout FromJson(const Json::Value& json)
+        {
+            auto layout = winrt::make_self<implementation::WindowLayout>();
+
+            GetValueForKey(json, TabLayoutKey, layout->_TabLayout);
+            GetValueForKey(json, InitialPositionKey, layout->_InitialPosition);
+            GetValueForKey(json, InitialSizeKey, layout->_InitialSize);
+
+            return *layout;
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            return json.isObject();
+        }
+
+        Json::Value ToJson(const WindowLayout& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            SetValueForKey(json, TabLayoutKey, val.TabLayout());
+            SetValueForKey(json, InitialPositionKey, val.InitialPosition());
+            SetValueForKey(json, InitialSizeKey, val.InitialSize());
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return "WindowLayout";
+        }
+    };
+}
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 

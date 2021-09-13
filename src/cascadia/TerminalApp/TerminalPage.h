@@ -58,6 +58,8 @@ namespace winrt::TerminalApp::implementation
 
         void Create();
 
+        bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+
         winrt::fire_and_forget NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e);
 
         hstring Title();
@@ -69,7 +71,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring ApplicationDisplayName();
         winrt::hstring ApplicationVersion();
 
-        winrt::fire_and_forget CloseWindow();
+        winrt::fire_and_forget RequestQuit();
+        winrt::fire_and_forget CloseWindow(bool bypassDialog);
 
         void ToggleFocusMode();
         void ToggleFullscreen();
@@ -79,6 +82,8 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
+        void PersistWindowLayout();
+
         void SetInboundListener(bool isEmbedding);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
 
@@ -87,7 +92,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::TaskbarState TaskbarState() const;
 
-        void ShowKeyboardServiceWarning();
+        void ShowKeyboardServiceWarning() const;
         winrt::hstring KeyboardServiceDisabledText();
 
         winrt::fire_and_forget IdentifyWindow();
@@ -104,6 +109,9 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget WindowName(const winrt::hstring& value);
         uint64_t WindowId() const noexcept;
         void WindowId(const uint64_t& value);
+
+        void SetNumberOfOpenWindows(const uint64_t value);
+
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
@@ -124,6 +132,8 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+        TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
+        TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
 
     private:
         friend struct TerminalPageT<TerminalPage>; // for Xaml to bind events
@@ -155,10 +165,12 @@ namespace winrt::TerminalApp::implementation
         bool _isAlwaysOnTop{ false };
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
+        uint64_t _numOpenWindows{ 0 };
 
-        bool _rearranging;
-        std::optional<int> _rearrangeFrom;
-        std::optional<int> _rearrangeTo;
+        bool _maintainStateOnTabClose{ false };
+        bool _rearranging{ false };
+        std::optional<int> _rearrangeFrom{};
+        std::optional<int> _rearrangeTo{};
         bool _removing{ false };
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
@@ -181,6 +193,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _isElevated() const noexcept;
         void _ShowAboutDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowQuitDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
@@ -368,6 +381,13 @@ namespace winrt::TerminalApp::implementation
                                          const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
         void _adminWarningCancelClicked(const winrt::TerminalApp::AdminWarningPlaceholder& sender,
                                         const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
+
+        winrt::fire_and_forget _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
+        void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
+        void _KeyboardServiceWarningInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
+        static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
+        static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
+
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
 #define ON_ALL_ACTIONS(action) DECLARE_ACTION_HANDLER(action);

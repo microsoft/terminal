@@ -33,5 +33,7 @@ namespace Microsoft.Terminal.Settings.Model
         void SetParent(TerminalSettings parent);
         TerminalSettings GetParent();
         void ApplyColorScheme(ColorScheme scheme);
+
+        ColorScheme AppliedColorScheme;
     };
 }

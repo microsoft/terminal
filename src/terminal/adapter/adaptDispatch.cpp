@@ -2527,6 +2527,152 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber
     };
 }
 
+// Method Description:
+// - DECRQSS - Requests the state of a VT setting. The value being queried is
+//   identified by the intermediate and final characters of its control
+//   sequence, which are passed to the string handler.
+// Arguments:
+// - None
+// Return Value:
+// - a function to receive the VTID of the setting being queried
+ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
+{
+    // We use a VTIDBuilder to parse the characters in the control string into
+    // an ID which represents the setting being queried. If the given ID isn't
+    // supported, we respond with an error sequence: DCS 0 $ r ST. Note that
+    // this is the opposite of what is documented in most DEC manuals, which
+    // say that 0 is for a valid response, and 1 is for an error. The correct
+    // interpretation is documented in the DEC STD 070 reference.
+    const auto idBuilder = std::make_shared<VTIDBuilder>();
+    return [=](const auto ch) {
+        if (ch >= '\x40' && ch <= '\x7e')
+        {
+            const auto id = idBuilder->Finalize(ch);
+            switch (id)
+            {
+            case VTID('m'):
+                _ReportSGRSetting();
+                break;
+            case VTID('r'):
+                _ReportDECSTBMSetting();
+                break;
+            default:
+                _WriteResponse(L"\033P0$r\033\\");
+                break;
+            }
+            return false;
+        }
+        else
+        {
+            if (ch >= '\x20' && ch <= '\x2f')
+            {
+                idBuilder->AddIntermediate(ch);
+            }
+            return true;
+        }
+    };
+}
+
+// Method Description:
+// - Reports the current SGR attributes in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportSGRSetting() const
+{
+    // A valid response always starts with DCS 1 $ r.
+    // Then the '0' parameter is to reset the SGR attributes to the defaults.
+    std::wstring response = L"\033P1$r0";
+
+    TextAttribute attr;
+    if (_pConApi->PrivateGetTextAttributes(attr))
+    {
+        // For each boolean attribute that is set, we add the appropriate
+        // parameter value to the response string.
+        const auto addAttribute = [&](const auto parameter, const auto enabled) {
+            if (enabled)
+            {
+                response += parameter;
+            }
+        };
+        addAttribute(L";1", attr.IsBold());
+        addAttribute(L";2", attr.IsFaint());
+        addAttribute(L";3", attr.IsItalic());
+        addAttribute(L";4", attr.IsUnderlined());
+        addAttribute(L";5", attr.IsBlinking());
+        addAttribute(L";7", attr.IsReverseVideo());
+        addAttribute(L";8", attr.IsInvisible());
+        addAttribute(L";9", attr.IsCrossedOut());
+        addAttribute(L";21", attr.IsDoublyUnderlined());
+        addAttribute(L";53", attr.IsOverlined());
+
+        // We also need to add the appropriate color encoding parameters for
+        // both the foreground and background colors.
+        const auto addColor = [&](const auto base, const auto color) {
+            const auto iterator = std::back_insert_iterator(response);
+            if (color.IsIndex16())
+            {
+                const auto index = XtermToWindowsIndex(color.GetIndex());
+                const auto colorParameter = base + (index >= 8 ? 60 : 0) + (index % 8);
+                fmt::format_to(iterator, FMT_STRING(L";{}"), colorParameter);
+            }
+            else if (color.IsIndex256())
+            {
+                const auto index = Xterm256ToWindowsIndex(color.GetIndex());
+                fmt::format_to(iterator, FMT_STRING(L";{};5;{}"), base + 8, index);
+            }
+            else if (color.IsRgb())
+            {
+                const auto r = GetRValue(color.GetRGB());
+                const auto g = GetGValue(color.GetRGB());
+                const auto b = GetBValue(color.GetRGB());
+                fmt::format_to(iterator, FMT_STRING(L";{};2;{};{};{}"), base + 8, r, g, b);
+            }
+        };
+        addColor(30, attr.GetForeground());
+        addColor(40, attr.GetBackground());
+    }
+
+    // The 'm' indicates this is an SGR response, and ST ends the sequence.
+    response += L"m\033\\";
+    _WriteResponse(response);
+}
+
+// Method Description:
+// - Reports the DECSTBM margin range in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSTBMSetting() const
+{
+    // A valid response always starts with DCS 1 $ r.
+    std::wstring response = L"\033P1$r";
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    if (_pConApi->GetConsoleScreenBufferInfoEx(csbiex))
+    {
+        auto marginTop = _scrollMargins.Top + 1;
+        auto marginBottom = _scrollMargins.Bottom + 1;
+        // If the margin top is greater than or equal to the bottom, then the
+        // margins aren't actually set, so we need to return the full height
+        // of the window for the margin range.
+        if (marginTop >= marginBottom)
+        {
+            marginTop = 1;
+            marginBottom = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+        }
+        const auto iterator = std::back_insert_iterator(response);
+        fmt::format_to(iterator, FMT_STRING(L"{};{}"), marginTop, marginBottom);
+    }
+
+    // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
+    response += L"r\033\\";
+    _WriteResponse(response);
+}
+
 // Routine Description:
 // - Determines whether we should pass any sequence that manipulates
 //   TerminalInput's input generator through the PTY. It encapsulates
