@@ -35,16 +35,16 @@ void NotificationIcon::_CreateWindow()
     RegisterClass(&wc);
 
     _notificationIconHwnd = wil::unique_hwnd(CreateWindowW(wc.lpszClassName,
-                                                   wc.lpszClassName,
-                                                   WS_DISABLED,
-                                                   CW_USEDEFAULT,
-                                                   CW_USEDEFAULT,
-                                                   CW_USEDEFAULT,
-                                                   CW_USEDEFAULT,
-                                                   HWND_MESSAGE,
-                                                   nullptr,
-                                                   wc.hInstance,
-                                                   nullptr));
+                                                           wc.lpszClassName,
+                                                           WS_DISABLED,
+                                                           CW_USEDEFAULT,
+                                                           CW_USEDEFAULT,
+                                                           CW_USEDEFAULT,
+                                                           CW_USEDEFAULT,
+                                                           HWND_MESSAGE,
+                                                           nullptr,
+                                                           wc.hInstance,
+                                                           nullptr));
 
     WINRT_VERIFY(_notificationIconHwnd);
 }
