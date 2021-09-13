@@ -373,8 +373,8 @@
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+insert" },
-        { "command": "paste", "keys": "ctrl+shift+v" },
-        { "command": "paste", "keys": "shift+insert" },
+        { "id": "Terminal.Paste", "command": "paste", "keys": "ctrl+shift+v" },
+        { "id": "Terminal.Paste", "command": "paste", "keys": "shift+insert" },
 
         // Scrollback
         { "command": "scrollDown", "keys": "ctrl+shift+down" },

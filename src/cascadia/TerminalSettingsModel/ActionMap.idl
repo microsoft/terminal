@@ -11,7 +11,7 @@ namespace Microsoft.Terminal.Settings.Model
         Boolean IsKeyChordExplicitlyUnbound(Microsoft.Terminal.Control.KeyChord keys);
 
         Command GetActionByKeyChord(Microsoft.Terminal.Control.KeyChord keys);
-        Command GetActionByExternalID(String externalID);
+        //Command GetActionByExternalID(String externalID);
 
         Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action);
         [method_name("GetKeyBindingForActionWithArgs")] Microsoft.Terminal.Control.KeyChord GetKeyBindingForAction(ShortcutAction action, IActionArgs actionArgs);

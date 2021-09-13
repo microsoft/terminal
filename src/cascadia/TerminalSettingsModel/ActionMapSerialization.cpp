@@ -50,8 +50,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 continue;
             }
 
-            AddAction(*Command::FromJson(cmdJson, warnings));
+            const auto& cmd = Command::FromJson(cmdJson, warnings);
+
+            if (!cmd->ExternalID().empty())
+            {
+                _StashIncompleteActions(*cmd);
+            }
+            else
+            {
+                AddAction(*cmd);
+            }
         }
+
+        _AddIncompleteActions();
 
         return warnings;
     }

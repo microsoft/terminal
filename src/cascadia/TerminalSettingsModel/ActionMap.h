@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool IsKeyChordExplicitlyUnbound(Control::KeyChord const& keys) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action) const;
         Control::KeyChord GetKeyBindingForAction(ShortcutAction const& action, IActionArgs const& actionArgs) const;
-        Model::Command GetActionByExternalID(winrt::hstring const& externalId) const;
+        std::optional<Model::Command> GetActionByExternalID(const winrt::hstring& externalId) const;
 
         // population
         void AddAction(const Model::Command& cmd);
@@ -91,6 +91,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
+        void _TryUpdateExternalID(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
+        void _AddIncompleteActions();
+        void _StashIncompleteActions(const Model::Command& cmd);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
@@ -102,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
         std::unordered_map<winrt::hstring, InternalActionID> _ExternalIDMap;
+        std::unordered_map<winrt::hstring, Model::Command> _IncompleteActions;
 
         // Masking Actions:
         // These are actions that were introduced in an ancestor,

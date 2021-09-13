@@ -451,6 +451,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         //  Add the new command to the KeyMap.
         //  This map directs you to an entry in the ActionMap.
 
+        // Action IDs:
+        // cmd.ExternalID and cmd.Action have a one-to-one relationship.
+
         // Removing Actions from the Command Palette:
         //  cmd.Name and cmd.Action have a one-to-one relationship.
         //  If cmd.Name is empty, we must retrieve the old name and remove it.
@@ -467,6 +470,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Command maskingCmd{ nullptr };
         _TryUpdateActionMap(cmd, oldCmd, maskingCmd);
 
+        _TryUpdateExternalID(cmd, oldCmd, maskingCmd);
         _TryUpdateName(cmd, oldCmd, maskingCmd);
         _TryUpdateKeyChord(cmd, oldCmd, maskingCmd);
     }
@@ -481,28 +485,49 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - maskingAction: the action found in a parent layer, if one already exists
     void ActionMap::_TryUpdateActionMap(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& maskingCmd)
     {
-        // Example:
-        //   { "id": "MyAction", "command": "copy", "keys": "ctrl+c" }  --> add the action in for the first time
-        //   { "command": "copy", "keys": "ctrl+shift+c" }              --> update oldCmd
-        //   { "id": "MyAction", "keys": "ctrl+f" }                     --> look for the action named "MyAction", update keys.
-        if (!cmd.ExternalID().empty())
-        {
-            const auto action = GetActionByExternalID(cmd.ExternalID());
-
-        }
-
         const auto actionID{ Hash(cmd.ActionAndArgs()) };
         const auto& actionPair{ _ActionMap.find(actionID) };
-        if (actionPair == _ActionMap.end())
+
+        if (!cmd.ExternalID().empty())
         {
-            // add this action in for the first time
-            _ActionMap.emplace(actionID, cmd);
+            const auto& externalPair = _ExternalIDMap.find(cmd.ExternalID());
+            if (externalPair == _ExternalIDMap.end())
+            {
+                _ExternalIDMap.emplace(cmd.ExternalID(), actionID);
+
+                if (actionPair == _ActionMap.end())
+                {
+                    // add this action in for the first time
+                    _ActionMap.emplace(actionID, cmd);
+                }
+                else
+                {
+                    // We're adding an action that already exists in our layer.
+                    // Record it so that we update it with any new information.
+                    oldCmd = actionPair->second;
+                }
+            }
+            else
+            {
+                oldCmd = _ActionMap.find(externalPair->second)->second;
+            }
         }
         else
         {
-            // We're adding an action that already exists in our layer.
-            // Record it so that we update it with any new information.
-            oldCmd = actionPair->second;
+            // Example:
+            //   { "command": "copy", "keys": "ctrl+c" }        --> add the action in for the first time
+            //   { "command": "copy", "keys": "ctrl+shift+c" }  --> update oldCmd
+            if (actionPair == _ActionMap.end())
+            {
+                // add this action in for the first time
+                _ActionMap.emplace(actionID, cmd);
+            }
+            else
+            {
+                // We're adding an action that already exists in our layer.
+                // Record it so that we update it with any new information.
+                oldCmd = actionPair->second;
+            }
         }
 
         // Masking Actions
@@ -520,15 +545,37 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             FAIL_FAST_IF(_parents.size() > 1);
             for (const auto& parent : _parents)
             {
-                // NOTE: This only checks the layer above us, but that's ok.
-                //       If we had to find one from a layer above that, parent->_MaskingActions
-                //       would have found it, so we inherit it for free!
-                const auto& inheritedCmd{ parent->_GetActionByID(actionID) };
-                if (inheritedCmd && *inheritedCmd)
+                if (!cmd.ExternalID().empty())
                 {
-                    const auto& inheritedCmdImpl{ get_self<Command>(*inheritedCmd) };
-                    maskingCmd = *inheritedCmdImpl->Copy();
-                    _MaskingActions.emplace(actionID, maskingCmd);
+                    auto inheritedCmdWithID{ parent->GetActionByExternalID(cmd.ExternalID()) };
+                    if (inheritedCmdWithID && *inheritedCmdWithID)
+                    {
+                        // We've found an action in a parent layer that has the same external
+                        // ID as our current layer action. We'll need to overwrite the parent's info.
+
+                        // Make a copy of inherited, update only the action.
+                        const auto& inheritedCmdImpl{ get_self<Command>(*inheritedCmdWithID) };
+                        const auto inheritedCmdImplCopy{ inheritedCmdImpl->Copy() };
+                        inheritedCmdImplCopy->ActionAndArgs(cmd.ActionAndArgs());
+
+                        // Adding it to the parent's actions should update all the internal IDs
+                        parent->AddAction(*inheritedCmdImplCopy);
+                        maskingCmd = *inheritedCmdImplCopy;
+                        _MaskingActions.emplace(actionID, maskingCmd);
+                    }
+                }
+                else
+                {
+                    // NOTE: This only checks the layer above us, but that's ok.
+                    //       If we had to find one from a layer above that, parent->_MaskingActions
+                    //       would have found it, so we inherit it for free!
+                    auto inheritedCmd{ parent->_GetActionByID(actionID) };
+                    if (inheritedCmd && *inheritedCmd)
+                    {
+                        const auto& inheritedCmdImpl{ get_self<Command>(*inheritedCmd) };
+                        maskingCmd = *inheritedCmdImpl->Copy();
+                        _MaskingActions.emplace(actionID, maskingCmd);
+                    }
                 }
             }
         }
@@ -537,6 +584,87 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // This is an action that we already have a mutable "masking" record for.
             // Record it so that we update it with any new information.
             maskingCmd = maskingActionPair->second;
+        }
+    }
+
+    void ActionMap::_StashIncompleteActions(const Model::Command& cmd)
+    {
+        // Stash commands with external IDs so we can combine them
+        // and AddAction when we know there's no more declarations using the ID.
+        // Example:
+        // {
+        //    "id": "customaction",
+        //    "keys": "ctrl+shift+g"
+        // },
+        // {
+        //    "id": "customaction",
+        //    "name": "customaction"
+        // },
+        // {
+        //    "id": "customaction",
+        //    "command": "copy"
+        // }
+        if (!cmd.ExternalID().empty())
+        {
+            // Add it to incomplete, or combine it with an existing incomplete.
+            auto incompletePair{ _IncompleteActions.find(cmd.ExternalID()) };
+            if (incompletePair == _IncompleteActions.end())
+            {
+                _IncompleteActions.emplace(cmd.ExternalID(), cmd);
+            }
+            else
+            {
+                const auto incompleteImpl{ get_self<Command>(incompletePair->second) };
+                const auto cmdImpl{ get_self<Command>(cmd) };
+                if (cmdImpl->HasName())
+                {
+                    incompleteImpl->Name(cmdImpl->Name());
+                }
+                if (cmdImpl->Keys())
+                {
+                    incompleteImpl->RegisterKey(cmdImpl->Keys());
+                }
+
+                if ((incompleteImpl->ActionAndArgs().Action() == ShortcutAction::Invalid) ||
+                    (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid))
+                {
+                    incompleteImpl->ActionAndArgs(cmd.ActionAndArgs());
+                }
+            }
+        }
+    }
+
+    void ActionMap::_AddIncompleteActions()
+    {
+        for (const auto& [id, cmd]: _IncompleteActions)
+        {
+            AddAction(cmd);
+        }
+        _IncompleteActions.clear();
+    }
+
+    void ActionMap::_TryUpdateExternalID(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& maskingCmd)
+    {
+        if (cmd.ExternalID().empty())
+        {
+            return;
+        }
+
+        const auto externalID{ cmd.ExternalID() };
+        if (oldCmd)
+        {
+            if (oldCmd.ExternalID().empty())
+            {
+                oldCmd.ExternalID(externalID);
+            }
+        }
+
+        if (maskingCmd)
+        {
+            if (maskingCmd.ExternalID().empty())
+            {
+                maskingCmd.ExternalID(externalID);
+            }
         }
     }
 
@@ -799,14 +927,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return nullptr;
     }
 
-    Model::Command ActionMap::GetActionByExternalID(winrt::hstring const& externalID) const
+    std::optional<Model::Command> ActionMap::GetActionByExternalID(const winrt::hstring& externalID) const
     {
         const auto idMapPair{ _ExternalIDMap.find(externalID) };
         if (idMapPair != _ExternalIDMap.end())
         {
             // Really there should be no scenario where an ExternalID mapping to InternalID
             // mapping exists but the InternalID doesn't have an action associated to it right?
-            return _GetActionByID(idMapPair->second).value_or(nullptr);
+            return _GetActionByID(idMapPair->second);
         }
 
         return nullptr;
