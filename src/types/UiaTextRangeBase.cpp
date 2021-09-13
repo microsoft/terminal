@@ -1088,7 +1088,14 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     // GH#7342: check if we're past the documentEnd
     // If so, clamp each endpoint to the end of the document.
     const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
-    const COORD documentEnd = _getDocumentEnd();
+
+    auto documentEnd = bufferSize.EndExclusive();
+    try
+    {
+        documentEnd = _getDocumentEnd();
+    }
+    CATCH_LOG();
+
     if (bufferSize.CompareInBounds(_start, documentEnd, true) > 0)
     {
         _start = documentEnd;
@@ -1341,7 +1348,7 @@ const Viewport UiaTextRangeBase::_getOptimizedBufferSize() const noexcept
 // the last legible character is on the last line of the buffer,
 // we use the "end exclusive" position (left-most point on a line one past the end of the buffer).
 // NOTE: "end exclusive" is naturally computed using the heuristic above.
-const til::point UiaTextRangeBase::_getDocumentEnd() const noexcept
+const til::point UiaTextRangeBase::_getDocumentEnd() const
 {
     const auto optimizedBufferSize{ _getOptimizedBufferSize() };
     const auto& buffer{ _pData->GetTextBuffer() };
@@ -1562,7 +1569,13 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
     const bool allowBottomExclusive = !preventBoundary;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _getOptimizedBufferSize();
-    const auto documentEnd{ _getDocumentEnd() };
+
+    auto documentEnd{ bufferSize.EndExclusive() };
+    try
+    {
+        documentEnd = _getDocumentEnd();
+    }
+    CATCH_LOG();
 
     bool success = true;
     auto resultPos = GetEndpoint(endpoint);
@@ -1574,14 +1587,14 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (nextPos.Y >= documentEnd.y())
+            if (nextPos.Y >= documentEnd.Y)
             {
                 // Corner Case: we're past the limit
                 // Clamp us to the limit
                 resultPos = documentEnd;
                 success = false;
             }
-            else if (preventBoundary && nextPos.Y == base::ClampSub(documentEnd.y(), 1))
+            else if (preventBoundary && nextPos.Y == base::ClampSub(documentEnd.Y, 1))
             {
                 // Corner Case: we're just before the limit
                 // and we're not allowed onto the exclusive end.
@@ -1669,7 +1682,13 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     {
     case MovementDirection::Forward:
     {
-        const auto documentEnd{ _getDocumentEnd() };
+        auto documentEnd{ bufferSize.EndExclusive() };
+        try
+        {
+            documentEnd = _getDocumentEnd();
+        }
+        CATCH_LOG();
+
         if (preventBoundary || bufferSize.CompareInBounds(target, documentEnd, true) >= 0)
         {
             return;
