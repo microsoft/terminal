@@ -45,22 +45,47 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
+    std::pair<COLORREF, COLORREF> colors;
     _blinkingState.RecordBlinkingUsage(attr);
-    auto colors = _perceptualColorNudging ? attr.CalculateRgbColors(
-                                                _colorTable,
-                                                _defaultFg,
-                                                _defaultBg,
-                                                _screenReversed,
-                                                _blinkingState.IsBlinkingFaint(),
-                                                _intenseIsBright,
-                                                _adjustedForegroundColors) :
-                                            attr.CalculateRgbColors(
-                                                _colorTable,
-                                                _defaultFg,
-                                                _defaultBg,
-                                                _screenReversed,
-                                                _blinkingState.IsBlinkingFaint(),
-                                                _intenseIsBright);
+    const auto fgTextColor = attr.GetForeground();
+    const auto bgTextColor = attr.GetBackground();
+
+    // We want to nudge the foreground color to make it more perceivable only for the
+    // default color pairs within the color table
+    if (_perceptualColorNudging &&
+        !(attr.IsFaint() || (attr.IsBlinking() && _blinkingState.IsBlinkingFaint())) &&
+        (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
+        (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
+    {
+        auto bgIndex = bgTextColor.IsDefault() ? 16 : bgTextColor.GetIndex();
+        auto fgIndex = fgTextColor.IsDefault() ? 17 : fgTextColor.GetIndex();
+
+        if (fgTextColor.IsIndex16() && (fgIndex < 8) && attr.IsBold() && _intenseIsBright)
+        {
+            // There is a special case for bold here - we need to get the bright version of the foreground color
+            fgIndex += 8;
+        }
+
+        if (attr.IsReverseVideo() ^ _screenReversed)
+        {
+            colors.first = _adjustedForegroundColors[fgIndex][bgIndex];
+            colors.second = fgTextColor.GetColor(_colorTable, _defaultFg);
+        }
+        else
+        {
+            colors.first = _adjustedForegroundColors[bgIndex][fgIndex];
+            colors.second = bgTextColor.GetColor(_colorTable, _defaultBg);
+        }
+    }
+    else
+    {
+        colors = attr.CalculateRgbColors(_colorTable,
+                                         _defaultFg,
+                                         _defaultBg,
+                                         _screenReversed,
+                                         _blinkingState.IsBlinkingFaint(),
+                                         _intenseIsBright);
+    }
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.

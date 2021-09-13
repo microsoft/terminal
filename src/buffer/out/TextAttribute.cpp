@@ -104,38 +104,15 @@ std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array
                                                                 const COLORREF defaultBgColor,
                                                                 const bool reverseScreenMode,
                                                                 const bool blinkingIsFaint,
-                                                                const bool boldIsBright,
-                                                                const std::optional<std::array<std::array<COLORREF, 18>, 18>>& adjustedForegroundColors) const noexcept
+                                                                const bool boldIsBright) const noexcept
 {
-    COLORREF fg;
+    auto fg = _foreground.GetColor(colorTable, defaultFgColor, boldIsBright && IsBold());
     auto bg = _background.GetColor(colorTable, defaultBgColor);
-    bool reversed{ false };
-    if (adjustedForegroundColors.has_value() &&
-        (_background.IsDefault() || _background.IsLegacy()) &&
-        (_foreground.IsDefault() || _foreground.IsLegacy()))
-    {
-        auto bgIndex = _background.IsDefault() ? 16 : _background.GetIndex();
-        auto fgIndex = _foreground.IsDefault() ? 17 : _foreground.GetIndex();
-        if (IsReverseVideo() ^ reverseScreenMode)
-        {
-            bg = _foreground.GetColor(colorTable, defaultFgColor);
-            fg = adjustedForegroundColors.value()[fgIndex][bgIndex];
-            reversed = true;
-        }
-        else
-        {
-            fg = adjustedForegroundColors.value()[bgIndex][fgIndex];
-        }
-    }
-    else
-    {
-        fg = _foreground.GetColor(colorTable, defaultFgColor, boldIsBright && IsBold());
-    }
     if (IsFaint() || (IsBlinking() && blinkingIsFaint))
     {
         fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
     }
-    if (IsReverseVideo() ^ reverseScreenMode && !reversed)
+    if (IsReverseVideo() ^ reverseScreenMode)
     {
         std::swap(fg, bg);
     }
