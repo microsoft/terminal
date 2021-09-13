@@ -49,7 +49,6 @@ namespace Microsoft::Terminal::Settings::Model
         // * admins can do anything
         // * no one else can do anything.
         PACL pAcl{ nullptr }; // This doesn't need to be cleanup up apparently
-        PSECURITY_DESCRIPTOR pSD{ nullptr };
 
         auto status = GetNamedSecurityInfo(path.c_str(),
                                            SE_FILE_OBJECT,
@@ -58,7 +57,7 @@ namespace Microsoft::Terminal::Settings::Model
                                            nullptr,
                                            &pAcl,
                                            nullptr,
-                                           &pSD);
+                                           nullptr);
         THROW_IF_WIN32_ERROR(status);
 
         PEXPLICIT_ACCESS pEA{ nullptr };
