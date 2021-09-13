@@ -77,7 +77,7 @@ try
 
     Json::StreamWriterBuilder wbuilder;
     const auto content = Json::writeString(wbuilder, root);
-    WriteUTF8FileAtomic(_path, content);
+    _writeFileContents(content);
 }
 CATCH_LOG()
 

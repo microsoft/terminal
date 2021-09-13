@@ -41,73 +41,88 @@ namespace Microsoft::Terminal::Settings::Model
         return baseSettingsPath;
     }
 
+    static bool _hasExpectedPermissions(const std::filesystem::path& path)
+    {
+        // If we want to only open the file if it's elevated, check the
+        // permissions on this file. We want to make sure that:
+        // * Everyone has permission to read
+        // * admins can do anything
+        // * no one else can do anything.
+        PACL pAcl{ nullptr }; // This doesn't need to be cleanup up apparently
+        PSECURITY_DESCRIPTOR pSD{ nullptr };
+
+        auto status = GetNamedSecurityInfo(path.c_str(),
+                                           SE_FILE_OBJECT,
+                                           DACL_SECURITY_INFORMATION,
+                                           nullptr,
+                                           nullptr,
+                                           &pAcl,
+                                           nullptr,
+                                           &pSD);
+        THROW_IF_WIN32_ERROR(status);
+
+        PEXPLICIT_ACCESS pEA{ nullptr };
+        DWORD count = 0;
+        status = GetExplicitEntriesFromAcl(pAcl, &count, &pEA);
+        THROW_IF_WIN32_ERROR(status);
+
+        auto explicitAccessCleanup = wil::scope_exit([&]() { ::LocalFree(pEA); });
+
+        if (count != 2)
+        {
+            return false;
+        }
+
+        // Now, get the Everyone and Admins SIDS so we can make sure they're
+        // the ones in this file.
+
+        wil::unique_sid everyoneSid{};
+        wil::unique_sid adminGroupSid{};
+        SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
+        SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
+
+        // Create a SID for the BUILTIN\Administrators group.
+        THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
+
+        // Create a well-known SID for the Everyone group.
+        THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &everyoneSid));
+
+        bool hadExpectedPermissions = true;
+
+        // Check that the permissions are what we'd expect them to be if only
+        // admins can write to the file. This is basically a mirror of what we
+        // set up in `WriteUTF8File`.
+
+        // For grfAccessPermissions, GENERIC_ALL turns into STANDARD_RIGHTS_ALL,
+        // and GENERIC_READ -> READ_CONTROL
+        hadExpectedPermissions = hadExpectedPermissions && WI_AreAllFlagsSet(pEA[0].grfAccessPermissions, STANDARD_RIGHTS_ALL);
+        hadExpectedPermissions = hadExpectedPermissions && pEA[0].grfInheritance == NO_INHERITANCE;
+        hadExpectedPermissions = hadExpectedPermissions && pEA[0].Trustee.TrusteeForm == TRUSTEE_IS_SID;
+        // SIDs are void*'s that happen to convert to a wchar_t
+        hadExpectedPermissions = hadExpectedPermissions && *(pEA[0].Trustee.ptstrName) == *(LPWSTR)(adminGroupSid.get());
+
+        // Now check the other EXPLICIT_ACCESS
+        hadExpectedPermissions = hadExpectedPermissions && WI_IsFlagSet(pEA[1].grfAccessPermissions, READ_CONTROL);
+        hadExpectedPermissions = hadExpectedPermissions && pEA[1].grfInheritance == NO_INHERITANCE;
+        hadExpectedPermissions = hadExpectedPermissions && pEA[1].Trustee.TrusteeForm == TRUSTEE_IS_SID;
+        hadExpectedPermissions = hadExpectedPermissions && *(pEA[1].Trustee.ptstrName) == *(LPWSTR)(everyoneSid.get());
+
+        return hadExpectedPermissions;
+    }
     // Tries to read a file somewhat atomically without locking it.
     // Strips the UTF8 BOM if it exists.
     std::string ReadUTF8File(const std::filesystem::path& path, const bool elevatedOnly)
     {
         if (elevatedOnly)
         {
-            // If we want to only open the file if it's elevated, check the
-            // permissions on this file. We want to make sure that:
-            // * Everyone has permission to read
-            // * admins can do anything
-            // * no one else can do anything.
-            PACL pAcl{ nullptr };
-            PSECURITY_DESCRIPTOR pSD{ nullptr };
-
-            auto status = GetNamedSecurityInfo(path.c_str(),
-                                               SE_FILE_OBJECT,
-                                               DACL_SECURITY_INFORMATION,
-                                               nullptr,
-                                               nullptr,
-                                               &pAcl,
-                                               nullptr,
-                                               &pSD);
-            THROW_IF_WIN32_ERROR(status);
-            pSD;
-            pAcl;
-
-            PEXPLICIT_ACCESS pEA{ nullptr };
-            DWORD count = 0;
-            status = GetExplicitEntriesFromAcl(pAcl, &count, &pEA);
-            THROW_IF_WIN32_ERROR(status);
-            THROW_HR_IF(E_FAIL, count != 2);
-
-            PSID pEveryoneSid = nullptr;
-            PSID pAdminGroupSid = nullptr;
-            SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-            SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-
-            // Create a SID for the BUILTIN\Administrators group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &pAdminGroupSid));
-
-            // Create a well-known SID for the Everyone group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &pEveryoneSid));
-
-            THROW_HR_IF(E_FAIL, pEA[0].grfAccessPermissions != GENERIC_ALL);
-            THROW_HR_IF(E_FAIL, pEA[0].grfInheritance != NO_INHERITANCE);
-            THROW_HR_IF(E_FAIL, pEA[0].Trustee.TrusteeForm != TRUSTEE_IS_SID);
-            THROW_HR_IF(E_FAIL, pEA[0].Trustee.TrusteeType != TRUSTEE_IS_WELL_KNOWN_GROUP);
-            THROW_HR_IF(E_FAIL, pEA[0].Trustee.ptstrName != pAdminGroupSid);
-
-            THROW_HR_IF(E_FAIL, pEA[1].grfAccessPermissions != GENERIC_READ);
-            THROW_HR_IF(E_FAIL, pEA[1].grfInheritance != NO_INHERITANCE);
-            THROW_HR_IF(E_FAIL, pEA[1].Trustee.TrusteeForm != TRUSTEE_IS_SID);
-            THROW_HR_IF(E_FAIL, pEA[1].Trustee.TrusteeType != TRUSTEE_IS_WELL_KNOWN_GROUP);
-            THROW_HR_IF(E_FAIL, pEA[1].Trustee.ptstrName != pEveryoneSid);
-            // // Grant Admins all permissions on this file
-            // ea[0].grfAccessPermissions = GENERIC_ALL;
-            // ea[0].grfAccessMode = SET_ACCESS;
-            // ea[0].grfInheritance = NO_INHERITANCE;
-            // ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-            // ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            // ea[0].Trustee.ptstrName = (LPTSTR)pAdminGroupSid;
-            // ea[1].grfAccessPermissions = GENERIC_READ;
-            // ea[1].grfAccessMode = SET_ACCESS;
-            // ea[1].grfInheritance = NO_INHERITANCE;
-            // ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-            // ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            // ea[1].Trustee.ptstrName = (LPTSTR)pEveryoneSid;
+            const bool hadExpectedPermissions{ _hasExpectedPermissions(path) };
+            if (!hadExpectedPermissions)
+            {
+                // delete the file. It's been compromised.
+                LOG_LAST_ERROR_IF(!DeleteFile(path.c_str()));
+                // Exit early, because obviously there's nothing to read from the deleted file.
+                return "";
+            }
         }
 
         // From some casual observations we can determine that:
