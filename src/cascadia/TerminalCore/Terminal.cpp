@@ -862,7 +862,7 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
     return std::unique_lock{ _readWriteLock };
 }
 
-Viewport Terminal::_GetMutableViewport() const noexcept
+Microsoft::Console::Types::Viewport Terminal::_GetMutableViewport() const noexcept
 {
     return _mutableViewport;
 }

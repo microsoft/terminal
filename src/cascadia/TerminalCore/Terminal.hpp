@@ -35,6 +35,23 @@ namespace winrt::Microsoft::Terminal::Core
 namespace Microsoft::Terminal::Core
 {
     class Terminal;
+
+    enum class InternalSelectionDirection
+    {
+        Left,
+        Right,
+        Up,
+        Down
+    };
+
+    enum class InternalSelectionExpansion
+    {
+        Char,
+        Word,
+        Line, // Mouse selection only! Not a setting!
+        Viewport,
+        Buffer
+    };
 }
 
 // fwdecl unittest classes
@@ -227,11 +244,11 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    void MultiClickSelection(const COORD viewportPos, winrt::Microsoft::Terminal::Core::SelectionExpansion expansionMode);
+    void MultiClickSelection(const COORD viewportPos, InternalSelectionExpansion expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<winrt::Microsoft::Terminal::Core::SelectionExpansion> newExpansionMode = std::nullopt);
+    void SetSelectionEnd(const COORD position, std::optional<InternalSelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
-    void UpdateSelection(winrt::Microsoft::Terminal::Core::SelectionDirection direction, winrt::Microsoft::Terminal::Core::SelectionExpansion mode);
+    void UpdateSelection(InternalSelectionDirection direction, InternalSelectionExpansion mode);
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -303,7 +320,7 @@ private:
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
     std::wstring _wordDelimiters;
-    winrt::Microsoft::Terminal::Core::SelectionExpansion _multiClickSelectionMode;
+    InternalSelectionExpansion _multiClickSelectionMode;
 #pragma endregion
 
     // TODO: These members are not shared by an alt-buffer. They should be
@@ -370,10 +387,10 @@ private:
     std::tuple<COORD, COORD, bool> _PivotSelection(const COORD targetPos) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
-    void _MoveByChar(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
-    void _MoveByWord(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
-    void _MoveByViewport(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
-    void _MoveByBuffer(winrt::Microsoft::Terminal::Core::SelectionDirection direction, COORD& pos);
+    void _MoveByChar(InternalSelectionDirection direction, COORD& pos);
+    void _MoveByWord(InternalSelectionDirection direction, COORD& pos);
+    void _MoveByViewport(InternalSelectionDirection direction, COORD& pos);
+    void _MoveByBuffer(InternalSelectionDirection direction, COORD& pos);
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;

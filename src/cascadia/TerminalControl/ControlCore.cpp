@@ -33,6 +33,40 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
+static constexpr InternalSelectionDirection ConvertToInternalSelectionDirection(winrt::Microsoft::Terminal::Core::SelectionDirection dir)
+{
+    switch (dir)
+    {
+    default:
+    case winrt::Microsoft::Terminal::Core::SelectionDirection::Left:
+        return InternalSelectionDirection::Left;
+    case winrt::Microsoft::Terminal::Core::SelectionDirection::Right:
+        return InternalSelectionDirection::Right;
+    case winrt::Microsoft::Terminal::Core::SelectionDirection::Up:
+        return InternalSelectionDirection::Up;
+    case winrt::Microsoft::Terminal::Core::SelectionDirection::Down:
+        return InternalSelectionDirection::Down;
+    }
+}
+
+static constexpr InternalSelectionExpansion ConvertToInternalSelectionExpansion(winrt::Microsoft::Terminal::Core::SelectionExpansion mode)
+{
+    switch (mode)
+    {
+    default:
+    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Char:
+        return InternalSelectionExpansion::Char;
+    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Word:
+        return InternalSelectionExpansion::Word;
+    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Line:
+        return InternalSelectionExpansion::Line;
+    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Viewport:
+        return InternalSelectionExpansion::Viewport;
+    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Buffer:
+        return InternalSelectionExpansion::Buffer;
+    }
+}
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -937,7 +971,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForWriting();
-        _terminal->UpdateSelection(direction, mode);
+        _terminal->UpdateSelection(ConvertToInternalSelectionDirection(direction), ConvertToInternalSelectionExpansion(mode));
         _renderer->TriggerSelection();
         return true;
     }
@@ -1470,7 +1504,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If shift is pressed and there is a selection we extend it using
             // the selection mode (expand the "end" selection point)
-            _terminal->SetSelectionEnd(terminalPosition, mode);
+            _terminal->SetSelectionEnd(terminalPosition, ConvertToInternalSelectionExpansion(mode));
             selectionNeedsToBeCopied = true;
         }
         else if (mode != Core::SelectionExpansion::Char || shiftEnabled)
@@ -1478,7 +1512,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
             // (expand both "start" and "end" selection points)
-            _terminal->MultiClickSelection(terminalPosition, mode);
+            _terminal->MultiClickSelection(terminalPosition, ConvertToInternalSelectionExpansion(mode));
             selectionNeedsToBeCopied = true;
         }
 
@@ -1572,5 +1606,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         return hstring(ss.str());
     }
-
 }
