@@ -58,6 +58,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ParsedSettings inboxSettings;
         ParsedSettings userSettings;
         bool duplicateProfile = false;
+        bool userProfilesChanged = false;
 
     private:
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
@@ -65,7 +66,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         static bool _isValidProfileObject(const Json::Value& profileJson);
-        void _parse(const OriginTag origin, const std::string_view& content, ParsedSettings& settings);
+        void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;

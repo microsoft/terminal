@@ -87,11 +87,11 @@ SettingsLoader SettingsLoader::Default(const std::string_view& userJSON, const s
 
 SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::string_view& inboxJSON)
 {
-    _parse(OriginTag::InBox, inboxJSON, inboxSettings);
+    _parse(OriginTag::InBox, {}, inboxJSON, inboxSettings);
 
     try
     {
-        _parse(OriginTag::User, userJSON, userSettings);
+        _parse(OriginTag::User, {}, userJSON, userSettings);
     }
     catch (const JsonUtils::DeserializationError& e)
     {
@@ -180,6 +180,7 @@ void SettingsLoader::MergeInboxIntoUserProfiles()
         else
         {
             userSettings.profiles.emplace_back(CreateChild(generatedProfile));
+            userProfilesChanged = true;
         }
     }
 }
@@ -196,7 +197,7 @@ void SettingsLoader::MergeFragmentsIntoUserProfiles()
                 try
                 {
                     const auto content = ReadUTF8File(fragmentExt.path());
-                    _parse(OriginTag::Fragment, content, fragmentSettings);
+                    _parse(OriginTag::Fragment, source, content, fragmentSettings);
 
                     for (const auto& fragmentProfile : fragmentSettings.profiles)
                     {
@@ -204,14 +205,11 @@ void SettingsLoader::MergeFragmentsIntoUserProfiles()
                         {
                             if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
                             {
-                                fragmentProfile->Source(source);
                                 it->second->InsertParent(0, fragmentProfile);
                             }
                         }
                         else
                         {
-                            // TODO: GUID uniqueness?
-                            fragmentProfile->Source(source);
                             _appendProfile(CreateChild(fragmentProfile), userSettings);
                         }
                     }
@@ -416,7 +414,7 @@ bool SettingsLoader::_isValidProfileObject(const Json::Value& profileJson)
             profileJson.isMember(GuidKey.data(), GuidKey.data() + GuidKey.size())); // or has a guid
 }
 
-void SettingsLoader::_parse(const OriginTag origin, const std::string_view& content, ParsedSettings& settings)
+void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
 {
     static constexpr std::string_view emptyObjectJSON{ "{}" };
 
@@ -469,6 +467,13 @@ void SettingsLoader::_parse(const OriginTag origin, const std::string_view& cont
             {
                 auto profile = Profile::FromJson(profileJson);
                 profile->Origin(origin);
+
+                // The Guid() generation below depends on the value of Source().
+                // --> Provide one if we got one.
+                if (!source.empty())
+                {
+                    profile->Source(source);
+                }
 
                 // The Guid() getter generates one from Name() and Source() if none exists otherwise.
                 // We want to ensure that every profile has a GUID no matter what, not just to
@@ -535,12 +540,16 @@ try
     loader.DisableDeletedProfiles();
     loader.FinalizeLayering();
 
+    // NOTE: loader is being moved into CascadiaSettings() below.
+    // Extract anything of value before that.
+    const auto mustWriteToDisk = firstTimeSetup || loader.userProfilesChanged;
+
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
 
     // If we created the file, or found new dynamic profiles, write the user
     // settings string back to the file.
-    if (firstTimeSetup)
+    if (mustWriteToDisk)
     {
         try
         {
