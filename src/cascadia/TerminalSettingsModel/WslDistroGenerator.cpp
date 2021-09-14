@@ -165,7 +165,12 @@ static std::vector<Profile> namesToProfiles(const std::vector<std::wstring>& nam
 
         auto WSLDistro{ CreateDefaultProfile(distName) };
 
-        WSLDistro.Commandline(L"wsl.exe -d " + distName);
+        // GH#11096 - make sure the WSL path starts explicitly with
+        // C:\Windows\System32. Don't want someone path hijacking wsl.exe.
+        wil::unique_cotaskmem_string systemPath;
+        THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
+        std::wstring command(systemPath.get());
+        WSLDistro.Commandline(command + L"\\wsl.exe -d " + distName);
         WSLDistro.DefaultAppearance().ColorSchemeName(L"Campbell");
         WSLDistro.StartingDirectory(DEFAULT_STARTING_DIRECTORY);
         WSLDistro.Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");

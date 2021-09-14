@@ -1495,7 +1495,7 @@ namespace winrt::TerminalApp::implementation
     // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
     // - %SystemRoot%\System32\cmd.exe -> returns true
     // - %SystemRoot%\System32\wsl.exe -d <distroname> -> returns true
-    static bool _isInSystem32(winrt::hstring commandLine)
+    static bool _isInSystem32(std::wstring_view commandLine)
     {
         // use C++11 magic statics to make sure we only do this once.
         static std::wstring systemDirectory = []() -> std::wstring {
@@ -1515,24 +1515,73 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
-        const std::filesystem::path executablePath{
-            wil::ExpandEnvironmentStringsW<std::wstring>(commandLine.c_str())
+        const std::filesystem::path fullCommandlinePath{
+            wil::ExpandEnvironmentStringsW<std::wstring>(commandLine.data())
         };
 
-        if (executablePath.wstring().size() > systemDirectory.size())
+        if (fullCommandlinePath.wstring().size() > systemDirectory.size())
         {
             // Get the first part of the executable path
-            const auto start = executablePath.wstring().substr(0, systemDirectory.size());
+            const auto start = fullCommandlinePath.wstring().substr(0, systemDirectory.size());
             const auto pathEquals = til::equals_insensitive_ascii(start, systemDirectory);
-            if (pathEquals && std::filesystem::exists(executablePath))
+            if (pathEquals && std::filesystem::exists(fullCommandlinePath))
             {
                 return true;
             }
         }
 
-        // TODO!: Also, if the path is literally
+        // Also, if the path is literally
         //   %SystemRoot%\System32\wsl.exe -d <distroname>
         // then allow it.
+
+        // Stolen from _tryMangleStartingDirectoryForWSL
+        // Find the first space, quote or the end of the string -- we'll look
+        // for wsl before that.
+        const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+        const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+        const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
+        const auto executableFilename{ executablePath.filename().wstring() };
+
+        if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
+        {
+            // We've got a WSL -- let's just make sure it's the right one.
+            if (executablePath.has_parent_path())
+            {
+                if (executablePath.parent_path().wstring() != systemDirectory)
+                {
+                    return false; // it wasn't in system32!
+                }
+            }
+            else
+            {
+                // Unqualified WSL, this is dangerous, so return false.
+                return false;
+            }
+
+            // Get everything after the wsl.exe
+            const auto arguments{ terminator == std::wstring_view::npos ? std::wstring_view{} : commandLine.substr(terminator + 1) };
+            const auto dashD{ arguments.find(L"-d ") };
+
+            // If we found a "-d " IMMEDIATELY AFTER wsl.exe. If it wasn't
+            // immediately after, it could have been `wsl.exe --doSomethingEvil`
+            if (dashD == 0)
+            {
+                // Using the string following "-d "...
+                const auto afterDashD{ arguments.substr(dashD + 3) };
+                // Find the next space
+                const auto afterFirstWord = afterDashD.substr(firstNonSpace).find(L" ");
+                // if that space _wasn't_ at the end of the commandline, then
+                // there were some other args. That means it was `wsl -d distro
+                // anything`, and we should ask the user.
+                //
+                // So if it was at the end of the commandline, then there were
+                // no other args besides the distro name.
+                if (afterFirstWord == std::wstring::npos)
+                {
+                    return true;
+                }
+            }
+        }
 
         return false;
     }
@@ -1551,7 +1600,7 @@ namespace winrt::TerminalApp::implementation
         // NOTE: For debugging purposes, changing this to `true ||
         // _isElevated()` is a handy way of forcing the elevation logic, even
         // when unelevated.
-        if (true || _isElevated())
+        if (_isElevated())
         {
             // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.
