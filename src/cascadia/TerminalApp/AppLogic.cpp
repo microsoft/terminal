@@ -210,7 +210,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     AppLogic::AppLogic() :
-        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); } }
+        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); ElevatedState::SharedInstance().Reload(); } }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -927,8 +927,6 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_RegisterSettingsChange()
     {
         const std::filesystem::path settingsPath{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
-        const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
-
         _reader.create(
             settingsPath.parent_path().c_str(),
             false,
@@ -937,14 +935,17 @@ namespace winrt::TerminalApp::implementation
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
-            [this, settingsBasename = settingsPath.filename(), stateBasename = statePath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
+            [this, settingsPath](wil::FolderChangeEvent, PCWSTR fileModified) {
+                static const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
+                static const std::filesystem::path elevatedStatePath{ std::wstring_view{ ElevatedState::SharedInstance().FilePath() } };
+
                 const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
 
-                if (modifiedBasename == settingsBasename)
+                if (modifiedBasename == settingsPath.filename())
                 {
                     _reloadSettings->Run();
                 }
-                else if (modifiedBasename == stateBasename)
+                else if (modifiedBasename == statePath.filename() || modifiedBasename == elevatedStatePath.filename())
                 {
                     _reloadState();
                 }

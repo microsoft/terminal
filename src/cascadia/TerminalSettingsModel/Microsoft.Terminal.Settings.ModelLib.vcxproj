@@ -21,6 +21,7 @@
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="BaseApplicationState.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ActionArgs.h">
       <DependentUpon>ActionArgs.idl</DependentUpon>
@@ -34,6 +35,9 @@
     <ClInclude Include="AzureCloudShellGenerator.h" />
     <ClInclude Include="ApplicationState.h">
       <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="ElevatedState.h">
+      <DependentUpon>ElevatedState.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="CascadiaSettings.h">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
@@ -88,6 +92,7 @@
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="init.cpp" />
+    <ClCompile Include="BaseApplicationState.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -106,6 +111,9 @@
     <ClCompile Include="AzureCloudShellGenerator.cpp" />
     <ClCompile Include="ApplicationState.cpp">
       <DependentUpon>ApplicationState.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="ElevatedState.cpp">
+      <DependentUpon>ElevatedState.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="CascadiaSettings.cpp">
       <DependentUpon>CascadiaSettings.idl</DependentUpon>
@@ -156,6 +164,7 @@
     <Midl Include="ActionArgs.idl" />
     <Midl Include="ActionMap.idl" />
     <Midl Include="ApplicationState.idl" />
+    <Midl Include="ElevatedState.idl" />
     <Midl Include="CascadiaSettings.idl" />
     <Midl Include="ColorScheme.idl" />
     <Midl Include="Command.idl" />
