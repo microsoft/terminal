@@ -1,7 +1,7 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2019-08-30
-last updated: 2020-06-26
+last updated: 2021-09-14
 issue id: 715
 ---
 
@@ -13,7 +13,7 @@ This spec describes a new set of keybindings that allows the user to create and 
 
 ## Inspiration
 
-ConHost allows the user to modify a selection using the keyboard. Holding `Shift` allows the user to move the second selection endpoint in accordance with the arrow keys. The selection anchor updates by one cell per key event, allowing the user to refine the selected region.
+ConHost allows the user to modify a selection using the keyboard. Holding `Shift` allows the user to move the second selection endpoint in accordance with the arrow keys. The selection endpoint updates by one cell per key event, allowing the user to refine the selected region.
 
 Mark mode allows the user to create a selection using only the keyboard, then edit it as mentioned above.
 
@@ -40,35 +40,37 @@ However, the mouse handler operates by translating a pixel coordinate on the scr
 
 ### Fundamental Terminal Core Changes
 
-The Terminal Core will need to expose a `MoveSelectionEndpoint()` function that is called by the keybinding handler. The following parameters will need to be passed in:
-- `enum Direction`: the direction that the selection anchor will attempt to move to. Possible values include `Up`, `Down`, `Left`, and `Right`.
-- `enum SelectionExpansionMode`: the selection expansion mode that the selection anchor will adhere to. Possible values include `Cell`, `Word`, `Viewport`, `Buffer`.
+The Terminal Core will need to expose a `UpdateSelection()` function that is called by the keybinding handler. The following parameters will need to be passed in:
+- `enum SelectionDirection`: the direction that the selection endpoint will attempt to move to. Possible values include `Up`, `Down`, `Left`, and `Right`.
+- `enum SelectionExpansion`: the selection expansion mode that the selection endpoint will adhere to. Possible values include `Char`, `Word`, `View`, `Buffer`.
 
 #### Moving by Cell
-For `SelectionExpansionMode = Cell`, the selection anchor will be updated according to the buffer's output pattern. For **horizontal movements**, the selection anchor will attempt to move left or right. If a viewport boundary is hit, the anchor will wrap appropriately (i.e.: hitting the left boundary moves it to the last cell of the line above it).
+For `SelectionExpansion = Char`, the selection endpoint will be updated according to the buffer's output pattern. For **horizontal movements**, the selection endpoint will attempt to move left or right. If a viewport boundary is hit, the endpoint will wrap appropriately (i.e.: hitting the left boundary moves it to the last cell of the line above it).
 
-For **vertical movements**, the selection anchor will attempt to move up or down. If a **viewport boundary** is hit and there is a scroll buffer, the anchor will move and scroll accordingly by a line. If a **buffer boundary** is hit, the anchor will not move. In this case, however, the event will still be considered handled.
+For **vertical movements**, the selection endpoint will attempt to move up or down. If a **viewport boundary** is hit and there is a scroll buffer, the endpoint will move and scroll accordingly by a line.
 
-**NOTE**: An important thing to handle properly in all cases is wide glyphs. The user should not be allowed to select a portion of a wide glyph; it should be all or none of it. When calling `_ExpandWideGlyphSelection` functions, the result must be saved to the anchor.
+If a **buffer boundary** is hit, the endpoint will not move. In this case, however, the event will still be considered handled.
+
+**NOTE**: An important thing to handle properly in all cases is wide glyphs. The user should not be allowed to select a portion of a wide glyph; it should be all or none of it. When calling `_ExpandWideGlyphSelection` functions, the result must be saved to the endpoint.
 
 #### Moving by Word
-For `SelectionExpansionMode = Word`, the selection anchor will also be updated according to the buffer's output pattern, as above. However, the selection will be updated in accordance with "chunk selection" (performing a double-click and dragging the mouse to expand the selection). For **horizontal movements**, the selection anchor will be updated according to the `_ExpandDoubleClickSelection` functions. The result must be saved to the anchor. As before, if a boundary is hit, the anchor will wrap appropriately. See [Future Considerations](#FutureConsiderations) for how this will interact with line wrapping.
+For `SelectionExpansion = Word`, the selection endpoint will also be updated according to the buffer's output pattern, as above. However, the selection will be updated in accordance with "chunk selection" (performing a double-click and dragging the mouse to expand the selection). For **horizontal movements**, the selection endpoint will be updated according to the `_ExpandDoubleClickSelection` functions. The result must be saved to the endpoint. As before, if a boundary is hit, the endpoint will wrap appropriately. See [Future Considerations](#FutureConsiderations) for how this will interact with line wrapping.
 
-For **vertical movements**, the movement is a little more complicated than before. The selection will still respond to buffer and viewport boundaries as before. If the user is trying to move up, the selection anchor will attempt to move up by one line, then selection will be expanded leftwards. Alternatively, if the user is trying to move down, the selection anchor will attempt to move down by one line, then the selection will be expanded rightwards.
+For **vertical movements**, the movement is a little more complicated than before. The selection will still respond to buffer and viewport boundaries as before. If the user is trying to move up, the selection endpoint will attempt to move up by one line, then selection will be expanded leftwards. Alternatively, if the user is trying to move down, the selection endpoint will attempt to move down by one line, then the selection will be expanded rightwards.
 
 #### Moving by Viewport
-For `SelectionExpansionMode = Viewport`, the selection anchor will be updated according to the viewport's height. Horizontal movements will be updated according to the viewport's width, thus resulting in the anchor being moved to the left/right boundary of the viewport.
+For `SelectionExpansion = View`, the selection endpoint will be updated according to the viewport's height. Horizontal movements will be updated according to the viewport's width, thus resulting in the endpoint being moved to the left/right boundary of the viewport.
 
 #### Moving by Buffer
 
-For `SelectionExpansionMode = Buffer`, the selection anchor will be moved to the beginning or end of all the text within the buffer. If moving up or left, set the position to 0,0 (the origin of the buffer). If moving down or right, set the position to the last character in the buffer.
+For `SelectionExpansion = Buffer`, the selection endpoint will be moved to the beginning or end of all the text within the buffer. If moving up or left, set the position to 0,0 (the origin of the buffer). If moving down or right, set the position to the last character in the buffer.
 
 
 **NOTE**: In all cases, horizontal movements attempting to move past the left/right viewport boundaries result in a wrap. Vertical movements attempting to move past the top/bottom viewport boundaries will scroll such that the selection is at the edge of the screen. Vertical movements attempting to move past the top/bottom buffer boundaries will be clamped to be within buffer boundaries.
 
-Every combination of the `Direction` and `SelectionExpansionMode` will map to a keybinding. These pairings are shown below in the UI/UX Design --> Keybindings section.
+Every combination of the `SelectionDirection` and `SelectionExpansion` will map to a keybinding. These pairings are shown below in the UI/UX Design --> Keybindings section.
 
-**NOTE**: If `copyOnSelect` is enabled, we need to make sure we update the clipboard on every change in selection.
+**NOTE**: If `copyOnSelect` is enabled, we need to make sure we **DO NOT** update the clipboard on every change in selection. The user must explicitly choose to copy the selected text from the buffer.
 
 
 ## UI/UX Design
@@ -78,33 +80,33 @@ Every combination of the `Direction` and `SelectionExpansionMode` will map to a 
 Thanks to Keybinding Args, there will only be 2 new commands that need to be added:
 | Action | Keybinding Args | Description |
 |--|--|--|
-| `moveSelectionPoint` |                                                               | If a selection exists, moves the last selection anchor.
+| `updateSelection` |                                                               | If a selection exists, moves the last selection endpoint.
 |                       | `Enum direction { up, down, left, right }`                     | The direction the selection will be moved in. |
-|                       | `Enum expandBy { cell, word, page, all }`   | The context for which to move the selection anchor to. (defaults to `cell`)
+|                       | `Enum mode { char, word, view, buffer }`   | The context for which to move the selection endpoint to. (defaults to `char`)
 | `selectAll`  | | Select the entire text buffer.
 
 
 By default, the following keybindings will be set:
 ```JS
-// Cell Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "down" },  "keys": "shift+down" },
-{ "command": { "action": "moveSelectionPoint", "direction": "up" },    "keys": "shift+up" },
-{ "command": { "action": "moveSelectionPoint", "direction": "left" },  "keys": "shift+left" },
-{ "command": { "action": "moveSelectionPoint", "direction": "right" }, "keys": "shift+right" },
+// Character Selection
+{ "command": {"action": "updateSelection", "direction": "left",  "mode": "char" }, "keys": "shift+left" },
+{ "command": {"action": "updateSelection", "direction": "right", "mode": "char" }, "keys": "shift+right" },
+{ "command": {"action": "updateSelection", "direction": "up",    "mode": "char" }, "keys": "shift+up" },
+{ "command": {"action": "updateSelection", "direction": "down",  "mode": "char" }, "keys": "shift+down" },
 
 // Word Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expandBy": "word" }, "keys": "ctrl+shift+left" },
-{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expandBy": "word" }, "keys": "ctrl+shift+right" },
+{ "command": {"action": "updateSelection", "direction": "left",  "mode": "word" }, "keys": "ctrl+shift+left" },
+{ "command": {"action": "updateSelection", "direction": "right", "mode": "word" }, "keys": "ctrl+shift+right" },
 
 // Viewport Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "left",    "expandBy": "page" }, "keys": "shift+home" },
-{ "command": { "action": "moveSelectionPoint", "direction": "right",   "expandBy": "page" }, "keys": "shift+end" },
-{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expandBy": "page" }, "keys": "shift+pgup" },
-{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expandBy": "page" }, "keys": "shift+pgdn" },
+{ "command": {"action": "updateSelection", "direction": "left",  "mode": "view" }, "keys": "shift+home" },
+{ "command": {"action": "updateSelection", "direction": "right", "mode": "view" }, "keys": "shift+end" },
+{ "command": {"action": "updateSelection", "direction": "up",    "mode": "view" }, "keys": "shift+pgup" },
+{ "command": {"action": "updateSelection", "direction": "down",  "mode": "view" }, "keys": "shift+pgdn" },
 
 // Buffer Corner Selection
-{ "command": { "action": "moveSelectionPoint", "direction": "up",      "expandBy": "all" }, "keys": "ctrl+shift+home" },
-{ "command": { "action": "moveSelectionPoint", "direction": "down",    "expandBy": "all" }, "keys": "ctrl+shift+end" },
+{ "command": {"action": "updateSelection", "direction": "up",    "mode": "buffer" }, "keys": "ctrl+shift+home" },
+{ "command": {"action": "updateSelection", "direction": "down",  "mode": "buffer" }, "keys": "ctrl+shift+end" },
 
 // Select All
 { "command": "selectAll", "keys": "ctrl+shift+a" },
