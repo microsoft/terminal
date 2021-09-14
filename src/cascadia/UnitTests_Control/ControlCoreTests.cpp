@@ -136,8 +136,11 @@ namespace ControlUnitTests
                 VERIFY_IS_TRUE(settings->UseAcrylic());
                 VERIFY_IS_TRUE(core->_settings.UseAcrylic());
             }
-            VERIFY_ARE_EQUAL(expectedOpacity < 1.0, settings->UseAcrylic());
-            VERIFY_ARE_EQUAL(expectedOpacity < 1.0, core->_settings.UseAcrylic());
+
+            // GH#603: Adjusting opacity shouldn't change whether or not we
+            // requested acrylic.
+            VERIFY_IS_TRUE(settings->UseAcrylic());
+            VERIFY_IS_TRUE(core->_settings.UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
 
@@ -220,7 +223,7 @@ namespace ControlUnitTests
     {
         auto [settings, conn] = _createSettingsAndConnection();
         Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
         _standardInit(core);
 
@@ -259,7 +262,7 @@ namespace ControlUnitTests
     {
         auto [settings, conn] = _createSettingsAndConnection();
         Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
         _standardInit(core);
 
@@ -298,7 +301,7 @@ namespace ControlUnitTests
     {
         auto [settings, conn] = _createSettingsAndConnection();
         Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
         _standardInit(core);
 
