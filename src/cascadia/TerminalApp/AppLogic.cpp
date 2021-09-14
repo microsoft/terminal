@@ -131,11 +131,32 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 // Method Description:
 // - Returns whether the user is either a member of the Administrators group or
 //   is currently elevated.
+// - This will return **FALSE** if the user has UAC disabled entirely, because
+//   there's no separation of power between the user and an admin in that case.
 // Return Value:
 // - true if the user is an administrator
 static bool _isUserAdmin() noexcept
 try
 {
+    DWORD dwSize;
+    wil::unique_handle hToken;
+    TOKEN_ELEVATION_TYPE elevationType;
+    TOKEN_ELEVATION elevationState{ 0 };
+
+    OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken);
+    GetTokenInformation(hToken.get(), TokenElevationType, &elevationType, sizeof(elevationType), &dwSize);
+    GetTokenInformation(hToken.get(), TokenElevation, &elevationState, sizeof(elevationState), &dwSize);
+    if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
+    {
+        // In this case, the user has UAC entirely disabled. This is sorta
+        // weird, we treat this like the user isn't an admin at all. There's no
+        // separation of powers, so the things we normally want to gate on
+        // "having special powers" doesn't apply.
+        //
+        // See GH#7754, GH#11096
+        return false;
+    }
+
     SID_IDENTIFIER_AUTHORITY ntAuthority{ SECURITY_NT_AUTHORITY };
     wil::unique_sid adminGroupSid{};
     THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
