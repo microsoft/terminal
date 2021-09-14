@@ -1480,14 +1480,33 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Function Description:
+    // - Returns true if this commandline is precisely an executable in
+    //   system32. We can use this to bypass the elevated state check, because
+    //   we're confident that executables in that path won't have been hijacked.
+    // Arguments:
+    // - commandLine: the command to check.
+    // Return Value (example):
+    // - C:\windows\system32\cmd.exe -> returns true
+    // - cmd.exe -> returns false
+    // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
     static bool _isInSystem32(std::wstring_view commandLine)
     {
-        // TODO! magic static
-        static std::wstring systemDirectory{};
-        if (FAILED(wil::GetSystemDirectoryW(systemDirectory)))
+        // use C++11 magic statics to make sure we only do this once.
+        static std::wstring systemDirectory = []() -> std::wstring {
+            // *** THIS IS A SINGLETON ***
+            static std::wstring sys32{};
+            if (FAILED(wil::GetSystemDirectoryW(sys32)))
+            {
+                // we couldn't look up where system32 is?? Then it's definitely not
+                // in System32
+                return {};
+            }
+            return sys32;
+        }();
+
+        if (systemDirectory.empty())
         {
-            // we couldn't look up where system32 is?? Then it's definitely not
-            // in System32
             return false;
         }
 
@@ -1519,9 +1538,9 @@ namespace winrt::TerminalApp::implementation
         // NOTE: For debugging purposes, changing this to `true ||
         // _isElevated()` is a handy way of forcing the elevation logic, even
         // when unelevated.
-        if (true || _isElevated())
+        if (_isElevated())
         {
-            // If the cmdline starts with (case-insensitive)
+            // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.
             if (_isInSystem32(cmdline))
             {
