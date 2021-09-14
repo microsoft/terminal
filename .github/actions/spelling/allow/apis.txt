@@ -1,5 +1,7 @@
 ACCEPTFILES
 ACCESSDENIED
+acl
+aclapi
 alignas
 alignof
 APPLYTOSUBMENUS
@@ -19,6 +21,7 @@ comparand
 cstdint
 CXICON
 CYICON
+Dacl
 dataobject
 dcomp
 DERR
@@ -112,9 +115,12 @@ OSVERSIONINFOEXW
 otms
 OUTLINETEXTMETRICW
 overridable
+PACL
 PAGESCROLL
+PEXPLICIT
 PICKFOLDERS
 pmr
+ptstr
 rcx
 REGCLS
 RETURNCMD

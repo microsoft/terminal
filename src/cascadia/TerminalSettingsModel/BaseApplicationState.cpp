@@ -47,6 +47,8 @@ winrt::hstring BaseApplicationState::FilePath() const noexcept
 void BaseApplicationState::_read() const noexcept
 try
 {
+    // Use the derived class's implementation of _readFileContents to get the
+    // actual contents of the file.
     const auto data = _readFileContents().value_or(std::string{});
     if (data.empty())
     {
@@ -77,6 +79,9 @@ try
 
     Json::StreamWriterBuilder wbuilder;
     const auto content = Json::writeString(wbuilder, root);
+
+    // Use the derived class's implementation of _writeFileContents to write the
+    // file to disk.
     _writeFileContents(content);
 }
 CATCH_LOG()

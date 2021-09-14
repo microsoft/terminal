@@ -3,10 +3,12 @@ Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
 Module Name:
-- ApplicationState.h
+- BaseApplicationState.h
 
 Abstract:
-- TODO!
+- This is the common core for both ApplicationState and ElevatedState. This
+  handles more of the mechanics of serializing these structures to/from json, as
+  well as the mechanics of loading the file.
 --*/
 #pragma once
 
