@@ -311,14 +311,16 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // Check if moving up or down the tree
     if (direction == FocusDirection::Parent)
     {
-        const auto parent = _FindParentOfPane(sourcePane);
+        if (const auto parent = _FindParentOfPane(sourcePane))
+        {
+            // Capture a weak reference to the source pane if it is a leaf so that
+            // we can keep the same terminal focused and take the same path back down
+            // if a child movement is requested.
+            parent->_previouslyFocusedTerminal = sourcePane->_IsLeaf() ? sourcePane->weak_from_this() : sourcePane->_previouslyFocusedTerminal;
 
-        // Capture a weak reference to the source pane if it is a leaf so that
-        // we can keep the same terminal focused and take the same path back down
-        // if a child movement is requested.
-        parent->_previouslyFocusedTerminal = sourcePane->_IsLeaf() ? sourcePane->weak_from_this() : sourcePane->_previouslyFocusedTerminal;
-
-        return parent;
+            return parent;
+        }
+        return nullptr;
     }
 
     if (direction == FocusDirection::Child)
