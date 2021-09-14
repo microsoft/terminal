@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "NonClientIslandWindow.h"
-#include "TrayIcon.h"
+#include "NotificationIcon.h"
 
 class AppHost
 {
@@ -85,13 +85,13 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
-    void _CreateTrayIcon();
-    void _DestroyTrayIcon();
-    void _ShowTrayIconRequested();
-    void _HideTrayIconRequested();
-    std::unique_ptr<TrayIcon> _trayIcon;
-    winrt::event_token _ReAddTrayIconToken;
-    winrt::event_token _TrayIconPressedToken;
-    winrt::event_token _ShowTrayContextMenuToken;
-    winrt::event_token _TrayMenuItemSelectedToken;
+    void _CreateNotificationIcon();
+    void _DestroyNotificationIcon();
+    void _ShowNotificationIconRequested();
+    void _HideNotificationIconRequested();
+    std::unique_ptr<NotificationIcon> _notificationIcon;
+    winrt::event_token _ReAddNotificationIconToken;
+    winrt::event_token _NotificationIconPressedToken;
+    winrt::event_token _ShowNotificationContextMenuToken;
+    winrt::event_token _NotificationMenuItemSelectedToken;
 };

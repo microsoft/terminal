@@ -43,14 +43,14 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> GetPeasantNames();
 
-        winrt::fire_and_forget RequestShowTrayIcon();
-        winrt::fire_and_forget RequestHideTrayIcon();
+        winrt::fire_and_forget RequestShowNotificationIcon();
+        winrt::fire_and_forget RequestHideNotificationIcon();
         bool DoesQuakeWindowExist();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(BecameMonarch, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
 
     private:
         bool _shouldCreateWindow{ false };
