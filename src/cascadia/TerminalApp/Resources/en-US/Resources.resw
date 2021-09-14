@@ -715,4 +715,7 @@
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Don't show again</value>
   </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>This Terminal window is running as an Administrator</value>
+  </data>
 </root>

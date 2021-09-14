@@ -17,7 +17,8 @@
                           Grid.Column="0">
 
             <!--  EA18 is the "Shield" glyph  -->
-            <FontIcon Margin="9,4,0,0"
+            <FontIcon x:Uid="ElevationShield"
+                      Margin="9,4,0,0"
                       FontFamily="Segoe MDL2 Assets"
                       FontSize="16"
                       Glyph="&#xEA18;"
