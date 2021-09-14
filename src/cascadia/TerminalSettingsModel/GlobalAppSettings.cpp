@@ -48,8 +48,8 @@ static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
-static constexpr std::string_view AlwaysShowTrayIconKey{ "alwaysShowTrayIcon" };
-static constexpr std::string_view MinimizeToTrayKey{ "minimizeToTray" };
+static constexpr std::string_view AlwaysShowNotificationIconKey{ "alwaysShowNotificationIcon" };
+static constexpr std::string_view MinimizeToNotificationAreaKey{ "minimizeToNotificationArea" };
 static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
@@ -118,8 +118,8 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_WindowingBehavior = _WindowingBehavior;
     globals->_TrimBlockSelection = _TrimBlockSelection;
     globals->_DetectURLs = _DetectURLs;
-    globals->_MinimizeToTray = _MinimizeToTray;
-    globals->_AlwaysShowTrayIcon = _AlwaysShowTrayIcon;
+    globals->_MinimizeToNotificationArea = _MinimizeToNotificationArea;
+    globals->_AlwaysShowNotificationIcon = _AlwaysShowNotificationIcon;
     globals->_DisabledProfileSources = _DisabledProfileSources;
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
 
@@ -223,8 +223,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, WindowingBehaviorKey, _WindowingBehavior);
     JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
     JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
-    JsonUtils::GetValueForKey(json, MinimizeToTrayKey, _MinimizeToTray);
-    JsonUtils::GetValueForKey(json, AlwaysShowTrayIconKey, _AlwaysShowTrayIcon);
+    JsonUtils::GetValueForKey(json, MinimizeToNotificationAreaKey, _MinimizeToNotificationArea);
+    JsonUtils::GetValueForKey(json, AlwaysShowNotificationIconKey, _AlwaysShowNotificationIcon);
     JsonUtils::GetValueForKey(json, DisabledProfileSourcesKey, _DisabledProfileSources);
 
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
@@ -321,8 +321,8 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
     JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
     JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
-    JsonUtils::SetValueForKey(json, MinimizeToTrayKey,              _MinimizeToTray);
-    JsonUtils::SetValueForKey(json, AlwaysShowTrayIconKey,          _AlwaysShowTrayIcon);
+    JsonUtils::SetValueForKey(json, MinimizeToNotificationAreaKey,  _MinimizeToNotificationArea);
+    JsonUtils::SetValueForKey(json, AlwaysShowNotificationIconKey,  _AlwaysShowNotificationIcon);
     JsonUtils::SetValueForKey(json, DisabledProfileSourcesKey,      _DisabledProfileSources);
     // clang-format on
 

@@ -80,8 +80,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
             peasant.RenameRequested({ this, &Monarch::_renameRequested });
 
-            peasant.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
-            peasant.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
+            peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
+            peasant.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
+            peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
             _peasants[newPeasantsId] = peasant;
 
@@ -110,6 +111,35 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
+    // - Gives the host process an opportunity to run any pre-close logic then
+    //   requests all peasants to close.
+    // Arguments:
+    // - <none> used
+    // Return Value:
+    // - <none>
+    void Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
+    {
+        // Let the process hosting the monarch run any needed logic before
+        // closing all windows.
+        _QuitAllRequestedHandlers(*this, nullptr);
+
+        // Tell all peasants to exit.
+        const auto callback = [&](const auto& /*id*/, const auto& p) {
+            p.Quit();
+        };
+        const auto onError = [&](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_handleQuitAll_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not close"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forEachPeasant(callback, onError);
+    }
+
+    // Method Description:
     // - Tells the monarch that a peasant is being closed.
     // Arguments:
     // - peasantId: the id of the peasant
@@ -117,6 +147,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::SignalClose(const uint64_t peasantId)
     {
+        _clearOldMruEntries(peasantId);
         _peasants.erase(peasantId);
         _WindowClosedHandlers(nullptr, nullptr);
     }

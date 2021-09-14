@@ -750,7 +750,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         // reason so we have to do it ourselves.
         if (wParam == HTCAPTION)
         {
-            _OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         }
         break;
     }
@@ -946,48 +946,4 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !(_fullscreen || _borderless);
-}
-
-// Method Description:
-// - Opens the window's system menu.
-// - The system menu is the menu that opens when the user presses Alt+Space or
-//   right clicks on the title bar.
-// - Before updating the menu, we update the buttons like "Maximize" and
-//   "Restore" so that they are grayed out depending on the window's state.
-// Arguments:
-// - cursorX: the cursor's X position in screen coordinates
-// - cursorY: the cursor's Y position in screen coordinates
-void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY) const noexcept
-{
-    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
-
-    WINDOWPLACEMENT placement;
-    if (!GetWindowPlacement(_window.get(), &placement))
-    {
-        return;
-    }
-    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
-
-    // Update the options based on window state.
-    MENUITEMINFO mii;
-    mii.cbSize = sizeof(MENUITEMINFO);
-    mii.fMask = MIIM_STATE;
-    mii.fType = MFT_STRING;
-    auto setState = [&](UINT item, bool enabled) {
-        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
-        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
-    };
-    setState(SC_RESTORE, isMaximized);
-    setState(SC_MOVE, !isMaximized);
-    setState(SC_SIZE, !isMaximized);
-    setState(SC_MINIMIZE, true);
-    setState(SC_MAXIMIZE, !isMaximized);
-    setState(SC_CLOSE, true);
-    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
-
-    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, cursorX, cursorY, 0, _window.get(), nullptr);
-    if (ret != 0)
-    {
-        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
-    }
 }
