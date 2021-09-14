@@ -1484,14 +1484,18 @@ namespace winrt::TerminalApp::implementation
     // - Returns true if this commandline is precisely an executable in
     //   system32. We can use this to bypass the elevated state check, because
     //   we're confident that executables in that path won't have been hijacked.
+    // - Will attempt to resolve environment strings.
+    // - Will also manually allow commandlines as generated for the default WSL
+    //   distros.
     // Arguments:
     // - commandLine: the command to check.
     // Return Value (example):
     // - C:\windows\system32\cmd.exe -> returns true
     // - cmd.exe -> returns false
     // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
-    // - %SystemRoot%\System32\cmd.exe -> TODO!
-    static bool _isInSystem32(std::wstring_view commandLine)
+    // - %SystemRoot%\System32\cmd.exe -> returns true
+    // - %SystemRoot%\System32\wsl.exe -d <distroname> -> returns true
+    static bool _isInSystem32(winrt::hstring commandLine)
     {
         // use C++11 magic statics to make sure we only do this once.
         static std::wstring systemDirectory = []() -> std::wstring {
@@ -1511,17 +1515,25 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
-        const std::filesystem::path executablePath{ commandLine };
+        const std::filesystem::path executablePath{
+            wil::ExpandEnvironmentStringsW<std::wstring>(commandLine.c_str())
+        };
 
-        if (executablePath.has_parent_path())
+        if (executablePath.wstring().size() > systemDirectory.size())
         {
-            auto parentPath{ executablePath.parent_path() };
-            const auto pathEquals = til::equals_insensitive_ascii(parentPath.wstring(), systemDirectory);
+            // Get the first part of the executable path
+            const auto start = executablePath.wstring().substr(0, systemDirectory.size());
+            const auto pathEquals = til::equals_insensitive_ascii(start, systemDirectory);
             if (pathEquals && std::filesystem::exists(executablePath))
             {
                 return true;
             }
         }
+
+        // TODO!: Also, if the path is literally
+        //   %SystemRoot%\System32\wsl.exe -d <distroname>
+        // then allow it.
+
         return false;
     }
 
@@ -1539,7 +1551,7 @@ namespace winrt::TerminalApp::implementation
         // NOTE: For debugging purposes, changing this to `true ||
         // _isElevated()` is a handy way of forcing the elevation logic, even
         // when unelevated.
-        if (_isElevated())
+        if (true || _isElevated())
         {
             // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.
