@@ -12,12 +12,11 @@ Abstract:
 --*/
 #pragma once
 
+#include "BaseApplicationState.h"
 #include "ApplicationState.g.h"
 #include "WindowLayout.g.h"
 
 #include <inc/cppwinrt_utils.h>
-#include <til/mutex.h>
-#include <til/throttled_func.h>
 #include <JsonUtils.h>
 
 // This macro generates all getters and setters for ApplicationState.
@@ -40,18 +39,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
     };
 
-    struct ApplicationState : ApplicationStateT<ApplicationState>
+    struct ApplicationState : public BaseApplicationState, ApplicationStateT<ApplicationState>
     {
         static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
 
         ApplicationState(std::filesystem::path path) noexcept;
-        ~ApplicationState();
 
-        // Methods
-        void Reload() const noexcept;
-
-        // General getters/setters
-        winrt::hstring FilePath() const noexcept;
+        virtual void FromJson(const Json::Value& root) const noexcept override;
+        virtual Json::Value ToJson() const noexcept override;
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
@@ -67,13 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         };
-
-        void _write() const noexcept;
-        void _read() const noexcept;
-
-        std::filesystem::path _path;
         til::shared_mutex<state_t> _state;
-        til::throttled_func_trailing<> _throttler;
     };
 }
 
