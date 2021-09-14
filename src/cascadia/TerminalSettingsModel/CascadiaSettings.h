@@ -50,8 +50,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void GenerateProfiles();
         void ApplyRuntimeInitialSettings();
-        void MergeInboxIntoUserProfiles();
-        void MergeFragmentsIntoUserProfiles();
+        void LayerInboxOntoUser();
+        void LayerFragmentsOntoUser();
         void DisableDeletedProfiles();
         void FinalizeLayering();
 
@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     private:
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
-        static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, std::string_view settingsString);
+        static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         static bool _isValidProfileObject(const Json::Value& profileJson);
@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
 
-        void _finalizeSettings() const;
+        void _resolveDefaultProfile() const;
 
         void _validateSettings();
         void _validateAllSchemesExist();

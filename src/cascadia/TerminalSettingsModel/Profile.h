@@ -87,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return Name();
         }
 
-        static void CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target);
-        winrt::com_ptr<Profile>& CopyInterned(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const;
+        static void CopyInheritanceGraphs(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target);
+        winrt::com_ptr<Profile>& CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const;
         winrt::com_ptr<Profile> CopySettings() const;
 
         static com_ptr<Profile> FromJson(const Json::Value& json);

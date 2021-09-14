@@ -53,9 +53,9 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
                 sourceProfiles.emplace_back(std::move(profileImpl));
             }
 
-            // Profiles are basically an acyclic graph. Cloning it without creating duplicated nodes,
+            // Profiles are basically a directed acyclic graph. Cloning it without creating duplicated nodes,
             // requires us to "intern" visited profiles. Thus the "visited" map contains a cache of
-            // previously cloned profiles. It maps from source-profile-pointer to cloned-profile.
+            // previously cloned profiles/sub-graphs. It maps from source-profile-pointer to cloned-profile.
             std::unordered_map<const Profile*, winrt::com_ptr<Profile>> visited;
             // I'm just gonna estimate that each profile has 3 parents at most on average:
             // * base layer
@@ -63,8 +63,10 @@ Model::CascadiaSettings CascadiaSettings::Copy() const
             // * inbox defaults
             visited.reserve(sourceProfiles.size() * 3);
 
-            settings->_baseLayerProfile = _baseLayerProfile->CopyInterned(visited);
-            Profile::CopyInheritanceGraph(visited, sourceProfiles, targetProfiles);
+            // _baseLayerProfile is part of the profile graph.
+            // In order to get a reference to the clone, we need to copy it explicitly.
+            settings->_baseLayerProfile = _baseLayerProfile->CopyInheritanceGraph(visited);
+            Profile::CopyInheritanceGraphs(visited, sourceProfiles, targetProfiles);
 
             for (const auto& profile : targetProfiles)
             {
@@ -387,26 +389,6 @@ void CascadiaSettings::_validateSettings()
     _validateMediaResources();
     _validateKeybindings();
     _validateColorSchemesInCommands();
-}
-
-// Method Description:
-// - Resolves the "defaultProfile", which can be a profile name, to a GUID
-//   and stores it back to the globals.
-void CascadiaSettings::_finalizeSettings() const
-{
-    if (const auto unparsedDefaultProfile = _globals->UnparsedDefaultProfile(); !unparsedDefaultProfile.empty())
-    {
-        if (const auto profile = GetProfileByName(unparsedDefaultProfile))
-        {
-            _globals->DefaultProfile(profile.Guid());
-            return;
-        }
-
-        _warnings.Append(SettingsLoadWarnings::MissingDefaultProfile);
-    }
-
-    // Use the first profile as the new default.
-    GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
 }
 
 // Method Description:

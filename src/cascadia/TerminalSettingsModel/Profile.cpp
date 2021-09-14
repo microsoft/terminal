@@ -73,22 +73,32 @@ void Profile::DeleteUnfocusedAppearance()
     _UnfocusedAppearance = std::nullopt;
 }
 
-void Profile::CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target)
+// See CopyInheritanceGraph (singular) for more information.
+// This does the same, but runs it on a list of graph nodes and clones each sub-graph.
+void Profile::CopyInheritanceGraphs(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target)
 {
     for (const auto& sourceProfile : source)
     {
-        target.emplace_back(sourceProfile->CopyInterned(visited));
+        target.emplace_back(sourceProfile->CopyInheritanceGraph(visited));
     }
 }
 
-winrt::com_ptr<Profile>& Profile::CopyInterned(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const
+// A profile and its IInherhitance parents basically behave like a directed acyclic graph (DAG).
+// Cloning a DAG requires us to prevent the duplication of already cloned nodes (or profiles).
+// This is where "visited" comes into play: It contains previously cloned sub-graphs of profiles and "interns" them.
+winrt::com_ptr<Profile>& Profile::CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const
 {
+    // The operator[] is usually considered to suck, because it implicitly creates entries
+    // in maps/sets if the entry doesn't exist yet, which is often an unwanted behavior.
+    // But in this case it's just perfect. We want to return a reference to the profile if it's
+    // been created before and create a cloned profile if it doesn't. With the operator[]
+    // we can just assign the returned reference allowing us to write some lean code.
     auto& clone = visited[this];
 
     if (!clone)
     {
         clone = CopySettings();
-        CopyInheritanceGraph(visited, _parents, clone->_parents);
+        CopyInheritanceGraphs(visited, _parents, clone->_parents);
         clone->_FinalizeInheritance();
     }
 
