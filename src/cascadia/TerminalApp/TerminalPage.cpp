@@ -1490,6 +1490,7 @@ namespace winrt::TerminalApp::implementation
     // - C:\windows\system32\cmd.exe -> returns true
     // - cmd.exe -> returns false
     // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
+    // - %SystemRoot%\System32\cmd.exe -> TODO!
     static bool _isInSystem32(std::wstring_view commandLine)
     {
         // use C++11 magic statics to make sure we only do this once.
@@ -1575,12 +1576,16 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
             {
-                tabImpl->GetRootPane()->WalkTree([warningControl, cmdline](std::shared_ptr<Pane> pane) -> bool {
+                tabImpl->GetRootPane()->WalkTree([warningControl, cmdline, tabImpl](std::shared_ptr<Pane> pane) -> bool {
                     if (pane->GetUserControl() == *warningControl)
                     {
                         // Hooray, we found us!
                         pane->ReplaceControl(warningControl->Control());
-                        // Don't return true here. We want to make sure to chekc
+                        // Update the title, because replacing the control like
+                        // this is a little weird, and doesn't actually trigger
+                        // a TitleChanged by itself.
+                        tabImpl->UpdateTitle();
+                        // Don't return true here. We want to make sure to check
                         // all the panes for the same commandline we just
                         // approved.
                     }
@@ -1593,6 +1598,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             // Go ahead and allow them as well.
                             pane->ReplaceControl(otherWarning->Control());
+                            tabImpl->UpdateTitle();
                         }
                     }
                     return false;
