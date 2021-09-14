@@ -680,16 +680,16 @@ namespace TerminalAppLocalTests
         // <Command Palette>
         //  ├─ profile0...
         //  |  ├─ Split pane, profile: profile0
-        //  |  ├─ Split pane, direction: vertical, profile: profile0
-        //  |  └─ Split pane, direction: horizontal, profile: profile0
+        //  |  ├─ Split pane, direction: right, profile: profile0
+        //  |  └─ Split pane, direction: down, profile: profile0
         //  ├─ profile1...
         //  |  ├─Split pane, profile: profile1
-        //  |  ├─Split pane, direction: vertical, profile: profile1
-        //  |  └─Split pane, direction: horizontal, profile: profile1
+        //  |  ├─Split pane, direction: right, profile: profile1
+        //  |  └─Split pane, direction: down, profile: profile1
         //  └─ profile2...
         //     ├─ Split pane, profile: profile2
-        //     ├─ Split pane, direction: vertical, profile: profile2
-        //     └─ Split pane, direction: horizontal, profile: profile2
+        //     ├─ Split pane, direction: right, profile: profile2
+        //     └─ Split pane, direction: down, profile: profile2
 
         const std::string settingsJson{ R"(
         {
@@ -719,8 +719,8 @@ namespace TerminalAppLocalTests
                     "name": "${profile.name}...",
                     "commands": [
                         { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
-                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
-                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" } },
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" } }
                     ]
                 }
             ],
@@ -773,7 +773,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -794,7 +794,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -915,16 +915,16 @@ namespace TerminalAppLocalTests
         // └─ New Pane...
         //    ├─ profile0...
         //    |  ├─ Split automatically
-        //    |  ├─ Split vertically
-        //    |  └─ Split horizontally
+        //    |  ├─ Split right
+        //    |  └─ Split down
         //    ├─ profile1...
         //    |  ├─ Split automatically
-        //    |  ├─ Split vertically
-        //    |  └─ Split horizontally
+        //    |  ├─ Split right
+        //    |  └─ Split down
         //    └─ profile2...
         //       ├─ Split automatically
-        //       ├─ Split vertically
-        //       └─ Split horizontally
+        //       ├─ Split right
+        //       └─ Split down
 
         const std::string settingsJson{ R"(
         {
@@ -957,8 +957,8 @@ namespace TerminalAppLocalTests
                             "name": "${profile.name}...",
                             "commands": [
                                 { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
-                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
-                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" } },
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" } }
                             ]
                         }
                     ]
@@ -1021,7 +1021,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1042,7 +1042,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();

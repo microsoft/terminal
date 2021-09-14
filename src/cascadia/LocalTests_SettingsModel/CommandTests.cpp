@@ -164,7 +164,7 @@ namespace SettingsModelLocalTests
         VERIFY_ARE_EQUAL(0u, commands.Size());
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
-        VERIFY_ARE_EQUAL(5u, commands.Size());
+        VERIFY_ARE_EQUAL(9u, commands.Size());
 
         {
             auto command = commands.Lookup(L"command1");
@@ -334,8 +334,10 @@ namespace SettingsModelLocalTests
 
         const std::string commands0String{ R"([
             { "command": { "action": "splitPane", "split": null } },
-            { "command": { "action": "splitPane", "split": "vertical" } },
-            { "command": { "action": "splitPane", "split": "horizontal" } },
+            { "command": { "action": "splitPane", "split": "left" } },
+            { "command": { "action": "splitPane", "split": "right" } },
+            { "command": { "action": "splitPane", "split": "up" } },
+            { "command": { "action": "splitPane", "split": "down" } },
             { "command": { "action": "splitPane", "split": "none" } },
             { "command": { "action": "splitPane" } },
             { "command": { "action": "splitPane", "split": "auto" } },
@@ -349,10 +351,10 @@ namespace SettingsModelLocalTests
         auto warnings = implementation::Command::LayerJson(commands, commands0Json);
         VERIFY_ARE_EQUAL(0u, warnings.size());
 
-        // There are only 3 commands here: all of the `"none"`, `"auto"`,
+        // There are only 5 commands here: all of the `"none"`, `"auto"`,
         // `"foo"`, `null`, and <no args> bindings all generate the same action,
         // which will generate just a single name for all of them.
-        VERIFY_ARE_EQUAL(3u, commands.Size());
+        VERIFY_ARE_EQUAL(5u, commands.Size());
 
         {
             auto command = commands.Lookup(L"Split pane");
@@ -365,7 +367,17 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
         }
         {
-            auto command = commands.Lookup(L"Split pane, split: vertical");
+            auto command = commands.Lookup(L"Split pane, split: left");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitDirection::Left, realArgs.SplitDirection());
+        }
+        {
+            auto command = commands.Lookup(L"Split pane, split: right");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.ActionAndArgs());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
@@ -375,7 +387,17 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
         }
         {
-            auto command = commands.Lookup(L"Split pane, split: horizontal");
+            auto command = commands.Lookup(L"Split pane, split: up");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitDirection::Up, realArgs.SplitDirection());
+        }
+        {
+            auto command = commands.Lookup(L"Split pane, split: down");
             VERIFY_IS_NOT_NULL(command);
             VERIFY_IS_NOT_NULL(command.ActionAndArgs());
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
