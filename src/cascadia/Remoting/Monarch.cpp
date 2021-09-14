@@ -80,8 +80,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
             peasant.RenameRequested({ this, &Monarch::_renameRequested });
 
-            peasant.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
-            peasant.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
+            peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
+            peasant.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
             peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
             _peasants[newPeasantsId] = peasant;

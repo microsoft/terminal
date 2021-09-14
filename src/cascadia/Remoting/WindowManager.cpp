@@ -269,8 +269,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.WindowCreated({ get_weak(), &WindowManager::_WindowCreatedHandlers });
         _monarch.WindowClosed({ get_weak(), &WindowManager::_WindowClosedHandlers });
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
-        _monarch.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
-        _monarch.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
+        _monarch.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
+        _monarch.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
         _monarch.QuitAllRequested([this](auto&&, auto&&) { _QuitAllRequestedHandlers(*this, nullptr); });
 
         _BecameMonarchHandlers(*this, nullptr);
@@ -529,7 +529,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     void WindowManager::SummonAllWindows()
     {
-        if constexpr (Feature_TrayIcon::IsEnabled())
+        if constexpr (Feature_NotificationIcon::IsEnabled())
         {
             _monarch.SummonAllWindows();
         }
@@ -556,28 +556,28 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
-    // - Ask the monarch to show a tray icon.
+    // - Ask the monarch to show a notification icon.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget WindowManager::RequestShowTrayIcon()
+    winrt::fire_and_forget WindowManager::RequestShowNotificationIcon()
     {
         co_await winrt::resume_background();
-        _peasant.RequestShowTrayIcon();
+        _peasant.RequestShowNotificationIcon();
     }
 
     // Method Description:
-    // - Ask the monarch to hide its tray icon.
+    // - Ask the monarch to hide its notification icon.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget WindowManager::RequestHideTrayIcon()
+    winrt::fire_and_forget WindowManager::RequestHideNotificationIcon()
     {
         auto strongThis{ get_strong() };
         co_await winrt::resume_background();
-        _peasant.RequestHideTrayIcon();
+        _peasant.RequestHideNotificationIcon();
     }
 
     // Method Description:

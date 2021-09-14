@@ -65,8 +65,8 @@
     </feature>
 
     <feature>
-        <name>Feature_TrayIcon</name>
-        <description>Controls whether the Tray Icon and related settings (aka. MinimizeToTray and AlwaysShowTrayIcon) are enabled</description>
+        <name>Feature_NotificationIcon</name>
+        <description>Controls whether the Notification Icon and related settings (aka. MinimizeToNotificationArea and AlwaysShowNotificationIcon) are enabled</description>
         <stage>AlwaysEnabled</stage>
         <alwaysDisabledReleaseTokens/>
     </feature>
