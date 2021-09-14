@@ -1255,6 +1255,14 @@ const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const st
         }
 
         result = iter.Pos();
+
+        // Special case: we tried to move one past the end of the buffer,
+        // but iter prevented that (because that pos doesn't exist).
+        // Manually increment onto the EndExclusive point.
+        if (!iter)
+        {
+            bufferSize.IncrementInBounds(result, true);
+        }
     }
 
     return result;
