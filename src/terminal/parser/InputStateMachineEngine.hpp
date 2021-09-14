@@ -24,20 +24,20 @@ Author(s):
 namespace Microsoft::Console::VirtualTerminal
 {
     // The values used by VkKeyScan to encode modifiers in the high order byte
-    const short KEYSCAN_SHIFT = 1;
-    const short KEYSCAN_CTRL = 2;
-    const short KEYSCAN_ALT = 4;
+    constexpr short KEYSCAN_SHIFT = 1;
+    constexpr short KEYSCAN_CTRL = 2;
+    constexpr short KEYSCAN_ALT = 4;
 
     // The values with which VT encodes modifier values.
-    const short VT_SHIFT = 1;
-    const short VT_ALT = 2;
-    const short VT_CTRL = 4;
+    constexpr short VT_SHIFT = 1;
+    constexpr short VT_ALT = 2;
+    constexpr short VT_CTRL = 4;
 
     // The assumed values for SGR Mouse Scroll Wheel deltas
     constexpr DWORD SCROLL_DELTA_BACKWARD = 0xFF800000;
     constexpr DWORD SCROLL_DELTA_FORWARD = 0x00800000;
 
-    const size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
+    constexpr size_t WRAPPED_SEQUENCE_MAX_LENGTH = 8;
 
     // For reference, the equivalent INPUT_RECORD values are:
     // RIGHT_ALT_PRESSED   0x0001
@@ -50,30 +50,25 @@ namespace Microsoft::Console::VirtualTerminal
     // CAPSLOCK_ON         0x0080
     // ENHANCED_KEY        0x0100
 
-    enum CsiIntermediateCodes : wchar_t
+    enum CsiActionCodes : uint64_t
     {
-        MOUSE_SGR = L'<',
-    };
-
-    enum class CsiActionCodes : wchar_t
-    {
-        ArrowUp = L'A',
-        ArrowDown = L'B',
-        ArrowRight = L'C',
-        ArrowLeft = L'D',
-        Home = L'H',
-        End = L'F',
-        MouseDown = L'M',
-        MouseUp = L'm',
-        Generic = L'~', // Used for a whole bunch of possible keys
-        CSI_F1 = L'P',
-        CSI_F2 = L'Q',
-        CSI_F3 = L'R', // Both F3 and DSR are on R.
-        // DSR_DeviceStatusReportResponse = L'R',
-        CSI_F4 = L'S',
-        DTTERM_WindowManipulation = L't',
-        CursorBackTab = L'Z',
-        Win32KeyboardInput = L'_'
+        ArrowUp = VTID("A"),
+        ArrowDown = VTID("B"),
+        ArrowRight = VTID("C"),
+        ArrowLeft = VTID("D"),
+        Home = VTID("H"),
+        End = VTID("F"),
+        MouseDown = VTID("<M"),
+        MouseUp = VTID("<m"),
+        Generic = VTID("~"), // Used for a whole bunch of possible keys
+        CSI_F1 = VTID("P"),
+        CSI_F2 = VTID("Q"),
+        CSI_F3 = VTID("R"), // Both F3 and DSR are on R.
+        // DSR_DeviceStatusReportResponse = VTID("R"),
+        CSI_F4 = VTID("S"),
+        DTTERM_WindowManipulation = VTID("t"),
+        CursorBackTab = VTID("Z"),
+        Win32KeyboardInput = VTID("_")
     };
 
     enum CsiMouseButtonCodes : unsigned short
@@ -97,7 +92,7 @@ namespace Microsoft::Console::VirtualTerminal
     };
 
     // Sequences ending in '~' use these numbers as identifiers.
-    enum class GenericKeyIdentifiers : unsigned short
+    enum class GenericKeyIdentifiers : size_t
     {
         GenericHome = 1,
         Insert = 2,
@@ -145,16 +140,13 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionPassThroughString(const std::wstring_view string) override;
 
-        bool ActionEscDispatch(const wchar_t wch,
-                               const std::basic_string_view<wchar_t> intermediates) override;
+        bool ActionEscDispatch(const VTID id) override;
 
-        bool ActionVt52EscDispatch(const wchar_t wch,
-                                   const std::basic_string_view<wchar_t> intermediates,
-                                   const std::basic_string_view<size_t> parameters) noexcept override;
+        bool ActionVt52EscDispatch(const VTID id, const VTParameters parameters) noexcept override;
 
-        bool ActionCsiDispatch(const wchar_t wch,
-                               const std::basic_string_view<wchar_t> intermediates,
-                               const std::basic_string_view<size_t> parameters) override;
+        bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
+
+        StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
 
         bool ActionClear() noexcept override;
 
@@ -164,8 +156,7 @@ namespace Microsoft::Console::VirtualTerminal
                                const size_t parameter,
                                const std::wstring_view string) noexcept override;
 
-        bool ActionSs3Dispatch(const wchar_t wch,
-                               const std::basic_string_view<size_t> parameters) override;
+        bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) override;
 
         bool ParseControlSequenceAfterSs3() const noexcept override;
         bool FlushAtEndOfString() const noexcept override;
@@ -179,28 +170,31 @@ namespace Microsoft::Console::VirtualTerminal
         std::function<bool()> _pfnFlushToInputQueue;
         bool _lookingForDSR;
         DWORD _mouseButtonState = 0;
+        std::chrono::milliseconds _doubleClickTime;
+        std::optional<til::point> _lastMouseClickPos{};
+        std::optional<std::chrono::steady_clock::time_point> _lastMouseClickTime{};
+        std::optional<size_t> _lastMouseClickButton{};
 
-        DWORD _GetCursorKeysModifierState(const std::basic_string_view<size_t> parameters, const CsiActionCodes actionCode) noexcept;
-        DWORD _GetGenericKeysModifierState(const std::basic_string_view<size_t> parameters) noexcept;
-        DWORD _GetSGRMouseModifierState(const std::basic_string_view<size_t> parameters) noexcept;
+        DWORD _GetCursorKeysModifierState(const VTParameters parameters, const VTID id) noexcept;
+        DWORD _GetGenericKeysModifierState(const VTParameters parameters) noexcept;
+        DWORD _GetSGRMouseModifierState(const size_t modifierParam) noexcept;
         bool _GenerateKeyFromChar(const wchar_t wch, short& vkey, DWORD& modifierState) noexcept;
 
-        bool _IsModified(const size_t paramCount) noexcept;
         DWORD _GetModifier(const size_t parameter) noexcept;
 
-        bool _UpdateSGRMouseButtonState(const wchar_t wch,
-                                        const std::basic_string_view<size_t> parameters,
+        bool _UpdateSGRMouseButtonState(const VTID id,
+                                        const size_t sgrEncoding,
                                         DWORD& buttonState,
-                                        DWORD& eventFlags) noexcept;
-        bool _GetGenericVkey(const std::basic_string_view<size_t> parameters,
-                             short& vkey) const;
-        bool _GetCursorKeysVkey(const wchar_t wch, short& vkey) const;
+                                        DWORD& eventFlags,
+                                        const til::point uiPos);
+        bool _GetGenericVkey(const GenericKeyIdentifiers identifier, short& vkey) const;
+        bool _GetCursorKeysVkey(const VTID id, short& vkey) const;
         bool _GetSs3KeysVkey(const wchar_t wch, short& vkey) const;
 
         bool _WriteSingleKey(const short vkey, const DWORD modifierState);
         bool _WriteSingleKey(const wchar_t wch, const short vkey, const DWORD modifierState);
 
-        bool _WriteMouseEvent(const size_t column, const size_t line, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
+        bool _WriteMouseEvent(const til::point uiPos, const DWORD buttonState, const DWORD controlKeyState, const DWORD eventFlags);
 
         void _GenerateWrappedSequence(const wchar_t wch,
                                       const short vkey,
@@ -212,19 +206,10 @@ namespace Microsoft::Console::VirtualTerminal
                                 const DWORD modifierState,
                                 std::vector<INPUT_RECORD>& input);
 
-        bool _GetWindowManipulationType(const std::basic_string_view<size_t> parameters,
+        bool _GetWindowManipulationType(const gsl::span<const size_t> parameters,
                                         unsigned int& function) const noexcept;
 
-        bool _GenerateWin32Key(const std::basic_string_view<size_t> parameters, KeyEvent& key);
-
-        static constexpr size_t DefaultLine = 1;
-        static constexpr size_t DefaultColumn = 1;
-        bool _GetXYPosition(const std::basic_string_view<size_t> parameters,
-                            size_t& line,
-                            size_t& column) const noexcept;
-        bool _GetSGRXYPosition(const std::basic_string_view<size_t> parameters,
-                               size_t& line,
-                               size_t& column) const noexcept;
+        KeyEvent _GenerateWin32Key(const VTParameters parameters);
 
         bool _DoControlCharacter(const wchar_t wch, const bool writeAlt);
 

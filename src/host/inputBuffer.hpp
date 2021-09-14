@@ -26,6 +26,8 @@ Revision History:
 #include "../server/ObjectHeader.h"
 #include "../terminal/input/terminalInput.hpp"
 
+#include "../inc/ITerminalOutputConnection.hpp"
+
 #include <deque>
 
 class InputBuffer final : public ConsoleObjectHeader
@@ -75,12 +77,15 @@ public:
 
     bool IsInVirtualTerminalInputMode() const;
     Microsoft::Console::VirtualTerminal::TerminalInput& GetTerminalInput();
+    void SetTerminalConnection(_In_ Microsoft::Console::ITerminalOutputConnection* const pTtyConnection);
+    void PassThroughWin32MouseRequest(bool enable);
 
 private:
     std::deque<std::unique_ptr<IInputEvent>> _storage;
     std::unique_ptr<IInputEvent> _readPartialByteSequence;
     std::unique_ptr<IInputEvent> _writePartialByteSequence;
     Microsoft::Console::VirtualTerminal::TerminalInput _termInput;
+    Microsoft::Console::ITerminalOutputConnection* _pTtyConnection;
 
     // This flag is used in _HandleTerminalInputCallback
     // If the InputBuffer leads to a _HandleTerminalInputCallback call,

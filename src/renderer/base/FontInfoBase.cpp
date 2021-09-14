@@ -5,7 +5,7 @@
 
 #include <cwchar>
 
-#include "..\inc\FontInfoBase.hpp"
+#include "../inc/FontInfoBase.hpp"
 
 bool operator==(const FontInfoBase& a, const FontInfoBase& b)
 {
@@ -61,7 +61,7 @@ unsigned int FontInfoBase::GetWeight() const
     return _weight;
 }
 
-const std::wstring_view FontInfoBase::GetFaceName() const
+const std::wstring_view FontInfoBase::GetFaceName() const noexcept
 {
     return _faceName;
 }

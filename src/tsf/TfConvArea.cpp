@@ -45,8 +45,8 @@ Notes:
     const auto encodedAttributes = _DisplayAttributesToEncodedAttributes(DisplayAttributes,
                                                                          CompCursorPos);
 
-    std::basic_string_view<BYTE> attributes(encodedAttributes.data(), encodedAttributes.size());
-    std::basic_string_view<WORD> colorArray(colors.data(), colors.size());
+    gsl::span<const BYTE> attributes(encodedAttributes.data(), encodedAttributes.size());
+    gsl::span<const WORD> colorArray(colors.data(), colors.size());
 
     return ImeComposeData(CompStr, attributes, colorArray);
 }

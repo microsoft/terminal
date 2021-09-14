@@ -28,6 +28,12 @@ void CursorBlinker::UpdateSystemMetrics()
 {
     // This can be -1 in a TS session
     _uCaretBlinkTime = ServiceLocator::LocateSystemConfigurationProvider()->GetCaretBlinkTime();
+
+    // If animations are disabled, or the blink rate is infinite, blinking is not allowed.
+    BOOL animationsEnabled = TRUE;
+    SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);
+    auto& blinkingState = ServiceLocator::LocateGlobals().getConsoleInformation().GetBlinkingState();
+    blinkingState.SetBlinkingAllowed(animationsEnabled && _uCaretBlinkTime != INFINITE);
 }
 
 void CursorBlinker::SettingsChanged()
@@ -53,16 +59,18 @@ void CursorBlinker::FocusStart()
 }
 
 // Routine Description:
-// - This routine is called when the timer in the console with the focus goes off.  It blinks the cursor.
+// - This routine is called when the timer in the console with the focus goes off.
+//   It blinks the cursor and also toggles the rendition of any blinking attributes.
 // Arguments:
 // - ScreenInfo - reference to screen info structure.
 // Return Value:
 // - <none>
 void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
 {
-    Cursor& cursor = ScreenInfo.GetTextBuffer().GetCursor();
+    auto& buffer = ScreenInfo.GetTextBuffer();
+    auto& cursor = buffer.GetCursor();
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    auto* const _pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    auto* const pAccessibilityNotifier = ServiceLocator::LocateAccessibilityNotifier();
 
     if (!WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS))
     {
@@ -70,9 +78,12 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     }
 
     // Update the cursor pos in USER so accessibility will work.
-    if (cursor.HasMoved())
+    // Don't do all this work or send events if we don't have a notifier target.
+    if (pAccessibilityNotifier && cursor.HasMoved())
     {
-        const auto position = cursor.GetPosition();
+        // Convert the buffer position to the equivalent screen coordinates
+        // required by the notifier, taking line rendition into account.
+        const auto position = buffer.BufferToScreenPosition(cursor.GetPosition());
         const auto viewport = ScreenInfo.GetViewport();
         const auto fontSize = ScreenInfo.GetScreenFontSize();
         cursor.SetHasMoved(false);
@@ -83,7 +94,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
         rc.right = rc.left + fontSize.X;
         rc.bottom = rc.top + fontSize.Y;
 
-        _pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
+        pAccessibilityNotifier->NotifyConsoleCaretEvent(rc);
 
         // Send accessibility information
         {
@@ -99,7 +110,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
                 flags = IAccessibilityNotifier::ConsoleCaretEventFlags::CaretVisible;
             }
 
-            _pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(position.X, position.Y));
+            pAccessibilityNotifier->NotifyConsoleCaretEvent(flags, MAKELONG(position.X, position.Y));
         }
     }
 
@@ -109,7 +120,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     if (cursor.GetDelay())
     {
         cursor.SetDelay(false);
-        goto DoScroll;
+        goto DoBlinkingRenditionAndScroll;
     }
 
     // Don't blink the cursor for remote sessions.
@@ -118,7 +129,7 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
          (!cursor.IsBlinkingAllowed())) &&
         cursor.IsOn())
     {
-        goto DoScroll;
+        goto DoBlinkingRenditionAndScroll;
     }
 
     // Blink only if the cursor isn't turned off via the API
@@ -126,6 +137,9 @@ void CursorBlinker::TimerRoutine(SCREEN_INFORMATION& ScreenInfo)
     {
         cursor.SetIsOn(!cursor.IsOn());
     }
+
+DoBlinkingRenditionAndScroll:
+    gci.GetBlinkingState().ToggleBlinkingRendition(ScreenInfo.GetRenderTarget());
 
 DoScroll:
     Scrolling::s_ScrollIfNecessary(ScreenInfo);

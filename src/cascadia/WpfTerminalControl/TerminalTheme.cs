@@ -5,7 +5,6 @@
 
 namespace Microsoft.Terminal.Wpf
 {
-    using System;
     using System.Runtime.InteropServices;
 
     /// <summary>
@@ -52,7 +51,7 @@ namespace Microsoft.Terminal.Wpf
     /// <summary>
     /// Structure for color handling in the terminal.
     /// </summary>
-    /// <remarks>Pack = 1 removes the padding added by some compilers/processors for optimization purposes.</remarks>
+    /// <remarks>Keep in sync with HwndTerminal.hpp.</remarks>
     [StructLayout(LayoutKind.Sequential)]
     public struct TerminalTheme
     {
@@ -65,6 +64,16 @@ namespace Microsoft.Terminal.Wpf
         /// The default foreground color of the terminal, represented in Win32 COLORREF format.
         /// </summary>
         public uint DefaultForeground;
+
+        /// <summary>
+        /// The default selection background color of the terminal, represented in Win32 COLORREF format.
+        /// </summary>
+        public uint DefaultSelectionBackground;
+
+        /// <summary>
+        /// The opacity alpha for the selection color of the terminal, must be between 1.0 and 0.0.
+        /// </summary>
+        public float SelectionBackgroundAlpha;
 
         /// <summary>
         /// The style of cursor to use in the terminal.

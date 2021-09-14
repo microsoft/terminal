@@ -6,30 +6,51 @@
 #include "../types/inc/Viewport.hpp"
 #include "../types/inc/utils.hpp"
 #include "../types/inc/User32Utils.hpp"
-
+#include "../WinRTUtils/inc/WtExeUtils.h"
 #include "resource.h"
+#include "VirtualDesktopUtils.h"
+#include "icon.h"
 
 using namespace winrt::Windows::UI;
 using namespace winrt::Windows::UI::Composition;
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Hosting;
 using namespace winrt::Windows::Foundation::Numerics;
+using namespace winrt::Microsoft::Terminal;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
 
+// This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
+// "If the high-order bit is 1, the key is down; otherwise, it is up."
+static constexpr short KeyPressed{ gsl::narrow_cast<short>(0x8000) };
+
 AppHost::AppHost() noexcept :
     _app{},
+    _windowManager{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
     _window{ nullptr }
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
-    _useNonClientArea = _logic.GetShowTabsInTitlebar();
+    // Inform the WindowManager that it can use us to find the target window for
+    // a set of commandline args. This needs to be done before
+    // _HandleCommandlineArgs, because WE might end up being the monarch. That
+    // would mean we'd need to be responsible for looking that up.
+    _windowManager.FindTargetWindowRequested({ this, &AppHost::_FindTargetWindow });
 
     // If there were commandline args to our process, try and process them here.
-    // Do this before AppLogic::Create, otherwise this will have no effect
+    // Do this before AppLogic::Create, otherwise this will have no effect.
+    //
+    // This will send our commandline to the Monarch, to ask if we should make a
+    // new window or not. If not, exit immediately.
     _HandleCommandlineArgs();
+    if (!_shouldCreateWindow)
+    {
+        return;
+    }
 
+    _useNonClientArea = _logic.GetShowTabsInTitlebar();
     if (_useNonClientArea)
     {
         _window = std::make_unique<NonClientIslandWindow>(_logic.GetRequestedTheme());
@@ -38,6 +59,11 @@ AppHost::AppHost() noexcept :
     {
         _window = std::make_unique<IslandWindow>();
     }
+
+    // Update our own internal state tracking if we're in quake mode or not.
+    _IsQuakeWindowChanged(nullptr, nullptr);
+
+    _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
@@ -52,7 +78,17 @@ AppHost::AppHost() noexcept :
                                                 std::placeholders::_1,
                                                 std::placeholders::_2));
     _window->MouseScrolled({ this, &AppHost::_WindowMouseWheeled });
+    _window->WindowActivated({ this, &AppHost::_WindowActivated });
+    _window->WindowMoved({ this, &AppHost::_WindowMoved });
+    _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
+    _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
+
+    _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
+    if (_windowManager.IsMonarch())
+    {
+        _BecomeMonarch(nullptr, nullptr);
+    }
 }
 
 AppHost::~AppHost()
@@ -63,18 +99,62 @@ AppHost::~AppHost()
     _app = nullptr;
 }
 
-bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const bool down)
+bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down)
 {
     if (_logic)
     {
-        return _logic.OnDirectKeyEvent(vkey, down);
+        return _logic.OnDirectKeyEvent(vkey, scanCode, down);
     }
     return false;
 }
 
 // Method Description:
+// - Event handler to update the taskbar progress indicator
+// - Upon receiving the event, we ask the underlying logic for the taskbar state/progress values
+//   of the last active control
+// Arguments:
+// - sender: not used
+// - args: not used
+void AppHost::SetTaskbarProgress(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    if (_logic)
+    {
+        const auto state = _logic.TaskbarState();
+        _window->SetTaskbarProgress(gsl::narrow_cast<size_t>(state.State()),
+                                    gsl::narrow_cast<size_t>(state.Progress()));
+    }
+}
+
+void _buildArgsFromCommandline(std::vector<winrt::hstring>& args)
+{
+    if (auto commandline{ GetCommandLineW() })
+    {
+        int argc = 0;
+
+        // Get the argv, and turn them into a hstring array to pass to the app.
+        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
+        if (argv)
+        {
+            for (auto& elem : wil::make_range(argv.get(), argc))
+            {
+                args.emplace_back(elem);
+            }
+        }
+    }
+    if (args.empty())
+    {
+        args.emplace_back(L"wt.exe");
+    }
+}
+
+// Method Description:
 // - Retrieve any commandline args passed on the commandline, and pass them to
-//   the app logic for processing.
+//   the WindowManager, to ask if we should become a window process.
+// - If we should create a window, then pass the arguments to the app logic for
+//   processing.
+// - If we shouldn't become a window, set _shouldCreateWindow to false and exit
+//   immediately.
 // - If the logic determined there's an error while processing that commandline,
 //   display a message box to the user with the text of the error, and exit.
 //    * We display a message box because we're a Win32 application (not a
@@ -87,21 +167,24 @@ bool AppHost::OnDirectKeyEvent(const uint32_t vkey, const bool down)
 // - <none>
 void AppHost::_HandleCommandlineArgs()
 {
-    if (auto commandline{ GetCommandLineW() })
+    std::vector<winrt::hstring> args;
+    _buildArgsFromCommandline(args);
+    std::wstring cwd{ wil::GetCurrentDirectoryW<std::wstring>() };
+
+    Remoting::CommandlineArgs eventArgs{ { args }, { cwd } };
+    _windowManager.ProposeCommandline(eventArgs);
+
+    _shouldCreateWindow = _windowManager.ShouldCreateWindow();
+    if (!_shouldCreateWindow)
     {
-        int argc = 0;
+        return;
+    }
 
-        // Get the argv, and turn them into a hstring array to pass to the app.
-        wil::unique_any<LPWSTR*, decltype(&::LocalFree), ::LocalFree> argv{ CommandLineToArgvW(commandline, &argc) };
-        if (argv)
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        if (auto args{ peasant.InitialArgs() })
         {
-            std::vector<winrt::hstring> args;
-            for (auto& elem : wil::make_range(argv.get(), argc))
-            {
-                args.emplace_back(elem);
-            }
-
-            const auto result = _logic.SetStartupCommandline({ args });
+            const auto result = _logic.SetStartupCommandline(args.Commandline());
             const auto message = _logic.ParseCommandlineMessage();
             if (!message.empty())
             {
@@ -121,6 +204,26 @@ void AppHost::_HandleCommandlineArgs()
                 }
             }
         }
+
+        // After handling the initial args, hookup the callback for handling
+        // future commandline invocations. When our peasant is told to execute a
+        // commandline (in the future), it'll trigger this callback, that we'll
+        // use to send the actions to the app.
+        peasant.ExecuteCommandlineRequested({ this, &AppHost::_DispatchCommandline });
+        peasant.SummonRequested({ this, &AppHost::_HandleSummon });
+
+        peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
+        peasant.QuitRequested({ this, &AppHost::_QuitRequested });
+
+        // We need this property to be set before we get the InitialSize/Position
+        // and BecameMonarch which normally sets it is only run after the window
+        // is created.
+        if (_windowManager.IsMonarch())
+        {
+            _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+        }
+        _logic.WindowName(peasant.WindowName());
+        _logic.WindowId(peasant.GetID());
     }
 }
 
@@ -139,6 +242,11 @@ void AppHost::Initialize()
 {
     _window->Initialize();
 
+    if (auto withWindow{ _logic.try_as<IInitializeWithWindow>() })
+    {
+        withWindow->Initialize(_window->GetHandle());
+    }
+
     if (_useNonClientArea)
     {
         // Register our callback for when the app's non-client content changes.
@@ -156,13 +264,23 @@ void AppHost::Initialize()
     _window->DragRegionClicked([this]() { _logic.TitlebarClicked(); });
 
     _logic.RequestedThemeChanged({ this, &AppHost::_UpdateTheme });
-    _logic.ToggleFullscreen({ this, &AppHost::_ToggleFullscreen });
-    _logic.ToggleFocusMode({ this, &AppHost::_ToggleFocusMode });
+    _logic.FullscreenChanged({ this, &AppHost::_FullscreenChanged });
+    _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
+    _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
+    _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
 
     _logic.Create();
 
     _logic.TitleChanged({ this, &AppHost::AppTitleChanged });
     _logic.LastTabClosed({ this, &AppHost::LastTabClosed });
+    _logic.SetTaskbarProgress({ this, &AppHost::SetTaskbarProgress });
+    _logic.IdentifyWindowsRequested({ this, &AppHost::_IdentifyWindowsRequested });
+    _logic.RenameWindowRequested({ this, &AppHost::_RenameWindowRequested });
+    _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
+    _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
+    _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
+    _logic.OpenSystemMenu({ this, &AppHost::_OpenSystemMenu });
+    _logic.QuitRequested({ this, &AppHost::_RequestQuitAll });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -191,8 +309,9 @@ void AppHost::Initialize()
 }
 
 // Method Description:
-// - Called when the app's title changes. Fires off a window message so we can
-//   update the window's title on the main thread.
+// - Called everytime when the active tab's title changes. We'll also fire off
+//   a window message so we can update the window's title on the main thread,
+//   though we'll only do so if the settings are configured for that.
 // Arguments:
 // - sender: unused
 // - newTitle: the string to use as the new window title
@@ -200,7 +319,11 @@ void AppHost::Initialize()
 // - <none>
 void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
-    _window->UpdateTitle(newTitle);
+    if (_logic.GetShowTitleInTitlebar())
+    {
+        _window->UpdateTitle(newTitle);
+    }
+    _windowManager.UpdateActiveTabTitle(newTitle);
 }
 
 // Method Description:
@@ -212,6 +335,15 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - <none>
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
+    if (_windowManager.IsMonarch() && _notificationIcon)
+    {
+        _DestroyNotificationIcon();
+    }
+    else if (_window->IsQuakeWindow())
+    {
+        _HideNotificationIconRequested();
+    }
+
     _window->Close();
 }
 
@@ -229,14 +361,15 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
 // - launchMode: A LaunchMode enum reference that indicates the launch mode
 // Return Value:
 // - None
-void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::TerminalApp::LaunchMode& launchMode)
+void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode& launchMode)
 {
     launchMode = _logic.GetLaunchMode();
 
     // Acquire the actual initial position
-    winrt::Windows::Foundation::Point initialPosition = _logic.GetLaunchInitialPositions(proposedRect.left, proposedRect.top);
-    proposedRect.left = gsl::narrow_cast<long>(initialPosition.X);
-    proposedRect.top = gsl::narrow_cast<long>(initialPosition.Y);
+    auto initialPos = _logic.GetInitialPosition(proposedRect.left, proposedRect.top);
+    const auto centerOnLaunch = _logic.CenterOnLaunch();
+    proposedRect.left = static_cast<long>(initialPos.X);
+    proposedRect.top = static_cast<long>(initialPos.Y);
 
     long adjustedHeight = 0;
     long adjustedWidth = 0;
@@ -284,28 +417,69 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, winrt::Ter
     auto initialSize = _logic.GetLaunchDimensions(dpix);
 
     const short islandWidth = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.X)), 1);
+        static_cast<long>(ceil(initialSize.Width)), 1);
     const short islandHeight = Utils::ClampToShortMax(
-        static_cast<long>(ceil(initialSize.Y)), 1);
+        static_cast<long>(ceil(initialSize.Height)), 1);
 
     // Get the size of a window we'd need to host that client rect. This will
     // add the titlebar space.
-    const auto nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
-    adjustedWidth = islandWidth + nonClientSize.cx;
-    adjustedHeight = islandHeight + nonClientSize.cy;
+    const til::size nonClientSize = _window->GetTotalNonClientExclusiveSize(dpix);
+    const til::rectangle nonClientFrame = _window->GetNonClientFrame(dpix);
+    adjustedWidth = islandWidth + nonClientSize.width<long>();
+    adjustedHeight = islandHeight + nonClientSize.height<long>();
 
-    const COORD origin{ gsl::narrow<short>(proposedRect.left),
-                        gsl::narrow<short>(proposedRect.top) };
-    const COORD dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
-                            Utils::ClampToShortMax(adjustedHeight, 1) };
+    til::size dimensions{ Utils::ClampToShortMax(adjustedWidth, 1),
+                          Utils::ClampToShortMax(adjustedHeight, 1) };
 
-    const auto newPos = Viewport::FromDimensions(origin, dimensions);
+    // Find nearest monitor for the position that we've actually settled on
+    HMONITOR hMonNearest = MonitorFromRect(&proposedRect, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO nearestMonitorInfo;
+    nearestMonitorInfo.cbSize = sizeof(MONITORINFO);
+    // Get monitor dimensions:
+    GetMonitorInfo(hMonNearest, &nearestMonitorInfo);
+    const til::size desktopDimensions{ gsl::narrow<short>(nearestMonitorInfo.rcWork.right - nearestMonitorInfo.rcWork.left),
+                                       gsl::narrow<short>(nearestMonitorInfo.rcWork.bottom - nearestMonitorInfo.rcWork.top) };
+
+    // GH#10583 - Adjust the position of the rectangle to account for the size
+    // of the invisible borders on the left/right. We DON'T want to adjust this
+    // for the top here - the IslandWindow includes the titlebar in
+    // nonClientFrame.top, so adjusting for that would actually place the
+    // titlebar _off_ the monitor.
+    til::point origin{ (proposedRect.left + nonClientFrame.left<LONG>()),
+                       (proposedRect.top) };
+
+    if (_logic.IsQuakeWindow())
+    {
+        // If we just use rcWork by itself, we'll fail to account for the invisible
+        // space reserved for the resize handles. So retrieve that size here.
+        const til::size availableSpace = desktopDimensions + nonClientSize;
+
+        origin = til::point{
+            ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (nonClientSize.width() / 2)),
+            (nearestMonitorInfo.rcWork.top)
+        };
+        dimensions = til::size{
+            availableSpace.width(),
+            availableSpace.height() / 2
+        };
+        launchMode = LaunchMode::FocusMode;
+    }
+    else if (centerOnLaunch)
+    {
+        // Move our proposed location into the center of that specific monitor.
+        origin = til::point{
+            (nearestMonitorInfo.rcWork.left + ((desktopDimensions.width() / 2) - (dimensions.width() / 2))),
+            (nearestMonitorInfo.rcWork.top + ((desktopDimensions.height() / 2) - (dimensions.height() / 2)))
+        };
+    }
+
+    const til::rectangle newRect{ origin, dimensions };
     bool succeeded = SetWindowPos(hwnd,
                                   nullptr,
-                                  newPos.Left(),
-                                  newPos.Top(),
-                                  newPos.Width(),
-                                  newPos.Height(),
+                                  newRect.left<int>(),
+                                  newRect.top<int>(),
+                                  newRect.width<int>(),
+                                  newRect.height<int>(),
                                   SWP_NOACTIVATE | SWP_NOZORDER);
 
     // Refresh the dpi of HWND because the dpi where the window will launch may be different
@@ -353,16 +527,33 @@ void AppHost::_UpdateTheme(const winrt::Windows::Foundation::IInspectable&, cons
     _window->OnApplicationThemeChanged(arg);
 }
 
-void AppHost::_ToggleFocusMode(const winrt::Windows::Foundation::IInspectable&,
-                               const winrt::TerminalApp::ToggleFocusModeEventArgs&)
+void AppHost::_FocusModeChanged(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFocusMode();
+    _window->FocusModeChanged(_logic.FocusMode());
 }
 
-void AppHost::_ToggleFullscreen(const winrt::Windows::Foundation::IInspectable&,
-                                const winrt::TerminalApp::ToggleFullscreenEventArgs&)
+void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&,
+                                 const winrt::Windows::Foundation::IInspectable&)
 {
-    _window->ToggleFullscreen();
+    _window->FullscreenChanged(_logic.Fullscreen());
+}
+
+void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,
+                                  const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->SetAlwaysOnTop(_logic.AlwaysOnTop());
+}
+
+// Method Description
+// - Called when the app wants to flash the taskbar, indicating to the user that
+//   something needs their attention
+// Arguments
+// - <unused>
+void AppHost::_RaiseVisualBell(const winrt::Windows::Foundation::IInspectable&,
+                               const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->FlashTaskbar();
 }
 
 // Method Description:
@@ -386,7 +577,7 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
         for (const auto& e : elems)
         {
             // If that element has implemented IMouseWheelListener, call OnMouseWheel on that element.
-            if (auto control{ e.try_as<winrt::Microsoft::Terminal::TerminalControl::IMouseWheelListener>() })
+            if (auto control{ e.try_as<winrt::Microsoft::Terminal::Control::IMouseWheelListener>() })
             {
                 try
                 {
@@ -397,7 +588,11 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
 
                     const til::point offsetPoint = coord - controlOrigin;
 
-                    if (control.OnMouseWheel(offsetPoint, delta))
+                    const auto lButtonDown = WI_IsFlagSet(GetKeyState(VK_LBUTTON), KeyPressed);
+                    const auto mButtonDown = WI_IsFlagSet(GetKeyState(VK_MBUTTON), KeyPressed);
+                    const auto rButtonDown = WI_IsFlagSet(GetKeyState(VK_RBUTTON), KeyPressed);
+
+                    if (control.OnMouseWheel(offsetPoint, delta, lButtonDown, mButtonDown, rButtonDown))
                     {
                         // If the element handled the mouse wheel event, don't
                         // continue to iterate over the remaining controls.
@@ -406,6 +601,576 @@ void AppHost::_WindowMouseWheeled(const til::point coord, const int32_t delta)
                 }
                 CATCH_LOG();
             }
+        }
+    }
+}
+
+bool AppHost::HasWindow()
+{
+    return _shouldCreateWindow;
+}
+
+// Method Description:
+// - Event handler for the Peasant::ExecuteCommandlineRequested event. Take the
+//   provided commandline args, and attempt to parse them and perform the
+//   actions immediately. The parsing is performed by AppLogic.
+// - This is invoked when another wt.exe instance runs something like `wt -w 1
+//   new-tab`, and the Monarch delegates the commandline to this instance.
+// Arguments:
+// - args: the bundle of a commandline and working directory to use for this invocation.
+// Return Value:
+// - <none>
+void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
+                                   Remoting::CommandlineArgs args)
+{
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+    // Summon the window whenever we dispatch a commandline to it. This will
+    // make it obvious when a new tab/pane is created in a window.
+    _HandleSummon(sender, summonArgs);
+    _logic.ExecuteCommandline(args.Commandline(), args.CurrentDirectory());
+}
+
+// Method Description:
+// - Event handler for the WindowManager::FindTargetWindowRequested event. The
+//   manager will ask us how to figure out what the target window is for a set
+//   of commandline arguments. We'll take those arguments, and ask AppLogic to
+//   parse them for us. We'll then set ResultTargetWindow in the given args, so
+//   the sender can use that result.
+// Arguments:
+// - args: the bundle of a commandline and working directory to find the correct target window for.
+// Return Value:
+// - <none>
+void AppHost::_FindTargetWindow(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                const Remoting::FindTargetWindowArgs& args)
+{
+    const auto targetWindow = _logic.FindTargetWindow(args.Args().Commandline());
+    args.ResultTargetWindow(targetWindow.WindowId());
+    args.ResultTargetWindowName(targetWindow.WindowName());
+}
+
+winrt::fire_and_forget AppHost::_WindowActivated()
+{
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        const auto currentDesktopGuid{ _CurrentDesktopGuid() };
+
+        // TODO: projects/5 - in the future, we'll want to actually get the
+        // desktop GUID in IslandWindow, and bubble that up here, then down to
+        // the Peasant. For now, we're just leaving space for it.
+        Remoting::WindowActivatedArgs args{ peasant.GetID(),
+                                            (uint64_t)_window->GetHandle(),
+                                            currentDesktopGuid,
+                                            winrt::clock().now() };
+        peasant.ActivateWindow(args);
+    }
+}
+
+void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                             const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
+
+    if (_windowManager.DoesQuakeWindowExist() ||
+        _window->IsQuakeWindow() ||
+        (_logic.GetAlwaysShowNotificationIcon() || _logic.GetMinimizeToNotificationArea()))
+    {
+        _CreateNotificationIcon();
+    }
+
+    // Set the number of open windows (so we know if we are the last window)
+    // and subscribe for updates if there are any changes to that number.
+    _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+
+    _windowManager.WindowCreated([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+    _windowManager.WindowClosed([this](auto&&, auto&&) { _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+
+    // These events are coming from peasants that become or un-become quake windows.
+    _windowManager.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequested(); });
+    _windowManager.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequested(); });
+    // If the monarch receives a QuitAll event it will signal this event to be
+    // ran before each peasant is closed.
+    _windowManager.QuitAllRequested({ this, &AppHost::_QuitAllRequested });
+}
+
+void AppHost::_listenForInboundConnections()
+{
+    _logic.SetInboundListener();
+}
+
+winrt::fire_and_forget AppHost::_setupGlobalHotkeys()
+{
+    // The hotkey MUST be registered on the main thread. It will fail otherwise!
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+
+    // Unregister all previously registered hotkeys.
+    //
+    // RegisterHotKey(), will not unregister hotkeys automatically.
+    // If a hotkey with a given HWND and ID combination already exists
+    // then a duplicate one will be added, which we don't want.
+    // (Additionally we want to remove hotkeys that were removed from the settings.)
+    for (int i = 0, count = gsl::narrow_cast<int>(_hotkeys.size()); i < count; ++i)
+    {
+        _window->UnregisterHotKey(i);
+    }
+
+    _hotkeys.clear();
+
+    // Re-register all current hotkeys.
+    for (const auto& [keyChord, cmd] : _logic.GlobalHotkeys())
+    {
+        if (auto summonArgs = cmd.ActionAndArgs().Args().try_as<Settings::Model::GlobalSummonArgs>())
+        {
+            int index = gsl::narrow_cast<int>(_hotkeys.size());
+            const bool succeeded = _window->RegisterHotKey(index, keyChord);
+
+            TraceLoggingWrite(g_hWindowsTerminalProvider,
+                              "AppHost_setupGlobalHotkey",
+                              TraceLoggingDescription("Emitted when setting a single hotkey"),
+                              TraceLoggingInt64(index, "index", "the index of the hotkey to add"),
+                              TraceLoggingWideString(cmd.Name().c_str(), "name", "the name of the command"),
+                              TraceLoggingBoolean(succeeded, "succeeded", "true if we succeeded"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+            _hotkeys.emplace_back(summonArgs);
+        }
+    }
+}
+
+// Method Description:
+// - Called whenever a registered hotkey is pressed. We'll look up the
+//   GlobalSummonArgs for the specified hotkey, then dispatch a call to the
+//   Monarch with the selection information.
+// - If the monarch finds a match for the window name (or no name was provided),
+//   it'll set FoundMatch=true.
+// - If FoundMatch is false, and a name was provided, then we should create a
+//   new window with the given name.
+// Arguments:
+// - hotkeyIndex: the index of the entry in _hotkeys that was pressed.
+// Return Value:
+// - <none>
+void AppHost::_GlobalHotkeyPressed(const long hotkeyIndex)
+{
+    if (hotkeyIndex < 0 || static_cast<size_t>(hotkeyIndex) > _hotkeys.size())
+    {
+        return;
+    }
+
+    const auto& summonArgs = til::at(_hotkeys, hotkeyIndex);
+    Remoting::SummonWindowSelectionArgs args{ summonArgs.Name() };
+
+    // desktop:any - MoveToCurrentDesktop=false, OnCurrentDesktop=false
+    // desktop:toCurrent - MoveToCurrentDesktop=true, OnCurrentDesktop=false
+    // desktop:onCurrent - MoveToCurrentDesktop=false, OnCurrentDesktop=true
+    args.OnCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::OnCurrent);
+    args.SummonBehavior().MoveToCurrentDesktop(summonArgs.Desktop() == Settings::Model::DesktopBehavior::ToCurrent);
+    args.SummonBehavior().ToggleVisibility(summonArgs.ToggleVisibility());
+    args.SummonBehavior().DropdownDuration(summonArgs.DropdownDuration());
+
+    switch (summonArgs.Monitor())
+    {
+    case Settings::Model::MonitorBehavior::Any:
+        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::InPlace);
+        break;
+    case Settings::Model::MonitorBehavior::ToCurrent:
+        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToCurrent);
+        break;
+    case Settings::Model::MonitorBehavior::ToMouse:
+        args.SummonBehavior().ToMonitor(Remoting::MonitorBehavior::ToMouse);
+        break;
+    }
+
+    _windowManager.SummonWindow(args);
+    if (args.FoundMatch())
+    {
+        // Excellent, the window was found. We have nothing else to do here.
+    }
+    else
+    {
+        // We should make the window ourselves.
+        _createNewTerminalWindow(summonArgs);
+    }
+}
+
+// Method Description:
+// - Called when the monarch failed to summon a window for a given set of
+//   SummonWindowSelectionArgs. In this case, we should create the specified
+//   window ourselves.
+// - This is to support the scenario like `globalSummon(Name="_quake")` being
+//   used to summon the window if it already exists, or create it if it doesn't.
+// Arguments:
+// - args: Contains information on how we should name the window
+// Return Value:
+// - <none>
+winrt::fire_and_forget AppHost::_createNewTerminalWindow(Settings::Model::GlobalSummonArgs args)
+{
+    // Hop to the BG thread
+    co_await winrt::resume_background();
+
+    // This will get us the correct exe for dev/preview/release. If you
+    // don't stick this in a local, it'll get mangled by ShellExecute. I
+    // have no idea why.
+    const auto exePath{ GetWtExePath() };
+
+    // If we weren't given a name, then just use new to force the window to be
+    // unnamed.
+    winrt::hstring cmdline{
+        fmt::format(L"-w {}",
+                    args.Name().empty() ? L"new" :
+                                          args.Name())
+    };
+
+    SHELLEXECUTEINFOW seInfo{ 0 };
+    seInfo.cbSize = sizeof(seInfo);
+    seInfo.fMask = SEE_MASK_NOASYNC;
+    seInfo.lpVerb = L"open";
+    seInfo.lpFile = exePath.c_str();
+    seInfo.lpParameters = cmdline.c_str();
+    seInfo.nShow = SW_SHOWNORMAL;
+    LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+
+    co_return;
+}
+
+// Method Description:
+// - Helper to initialize our instance of IVirtualDesktopManager. If we already
+//   got one, then this will just return true. Otherwise, we'll try and init a
+//   new instance of one, and store that.
+// - This will return false if we weren't able to initialize one, which I'm not
+//   sure is actually possible.
+// Arguments:
+// - <none>
+// Return Value:
+// - true iff _desktopManager points to a non-null instance of IVirtualDesktopManager
+bool AppHost::_LazyLoadDesktopManager()
+{
+    if (_desktopManager == nullptr)
+    {
+        try
+        {
+            _desktopManager = winrt::create_instance<IVirtualDesktopManager>(__uuidof(VirtualDesktopManager));
+        }
+        CATCH_LOG();
+    }
+
+    return _desktopManager != nullptr;
+}
+
+void AppHost::_HandleSummon(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                            const Remoting::SummonWindowBehavior& args)
+{
+    _window->SummonWindow(args);
+
+    if (args != nullptr && args.MoveToCurrentDesktop())
+    {
+        if (_LazyLoadDesktopManager())
+        {
+            // First thing - make sure that we're not on the current desktop. If
+            // we are, then don't call MoveWindowToDesktop. This is to mitigate
+            // MSFT:33035972
+            BOOL onCurrentDesktop{ false };
+            if (SUCCEEDED(_desktopManager->IsWindowOnCurrentVirtualDesktop(_window->GetHandle(), &onCurrentDesktop)) && onCurrentDesktop)
+            {
+                // If we succeeded, and the window was on the current desktop, then do nothing.
+            }
+            else
+            {
+                // Here, we either failed to check if the window is on the
+                // current desktop, or it wasn't on that desktop. In both those
+                // cases, just move the window.
+
+                GUID currentlyActiveDesktop{ 0 };
+                if (VirtualDesktopUtils::GetCurrentVirtualDesktopId(&currentlyActiveDesktop))
+                {
+                    LOG_IF_FAILED(_desktopManager->MoveWindowToDesktop(_window->GetHandle(), currentlyActiveDesktop));
+                }
+                // If GetCurrentVirtualDesktopId failed, then just leave the window
+                // where it is. Nothing else to be done :/
+            }
+        }
+    }
+}
+
+// Method Description:
+// - This gets the GUID of the desktop our window is currently on. It does NOT
+//   get the GUID of the desktop that's currently active.
+// Arguments:
+// - <none>
+// Return Value:
+// - the GUID of the desktop our window is currently on
+GUID AppHost::_CurrentDesktopGuid()
+{
+    GUID currentDesktopGuid{ 0 };
+    if (_LazyLoadDesktopManager())
+    {
+        LOG_IF_FAILED(_desktopManager->GetWindowDesktopId(_window->GetHandle(), &currentDesktopGuid));
+    }
+    return currentDesktopGuid;
+}
+
+// Method Description:
+// - Called when this window wants _all_ windows to display their
+//   identification. We'll hop to the BG thread, and raise an event (eventually
+//   handled by the monarch) to bubble this request to all the Terminal windows.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+winrt::fire_and_forget AppHost::_IdentifyWindowsRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                          const winrt::Windows::Foundation::IInspectable /*args*/)
+{
+    // We'll be raising an event that may result in a RPC call to the monarch -
+    // make sure we're on the background thread, or this will silently fail
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        peasant.RequestIdentifyWindows();
+    }
+}
+
+// Method Description:
+// - Called when the monarch wants us to display our window ID. We'll call down
+//   to the app layer to display the toast.
+// Arguments:
+// - <unused>
+// Return Value:
+// - <none>
+void AppHost::_DisplayWindowId(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                               const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _logic.IdentifyWindow();
+}
+
+winrt::fire_and_forget AppHost::_RenameWindowRequested(const winrt::Windows::Foundation::IInspectable /*sender*/,
+                                                       const winrt::TerminalApp::RenameWindowRequestedArgs args)
+{
+    // Capture calling context.
+    winrt::apartment_context ui_thread;
+
+    // Switch to the BG thread - anything x-proc must happen on a BG thread
+    co_await winrt::resume_background();
+
+    if (auto peasant{ _windowManager.CurrentWindow() })
+    {
+        Remoting::RenameRequestArgs requestArgs{ args.ProposedName() };
+
+        peasant.RequestRename(requestArgs);
+
+        // Switch back to the UI thread. Setting the WindowName needs to happen
+        // on the UI thread, because it'll raise a PropertyChanged event
+        co_await ui_thread;
+
+        if (requestArgs.Succeeded())
+        {
+            _logic.WindowName(args.ProposedName());
+        }
+        else
+        {
+            _logic.RenameFailed();
+        }
+    }
+}
+
+void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
+{
+    _setupGlobalHotkeys();
+
+    // If we're monarch, we need to check some conditions to show the notification icon.
+    // If there's a Quake window somewhere, we'll want to keep the notification icon.
+    // There's two settings - MinimizeToNotificationArea and AlwaysShowNotificationIcon. If either
+    // one of them are true, we want to make sure there's a notification icon.
+    // If both are false, we want to remove our icon from the notification area.
+    // When we remove our icon from the notification area, we'll also want to re-summon
+    // any hidden windows, but right now we're not keeping track of who's hidden,
+    // so just summon them all. Tracking the work to do a "summon all minimized" in
+    // GH#10448
+    if (_windowManager.IsMonarch())
+    {
+        if (!_windowManager.DoesQuakeWindowExist())
+        {
+            if (!_notificationIcon && (_logic.GetMinimizeToNotificationArea() || _logic.GetAlwaysShowNotificationIcon()))
+            {
+                _CreateNotificationIcon();
+            }
+            else if (_notificationIcon && !_logic.GetMinimizeToNotificationArea() && !_logic.GetAlwaysShowNotificationIcon())
+            {
+                _windowManager.SummonAllWindows();
+                _DestroyNotificationIcon();
+            }
+        }
+    }
+
+    _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
+}
+
+void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
+                                    const winrt::Windows::Foundation::IInspectable&)
+{
+    // We want the quake window to be accessible through the notification icon.
+    // This means if there's a quake window _somewhere_, we want the notification icon
+    // to show regardless of the notification icon settings.
+    // This also means we'll need to destroy the notification icon if it was created
+    // specifically for the quake window. If not, it should not be destroyed.
+    if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
+    {
+        _ShowNotificationIconRequested();
+    }
+    else if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
+    {
+        _HideNotificationIconRequested();
+    }
+
+    _window->IsQuakeWindow(_logic.IsQuakeWindow());
+}
+
+winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
+                                               const winrt::Windows::Foundation::IInspectable&)
+{
+    // Need to be on the main thread to close out all of the tabs.
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+
+    _logic.Quit();
+}
+
+void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
+                              const winrt::Windows::Foundation::IInspectable&)
+{
+    _windowManager.RequestQuitAll();
+}
+
+void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Windows::Foundation::IInspectable&)
+{
+    // TODO: GH#9800: For now, nothing needs to be done before the monarch closes all windows.
+    // Later when we have state saving that should go here.
+}
+
+void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                     const winrt::Windows::Foundation::IInspectable&)
+{
+    const Remoting::SummonWindowBehavior summonArgs{};
+    summonArgs.MoveToCurrentDesktop(false);
+    summonArgs.DropdownDuration(0);
+    summonArgs.ToMonitor(Remoting::MonitorBehavior::InPlace);
+    summonArgs.ToggleVisibility(false); // Do not toggle, just make visible.
+    _HandleSummon(sender, summonArgs);
+}
+
+void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
+                              const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->OpenSystemMenu(std::nullopt, std::nullopt);
+}
+
+// Method Description:
+// - Creates a Notification Icon and hooks up its handlers
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::_CreateNotificationIcon()
+{
+    if constexpr (Feature_NotificationIcon::IsEnabled())
+    {
+        _notificationIcon = std::make_unique<NotificationIcon>(_window->GetHandle());
+
+        // Hookup the handlers, save the tokens for revoking if settings change.
+        _ReAddNotificationIconToken = _window->NotifyReAddNotificationIcon([this]() { _notificationIcon->ReAddNotificationIcon(); });
+        _NotificationIconPressedToken = _window->NotifyNotificationIconPressed([this]() { _notificationIcon->NotificationIconPressed(); });
+        _ShowNotificationIconContextMenuToken = _window->NotifyShowNotificationIconContextMenu([this](til::point coord) { _notificationIcon->ShowContextMenu(coord, _windowManager.GetPeasantInfos()); });
+        _NotificationIconMenuItemSelectedToken = _window->NotifyNotificationIconMenuItemSelected([this](HMENU hm, UINT idx) { _notificationIcon->MenuItemSelected(hm, idx); });
+        _notificationIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
+    }
+}
+
+// Method Description:
+// - Deletes our notification icon if we have one.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::_DestroyNotificationIcon()
+{
+    if constexpr (Feature_NotificationIcon::IsEnabled())
+    {
+        _window->NotifyReAddNotificationIcon(_ReAddNotificationIconToken);
+        _window->NotifyNotificationIconPressed(_NotificationIconPressedToken);
+        _window->NotifyShowNotificationIconContextMenu(_ShowNotificationIconContextMenuToken);
+        _window->NotifyNotificationIconMenuItemSelected(_NotificationIconMenuItemSelectedToken);
+
+        _notificationIcon->RemoveIconFromNotificationArea();
+        _notificationIcon = nullptr;
+    }
+}
+
+void AppHost::_ShowNotificationIconRequested()
+{
+    if constexpr (Feature_NotificationIcon::IsEnabled())
+    {
+        if (_windowManager.IsMonarch())
+        {
+            if (!_notificationIcon)
+            {
+                _CreateNotificationIcon();
+            }
+        }
+        else
+        {
+            _windowManager.RequestShowNotificationIcon();
+        }
+    }
+}
+
+void AppHost::_HideNotificationIconRequested()
+{
+    if constexpr (Feature_NotificationIcon::IsEnabled())
+    {
+        if (_windowManager.IsMonarch())
+        {
+            // Destroy it only if our settings allow it
+            if (_notificationIcon &&
+                !_logic.GetAlwaysShowNotificationIcon() &&
+                !_logic.GetMinimizeToNotificationArea())
+            {
+                _DestroyNotificationIcon();
+            }
+        }
+        else
+        {
+            _windowManager.RequestHideNotificationIcon();
+        }
+    }
+}
+
+// Method Description:
+// - BODGY workaround for GH#9320. When the window moves, dismiss all the popups
+//   in the UI tree. Xaml Islands unfortunately doesn't do this for us, see
+//   microsoft/microsoft-ui-xaml#4554
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppHost::_WindowMoved()
+{
+    if (_logic)
+    {
+        const auto root{ _logic.GetRoot() };
+
+        // This is basically DismissAllPopups which is also in
+        // TerminalSettingsEditor/Utils.h
+        // There isn't a good place that's shared between these two files, but
+        // it's only 5 LOC so whatever.
+        const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+        for (const auto& p : popups)
+        {
+            p.IsOpen(false);
         }
     }
 }

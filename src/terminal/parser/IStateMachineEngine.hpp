@@ -12,11 +12,16 @@ Abstract:
     the existing VT parsing.
 */
 #pragma once
+
+#include "../adapter/DispatchTypes.hpp"
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class IStateMachineEngine
     {
     public:
+        using StringHandler = std::function<bool(const wchar_t)>;
+
         virtual ~IStateMachineEngine() = 0;
         IStateMachineEngine(const IStateMachineEngine&) = default;
         IStateMachineEngine(IStateMachineEngine&&) = default;
@@ -30,14 +35,10 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool ActionPassThroughString(const std::wstring_view string) = 0;
 
-        virtual bool ActionEscDispatch(const wchar_t wch,
-                                       const std::basic_string_view<wchar_t> intermediates) = 0;
-        virtual bool ActionVt52EscDispatch(const wchar_t wch,
-                                           const std::basic_string_view<wchar_t> intermediates,
-                                           const std::basic_string_view<size_t> parameters) = 0;
-        virtual bool ActionCsiDispatch(const wchar_t wch,
-                                       const std::basic_string_view<wchar_t> intermediates,
-                                       const std::basic_string_view<size_t> parameters) = 0;
+        virtual bool ActionEscDispatch(const VTID id) = 0;
+        virtual bool ActionVt52EscDispatch(const VTID id, const VTParameters parameters) = 0;
+        virtual bool ActionCsiDispatch(const VTID id, const VTParameters parameters) = 0;
+        virtual StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) = 0;
 
         virtual bool ActionClear() = 0;
 
@@ -47,8 +48,7 @@ namespace Microsoft::Console::VirtualTerminal
                                        const size_t parameter,
                                        const std::wstring_view string) = 0;
 
-        virtual bool ActionSs3Dispatch(const wchar_t wch,
-                                       const std::basic_string_view<size_t> parameters) = 0;
+        virtual bool ActionSs3Dispatch(const wchar_t wch, const VTParameters parameters) = 0;
 
         virtual bool ParseControlSequenceAfterSs3() const = 0;
         virtual bool FlushAtEndOfString() const = 0;

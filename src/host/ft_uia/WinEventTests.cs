@@ -210,6 +210,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void TestSelection()
         {
             RunTest(TestSelectionImpl);
@@ -293,6 +294,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void TestLaunchAndExitChild()
         {
             RunTest(TestLaunchAndExitChildImpl);
@@ -353,6 +355,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void TestScrollByWheel()
         {
             RunTest(TestScrollByWheelImpl);
@@ -389,6 +392,7 @@ namespace Conhost.UIA.Tests
         }
 
         [TestMethod]
+        [TestProperty("Ignore", "True")] // GH#7282 - investigate and reenable
         public void TestScrollByOverflow()
         {
             RunTest(TestScrollByOverflowImpl);

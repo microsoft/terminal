@@ -24,6 +24,8 @@ namespace Microsoft::Console::Render
             renderTarget(renderTarget),
             foregroundBrush(foregroundBrush),
             backgroundBrush(backgroundBrush),
+            useBoldFont(false),
+            useItalicFont(false),
             forceGrayscaleAA(forceGrayscaleAA),
             dwriteFactory(dwriteFactory),
             spacing(spacing),
@@ -37,6 +39,8 @@ namespace Microsoft::Console::Render
         ID2D1RenderTarget* renderTarget;
         ID2D1SolidColorBrush* foregroundBrush;
         ID2D1SolidColorBrush* backgroundBrush;
+        bool useBoldFont;
+        bool useItalicFont;
         bool forceGrayscaleAA;
         IDWriteFactory* dwriteFactory;
         DWRITE_LINE_SPACING spacing;
@@ -53,7 +57,8 @@ namespace Microsoft::Console::Render
         Outline
     };
 
-    constexpr const ULONG MinCursorHeightPercent = 25;
+    constexpr const ULONG MinCursorHeightPixels = 1;
+    constexpr const ULONG MinCursorHeightPercent = 1;
     constexpr const ULONG MaxCursorHeightPercent = 100;
 
     class CustomTextRenderer : public ::Microsoft::WRL::RuntimeClass<::Microsoft::WRL::RuntimeClassFlags<::Microsoft::WRL::ClassicCom | ::Microsoft::WRL::InhibitFtmBase>, IDWriteTextRenderer>

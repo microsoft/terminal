@@ -1,0 +1,13 @@
+{"Registrations":[ 
+    {
+      "component": { 
+       "type": "git",
+        "git": {
+          "repositoryUrl": "https://github.com/ekg/intervaltree",
+          "commitHash": "b90527f9e6d51cd36ecbb50429e4524d3a418ea5"
+        }
+       }
+    }
+ ],
+ "Version": 1
+}

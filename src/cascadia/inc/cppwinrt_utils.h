@@ -82,7 +82,7 @@ public:                                                                         
     winrt::event_token name(args const& handler) { return _##name##Handlers.add(handler); } \
     void name(winrt::event_token const& token) { _##name##Handlers.remove(token); }         \
                                                                                             \
-private:                                                                                    \
+protected:                                                                                  \
     winrt::event<args> _##name##Handlers;
 
 // This is a helper macro for both declaring the signature and body of an event
@@ -96,10 +96,16 @@ public:                                                                         
     winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& h) { return handler->handlerName(h); } \
     void name(winrt::event_token const& token) noexcept { handler->handlerName(token); }
 
+// Same thing, but handler is a projected type, not an implementation
+#define PROJECTED_FORWARDED_TYPED_EVENT(name, sender, args, handler, handlerName)                                             \
+public:                                                                                                                       \
+    winrt::event_token name(Windows::Foundation::TypedEventHandler<sender, args> const& h) { return handler.handlerName(h); } \
+    void name(winrt::event_token const& token) noexcept { handler.handlerName(token); }
+
 // Use this macro to quick implement both the getter and setter for a property.
 // This should only be used for simple types where there's no logic in the
 // getter/setter beyond just accessing/updating the value.
-#define GETSET_PROPERTY(type, name, ...)                       \
+#define WINRT_PROPERTY(type, name, ...)                        \
 public:                                                        \
     type name() const noexcept { return _##name; }             \
     void name(const type& value) noexcept { _##name = value; } \
@@ -108,29 +114,29 @@ private:                                                       \
     type _##name{ __VA_ARGS__ };
 
 // Use this macro to quickly implement both the getter and setter for an
-// observable property. This is similar to the GETSET_PROPERTY macro above,
+// observable property. This is similar to the WINRT_PROPERTY macro above,
 // except this will also raise a PropertyChanged event with the name of the
 // property that has changed inside of the setter. This also implements a
 // private _setName() method, that the class can internally use to change the
 // value when it _knows_ it doesn't need to raise the PropertyChanged event
 // (like when the class is being initialized).
-#define OBSERVABLE_GETSET_PROPERTY(type, name, event)                                  \
-public:                                                                                \
-    type name() { return _##name; };                                                   \
-    void name(const type& value)                                                       \
-    {                                                                                  \
-        if (_##name != value)                                                          \
-        {                                                                              \
-            const_cast<type&>(_##name) = value;                                        \
-            event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L#name }); \
-        }                                                                              \
-    };                                                                                 \
-                                                                                       \
-private:                                                                               \
-    const type _##name;                                                                \
-    void _set##name(const type& value)                                                 \
-    {                                                                                  \
-        const_cast<type&>(_##name) = value;                                            \
+#define WINRT_OBSERVABLE_PROPERTY(type, name, event, ...)                                 \
+public:                                                                                   \
+    type name() const noexcept { return _##name; };                                       \
+    void name(const type& value)                                                          \
+    {                                                                                     \
+        if (_##name != value)                                                             \
+        {                                                                                 \
+            _##name = value;                                                              \
+            event(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L## #name }); \
+        }                                                                                 \
+    };                                                                                    \
+                                                                                          \
+private:                                                                                  \
+    type _##name{ __VA_ARGS__ };                                                          \
+    void _set##name(const type& value)                                                    \
+    {                                                                                     \
+        _##name = value;                                                                  \
     };
 
 // Use this macro for quickly defining the factory_implementation part of a
@@ -173,3 +179,27 @@ std::vector<wil::com_ptr<T>> SafeArrayToOwningVector(SAFEARRAY* safeArray)
 
     return result;
 }
+
+#define DECLARE_CONVERTER(nameSpace, className)                                                                   \
+    namespace nameSpace::implementation                                                                           \
+    {                                                                                                             \
+        struct className : className##T<className>                                                                \
+        {                                                                                                         \
+            className() = default;                                                                                \
+                                                                                                                  \
+            Windows::Foundation::IInspectable Convert(Windows::Foundation::IInspectable const& value,             \
+                                                      Windows::UI::Xaml::Interop::TypeName const& targetType,     \
+                                                      Windows::Foundation::IInspectable const& parameter,         \
+                                                      hstring const& language);                                   \
+                                                                                                                  \
+            Windows::Foundation::IInspectable ConvertBack(Windows::Foundation::IInspectable const& value,         \
+                                                          Windows::UI::Xaml::Interop::TypeName const& targetType, \
+                                                          Windows::Foundation::IInspectable const& parameter,     \
+                                                          hstring const& language);                               \
+        };                                                                                                        \
+    }                                                                                                             \
+                                                                                                                  \
+    namespace nameSpace::factory_implementation                                                                   \
+    {                                                                                                             \
+        BASIC_FACTORY(className);                                                                                 \
+    }\

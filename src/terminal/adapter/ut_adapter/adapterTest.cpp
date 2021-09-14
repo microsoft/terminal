@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
 #include "adaptDispatch.hpp"
 
@@ -81,7 +81,7 @@ public:
             VERIFY_ARE_EQUAL(_expectedCursorPos, sbiex.dwCursorPosition);
             VERIFY_ARE_EQUAL(_expectedScreenBufferSize, sbiex.dwSize);
             VERIFY_ARE_EQUAL(_expectedScreenBufferViewport, sbiex.srWindow);
-            VERIFY_ARE_EQUAL(_expectedAttributes, sbiex.wAttributes);
+            VERIFY_ARE_EQUAL(_expectedAttribute, TextAttribute{ sbiex.wAttributes });
         }
         return _setConsoleScreenBufferInfoExResult;
     }
@@ -96,32 +96,6 @@ public:
         }
 
         return _setConsoleCursorPositionResult;
-    }
-
-    bool GetConsoleCursorInfo(CONSOLE_CURSOR_INFO& cursorInfo) const override
-    {
-        Log::Comment(L"GetConsoleCursorInfo MOCK called...");
-
-        if (_getConsoleCursorInfoResult)
-        {
-            cursorInfo.dwSize = _cursorSize;
-            cursorInfo.bVisible = _cursorVisible;
-        }
-
-        return _getConsoleCursorInfoResult;
-    }
-
-    bool SetConsoleCursorInfo(const CONSOLE_CURSOR_INFO& cursorInfo) override
-    {
-        Log::Comment(L"SetConsoleCursorInfo MOCK called...");
-
-        if (_setConsoleCursorInfoResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedCursorSize, cursorInfo.dwSize);
-            VERIFY_ARE_EQUAL(_expectedCursorVisible, !!cursorInfo.bVisible);
-        }
-
-        return _setConsoleCursorInfoResult;
     }
 
     bool SetConsoleWindowInfo(const bool absolute, const SMALL_RECT& window) override
@@ -249,6 +223,27 @@ public:
         return _privateSetTextAttributesResult;
     }
 
+    bool PrivateSetCurrentLineRendition(const LineRendition /*lineRendition*/)
+    {
+        Log::Comment(L"PrivateSetCurrentLineRendition MOCK called...");
+
+        return false;
+    }
+
+    bool PrivateResetLineRenditionRange(const size_t /*startRow*/, const size_t /*endRow*/)
+    {
+        Log::Comment(L"PrivateResetLineRenditionRange MOCK called...");
+
+        return false;
+    }
+
+    SHORT PrivateGetLineWidth(const size_t /*row*/) const
+    {
+        Log::Comment(L"PrivateGetLineWidth MOCK called...");
+
+        return _bufferSize.X;
+    }
+
     bool PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                    size_t& eventsWritten) override
     {
@@ -259,30 +254,19 @@ public:
             // move all the input events we were given into local storage so we can test against them
             Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
 
-            _events.clear();
-            _events.swap(events);
+            if (_retainInput)
+            {
+                std::move(events.begin(), events.end(), std::back_inserter(_events));
+            }
+            else
+            {
+                _events.clear();
+                _events.swap(events);
+            }
             eventsWritten = _events.size();
         }
 
         return _privateWriteConsoleInputWResult;
-    }
-
-    bool PrivatePrependConsoleInput(std::deque<std::unique_ptr<IInputEvent>>& events,
-                                    size_t& eventsWritten) override
-    {
-        Log::Comment(L"PrivatePrependConsoleInput MOCK called...");
-
-        if (_privatePrependConsoleInputResult)
-        {
-            // move all the input events we were given into local storage so we can test against them
-            Log::Comment(NoThrowString().Format(L"Moving %zu input events into local storage...", events.size()));
-
-            _events.clear();
-            _events.swap(events);
-            eventsWritten = _events.size();
-        }
-
-        return _privatePrependConsoleInputResult;
     }
 
     bool PrivateWriteConsoleControlInput(_In_ KeyEvent key) override
@@ -434,6 +418,18 @@ public:
         return TRUE;
     }
 
+    bool PrivateClearBuffer() override
+    {
+        Log::Comment(L"PrivateClearBuffer MOCK called...");
+        return TRUE;
+    }
+
+    bool GetUserDefaultCursorStyle(CursorType& style) override
+    {
+        style = CursorType::Legacy;
+        return true;
+    }
+
     bool SetCursorStyle(const CursorType cursorType) override
     {
         Log::Comment(L"SetCursorStyle MOCK called...");
@@ -577,6 +573,19 @@ public:
         return TRUE;
     }
 
+    bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> /*bitPattern*/,
+                               const SIZE cellSize,
+                               const size_t /*centeringHint*/) noexcept override
+    {
+        Log::Comment(L"PrivateUpdateSoftFont MOCK called...");
+
+        Log::Comment(NoThrowString().Format(L"Cell size: %dx%d", cellSize.cx, cellSize.cy));
+        VERIFY_ARE_EQUAL(_expectedCellSize.cx, cellSize.cx);
+        VERIFY_ARE_EQUAL(_expectedCellSize.cy, cellSize.cy);
+
+        return TRUE;
+    }
+
     void PrepData()
     {
         PrepData(CursorDirection::UP); // if called like this, the cursor direction doesn't matter.
@@ -608,12 +617,9 @@ public:
         // APIs succeed by default
         _setConsoleCursorPositionResult = TRUE;
         _getConsoleScreenBufferInfoExResult = TRUE;
-        _getConsoleCursorInfoResult = TRUE;
-        _setConsoleCursorInfoResult = TRUE;
         _privateGetTextAttributesResult = TRUE;
         _privateSetTextAttributesResult = TRUE;
         _privateWriteConsoleInputWResult = TRUE;
-        _privatePrependConsoleInputResult = TRUE;
         _privateWriteConsoleControlInputResult = TRUE;
         _setConsoleWindowInfoResult = TRUE;
         _moveToBottomResult = true;
@@ -630,15 +636,14 @@ public:
         // Call cursor positions separately
         PrepCursor(xact, yact);
 
-        _cursorSize = 33;
-        _expectedCursorSize = _cursorSize;
-
         _cursorVisible = TRUE;
-        _expectedCursorVisible = _cursorVisible;
 
         // Attribute default is gray on black.
         _attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED };
         _expectedAttribute = _attribute;
+
+        _events.clear();
+        _retainInput = false;
     }
 
     void PrepCursor(CursorX xact, CursorY yact)
@@ -706,6 +711,20 @@ public:
         }
     }
 
+    bool PrivateAddHyperlink(const std::wstring_view /*uri*/, const std::wstring_view /*params*/) const
+    {
+        Log::Comment(L"PrivateAddHyperlink MOCK called...");
+
+        return TRUE;
+    }
+
+    bool PrivateEndHyperlink() const
+    {
+        Log::Comment(L"PrivateEndHyperlink MOCK called...");
+
+        return TRUE;
+    }
+
     void _SetMarginsHelper(SMALL_RECT* rect, SHORT top, SHORT bottom)
     {
         rect->Top = top;
@@ -726,6 +745,16 @@ public:
     static const WORD s_defaultFill = FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED; // dark gray on black.
 
     std::deque<std::unique_ptr<IInputEvent>> _events;
+    bool _retainInput{ false };
+
+    auto EnableInputRetentionInScope()
+    {
+        auto oldRetainValue{ _retainInput };
+        _retainInput = true;
+        return wil::scope_exit([oldRetainValue, this] {
+            _retainInput = oldRetainValue;
+        });
+    }
 
     COORD _bufferSize = { 0, 0 };
     SMALL_RECT _viewport = { 0, 0, 0, 0 };
@@ -733,12 +762,9 @@ public:
     COORD _cursorPos = { 0, 0 };
     SMALL_RECT _expectedScrollRegion = { 0, 0, 0, 0 };
 
-    DWORD _cursorSize = 0;
     bool _cursorVisible = false;
 
     COORD _expectedCursorPos = { 0, 0 };
-    DWORD _expectedCursorSize = 0;
-    bool _expectedCursorVisible = false;
 
     TextAttribute _attribute = {};
     TextAttribute _expectedAttribute = {};
@@ -750,12 +776,9 @@ public:
 
     bool _getConsoleScreenBufferInfoExResult = false;
     bool _setConsoleCursorPositionResult = false;
-    bool _getConsoleCursorInfoResult = false;
-    bool _setConsoleCursorInfoResult = false;
     bool _privateGetTextAttributesResult = false;
     bool _privateSetTextAttributesResult = false;
     bool _privateWriteConsoleInputWResult = false;
-    bool _privatePrependConsoleInputResult = false;
     bool _privateWriteConsoleControlInputResult = false;
 
     bool _setConsoleWindowInfoResult = false;
@@ -764,7 +787,6 @@ public:
 
     COORD _expectedScreenBufferSize = { 0, 0 };
     SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
-    WORD _expectedAttributes = 0;
     bool _privateSetCursorKeysModeResult = false;
     bool _privateSetKeypadModeResult = false;
     bool _cursorKeysApplicationMode = false;
@@ -806,6 +828,8 @@ public:
 
     bool _privateSetDefaultBackgroundResult = false;
     COLORREF _expectedDefaultBackgroundColorValue = INVALID_COLOR;
+
+    SIZE _expectedCellSize = {};
 
 private:
     HANDLE _hCon;
@@ -1236,7 +1260,7 @@ public:
 
         _testGetSet->PrepData();
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 0;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
@@ -1261,7 +1285,7 @@ public:
     TEST_METHOD(GraphicsSingleTests)
     {
         BEGIN_TEST_METHOD_PROPERTIES()
-            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 8, 22, 24, 27, 28, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
+            TEST_METHOD_PROPERTY(L"Data:uiGraphicsOptions", L"{0, 1, 2, 4, 7, 8, 9, 21, 22, 24, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 39, 40, 41, 42, 43, 44, 45, 46, 47, 49, 53, 55, 90, 91, 92, 93, 94, 95, 96, 97, 100, 101, 102, 103, 104, 105, 106, 107}") // corresponds to options in DispatchTypes::GraphicsOptions
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -1273,7 +1297,7 @@ public:
         VERIFY_SUCCEEDED_RETURN(TestData::TryGetValue(L"uiGraphicsOptions", uiGraphicsOption));
         graphicsOption = (DispatchTypes::GraphicsOptions)uiGraphicsOption;
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
         rgOptions[0] = graphicsOption;
 
@@ -1299,7 +1323,14 @@ public:
         case DispatchTypes::GraphicsOptions::Underline:
             Log::Comment(L"Testing graphics 'Underline'");
             _testGetSet->_attribute = TextAttribute{ 0 };
-            _testGetSet->_expectedAttribute = TextAttribute{ COMMON_LVB_UNDERSCORE };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetUnderlined(true);
+            break;
+        case DispatchTypes::GraphicsOptions::DoublyUnderlined:
+            Log::Comment(L"Testing graphics 'Doubly Underlined'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
             break;
         case DispatchTypes::GraphicsOptions::Overline:
             Log::Comment(L"Testing graphics 'Overline'");
@@ -1317,6 +1348,12 @@ public:
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute.SetInvisible(true);
             break;
+        case DispatchTypes::GraphicsOptions::CrossedOut:
+            Log::Comment(L"Testing graphics 'Crossed Out'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            _testGetSet->_expectedAttribute.SetCrossedOut(true);
+            break;
         case DispatchTypes::GraphicsOptions::NotBoldOrFaint:
             Log::Comment(L"Testing graphics 'No Bold or Faint'");
             _testGetSet->_attribute = TextAttribute{ 0 };
@@ -1326,7 +1363,9 @@ public:
             break;
         case DispatchTypes::GraphicsOptions::NoUnderline:
             Log::Comment(L"Testing graphics 'No Underline'");
-            _testGetSet->_attribute = TextAttribute{ COMMON_LVB_UNDERSCORE };
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetUnderlined(true);
+            _testGetSet->_attribute.SetDoublyUnderlined(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::NoOverline:
@@ -1343,6 +1382,12 @@ public:
             Log::Comment(L"Testing graphics 'Visible'");
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_attribute.SetInvisible(true);
+            _testGetSet->_expectedAttribute = TextAttribute{ 0 };
+            break;
+        case DispatchTypes::GraphicsOptions::NotCrossedOut:
+            Log::Comment(L"Testing graphics 'Not Crossed Out'");
+            _testGetSet->_attribute = TextAttribute{ 0 };
+            _testGetSet->_attribute.SetCrossedOut(true);
             _testGetSet->_expectedAttribute = TextAttribute{ 0 };
             break;
         case DispatchTypes::GraphicsOptions::ForegroundBlack:
@@ -1559,13 +1604,151 @@ public:
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
+    TEST_METHOD(GraphicsPushPopTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[16];
+        VTParameter rgStackOptions[16];
+        size_t cOptions = 1;
+
+        Log::Comment(L"Test 1: Basic push and pop");
+
+        rgOptions[0] = DispatchTypes::GraphicsOptions::Off;
+        _testGetSet->_expectedAttribute = {};
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 0;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 2: Push, change color, pop");
+
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundCyan;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(3);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 3: two pushes (nested) and pops");
+
+        // First push:
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundRed;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // Second push:
+        cOptions = 0;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // First pop:
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        // Second pop:
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+
+        Log::Comment(L"Test 4: Save and restore partial attributes");
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetDefaultBackground();
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundBlue;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_BLUE >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // Push, specifying that we only want to save the background, the boldness, and double-underline-ness:
+        cOptions = 3;
+        rgStackOptions[0] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::Boldness;
+        rgStackOptions[1] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::SaveBackgroundColor;
+        rgStackOptions[2] = (size_t)DispatchTypes::SgrSaveRestoreStackOptions::DoublyUnderlined;
+        VERIFY_IS_TRUE(_pDispatch->PushGraphicsRendition({ rgStackOptions, cOptions }));
+
+        // Now change everything...
+        cOptions = 2;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundGreen;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        cOptions = 1;
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundRed;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        rgOptions[0] = DispatchTypes::GraphicsOptions::NotBoldOrFaint;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
+        VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
+
+        // And then restore...
+        cOptions = 0;
+        _testGetSet->_expectedAttribute = {};
+        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_BLUE >> 4);
+        _testGetSet->_expectedAttribute.SetBold(true);
+        VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
+    }
+
     TEST_METHOD(GraphicsPersistBrightnessTests)
     {
         Log::Comment(L"Starting test...");
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 1;
 
         Log::Comment(L"Test 1: Basic brightness test");
@@ -1674,25 +1857,59 @@ public:
     {
         Log::Comment(L"Starting test...");
 
-        Log::Comment(L"Test 1: Verify normal cursor response position.");
-        _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+        {
+            Log::Comment(L"Test 1: Verify normal cursor response position.");
+            _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
 
-        // start with the cursor position in the buffer.
-        COORD coordCursorExpected = _testGetSet->_cursorPos;
+            // start with the cursor position in the buffer.
+            COORD coordCursorExpected = _testGetSet->_cursorPos;
 
-        // to get to VT, we have to adjust it to its position relative to the viewport top.
-        coordCursorExpected.Y -= _testGetSet->_viewport.Top;
+            // to get to VT, we have to adjust it to its position relative to the viewport top.
+            coordCursorExpected.Y -= _testGetSet->_viewport.Top;
 
-        // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
-        coordCursorExpected.X++;
-        coordCursorExpected.Y++;
+            // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
+            coordCursorExpected.X++;
+            coordCursorExpected.Y++;
 
-        VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
 
-        wchar_t pwszBuffer[50];
+            wchar_t pwszBuffer[50];
 
-        swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
-        _testGetSet->ValidateInputEvent(pwszBuffer);
+            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR", coordCursorExpected.Y, coordCursorExpected.X);
+            _testGetSet->ValidateInputEvent(pwszBuffer);
+        }
+
+        {
+            Log::Comment(L"Test 2: Verify multiple CPRs with a cursor move between them");
+            _testGetSet->PrepData(CursorX::XCENTER, CursorY::YCENTER);
+
+            // enable retention so that the two DSR responses don't delete eachother
+            auto retentionScope{ _testGetSet->EnableInputRetentionInScope() };
+
+            // start with the cursor position in the buffer.
+            til::point coordCursorExpectedFirst{ _testGetSet->_cursorPos };
+
+            // to get to VT, we have to adjust it to its position relative to the viewport top.
+            coordCursorExpectedFirst -= til::point{ 0, _testGetSet->_viewport.Top };
+
+            // Then note that VT is 1,1 based for the top left, so add 1. (The rest of the console uses 0,0 for array index bases.)
+            coordCursorExpectedFirst += til::point{ 1, 1 };
+
+            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+
+            _testGetSet->_cursorPos.X++;
+            _testGetSet->_cursorPos.Y++;
+
+            auto coordCursorExpectedSecond{ coordCursorExpectedFirst };
+            coordCursorExpectedSecond += til::point{ 1, 1 };
+
+            VERIFY_IS_TRUE(_pDispatch.get()->DeviceStatusReport(DispatchTypes::AnsiStatusType::CPR_CursorPositionReport));
+
+            wchar_t pwszBuffer[50];
+
+            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR\x1b[%d;%dR", coordCursorExpectedFirst.y<int>(), coordCursorExpectedFirst.x<int>(), coordCursorExpectedSecond.y<int>(), coordCursorExpectedSecond.x<int>());
+            _testGetSet->ValidateInputEvent(pwszBuffer);
+        }
     }
 
     TEST_METHOD(DeviceAttributesTests)
@@ -1708,7 +1925,7 @@ public:
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privatePrependConsoleInputResult = FALSE;
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->DeviceAttributes());
     }
@@ -1726,7 +1943,7 @@ public:
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privatePrependConsoleInputResult = FALSE;
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->SecondaryDeviceAttributes());
     }
@@ -1744,9 +1961,136 @@ public:
 
         Log::Comment(L"Test 2: Verify failure when WriteConsoleInput doesn't work.");
         _testGetSet->PrepData();
-        _testGetSet->_privatePrependConsoleInputResult = FALSE;
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
 
         VERIFY_IS_FALSE(_pDispatch.get()->TertiaryDeviceAttributes());
+    }
+
+    TEST_METHOD(RequestTerminalParametersTests)
+    {
+        Log::Comment(L"Starting test...");
+
+        Log::Comment(L"Test 1: Verify response for unsolicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[2;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 2: Verify response for solicited permission.");
+        _testGetSet->PrepData();
+        VERIFY_IS_TRUE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Solicited));
+        _testGetSet->ValidateInputEvent(L"\x1b[3;1;1;128;128;1;0x");
+
+        Log::Comment(L"Test 3: Verify failure with invalid parameter.");
+        _testGetSet->PrepData();
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters((DispatchTypes::ReportingPermission)2));
+
+        Log::Comment(L"Test 4: Verify failure when WriteConsoleInput doesn't work.");
+        _testGetSet->PrepData();
+        _testGetSet->_privateWriteConsoleInputWResult = FALSE;
+        VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+    }
+
+    TEST_METHOD(RequestSettingsTests)
+    {
+        const auto requestSetting = [=](const std::wstring_view settingId = {}) {
+            const auto stringHandler = _pDispatch.get()->RequestSetting();
+            for (auto ch : settingId)
+            {
+                stringHandler(ch);
+            }
+            stringHandler(L'\033'); // String terminator
+        };
+
+        Log::Comment(L"Requesting DECSTBM margins (5 to 10).");
+        _testGetSet->PrepData();
+        _pDispatch.get()->SetTopBottomScrollingMargins(5, 10);
+        requestSetting(L"r");
+        _testGetSet->ValidateInputEvent(L"\033P1$r5;10r\033\\");
+
+        Log::Comment(L"Requesting DECSTBM margins (full screen).");
+        _testGetSet->PrepData();
+        // Set screen height to 25 - this will be the expected margin range.
+        _testGetSet->_viewport.Bottom = _testGetSet->_viewport.Top + 25;
+        _pDispatch.get()->SetTopBottomScrollingMargins(0, 0);
+        requestSetting(L"r");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;25r\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (default).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (bold, underlined, reversed).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetBold(true);
+        _testGetSet->_attribute.SetUnderlined(true);
+        _testGetSet->_attribute.SetReverseVideo(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4;7m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (faint, blinking, invisible).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetFaint(true);
+        _testGetSet->_attribute.SetBlinking(true);
+        _testGetSet->_attribute.SetInvisible(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;2;5;8m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (italic, crossed-out).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetItalic(true);
+        _testGetSet->_attribute.SetCrossedOut(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;3;9m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (doubly underlined, overlined).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetDoublyUnderlined(true);
+        _testGetSet->_attribute.SetOverlined(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;21;53m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (standard colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetIndexedForeground((BYTE)::XtermToWindowsIndex(3));
+        _testGetSet->_attribute.SetIndexedBackground((BYTE)::XtermToWindowsIndex(6));
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;33;46m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (AIX colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetIndexedForeground((BYTE)::XtermToWindowsIndex(14));
+        _testGetSet->_attribute.SetIndexedBackground((BYTE)::XtermToWindowsIndex(11));
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;96;103m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (ITU indexed colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetIndexedForeground256(123);
+        _testGetSet->_attribute.SetIndexedBackground256(45);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;5;123;48;5;45m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetForeground(RGB(12, 34, 56));
+        _testGetSet->_attribute.SetBackground(RGB(65, 43, 21));
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;2;12;34;56;48;2;65;43;21m\033\\");
+
+        Log::Comment(L"Requesting an unsupported setting.");
+        _testGetSet->PrepData();
+        requestSetting(L"x");
+        _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
     }
 
     TEST_METHOD(CursorKeysModeTest)
@@ -2020,7 +2364,7 @@ public:
 
         _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
 
-        DispatchTypes::GraphicsOptions rgOptions[16];
+        VTParameter rgOptions[16];
         size_t cOptions = 3;
 
         _testGetSet->_privateGetColorTableEntryResult = true;
@@ -2065,6 +2409,53 @@ public:
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
+    TEST_METHOD(XtermExtendedColorDefaultParameterTest)
+    {
+        Log::Comment(L"Starting test...");
+
+        _testGetSet->PrepData(); // default color from here is gray on black, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED
+
+        VTParameter rgOptions[16];
+
+        _testGetSet->_privateGetColorTableEntryResult = true;
+        _testGetSet->_expectedAttribute = _testGetSet->_attribute;
+
+        Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(0);
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+
+        Log::Comment(L"Test 2: Change Indexed Background with default index parameter");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
+        rgOptions[2] = {};
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(0);
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+
+        Log::Comment(L"Test 3: Change RGB Foreground with all RGB parameters missing");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
+
+        Log::Comment(L"Test 4: Change RGB Background with some missing RGB parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = 123;
+        _testGetSet->_expectedAttribute.SetBackground(RGB(123, 0, 0));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
+
+        Log::Comment(L"Test 5: Change RGB Foreground with some default RGB parameters");
+        rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
+        rgOptions[1] = DispatchTypes::GraphicsOptions::RGBColorOrFaint;
+        rgOptions[2] = {};
+        rgOptions[3] = {};
+        rgOptions[4] = 123;
+        _testGetSet->_expectedAttribute.SetForeground(RGB(0, 0, 123));
+        VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 5 }));
+    }
+
     TEST_METHOD(SetColorTableValue)
     {
         _testGetSet->PrepData();
@@ -2084,6 +2475,229 @@ public:
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
         VERIFY_IS_FALSE(_pDispatch.get()->SetColorTableEntry(15, testColor));
+    }
+
+    TEST_METHOD(SoftFontSizeDetection)
+    {
+        using CellMatrix = DispatchTypes::DrcsCellMatrix;
+        using FontSet = DispatchTypes::DrcsFontSet;
+        using FontUsage = DispatchTypes::DrcsFontUsage;
+
+        const auto decdld = [=](const auto cmw, const auto cmh, const auto ss, const auto u, const std::wstring_view data = {}) {
+            const auto ec = DispatchTypes::DrcsEraseControl::AllChars;
+            const auto css = DispatchTypes::DrcsCharsetSize::Size94;
+            const auto cellMatrix = static_cast<DispatchTypes::DrcsCellMatrix>(cmw);
+            const auto stringHandler = _pDispatch.get()->DownloadDRCS(0, 0, ec, cellMatrix, ss, u, cmh, css);
+            if (stringHandler)
+            {
+                stringHandler(L'B'); // Charset identifier
+                for (auto ch : data)
+                {
+                    stringHandler(ch);
+                }
+                stringHandler(L'\033'); // String terminator
+            }
+            return stringHandler != nullptr;
+        };
+
+        // Matrix sizes at 80x24 should always use a 10x10 cell size (VT2xx).
+        Log::Comment(L"Matrix 5x10 for 80x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size5x10, 0, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Matrix 6x10 for 80x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Matrix 7x10 for 80x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 0, FontSet::Size80x24, FontUsage::Text));
+
+        // At 132x24 the cell size is typically 6x10 (VT240), but could be 10x10 (VT220)
+        Log::Comment(L"Matrix 5x10 for 132x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size5x10, 0, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Matrix 6x10 for 132x24 font set with text usage");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Matrix 7x10 for 132x24 font set with text usage (VT220 only)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 0, FontSet::Size132x24, FontUsage::Text));
+
+        // Full cell usage is invalid for all matrix sizes except 6x10 at 132x24.
+        Log::Comment(L"Matrix 5x10 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size5x10, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 6x10 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size6x10, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 7x10 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size7x10, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 5x10 for 132x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size5x10, 0, FontSet::Size132x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 6x10 for 132x24 font set with full cell usage");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size6x10, 0, FontSet::Size132x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 7x10 for 132x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Size7x10, 0, FontSet::Size132x24, FontUsage::FullCell));
+
+        // Matrix size 1 is always invalid.
+        Log::Comment(L"Matrix 1 for 80x24 font set with text usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Matrix 1 for 132x24 font set with text usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Matrix 1 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Matrix 1 for 132x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(CellMatrix::Invalid, 0, FontSet::Size132x24, FontUsage::FullCell));
+
+        // The height parameter has no effect when a matrix size is used.
+        Log::Comment(L"Matrix 7x10 with unused height parameter");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Size7x10, 20, FontSet::Size80x24, FontUsage::Text));
+
+        // Full cell fonts with explicit dimensions are accepted as their given cell size.
+        Log::Comment(L"Explicit 13x17 for 80x24 font set with full cell usage");
+        _testGetSet->_expectedCellSize = { 13, 17 };
+        VERIFY_IS_TRUE(decdld(13, 17, FontSet::Size80x24, FontUsage::FullCell));
+        Log::Comment(L"Explicit 9x25 for 132x24 font set with full cell usage");
+        _testGetSet->_expectedCellSize = { 9, 25 };
+        VERIFY_IS_TRUE(decdld(9, 25, FontSet::Size132x24, FontUsage::FullCell));
+
+        // Cell sizes outside the maximum supported range (16x32) are invalid.
+        Log::Comment(L"Explicit 18x38 for 80x24 font set with full cell usage (invalid)");
+        VERIFY_IS_FALSE(decdld(18, 38, FontSet::Size80x24, FontUsage::FullCell));
+
+        // Text fonts with explicit dimensions are interpreted as their closest matching device.
+        Log::Comment(L"Explicit 12x12 for 80x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 15, 12 };
+        VERIFY_IS_TRUE(decdld(12, 12, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 9x20 for 80x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 10, 20 };
+        VERIFY_IS_TRUE(decdld(9, 20, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 10x30 for 80x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 12, 30 };
+        VERIFY_IS_TRUE(decdld(10, 30, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 8x16 for 80x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 16 };
+        VERIFY_IS_TRUE(decdld(8, 16, FontSet::Size80x24, FontUsage::Text));
+        Log::Comment(L"Explicit 7x12 for 132x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 9, 12 };
+        VERIFY_IS_TRUE(decdld(7, 12, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Explicit 5x20 for 132x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 6, 20 };
+        VERIFY_IS_TRUE(decdld(5, 20, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Explicit 6x30 for 132x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 7, 30 };
+        VERIFY_IS_TRUE(decdld(6, 30, FontSet::Size132x24, FontUsage::Text));
+        Log::Comment(L"Explicit 5x16 for 132x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 16 };
+        VERIFY_IS_TRUE(decdld(5, 16, FontSet::Size132x24, FontUsage::Text));
+
+        // Font sets with more than 24 lines must be VT420/VT5xx.
+        Log::Comment(L"80x36 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x36, FontUsage::Text));
+        Log::Comment(L"80x48 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x48, FontUsage::Text));
+        Log::Comment(L"132x36 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x36, FontUsage::Text));
+        Log::Comment(L"132x48 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x48, FontUsage::Text));
+        Log::Comment(L"80x36 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x36, FontUsage::FullCell));
+        Log::Comment(L"80x48 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x48, FontUsage::FullCell));
+        Log::Comment(L"132x36 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x36, FontUsage::FullCell));
+        Log::Comment(L"132x48 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 8 };
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x48, FontUsage::FullCell));
+
+        // Without an explicit size, the cell size is estimated from the number of sixels
+        // used in the character bitmaps. But note that sixel heights are always a multiple
+        // of 6, so will often be larger than the cell size for which they were intended.
+        Log::Comment(L"8x12 bitmap for 80x24 font set with text usage (VT2xx)");
+        _testGetSet->_expectedCellSize = { 10, 10 };
+        const auto bitmapOf8x12 = L"????????/????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf8x12));
+        Log::Comment(L"12x12 bitmap for 80x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 15, 12 };
+        const auto bitmapOf12x12 = L"????????????/????????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf12x12));
+        Log::Comment(L"9x24 bitmap for 80x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 10, 20 };
+        const auto bitmapOf9x24 = L"?????????/?????????/?????????/?????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf9x24));
+        Log::Comment(L"10x30 bitmap for 80x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 12, 30 };
+        const auto bitmapOf10x30 = L"??????????/??????????/??????????/??????????/??????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf10x30));
+        Log::Comment(L"8x18 bitmap for 80x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 16 };
+        const auto bitmapOf8x18 = L"????????/????????/????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::Text, bitmapOf8x18));
+
+        Log::Comment(L"5x12 bitmap for 132x24 font set with text usage (VT240)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        const auto bitmapOf5x12 = L"?????/?????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x12));
+        Log::Comment(L"7x12 bitmap for 132x24 font set with text usage (VT320)");
+        _testGetSet->_expectedCellSize = { 9, 12 };
+        const auto bitmapOf7x12 = L"???????/???????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf7x12));
+        Log::Comment(L"5x24 bitmap for 132x24 font set with text usage (VT340)");
+        _testGetSet->_expectedCellSize = { 6, 20 };
+        const auto bitmapOf5x24 = L"?????/?????/?????/?????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x24));
+        Log::Comment(L"6x30 bitmap for 132x24 font set with text usage (VT382)");
+        _testGetSet->_expectedCellSize = { 7, 30 };
+        const auto bitmapOf6x30 = L"??????/??????/??????/??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf6x30));
+        Log::Comment(L"5x18 bitmap for 132x24 font set with text usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 16 };
+        const auto bitmapOf5x18 = L"?????/?????/?????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::Text, bitmapOf5x18));
+
+        Log::Comment(L"15x12 bitmap for 80x24 font set with full cell usage (VT320)");
+        _testGetSet->_expectedCellSize = { 15, 12 };
+        const auto bitmapOf15x12 = L"???????????????/???????????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf15x12));
+        Log::Comment(L"10x24 bitmap for 80x24 font set with full cell usage (VT340)");
+        _testGetSet->_expectedCellSize = { 10, 20 };
+        const auto bitmapOf10x24 = L"??????????/??????????/??????????/??????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf10x24));
+        Log::Comment(L"12x30 bitmap for 80x24 font set with full cell usage (VT382)");
+        _testGetSet->_expectedCellSize = { 12, 30 };
+        const auto bitmapOf12x30 = L"????????????/????????????/????????????/????????????/????????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf12x30));
+        Log::Comment(L"10x18 bitmap for 80x24 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 10, 16 };
+        const auto bitmapOf10x18 = L"??????????/??????????/??????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size80x24, FontUsage::FullCell, bitmapOf10x18));
+
+        Log::Comment(L"6x12 bitmap for 132x24 font set with full cell usage (VT240)");
+        _testGetSet->_expectedCellSize = { 6, 10 };
+        const auto bitmapOf6x12 = L"??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x12));
+        Log::Comment(L"9x12 bitmap for 132x24 font set with full cell usage (VT320)");
+        _testGetSet->_expectedCellSize = { 9, 12 };
+        const auto bitmapOf9x12 = L"?????????/?????????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf9x12));
+        Log::Comment(L"6x24 bitmap for 132x24 font set with full cell usage (VT340)");
+        _testGetSet->_expectedCellSize = { 6, 20 };
+        const auto bitmapOf6x24 = L"??????/??????/??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x24));
+        Log::Comment(L"7x30 bitmap for 132x24 font set with full cell usage (VT382)");
+        _testGetSet->_expectedCellSize = { 7, 30 };
+        const auto bitmapOf7x30 = L"???????/???????/???????/???????/???????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf7x30));
+        Log::Comment(L"6x18 bitmap for 132x24 font set with full cell usage (VT420/VT5xx)");
+        _testGetSet->_expectedCellSize = { 6, 16 };
+        const auto bitmapOf6x18 = L"??????/??????/??????";
+        VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x18));
     }
 
 private:

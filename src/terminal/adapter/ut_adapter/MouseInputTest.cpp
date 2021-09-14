@@ -3,9 +3,9 @@
 
 #include "precomp.h"
 #include <wextestclass.h>
-#include "..\..\inc\consoletaeftemplates.hpp"
+#include "../../inc/consoletaeftemplates.hpp"
 
-#include "..\terminal\input\terminalInput.hpp"
+#include "../terminal/input/terminalInput.hpp"
 
 using namespace WEX::Common;
 using namespace WEX::Logging;
@@ -186,8 +186,10 @@ public:
             wch = L'\x0';
             break;
         }
-        // MK_SHIFT is ignored by the translator
-        wch += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
+        // Use Any here with the multi-flag constants -- they capture left/right key state
+        WI_UpdateFlag(wch, 0x04, WI_IsAnyFlagSet(sModifierKeystate, SHIFT_PRESSED));
+        WI_UpdateFlag(wch, 0x08, WI_IsAnyFlagSet(sModifierKeystate, ALT_PRESSED));
+        WI_UpdateFlag(wch, 0x10, WI_IsAnyFlagSet(sModifierKeystate, CTRL_PRESSED));
         return wch;
     }
 
@@ -222,8 +224,10 @@ public:
             result = 0;
             break;
         }
-        // MK_SHIFT and MK_ALT is ignored by the translator
-        result += (sModifierKeystate & MK_CONTROL) ? 0x08 : 0x00;
+        // Use Any here with the multi-flag constants -- they capture left/right key state
+        WI_UpdateFlag(result, 0x04, WI_IsAnyFlagSet(sModifierKeystate, SHIFT_PRESSED));
+        WI_UpdateFlag(result, 0x08, WI_IsAnyFlagSet(sModifierKeystate, ALT_PRESSED));
+        WI_UpdateFlag(result, 0x10, WI_IsAnyFlagSet(sModifierKeystate, CTRL_PRESSED));
         return result;
     }
 
@@ -274,8 +278,8 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
             TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
-            // None, MK_SHIFT, MK_CONTROL
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -292,7 +296,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput->EnableDefaultTracking(true);
 
@@ -309,7 +313,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -327,7 +332,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -345,7 +351,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
     }
@@ -354,7 +361,8 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP}")
             TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205}")
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -371,7 +379,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput->SetUtf8ExtendedMode(true);
 
@@ -391,7 +399,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -409,7 +418,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -427,7 +437,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
     }
@@ -437,7 +448,8 @@ public:
         BEGIN_TEST_METHOD_PROPERTIES()
             // TEST_METHOD_PROPERTY(L"Data:uiButton", L"{WM_LBUTTONDOWN, WM_LBUTTONUP, WM_MBUTTONDOWN, WM_MBUTTONUP, WM_RBUTTONDOWN, WM_RBUTTONUP, WM_MOUSEMOVE}")
             TEST_METHOD_PROPERTY(L"Data:uiButton", L"{0x0201, 0x0202, 0x0207, 0x0208, 0x0204, 0x0205, 0x0200}")
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -453,7 +465,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         mouseInput->SetSGRExtendedMode(true);
 
@@ -471,7 +483,7 @@ public:
 
             // validate translation
             VERIFY_ARE_EQUAL(fExpectedKeyHandled,
-                             mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta),
+                             mouseInput->HandleMouse(Coord, uiButton, sModifierKeystate, sScrollDelta, {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -488,7 +500,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -506,7 +519,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
     }
@@ -515,7 +529,8 @@ public:
     {
         BEGIN_TEST_METHOD_PROPERTIES()
             TEST_METHOD_PROPERTY(L"Data:sScrollDelta", L"{-120, 120, -10000, 32736}")
-            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0004, 0x0008}")
+            // None, SHIFT, LEFT_CONTROL, RIGHT_ALT, RIGHT_ALT | LEFT_CONTROL
+            TEST_METHOD_PROPERTY(L"Data:uiModifierKeystate", L"{0x0000, 0x0010, 0x0008, 0x0001, 0x0009}")
         END_TEST_METHOD_PROPERTIES()
 
         Log::Comment(L"Starting test...");
@@ -532,7 +547,7 @@ public:
 
         bool fExpectedKeyHandled = false;
         s_pwszInputExpected = L"\x0";
-        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta));
+        VERIFY_ARE_EQUAL(fExpectedKeyHandled, mouseInput->HandleMouse({ 0, 0 }, uiButton, sModifierKeystate, sScrollDelta, {}));
 
         // Default Tracking, Default Encoding
         mouseInput->EnableDefaultTracking(true);
@@ -550,7 +565,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -570,7 +586,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
 
@@ -589,7 +606,8 @@ public:
                              mouseInput->HandleMouse(Coord,
                                                      uiButton,
                                                      sModifierKeystate,
-                                                     sScrollDelta),
+                                                     sScrollDelta,
+                                                     {}),
                              NoThrowString().Format(L"(x,y)=(%d,%d)", Coord.X, Coord.Y));
         }
     }
@@ -606,31 +624,31 @@ public:
 
         Log::Comment(L"Test mouse wheel scrolling up");
         s_pwszInputExpected = L"\x1B[A";
-        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA));
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling down");
         s_pwszInputExpected = L"\x1B[B";
-        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA));
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Enable cursor keys mode");
         mouseInput->ChangeCursorKeysMode(true);
 
         Log::Comment(L"Test mouse wheel scrolling up");
         s_pwszInputExpected = L"\x1BOA";
-        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA));
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Test mouse wheel scrolling down");
         s_pwszInputExpected = L"\x1BOB";
-        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA));
+        VERIFY_IS_TRUE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, -WHEEL_DELTA, {}));
 
         Log::Comment(L"Confirm no effect when scroll mode is disabled");
         mouseInput->UseAlternateScreenBuffer();
         mouseInput->EnableAlternateScroll(false);
-        VERIFY_IS_FALSE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA));
+        VERIFY_IS_FALSE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
 
         Log::Comment(L"Confirm no effect when using the main buffer");
         mouseInput->UseMainScreenBuffer();
         mouseInput->EnableAlternateScroll(true);
-        VERIFY_IS_FALSE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA));
+        VERIFY_IS_FALSE(mouseInput->HandleMouse({ 0, 0 }, WM_MOUSEWHEEL, noModifierKeys, WHEEL_DELTA, {}));
     }
 };

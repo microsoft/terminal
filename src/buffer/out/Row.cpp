@@ -16,48 +16,16 @@
 // - pParent - the text buffer that this row belongs to
 // Return Value:
 // - constructed object
-ROW::ROW(const SHORT rowId, const short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
+ROW::ROW(const SHORT rowId, const unsigned short rowWidth, const TextAttribute fillAttribute, TextBuffer* const pParent) :
     _id{ rowId },
-    _rowWidth{ gsl::narrow<size_t>(rowWidth) },
-    _charRow{ gsl::narrow<size_t>(rowWidth), this },
-    _attrRow{ gsl::narrow<UINT>(rowWidth), fillAttribute },
+    _rowWidth{ rowWidth },
+    _charRow{ rowWidth, this },
+    _attrRow{ rowWidth, fillAttribute },
+    _lineRendition{ LineRendition::SingleWidth },
+    _wrapForced{ false },
+    _doubleBytePadded{ false },
     _pParent{ pParent }
 {
-}
-
-size_t ROW::size() const noexcept
-{
-    return _rowWidth;
-}
-
-const CharRow& ROW::GetCharRow() const noexcept
-{
-    return _charRow;
-}
-
-CharRow& ROW::GetCharRow() noexcept
-{
-    return _charRow;
-}
-
-const ATTR_ROW& ROW::GetAttrRow() const noexcept
-{
-    return _attrRow;
-}
-
-ATTR_ROW& ROW::GetAttrRow() noexcept
-{
-    return _attrRow;
-}
-
-SHORT ROW::GetId() const noexcept
-{
-    return _id;
-}
-
-void ROW::SetId(const SHORT id) noexcept
-{
-    _id = id;
 }
 
 // Routine Description:
@@ -68,6 +36,9 @@ void ROW::SetId(const SHORT id) noexcept
 // - <none>
 bool ROW::Reset(const TextAttribute Attr)
 {
+    _lineRendition = LineRendition::SingleWidth;
+    _wrapForced = false;
+    _doubleBytePadded = false;
     _charRow.Reset();
     try
     {
@@ -87,7 +58,7 @@ bool ROW::Reset(const TextAttribute Attr)
 // - width - the new width, in cells
 // Return Value:
 // - S_OK if successful, otherwise relevant error
-[[nodiscard]] HRESULT ROW::Resize(const size_t width)
+[[nodiscard]] HRESULT ROW::Resize(const unsigned short width)
 {
     RETURN_IF_FAILED(_charRow.Resize(width));
     try
@@ -113,25 +84,6 @@ void ROW::ClearColumn(const size_t column)
     _charRow.ClearCell(column);
 }
 
-// Routine Description:
-// - gets the text of the row as it would be shown on the screen
-// Return Value:
-// - wstring containing text for the row
-std::wstring ROW::GetText() const
-{
-    return _charRow.GetText();
-}
-
-RowCellIterator ROW::AsCellIter(const size_t startIndex) const
-{
-    return AsCellIter(startIndex, size() - startIndex);
-}
-
-RowCellIterator ROW::AsCellIter(const size_t startIndex, const size_t count) const
-{
-    return RowCellIterator(*this, startIndex, count);
-}
-
 UnicodeStorage& ROW::GetUnicodeStorage() noexcept
 {
     return _pParent->GetUnicodeStorage();
@@ -155,21 +107,35 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 {
     THROW_HR_IF(E_INVALIDARG, index >= _charRow.size());
     THROW_HR_IF(E_INVALIDARG, limitRight.value_or(0) >= _charRow.size());
-    size_t currentIndex = index;
 
     // If we're given a right-side column limit, use it. Otherwise, the write limit is the final column index available in the char row.
     const auto finalColumnInRow = limitRight.value_or(_charRow.size() - 1);
+
+    auto currentColor = it->TextAttr();
+    uint16_t colorUses = 0;
+    uint16_t colorStarts = gsl::narrow_cast<uint16_t>(index);
+    uint16_t currentIndex = colorStarts;
 
     while (it && currentIndex <= finalColumnInRow)
     {
         // Fill the color if the behavior isn't set to keeping the current color.
         if (it->TextAttrBehavior() != TextAttributeBehavior::Current)
         {
-            const TextAttributeRun attrRun{ 1, it->TextAttr() };
-            LOG_IF_FAILED(_attrRow.InsertAttrRuns({ &attrRun, 1 },
-                                                  currentIndex,
-                                                  currentIndex,
-                                                  _charRow.size()));
+            // If the color of this cell is the same as the run we're currently on,
+            // just increment the counter.
+            if (currentColor == it->TextAttr())
+            {
+                ++colorUses;
+            }
+            else
+            {
+                // Otherwise, commit this color into the run and save off the new one.
+                // Now commit the new color runs into the attr row.
+                _attrRow.Replace(colorStarts, currentIndex, currentColor);
+                currentColor = it->TextAttr();
+                colorUses = 1;
+                colorStarts = currentIndex;
+            }
         }
 
         // Fill the text if the behavior isn't set to saying there's only a color stored in this iterator.
@@ -192,7 +158,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             else if (fillingLastColumn && it->DbcsAttr().IsLeading())
             {
                 _charRow.ClearCell(currentIndex);
-                _charRow.SetDoubleBytePadded(true);
+                SetDoubleBytePadded(true);
             }
             // Otherwise, copy the data given and increment the iterator.
             else
@@ -210,7 +176,7 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
             if (wrap.has_value() && fillingLastColumn)
             {
                 // set wrap status on the row to parameter's value.
-                _charRow.SetWrapForced(wrap.value());
+                SetWrapForced(*wrap);
             }
         }
         else
@@ -220,6 +186,12 @@ OutputCellIterator ROW::WriteCells(OutputCellIterator it, const size_t index, co
 
         // Move to the next cell for the next time through the loop.
         ++currentIndex;
+    }
+
+    // Now commit the final color into the attr row
+    if (colorUses)
+    {
+        _attrRow.Replace(colorStarts, currentIndex, currentColor);
     }
 
     return it;

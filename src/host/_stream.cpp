@@ -19,7 +19,7 @@
 #include "../types/inc/GlyphWidth.hpp"
 #include "../types/inc/Viewport.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 using namespace Microsoft::Console::Types;
@@ -27,8 +27,6 @@ using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::StateMachine;
 // Used by WriteCharsLegacy.
 #define IS_GLYPH_CHAR(wch) (((wch) >= L' ') && ((wch) != 0x007F))
-
-constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
 // Routine Description:
 // - This routine updates the cursor position.  Its input is the non-special
@@ -317,9 +315,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - pcb - On input, number of bytes to write.  On output, number of bytes written.
 // - pcSpaces - On output, the number of spaces consumed by the written characters.
 // - dwFlags -
-//      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-//      WC_KEEP_CURSOR_VISIBLE   change window origin desirable when hit rt. edge
-//      WC_ECHO                  if called by Read (echoing characters)
+//      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+//      WC_KEEP_CURSOR_VISIBLE     change window origin desirable when hit rt. edge
+//      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.
@@ -339,7 +337,6 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
     COORD CursorPosition = cursor.GetPosition();
     NTSTATUS Status = STATUS_SUCCESS;
     SHORT XPosition;
-    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
     size_t TempNumSpaces = 0;
     const bool fUnprocessed = WI_IsFlagClear(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT);
     const bool fWrapAtEOL = WI_IsFlagSet(screenInfo.OutputMode, ENABLE_WRAP_AT_EOL_OUTPUT);
@@ -353,7 +350,15 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
     const wchar_t* lpString = pwchRealUnicode;
 
-    const COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    COORD coordScreenBufferSize = screenInfo.GetBufferSize().Dimensions();
+    // In VT mode, the width at which we wrap is determined by the line rendition attribute.
+    if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+    {
+        coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+    }
+
+    static constexpr unsigned int LOCAL_BUFFER_SIZE = 1024;
+    WCHAR LocalBuffer[LOCAL_BUFFER_SIZE];
 
     while (*pcb < BufferSize)
     {
@@ -371,6 +376,11 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
 
                 CursorPosition = cursor.GetPosition();
+                // In VT mode, we need to recalculate the width when moving to a new line.
+                if (WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING))
+                {
+                    coordScreenBufferSize.X = textBuffer.GetLineWidth(CursorPosition.Y);
+                }
             }
         }
 
@@ -382,9 +392,13 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         {
 #pragma prefast(suppress : 26019, "Buffer is taken in multiples of 2. Validation is ok.")
             const wchar_t Char = *lpString;
+            // WCL-NOTE: We believe RealUnicodeChar to be identical to Char, because we believe pwchRealUnicode
+            // WCL-NOTE: to be identical to lpString. They are incremented in lockstep, never separately, and lpString
+            // WCL-NOTE: is initialized from pwchRealUnicode.
             const wchar_t RealUnicodeChar = *pwchRealUnicode;
             if (IS_GLYPH_CHAR(RealUnicodeChar) || fUnprocessed)
             {
+                // WCL-NOTE: This operates on a single code unit instead of a whole codepoint. It will mis-measure surrogate pairs.
                 if (IsGlyphFullWidth(Char))
                 {
                     if (i < (LOCAL_BUFFER_SIZE - 1) && XPosition < (coordScreenBufferSize.X - 1))
@@ -416,7 +430,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 switch (RealUnicodeChar)
                 {
                 case UNICODE_BELL:
-                    if (dwFlags & WC_ECHO)
+                    if (dwFlags & WC_PRINTABLE_CONTROL_CHARS)
                     {
                         goto CtrlChar;
                     }
@@ -460,11 +474,13 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 default:
 
                     // if char is ctrl char, write ^char.
-                    if ((dwFlags & WC_ECHO) && (IS_CONTROL_CHAR(RealUnicodeChar)))
+                    if ((dwFlags & WC_PRINTABLE_CONTROL_CHARS) && (IS_CONTROL_CHAR(RealUnicodeChar)))
                     {
                     CtrlChar:
                         if (i < (LOCAL_BUFFER_SIZE - 1))
                         {
+                            // WCL-NOTE: We do not properly measure that there is space for two characters
+                            // WCL-NOTE: left on the screen.
                             *LocalBufPtr = (WCHAR)'^';
                             LocalBufPtr++;
                             XPosition++;
@@ -505,6 +521,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                             }
                             else
                             {
+                                // WCL-NOTE: We should never hit this.
+                                // WCL-NOTE: 1. Normal characters are handled via the early check for IS_GLYPH_CHAR
+                                // WCL-NOTE: 2. Control characters are handled via the CtrlChar label (if WC_PRINTABLE_CONTROL_CHARS is on)
+                                // WCL-NOTE:    And if they are control characters they will trigger the C1_CNTRL check above.
                                 *LocalBufPtr = Char;
                             }
                         }
@@ -526,6 +546,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             CursorPosition = cursor.GetPosition();
 
             // Make sure we don't write past the end of the buffer.
+            // WCL-NOTE: This check uses a code unit count instead of a column count. That is incorrect.
             if (i > gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - CursorPosition.X)
             {
                 i = gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - CursorPosition.X;
@@ -536,11 +557,17 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             const auto itEnd = screenInfo.Write(it);
 
             // Notify accessibility
-            screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
+            if (screenInfo.HasAccessibilityEventing())
+            {
+                screenInfo.NotifyAccessibilityEventing(CursorPosition.X, CursorPosition.Y, CursorPosition.X + gsl::narrow<SHORT>(i - 1), CursorPosition.Y);
+            }
 
             // The number of "spaces" or "cells" we have consumed needs to be reported and stored for later
             // when/if we need to erase the command line.
             TempNumSpaces += itEnd.GetCellDistance(it);
+            // WCL-NOTE: We are using the "estimated" X position delta instead of the actual delta from
+            // WCL-NOTE: the iterator. It is not clear why. If they differ, the cursor ends up in the
+            // WCL-NOTE: wrong place (typically inside another character).
             CursorPosition.X = XPosition;
 
             // enforce a delayed newline if we're about to pass the end and the WC_DELAY_EOL_WRAP flag is set.
@@ -560,6 +587,8 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, WI_IsFlagSet(dwFlags, WC_KEEP_CURSOR_VISIBLE), psScrollY);
             }
 
+            // WCL-NOTE: If we have processed the entire input string during our "fast one-line print" handler,
+            // WCL-NOTE: we are done as there is nothing more to do. Neat!
             if (*pcb == BufferSize)
             {
                 if (nullptr != pcSpaces)
@@ -572,6 +601,10 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
         }
         else if (*pcb >= BufferSize)
         {
+            // WCL-NOTE: This case looks like it is never encountered, but it *is* if WC_PRINTABLE_CONTROL_CHARS is off.
+            // WCL-NOTE: If the string is entirely nonprinting control characters, there will be
+            // WCL-NOTE: no output in the buffer (LocalBuffer; i == 0) but we will have processed
+            // WCL-NOTE: "every" character. We can just bail out and report the number of spaces consumed.
             FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
 
             // this catches the case where the number of backspaces == the number of characters.
@@ -656,7 +689,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                         // since you just backspaced yourself back up into the previous row, unset the wrap
                         // flag on the prev row if it was set
-                        textBuffer.GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
+                        textBuffer.GetRowByOffset(CursorPosition.Y).SetWrapForced(false);
                     }
                 }
                 else if (IS_CONTROL_CHAR(LastChar))
@@ -720,14 +753,14 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                                         pwchBuffer + 1 - pwchBufferBackupLimit,
                                         gsl::narrow_cast<size_t>(coordScreenBufferSize.X) - sOriginalXPosition,
                                         sOriginalXPosition,
-                                        dwFlags & WC_ECHO))
+                                        dwFlags & WC_PRINTABLE_CONTROL_CHARS))
                 {
                     CursorPosition.X = coordScreenBufferSize.X - 1;
                     CursorPosition.Y = (SHORT)(cursor.GetPosition().Y - 1);
 
                     // since you just backspaced yourself back up into the previous row, unset the wrap flag
                     // on the prev row if it was set
-                    textBuffer.GetRowByOffset(CursorPosition.Y).GetCharRow().SetWrapForced(false);
+                    textBuffer.GetRowByOffset(CursorPosition.Y).SetWrapForced(false);
 
                     Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 }
@@ -754,7 +787,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
                 CursorPosition.Y = cursor.GetPosition().Y + 1;
 
                 // since you just tabbed yourself past the end of the row, set the wrap
-                textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(true);
+                textBuffer.GetRowByOffset(cursor.GetPosition().Y).SetWrapForced(true);
             }
             else
             {
@@ -801,7 +834,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
             {
                 // since we explicitly just moved down a row, clear the wrap status on the row we just came from
-                textBuffer.GetRowByOffset(cursor.GetPosition().Y).GetCharRow().SetWrapForced(false);
+                textBuffer.GetRowByOffset(cursor.GetPosition().Y).SetWrapForced(false);
             }
 
             Status = AdjustCursorPosition(screenInfo, CursorPosition, (dwFlags & WC_KEEP_CURSOR_VISIBLE) != 0, psScrollY);
@@ -817,7 +850,7 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
             {
                 const COORD TargetPoint = cursor.GetPosition();
                 ROW& Row = textBuffer.GetRowByOffset(TargetPoint.Y);
-                CharRow& charRow = Row.GetCharRow();
+                const CharRow& charRow = Row.GetCharRow();
 
                 try
                 {
@@ -845,11 +878,11 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 
                 // since you just moved yourself down onto the next row with 1 character, that sounds like a
                 // forced wrap so set the flag
-                charRow.SetWrapForced(true);
+                Row.SetWrapForced(true);
 
                 // Additionally, this padding is only called for IsConsoleFullWidth (a.k.a. when a character
                 // is too wide to fit on the current line).
-                charRow.SetDoubleBytePadded(true);
+                Row.SetDoubleBytePadded(true);
 
                 Status = AdjustCursorPosition(screenInfo, CursorPosition, dwFlags & WC_KEEP_CURSOR_VISIBLE, psScrollY);
                 continue;
@@ -888,9 +921,9 @@ constexpr unsigned int LOCAL_BUFFER_SIZE = 100;
 // - pcb - On input, number of bytes to write.  On output, number of bytes written.
 // - pcSpaces - On output, the number of spaces consumed by the written characters.
 // - dwFlags -
-//      WC_DESTRUCTIVE_BACKSPACE backspace overwrites characters.
-//      WC_KEEP_CURSOR_VISIBLE   change window origin (viewport) desirable when hit rt. edge
-//      WC_ECHO                  if called by Read (echoing characters)
+//      WC_DESTRUCTIVE_BACKSPACE   backspace overwrites characters.
+//      WC_KEEP_CURSOR_VISIBLE     change window origin (viewport) desirable when hit rt. edge
+//      WC_PRINTABLE_CONTROL_CHARS if control characters should be expanded (as in, to "^X")
 // Return Value:
 // Note:
 // - This routine does not process tabs and backspace properly.  That code will be implemented as part of the line editing services.

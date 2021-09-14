@@ -9,6 +9,8 @@ This document serves as a storage point for those posts.
 - [Output Processing between "Far East" and "Western"](#fesb)
 - [Why do we not backport things?](#backport)
 - [Why can't we have mixed elevated and non-elevated tabs in the Terminal?](#elevation)
+- [What's the difference between a shell and a terminal?](#shell-vs-terminal)
+
 
 ## <a name="cmd"></a>Why do we avoid changing CMD.exe?
 `setlocal` doesn't behave the same way as an environment variable. It's a thing that would have to be put in at the top of the batch script that is `somefile.cmd` as one of its first commands to adjust the way that one specific batch file is processed by the `cmd.exe` engine. That's probably not suitable for your needs, but that's the way we have to go.
@@ -179,3 +181,20 @@ Other platforms have accepted that risk in preference for user convenience. They
 
 Original Source: https://github.com/microsoft/terminal/issues/632#issuecomment-519375707
 
+## <a name="shell-vs-terminal"></a>What's the difference between a shell and a terminal?
+
+_guest speaker @zadjii-msft_
+
+I think there might be a bit of a misunderstanding here - there are two different kinds of applications we're talking about here:
+* shell applications, like `cmd.exe`, `powershell`, `zsh`, etc. These are text-only applications that emit streams of characters. They don't care at all about how they're eventually rendered to the user. These are also sometimes referred to as "commandline client" applications.
+* terminal applications, like the Windows Terminal, gnome-terminal, xterm, iterm2, hyper. These are graphical applications that can be used to render the output of commandline clients. 
+
+On Windows, if you just run `cmd.exe` directly, the OS will create an instance of `conhost.exe` as the _terminal_ for `cmd.exe`. The same thing happens for `powershell.exe`, the system will creates a new conhost window for any client that's not already connected to a terminal of some sort. This has lead to an enormous amount of confusion for people thinking that a conhost window is actually a "`cmd` window". `cmd` can't have a window, it's just a commandline application. Its window is always some other terminal.
+
+Any terminal can run any commandline client application. So you can use the Windows Terminal to run whatever shell you want. I use mine for both `cmd` and `powershell`, and also WSL:
+
+![image](https://user-images.githubusercontent.com/18356694/89556758-79d27e80-d7d7-11ea-84e2-10710e09ef4a.png)
+
+It's not the Terminal's responsibility to remember the commands executed by a commandline client. That's the responsibility of the _shell_. How would the terminal remember commands executed by something like `emacs` or `vim`? Those are both applications where the user is typing input and hitting enter, like they would at a cmd prompt, but without something that resembles a command history.
+
+Original Source: https://github.com/microsoft/terminal/issues/6500#issuecomment-670035468

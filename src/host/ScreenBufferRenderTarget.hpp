@@ -33,7 +33,7 @@ public:
     void TriggerRedraw(const COORD* const pcoord) override;
     void TriggerRedrawCursor(const COORD* const pcoord) override;
     void TriggerRedrawAll() override;
-    void TriggerTeardown() override;
+    void TriggerTeardown() noexcept override;
     void TriggerSelection() override;
     void TriggerScroll() override;
     void TriggerScroll(const COORD* const pcoordDelta) override;

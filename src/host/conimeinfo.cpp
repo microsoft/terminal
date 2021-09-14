@@ -57,15 +57,19 @@ void ConsoleImeInfo::RedrawCompMessage()
 // - attributes - Encoded attributes including the cursor position and the color index (to the array)
 // - colorArray - An array of colors to use for the text
 void ConsoleImeInfo::WriteCompMessage(const std::wstring_view text,
-                                      const std::basic_string_view<BYTE> attributes,
-                                      const std::basic_string_view<WORD> colorArray)
+                                      const gsl::span<const BYTE> attributes,
+                                      const gsl::span<const WORD> colorArray)
 {
     ClearAllAreas();
 
+    // MSFT:29219348 only hide the cursor after the IME produces a string.
+    // See notes in convarea.cpp ImeStartComposition().
+    SaveCursorVisibility();
+
     // Save copies of the composition message in case we need to redraw it as things scroll/resize
     _text = text;
-    _attributes = attributes;
-    _colorArray = colorArray;
+    _attributes.assign(attributes.begin(), attributes.end());
+    _colorArray.assign(colorArray.begin(), colorArray.end());
 
     _WriteUndeterminedChars(text, attributes, colorArray);
 }
@@ -177,8 +181,8 @@ void ConsoleImeInfo::ClearAllAreas()
 // Return Value:
 // - TextAttribute object with color and cursor and line drawing data.
 TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
-                                                    const std::basic_string_view<BYTE> attributes,
-                                                    const std::basic_string_view<WORD> colorArray)
+                                                    const gsl::span<const BYTE> attributes,
+                                                    const gsl::span<const WORD> colorArray)
 {
     // Encoded attribute is the shorthand information passed from the IME
     // that contains a cursor position packed in along with which color in the
@@ -214,8 +218,8 @@ TextAttribute ConsoleImeInfo::s_RetrieveAttributeAt(const size_t pos,
 // Return Value:
 // - Vector of OutputCells where each one represents one cell of the output buffer.
 std::vector<OutputCell> ConsoleImeInfo::s_ConvertToCells(const std::wstring_view text,
-                                                         const std::basic_string_view<BYTE> attributes,
-                                                         const std::basic_string_view<WORD> colorArray)
+                                                         const gsl::span<const BYTE> attributes,
+                                                         const gsl::span<const WORD> colorArray)
 {
     std::vector<OutputCell> cells;
 
@@ -372,7 +376,10 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
     area.Paint();
 
     // Notify accessibility that we have updated the text in this display region within the viewport.
-    screenInfo.NotifyAccessibilityEventing(insertionPos.X, insertionPos.Y, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), insertionPos.Y);
+    if (screenInfo.HasAccessibilityEventing())
+    {
+        screenInfo.NotifyAccessibilityEventing(insertionPos.X, insertionPos.Y, gsl::narrow<SHORT>(insertionPos.X + lineVec.size() - 1), insertionPos.Y);
+    }
 
     // Hand back the iterator representing the end of what we used to be fed into the beginning of the next call.
     return lineEnd;
@@ -389,8 +396,8 @@ std::vector<OutputCell>::const_iterator ConsoleImeInfo::_WriteConversionArea(con
 //                each text character. This view must be the same size as the text view.
 // - colorArray - 8 colors to be used to format the text for display
 void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
-                                             const std::basic_string_view<BYTE> attributes,
-                                             const std::basic_string_view<WORD> colorArray)
+                                             const gsl::span<const BYTE> attributes,
+                                             const gsl::span<const WORD> colorArray)
 {
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
@@ -418,6 +425,10 @@ void ConsoleImeInfo::_WriteUndeterminedChars(const std::wstring_view text,
     // screen buffer and viewport positioning.
     // Each conversion area write will adjust these to set up any subsequent calls to go onto the next line.
     auto pos = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    // Convert the cursor buffer position to the equivalent screen
+    // coordinates, taking line rendition into account.
+    pos = screenInfo.GetTextBuffer().BufferToScreenPosition(pos);
+
     const auto view = screenInfo.GetViewport();
     // Set cursor position relative to viewport
 

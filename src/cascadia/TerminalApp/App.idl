@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../AppLogic.idl";
+import "AppLogic.idl";
 
 namespace TerminalApp
 {

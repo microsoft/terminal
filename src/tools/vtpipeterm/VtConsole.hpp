@@ -15,8 +15,8 @@ Author(s):
 --*/
 
 #include <windows.h>
-#include <wil\result.h>
-#include <wil\resource.h>
+#include <wil/result.h>
+#include <wil/resource.h>
 
 #include <string>
 

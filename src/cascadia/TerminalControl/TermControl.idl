@@ -2,73 +2,74 @@
 // Licensed under the MIT license.
 
 import "IMouseWheelListener.idl";
+import "IControlSettings.idl";
+import "IDirectKeyListener.idl";
+import "EventArgs.idl";
+import "ICoreState.idl";
+import "ControlCore.idl";
 
-namespace Microsoft.Terminal.TerminalControl
+namespace Microsoft.Terminal.Control
 {
-    delegate void TitleChangedEventArgs(String newTitle);
-    delegate void FontSizeChangedEventArgs(Int32 width, Int32 height, Boolean isInitialChange);
-    delegate void ScrollPositionChangedEventArgs(Int32 viewTop, Int32 viewHeight, Int32 bufferLength);
 
-    // C++/winrt makes it difficult to share this idl between two projects,
-    // Instead, we just pin the uuid and include it in both TermControl and App
-    // If you update this one, please update TerminalApp\IDirectKeyListener.idl.
-    // If you change this interface, please update the guid.
-    // If you press F7 or Alt and get a runtime error, go make sure both copies are the same.
-    [uuid("339e1a87-5315-4da6-96f0-565549b6472b")] interface IDirectKeyListener {
-        Boolean OnDirectKeyEvent(UInt32 vkey, Boolean down);
-    }
-
-    runtimeclass CopyToClipboardEventArgs
+    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl,
+                                                   IDirectKeyListener,
+                                                   IMouseWheelListener,
+                                                   ICoreState
     {
-        String Text { get; };
-        String Html { get; };
-        String Rtf { get; };
-    }
+        TermControl(IControlSettings settings,
+                    Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
-    runtimeclass PasteFromClipboardEventArgs
-    {
-        void HandleClipboardData(String data);
-    }
+        static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
 
-    [default_interface] runtimeclass TermControl : Windows.UI.Xaml.Controls.UserControl, IDirectKeyListener, IMouseWheelListener
-    {
-        TermControl();
-        TermControl(Microsoft.Terminal.Settings.IControlSettings settings, Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
+        void UpdateSettings();
 
-        static Windows.Foundation.Point GetProposedDimensions(Microsoft.Terminal.Settings.IControlSettings settings, UInt32 dpi);
+        Microsoft.Terminal.Control.IControlSettings Settings;
+        Microsoft.Terminal.Control.IControlAppearance UnfocusedAppearance;
 
-        void UpdateSettings(Microsoft.Terminal.Settings.IControlSettings newSettings);
-
-        event TitleChangedEventArgs TitleChanged;
         event FontSizeChangedEventArgs FontSizeChanged;
-        event Windows.Foundation.TypedEventHandler<TermControl, CopyToClipboardEventArgs> CopyToClipboard;
-        event Windows.Foundation.TypedEventHandler<TermControl, PasteFromClipboardEventArgs> PasteFromClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;
+        event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;
+        event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, NoticeEventArgs> RaiseNotice;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WarningBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HidePointerCursor;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RestorePointerCursor;
+        event Windows.Foundation.TypedEventHandler<Object, Object> TabColorChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ReadOnlyChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusFollowMouseRequested;
 
         event Windows.Foundation.TypedEventHandler<TermControl, Windows.UI.Xaml.RoutedEventArgs> Initialized;
         // This is an event handler forwarder for the underlying connection.
         // We expose this and ConnectionState here so that it might eventually be data bound.
-        event Windows.Foundation.TypedEventHandler<TermControl, IInspectable> ConnectionStateChanged;
-        Microsoft.Terminal.TerminalConnection.ConnectionState ConnectionState { get; };
+        event Windows.Foundation.TypedEventHandler<Object, IInspectable> ConnectionStateChanged;
 
-        String Title { get; };
-
-        Boolean CopySelectionToClipboard(Boolean collapseText);
+        Boolean CopySelectionToClipboard(Boolean singleLine, Windows.Foundation.IReference<CopyFormat> formats);
         void PasteTextFromClipboard();
+        void ClearBuffer(ClearBufferType clearType);
         void Close();
         Windows.Foundation.Size CharacterDimensions { get; };
         Windows.Foundation.Size MinimumSize { get; };
         Single SnapDimensionToGrid(Boolean widthOrHeight, Single dimension);
 
         void ScrollViewport(Int32 viewTop);
-        Int32 GetScrollOffset();
-        Int32 GetViewHeight();
-        event ScrollPositionChangedEventArgs ScrollPositionChanged;
 
         void CreateSearchBoxControl();
+
+        void SearchMatch(Boolean goForward);
 
         void AdjustFontSize(Int32 fontSizeDelta);
         void ResetFontSize();
 
-        void ToggleRetroEffect();
+        void ToggleShaderEffects();
+        void SendInput(String input);
+
+        void BellLightOn();
+
+        Boolean ReadOnly { get; };
+        void ToggleReadOnly();
+
+        String ReadEntireBuffer();
     }
 }

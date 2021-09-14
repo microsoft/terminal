@@ -16,7 +16,7 @@ Author(s):
 
 #include "precomp.h"
 
-#include "..\inc\IAccessibilityNotifier.hpp"
+#include "../inc/IAccessibilityNotifier.hpp"
 
 #pragma hdrstop
 

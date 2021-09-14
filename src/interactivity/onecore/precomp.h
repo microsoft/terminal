@@ -15,4 +15,4 @@
 #include <sysparamsext.h>
 
 #define _DDK_INCLUDED
-#include "..\..\host\precomp.h"
+#include "../../host/precomp.h"

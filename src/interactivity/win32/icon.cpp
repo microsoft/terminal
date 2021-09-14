@@ -7,7 +7,7 @@
 
 #include "window.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 

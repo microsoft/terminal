@@ -13,6 +13,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     {
     public:
         explicit DebugTapConnection(Microsoft::Terminal::TerminalConnection::ITerminalConnection wrappedConnection);
+        void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/){};
         ~DebugTapConnection();
         void Start();
         void WriteInput(hstring const& data);

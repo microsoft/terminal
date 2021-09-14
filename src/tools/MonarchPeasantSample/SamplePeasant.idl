@@ -1,0 +1,18 @@
+
+
+namespace MonarchPeasantSample
+{
+    interface IPeasant
+    {
+        void AssignID(UInt64 id);
+        UInt64 GetID();
+        UInt64 GetPID();
+        Boolean ExecuteCommandline(String[] args, String currentDirectory);
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowActivated;
+    };
+
+    [default_interface] runtimeclass Peasant : IPeasant
+    {
+        Peasant();
+    };
+}

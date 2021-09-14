@@ -19,8 +19,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct AzureConnection : AzureConnectionT<AzureConnection>, ConnectionStateHolder<AzureConnection>
     {
+        static winrt::guid ConnectionType() noexcept;
         static bool IsAzureConnectionAvailable() noexcept;
-        AzureConnection(const uint32_t rows, const uint32_t cols);
+
+        AzureConnection() = default;
+        void Initialize(const Windows::Foundation::Collections::ValueSet& settings);
 
         void Start();
         void WriteInput(hstring const& data);
@@ -94,6 +97,8 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::optional<std::wstring> _ReadUserInput(InputMode mode);
 
         web::websockets::client::websocket_client _cloudShellSocket;
+
+        static std::optional<utility::string_t> _ParsePreferredShellType(const web::json::value& settingsResponse);
     };
 }
 

@@ -13,4 +13,4 @@ Abstract:
 // This includes support libraries from the CRT, STL, WIL, and GSL
 #include "LibraryIncludes.h"
 
-#include "..\..\inc\conattrs.hpp"
+#include "../../inc/conattrs.hpp"

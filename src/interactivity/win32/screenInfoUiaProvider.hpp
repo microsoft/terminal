@@ -21,8 +21,8 @@ Author(s):
 
 #include <UIAutomationCore.h>
 
-#include "..\types\ScreenInfoUiaProviderBase.h"
-#include "..\types\UiaTextRangeBase.hpp"
+#include "../types/ScreenInfoUiaProviderBase.h"
+#include "../types/UiaTextRangeBase.hpp"
 #include "uiaTextRange.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32

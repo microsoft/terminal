@@ -381,23 +381,23 @@ namespace Conhost.UIA.Tests
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that background bright cyan  got set.");
 
-            Log.Comment("Set underline (SGR.4)");
+            Log.Comment("Set overline (SGR.53)");
             app.FillCursorPosition(hConsole, ref pt);
             app.UIRoot.SendKeys("e`");
 
-            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.COMMON_LVB_UNDERSCORE;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.COMMON_LVB_GRID_HORIZONTAL;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
-            Verify.AreEqual(ciExpected, ciActual, "Verify that underline got set.");
+            Verify.AreEqual(ciExpected, ciActual, "Verify that overline got set.");
 
-            Log.Comment("Clear underline (SGR.24)");
+            Log.Comment("Clear overline (SGR.55)");
             app.FillCursorPosition(hConsole, ref pt);
             app.UIRoot.SendKeys("d`");
 
-            ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.COMMON_LVB_UNDERSCORE;
+            ciExpected.Attributes &= ~WinCon.CONSOLE_ATTRIBUTES.COMMON_LVB_GRID_HORIZONTAL;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
-            Verify.AreEqual(ciExpected, ciActual, "Verify that underline got cleared.");
+            Verify.AreEqual(ciExpected, ciActual, "Verify that overline got cleared.");
 
             Log.Comment("Set negative image video (SGR.7)");
             app.FillCursorPosition(hConsole, ref pt);
@@ -426,14 +426,14 @@ namespace Conhost.UIA.Tests
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that we got set back to the original state.");
 
-            Log.Comment("Set multiple properties in the same message (SGR.1,37,43,4)");
+            Log.Comment("Set multiple properties in the same message (SGR.1,37,43,53)");
             app.FillCursorPosition(hConsole, ref pt);
             app.UIRoot.SendKeys("9`");
 
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_COLORS;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.FOREGROUND_INTENSITY;
             ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.BACKGROUND_YELLOW;
-            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.COMMON_LVB_UNDERSCORE;
+            ciExpected.Attributes |= WinCon.CONSOLE_ATTRIBUTES.COMMON_LVB_GRID_HORIZONTAL;
 
             ciActual = area.GetCharInfoAt(hConsole, pt);
             Verify.AreEqual(ciExpected, ciActual, "Verify that we set foreground bright white, background yellow, and underscore in the same SGR command.");

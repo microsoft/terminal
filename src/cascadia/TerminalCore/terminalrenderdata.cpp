@@ -27,23 +27,15 @@ const TextBuffer& Terminal::GetTextBuffer() noexcept
     return *_buffer;
 }
 
-// Creating a FontInfo can technically throw (on string allocation) and this is noexcept.
-// That means this will std::terminate. We could come back and make there be a default constructor
-// backup to FontInfo that throws no exceptions and allocates a default FontInfo structure.
-#pragma warning(push)
-#pragma warning(disable : 26447)
 const FontInfo& Terminal::GetFontInfo() noexcept
 {
-    // TODO: This font value is only used to check if the font is a raster font.
-    // Otherwise, the font is changed with the renderer via TriggerFontChange.
-    // The renderer never uses any of the other members from the value returned
-    //      by this method.
-    // We could very likely replace this with just an IsRasterFont method
-    //      (which would return false)
-    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
-    return _fakeFontInfo;
+    return _fontInfo;
 }
-#pragma warning(pop)
+
+void Terminal::SetFontInfo(const FontInfo& fontInfo)
+{
+    _fontInfo = fontInfo;
+}
 
 const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 {
@@ -52,10 +44,14 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    auto colors = attr.CalculateRgbColors({ _colorTable.data(), _colorTable.size() },
-                                          _defaultFg,
-                                          _defaultBg,
-                                          _screenReversed);
+    _blinkingState.RecordBlinkingUsage(attr);
+    auto colors = attr.CalculateRgbColors(
+        _colorTable,
+        _defaultFg,
+        _defaultBg,
+        _screenReversed,
+        _blinkingState.IsBlinkingFaint(),
+        _intenseIsBright);
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
@@ -121,6 +117,42 @@ const bool Terminal::IsGridLineDrawingAllowed() noexcept
     return true;
 }
 
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkUri(uint16_t id) const noexcept
+{
+    return _buffer->GetHyperlinkUriFromId(id);
+}
+
+const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uint16_t id) const noexcept
+{
+    return _buffer->GetCustomIdFromId(id);
+}
+
+// Method Description:
+// - Gets the regex pattern ids of a location
+// Arguments:
+// - The location
+// Return value:
+// - The pattern IDs of the location
+const std::vector<size_t> Terminal::GetPatternId(const COORD location) const noexcept
+{
+    // Look through our interval tree for this location
+    const auto intervals = _patternIntervalTree.findOverlapping(COORD{ location.X + 1, location.Y }, location);
+    if (intervals.size() == 0)
+    {
+        return {};
+    }
+    else
+    {
+        std::vector<size_t> result{};
+        for (const auto& interval : intervals)
+        {
+            result.emplace_back(interval.value);
+        }
+        return result;
+    }
+    return {};
+}
+
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
 try
 {
@@ -177,7 +209,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
 }
 
-const std::wstring Terminal::GetConsoleTitle() const noexcept
+const std::wstring_view Terminal::GetConsoleTitle() const noexcept
 try
 {
     if (_title.has_value())
@@ -200,14 +232,14 @@ catch (...)
 //      they're done with any querying they need to do.
 void Terminal::LockConsole() noexcept
 {
-    _readWriteLock.lock_shared();
+    _readWriteLock.lock();
 }
 
 // Method Description:
 // - Unlocks the terminal after a call to Terminal::LockConsole.
 void Terminal::UnlockConsole() noexcept
 {
-    _readWriteLock.unlock_shared();
+    _readWriteLock.unlock();
 }
 
 // Method Description:

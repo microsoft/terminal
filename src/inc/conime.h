@@ -32,8 +32,8 @@ constexpr BYTE CONIME_CURSOR_LEFT = 0x20;
 [[nodiscard]] HRESULT ImeEndComposition();
 
 [[nodiscard]] HRESULT ImeComposeData(std::wstring_view text,
-                                     std::basic_string_view<BYTE> attributes,
-                                     std::basic_string_view<WORD> colorArray);
+                                     gsl::span<const BYTE> attributes,
+                                     gsl::span<const WORD> colorArray);
 
 [[nodiscard]] HRESULT ImeClearComposeData();
 

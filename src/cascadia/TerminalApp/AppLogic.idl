@@ -1,17 +1,22 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "../TerminalPage.idl";
-import "../ShortcutActionDispatch.idl";
-import "../IDirectKeyListener.idl";
+import "TerminalPage.idl";
+import "ShortcutActionDispatch.idl";
+import "IDirectKeyListener.idl";
 
 namespace TerminalApp
 {
-    enum LaunchMode
+    struct InitialPosition
     {
-        DefaultMode,
-        MaximizedMode,
-        FullscreenMode,
+        Int64 X;
+        Int64 Y;
+    };
+
+    [default_interface] runtimeclass FindTargetWindowResult
+    {
+        Int32 WindowId { get; };
+        String WindowName { get; };
     };
 
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
@@ -30,25 +35,51 @@ namespace TerminalApp
         Boolean IsElevated();
 
         Int32 SetStartupCommandline(String[] commands);
+        Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
+
+        void Quit();
 
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
+        void SetInboundListener();
+
         String Title { get; };
 
-        String ApplicationDisplayName { get; };
-        String ApplicationVersion { get; };
+        Boolean FocusMode { get; };
+        Boolean Fullscreen { get; };
+        Boolean AlwaysOnTop { get; };
 
-        Windows.Foundation.Point GetLaunchDimensions(UInt32 dpi);
-        Windows.Foundation.Point GetLaunchInitialPositions(Int32 defaultInitialX, Int32 defaultInitialY);
+        void IdentifyWindow();
+        String WindowName;
+        UInt64 WindowId;
+        void SetNumberOfOpenWindows(UInt64 num);
+        void RenameFailed();
+        Boolean IsQuakeWindow();
+
+        Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
+        Boolean CenterOnLaunch { get; };
+
+        InitialPosition GetInitialPosition(Int64 defaultInitialX, Int64 defaultInitialY);
         Windows.UI.Xaml.ElementTheme GetRequestedTheme();
-        LaunchMode GetLaunchMode();
+        Microsoft.Terminal.Settings.Model.LaunchMode GetLaunchMode();
         Boolean GetShowTabsInTitlebar();
+        Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
         void WindowCloseButtonClicked();
+
+        TaskbarState TaskbarState{ get; };
+
+        Boolean GetMinimizeToNotificationArea();
+        Boolean GetAlwaysShowNotificationIcon();
+        Boolean GetShowTitleInTitlebar();
+
+        FindTargetWindowResult FindTargetWindow(String[] args);
+
+        Windows.Foundation.Collections.IMapView<Microsoft.Terminal.Control.KeyChord, Microsoft.Terminal.Settings.Model.Command> GlobalHotkeys();
 
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
@@ -58,7 +89,17 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
         event Windows.Foundation.TypedEventHandler<Object, LastTabClosedEventArgs> LastTabClosed;
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.ElementTheme> RequestedThemeChanged;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleFullscreenEventArgs> ToggleFullscreen;
-        event Windows.Foundation.TypedEventHandler<Object, ToggleFocusModeEventArgs> ToggleFocusMode;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FocusModeChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> FullscreenChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> AlwaysOnTopChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> RaiseVisualBell;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SetTaskbarProgress;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IdentifyWindowsRequested;
+        event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
+        event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
     }
 }

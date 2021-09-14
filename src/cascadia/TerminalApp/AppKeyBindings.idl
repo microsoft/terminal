@@ -1,20 +1,14 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-import "../ActionArgs.idl";
-import "../ShortcutActionDispatch.idl";
+import "ShortcutActionDispatch.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Settings.IKeyBindings
+    [default_interface] runtimeclass AppKeyBindings : Microsoft.Terminal.Control.IKeyBindings
     {
         AppKeyBindings();
 
-        void SetKeyBinding(ActionAndArgs actionAndArgs, Microsoft.Terminal.Settings.KeyChord chord);
-        void ClearKeyBinding(Microsoft.Terminal.Settings.KeyChord chord);
-
-        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForAction(ShortcutAction action);
-        Microsoft.Terminal.Settings.KeyChord GetKeyBindingForActionWithArgs(ActionAndArgs actionAndArgs);
-
         void SetDispatch(ShortcutActionDispatch dispatch);
+        void SetActionMap(Microsoft.Terminal.Settings.Model.IActionMapView actionMap);
     }
 }

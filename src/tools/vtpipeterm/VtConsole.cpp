@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-#include "..\..\inc\conpty.h"
+#include "../../inc/conpty.h"
 #include "VtConsole.hpp"
 
 #include <cstdlib> /* srand, rand */
