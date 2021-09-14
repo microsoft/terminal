@@ -14,8 +14,8 @@ namespace Microsoft.Terminal.Remoting
         Boolean IsMonarch { get; };
         void SummonWindow(SummonWindowSelectionArgs args);
         void SummonAllWindows();
-        void RequestShowTrayIcon();
-        void RequestHideTrayIcon();
+        void RequestShowNotificationIcon();
+        void RequestHideNotificationIcon();
         UInt64 GetNumberOfPeasants();
         void RequestQuitAll();
         void UpdateActiveTabTitle(String title);
@@ -25,8 +25,8 @@ namespace Microsoft.Terminal.Remoting
         event Windows.Foundation.TypedEventHandler<Object, Object> BecameMonarch;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
-        event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
     };
 }

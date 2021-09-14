@@ -29,8 +29,8 @@
     "disableAnimations": false,
     "startupActions": "",
     "focusFollowMouse": false,
-    "minimizeToTray": false,
-    "alwaysShowTrayIcon": false,
+    "minimizeToNotificationArea": false,
+    "alwaysShowNotificationIcon": false,
 
     "profiles":
     [
@@ -301,6 +301,7 @@
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
         { "command": "quakeMode", "keys":"win+sc(41)" },
+        { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
 
         // Tab Management
