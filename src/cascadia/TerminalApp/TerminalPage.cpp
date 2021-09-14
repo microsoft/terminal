@@ -1480,6 +1480,31 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    static bool _isInSystem32(std::wstring_view commandLine)
+    {
+        // TODO! magic static
+        static std::wstring systemDirectory{};
+        if (FAILED(wil::GetSystemDirectoryW(systemDirectory)))
+        {
+            // we couldn't look up where system32 is?? Then it's definitely not
+            // in System32
+            return false;
+        }
+
+        const std::filesystem::path executablePath{ commandLine };
+
+        if (executablePath.has_parent_path())
+        {
+            auto parentPath{ executablePath.parent_path() };
+            const auto pathEquals = til::equals_insensitive_ascii(parentPath.wstring(), systemDirectory);
+            if (pathEquals && std::filesystem::exists(executablePath))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     // Method Description:
     // - For a given commandline, determines if we should prompt the user for
     //   approval. We only do this check when elevated. This will check the
@@ -1494,8 +1519,15 @@ namespace winrt::TerminalApp::implementation
         // NOTE: For debugging purposes, changing this to `true ||
         // _isElevated()` is a handy way of forcing the elevation logic, even
         // when unelevated.
-        if (_isElevated())
+        if (true || _isElevated())
         {
+            // If the cmdline starts with (case-insensitive)
+            // `C:\WINDOWS\System32`, then ignore this check.
+            if (_isInSystem32(cmdline))
+            {
+                return false;
+            }
+
             if (const auto& allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() })
             {
                 for (const auto& approved : allowedCommandlines)
@@ -1506,9 +1538,7 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             }
-
-            // TODO! If the cmdline starts with (case-insensitive)
-            // `C:\WINDOWS\System32`, then ignore this check.
+            return true;
         }
 
         return false;
