@@ -83,7 +83,7 @@ void Profile::CopyInheritanceGraphs(std::unordered_map<const Profile*, winrt::co
     }
 }
 
-// A profile and its IInherhitance parents basically behave like a directed acyclic graph (DAG).
+// A profile and its IInheritable parents basically behave like a directed acyclic graph (DAG).
 // Cloning a DAG requires us to prevent the duplication of already cloned nodes (or profiles).
 // This is where "visited" comes into play: It contains previously cloned sub-graphs of profiles and "interns" them.
 winrt::com_ptr<Profile>& Profile::CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const
