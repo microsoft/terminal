@@ -24,14 +24,14 @@ public:
     void ReAddTrayIcon();
 
     void TrayIconPressed();
-    void ShowTrayContextMenu(const til::point coord, winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
+    void ShowTrayContextMenu(const til::point& coord, const winrt::Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants);
     void TrayMenuItemSelected(const HMENU menu, const UINT menuItemIndex);
 
     WINRT_CALLBACK(SummonWindowRequested, winrt::delegate<void(winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs)>);
 
 private:
     void _CreateWindow();
-    HMENU _CreateTrayContextMenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
+    HMENU _CreateTrayContextMenu(const winrt::Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants);
 
     wil::unique_hwnd _trayIconHwnd;
     HWND _owningHwnd;

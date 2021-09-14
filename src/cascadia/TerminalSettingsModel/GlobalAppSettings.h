@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::FirstWindowPreference, FirstWindowPreference, FirstWindowPreference::DefaultProfile);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);
