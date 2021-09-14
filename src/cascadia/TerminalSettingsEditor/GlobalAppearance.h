@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
-        bool FeatureTrayIconEnabled() const noexcept;
+        bool FeatureNotificationIconEnabled() const noexcept;
 
         WINRT_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals, Theme);

@@ -5,4 +5,4 @@
 
 // Custom window messages
 #define CM_UPDATE_TITLE (WM_USER)
-#define CM_NOTIFY_FROM_TRAY (WM_USER + 1)
+#define CM_NOTIFY_FROM_NOTIFICATION_AREA (WM_USER + 1)
