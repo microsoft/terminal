@@ -526,7 +526,7 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::SelectionDirection)
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Core::SelectionExpansion)
 {
     static constexpr std::array<pair_type, 4> mappings = {
-        pair_type{ "cell", ValueType::Cell },
+        pair_type{ "char", ValueType::Char },
         pair_type{ "word", ValueType::Word },
         pair_type{ "view", ValueType::Viewport },
         pair_type{ "buffer", ValueType::Buffer }
