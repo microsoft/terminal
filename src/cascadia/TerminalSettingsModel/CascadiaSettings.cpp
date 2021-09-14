@@ -17,7 +17,7 @@ using namespace Microsoft::Console;
 
 winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
-    const auto profile = winrt::make_self<Profile>();
+    auto profile = winrt::make_self<Profile>();
     profile->Origin(OriginTag::User);
     profile->Name(parent->Name());
     profile->Guid(parent->Guid());
@@ -367,7 +367,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
     GUID guid{};
     LOG_IF_FAILED(CoCreateGuid(&guid));
 
-    const auto profile = CreateChild(_baseLayerProfile);
+    auto profile = CreateChild(_baseLayerProfile);
     profile->Guid(guid);
     profile->Name(winrt::hstring{ name });
     return profile;
