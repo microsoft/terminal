@@ -152,6 +152,10 @@ namespace SettingsModelLocalTests
             { "name": "command4", "command": { "action": "splitPane" } },
             { "name": "command5", "command": { "action": "splitPane", "split": "auto" } },
             { "name": "command6", "command": { "action": "splitPane", "size": 0.25 } },
+            { "name": "command7", "command": { "action": "splitPane", "split": "right" } },
+            { "name": "command8", "command": { "action": "splitPane", "split": "left" } },
+            { "name": "command9", "command": { "action": "splitPane", "split": "up" } },
+            { "name": "command10", "command": { "action": "splitPane", "split": "down" } },
         ])" };
 
         const auto commands0Json = VerifyParseSucceeded(commands0String);
@@ -170,7 +174,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
         }
         {
@@ -181,7 +185,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
         }
         {
@@ -192,7 +196,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
         }
         {
@@ -203,7 +207,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
         }
         {
@@ -214,8 +218,52 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.25, realArgs.SplitSize());
+        }
+        {
+            auto command = commands.Lookup(L"command7");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
+            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+        }
+        {
+            auto command = commands.Lookup(L"command8");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitDirection::Left, realArgs.SplitDirection());
+            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+        }
+        {
+            auto command = commands.Lookup(L"command9");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitDirection::Up, realArgs.SplitDirection());
+            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
+        }
+        {
+            auto command = commands.Lookup(L"command10");
+            VERIFY_IS_NOT_NULL(command);
+            VERIFY_IS_NOT_NULL(command.ActionAndArgs());
+            VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, command.ActionAndArgs().Action());
+            const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
+            VERIFY_IS_NOT_NULL(realArgs);
+            // Verify the args have the expected value
+            VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
+            VERIFY_ARE_EQUAL(0.5, realArgs.SplitSize());
         }
     }
 
@@ -244,7 +292,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_ARE_EQUAL(0.25, realArgs.SplitSize());
         }
     }
@@ -314,7 +362,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
         }
         {
             auto command = commands.Lookup(L"Split pane, split: vertical");
@@ -324,7 +372,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
         }
         {
             auto command = commands.Lookup(L"Split pane, split: horizontal");
@@ -334,7 +382,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
         }
     }
     void CommandTests::TestLayerOnAutogeneratedName()
@@ -360,7 +408,7 @@ namespace SettingsModelLocalTests
             const auto& realArgs = command.ActionAndArgs().Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
         }
     }
 
