@@ -36,6 +36,9 @@ namespace Microsoft::Terminal::Core
 {
     class Terminal;
 
+    // TODO GH#6999: We need to convert winrt::Microsoft::Terminal::Core::SelectionDirection/Expansion
+    // into an equivalent enum class because PublicTerminalCore doesn't consume winrt. Once we introduce
+    // an interactivity layer, we'll be able to remove this duplicate enum and directly use the winrt enums.
     enum class InternalSelectionDirection
     {
         Left,
