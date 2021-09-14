@@ -92,6 +92,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateExternalID(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
+        void _TryUpdateAction(const InternalActionID oldActionID, const Model::Command& action);
         void _AddIncompleteActions();
         void _StashIncompleteActions(const Model::Command& cmd);
 
@@ -105,7 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
         std::unordered_map<winrt::hstring, InternalActionID> _ExternalIDMap;
-        std::unordered_map<winrt::hstring, Model::Command> _IncompleteActions;
+        std::unordered_map<winrt::hstring, Model::Command> _ExternalIDStaging;
 
         // Masking Actions:
         // These are actions that were introduced in an ancestor,

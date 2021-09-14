@@ -13,38 +13,46 @@ using namespace winrt::Microsoft::Terminal::Control;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs)
+    static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs, const std::wstring& externalID = L"")
     {
-        size_t hashedAction{ HashUtils::HashProperty(actionAndArgs.Action()) };
+        if (externalID.empty())
+        {
+            size_t hashedAction{ HashUtils::HashProperty(actionAndArgs.Action()) };
 
-        size_t hashedArgs{};
-        if (const auto& args{ actionAndArgs.Args() })
-        {
-            // Args are defined, so hash them
-            hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
-        }
-        else
-        {
-            // Args are not defined.
-            // Check if the ShortcutAction supports args.
-            switch (actionAndArgs.Action())
+            size_t hashedArgs{};
+            if (const auto& args{ actionAndArgs.Args() })
             {
+                // Args are defined, so hash them
+                hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
+            }
+            else
+            {
+                // Args are not defined.
+                // Check if the ShortcutAction supports args.
+                switch (actionAndArgs.Action())
+                {
 #define ON_ALL_ACTIONS_WITH_ARGS(action)                        \
     case ShortcutAction::action:                                \
         /* If it does, hash the default values for the args.*/  \
         hashedArgs = EmptyHash<implementation::action##Args>(); \
         break;
-                ALL_SHORTCUT_ACTIONS_WITH_ARGS
+                    ALL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS
-            default:
-            {
-                // Otherwise, hash nullptr.
-                std::hash<IActionArgs> argsHash;
-                hashedArgs = argsHash(nullptr);
+                default:
+                {
+                    // Otherwise, hash nullptr.
+                    std::hash<IActionArgs> argsHash;
+                    hashedArgs = argsHash(nullptr);
+                }
+                }
             }
-            }
+            return hashedAction ^ hashedArgs;
         }
-        return hashedAction ^ hashedArgs;
+        else
+        {
+            return HashUtils::HashProperty(externalID);
+        }
+
     }
 
     // Method Description:
@@ -553,15 +561,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                         // We've found an action in a parent layer that has the same external
                         // ID as our current layer action. We'll need to overwrite the parent's info.
 
-                        // Make a copy of inherited, update only the action.
-                        const auto& inheritedCmdImpl{ get_self<Command>(*inheritedCmdWithID) };
-                        const auto inheritedCmdImplCopy{ inheritedCmdImpl->Copy() };
-                        inheritedCmdImplCopy->ActionAndArgs(cmd.ActionAndArgs());
+                        // Update the parent's action with the incoming action.
+                        parent->_TryUpdateAction(Hash(inheritedCmdWithID->ActionAndArgs()), cmd);
 
-                        // Adding it to the parent's actions should update all the internal IDs
-                        parent->AddAction(*inheritedCmdImplCopy);
-                        maskingCmd = *inheritedCmdImplCopy;
-                        _MaskingActions.emplace(actionID, maskingCmd);
+                        auto newParentAction{ parent->_GetActionByID(actionID) };
+                        if (newParentAction && *newParentAction)
+                        {
+                            maskingCmd = *newParentAction;
+                            _MaskingActions.emplace(actionID, maskingCmd);
+                        }
                     }
                 }
                 else
@@ -606,11 +614,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // }
         if (!cmd.ExternalID().empty())
         {
-            // Add it to incomplete, or combine it with an existing incomplete.
-            auto incompletePair{ _IncompleteActions.find(cmd.ExternalID()) };
-            if (incompletePair == _IncompleteActions.end())
+            std::wstring externalID{ cmd.ExternalID() };
+            if (externalID == L"")
             {
-                _IncompleteActions.emplace(cmd.ExternalID(), cmd);
+
+            }
+            // Add it to incomplete, or combine it with an existing incomplete.
+            auto incompletePair{ _ExternalIDStaging.find(cmd.ExternalID()) };
+            if (incompletePair == _ExternalIDStaging.end())
+            {
+                _ExternalIDStaging.emplace(cmd.ExternalID(), cmd);
             }
             else
             {
@@ -636,11 +649,34 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void ActionMap::_AddIncompleteActions()
     {
-        for (const auto& [id, cmd]: _IncompleteActions)
+        for (const auto& [id, cmd]: _ExternalIDStaging)
         {
             AddAction(cmd);
         }
-        _IncompleteActions.clear();
+        _ExternalIDStaging.clear();
+    }
+
+    void ActionMap::_TryUpdateAction(const InternalActionID actionID, const Model::Command& action)
+    {
+        const auto& newActionHash{ Hash(action.ActionAndArgs()) };
+        const auto& actionPair{ _ActionMap.find(actionID) };
+        if (actionPair != _ActionMap.end())
+        {
+            // ActionMap update
+            auto actionMapNode = _ActionMap.extract(actionID);
+            actionMapNode.key() = newActionHash;
+            _ActionMap.insert(std::move(actionMapNode));
+
+            // KeyMap update
+            const auto& actionImpl = get_self<implementation::Command>(*_GetActionByID(newActionHash));
+            for (const auto& keychord : actionImpl->KeyMappings())
+            {
+                _KeyMap.insert_or_assign(keychord, newActionHash);
+            }
+
+            // ExternalIDMap update
+            _ExternalIDMap.insert_or_assign(action.ExternalID(), newActionHash);
+        }
     }
 
     void ActionMap::_TryUpdateExternalID(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& maskingCmd)
@@ -735,84 +771,93 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // Example:
         //   {                "command": "copy", "keys": "ctrl+c" } --> we are registering a new key chord, update oldCmd and maskingCmd
         //   { "name": "foo", "command": "copy" }                   --> no change to keys, exit early
-        const auto keys{ cmd.Keys() };
-        if (!keys)
+        const auto cmdKeys{ cmd.Keys() };
+        if (!cmdKeys)
         {
             // the user is not trying to update the keys.
             return;
         }
 
-        // Handle collisions
-        const auto oldKeyPair{ _KeyMap.find(keys) };
-        if (oldKeyPair != _KeyMap.end())
+        // Loop through all key mappings in the command
+        // Normally, new incoming commands should not have multiple
+        // keymappings, but the way that actions with external IDs defined
+        // are constructed make it so that the action will have multiple
+        // mappings associated.
+        const auto cmdImpl { get_self<implementation::Command>(cmd) };
+        for (const auto& keys : cmdImpl->KeyMappings())
         {
-            // Collision: The key chord was already in use.
-            //
-            // Example:
-            //   { "command": "copy",  "keys": "ctrl+c" } --> register "ctrl+c" (different branch)
-            //   { "command": "paste", "keys": "ctrl+c" } --> Collision! (this branch)
-            //
-            // Remove the old one. (unbind "copy" in the example above)
-            const auto actionPair{ _ActionMap.find(oldKeyPair->second) };
-            const auto conflictingCmd{ actionPair->second };
-            const auto conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
-            conflictingCmdImpl->EraseKey(keys);
-        }
-        else if (const auto& conflictingCmd{ GetActionByKeyChord(keys) })
-        {
-            // Collision with ancestor: The key chord was already in use, but by an action in another layer
-            //
-            // Example:
-            //   parent:  { "command": "copy",    "keys": "ctrl+c" } --> register "ctrl+c" (different branch)
-            //   current: { "command": "paste",   "keys": "ctrl+c" } --> Collision with ancestor! (this branch, sub-branch 1)
-            //            { "command": "unbound", "keys": "ctrl+c" } --> Collision with masking action! (this branch, sub-branch 2)
-            const auto conflictingActionID{ Hash(conflictingCmd.ActionAndArgs()) };
-            const auto maskingCmdPair{ _MaskingActions.find(conflictingActionID) };
-            if (maskingCmdPair == _MaskingActions.end())
+            // Handle collisions
+            const auto oldKeyPair{ _KeyMap.find(keys) };
+            if (oldKeyPair != _KeyMap.end())
             {
-                // This is the first time we're colliding with an action from a different layer,
-                //   so let's add this action to _MaskingActions and update it appropriately.
-                // Create a copy of the conflicting action,
-                //   and erase the conflicting key chord from the copy.
+                // Collision: The key chord was already in use.
+                //
+                // Example:
+                //   { "command": "copy",  "keys": "ctrl+c" } --> register "ctrl+c" (different branch)
+                //   { "command": "paste", "keys": "ctrl+c" } --> Collision! (this branch)
+                //
+                // Remove the old one. (unbind "copy" in the example above)
+                const auto actionPair{ _ActionMap.find(oldKeyPair->second) };
+                const auto conflictingCmd{ actionPair->second };
                 const auto conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
-                const auto conflictingCmdCopy{ conflictingCmdImpl->Copy() };
-                conflictingCmdCopy->EraseKey(keys);
-                _MaskingActions.emplace(conflictingActionID, *conflictingCmdCopy);
+                conflictingCmdImpl->EraseKey(keys);
             }
-            else
+            else if (const auto& conflictingCmd{ GetActionByKeyChord(keys) })
             {
-                // We've collided with this action before. Let's resolve a collision with a masking action.
-                const auto maskingCmdImpl{ get_self<implementation::Command>(maskingCmdPair->second) };
-                maskingCmdImpl->EraseKey(keys);
+                // Collision with ancestor: The key chord was already in use, but by an action in another layer
+                //
+                // Example:
+                //   parent:  { "command": "copy",    "keys": "ctrl+c" } --> register "ctrl+c" (different branch)
+                //   current: { "command": "paste",   "keys": "ctrl+c" } --> Collision with ancestor! (this branch, sub-branch 1)
+                //            { "command": "unbound", "keys": "ctrl+c" } --> Collision with masking action! (this branch, sub-branch 2)
+                const auto conflictingActionID{ Hash(conflictingCmd.ActionAndArgs()) };
+                const auto maskingCmdPair{ _MaskingActions.find(conflictingActionID) };
+                if (maskingCmdPair == _MaskingActions.end())
+                {
+                    // This is the first time we're colliding with an action from a different layer,
+                    //   so let's add this action to _MaskingActions and update it appropriately.
+                    // Create a copy of the conflicting action,
+                    //   and erase the conflicting key chord from the copy.
+                    const auto conflictingCmdImpl{ get_self<implementation::Command>(conflictingCmd) };
+                    const auto conflictingCmdCopy{ conflictingCmdImpl->Copy() };
+                    conflictingCmdCopy->EraseKey(keys);
+                    _MaskingActions.emplace(conflictingActionID, *conflictingCmdCopy);
+                }
+                else
+                {
+                    // We've collided with this action before. Let's resolve a collision with a masking action.
+                    const auto maskingCmdImpl{ get_self<implementation::Command>(maskingCmdPair->second) };
+                    maskingCmdImpl->EraseKey(keys);
+                }
             }
-        }
 
-        // Assign the new action in the _KeyMap.
-        const auto actionID{ Hash(cmd.ActionAndArgs()) };
-        _KeyMap.insert_or_assign(keys, actionID);
+            // Assign the new action in the _KeyMap.
+            const auto actionID{ Hash(cmd.ActionAndArgs()) };
+            _KeyMap.insert_or_assign(keys, actionID);
 
-        // Additive operation:
-        //   Register the new key chord with oldCmd (an existing _ActionMap entry)
-        // Example:
-        //   { "command": "copy",  "keys": "ctrl+c" }       --> register "ctrl+c" (section above)
-        //   { "command": "copy",  "keys": "ctrl+shift+c" } --> also register "ctrl+shift+c" to the same Command (oldCmd)
-        if (oldCmd)
-        {
-            // Update inner Command with new key chord
-            auto oldCmdImpl{ get_self<Command>(oldCmd) };
-            oldCmdImpl->RegisterKey(keys);
-        }
+            // Additive operation:
+            //   Register the new key chord with oldCmd (an existing _ActionMap entry)
+            // Example:
+            //   { "command": "copy",  "keys": "ctrl+c" }       --> register "ctrl+c" (section above)
+            //   { "command": "copy",  "keys": "ctrl+shift+c" } --> also register "ctrl+shift+c" to the same Command (oldCmd)
+            if (oldCmd)
+            {
+                // Update inner Command with new key chord
+                auto oldCmdImpl{ get_self<Command>(oldCmd) };
+                oldCmdImpl->RegisterKey(keys);
+            }
 
-        // Additive operation:
-        //   Register the new key chord with maskingCmd (an existing _maskingAction entry)
-        // Example:
-        //   parent:  { "command": "copy", "keys": "ctrl+c" }       --> register "ctrl+c" to parent._ActionMap (different branch in a different layer)
-        //   current: { "command": "copy", "keys": "ctrl+shift+c" } --> also register "ctrl+shift+c" to the same Command (maskingCmd)
-        if (maskingCmd)
-        {
-            // Update inner Command with new key chord
-            auto maskingCmdImpl{ get_self<Command>(maskingCmd) };
-            maskingCmdImpl->RegisterKey(keys);
+            // Additive operation:
+            //   Register the new key chord with maskingCmd (an existing _maskingAction entry)
+            // Example:
+            //   parent:  { "command": "copy", "keys": "ctrl+c" }       --> register "ctrl+c" to parent._ActionMap (different branch in a different layer)
+            //   current: { "command": "copy", "keys": "ctrl+shift+c" } --> also register "ctrl+shift+c" to the same Command (maskingCmd)
+            if (maskingCmd)
+            {
+                // Update inner Command with new key chord
+                auto maskingCmdImpl{ get_self<Command>(maskingCmd) };
+                maskingCmdImpl->RegisterKey(keys);
+            }
         }
     }
 
