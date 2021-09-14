@@ -399,24 +399,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This text is intentionally _not_ localized, to attempt to mirror the
         // exact syntax that the property would have in JSON.
-        switch (SplitStyle())
+        switch (SplitDirection())
         {
-        case SplitState::Vertical:
-            ss << L"split: vertical, ";
-            break;
-        case SplitState::Horizontal:
-            ss << L"split: horizontal, ";
-            break;
-        case SplitState::Up:
+        case SplitDirection::Up:
             ss << L"split: up, ";
             break;
-        case SplitState::Right:
+        case SplitDirection::Right:
             ss << L"split: right, ";
             break;
-        case SplitState::Down:
+        case SplitDirection::Down:
             ss << L"split: down, ";
             break;
-        case SplitState::Left:
+        case SplitDirection::Left:
             ss << L"split: left, ";
             break;
         }

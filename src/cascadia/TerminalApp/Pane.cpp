@@ -1143,7 +1143,7 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
 // - splitType: How the pane should be attached
 // Return Value:
 // - the new reference to the child created from the current pane.
-std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState splitType)
+std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitDirection splitType)
 {
     // Splice the new pane into the tree
     const auto [first, _] = _Split(splitType, .5, pane);
@@ -1854,7 +1854,7 @@ void Pane::_SetupEntranceAnimation()
 // Note:
 // - This method is highly similar to Pane::PreCalculateAutoSplit
 std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                               SplitState splitType,
+                                               SplitDirection splitType,
                                                const float splitSize,
                                                const winrt::Windows::Foundation::Size availableSpace) const
 {
@@ -1868,12 +1868,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             // the available space to calculate which direction to split in.
             const Size minSize = _GetMinSize();
 
-            if (splitType == SplitState::None)
-            {
-                return { false };
-            }
-
-            else if (splitType == SplitState::Vertical || splitType == SplitState::Left || splitType == SplitState::Right)
+            if (splitType == SplitDirection::Left || splitType == SplitDirection::Right)
             {
                 const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
                 const auto newFirstWidth = widthMinusSeparator * firstPrecent;
@@ -1882,7 +1877,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                 return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
             }
 
-            else if (splitType == SplitState::Horizontal || splitType == SplitState::Up || splitType == SplitState::Down)
+            else if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
             {
                 const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
                 const auto newFirstHeight = heightMinusSeparator * firstPrecent;
@@ -1936,7 +1931,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 // - control: A TermControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes, with the original pane first
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType,
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
                                                                     const Profile& profile,
                                                                     const TermControl& control)
@@ -2001,18 +1996,16 @@ bool Pane::ToggleSplitOrientation()
 //   based upon the current dimensions of the Pane.
 // - Similarly, if Up/Down or Left/Right are provided a Horizontal or Vertical
 //   split type will be returned.
-// - If any of the other SplitState values are passed in, they're returned
-//   unmodified.
 // Arguments:
-// - splitType: The SplitState to attempt to convert
+// - splitType: The SplitDirection to attempt to convert
 // Return Value:
-// - None if splitType was None, otherwise one of Horizontal or Vertical
-SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitState& splitType) const
+// - One of Horizontal or Vertical
+SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitDirection& splitType) const
 {
     // Careful here! If the pane doesn't yet have a size, these dimensions will
     // be 0, and we'll always return Vertical.
 
-    if (splitType == SplitState::Automatic)
+    if (splitType == SplitDirection::Automatic)
     {
         // If the requested split type was "auto", determine which direction to
         // split based on our current dimensions
@@ -2020,15 +2013,12 @@ SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitState& spli
                                gsl::narrow_cast<float>(_root.ActualHeight()) };
         return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
     }
-    if (splitType == SplitState::Up || splitType == SplitState::Down)
+    if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
     {
         return SplitState::Horizontal;
     }
-    if (splitType == SplitState::Left || splitType == SplitState::Right)
-    {
-        return SplitState::Vertical;
-    }
-    return splitType;
+    // All that is left is Left / Right which are vertical splits
+    return SplitState::Vertical;
 }
 
 // Method Description:
@@ -2040,15 +2030,10 @@ SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitState& spli
 // - newPane: the pane to add as a child
 // Return Value:
 // - The two newly created Panes, with the original pane as the first pane.
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirection splitType,
                                                                      const float splitSize,
                                                                      std::shared_ptr<Pane> newPane)
 {
-    if (splitType == SplitState::None)
-    {
-        return { nullptr, nullptr };
-    }
-
     auto actualSplitType = _convertAutomaticOrDirectionalSplitState(splitType);
 
     // Lock the create/close lock so that another operation won't concurrently
@@ -2083,7 +2068,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     _secondChild = newPane;
 
     // If we want the new pane to be the first child, swap the children
-    if (splitType == SplitState::Up || splitType == SplitState::Left)
+    if (splitType == SplitDirection::Up || splitType == SplitDirection::Left)
     {
         std::swap(_firstChild, _secondChild);
     }
@@ -2110,7 +2095,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
 
     // Regardless of which child the new child is, we want to return the
     // original one first.
-    if (splitType == SplitState::Up || splitType == SplitState::Left)
+    if (splitType == SplitDirection::Up || splitType == SplitDirection::Left)
     {
         return { _secondChild, _firstChild };
     }
@@ -2749,10 +2734,10 @@ int Pane::GetLeafPaneCount() const noexcept
 // - availableSpace: The theoretical space that's available for this pane to be able to split.
 // Return Value:
 // - nullopt if `target` is not this pane or a child of this pane, otherwise the
-//   SplitState that `target` would use for an `Automatic` split given
+//   SplitDirection that `target` would use for an `Automatic` split given
 //   `availableSpace`
-std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                      const winrt::Windows::Foundation::Size availableSpace) const
+std::optional<SplitDirection> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                          const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (_IsLeaf())
     {
@@ -2760,7 +2745,7 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
         {
             //If this pane is a leaf, and it's the pane we're looking for, use
             //the available space to calculate which direction to split in.
-            return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
+            return availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
         }
         else
         {

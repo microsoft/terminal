@@ -446,7 +446,7 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(SplitState splitType,
+    void TerminalTab::SplitPane(SplitDirection splitType,
                                 const float splitSize,
                                 const Profile& profile,
                                 TermControl& control)
@@ -568,7 +568,7 @@ namespace winrt::TerminalApp::implementation
         const auto previousId = _activePane->Id();
 
         // Add the new pane as an automatic split on the active pane.
-        auto first = _activePane->AttachPane(pane, SplitState::Automatic);
+        auto first = _activePane->AttachPane(pane, SplitDirection::Automatic);
 
         // under current assumptions this condition should always be true.
         if (previousId)
@@ -1474,14 +1474,14 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - availableSpace: The theoretical space that's available for this Tab's content
     // Return Value:
-    // - The SplitState that we should use for an `Automatic` split given
+    // - The SplitDirection that we should use for an `Automatic` split given
     //   `availableSpace`
-    SplitState TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
+    SplitDirection TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
+        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitDirection::Right);
     }
 
-    bool TerminalTab::PreCalculateCanSplit(SplitState splitType,
+    bool TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
                                            const float splitSize,
                                            winrt::Windows::Foundation::Size availableSpace) const
     {
