@@ -102,7 +102,7 @@ namespace ControlUnitTests
         auto [settings, conn] = _createSettingsAndConnection();
 
         settings->UseAcrylic(true);
-        settings->TintOpacity(0.5f);
+        settings->Opacity(0.5f);
 
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
 
@@ -110,8 +110,8 @@ namespace ControlUnitTests
         double expectedOpacity = 0.5;
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
-            VERIFY_ARE_EQUAL(expectedOpacity, settings->TintOpacity());
-            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings.TintOpacity());
+            VERIFY_ARE_EQUAL(expectedOpacity, settings->Opacity());
+            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings.Opacity());
 
             if (expectedOpacity < 1.0)
             {
