@@ -209,6 +209,14 @@ JSON_ENUM_MAPPER(::winrt::Windows::UI::Xaml::ElementTheme)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FirstWindowPreference)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "defaultProfile", ValueType::DefaultProfile },
+        pair_type{ "persistedWindowLayout", ValueType::PersistedWindowLayout },
+    };
+};
+
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::LaunchMode)
 {
     JSON_MAPPINGS(5) = {
@@ -401,7 +409,8 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitState)
 // Possible SplitType values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitType)
 {
-    JSON_MAPPINGS(1) = {
+    JSON_MAPPINGS(2) = {
+        pair_type{ "manual", ValueType::Manual },
         pair_type{ "duplicate", ValueType::Duplicate },
     };
 };
@@ -500,6 +509,15 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::MonitorBehavior)
     };
 };
 
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Control::ClearBufferType)
+{
+    JSON_MAPPINGS(3) = {
+        pair_type{ "all", ValueType::All },
+        pair_type{ "screen", ValueType::Screen },
+        pair_type{ "scrollback", ValueType::Scrollback },
+    };
+};
+
 JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
 {
     static constexpr std::array<pair_type, 4> mappings = {
@@ -507,5 +525,14 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
         pair_type{ "bold", ValueType::Bold },
         pair_type{ "bright", ValueType::Bright },
         pair_type{ "all", AllSet },
+
+    };
+};
+
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
+{
+    JSON_MAPPINGS(2) = {
+        pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
+        pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
     };
 };

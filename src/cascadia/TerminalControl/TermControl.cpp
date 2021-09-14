@@ -351,6 +351,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _core.SendInput(wstr);
     }
+    void TermControl::ClearBuffer(Control::ClearBufferType clearType)
+    {
+        _core.ClearBuffer(clearType);
+    }
 
     void TermControl::ToggleShaderEffects()
     {
@@ -902,24 +906,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             e.Handled(true);
             return;
-        }
-
-        if (vkey == VK_SPACE && modifiers.IsAltPressed())
-        {
-            if (const auto bindings = _settings.KeyBindings())
-            {
-                if (!bindings.IsKeyChordExplicitlyUnbound({ modifiers.IsCtrlPressed(), modifiers.IsAltPressed(), modifiers.IsShiftPressed(), modifiers.IsWinPressed(), vkey, scanCode }))
-                {
-                    // If we get here, it means that
-                    //      1. we do not have a command bound to alt+space
-                    //      2. alt+space was not explicitly unbound
-                    // That means that XAML handled the alt+space to open up the context menu, and
-                    // so we don't want to send anything to the terminal
-                    // TODO GH#11018: Add a new "openSystemMenu" keybinding
-                    e.Handled(true);
-                    return;
-                }
-            }
         }
 
         if (_TrySendKeyEvent(vkey, scanCode, modifiers, keyDown))
@@ -2589,5 +2575,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_coreWarningBell(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _playWarningBell->Run();
+    }
+
+    hstring TermControl::ReadEntireBuffer() const
+    {
+        return _core.ReadEntireBuffer();
     }
 }

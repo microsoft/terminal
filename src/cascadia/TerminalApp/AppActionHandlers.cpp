@@ -78,7 +78,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseWindow();
+        CloseWindow(false);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleQuit(const IInspectable& /*sender*/,
+                                   const ActionEventArgs& args)
+    {
+        RequestQuit();
         args.Handled(true);
     }
 
@@ -871,6 +878,46 @@ namespace winrt::TerminalApp::implementation
                     _UnZoomIfNeeded();
                     args.Handled(activeTab->FocusPane(paneId));
                 }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleOpenSystemMenu(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _OpenSystemMenuHandlers(*this, nullptr);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ClearBufferArgs>())
+            {
+                if (const auto termControl{ _GetActiveControl() })
+                {
+                    termControl.ClearBuffer(realArgs.Clear());
+                    args.Handled(true);
+                }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleMultipleActions(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<MultipleActionsArgs>())
+            {
+                for (const auto& action : realArgs.Actions())
+                {
+                    _actionDispatch->DoAction(action);
+                }
+
+                args.Handled(true);
             }
         }
     }

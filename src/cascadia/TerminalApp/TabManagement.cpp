@@ -28,6 +28,9 @@ using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Text;
+using namespace winrt::Windows::Storage;
+using namespace winrt::Windows::Storage::Pickers;
+using namespace winrt::Windows::Storage::Provider;
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
@@ -168,6 +171,16 @@ namespace winrt::TerminalApp::implementation
             if (page && tab)
             {
                 page->_SplitTab(*tab);
+            }
+        });
+
+        newTabImpl->ExportTabRequested([weakTab, weakThis{ get_weak() }]() {
+            auto page{ weakThis.get() };
+            auto tab{ weakTab.get() };
+
+            if (page && tab)
+            {
+                page->_ExportTab(*tab);
             }
         });
 
@@ -392,6 +405,45 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Exports the content of the Terminal Buffer inside the tab
+    // Arguments:
+    // - tab: tab to export
+    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab)
+    {
+        try
+        {
+            if (const auto control{ tab.GetActiveTerminalControl() })
+            {
+                const FileSavePicker savePicker;
+                savePicker.as<IInitializeWithWindow>()->Initialize(*_hostingHwnd);
+                savePicker.SuggestedStartLocation(PickerLocationId::Downloads);
+                const auto fileChoices = single_threaded_vector<hstring>({ L".txt" });
+                savePicker.FileTypeChoices().Insert(RS_(L"PlainText"), fileChoices);
+                savePicker.SuggestedFileName(control.Title());
+
+                const StorageFile file = co_await savePicker.PickSaveFileAsync();
+                if (file != nullptr)
+                {
+                    const auto buffer = control.ReadEntireBuffer();
+                    CachedFileManager::DeferUpdates(file);
+                    co_await FileIO::WriteTextAsync(file, buffer);
+                    const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
+                    switch (status)
+                    {
+                    case FileUpdateStatus::Complete:
+                    case FileUpdateStatus::CompleteAndRenamed:
+                        _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"ExportSuccess"));
+                        break;
+                    default:
+                        _ShowControlNoticeDialog(RS_(L"NoticeError"), RS_(L"ExportFailure"));
+                    }
+                }
+            }
+        }
+        CATCH_LOG();
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
@@ -447,6 +499,14 @@ namespace winrt::TerminalApp::implementation
         // To close the window here, we need to close the hosting window.
         if (_tabs.Size() == 0)
         {
+            // If we are supposed to save state, make sure we clear it out
+            // if the user manually closed all tabs.
+            if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings))
+            {
+                auto state = ApplicationState::SharedInstance();
+                state.PersistedWindowLayouts(nullptr);
+            }
+
             _LastTabClosedHandlers(*this, nullptr);
         }
         else if (focusedTabIndex.has_value() && focusedTabIndex.value() == gsl::narrow_cast<uint32_t>(tabIndex))
@@ -547,9 +607,13 @@ namespace winrt::TerminalApp::implementation
         tabIndex = std::clamp(tabIndex, 0u, _tabs.Size() - 1);
 
         auto tab{ _tabs.GetAt(tabIndex) };
+        // GH#11107 - Always just set the item directly first so that if
+        // tab movement is done as part of multiple actions following calls
+        // to _GetFocusedTab will return the correct tab.
+        _tabView.SelectedItem(tab.TabViewItem());
+
         if (_startupState == StartupState::InStartup)
         {
-            _tabView.SelectedItem(tab.TabViewItem());
             _UpdatedSelectedTab(tab);
         }
         else

@@ -79,10 +79,13 @@ namespace winrt::TerminalApp::implementation
         void ResetRuntimeTabColor();
         void ActivateColorPicker();
 
+        void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
         bool IsZoomed();
         void EnterZoom();
         void ExitZoom();
+
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const;
 
         int GetLeafPaneCount() const noexcept;
 
@@ -103,6 +106,7 @@ namespace winrt::TerminalApp::implementation
         DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
         DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
         DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
+        DECLARE_EVENT(ExportTabRequested, _ExportTabRequestedHandlers, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:

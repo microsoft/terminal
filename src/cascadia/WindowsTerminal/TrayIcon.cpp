@@ -109,8 +109,8 @@ void TrayIcon::CreateTrayIcon()
 // - peasants: The map of all peasants that should be available in the context menu.
 // Return Value:
 // - <none>
-void TrayIcon::ShowTrayContextMenu(const til::point coord,
-                                   IMapView<uint64_t, winrt::hstring> peasants)
+void TrayIcon::ShowTrayContextMenu(const til::point& coord,
+                                   const IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants)
 {
     if (const auto hMenu = _CreateTrayContextMenu(peasants))
     {
@@ -142,7 +142,7 @@ void TrayIcon::ShowTrayContextMenu(const til::point coord,
 // - peasants: A map of all peasants' ID to their window name.
 // Return Value:
 // - The handle to the newly created context menu.
-HMENU TrayIcon::_CreateTrayContextMenu(IMapView<uint64_t, winrt::hstring> peasants)
+HMENU TrayIcon::_CreateTrayContextMenu(const IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants)
 {
     auto hMenu = CreatePopupMenu();
     if (hMenu)
@@ -161,17 +161,22 @@ HMENU TrayIcon::_CreateTrayContextMenu(IMapView<uint64_t, winrt::hstring> peasan
         // Submenu for Windows
         if (auto submenu = CreatePopupMenu())
         {
-            const auto locWindow = RS_(L"WindowIdLabel");
-            const auto locUnnamed = RS_(L"UnnamedWindowName");
-            for (const auto [id, name] : peasants)
+            for (const auto& p : peasants)
             {
-                winrt::hstring displayText = name;
-                if (name.empty())
+                std::wstringstream displayText;
+                displayText << L"#" << p.Id;
+
+                if (!p.TabTitle.empty())
                 {
-                    displayText = fmt::format(L"{} {} - <{}>", locWindow, id, locUnnamed);
+                    displayText << L": " << std::wstring_view{ p.TabTitle };
                 }
 
-                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(id), displayText.c_str());
+                if (!p.Name.empty())
+                {
+                    displayText << L" [" << std::wstring_view{ p.Name } << L"]";
+                }
+
+                AppendMenu(submenu, MF_STRING, gsl::narrow<UINT_PTR>(p.Id), displayText.str().c_str());
             }
 
             MENUINFO submenuInfo{};

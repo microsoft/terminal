@@ -63,6 +63,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         til::point GetFontSize() const;
 
         void SendInput(const winrt::hstring& input);
+        void ClearBuffer(Control::ClearBufferType clearType);
+
         void ToggleShaderEffects();
 
         winrt::fire_and_forget RenderEngineSwapChainChanged(IInspectable sender, IInspectable args);
@@ -106,6 +108,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static Control::MouseButtonState GetPressedMouseButtons(const winrt::Windows::UI::Input::PointerPoint point);
         static unsigned int GetPointerUpdateKind(const winrt::Windows::UI::Input::PointerPoint point);
         static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
+
+        hstring ReadEntireBuffer() const;
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

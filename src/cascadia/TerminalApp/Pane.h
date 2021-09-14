@@ -70,12 +70,24 @@ public:
     void ClearActive();
     void SetActive();
 
+    struct BuildStartupState
+    {
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> args;
+        std::shared_ptr<Pane> firstPane;
+        std::optional<uint32_t> focusedPaneId;
+        uint32_t panesCreated;
+    };
+    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
+
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
-    std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
+                                            const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                            const std::vector<uint32_t>& mruPanes);
     bool SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second);
 
     std::shared_ptr<Pane> NextPane(const std::shared_ptr<Pane> pane);
@@ -201,7 +213,7 @@ private:
 
     std::shared_ptr<Pane> _FindParentOfPane(const std::shared_ptr<Pane> pane);
     std::pair<PanePoint, PanePoint> _GetOffsetsForPane(const PanePoint parentOffset) const;
-    bool _IsAdjacent(const std::shared_ptr<Pane> first, const PanePoint firstOffset, const std::shared_ptr<Pane> second, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;
+    bool _IsAdjacent(const PanePoint firstOffset, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;
     PaneNeighborSearch _FindNeighborForPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
                                             PaneNeighborSearch searchResult,
                                             const bool focusIsSecondSide,
