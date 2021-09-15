@@ -349,6 +349,14 @@ class UiaTextRangeTests
         _pTextBuffer = &_pScreenInfo->GetTextBuffer();
         _pUiaData = &gci.renderData;
 
+        // GH#6986: document end now limits the navigation to be
+        // within the document end bounds _as opposed to_ the buffer bounds.
+        // As a result, let's populate the buffer partially to define a document end.
+        // Additionally, add spaces to create "words" in the buffer.
+
+        // LOAD BEARING: make sure we fill it halfway so that we can reuse most of
+        // the variables from the generated tests.
+
         // fill first half of text buffer with text
         for (UINT i = 0; i < _pTextBuffer->TotalRowCount() / 2; ++i)
         {
@@ -802,8 +810,6 @@ class UiaTextRangeTests
         for (const auto& test : testData)
         {
             Log::Comment(test.comment.data());
-            //if (test.comment == L"can't move past the end of the 'document'")
-            //    DebugBreak();
             int amountMoved;
 
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, test.start, test.end));
