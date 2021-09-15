@@ -144,7 +144,6 @@ namespace Microsoft::Terminal::Settings::Model
                     std::wstring productLine{ GetProductLineVersion(catalogProperties) };
                     suffix.append(productLine);
 
-
                     ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
                     if (customProperties != nullptr)
                     {
