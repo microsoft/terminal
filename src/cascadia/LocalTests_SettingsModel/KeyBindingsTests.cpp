@@ -426,7 +426,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
         }
         {
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('E'), 0 };
@@ -434,7 +434,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
         }
         {
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('G'), 0 };
@@ -442,7 +442,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
         }
         {
             KeyChord kc{ true, false, false, false, static_cast<int32_t>('H'), 0 };
@@ -450,7 +450,7 @@ namespace SettingsModelLocalTests
             VERIFY_ARE_EQUAL(ShortcutAction::SplitPane, actionAndArgs.Action());
             const auto& realArgs = actionAndArgs.Args().as<SplitPaneArgs>();
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
         }
     }
 

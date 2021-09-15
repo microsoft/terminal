@@ -269,12 +269,12 @@ namespace winrt::TerminalApp::implementation
 
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
 
-        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitState splitType,
+        void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                         const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual,
                         const float splitSize = 0.5f,
                         const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
         void _SplitPane(TerminalTab& tab,
-                        const Microsoft::Terminal::Settings::Model::SplitState splitType,
+                        const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                         const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual,
                         const float splitSize = 0.5f,
                         const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);

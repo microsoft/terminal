@@ -337,8 +337,10 @@
 
         // Pane Management
         { "command": "closePane", "keys": "ctrl+shift+w" },
-        { "command": { "action": "splitPane", "split": "horizontal" }, "keys": "alt+shift+-" },
-        { "command": { "action": "splitPane", "split": "vertical" }, "keys": "alt+shift+plus" },
+        { "command": { "action": "splitPane", "split": "up" } },
+        { "command": { "action": "splitPane", "split": "down" }, "keys": "alt+shift+-" },
+        { "command": { "action": "splitPane", "split": "left" } },
+        { "command": { "action": "splitPane", "split": "right" }, "keys": "alt+shift+plus" },
         { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
         { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
         { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
@@ -431,10 +433,16 @@
                             "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "up" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "left" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" }
                         }
                     ]
                 }
