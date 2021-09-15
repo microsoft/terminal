@@ -81,7 +81,8 @@
                                                 SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                                <TextBox IsSpellCheckEnabled="False"
+                                         Style="{StaticResource TextBoxSettingStyle}"
                                          Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_CommandlineBrowse"
                                         Click="Commandline_Click"
@@ -99,6 +100,7 @@
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBox IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                             IsSpellCheckEnabled="False"
                                              Style="{StaticResource TextBoxSettingStyle}"
                                              Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" />
                                     <Button x:Name="StartingDirectoryBrowse"
@@ -120,6 +122,7 @@
                                                 SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox FontFamily="Segoe UI, Segoe MDL2 Assets"
+                                         IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
                                          Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_IconBrowse"

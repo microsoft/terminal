@@ -279,6 +279,7 @@
         "paste",
         "prevTab",
         "renameTab",
+        "openSystemMenu",
         "openTabRenamer",
         "quakeMode",
         "resetFontSize",
@@ -304,6 +305,7 @@
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
+        "quit",
         "unbound"
       ],
       "type": "string"
@@ -346,11 +348,13 @@
       ],
       "type": "string"
     },
-    "SplitState": {
+    "SplitDirection": {
       "enum": [
-        "vertical",
-        "horizontal",
-        "auto"
+        "auto",
+        "up",
+        "right",
+        "down",
+        "left"
       ],
       "type": "string"
     },
@@ -629,9 +633,9 @@
           "properties": {
             "action": { "type": "string", "pattern": "splitPane" },
             "split": {
-              "$ref": "#/definitions/SplitState",
+              "$ref": "#/definitions/SplitDirection",
               "default": "auto",
-              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"horizontal\" (think [-])\n -\"vertical\" (think [|])"
+              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"up\" (think [-] and above)\n -\"down\" (think [-] and below)\n -\"left\" (think [|] and to the left)\n -\"right\"(think [|] and to the right)"
             },
             "splitMode": {
               "default": "duplicate",
@@ -1233,6 +1237,15 @@
           "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
           "type": "boolean"
         },
+        "firstWindowPreference": {
+          "default": "defaultProfile",
+          "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",
+          "enum": [
+            "defaultProfile",
+            "persistedWindowLayout"
+          ],
+          "type": "string"
+        },
         "launchMode": {
           "default": "default",
           "description": "Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to \"focus\" is equivalent to launching the terminal in the \"default\" mode, but with the focus mode enabled. Similar, setting this to \"maximizedFocus\" will result in launching the terminal in a maximized window with the focus mode enabled.",
@@ -1253,14 +1266,14 @@
           "type": [ "integer", "string" ],
           "deprecated": true
         },
-        "minimizeToTray": {
+        "minimizeToNotificationArea": {
           "default": "false",
-          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the system tray through which the user can access their windows.",
+          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the notification area through which the user can access their windows.",
           "type": "boolean"
         },
-        "alwaysShowTrayIcon": {
+        "alwaysShowNotificationIcon": {
           "default": "false",
-          "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
         "useAcrylicInTabRow": {

@@ -78,7 +78,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseWindow();
+        CloseWindow(false);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleQuit(const IInspectable& /*sender*/,
+                                   const ActionEventArgs& args)
+    {
+        RequestQuit();
         args.Handled(true);
     }
 
@@ -166,7 +173,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(),
+            _SplitPane(realArgs.SplitDirection(),
                        realArgs.SplitMode(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
@@ -873,6 +880,13 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
+    }
+
+    void TerminalPage::_HandleOpenSystemMenu(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _OpenSystemMenuHandlers(*this, nullptr);
+        args.Handled(true);
     }
 
     void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,

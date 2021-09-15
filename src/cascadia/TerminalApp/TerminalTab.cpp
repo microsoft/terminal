@@ -445,6 +445,50 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Serializes the state of this tab as a series of commands that can be
+    //   executed to recreate it.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - A vector of commands
+    std::vector<ActionAndArgs> TerminalTab::BuildStartupActions() const
+    {
+        // Give initial ids (0 for the child created with this tab,
+        // 1 for the child after the first split.
+        auto state = _rootPane->BuildStartupActions(0, 1);
+
+        ActionAndArgs newTabAction{};
+        newTabAction.Action(ShortcutAction::NewTab);
+        NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
+        newTabAction.Args(newTabArgs);
+
+        state.args.emplace(state.args.begin(), std::move(newTabAction));
+
+        // If we only have one arg, we only have 1 pane so we don't need any
+        // special focus logic
+        if (state.args.size() > 1 && state.focusedPaneId.has_value())
+        {
+            ActionAndArgs focusPaneAction{};
+            focusPaneAction.Action(ShortcutAction::FocusPane);
+            FocusPaneArgs focusArgs{ state.focusedPaneId.value() };
+            focusPaneAction.Args(focusArgs);
+
+            state.args.emplace_back(std::move(focusPaneAction));
+        }
+
+        if (_zoomedPane)
+        {
+            // we start without any panes zoomed so toggle zoom will enable zoom.
+            ActionAndArgs zoomPaneAction{};
+            zoomPaneAction.Action(ShortcutAction::TogglePaneZoom);
+
+            state.args.emplace_back(std::move(zoomPaneAction));
+        }
+
+        return state.args;
+    }
+
+    // Method Description:
     // - Split the focused pane in our tree of panes, and place the
     //   given TermControl into the newly created pane.
     // Arguments:
@@ -453,39 +497,38 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(SplitState splitType,
+    void TerminalTab::SplitPane(SplitDirection splitType,
                                 const float splitSize,
                                 const Profile& profile,
                                 TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
-        auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
+        // Depending on which direction will be split, the new pane can be
+        // either the first or second child, but this will always return the
+        // original pane first.
+        auto [original, newPane] = _activePane->Split(splitType, splitSize, profile, control);
         // The active pane has an id if it is a leaf
         if (activePaneId)
         {
-            first->Id(activePaneId.value());
-            second->Id(_nextPaneId);
-            ++_nextPaneId;
+            original->Id(activePaneId.value());
         }
-        else
-        {
-            second->Id(_nextPaneId);
-            ++_nextPaneId;
-        }
-        _activePane = first;
+        newPane->Id(_nextPaneId);
+        ++_nextPaneId;
+
+        _activePane = original;
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToControl(second->Id().value(), control);
-        _AttachEventHandlersToPane(first);
-        _AttachEventHandlersToPane(second);
+        _AttachEventHandlersToControl(newPane->Id().value(), control);
+        _AttachEventHandlersToPane(original);
+        _AttachEventHandlersToPane(newPane);
 
         // Immediately update our tracker of the focused pane now. If we're
         // splitting panes during startup (from a commandline), then it's
         // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
-        _UpdateActivePane(second);
+        _UpdateActivePane(newPane);
     }
 
     // Method Description:
@@ -571,7 +614,7 @@ namespace winrt::TerminalApp::implementation
         const auto previousId = _activePane->Id();
 
         // Add the new pane as an automatic split on the active pane.
-        auto first = _activePane->AttachPane(pane, SplitState::Automatic);
+        auto first = _activePane->AttachPane(pane, SplitDirection::Automatic);
 
         // This will be true if the original _activePane is a leaf pane.
         // If it is a parent pane then we don't want to set an ID on it.
@@ -1501,14 +1544,14 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - availableSpace: The theoretical space that's available for this Tab's content
     // Return Value:
-    // - The SplitState that we should use for an `Automatic` split given
+    // - The SplitDirection that we should use for an `Automatic` split given
     //   `availableSpace`
-    SplitState TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
+    SplitDirection TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
+        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitDirection::Right);
     }
 
-    bool TerminalTab::PreCalculateCanSplit(SplitState splitType,
+    bool TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
                                            const float splitSize,
                                            winrt::Windows::Foundation::Size availableSpace) const
     {

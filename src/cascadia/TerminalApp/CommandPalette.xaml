@@ -407,7 +407,7 @@
               HorizontalAlignment="Stretch"
               VerticalAlignment="Top"
               Windows10version1903:Shadow="{StaticResource CommandPaletteShadow}"
-              CornerRadius="{ThemeResource ControlCornerRadius}"
+              CornerRadius="{ThemeResource OverlayCornerRadius}"
               PointerPressed="_backdropPointerPressed"
               Style="{ThemeResource CommandPaletteBackground}">
 
