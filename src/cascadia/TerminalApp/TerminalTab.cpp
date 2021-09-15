@@ -1489,7 +1489,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_RefreshVisualState()
     {
-        if (_focusState != FocusState::Unfocused)
+        
+        if (TabViewItem().IsSelected())
         {
             VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
             VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
