@@ -1298,7 +1298,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<FindMatchArgs>(val) };
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
             return json;
         }
         IActionArgs Copy() const
