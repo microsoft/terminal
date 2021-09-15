@@ -1397,13 +1397,22 @@ namespace winrt::TerminalApp::implementation
         deselectedTabBrush.Color(deselectedTabColor);
 
         // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        // TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        // signified by using the same color with a bit of transparency
+        //
+        // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
+        // use TabViewItem().Background() for that. HOWEVER,
+        // TabViewItem().Background() only sets the color of the tab background
+        // when the TabViewItem is unselected. So we still need to set the other
+        // properties ourselves.
         TabViewItem().Background(deselectedTabBrush);
+        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        // TabViewItem().Foreground(fontBrush);
+
+        // TabViewItem().Foreground() unfortunately does not work for us. It
+        // sets the color for the text when the TabViewItem isn't selected, but
+        // not when it is hovered, pressed, dragged, or selected, so we'll need
+        // to just set them all anyways.
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
@@ -1441,7 +1450,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_ClearTabBackgroundColor()
     {
         winrt::hstring keys[] = {
-            L"TabViewItemHeaderBackground",
             L"TabViewItemHeaderBackgroundSelected",
             L"TabViewItemHeaderBackgroundPointerOver",
             L"TabViewItemHeaderForeground",
@@ -1462,8 +1470,8 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
+        // Clear out the Background.
         TabViewItem().Background(nullptr);
-        // TabViewItem().Foreground(nullptr);
 
         _RefreshVisualState();
         _colorCleared();
@@ -1489,7 +1497,6 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_RefreshVisualState()
     {
-        
         if (TabViewItem().IsSelected())
         {
             VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
