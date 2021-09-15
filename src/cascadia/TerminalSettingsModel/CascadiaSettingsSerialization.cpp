@@ -547,7 +547,7 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, ParsedSet
 
 // We offer a global option called "disabledProfileSources" (it's an array of strings).
 // If the option contains "Windows.Terminal.Wsl" for instance, we'll not generate any dynamic WSL profiles.
-// 
+//
 // Unfortunately this poses a problem: What about existing user profiles?
 // This function ensures that existing profiles with such disabled sources are removed.
 void SettingsLoader::_removeIgnoredProfiles(ParsedSettings& settings)
@@ -604,7 +604,7 @@ try
     // --> FindFragmentsAndMergeIntoUserSettings must be called after MergeInboxIntoUserSettings.
     loader.FindFragmentsAndMergeIntoUserSettings();
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
-    // Coincidentially this is also the time we should write the new settings.json
+    // Coincidentally this is also the time we should write the new settings.json
     // to disk (so that it contains the new profiles for manual editing by the user).
     mustWriteToDisk |= loader.DisableDeletedProfiles();
     loader.FinalizeLayering();
@@ -761,8 +761,7 @@ winrt::hstring CascadiaSettings::DefaultSettingsPath()
     // directory as the exe, that will work for unpackaged scenarios as well. So
     // let's try that.
 
-    std::wstring exePathString;
-    THROW_IF_FAILED(wil::GetModuleFileNameW(nullptr, exePathString));
+    const auto exePathString = wil::GetModuleFileNameW<std::wstring>(nullptr);
 
     std::filesystem::path path{ exePathString };
     path.replace_filename(DefaultsFilename);
