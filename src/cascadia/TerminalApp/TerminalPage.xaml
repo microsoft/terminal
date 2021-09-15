@@ -47,6 +47,11 @@
             </StackPanel>
         </ContentDialog>
 
+        <ContentDialog x:Name="QuitDialog"
+                       x:Uid="QuitDialog"
+                       x:Load="False"
+                       DefaultButton="Primary" />
+
         <ContentDialog x:Name="CloseAllDialog"
                        x:Uid="CloseAllDialog"
                        x:Load="False"
@@ -109,13 +114,33 @@
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
 
-        <mux:InfoBar x:Name="KeyboardWarningInfoBar"
-                     x:Load="False"
-                     IsClosable="True"
-                     IsIconVisible="True"
-                     IsOpen="False"
-                     Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
-                     Severity="Warning" />
+        <StackPanel>
+            <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
+                         x:Load="False"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
+                         Severity="Warning">
+                <mux:InfoBar.ActionButton>
+                    <Button x:Uid="InfoBarDismissButton"
+                            Click="_KeyboardServiceWarningInfoDismissHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+
+            <mux:InfoBar x:Name="CloseOnExitInfoBar"
+                         x:Uid="CloseOnExitInfoBar"
+                         x:Load="False"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Severity="Informational">
+                <mux:InfoBar.ActionButton>
+                    <Button x:Uid="InfoBarDismissButton"
+                            Click="_CloseOnExitInfoDismissHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+        </StackPanel>
 
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately

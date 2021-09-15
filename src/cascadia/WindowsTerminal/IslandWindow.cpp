@@ -6,7 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
 #include "icon.h"
-#include "TrayIcon.h"
+#include "NotificationIcon.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -570,20 +570,20 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             }
         }
     }
-    case CM_NOTIFY_FROM_TRAY:
+    case CM_NOTIFY_FROM_NOTIFICATION_AREA:
     {
         switch (LOWORD(lparam))
         {
         case NIN_SELECT:
         case NIN_KEYSELECT:
         {
-            _NotifyTrayIconPressedHandlers();
+            _NotifyNotificationIconPressedHandlers();
             return 0;
         }
         case WM_CONTEXTMENU:
         {
             const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
-            _NotifyShowTrayContextMenuHandlers(eventPoint);
+            _NotifyShowNotificationIconContextMenuHandlers(eventPoint);
             return 0;
         }
         }
@@ -591,17 +591,17 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_MENUCOMMAND:
     {
-        _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
+        _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         return 0;
     }
     default:
         // We'll want to receive this message when explorer.exe restarts
-        // so that we can re-add our icon to the tray.
+        // so that we can re-add our icon to the notification area.
         // This unfortunately isn't a switch case because we register the
         // message at runtime.
         if (message == WM_TASKBARCREATED)
         {
-            _NotifyReAddTrayIconHandlers();
+            _NotifyReAddNotificationIconHandlers();
             return 0;
         }
     }
@@ -628,7 +628,7 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 void IslandWindow::OnMinimize()
 {
     // TODO GH#1989 Stop rendering island content when the app is minimized.
-    if (_minimizeToTray)
+    if (_minimizeToNotificationArea)
     {
         HideWindow();
     }
@@ -1640,9 +1640,67 @@ void IslandWindow::HideWindow()
     ShowWindow(GetHandle(), SW_HIDE);
 }
 
-void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
+void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept
 {
-    _minimizeToTray = minimizeToTray;
+    _minimizeToNotificationArea = MinimizeToNotificationArea;
+}
+
+// Method Description:
+// - Opens the window's system menu.
+// - The system menu is the menu that opens when the user presses Alt+Space or
+//   right clicks on the title bar.
+// - Before updating the menu, we update the buttons like "Maximize" and
+//   "Restore" so that they are grayed out depending on the window's state.
+// Arguments:
+// - cursorX: the cursor's X position in screen coordinates
+// - cursorY: the cursor's Y position in screen coordinates
+void IslandWindow::OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept
+{
+    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
+
+    WINDOWPLACEMENT placement;
+    if (!GetWindowPlacement(_window.get(), &placement))
+    {
+        return;
+    }
+    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
+
+    // Update the options based on window state.
+    MENUITEMINFO mii;
+    mii.cbSize = sizeof(MENUITEMINFO);
+    mii.fMask = MIIM_STATE;
+    mii.fType = MFT_STRING;
+    auto setState = [&](UINT item, bool enabled) {
+        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
+        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
+    };
+    setState(SC_RESTORE, isMaximized);
+    setState(SC_MOVE, !isMaximized);
+    setState(SC_SIZE, !isMaximized);
+    setState(SC_MINIMIZE, true);
+    setState(SC_MAXIMIZE, !isMaximized);
+    setState(SC_CLOSE, true);
+    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
+
+    int xPos;
+    int yPos;
+    if (mouseX && mouseY)
+    {
+        xPos = mouseX.value();
+        yPos = mouseY.value();
+    }
+    else
+    {
+        RECT windowPos;
+        ::GetWindowRect(GetHandle(), &windowPos);
+        xPos = windowPos.left;
+        yPos = windowPos.top;
+    }
+    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, xPos, yPos, 0, _window.get(), nullptr);
+    if (ret != 0)
+    {
+        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
+    }
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);

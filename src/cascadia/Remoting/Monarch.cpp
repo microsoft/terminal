@@ -80,8 +80,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             peasant.IdentifyWindowsRequested({ this, &Monarch::_identifyWindows });
             peasant.RenameRequested({ this, &Monarch::_renameRequested });
 
-            peasant.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequestedHandlers(*this, nullptr); });
-            peasant.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequestedHandlers(*this, nullptr); });
+            peasant.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
+            peasant.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
+            peasant.QuitAllRequested({ this, &Monarch::_handleQuitAll });
 
             _peasants[newPeasantsId] = peasant;
 
@@ -91,6 +92,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                               TraceLoggingUInt64(newPeasantsId, "peasantID", "the ID of the new peasant"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+            _WindowCreatedHandlers(nullptr, nullptr);
             return newPeasantsId;
         }
         catch (...)
@@ -105,6 +108,75 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             // get it.
             return -1;
         }
+    }
+
+    // Method Description:
+    // - Gives the host process an opportunity to run any pre-close logic then
+    //   requests all peasants to close.
+    // Arguments:
+    // - <none> used
+    // Return Value:
+    // - <none>
+    void Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
+    {
+        // Let the process hosting the monarch run any needed logic before
+        // closing all windows.
+        _QuitAllRequestedHandlers(*this, nullptr);
+
+        // Tell all peasants to exit.
+        const auto callback = [&](const auto& /*id*/, const auto& p) {
+            p.Quit();
+        };
+        const auto onError = [&](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_handleQuitAll_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not close"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forEachPeasant(callback, onError);
+    }
+
+    // Method Description:
+    // - Tells the monarch that a peasant is being closed.
+    // Arguments:
+    // - peasantId: the id of the peasant
+    // Return Value:
+    // - <none>
+    void Monarch::SignalClose(const uint64_t peasantId)
+    {
+        _clearOldMruEntries(peasantId);
+        _peasants.erase(peasantId);
+        _WindowClosedHandlers(nullptr, nullptr);
+    }
+
+    // Method Description:
+    // - Counts the number of living peasants.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the number of active peasants.
+    uint64_t Monarch::GetNumberOfPeasants()
+    {
+        auto num = 0;
+        auto callback = [&](const auto& /*id*/, const auto& p) {
+            // Check that the peasant is alive, and if so increment the count
+            p.GetID();
+            num += 1;
+        };
+        auto onError = [](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_GetNumberOfPeasants_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not enumerate"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forEachPeasant(callback, onError);
+
+        return num;
     }
 
     // Method Description:
@@ -614,39 +686,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     }
 
     // Method Description:
-    // - Helper for doing something on each and every peasant, with no regard
-    //   for if the peasant is living or dead.
-    // - We'll try calling callback on every peasant.
-    // - If any single peasant is dead, then we'll call errorCallback, and move on.
-    // - We're taking an errorCallback here, because the thing we usually want
-    //   to do is TraceLog a message, but TraceLoggingWrite is actually a macro
-    //   that _requires_ the second arg to be a string literal. It can't just be
-    //   a variable.
-    // Arguments:
-    // - callback: The function to call on each peasant
-    // - errorCallback: The function to call if a peasant is dead.
-    // Return Value:
-    // - <none>
-    void Monarch::_forAllPeasantsIgnoringTheDead(std::function<void(const Remoting::IPeasant&, const uint64_t)> callback,
-                                                 std::function<void(const uint64_t)> errorCallback)
-    {
-        for (const auto& [id, p] : _peasants)
-        {
-            try
-            {
-                callback(p, id);
-            }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                // If this fails, we don't _really_ care. Just move on to the
-                // next one. Someone else will clean up the dead peasant.
-                errorCallback(id);
-            }
-        }
-    }
-
-    // Method Description:
     // - This is an event handler for the IdentifyWindowsRequested event. A
     //   Peasant may raise that event if they want _all_ windows to identify
     //   themselves.
@@ -660,17 +699,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                    const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
         // Notify all the peasants to display their ID.
-        auto callback = [](auto&& p, auto&& /*id*/) {
+        const auto callback = [&](const auto& /*id*/, const auto& p) {
             p.DisplayWindowId();
         };
-        auto onError = [](auto&& id) {
+        const auto onError = [&](const auto& id) {
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_identifyWindows_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         };
-        _forAllPeasantsIgnoringTheDead(callback, onError);
+
+        _forEachPeasant(callback, onError);
     }
 
     // Method Description:
@@ -812,48 +852,68 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     // Return Value:
     // - A map of peasant IDs to their names.
-    Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> Monarch::GetPeasantNames()
+    Windows::Foundation::Collections::IVectorView<PeasantInfo> Monarch::GetPeasantInfos()
     {
-        auto names = winrt::single_threaded_map<uint64_t, winrt::hstring>();
+        std::vector<PeasantInfo> names;
+        names.reserve(_peasants.size());
 
-        std::vector<uint64_t> peasantsToErase{};
-        for (const auto& [id, p] : _peasants)
-        {
-            try
+        const auto func = [&](const auto& id, const auto& p) -> void {
+            names.push_back({ id, p.WindowName(), p.ActiveTabTitle() });
+        };
+
+        const auto onError = [&](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_identifyWindows_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not identify"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+
+        _forEachPeasant(func, onError);
+
+        return winrt::single_threaded_vector<PeasantInfo>(std::move(names)).GetView();
+    }
+
+    bool Monarch::DoesQuakeWindowExist()
+    {
+        bool result = false;
+        const auto func = [&](const auto& /*id*/, const auto& p) {
+            if (p.WindowName() == QuakeWindowName)
             {
-                names.Insert(id, p.WindowName());
+                result = true;
             }
-            catch (...)
-            {
-                LOG_CAUGHT_EXCEPTION();
-                peasantsToErase.push_back(id);
-            }
-        }
+            // continue if we didn't get a positive result
+            return !result;
+        };
 
-        // Remove the dead peasants we came across while iterating.
-        for (const auto& id : peasantsToErase)
-        {
-            _peasants.erase(id);
-            _clearOldMruEntries(id);
-        }
+        const auto onError = [&](const auto& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_DoesQuakeWindowExist_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not ask for its name"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
 
-        return names.GetView();
+        _forEachPeasant(func, onError);
+        return result;
     }
 
     void Monarch::SummonAllWindows()
     {
-        auto callback = [](auto&& p, auto&& /*id*/) {
+        const auto func = [&](const auto& /*id*/, const auto& p) {
             SummonWindowBehavior args{};
             args.ToggleVisibility(false);
             p.Summon(args);
         };
-        auto onError = [](auto&& id) {
+
+        const auto onError = [&](const auto& id) {
             TraceLoggingWrite(g_hRemotingProvider,
                               "Monarch_SummonAll_Failed",
                               TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not summon"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         };
-        _forAllPeasantsIgnoringTheDead(callback, onError);
+
+        _forEachPeasant(func, onError);
     }
 }

@@ -79,10 +79,13 @@ namespace winrt::TerminalApp::implementation
         void ResetRuntimeTabColor();
         void ActivateColorPicker();
 
+        void UpdateZoom(std::shared_ptr<Pane> newFocus);
         void ToggleZoom();
         bool IsZoomed();
         void EnterZoom();
         void ExitZoom();
+
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const;
 
         int GetLeafPaneCount() const noexcept;
 

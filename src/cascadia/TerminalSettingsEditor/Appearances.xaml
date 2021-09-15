@@ -206,6 +206,7 @@
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
                         <TextBox IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
+                                 IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
                                  Text="{x:Bind local:Converters.StringFallBackToEmptyString('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                         <Button x:Uid="Profile_BackgroundImageBrowse"

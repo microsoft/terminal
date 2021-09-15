@@ -84,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::FirstWindowPreference, FirstWindowPreference, FirstWindowPreference::DefaultProfile);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);
@@ -99,8 +100,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, MinimizeToTray, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTrayIcon, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, MinimizeToNotificationArea, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowNotificationIcon, false);
 
     private:
         guid _defaultProfile;
