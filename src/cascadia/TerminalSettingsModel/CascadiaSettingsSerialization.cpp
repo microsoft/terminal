@@ -666,16 +666,11 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader)
         // a profile from a fragment doesn't exist anymore, we should also stop including the
         // matching user's profile in _allProfiles (since they aren't functional anyways).
         //
-        // Any profile with a source requires a generated parent (as a source signals that it was generated previously).
+        // A user profile has a valid, dynamic parent if it has a parent with identical source.
         if (const auto source = profile->Source(); !source.empty())
         {
-            static constexpr auto isDynamic = [](const auto& profile) {
-                const auto origin = profile->Origin();
-                return origin == OriginTag::Generated || origin == OriginTag::Fragment;
-            };
-
             const auto& parents = profile->Parents();
-            if (std::none_of(parents.begin(), parents.end(), isDynamic))
+            if (std::none_of(parents.begin(), parents.end(), [&](const auto& parent) { return parent->Source() == source; }))
             {
                 continue;
             }
