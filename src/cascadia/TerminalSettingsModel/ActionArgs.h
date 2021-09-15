@@ -674,21 +674,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
         SplitPaneArgs() = default;
-        SplitPaneArgs(SplitType splitMode, SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
+        SplitPaneArgs(SplitType splitMode, SplitDirection direction, double size, const Model::NewTerminalArgs& terminalArgs) :
             _SplitMode{ splitMode },
-            _SplitStyle{ style },
+            _SplitDirection{ direction },
             _SplitSize{ size },
             _TerminalArgs{ terminalArgs } {};
-        SplitPaneArgs(SplitState style, double size, const Model::NewTerminalArgs& terminalArgs) :
-            _SplitStyle{ style },
+        SplitPaneArgs(SplitDirection direction, double size, const Model::NewTerminalArgs& terminalArgs) :
+            _SplitDirection{ direction },
             _SplitSize{ size },
             _TerminalArgs{ terminalArgs } {};
-        SplitPaneArgs(SplitState style, const Model::NewTerminalArgs& terminalArgs) :
-            _SplitStyle{ style },
+        SplitPaneArgs(SplitDirection direction, const Model::NewTerminalArgs& terminalArgs) :
+            _SplitDirection{ direction },
             _TerminalArgs{ terminalArgs } {};
         SplitPaneArgs(SplitType splitMode) :
             _SplitMode{ splitMode } {};
-        ACTION_ARG(SplitState, SplitStyle, SplitState::Automatic);
+        ACTION_ARG(Model::SplitDirection, SplitDirection, SplitDirection::Automatic);
         WINRT_PROPERTY(Model::NewTerminalArgs, TerminalArgs, nullptr);
         ACTION_ARG(SplitType, SplitMode, SplitType::Manual);
         ACTION_ARG(double, SplitSize, .5);
@@ -705,7 +705,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             auto otherAsUs = other.try_as<SplitPaneArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_SplitStyle == _SplitStyle &&
+                return otherAsUs->_SplitDirection == _SplitDirection &&
                        (otherAsUs->_TerminalArgs ? otherAsUs->_TerminalArgs.Equals(_TerminalArgs) :
                                                    otherAsUs->_TerminalArgs == _TerminalArgs) &&
                        otherAsUs->_SplitSize == _SplitSize &&
@@ -718,7 +718,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<SplitPaneArgs>();
             args->_TerminalArgs = NewTerminalArgs::FromJson(json);
-            JsonUtils::GetValueForKey(json, SplitKey, args->_SplitStyle);
+            JsonUtils::GetValueForKey(json, SplitKey, args->_SplitDirection);
             JsonUtils::GetValueForKey(json, SplitModeKey, args->_SplitMode);
             JsonUtils::GetValueForKey(json, SplitSizeKey, args->_SplitSize);
             if (args->SplitSize() >= 1 || args->SplitSize() <= 0)
@@ -735,7 +735,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             const auto args{ get_self<SplitPaneArgs>(val) };
             auto json{ NewTerminalArgs::ToJson(args->_TerminalArgs) };
-            JsonUtils::SetValueForKey(json, SplitKey, args->_SplitStyle);
+            JsonUtils::SetValueForKey(json, SplitKey, args->_SplitDirection);
             JsonUtils::SetValueForKey(json, SplitModeKey, args->_SplitMode);
             JsonUtils::SetValueForKey(json, SplitSizeKey, args->_SplitSize);
             return json;
@@ -743,7 +743,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<SplitPaneArgs>() };
-            copy->_SplitStyle = _SplitStyle;
+            copy->_SplitDirection = _SplitDirection;
             copy->_TerminalArgs = _TerminalArgs.Copy();
             copy->_SplitMode = _SplitMode;
             copy->_SplitSize = _SplitSize;
@@ -751,7 +751,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SplitStyle(), TerminalArgs(), SplitMode(), SplitSize());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SplitDirection(), TerminalArgs(), SplitMode(), SplitSize());
         }
     };
 

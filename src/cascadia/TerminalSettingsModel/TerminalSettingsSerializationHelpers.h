@@ -369,12 +369,16 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ResizeDirection)
 };
 
 // Possible SplitState values
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitDirection)
 {
-    JSON_MAPPINGS(3) = {
-        pair_type{ "vertical", ValueType::Vertical },
-        pair_type{ "horizontal", ValueType::Horizontal },
+    JSON_MAPPINGS(7) = {
         pair_type{ "auto", ValueType::Automatic },
+        pair_type{ "up", ValueType::Up },
+        pair_type{ "right", ValueType::Right },
+        pair_type{ "down", ValueType::Down },
+        pair_type{ "left", ValueType::Left },
+        pair_type{ "vertical", ValueType::Right },
+        pair_type{ "horizontal", ValueType::Down },
     };
 };
 
