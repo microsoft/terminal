@@ -665,11 +665,11 @@
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Command Palette</value>
   </data>
-  <data name="TrayIconFocusTerminal" xml:space="preserve">
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
     <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
   </data>
-  <data name="TrayIconWindowSubmenu" xml:space="preserve">
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>

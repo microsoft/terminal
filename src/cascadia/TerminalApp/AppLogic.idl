@@ -73,8 +73,8 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
 
-        Boolean GetMinimizeToTray();
-        Boolean GetAlwaysShowTrayIcon();
+        Boolean GetMinimizeToNotificationArea();
+        Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
 
         FindTargetWindowResult FindTargetWindow(String[] args);

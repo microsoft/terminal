@@ -95,8 +95,8 @@ namespace winrt::TerminalApp::implementation
 
         winrt::TerminalApp::TaskbarState TaskbarState();
 
-        bool GetMinimizeToTray();
-        bool GetAlwaysShowTrayIcon();
+        bool GetMinimizeToNotificationArea();
+        bool GetAlwaysShowNotificationIcon();
         bool GetShowTitleInTitlebar();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
