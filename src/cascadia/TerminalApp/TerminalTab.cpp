@@ -1371,47 +1371,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_ApplyTabColor(const winrt::Windows::UI::Color& color)
     {
-        Media::SolidColorBrush selectedTabBrush{};
-        Media::SolidColorBrush deselectedTabBrush{};
-        Media::SolidColorBrush fontBrush{};
-        Media::SolidColorBrush hoverTabBrush{};
-        // calculate the luminance of the current color and select a font
-        // color based on that
-        // see https://www.w3.org/TR/WCAG20/#relativeluminancedef
-        if (TerminalApp::ColorHelper::IsBrightColor(color))
-        {
-            fontBrush.Color(winrt::Windows::UI::Colors::Black());
-        }
-        else
-        {
-            fontBrush.Color(winrt::Windows::UI::Colors::White());
-        }
-
-        hoverTabBrush.Color(TerminalApp::ColorHelper::GetAccentColor(color));
-        selectedTabBrush.Color(color);
-
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
-        auto deselectedTabColor = color;
-        deselectedTabColor.A = 64;
-        deselectedTabBrush.Color(deselectedTabColor);
-
-        // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundActiveTab"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPressed"), fontBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewButtonForegroundPointerOver"), fontBrush);
-
-        _RefreshVisualState();
-
+        TabViewItem().Background(Media::SolidColorBrush{ color });
         _colorSelected(color);
     }
 
@@ -1438,29 +1398,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_ClearTabBackgroundColor()
     {
-        winrt::hstring keys[] = {
-            L"TabViewItemHeaderBackground",
-            L"TabViewItemHeaderBackgroundSelected",
-            L"TabViewItemHeaderBackgroundPointerOver",
-            L"TabViewItemHeaderForeground",
-            L"TabViewItemHeaderForegroundSelected",
-            L"TabViewItemHeaderForegroundPointerOver",
-            L"TabViewItemHeaderBackgroundPressed",
-            L"TabViewItemHeaderForegroundPressed",
-            L"TabViewButtonForegroundActiveTab"
-        };
-
-        // simply clear any of the colors in the tab's dict
-        for (auto keyString : keys)
-        {
-            auto key = winrt::box_value(keyString);
-            if (TabViewItem().Resources().HasKey(key))
-            {
-                TabViewItem().Resources().Remove(key);
-            }
-        }
-
-        _RefreshVisualState();
+        TabViewItem().Background(nullptr);
         _colorCleared();
     }
 
