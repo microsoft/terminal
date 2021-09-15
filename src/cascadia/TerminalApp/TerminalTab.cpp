@@ -1399,9 +1399,11 @@ namespace winrt::TerminalApp::implementation
         // currently if a tab has a custom color, a deselected state is
         // signified by using the same color with a bit ot transparency
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        // TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        TabViewItem().Background(deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+        // TabViewItem().Foreground(fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
@@ -1459,6 +1461,9 @@ namespace winrt::TerminalApp::implementation
                 TabViewItem().Resources().Remove(key);
             }
         }
+
+        TabViewItem().Background(nullptr);
+        // TabViewItem().Foreground(nullptr);
 
         _RefreshVisualState();
         _colorCleared();
