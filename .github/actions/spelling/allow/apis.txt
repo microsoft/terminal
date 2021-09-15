@@ -66,6 +66,7 @@ iosfwd
 IPackage
 IPeasant
 isspace
+ISetup
 IStorage
 istream
 IStringable
