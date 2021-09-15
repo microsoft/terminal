@@ -144,8 +144,8 @@ try
     TOKEN_ELEVATION elevationState{ 0 };
 
     OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &hToken);
-    GetTokenInformation(hToken.get(), TokenElevationType, &elevationType, sizeof(elevationType), &dwSize);
-    GetTokenInformation(hToken.get(), TokenElevation, &elevationState, sizeof(elevationState), &dwSize);
+    THROW_IF_WIN32_BOOL_FALSE(GetTokenInformation(hToken.get(), TokenElevationType, &elevationType, sizeof(elevationType), &dwSize));
+    THROW_IF_WIN32_BOOL_FALSE(GetTokenInformation(hToken.get(), TokenElevation, &elevationState, sizeof(elevationState), &dwSize));
     if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
     {
         // In this case, the user has UAC entirely disabled. This is sort of
