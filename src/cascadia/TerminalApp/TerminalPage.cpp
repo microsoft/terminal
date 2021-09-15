@@ -416,8 +416,8 @@ namespace winrt::TerminalApp::implementation
             // command line and also to load from a particular layout.
             if (idx && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
             {
-                auto i = idx.value();
-                auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+                const auto i = idx.value();
+                const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
                 if (layouts && layouts.Size() > i && layouts.GetAt(i).TabLayout() && layouts.GetAt(i).TabLayout().Size() > 0)
                 {
                     _startupActions = layouts.GetAt(i).TabLayout();

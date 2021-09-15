@@ -228,8 +228,8 @@ void AppHost::_HandleCommandlineArgs()
         // is created.
         if (_windowManager.IsMonarch())
         {
-            auto numPeasants = _windowManager.GetNumberOfPeasants();
-            auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            const auto numPeasants = _windowManager.GetNumberOfPeasants();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
             if (_logic.ShouldUsePersistedLayout() && layouts && layouts.Size() > 0)
             {
                 uint32_t startIdx = 0;
@@ -248,9 +248,9 @@ void AppHost::_HandleCommandlineArgs()
 
                     STARTUPINFO si;
                     PROCESS_INFORMATION pi;
-                    ZeroMemory(&si, sizeof(si));
+                    memset(&si, 0, sizeof(si));
                     si.cb = sizeof(si);
-                    ZeroMemory(&pi, sizeof(pi));
+                    memset(&pi, 0, sizeof(pi));
 
                     try
                     {
@@ -412,10 +412,10 @@ LaunchPosition AppHost::_GetWindowLaunchPosition()
 {
     // Get the position of the current window. This includes the
     // non-client already.
-    auto window = _window->GetWindowRect();
+    const auto window = _window->GetWindowRect();
 
-    auto dpi = _window->GetCurrentDpi();
-    auto nonClientArea = _window->GetNonClientFrame(dpi);
+    const auto dpi = _window->GetCurrentDpi();
+    const auto nonClientArea = _window->GetNonClientFrame(dpi);
 
     // The nonClientArea adjustment is negative, so subtract that out.
     // This way we save the user-visible location of the terminal.
@@ -837,10 +837,11 @@ winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
 
     co_await _SaveWindowLayouts();
 
+    // don't need to save too frequently
+    co_await 30s;
+
     if (_getWindowLayoutThrottler.has_value())
     {
-        // don't need to save too frequently
-        co_await 30s;
         _getWindowLayoutThrottler.value()();
     }
 }
@@ -1195,6 +1196,13 @@ void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
 void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
                                 const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
 {
+    // Make sure that the current timer is destroyed so that it doesn't attempt
+    // to run while we are in the middle of quitting.
+    if (_getWindowLayoutThrottler.has_value())
+    {
+        _getWindowLayoutThrottler.reset();
+    }
+
     // Tell the monarch to wait for the window layouts to save before
     // everyone quits.
     args.BeforeQuitAllAction(_SaveWindowLayouts());

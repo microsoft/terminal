@@ -609,7 +609,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     {
         if (_monarch)
         {
-            return _monarch.GetAllWindowLayouts();
+            try
+            {
+                return _monarch.GetAllWindowLayouts();
+            }
+            CATCH_LOG()
         }
         return nullptr;
     }
