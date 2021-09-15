@@ -24,7 +24,6 @@ namespace Microsoft::Terminal::Settings::Model
     /// </summary>
     class VsSetupConfiguration
     {
-    private:
         typedef wil::com_ptr<ISetupConfiguration2> ComPtrSetupQuery;
         typedef wil::com_ptr<ISetupHelper> ComPtrSetupHelper;
         typedef wil::com_ptr<ISetupInstance> ComPtrSetupInstance;
@@ -38,12 +37,12 @@ namespace Microsoft::Terminal::Settings::Model
     public:
         struct VsSetupInstance
         {
-            inline std::wstring ResolvePath(std::wstring_view relativePath) const
+            std::wstring ResolvePath(std::wstring_view relativePath) const
             {
                 return VsSetupConfiguration::ResolvePath(inst.get(), relativePath);
             }
 
-            inline std::wstring GetDevShellModulePath() const
+            std::wstring GetDevShellModulePath() const
             {
                 // The path of Microsoft.VisualStudio.DevShell.dll changed in 16.3
                 if (VersionInRange(L"[16.3,"))
@@ -54,39 +53,39 @@ namespace Microsoft::Terminal::Settings::Model
                 return ResolvePath(L"Common7\\Tools\\vsdevshell\\Microsoft.VisualStudio.DevShell.dll");
             }
 
-            inline std::wstring GetDevCmdScriptPath() const
+            std::wstring GetDevCmdScriptPath() const
             {
                 return ResolvePath(L"Common7\\Tools\\VsDevCmd.bat");
             }
 
-            inline bool VersionInRange(std::wstring_view range) const
+            bool VersionInRange(std::wstring_view range) const
             {
-                return VsSetupConfiguration::InstallationVersionInRange(query.get(), inst.get(), range);
+                return InstallationVersionInRange(query.get(), inst.get(), range);
             }
 
-            inline std::wstring GetVersion() const
+            std::wstring GetVersion() const
             {
-                return VsSetupConfiguration::GetInstallationVersion(inst.get());
+                return GetInstallationVersion(inst.get());
             }
 
-            inline std::wstring GetInstallationPath() const
+            std::wstring GetInstallationPath() const
             {
                 return VsSetupConfiguration::GetInstallationPath(inst.get());
             }
 
-            inline std::wstring GetInstanceId() const
+            std::wstring GetInstanceId() const
             {
                 return VsSetupConfiguration::GetInstanceId(inst.get());
             }
 
-            inline ComPtrPropertyStore GetInstancePropertyStore() const
+            ComPtrPropertyStore GetInstancePropertyStore() const
             {
                 ComPtrPropertyStore properties;
                 inst.query_to<ISetupPropertyStore>(&properties);
                 return properties;
             }
 
-            inline ComPtrCustomPropertyStore GetCustomPropertyStore() const
+            ComPtrCustomPropertyStore GetCustomPropertyStore() const
             {
                 ComPtrSetupInstance2 instance2;
                 inst.query_to<ISetupInstance2>(&instance2);
@@ -99,7 +98,7 @@ namespace Microsoft::Terminal::Settings::Model
                 return properties;
             }
 
-            inline ComPtrCatalogPropertyStore GetCatalogPropertyStore() const
+            ComPtrCatalogPropertyStore GetCatalogPropertyStore() const
             {
                 ComPtrInstanceCatalog instanceCatalog;
                 inst.query_to<ISetupInstanceCatalog>(&instanceCatalog);
@@ -112,7 +111,7 @@ namespace Microsoft::Terminal::Settings::Model
                 return properties;
             }
 
-            inline std::wstring GetProfileNameSuffix() const
+            std::wstring GetProfileNameSuffix() const
             {
                 return profileNameSuffix;
             }
@@ -132,7 +131,7 @@ namespace Microsoft::Terminal::Settings::Model
 
             std::wstring profileNameSuffix;
 
-            inline std::wstring BuildProfileNameSuffix() const
+            std::wstring BuildProfileNameSuffix() const
             {
                 ComPtrCatalogPropertyStore catalogProperties = GetCatalogPropertyStore();
                 if (catalogProperties != nullptr)
@@ -168,7 +167,7 @@ namespace Microsoft::Terminal::Settings::Model
                 return GetVersion();
             }
 
-            inline std::wstring GetChannelNameSuffixTag(ISetupPropertyStore* instanceProperties) const
+            static std::wstring GetChannelNameSuffixTag(ISetupPropertyStore* instanceProperties)
             {
                 std::wstring tag;
                 std::wstring channelName{ GetChannelName(instanceProperties) };
@@ -186,12 +185,12 @@ namespace Microsoft::Terminal::Settings::Model
                 return tag;
             }
 
-            inline std::wstring GetChannelId(ISetupPropertyStore* instanceProperties) const
+            static std::wstring GetChannelId(ISetupPropertyStore* instanceProperties)
             {
-                return VsSetupConfiguration::GetStringProperty(instanceProperties, L"channelId");
+                return GetStringProperty(instanceProperties, L"channelId");
             }
 
-            inline std::wstring GetChannelName(ISetupPropertyStore* instanceProperties) const
+            static std::wstring GetChannelName(ISetupPropertyStore* instanceProperties)
             {
                 std::wstring channelId{ GetChannelId(instanceProperties) };
                 if (channelId.empty())
@@ -211,23 +210,20 @@ namespace Microsoft::Terminal::Settings::Model
                 return channelName;
             }
 
-            inline std::wstring GetNickname(ISetupPropertyStore* customProperties) const
+            static std::wstring GetNickname(ISetupPropertyStore* customProperties)
             {
-                return VsSetupConfiguration::GetStringProperty(customProperties, L"nickname");
+                return GetStringProperty(customProperties, L"nickname");
             }
 
-            inline std::wstring GetProductLineVersion(ISetupPropertyStore* customProperties) const
+            static std::wstring GetProductLineVersion(ISetupPropertyStore* customProperties)
             {
-                return VsSetupConfiguration::GetStringProperty(customProperties, L"productLineVersion");
+                return GetStringProperty(customProperties, L"productLineVersion");
             }
         };
 
-        static std::vector<VsSetupConfiguration::VsSetupInstance> QueryInstances();
+        static std::vector<VsSetupInstance> QueryInstances();
 
     private:
-        VsSetupConfiguration() = default;
-        ~VsSetupConfiguration() = default;
-
         static bool InstallationVersionInRange(ISetupConfiguration2* pQuery, ISetupInstance* pInst, std::wstring_view range);
         static std::wstring ResolvePath(ISetupInstance* pInst, std::wstring_view relativePath);
         static std::wstring GetInstallationVersion(ISetupInstance* pInst);

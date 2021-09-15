@@ -8,7 +8,7 @@ using namespace Microsoft::Terminal::Settings::Model;
 
 std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryInstances()
 {
-    std::vector<VsSetupConfiguration::VsSetupInstance> instances;
+    std::vector<VsSetupInstance> instances;
 
     // SetupConfiguration is only registered if Visual Studio is installed
     ComPtrSetupQuery pQuery{ wil::CoCreateInstanceNoThrow<SetupConfiguration, ISetupConfiguration2>() };
@@ -26,7 +26,7 @@ std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryIn
     while (S_OK == result)
     {
         // wrap the COM pointers in a friendly interface
-        instances.emplace_back(VsSetupConfiguration::VsSetupInstance{ pQuery, rgpInstance });
+        instances.emplace_back(VsSetupInstance{ pQuery, rgpInstance });
         result = e->Next(1, &rgpInstance, nullptr);
     }
 
@@ -51,7 +51,7 @@ std::wstring VsSetupConfiguration::ResolvePath(ISetupInstance* pInst, std::wstri
 /// </summary>
 bool VsSetupConfiguration::InstallationVersionInRange(ISetupConfiguration2* pQuery, ISetupInstance* pInst, std::wstring_view range)
 {
-    auto helper = wil::com_query<ISetupHelper>(pQuery);
+    const auto helper = wil::com_query<ISetupHelper>(pQuery);
 
     // VS versions in a string format such as "16.3.0.0" can be easily compared
     // by parsing them into 64-bit unsigned integers using the stable algorithm
