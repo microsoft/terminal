@@ -5,49 +5,33 @@
 #include "BaseVisualStudioGenerator.h"
 #include "DefaultProfileUtils.h"
 
-using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-std::vector<Profile> BaseVisualStudioGenerator::GenerateProfiles()
+void BaseVisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const
 {
-    std::vector<Profile> profiles;
-
     // There's no point in enumerating valid Visual Studio instances more than once,
     // so cache them for use by both Visual Studio profile generators.
-    if (!BaseVisualStudioGenerator::hasQueried)
-    {
-        instances = VsSetupConfiguration::QueryInstances();
-        hasQueried = true;
-    }
+    static const auto instances = VsSetupConfiguration::QueryInstances();
 
-    for (auto const& instance : BaseVisualStudioGenerator::instances)
+    for (auto const& instance : instances)
     {
         try
         {
             if (!IsInstanceValid(instance))
+            {
                 continue;
+            }
 
-            auto DevShell{ CreateProfile(GetProfileGuidSeed(instance)) };
-            DevShell.Name(GetProfileName(instance));
-            DevShell.Commandline(GetProfileCommandLine(instance));
-            DevShell.StartingDirectory(instance.GetInstallationPath());
-            DevShell.Icon(GetProfileIconPath());
-
-            profiles.emplace_back(DevShell);
+            const auto seed = GetProfileGuidSeed(instance);
+            const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(seed))) };
+            auto profile = winrt::make_self<implementation::Profile>(profileGuid);
+            profile->Origin(OriginTag::Generated);
+            profile->Name(winrt::hstring{ GetProfileName(instance) });
+            profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance) });
+            profile->StartingDirectory(winrt::hstring{ instance.GetInstallationPath() });
+            profile->Icon(winrt::hstring{ GetProfileIconPath() });
+            profiles.emplace_back(std::move(profile));
         }
         CATCH_LOG();
     }
-
-    return profiles;
-}
-
-Profile BaseVisualStudioGenerator::CreateProfile(const std::wstring_view seed)
-{
-    const winrt::guid profileGuid{ Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID,
-                                                                           gsl::as_bytes(gsl::make_span(seed))) };
-
-    auto newProfile = winrt::make_self<implementation::Profile>(profileGuid);
-    newProfile->Origin(OriginTag::Generated);
-
-    return *newProfile;
 }

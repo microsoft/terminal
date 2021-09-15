@@ -4,11 +4,11 @@
 #include "pch.h"
 #include "VsSetupConfiguration.h"
 
-using namespace Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryInstances()
 {
-    std::vector<VsSetupConfiguration::VsSetupInstance> instances;
+    std::vector<VsSetupInstance> instances;
 
     // SetupConfiguration is only registered if Visual Studio is installed
     ComPtrSetupQuery pQuery{ wil::CoCreateInstanceNoThrow<SetupConfiguration, ISetupConfiguration2>() };
@@ -26,7 +26,7 @@ std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryIn
     while (S_OK == result)
     {
         // wrap the COM pointers in a friendly interface
-        instances.emplace_back(VsSetupConfiguration::VsSetupInstance{ pQuery, rgpInstance[0] });
+        instances.emplace_back(VsSetupInstance{ pQuery, rgpInstance[0] });
         result = e->Next(1, &rgpInstance[0], NULL);
     }
 
