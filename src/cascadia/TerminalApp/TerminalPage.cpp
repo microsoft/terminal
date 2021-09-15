@@ -1076,7 +1076,6 @@ namespace winrt::TerminalApp::implementation
                                                                                  ::base::saturated_cast<uint32_t>(settings.InitialCols()),
                                                                                  winrt::guid());
 
-            
             if constexpr (Feature_VtPassthroughMode::IsEnabled())
             {
                 valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
@@ -1128,10 +1127,7 @@ namespace winrt::TerminalApp::implementation
                                                                                  ::base::saturated_cast<uint32_t>(settings.InitialCols()),
                                                                                  winrt::guid());
 
-            if constexpr (Feature_VtPassthroughMode::IsEnabled())
-            {
-                valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
-            }
+            valueSet.Insert(L"passthroughMode", Windows::Foundation::PropertyValue::CreateBoolean(settings.VtPassthrough()));
 
             conhostConn.Initialize(valueSet);
 

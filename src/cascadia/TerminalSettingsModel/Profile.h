@@ -118,10 +118,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
 
+<<<<<<< HEAD
 #define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
         MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
+=======
+        INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
+        INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
+        INHERITABLE_SETTING(Model::Profile, bool, VtPassthrough, false);
+
+        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
+        INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
+
+        INHERITABLE_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
+        INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
+        INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
+
+        INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
+
+        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+>>>>>>> a19198a9f (argument/option for passthrough mode)
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };

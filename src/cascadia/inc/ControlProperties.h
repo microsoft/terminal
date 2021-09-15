@@ -45,7 +45,8 @@
     X(bool, SuppressApplicationTitle)                                                                             \
     X(bool, ForceVTInput, false)                                                                                  \
     X(winrt::hstring, StartingTitle)                                                                              \
-    X(bool, DetectURLs, true)
+    X(bool, DetectURLs, true)                                                                                     \
+    X(bool, VtPassthrough, false)
 
 // --------------------------- Control Settings ---------------------------
 //  All of these settings are defined in IControlSettings.
