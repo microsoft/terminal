@@ -39,7 +39,6 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     const auto WSLDistro{ CreateDynamicProfile(WslGeneratorNamespace, distName) };
     WSLDistro->Commandline(winrt::hstring{ L"wsl.exe -d " + distName });
     WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
-    WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
     WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
     return WSLDistro;
 }

@@ -768,22 +768,28 @@ winrt::hstring CascadiaSettings::ApplicationDisplayName()
 
 winrt::hstring CascadiaSettings::ApplicationVersion()
 {
-    static constexpr auto formatVersion = [](const unsigned int a, const unsigned int b, const unsigned int c, const unsigned int d) {
-        return winrt::hstring{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", a, b, c, d) };
-    };
-
     try
     {
-        const auto package = winrt::Windows::ApplicationModel::Package::Current();
-        const auto version = package.Id().Version();
-        return formatVersion(version.Major, version.Minor, version.Build, version.Revision);
+        const auto package{ winrt::Windows::ApplicationModel::Package::Current() };
+        const auto version{ package.Id().Version() };
+        return winrt::hstring{ wil::str_printf<std::wstring>(L"%u.%u.%u.%u", version.Major, version.Minor, version.Build, version.Revision) };
     }
     CATCH_LOG();
 
-    // Fallback if Windows Terminal is run unpackaged.
-    // It queries the version information embedded in its own DLL.
+    // Get the product version the old-fashioned way from the localized version compartment.
+    // 
+    // We explicitly aren't using VS_FIXEDFILEINFO here, because our build pipeline puts
+    // a non-standard version number into the localized version field.
+    // For instance the fixed file info might contain "1.12.2109.13002",
+    // while the localized field might contain "1.11.210830001-release1.11".
     try
     {
+        struct LocalizationInfo
+        {
+            WORD language, codepage;
+        };
+
+        // Use the current module instance handle for TerminalApp.dll, nullptr for WindowsTerminal.exe
         const auto filename = wil::GetModuleFileNameW(wil::GetModuleInstanceHandle());
         const auto size = GetFileVersionInfoSizeExW(0, filename.get(), nullptr);
         THROW_LAST_ERROR_IF(size == 0);
@@ -791,16 +797,20 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
         const auto versionBuffer = std::make_unique<std::byte[]>(size);
         THROW_IF_WIN32_BOOL_FALSE(GetFileVersionInfoExW(0, filename.get(), 0, size, versionBuffer.get()));
 
-        VS_FIXEDFILEINFO* info = nullptr;
-        UINT infoSize = 0;
-        THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), L"\\", reinterpret_cast<void**>(&info), &infoSize));
-        THROW_HR_IF(E_UNEXPECTED, infoSize < sizeof(*info));
+        // Get the list of Version localizations
+        LocalizationInfo* translation = nullptr;
+        UINT translationSize = 0;
+        THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), L"\\VarFileInfo\\Translation", reinterpret_cast<void**>(&translation), &translationSize));
+        THROW_HR_IF(E_UNEXPECTED, translationSize < sizeof(*translation)); // there must be at least one translation
 
-        return formatVersion(
-            HIWORD(info->dwProductVersionMS),
-            LOWORD(info->dwProductVersionMS),
-            HIWORD(info->dwProductVersionLS),
-            LOWORD(info->dwProductVersionLS));
+        WCHAR* version = nullptr;
+        UINT versionLen = 0;
+        const auto localizedVersionName = wil::str_printf<std::wstring>(
+            L"\\StringFileInfo\\%04x%04x\\ProductVersion",
+            translation->language ? translation->language : 0x0409, // well-known en-US LCID
+            translation->codepage);
+        THROW_IF_WIN32_BOOL_FALSE(VerQueryValueW(versionBuffer.get(), localizedVersionName.c_str(), reinterpret_cast<void**>(&version), &versionLen));
+        return { version };
     }
     CATCH_LOG();
 
@@ -818,7 +828,7 @@ bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
 {
     OSVERSIONINFOEXW osver{};
     osver.dwOSVersionInfoSize = sizeof(osver);
-    osver.dwBuildNumber = 21359;
+    osver.dwBuildNumber = 22000;
 
     DWORDLONG dwlConditionMask = 0;
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);

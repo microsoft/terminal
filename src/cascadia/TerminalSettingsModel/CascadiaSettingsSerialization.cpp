@@ -69,7 +69,7 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
 }
 
 // Concatenates the two given strings and returns them as a path.
-std::filesystem::path buildPath(const std::wstring_view& lhs, const std::wstring_view& rhs)
+static std::filesystem::path buildPath(const std::wstring_view& lhs, const std::wstring_view& rhs)
 {
     std::wstring buffer;
     buffer.reserve(lhs.size() + rhs.size());
@@ -84,14 +84,17 @@ std::filesystem::path buildPath(const std::wstring_view& lhs, const std::wstring
 SettingsLoader SettingsLoader::Default(const std::string_view& userJSON, const std::string_view& inboxJSON)
 {
     SettingsLoader loader{ userJSON, inboxJSON };
-    loader.LayerInboxOntoUser();
+    loader.MergeInboxIntoUserSettings();
     loader.FinalizeLayering();
     return loader;
 }
 
 // The SettingsLoader class is an internal implementation detail of CascadiaSettings.
-// Member methods aren't safe against abuse and you need to ensure to call them in a specific order.
-// See CascadiaSettings::LoadAll() for instance.
+// Member methods aren't safe against misuse and you need to ensure to call them in a specific order.
+// See CascadiaSettings::LoadAll() for a specific usage example.
+//
+// This constructor only handles parsing the two given JSON strings.
+// At a minimum you should do at least everything that SettingsLoader::Default does.
 SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::string_view& inboxJSON)
 {
     _parse(OriginTag::InBox, {}, inboxJSON, inboxSettings);
@@ -112,6 +115,12 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
         {
             _ignoredNamespaces.emplace(id);
         }
+    }
+
+    if (!_ignoredNamespaces.empty())
+    {
+        _removeIgnoredProfiles(inboxSettings);
+        _removeIgnoredProfiles(userSettings);
     }
 
     // See member description of _userProfileCount.
@@ -179,25 +188,29 @@ void SettingsLoader::ApplyRuntimeInitialSettings()
 // Adds profiles from .inboxSettings as parents of matching profiles in .userSettings.
 // That way the user profiles will get appropriate defaults from the generators (like icons and such).
 // If a matching profile doesn't exist yet in .userSettings, one will be created.
-void SettingsLoader::LayerInboxOntoUser()
+void SettingsLoader::MergeInboxIntoUserSettings()
 {
     for (const auto& generatedProfile : inboxSettings.profiles)
     {
         if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(generatedProfile->Guid(), generatedProfile); !inserted)
         {
+            // If inserted is false, we got a matching user profile with identical GUID.
+            // --> The generated profile is a parent of the existing user profile.
             it->second->InsertParent(generatedProfile);
         }
         else
         {
+            // If inserted is true, then this is a generated profile that doesn't exist in the user's settings.
+            // While emplace() has already created an appropriate entry in .profilesByGuid, we still need to
+            // add it to .profiles (which is basically a sorted list of .profilesByGuid's values).
             userSettings.profiles.emplace_back(CreateChild(generatedProfile));
-            userProfilesChanged = true;
         }
     }
 }
 
 // Searches AppData/ProgramData and app extension directories for settings JSON files.
 // If such JSON files are found, they're read and their contents added to .userSettings.
-void SettingsLoader::LayerFragmentsOntoUser()
+void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 {
     ParsedSettings fragmentSettings;
 
@@ -298,7 +311,7 @@ void SettingsLoader::LayerFragmentsOntoUser()
 // This section of code recognizes if a profile was seen before and marks it as
 // `"hidden": true` by default and thus ensures the behavior the user expects:
 // Profiles won't show up again after they've been removed from settings.json.
-void SettingsLoader::DisableDeletedProfiles()
+bool SettingsLoader::DisableDeletedProfiles()
 {
     const auto& state = winrt::get_self<ApplicationState>(ApplicationState::SharedInstance());
     auto generatedProfileIds = state->GeneratedProfiles();
@@ -322,10 +335,12 @@ void SettingsLoader::DisableDeletedProfiles()
     {
         state->GeneratedProfiles(generatedProfileIds);
     }
+
+    return newGeneratedProfiles;
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
-// It layers all remaining objects onto each other (those that aren't covered by LayerInboxOntoUser/LayerFragmentsOntoUser).
+// It layers all remaining objects onto each other (those that aren't covered by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
 
 void SettingsLoader::FinalizeLayering()
 {
@@ -441,7 +456,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 {
     static constexpr std::string_view emptyObjectJSON{ "{}" };
 
-    const auto json = _parseJSON(content.empty() ? emptyObjectJSON : content);
+    const auto json = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& profilesObject = _getJSONValue(json, ProfilesKey);
     const auto& defaultsObject = _getJSONValue(profilesObject, DefaultSettingsKey);
     const auto& profilesArray = profilesObject.isArray() ? profilesObject : _getJSONValue(profilesObject, ProfilesListKey);
@@ -479,7 +494,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         const auto size = profilesArray.size();
 
         // NOTE: This function is supposed to *replace* the contents of ParsedSettings. Don't break this promise.
-        // SettingsLoader::LayerFragmentsOntoUser relies on this.
+        // SettingsLoader::FindFragmentsAndMergeIntoUserSettings relies on this.
         settings.profiles.clear();
         settings.profiles.reserve(size);
 
@@ -530,6 +545,27 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, ParsedSet
     }
 }
 
+// We offer a global option called "disabledProfileSources" (it's an array of strings).
+// If the option contains "Windows.Terminal.Wsl" for instance, we'll not generate any dynamic WSL profiles.
+// 
+// Unfortunately this poses a problem: What about existing user profiles?
+// This function ensures that existing profiles with such disabled sources are removed.
+void SettingsLoader::_removeIgnoredProfiles(ParsedSettings& settings)
+{
+    const auto begin = settings.profiles.begin();
+    const auto end = settings.profiles.end();
+    const auto it = std::remove_if(begin, end, [&](const auto& profile) {
+        const auto source = profile->Source();
+        const auto remove = !source.empty() && _ignoredNamespaces.count(source);
+        if (remove)
+        {
+            settings.profilesByGuid.erase(profile->Guid());
+        }
+        return remove;
+    });
+    settings.profiles.erase(it, end);
+}
+
 // Method Description:
 // - Creates a CascadiaSettings from whatever's saved on disk, or instantiates
 //      a new one with the default values. If we're running as a packaged app,
@@ -548,6 +584,7 @@ try
     const auto settingsString = ReadUTF8FileIfExists(_settingsPath()).value_or(std::string{});
     const auto firstTimeSetup = settingsString.empty();
     const auto settingsStringView = firstTimeSetup ? UserSettingsJson : settingsString;
+    auto mustWriteToDisk = firstTimeSetup;
 
     SettingsLoader loader{ settingsStringView, DefaultJson };
 
@@ -562,16 +599,15 @@ try
         loader.ApplyRuntimeInitialSettings();
     }
 
-    loader.LayerInboxOntoUser();
+    loader.MergeInboxIntoUserSettings();
     // Fragments might reference user profiles created by a generator.
-    // --> LayerFragmentsOntoUser must be called after LayerInboxOntoUser.
-    loader.LayerFragmentsOntoUser();
-    loader.DisableDeletedProfiles();
+    // --> FindFragmentsAndMergeIntoUserSettings must be called after MergeInboxIntoUserSettings.
+    loader.FindFragmentsAndMergeIntoUserSettings();
+    // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
+    // Coincidentially this is also the time we should write the new settings.json
+    // to disk (so that it contains the new profiles for manual editing by the user).
+    mustWriteToDisk |= loader.DisableDeletedProfiles();
     loader.FinalizeLayering();
-
-    // NOTE: loader is being moved into CascadiaSettings() below.
-    // Extract anything of value before that.
-    const auto mustWriteToDisk = firstTimeSetup || loader.userProfilesChanged;
 
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));

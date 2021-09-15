@@ -310,7 +310,6 @@ void PowershellCoreProfileGenerator::GenerateProfiles(std::vector<winrt::com_ptr
         const auto name = psI.Name();
         auto profile{ CreateDynamicProfile(PowershellCoreGeneratorNamespace, name) };
         profile->Commandline(winrt::hstring{ psI.executablePath.native() });
-        profile->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
         profile->DefaultAppearance().ColorSchemeName(L"Campbell");
         profile->Icon(winrt::hstring{ WI_IsFlagSet(psI.flags, PowerShellFlags::Preview) ? POWERSHELL_PREVIEW_ICON : POWERSHELL_ICON });
 

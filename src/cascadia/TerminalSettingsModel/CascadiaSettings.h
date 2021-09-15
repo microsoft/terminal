@@ -50,15 +50,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void GenerateProfiles();
         void ApplyRuntimeInitialSettings();
-        void LayerInboxOntoUser();
-        void LayerFragmentsOntoUser();
-        void DisableDeletedProfiles();
+        void MergeInboxIntoUserSettings();
+        void FindFragmentsAndMergeIntoUserSettings();
+        bool DisableDeletedProfiles();
         void FinalizeLayering();
 
         ParsedSettings inboxSettings;
         ParsedSettings userSettings;
         bool duplicateProfile = false;
-        bool userProfilesChanged = false;
 
     private:
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
@@ -68,6 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static bool _isValidProfileObject(const Json::Value& profileJson);
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
+        void _removeIgnoredProfiles(ParsedSettings& settings);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;
         // We treat userSettings.profiles as an append-only array and will
