@@ -24,6 +24,7 @@ public:
     virtual void OnAppInitialized();
     virtual void SetContent(winrt::Windows::UI::Xaml::UIElement content);
     virtual void OnApplicationThemeChanged(const winrt::Windows::UI::Xaml::ElementTheme& requestedTheme);
+    virtual RECT GetNonClientFrame(const UINT dpi) const noexcept;
     virtual SIZE GetTotalNonClientExclusiveSize(const UINT dpi) const noexcept;
 
     virtual void Initialize();
@@ -39,20 +40,31 @@ public:
     void SetTaskbarProgress(const size_t state, const size_t progress);
 
     void UnregisterHotKey(const int index) noexcept;
-    void RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
+    bool RegisterHotKey(const int index, const winrt::Microsoft::Terminal::Control::KeyChord& hotkey) noexcept;
 
     winrt::fire_and_forget SummonWindow(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool IsQuakeWindow() const noexcept;
     void IsQuakeWindow(bool isQuakeWindow) noexcept;
 
+    void HideWindow();
+
+    void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;
+
+    void OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept;
+
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
-    WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyNotificationIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyShowNotificationIconContextMenu, winrt::delegate<void(til::point)>);
+    WINRT_CALLBACK(NotifyNotificationIconMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
+    WINRT_CALLBACK(NotifyReAddNotificationIcon, winrt::delegate<void()>);
+
+    WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
 
 protected:
     void ForceResize()
@@ -114,6 +126,8 @@ protected:
     til::rectangle _getQuakeModeSize(HMONITOR hmon);
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
+
+    bool _minimizeToNotificationArea{ false };
 
 private:
     // This minimum width allows for width the tabs fit

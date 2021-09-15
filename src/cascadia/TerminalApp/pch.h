@@ -56,6 +56,9 @@
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include <winrt/Microsoft.Terminal.Settings.Editor.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>
+#include <winrt/Windows.Storage.h>
+#include <winrt/Windows.Storage.Provider.h>
+#include <winrt/Windows.Storage.Pickers.h>
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
@@ -66,6 +69,7 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 #include <telemetry/ProjectTelemetry.h>
 #include <TraceLoggingActivity.h>
 
+#include <msctf.h>
 #include <shellapi.h>
 #include <shobjidl_core.h>
 

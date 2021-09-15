@@ -36,26 +36,27 @@ namespace TerminalAppUnitTests
             return true;
         }
 
-        Json::Value VerifyParseSucceeded(std::string content);
-        void VerifyParseFailed(std::string content);
+        Json::Value VerifyParseSucceeded(std::string_view content);
+        void VerifyParseFailed(std::string_view content);
 
     private:
         Json::StreamWriterBuilder _builder;
     };
 
-    Json::Value JsonTests::VerifyParseSucceeded(std::string content)
+    Json::Value JsonTests::VerifyParseSucceeded(std::string_view content)
     {
         Json::Value root;
         std::string errs;
-        const bool parseResult = _reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
+        const bool parseResult = _reader->parse(content.data(), content.data() + content.size(), &root, &errs);
         VERIFY_IS_TRUE(parseResult, winrt::to_hstring(errs).c_str());
         return root;
     }
-    void JsonTests::VerifyParseFailed(std::string content)
+
+    void JsonTests::VerifyParseFailed(std::string_view content)
     {
         Json::Value root;
         std::string errs;
-        const bool parseResult = _reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
+        const bool parseResult = _reader->parse(content.data(), content.data() + content.size(), &root, &errs);
         VERIFY_IS_FALSE(parseResult);
     }
 

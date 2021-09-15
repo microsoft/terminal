@@ -155,15 +155,14 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         const auto hardcodedDefaultGuid = resultPtr->GlobalSettings().DefaultProfile();
 
         std::optional<std::string> fileData = _ReadUserSettings();
-        const bool foundFile = fileData.has_value();
 
         // Make sure the file isn't totally empty. If it is, we'll treat the file
         // like it doesn't exist at all.
-        const bool fileHasData = foundFile && !fileData.value().empty();
+        const bool fileHasData = fileData && !fileData->empty();
         bool needToWriteFile = false;
         if (fileHasData)
         {
-            resultPtr->_ParseJsonString(fileData.value(), false);
+            resultPtr->_ParseJsonString(*fileData, false);
         }
 
         // Load profiles from dynamic profile generators. _userSettings should be
@@ -202,6 +201,38 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
         catch (...)
         {
             _CatchRethrowSerializationExceptionWithLocationInfo(resultPtr->_userSettingsString);
+        }
+
+        // Let's say a user doesn't know that they need to write `"hidden": true` in
+        // order to prevent a profile from showing up (and a settings UI doesn't exist).
+        // Naturally they would open settings.json and try to remove the profile object.
+        // This section of code recognizes if a profile was seen before and marks it as
+        // `"hidden": true` by default and thus ensures the behavior the user expects:
+        // Profiles won't show up again after they've been removed from settings.json.
+        {
+            const auto state = winrt::get_self<implementation::ApplicationState>(ApplicationState::SharedInstance());
+            auto generatedProfiles = state->GeneratedProfiles();
+            bool generatedProfilesChanged = false;
+
+            for (const auto& profile : resultPtr->_allProfiles)
+            {
+                const auto profileImpl = winrt::get_self<implementation::Profile>(profile);
+
+                if (generatedProfiles.emplace(profileImpl->Guid()).second)
+                {
+                    generatedProfilesChanged = true;
+                }
+                else if (profileImpl->Origin() != OriginTag::User)
+                {
+                    profileImpl->Deleted(true);
+                    profileImpl->Hidden(true);
+                }
+            }
+
+            if (generatedProfilesChanged)
+            {
+                state->GeneratedProfiles(generatedProfiles);
+            }
         }
 
         // After layering the user settings, check if there are any new profiles
@@ -323,7 +354,7 @@ winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings CascadiaSettings::
     // tag these profiles as in-box
     for (const auto& profile : resultPtr->AllProfiles())
     {
-        const auto& profileImpl{ winrt::get_self<implementation::Profile>(profile) };
+        const auto profileImpl{ winrt::get_self<implementation::Profile>(profile) };
         profileImpl->Origin(OriginTag::InBox);
     }
 
@@ -352,7 +383,6 @@ void CascadiaSettings::_LoadDynamicProfiles()
         }
     }
 
-    const GUID nullGuid{ 0 };
     for (auto& generator : _profileGenerators)
     {
         const std::wstring generatorNamespace{ generator->GetNamespace() };
@@ -711,7 +741,7 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
     wbuilder.settings_["indentation"] = "    ";
     wbuilder.settings_["enableYAMLCompatibility"] = true; // suppress spaces around colons
 
-    auto isInJsonObj = [](const auto& profile, const auto& json) {
+    static const auto isInJsonObj = [](const auto& profile, const auto& json) {
         for (auto profileJson : _GetProfilesJsonObject(json))
         {
             if (profileJson.isObject())
@@ -745,8 +775,16 @@ bool CascadiaSettings::_AppendDynamicProfilesToUserSettings()
 
     for (const auto& profile : _allProfiles)
     {
-        // Skip profiles that are in the user settings or the default settings.
-        if (isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
+        // Skip profiles that are:
+        // * hidden
+        //   Because when a user manually removes profiles from settings.json,
+        //   we mark them as hidden in LoadAll(). Adding those profiles right
+        //   back into settings.json would feel confusing, while the
+        //   profile that was just erased is added right back.
+        // * in the user settings or the default settings
+        //   Because we don't want to add profiles which are already
+        //   in the settings.json (explicitly or implicitly).
+        if (profile.Deleted() || isInJsonObj(profile, _userSettings) || isInJsonObj(profile, _defaultSettings))
         {
             continue;
         }
@@ -1215,8 +1253,11 @@ Json::Value CascadiaSettings::ToJson() const
     Json::Value profilesList{ Json::ValueType::arrayValue };
     for (const auto& entry : _allProfiles)
     {
-        const auto prof{ winrt::get_self<implementation::Profile>(entry) };
-        profilesList.append(prof->ToJson());
+        if (!entry.Deleted())
+        {
+            const auto prof{ winrt::get_self<implementation::Profile>(entry) };
+            profilesList.append(prof->ToJson());
+        }
     }
     profiles[JsonKey(ProfilesListKey)] = profilesList;
     json[JsonKey(ProfilesKey)] = profiles;

@@ -78,7 +78,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseWindow();
+        CloseWindow(false);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleQuit(const IInspectable& /*sender*/,
+                                   const ActionEventArgs& args)
+    {
+        RequestQuit();
         args.Handled(true);
     }
 
@@ -140,6 +147,20 @@ namespace winrt::TerminalApp::implementation
                 termControl.SendInput(realArgs.Input());
                 args.Handled(true);
             }
+        }
+    }
+
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        {
+            auto moved = _MovePane(realArgs.TabIndex());
+            args.Handled(moved);
         }
     }
 
@@ -264,12 +285,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(nullptr);
+            LOG_IF_FAILED(_OpenNewTab(nullptr));
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            _OpenNewTab(realArgs.TerminalArgs());
+            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
     }
@@ -323,10 +344,10 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+    void TerminalPage::_HandleSwapPane(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
-        if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        if (const auto& realArgs = args.ActionArgs().try_as<SwapPaneArgs>())
         {
             if (realArgs.Direction() == FocusDirection::None)
             {
@@ -335,8 +356,8 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MovePane(realArgs.Direction());
-                args.Handled(true);
+                auto swapped = _SwapPane(realArgs.Direction());
+                args.Handled(swapped);
             }
         }
     }
@@ -739,11 +760,10 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
 
         // Manually fill in the evaluated profile.
-        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
         _OpenNewWindow(false, newTerminalArgs);
         actionArgs.Handled(true);
     }
@@ -858,6 +878,46 @@ namespace winrt::TerminalApp::implementation
                     _UnZoomIfNeeded();
                     args.Handled(activeTab->FocusPane(paneId));
                 }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleOpenSystemMenu(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _OpenSystemMenuHandlers(*this, nullptr);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ClearBufferArgs>())
+            {
+                if (const auto termControl{ _GetActiveControl() })
+                {
+                    termControl.ClearBuffer(realArgs.Clear());
+                    args.Handled(true);
+                }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleMultipleActions(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<MultipleActionsArgs>())
+            {
+                for (const auto& action : realArgs.Actions())
+                {
+                    _actionDispatch->DoAction(action);
+                }
+
+                args.Handled(true);
             }
         }
     }

@@ -5,8 +5,9 @@
 
 #include "AppLogic.g.h"
 #include "FindTargetWindowResult.g.h"
-#include "TerminalPage.h"
 #include "Jumplist.h"
+#include "LanguageProfileNotifier.h"
+#include "TerminalPage.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <ThrottledFunc.h>
@@ -52,6 +53,8 @@ namespace winrt::TerminalApp::implementation
         void LoadSettings();
         [[nodiscard]] Microsoft::Terminal::Settings::Model::CascadiaSettings GetSettings() const noexcept;
 
+        void Quit();
+
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
@@ -68,6 +71,7 @@ namespace winrt::TerminalApp::implementation
         void WindowName(const winrt::hstring& name);
         uint64_t WindowId();
         void WindowId(const uint64_t& id);
+        void SetNumberOfOpenWindows(const uint64_t num);
         bool IsQuakeWindow() const noexcept;
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
@@ -89,8 +93,11 @@ namespace winrt::TerminalApp::implementation
 
         void WindowCloseButtonClicked();
 
-        uint64_t GetLastActiveControlTaskbarState();
-        uint64_t GetLastActiveControlTaskbarProgress();
+        winrt::TerminalApp::TaskbarState TaskbarState();
+
+        bool GetMinimizeToNotificationArea();
+        bool GetAlwaysShowNotificationIcon();
+        bool GetShowTitleInTitlebar();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
 
@@ -110,12 +117,8 @@ namespace winrt::TerminalApp::implementation
         // ALSO: If you add any UIElements as roots here, make sure they're
         // updated in _ApplyTheme. The root currently is _root.
         winrt::com_ptr<TerminalPage> _root{ nullptr };
-
         Microsoft::Terminal::Settings::Model::CascadiaSettings _settings{ nullptr };
 
-        wil::unique_folder_change_reader_nothrow _reader;
-        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
-        til::throttled_func_trailing<> _reloadState;
         winrt::hstring _settingsLoadExceptionText;
         HRESULT _settingsLoadedResult = S_OK;
         bool _loadedInitialSettings = false;
@@ -124,6 +127,15 @@ namespace winrt::TerminalApp::implementation
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
+
+        std::shared_ptr<ThrottledFuncTrailing<>> _reloadSettings;
+        til::throttled_func_trailing<> _reloadState;
+
+        // These fields invoke _reloadSettings and must be destroyed before _reloadSettings.
+        // (C++ destroys members in reverse-declaration-order.)
+        winrt::com_ptr<LanguageProfileNotifier> _languageProfileNotifier;
+        wil::unique_folder_change_reader_nothrow _reader;
+
         static TerminalApp::FindTargetWindowResult _doFindTargetWindow(winrt::array_view<const hstring> args,
                                                                        const Microsoft::Terminal::Settings::Model::WindowingMode& windowingBehavior);
 
@@ -163,6 +175,8 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
         FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
+        FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
+        FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
 
 #ifdef UNIT_TESTING
         friend class TerminalAppLocalTests::CommandlineTest;

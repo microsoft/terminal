@@ -82,7 +82,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(MoveFocusFromZoomedPane);
         TEST_METHOD(CloseZoomedPane);
 
-        TEST_METHOD(MovePanes);
+        TEST_METHOD(SwapPanes);
 
         TEST_METHOD(NextMRUTab);
         TEST_METHOD(VerifyCommandPaletteTabSwitcherOrder);
@@ -430,7 +430,7 @@ namespace TerminalAppLocalTests
         Log::Comment(L"Duplicate the tab, and don't crash");
         result = RunOnUIThread([&page]() {
             page->_DuplicateFocusedTab();
-            VERIFY_ARE_EQUAL(2u, page->_tabs.Size(), L"We should gracefully do nothing here - the profile no longer exists.");
+            VERIFY_ARE_EQUAL(3u, page->_tabs.Size(), L"We should successfully duplicate a tab hosting a deleted profile.");
         });
         VERIFY_SUCCEEDED(result);
     }
@@ -530,9 +530,9 @@ namespace TerminalAppLocalTests
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
-            VERIFY_ARE_EQUAL(2,
+            VERIFY_ARE_EQUAL(3,
                              tab->GetLeafPaneCount(),
-                             L"We should gracefully do nothing here - the profile no longer exists.");
+                             L"We should successfully duplicate a pane hosting a deleted profile.");
         });
         VERIFY_SUCCEEDED(result);
 
@@ -821,7 +821,7 @@ namespace TerminalAppLocalTests
         VERIFY_SUCCEEDED(result);
     }
 
-    void TabTests::MovePanes()
+    void TabTests::SwapPanes()
     {
         auto page = _commonSetup();
 
@@ -914,10 +914,10 @@ namespace TerminalAppLocalTests
         // -------------------
         TestOnUIThread([&]() {
             // Set up action
-            MovePaneArgs args{ FocusDirection::Left };
+            SwapPaneArgs args{ FocusDirection::Left };
             ActionEventArgs eventArgs{ args };
 
-            page->_HandleMovePane(nullptr, eventArgs);
+            page->_HandleSwapPane(nullptr, eventArgs);
         });
 
         Sleep(250);
@@ -945,10 +945,10 @@ namespace TerminalAppLocalTests
         // -------------------
         TestOnUIThread([&]() {
             // Set up action
-            MovePaneArgs args{ FocusDirection::Up };
+            SwapPaneArgs args{ FocusDirection::Up };
             ActionEventArgs eventArgs{ args };
 
-            page->_HandleMovePane(nullptr, eventArgs);
+            page->_HandleSwapPane(nullptr, eventArgs);
         });
 
         Sleep(250);
@@ -976,10 +976,10 @@ namespace TerminalAppLocalTests
         // -------------------
         TestOnUIThread([&]() {
             // Set up action
-            MovePaneArgs args{ FocusDirection::Right };
+            SwapPaneArgs args{ FocusDirection::Right };
             ActionEventArgs eventArgs{ args };
 
-            page->_HandleMovePane(nullptr, eventArgs);
+            page->_HandleSwapPane(nullptr, eventArgs);
         });
 
         Sleep(250);
@@ -1007,10 +1007,10 @@ namespace TerminalAppLocalTests
         // -------------------
         TestOnUIThread([&]() {
             // Set up action
-            MovePaneArgs args{ FocusDirection::Down };
+            SwapPaneArgs args{ FocusDirection::Down };
             ActionEventArgs eventArgs{ args };
 
-            page->_HandleMovePane(nullptr, eventArgs);
+            page->_HandleSwapPane(nullptr, eventArgs);
         });
 
         Sleep(250);

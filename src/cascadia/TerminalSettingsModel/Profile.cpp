@@ -84,6 +84,7 @@ winrt::com_ptr<Profile> Profile::CopySettings(winrt::com_ptr<Profile> source)
 {
     auto profile{ winrt::make_self<Profile>() };
 
+    profile->_Deleted = source->_Deleted;
     profile->_Guid = source->_Guid;
     profile->_Name = source->_Name;
     profile->_Source = source->_Source;

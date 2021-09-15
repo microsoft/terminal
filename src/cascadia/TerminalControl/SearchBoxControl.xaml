@@ -16,18 +16,23 @@
         <ResourceDictionary>
             <Style x:Key="ToggleButtonStyle"
                    TargetType="ToggleButton">
-                <Setter Property="Width" Value="25" />
-                <Setter Property="Height" Value="25" />
+                <Setter Property="Width" Value="24" />
+                <Setter Property="Height" Value="24" />
                 <Setter Property="Background" Value="Transparent" />
-                <Setter Property="Padding" Value="1" />
-                <Setter Property="CornerRadius" Value="2" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="2,0" />
+                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
             </Style>
             <Style x:Key="ButtonStyle"
                    TargetType="Button">
-                <Setter Property="Width" Value="25" />
-                <Setter Property="Height" Value="25" />
+                <Setter Property="Width" Value="24" />
+                <Setter Property="Height" Value="24" />
                 <Setter Property="Background" Value="Transparent" />
-                <Setter Property="CornerRadius" Value="2" />
+                <Setter Property="BorderBrush" Value="Transparent" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="Margin" Value="6,0,0,0" />
+                <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
             </Style>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Dark">
@@ -227,18 +232,20 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <StackPanel Padding="5"
-                CornerRadius="0,0,2,2"
+    <StackPanel Margin="8"
+                Padding="8"
+                CornerRadius="{ThemeResource OverlayCornerRadius}"
                 Orientation="Horizontal"
                 Style="{ThemeResource SearchBoxBackground}">
         <TextBox x:Name="TextBox"
                  x:Uid="SearchBox_TextBox"
                  Width="160"
-                 Margin="5"
+                 Margin="0,0,6,0"
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center"
                  CornerRadius="2"
                  FontSize="15"
+                 IsSpellCheckEnabled="False"
                  KeyDown="TextBoxKeyDown"
                  PlaceholderForeground="{ThemeResource TextBoxPlaceholderTextThemeBrush}" />
 
@@ -269,7 +276,6 @@
 
         <Button x:Name="CloseButton"
                 x:Uid="SearchBox_Close"
-                Padding="0"
                 Click="CloseClick"
                 Style="{ThemeResource ButtonStyle}">
             <FontIcon FontFamily="Segoe MDL2 Assets"

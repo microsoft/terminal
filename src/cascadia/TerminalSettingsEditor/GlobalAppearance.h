@@ -18,12 +18,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
     };
 
-    struct GlobalAppearance : GlobalAppearanceT<GlobalAppearance>
+    struct GlobalAppearance : public HasScrollViewer<GlobalAppearance>, GlobalAppearanceT<GlobalAppearance>
     {
     public:
         GlobalAppearance();
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+
+        bool FeatureNotificationIconEnabled() const noexcept;
 
         WINRT_PROPERTY(Editor::GlobalAppearancePageNavigationState, State, nullptr);
         GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, State().Globals, Theme);

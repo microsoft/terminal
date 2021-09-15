@@ -6,6 +6,7 @@
 #include "../TerminalControl/ControlCore.h"
 #include "MockControlSettings.h"
 #include "MockConnection.h"
+#include "../UnitTests_TerminalCore/TestUtils.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -32,6 +33,10 @@ namespace ControlUnitTests
 
         TEST_METHOD(TestFontInitializedInCtor);
 
+        TEST_METHOD(TestClearScrollback);
+        TEST_METHOD(TestClearScreen);
+        TEST_METHOD(TestClearAll);
+
         TEST_CLASS_SETUP(ModuleSetup)
         {
             winrt::init_apartment(winrt::apartment_type::single_threaded);
@@ -56,6 +61,25 @@ namespace ControlUnitTests
 
             return { settings, conn };
         }
+
+        winrt::com_ptr<Control::implementation::ControlCore> createCore(Control::IControlSettings settings,
+                                                                        TerminalConnection::ITerminalConnection conn)
+        {
+            Log::Comment(L"Create ControlCore object");
+
+            auto core = winrt::make_self<Control::implementation::ControlCore>(settings, conn);
+            core->_inUnitTests = true;
+            return core;
+        }
+
+        void _standardInit(winrt::com_ptr<Control::implementation::ControlCore> core)
+        {
+            // "Consolas" ends up with an actual size of 9x21 at 96DPI. So
+            // let's just arbitrarily start with a 270x420px (30x20 chars) window
+            core->Initialize(270, 420, 1.0);
+            VERIFY_IS_TRUE(core->_initializedTerminal);
+            VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        }
     };
 
     void ControlCoreTests::ComPtrSettings()
@@ -71,8 +95,7 @@ namespace ControlUnitTests
     {
         auto [settings, conn] = _createSettingsAndConnection();
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
     }
 
@@ -80,8 +103,7 @@ namespace ControlUnitTests
     {
         auto [settings, conn] = _createSettingsAndConnection();
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
         VERIFY_IS_FALSE(core->_initializedTerminal);
@@ -99,8 +121,7 @@ namespace ControlUnitTests
         settings->UseAcrylic(true);
         settings->TintOpacity(0.5f);
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
         // A callback to make sure that we're raising TransparencyChanged events
@@ -167,8 +188,7 @@ namespace ControlUnitTests
         {
             auto [settings, conn] = _createSettingsAndConnection();
 
-            Log::Comment(L"Create ControlCore object");
-            auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+            auto core = createCore(*settings, *conn);
             VERIFY_IS_NOT_NULL(core);
 
             Log::Comment(L"Close the Core, like a TermControl would");
@@ -190,11 +210,128 @@ namespace ControlUnitTests
         // that you don't default to Cascadia*
         settings->FontFace(L"Impact");
 
-        Log::Comment(L"Create ControlCore object");
-        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        auto core = createCore(*settings, *conn);
         VERIFY_IS_NOT_NULL(core);
 
         VERIFY_ARE_EQUAL(L"Impact", std::wstring_view{ core->_actualFont.GetFaceName() });
+    }
+
+    void ControlCoreTests::TestClearScrollback()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
+                     L"(leaving the cursor afer 'Bar')");
+        for (int i = 0; i < 40; ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        conn->WriteInput(L"Bar");
+
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        Log::Comment(L"Check the buffer viewport before the clear");
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        Log::Comment(L"Clear the buffer");
+        core->ClearBuffer(Control::ClearBufferType::Scrollback);
+
+        Log::Comment(L"Check the buffer after the clear");
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(0, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->BufferHeight());
+
+        // In this test, we can't actually check if we cleared the buffer
+        // contents. ConPTY will handle the actual clearing of the buffer
+        // contents. We can only ensure that the viewport moved when we did a
+        // clear scrollback.
+        //
+        // The ConptyRoundtripTests test the actual clearing of the contents.
+    }
+    void ControlCoreTests::TestClearScreen()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
+                     L"(leaving the cursor afer 'Bar')");
+        for (int i = 0; i < 40; ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        conn->WriteInput(L"Bar");
+
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        Log::Comment(L"Check the buffer viewport before the clear");
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        Log::Comment(L"Clear the buffer");
+        core->ClearBuffer(Control::ClearBufferType::Screen);
+
+        Log::Comment(L"Check the buffer after the clear");
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        // In this test, we can't actually check if we cleared the buffer
+        // contents. ConPTY will handle the actual clearing of the buffer
+        // contents. We can only ensure that the viewport moved when we did a
+        // clear scrollback.
+        //
+        // The ConptyRoundtripTests test the actual clearing of the contents.
+    }
+    void ControlCoreTests::TestClearAll()
+    {
+        auto [settings, conn] = _createSettingsAndConnection();
+        Log::Comment(L"Create ControlCore object");
+        auto core = winrt::make_self<Control::implementation::ControlCore>(*settings, *conn);
+        VERIFY_IS_NOT_NULL(core);
+        _standardInit(core);
+
+        Log::Comment(L"Print 40 rows of 'Foo', and a single row of 'Bar' "
+                     L"(leaving the cursor afer 'Bar')");
+        for (int i = 0; i < 40; ++i)
+        {
+            conn->WriteInput(L"Foo\r\n");
+        }
+        conn->WriteInput(L"Bar");
+
+        // We printed that 40 times, but the final \r\n bumped the view down one MORE row.
+        Log::Comment(L"Check the buffer viewport before the clear");
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(21, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(41, core->BufferHeight());
+
+        Log::Comment(L"Clear the buffer");
+        core->ClearBuffer(Control::ClearBufferType::All);
+
+        Log::Comment(L"Check the buffer after the clear");
+        VERIFY_ARE_EQUAL(20, core->_terminal->GetViewport().Height());
+        VERIFY_ARE_EQUAL(0, core->ScrollOffset());
+        VERIFY_ARE_EQUAL(20, core->ViewHeight());
+        VERIFY_ARE_EQUAL(20, core->BufferHeight());
+
+        // In this test, we can't actually check if we cleared the buffer
+        // contents. ConPTY will handle the actual clearing of the buffer
+        // contents. We can only ensure that the viewport moved when we did a
+        // clear scrollback.
+        //
+        // The ConptyRoundtripTests test the actual clearing of the contents.
     }
 
 }

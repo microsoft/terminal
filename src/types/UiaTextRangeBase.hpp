@@ -153,6 +153,8 @@ namespace Microsoft::Console::Types
 
         void _getBoundingRect(const til::rectangle textRect, _Inout_ std::vector<double>& coords) const;
 
+        void _expandToEnclosingUnit(TextUnit unit);
+
         void
         _moveEndpointByUnitCharacter(_In_ const int moveCount,
                                      _In_ const TextPatternRangeEndpoint endpoint,
@@ -169,13 +171,13 @@ namespace Microsoft::Console::Types
         _moveEndpointByUnitLine(_In_ const int moveCount,
                                 _In_ const TextPatternRangeEndpoint endpoint,
                                 gsl::not_null<int*> const pAmountMoved,
-                                _In_ const bool preventBufferEnd = false) noexcept;
+                                _In_ const bool preventBoundary = false) noexcept;
 
         void
         _moveEndpointByUnitDocument(_In_ const int moveCount,
                                     _In_ const TextPatternRangeEndpoint endpoint,
                                     gsl::not_null<int*> const pAmountMoved,
-                                    _In_ const bool preventBufferEnd = false) noexcept;
+                                    _In_ const bool preventBoundary = false) noexcept;
 
         std::optional<bool> _verifyAttr(TEXTATTRIBUTEID attributeId, VARIANT val, const TextAttribute& attr) const;
         bool _initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal, const TextAttribute& attr) const;

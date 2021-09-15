@@ -2,8 +2,9 @@
 trigger: none
 pr: none
 
-pool:
-  name: Package ES Standard Build
+pool: 
+  name: WinDevPool-L
+  demands: ImageOverride -equals WinDevVS16-latest
 
 parameters:
   - name: branding
@@ -70,11 +71,9 @@ jobs:
     clean: true
     submodules: true
     persistCredentials: True
-  - task: PkgESSetupBuild@10
+  - task: PkgESSetupBuild@12
     displayName: Package ES - Setup Build
     inputs:
-      useDfs: false
-      productName: OpenConsole
       disableOutputRedirect: true
   - task: PowerShell@2
     displayName: Rationalize Build Platform
@@ -153,7 +152,7 @@ jobs:
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
         clean: true
@@ -195,7 +194,7 @@ jobs:
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
         platform: $(BuildPlatform)
         configuration: $(BuildConfiguration)
   - task: PowerShell@2
@@ -275,11 +274,9 @@ jobs:
       clean: true
       submodules: true
       persistCredentials: True
-    - task: PkgESSetupBuild@10
+    - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
       inputs:
-        useDfs: false
-        productName: OpenConsole
         disableOutputRedirect: true
     - task: DownloadBuildArtifacts@0
       displayName: Download Artifacts (*.appx, *.msix)
@@ -354,11 +351,9 @@ jobs:
       clean: true
       submodules: true
       persistCredentials: True
-    - task: PkgESSetupBuild@10
+    - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
       inputs:
-        useDfs: false
-        productName: OpenConsole
         disableOutputRedirect: true
     - task: DownloadBuildArtifacts@0
       displayName: Download x86 PublicTerminalCore
@@ -480,7 +475,7 @@ jobs:
 
           mv Microsoft.WindowsTerminal_8wekyb3d8bbwe.msixbundle .\WindowsTerminal.app\
         workingDirectory: $(System.ArtifactsDirectory)\appxbundle-signed
-    - task: PkgESVPack@10
+    - task: PkgESVPack@12
       displayName: 'Package ES - VPack'
       env:
         SYSTEM_ACCESSTOKEN: $(System.AccessToken)

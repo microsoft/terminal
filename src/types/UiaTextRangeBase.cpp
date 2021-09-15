@@ -262,59 +262,71 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
 
     try
     {
-        const auto& buffer = _pData->GetTextBuffer();
-        const auto bufferSize = _getBufferSize();
-        const auto bufferEnd = bufferSize.EndExclusive();
-
-        if (unit == TextUnit_Character)
-        {
-            _start = buffer.GetGlyphStart(_start);
-            _end = buffer.GetGlyphEnd(_start);
-        }
-        else if (unit <= TextUnit_Word)
-        {
-            // expand to word
-            _start = buffer.GetWordStart(_start, _wordDelimiters, true);
-            _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
-
-            // GetWordEnd may return the actual end of the TextBuffer.
-            // If so, just set it to this value of bufferEnd
-            if (!bufferSize.IsInBounds(_end))
-            {
-                _end = bufferEnd;
-            }
-        }
-        else if (unit <= TextUnit_Line)
-        {
-            if (_start == bufferEnd)
-            {
-                // Special case: if we are at the bufferEnd,
-                //   move _start back one, instead of _end forward
-                _start.X = 0;
-                _start.Y = base::ClampSub(_start.Y, 1);
-                _end = bufferEnd;
-            }
-            else
-            {
-                // expand to line
-                _start.X = 0;
-                _end.X = 0;
-                _end.Y = base::ClampAdd(_start.Y, 1);
-            }
-        }
-        else
-        {
-            // TODO GH#6986: properly handle "end of buffer" as last character
-            // instead of last cell
-            // expand to document
-            _start = bufferSize.Origin();
-            _end = bufferSize.EndExclusive();
-        }
-
+        _expandToEnclosingUnit(unit);
         UiaTracing::TextRange::ExpandToEnclosingUnit(unit, *this);
         return S_OK;
     }
     CATCH_RETURN();
+}
+
+// Method Description:
+// - Moves _start and _end endpoints to encompass the enclosing text unit.
+//   (i.e. word --> enclosing word, line --> enclosing line)
+// - IMPORTANT: this does _not_ lock the console
+// Arguments:
+// - attributeId - the UIA text attribute identifier we're expanding by
+// Return Value:
+// - <none>
+void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
+{
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto bufferSize = _getBufferSize();
+    const auto bufferEnd = bufferSize.EndExclusive();
+
+    if (unit == TextUnit_Character)
+    {
+        _start = buffer.GetGlyphStart(_start);
+        _end = buffer.GetGlyphEnd(_start);
+    }
+    else if (unit <= TextUnit_Word)
+    {
+        // expand to word
+        _start = buffer.GetWordStart(_start, _wordDelimiters, true);
+        _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
+
+        // GetWordEnd may return the actual end of the TextBuffer.
+        // If so, just set it to this value of bufferEnd
+        if (!bufferSize.IsInBounds(_end))
+        {
+            _end = bufferEnd;
+        }
+    }
+    else if (unit <= TextUnit_Line)
+    {
+        if (_start == bufferEnd)
+        {
+            // Special case: if we are at the bufferEnd,
+            //   move _start back one, instead of _end forward
+            _start.X = 0;
+            _start.Y = base::ClampSub(_start.Y, 1);
+            _end = bufferEnd;
+        }
+        else
+        {
+            // expand to line
+            _start.X = 0;
+            _end.X = 0;
+            _end.Y = base::ClampAdd(_start.Y, 1);
+        }
+    }
+    else
+    {
+        // TODO GH#6986: properly handle "end of buffer" as last character
+        // instead of last cell
+        // expand to document
+        _start = bufferSize.Origin();
+        _end = bufferSize.EndExclusive();
+    }
 }
 
 // Method Description:
@@ -926,7 +938,12 @@ try
     const auto maxLengthOpt = (maxLength == -1) ?
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([this]() noexcept {
+        _pData->UnlockConsole();
+    });
     const auto text = _getTextValue(maxLengthOpt);
+    Unlock.reset();
 
     *pRetVal = SysAllocString(text.c_str());
     RETURN_HR_IF_NULL(E_OUTOFMEMORY, *pRetVal);
@@ -946,11 +963,6 @@ CATCH_RETURN();
 #pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
 std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
-
     std::wstring textData{};
     if (!IsDegenerate())
     {
@@ -994,63 +1006,62 @@ std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLeng
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
                                       _Out_ int* pRetVal) noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
-    if (count == 0)
-    {
-        return S_OK;
-    }
 
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
 
-    // We can abstract this movement by moving _start, but disallowing moving to the end of the buffer
-    constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
-    constexpr auto preventBufferEnd = true;
     const auto wasDegenerate = IsDegenerate();
-    try
+    if (count != 0)
     {
+        // We can abstract this movement by moving _start
+        constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
+        const auto preventBoundary = !wasDegenerate;
         if (unit == TextUnit::TextUnit_Character)
         {
-            _moveEndpointByUnitCharacter(count, endpoint, pRetVal, preventBufferEnd);
+            _moveEndpointByUnitCharacter(count, endpoint, pRetVal, preventBoundary);
         }
         else if (unit <= TextUnit::TextUnit_Word)
         {
-            _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBufferEnd);
+            // TODO GH#10925: passing in "true" instead of "preventBoundary"
+            // We still need to go through the process of writing
+            // tests, finding failing cases, and fixing them.
+            // For now, just use true because we've been doing that so far.
+            // The tests at the time of writing don't report any failures
+            // if we use one over the other.
+            _moveEndpointByUnitWord(count, endpoint, pRetVal, true);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
-            _moveEndpointByUnitLine(count, endpoint, pRetVal, preventBufferEnd);
+            _moveEndpointByUnitLine(count, endpoint, pRetVal, preventBoundary);
         }
         else if (unit <= TextUnit::TextUnit_Document)
         {
-            _moveEndpointByUnitDocument(count, endpoint, pRetVal, preventBufferEnd);
+            _moveEndpointByUnitDocument(count, endpoint, pRetVal, preventBoundary);
         }
     }
-    CATCH_RETURN();
 
-    // If we actually moved...
-    if (*pRetVal != 0)
+    if (wasDegenerate)
     {
-        if (wasDegenerate)
-        {
-            // GH#7342: The range was degenerate before the move.
-            // To keep it that way, move _end to the new _start.
-            _end = _start;
-        }
-        else
-        {
-            // then just expand to get our _end
-            ExpandToEnclosingUnit(unit);
-        }
+        // GH#7342: The range was degenerate before the move.
+        // To keep it that way, move _end to the new _start.
+        _end = _start;
+    }
+    else
+    {
+        // then just expand to get our _end
+        _expandToEnclosingUnit(unit);
     }
 
     UiaTracing::TextRange::Move(unit, count, *pRetVal, *this);
     return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                                     _In_ TextUnit unit,
@@ -1500,15 +1511,14 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
 // - moveCount - the number of times to move
 // - endpoint - the endpoint to move
 // - pAmountMoved - the number of times that the return values are "moved"
-// - preventBufferEnd - when enabled, prevent endpoint from being at the end of the buffer
-//                      This is used for general movement, where you are not allowed to
-//                      create a degenerate range
+// - preventBoundary - true --> the range encompasses the unit we're on; prevent movement onto boundaries
+//                     false --> act like we're just moving an endpoint; allow movement onto boundaries
 // Return Value:
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
                                                _In_ const TextPatternRangeEndpoint endpoint,
                                                _Out_ gsl::not_null<int*> const pAmountMoved,
-                                               _In_ const bool preventBufferEnd) noexcept
+                                               _In_ const bool preventBoundary) noexcept
 {
     *pAmountMoved = 0;
 
@@ -1517,7 +1527,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         return;
     }
 
-    const bool allowBottomExclusive = !preventBufferEnd;
+    const bool allowBottomExclusive = !preventBoundary;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto bufferSize = _getBufferSize();
 
@@ -1533,7 +1543,7 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
             // can't move past end
             if (nextPos.Y >= bufferSize.BottomInclusive())
             {
-                if (preventBufferEnd || nextPos == bufferSize.EndExclusive())
+                if (preventBoundary || nextPos == bufferSize.EndExclusive())
                 {
                     success = false;
                     break;
@@ -1551,11 +1561,21 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         }
         case MovementDirection::Backward:
         {
-            // can't move past top
-            if (!allowBottomExclusive && nextPos.Y == bufferSize.Top())
+            if (preventBoundary)
             {
-                success = false;
-                break;
+                if (nextPos.Y == bufferSize.Top())
+                {
+                    // can't move past top
+                    success = false;
+                    break;
+                }
+                else
+                {
+                    // GH#10924: as a non-degenerate range, we are supposed to act
+                    // like we already encompass the line.
+                    // Move to the left boundary so we try to wrap around
+                    nextPos.X = bufferSize.Left();
+                }
             }
 
             // NOTE: Automatically detects if we are trying to move past origin
@@ -1584,15 +1604,14 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 // - moveCount - the number of times to move
 // - endpoint - the endpoint to move
 // - pAmountMoved - the number of times that the return values are "moved"
-// - preventBufferEnd - when enabled, prevent endpoint from being at the end of the buffer
-//                      This is used for general movement, where you are not allowed to
-//                      create a degenerate range
+// - preventBoundary - true --> the range encompasses the unit we're on; prevent movement onto boundaries
+//                     false --> act like we're just moving an endpoint; allow movement onto boundaries
 // Return Value:
 // - <none>
 void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
                                                    _In_ const TextPatternRangeEndpoint endpoint,
                                                    _Out_ gsl::not_null<int*> const pAmountMoved,
-                                                   _In_ const bool preventBufferEnd) noexcept
+                                                   _In_ const bool preventBoundary) noexcept
 {
     *pAmountMoved = 0;
 
@@ -1610,7 +1629,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     case MovementDirection::Forward:
     {
         const auto documentEnd = bufferSize.EndExclusive();
-        if (preventBufferEnd || target == documentEnd)
+        if (preventBoundary || target == documentEnd)
         {
             return;
         }
@@ -1624,7 +1643,7 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     case MovementDirection::Backward:
     {
         const auto documentBegin = bufferSize.Origin();
-        if (target == documentBegin)
+        if (preventBoundary || target == documentBegin)
         {
             return;
         }

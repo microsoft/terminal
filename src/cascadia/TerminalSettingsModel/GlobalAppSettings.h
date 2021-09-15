@@ -60,6 +60,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void UnparsedDefaultProfile(const hstring& value);
         void ClearUnparsedDefaultProfile();
 
+        // TODO GH#9207: Remove this once we have a GlobalAppSettingsViewModel in TerminalSettingsEditor
+        void SetInvertedDisableAnimationsValue(bool invertedDisableAnimationsValue)
+        {
+            DisableAnimations(!invertedDisableAnimationsValue);
+        }
+
         INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialRows, DEFAULT_ROWS);
         INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialCols, DEFAULT_COLS);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTabs, true);
@@ -68,6 +74,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, Language);
         INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
         INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, UseAcrylicInTabRow, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTabsInTitlebar, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CopyOnSelect, false);
@@ -77,6 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::FirstWindowPreference, FirstWindowPreference, FirstWindowPreference::DefaultProfile);
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);
@@ -92,6 +100,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
         INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, MinimizeToNotificationArea, false);
+        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowNotificationIcon, false);
 
     private:
         guid _defaultProfile;

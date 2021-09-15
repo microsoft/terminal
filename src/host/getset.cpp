@@ -1609,6 +1609,12 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
     return screenInfo.GetActiveBuffer().VtEraseAll();
 }
 
+// See SCREEN_INFORMATION::ClearBuffer's description for details.
+[[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo)
+{
+    return screenInfo.GetActiveBuffer().ClearBuffer();
+}
+
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType)
 {
@@ -1637,6 +1643,30 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
     auto attr = screenInfo.GetAttributes();
     attr.SetHyperlinkId(0);
     screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
+}
+
+// Routine Description:
+// - A private API call for updating the active soft font.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                          const SIZE cellSize,
+                                          const size_t centeringHint) noexcept
+{
+    try
+    {
+        auto* pRender = ServiceLocator::LocateGlobals().pRender;
+        if (pRender)
+        {
+            pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:

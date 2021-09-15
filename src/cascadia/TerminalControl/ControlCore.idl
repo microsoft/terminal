@@ -22,6 +22,14 @@ namespace Microsoft.Terminal.Control
         IsRightButtonDown = 0x4
     };
 
+
+    enum ClearBufferType
+    {
+        Screen,
+        Scrollback,
+        All
+    };
+
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
@@ -49,6 +57,7 @@ namespace Microsoft.Terminal.Control
                            Microsoft.Terminal.Core.ControlKeyStates modifiers);
         void SendInput(String text);
         void PasteText(String text);
+        void ClearBuffer(ClearBufferType clearType);
 
         void SetHoveredCell(Microsoft.Terminal.Core.Point terminalPosition);
         void ClearHoveredCell();
@@ -80,6 +89,8 @@ namespace Microsoft.Terminal.Control
         Boolean IsInReadOnlyMode { get; };
         Boolean CursorOn;
         void EnablePainting();
+
+        String ReadEntireBuffer();
 
         event FontSizeChangedEventArgs FontSizeChanged;
 

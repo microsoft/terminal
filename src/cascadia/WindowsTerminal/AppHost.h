@@ -2,8 +2,8 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-
 #include "NonClientIslandWindow.h"
+#include "NotificationIcon.h"
 
 class AppHost
 {
@@ -48,6 +48,7 @@ private:
                           const winrt::Windows::Foundation::IInspectable& arg);
     void _WindowMouseWheeled(const til::point coord, const int32_t delta);
     winrt::fire_and_forget _WindowActivated();
+    void _WindowMoved();
 
     void _DispatchCommandline(winrt::Windows::Foundation::IInspectable sender,
                               winrt::Microsoft::Terminal::Remoting::CommandlineArgs args);
@@ -84,8 +85,25 @@ private:
     void _SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                 const winrt::Windows::Foundation::IInspectable& args);
 
-    void _UpdateTrayIcon();
-    void _HandleTrayIconPressed();
+    void _OpenSystemMenu(const winrt::Windows::Foundation::IInspectable& sender,
+                         const winrt::Windows::Foundation::IInspectable& args);
 
-    std::optional<NOTIFYICONDATA> _trayIconData;
+    winrt::fire_and_forget _QuitRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                          const winrt::Windows::Foundation::IInspectable& args);
+
+    void _RequestQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                         const winrt::Windows::Foundation::IInspectable& args);
+
+    void _QuitAllRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                           const winrt::Windows::Foundation::IInspectable& args);
+
+    void _CreateNotificationIcon();
+    void _DestroyNotificationIcon();
+    void _ShowNotificationIconRequested();
+    void _HideNotificationIconRequested();
+    std::unique_ptr<NotificationIcon> _notificationIcon;
+    winrt::event_token _ReAddNotificationIconToken;
+    winrt::event_token _NotificationIconPressedToken;
+    winrt::event_token _ShowNotificationIconContextMenuToken;
+    winrt::event_token _NotificationIconMenuItemSelectedToken;
 };

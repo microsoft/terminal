@@ -50,6 +50,7 @@
     ON_ALL_ACTIONS(ResizePane)             \
     ON_ALL_ACTIONS(MoveFocus)              \
     ON_ALL_ACTIONS(MovePane)               \
+    ON_ALL_ACTIONS(SwapPane)               \
     ON_ALL_ACTIONS(Find)                   \
     ON_ALL_ACTIONS(ToggleShaderEffects)    \
     ON_ALL_ACTIONS(ToggleFocusMode)        \
@@ -77,7 +78,11 @@
     ON_ALL_ACTIONS(OpenWindowRenamer)      \
     ON_ALL_ACTIONS(GlobalSummon)           \
     ON_ALL_ACTIONS(QuakeMode)              \
-    ON_ALL_ACTIONS(FocusPane)
+    ON_ALL_ACTIONS(FocusPane)              \
+    ON_ALL_ACTIONS(OpenSystemMenu)         \
+    ON_ALL_ACTIONS(ClearBuffer)            \
+    ON_ALL_ACTIONS(MultipleActions)        \
+    ON_ALL_ACTIONS(Quit)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
@@ -90,6 +95,7 @@
     ON_ALL_ACTIONS_WITH_ARGS(GlobalSummon)         \
     ON_ALL_ACTIONS_WITH_ARGS(MoveFocus)            \
     ON_ALL_ACTIONS_WITH_ARGS(MovePane)             \
+    ON_ALL_ACTIONS_WITH_ARGS(SwapPane)             \
     ON_ALL_ACTIONS_WITH_ARGS(MoveTab)              \
     ON_ALL_ACTIONS_WITH_ARGS(NewTab)               \
     ON_ALL_ACTIONS_WITH_ARGS(NewWindow)            \
@@ -107,4 +113,6 @@
     ON_ALL_ACTIONS_WITH_ARGS(SplitPane)            \
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \
-    ON_ALL_ACTIONS_WITH_ARGS(FocusPane)
+    ON_ALL_ACTIONS_WITH_ARGS(FocusPane)            \
+    ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
+    ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)

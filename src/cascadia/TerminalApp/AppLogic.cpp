@@ -203,11 +203,15 @@ namespace winrt::TerminalApp::implementation
         _isElevated = _isUserAdmin();
         _root = winrt::make_self<TerminalPage>();
 
-        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(_root->Dispatcher(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
+        _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
             if (auto self{ weakSelf.get() })
             {
                 self->_ReloadSettings();
             }
+        });
+
+        _languageProfileNotifier = winrt::make_self<LanguageProfileNotifier>([this]() {
+            _reloadSettings->Run();
         });
     }
 
@@ -323,6 +327,14 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    }
+
+    void AppLogic::Quit()
+    {
+        if (_root)
+        {
+            _root->CloseWindow(true);
+        }
     }
 
     // Method Description:
@@ -592,12 +604,30 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        // Use the default profile to determine how big of a window we need.
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
-
-        auto proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+        winrt::Windows::Foundation::Size proposedSize{};
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        if (_root->ShouldUsePersistedLayout(_settings))
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialSize())
+            {
+                proposedSize = layouts.GetAt(0).InitialSize().Value();
+                // The size is saved as a non-scaled real pixel size,
+                // so we need to scale it appropriately.
+                proposedSize.Height = proposedSize.Height * scale;
+                proposedSize.Width = proposedSize.Width * scale;
+            }
+        }
+
+        if (proposedSize.Width == 0 && proposedSize.Height == 0)
+        {
+            // Use the default profile to determine how big of a window we need.
+            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
+
+            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+        }
 
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
@@ -679,7 +709,18 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
+        auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
+
+        if (_root->ShouldUsePersistedLayout(_settings))
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialPosition())
+            {
+                initialPosition = layouts.GetAt(0).InitialPosition().Value();
+            }
+        }
+
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
@@ -1121,32 +1162,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (_root)
         {
-            _root->CloseWindow();
+            _root->CloseWindow(false);
         }
     }
 
-    // Method Description:
-    // - Gets the taskbar state value from the last active control
-    // Return Value:
-    // - The taskbar state of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarState()
+    winrt::TerminalApp::TaskbarState AppLogic::TaskbarState()
     {
         if (_root)
         {
-            return _root->GetLastActiveControlTaskbarState();
-        }
-        return {};
-    }
-
-    // Method Description:
-    // - Gets the taskbar progress value from the last active control
-    // Return Value:
-    // - The taskbar progress of the last active control
-    uint64_t AppLogic::GetLastActiveControlTaskbarProgress()
-    {
-        if (_root)
-        {
-            return _root->GetLastActiveControlTaskbarProgress();
+            return _root->TaskbarState();
         }
         return {};
     }
@@ -1229,6 +1253,11 @@ namespace winrt::TerminalApp::implementation
             auto actions = winrt::single_threaded_vector<ActionAndArgs>(std::move(appArgs.GetStartupActions()));
 
             _root->ProcessStartupActions(actions, false, cwd);
+
+            if (appArgs.IsHandoffListener())
+            {
+                _root->SetInboundListener(true);
+            }
         }
         // Return the result of parsing with commandline, though it may or may not be used.
         return result;
@@ -1437,6 +1466,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void AppLogic::SetNumberOfOpenWindows(const uint64_t num)
+    {
+        if (_root)
+        {
+            _root->SetNumberOfOpenWindows(num);
+        }
+    }
+
     void AppLogic::RenameFailed()
     {
         if (_root)
@@ -1450,4 +1487,44 @@ namespace winrt::TerminalApp::implementation
         return _root->IsQuakeWindow();
     }
 
+    bool AppLogic::GetMinimizeToNotificationArea()
+    {
+        if constexpr (Feature_NotificationIcon::IsEnabled())
+        {
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
+
+            return _settings.GlobalSettings().MinimizeToNotificationArea();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool AppLogic::GetAlwaysShowNotificationIcon()
+    {
+        if constexpr (Feature_NotificationIcon::IsEnabled())
+        {
+            if (!_loadedInitialSettings)
+            {
+                // Load settings if we haven't already
+                LoadSettings();
+            }
+
+            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    bool AppLogic::GetShowTitleInTitlebar()
+    {
+        return _settings.GlobalSettings().ShowTitleInTitlebar();
+    }
 }

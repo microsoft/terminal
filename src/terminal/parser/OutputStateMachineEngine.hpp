@@ -39,7 +39,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool ActionCsiDispatch(const VTID id, const VTParameters parameters) override;
 
-        StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) noexcept override;
+        StringHandler ActionDcsDispatch(const VTID id, const VTParameters parameters) override;
 
         bool ActionClear() noexcept override;
 
@@ -142,6 +142,12 @@ namespace Microsoft::Console::VirtualTerminal
             XT_PushSgr = VTID("#{"),
             XT_PopSgr = VTID("#}"),
             DECSCPP_SetColumnsPerPage = VTID("$|"),
+        };
+
+        enum DcsActionCodes : uint64_t
+        {
+            DECDLD_DownloadDRCS = VTID("{"),
+            DECRQSS_RequestSetting = VTID("$q")
         };
 
         enum Vt52ActionCodes : uint64_t

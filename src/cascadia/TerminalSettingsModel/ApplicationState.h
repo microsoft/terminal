@@ -13,19 +13,33 @@ Abstract:
 #pragma once
 
 #include "ApplicationState.g.h"
+#include "WindowLayout.g.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <til/mutex.h>
 #include <til/throttled_func.h>
+#include <JsonUtils.h>
 
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
 //   (type, function name, JSON key, ...variadic construction arguments)
-#define MTSM_APPLICATION_STATE_FIELDS(X) \
-    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                \
+    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                          \
+    X(Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts") \
+    X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                             \
+    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages")
+
+    struct WindowLayout : WindowLayoutT<WindowLayout>
+    {
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
+        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
+        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);
+
+        friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
+    };
+
     struct ApplicationState : ApplicationStateT<ApplicationState>
     {
         static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
@@ -65,5 +79,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
+    BASIC_FACTORY(WindowLayout)
     BASIC_FACTORY(ApplicationState);
 }

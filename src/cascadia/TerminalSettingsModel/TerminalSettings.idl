@@ -27,12 +27,13 @@ namespace Microsoft.Terminal.Settings.Model
         TerminalSettings();
 
         static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
-        static TerminalSettingsCreateResult CreateWithProfileByID(CascadiaSettings appSettings, Guid profileGuid, Microsoft.Terminal.Control.IKeyBindings keybindings);
         static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
         static TerminalSettingsCreateResult CreateWithParent(TerminalSettingsCreateResult parent);
 
         void SetParent(TerminalSettings parent);
         TerminalSettings GetParent();
         void ApplyColorScheme(ColorScheme scheme);
+
+        ColorScheme AppliedColorScheme;
     };
 }

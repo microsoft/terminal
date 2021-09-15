@@ -29,6 +29,7 @@ static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTi
 static constexpr std::string_view LanguageKey{ "language" };
 static constexpr std::string_view ThemeKey{ "theme" };
 static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
+static constexpr std::string_view UseAcrylicInTabRowKey{ "useAcrylicInTabRow" };
 static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
 static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
 static constexpr std::string_view InputServiceWarningKey{ "inputServiceWarning" };
@@ -40,6 +41,7 @@ static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
 static constexpr std::string_view EnableStartupTaskKey{ "startOnUserLogin" };
+static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreference" };
 static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
 static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
@@ -48,6 +50,8 @@ static constexpr std::string_view StartupActionsKey{ "startupActions" };
 static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
 static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
+static constexpr std::string_view AlwaysShowNotificationIconKey{ "alwaysShowNotificationIcon" };
+static constexpr std::string_view MinimizeToNotificationAreaKey{ "minimizeToNotificationArea" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -105,6 +109,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_Language = _Language;
     globals->_Theme = _Theme;
     globals->_TabWidthMode = _TabWidthMode;
+    globals->_UseAcrylicInTabRow = _UseAcrylicInTabRow;
     globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
     globals->_WordDelimiters = _WordDelimiters;
     globals->_InputServiceWarning = _InputServiceWarning;
@@ -121,6 +126,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_ForceVTInput = _ForceVTInput;
     globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
     globals->_StartOnUserLogin = _StartOnUserLogin;
+    globals->_FirstWindowPreference = _FirstWindowPreference;
     globals->_AlwaysOnTop = _AlwaysOnTop;
     globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
@@ -129,6 +135,8 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_WindowingBehavior = _WindowingBehavior;
     globals->_TrimBlockSelection = _TrimBlockSelection;
     globals->_DetectURLs = _DetectURLs;
+    globals->_MinimizeToNotificationArea = _MinimizeToNotificationArea;
+    globals->_AlwaysShowNotificationIcon = _AlwaysShowNotificationIcon;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
     globals->_validDefaultProfile = _validDefaultProfile;
@@ -279,6 +287,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
     JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
 
+    JsonUtils::GetValueForKey(json, FirstWindowPreferenceKey, _FirstWindowPreference);
+
     JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
 
     JsonUtils::GetValueForKey(json, LanguageKey, _Language);
@@ -286,6 +296,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, ThemeKey, _Theme);
 
     JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
+
+    JsonUtils::GetValueForKey(json, UseAcrylicInTabRowKey, _UseAcrylicInTabRow);
 
     JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
 
@@ -318,6 +330,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
 
     JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
+
+    JsonUtils::GetValueForKey(json, MinimizeToNotificationAreaKey, _MinimizeToNotificationArea);
+
+    JsonUtils::GetValueForKey(json, AlwaysShowNotificationIconKey, _AlwaysShowNotificationIcon);
 
     // This is a helper lambda to get the keybindings and commands out of both
     // and array of objects. We'll use this twice, once on the legacy
@@ -396,10 +412,12 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, CopyFormattingKey,              _CopyFormatting);
     JsonUtils::SetValueForKey(json, WarnAboutLargePasteKey,         _WarnAboutLargePaste);
     JsonUtils::SetValueForKey(json, WarnAboutMultiLinePasteKey,     _WarnAboutMultiLinePaste);
+    JsonUtils::SetValueForKey(json, FirstWindowPreferenceKey,       _FirstWindowPreference);
     JsonUtils::SetValueForKey(json, LaunchModeKey,                  _LaunchMode);
     JsonUtils::SetValueForKey(json, LanguageKey,                    _Language);
     JsonUtils::SetValueForKey(json, ThemeKey,                       _Theme);
     JsonUtils::SetValueForKey(json, TabWidthModeKey,                _TabWidthMode);
+    JsonUtils::SetValueForKey(json, UseAcrylicInTabRowKey,          _UseAcrylicInTabRow);
     JsonUtils::SetValueForKey(json, SnapToGridOnResizeKey,          _SnapToGridOnResize);
     JsonUtils::SetValueForKey(json, DebugFeaturesKey,               _DebugFeaturesEnabled);
     JsonUtils::SetValueForKey(json, ForceFullRepaintRenderingKey,   _ForceFullRepaintRendering);
@@ -414,6 +432,8 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
     JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
     JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
+    JsonUtils::SetValueForKey(json, MinimizeToNotificationAreaKey,  _MinimizeToNotificationArea);
+    JsonUtils::SetValueForKey(json, AlwaysShowNotificationIconKey,          _AlwaysShowNotificationIcon);
     // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();

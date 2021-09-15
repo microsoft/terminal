@@ -29,6 +29,8 @@
     "disableAnimations": false,
     "startupActions": "",
     "focusFollowMouse": false,
+    "minimizeToNotificationArea": false,
+    "alwaysShowNotificationIcon": false,
 
     "profiles":
     [
@@ -299,6 +301,8 @@
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
         { "command": "quakeMode", "keys":"win+sc(41)" },
+        { "command": "openSystemMenu", "keys": "alt+space" },
+        { "command": "quit" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -344,14 +348,29 @@
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
         { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left"},
-        { "command": { "action": "movePane", "direction": "down" } },
-        { "command": { "action": "movePane", "direction": "left" } },
-        { "command": { "action": "movePane", "direction": "right" } },
-        { "command": { "action": "movePane", "direction": "up" } },
-        { "command": { "action": "movePane", "direction": "previous"} },
+        { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
+        { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
+        { "command": { "action": "moveFocus", "direction": "first" } },
+        { "command": { "action": "swapPane", "direction": "down" } },
+        { "command": { "action": "swapPane", "direction": "left" } },
+        { "command": { "action": "swapPane", "direction": "right" } },
+        { "command": { "action": "swapPane", "direction": "up" } },
+        { "command": { "action": "swapPane", "direction": "previous"} },
+        { "command": { "action": "swapPane", "direction": "previousInOrder"} },
+        { "command": { "action": "swapPane", "direction": "nextInOrder"} },
+        { "command": { "action": "swapPane", "direction": "first" } },
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
+        { "command": { "action": "movePane", "index": 0 } },
+        { "command": { "action": "movePane", "index": 1 } },
+        { "command": { "action": "movePane", "index": 2 } },
+        { "command": { "action": "movePane", "index": 3 } },
+        { "command": { "action": "movePane", "index": 4 } },
+        { "command": { "action": "movePane", "index": 5 } },
+        { "command": { "action": "movePane", "index": 6 } },
+        { "command": { "action": "movePane", "index": 7 } },
+        { "command": { "action": "movePane", "index": 8 } },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -366,6 +385,7 @@
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
+        { "command": { "action": "clearBuffer", "clear": "all" } },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },

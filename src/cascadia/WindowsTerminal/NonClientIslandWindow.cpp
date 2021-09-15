@@ -629,14 +629,21 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 
     return DefWindowProc(GetHandle(), WM_SETCURSOR, wParam, lParam);
 }
-
 // Method Description:
-// - Gets the difference between window and client area size.
+// - Get the dimensions of our non-client area, as a rect where each component
+//   represents that side.
+// - The .left will be a negative number, to represent that the actual side of
+//   the non-client area is outside the border of our window. It's roughly 8px (
+//   * DPI scaling) to the left of the visible border.
+// - The .right component will be positive, indicating that the nonclient border
+//   is in the positive-x direction from the edge of our client area.
+// - This DOES NOT include our titlebar! It's in the client area for us.
 // Arguments:
-// - dpi: dpi of a monitor on which the window is placed
-// Return Value
-// - The size difference
-SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+// - dpi: the scaling that we should use to calculate the border sizes.
+// Return Value:
+// - a RECT whose components represent the margins of the nonclient area,
+//   relative to the client area.
+RECT NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
@@ -647,6 +654,18 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
     LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
 
     islandFrame.top = -topBorderVisibleHeight;
+    return islandFrame;
+}
+
+// Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpi: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+{
+    const auto islandFrame{ GetNonClientFrame(dpi) };
 
     // If we have a titlebar, this is being called after we've initialized, and
     // we can just ask that titlebar how big it wants to be.
@@ -731,7 +750,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         // reason so we have to do it ourselves.
         if (wParam == HTCAPTION)
         {
-            _OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         }
         break;
     }
@@ -782,8 +801,18 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         rcRest.top = topBorderHeight;
 
         const auto backgroundBrush = _titlebar.Background();
-        const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-        const til::color backgroundColor = backgroundSolidBrush.Color();
+        const auto backgroundSolidBrush = backgroundBrush.try_as<Media::SolidColorBrush>();
+        const auto backgroundAcrylicBrush = backgroundBrush.try_as<Media::AcrylicBrush>();
+
+        til::color backgroundColor = Colors::Black();
+        if (backgroundSolidBrush)
+        {
+            backgroundColor = backgroundSolidBrush.Color();
+        }
+        else if (backgroundAcrylicBrush)
+        {
+            backgroundColor = backgroundAcrylicBrush.FallbackColor();
+        }
 
         if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
         {
@@ -917,48 +946,4 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !(_fullscreen || _borderless);
-}
-
-// Method Description:
-// - Opens the window's system menu.
-// - The system menu is the menu that opens when the user presses Alt+Space or
-//   right clicks on the title bar.
-// - Before updating the menu, we update the buttons like "Maximize" and
-//   "Restore" so that they are grayed out depending on the window's state.
-// Arguments:
-// - cursorX: the cursor's X position in screen coordinates
-// - cursorY: the cursor's Y position in screen coordinates
-void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY) const noexcept
-{
-    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
-
-    WINDOWPLACEMENT placement;
-    if (!GetWindowPlacement(_window.get(), &placement))
-    {
-        return;
-    }
-    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
-
-    // Update the options based on window state.
-    MENUITEMINFO mii;
-    mii.cbSize = sizeof(MENUITEMINFO);
-    mii.fMask = MIIM_STATE;
-    mii.fType = MFT_STRING;
-    auto setState = [&](UINT item, bool enabled) {
-        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
-        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
-    };
-    setState(SC_RESTORE, isMaximized);
-    setState(SC_MOVE, !isMaximized);
-    setState(SC_SIZE, !isMaximized);
-    setState(SC_MINIMIZE, true);
-    setState(SC_MAXIMIZE, !isMaximized);
-    setState(SC_CLOSE, true);
-    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
-
-    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, cursorX, cursorY, 0, _window.get(), nullptr);
-    if (ret != 0)
-    {
-        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
-    }
 }

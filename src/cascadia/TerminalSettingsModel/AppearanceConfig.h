@@ -52,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::IAppearanceConfig, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, PixelShaderPath, L"");
+        INHERITABLE_SETTING(Model::IAppearanceConfig, Model::IntenseStyle, IntenseTextStyle, Model::IntenseStyle::Bright);
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;

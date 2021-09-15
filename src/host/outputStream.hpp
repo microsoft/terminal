@@ -104,6 +104,7 @@ public:
     bool PrivateEnableAnyEventMouseMode(const bool enabled) override;
     bool PrivateEnableAlternateScroll(const bool enabled) override;
     bool PrivateEraseAll() override;
+    bool PrivateClearBuffer() override;
 
     bool GetUserDefaultCursorStyle(CursorType& style) override;
     bool SetCursorStyle(CursorType const style) override;
@@ -146,6 +147,10 @@ public:
 
     bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
     bool PrivateEndHyperlink() const override;
+
+    bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                               const SIZE cellSize,
+                               const size_t centeringHint) noexcept override;
 
 private:
     Microsoft::Console::IIoProvider& _io;
