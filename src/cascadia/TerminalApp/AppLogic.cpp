@@ -148,7 +148,7 @@ try
     GetTokenInformation(hToken.get(), TokenElevation, &elevationState, sizeof(elevationState), &dwSize);
     if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
     {
-        // In this case, the user has UAC entirely disabled. This is sorta
+        // In this case, the user has UAC entirely disabled. This is sort of
         // weird, we treat this like the user isn't an admin at all. There's no
         // separation of powers, so the things we normally want to gate on
         // "having special powers" doesn't apply.
