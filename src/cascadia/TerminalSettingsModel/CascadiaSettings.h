@@ -67,7 +67,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static bool _isValidProfileObject(const Json::Value& profileJson);
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
-        void _removeIgnoredProfiles(ParsedSettings& settings);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;
         // We treat userSettings.profiles as an append-only array and will

@@ -117,12 +117,6 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
         }
     }
 
-    if (!_ignoredNamespaces.empty())
-    {
-        _removeIgnoredProfiles(inboxSettings);
-        _removeIgnoredProfiles(userSettings);
-    }
-
     // See member description of _userProfileCount.
     _userProfileCount = userSettings.profiles.size();
 }
@@ -210,6 +204,11 @@ void SettingsLoader::MergeInboxIntoUserSettings()
 
 // Searches AppData/ProgramData and app extension directories for settings JSON files.
 // If such JSON files are found, they're read and their contents added to .userSettings.
+//
+// Of course it would be more elegant to add fragments to .inboxSettings first and then have MergeInboxIntoUserSettings
+// merge them. Unfortunately however the "updates" key in fragment profiles make this impossible:
+// The targeted profile might be one that got created as part of SettingsLoader::MergeInboxIntoUserSettings.
+// Additionally the GUID in "updates" will conflict with existing GUIDs in .inboxSettings.
 void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 {
     ParsedSettings fragmentSettings;
@@ -454,8 +453,6 @@ bool SettingsLoader::_isValidProfileObject(const Json::Value& profileJson)
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
 void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
 {
-    static constexpr std::string_view emptyObjectJSON{ "{}" };
-
     const auto json = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& profilesObject = _getJSONValue(json, ProfilesKey);
     const auto& defaultsObject = _getJSONValue(profilesObject, DefaultSettingsKey);
@@ -543,27 +540,6 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, ParsedSet
     {
         duplicateProfile = true;
     }
-}
-
-// We offer a global option called "disabledProfileSources" (it's an array of strings).
-// If the option contains "Windows.Terminal.Wsl" for instance, we'll not generate any dynamic WSL profiles.
-//
-// Unfortunately this poses a problem: What about existing user profiles?
-// This function ensures that existing profiles with such disabled sources are removed.
-void SettingsLoader::_removeIgnoredProfiles(ParsedSettings& settings)
-{
-    const auto begin = settings.profiles.begin();
-    const auto end = settings.profiles.end();
-    const auto it = std::remove_if(begin, end, [&](const auto& profile) {
-        const auto source = profile->Source();
-        const auto remove = !source.empty() && _ignoredNamespaces.count(source);
-        if (remove)
-        {
-            settings.profilesByGuid.erase(profile->Guid());
-        }
-        return remove;
-    });
-    settings.profiles.erase(it, end);
 }
 
 // Method Description:
@@ -686,6 +662,22 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader)
 
     for (const auto& profile : loader.userSettings.profiles)
     {
+        // If a generator stops producing a certain profile (e.g. WSL or PowerShell were removed) we should also
+        // stop including the matching user's profile in _allProfiles (since they're disfunctional anyways).
+        // A profile requires a generated parent if it has a source (signaling that it was generated previously).
+        if (const auto source = profile->Source(); !source.empty())
+        {
+            static constexpr auto isGenerated = [](const auto& profile) {
+                return profile->Origin() == OriginTag::Generated;
+            };
+
+            const auto& parents = profile->Parents();
+            if (std::none_of(parents.begin(), parents.end(), isGenerated))
+            {
+                continue;
+            }
+        }
+
         allProfiles.emplace_back(*profile);
         if (!profile->Hidden())
         {
