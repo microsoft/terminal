@@ -662,17 +662,20 @@ CascadiaSettings::CascadiaSettings(SettingsLoader&& loader)
 
     for (const auto& profile : loader.userSettings.profiles)
     {
-        // If a generator stops producing a certain profile (e.g. WSL or PowerShell were removed) we should also
-        // stop including the matching user's profile in _allProfiles (since they're disfunctional anyways).
-        // A profile requires a generated parent if it has a source (signaling that it was generated previously).
+        // If a generator stops producing a certain profile (e.g. WSL or PowerShell were removed) or
+        // a profile from a fragment doesn't exist anymore, we should also stop including the
+        // matching user's profile in _allProfiles (since they aren't functional anyways).
+        //
+        // Any profile with a source requires a generated parent (as a source signals that it was generated previously).
         if (const auto source = profile->Source(); !source.empty())
         {
-            static constexpr auto isGenerated = [](const auto& profile) {
-                return profile->Origin() == OriginTag::Generated;
+            static constexpr auto isDynamic = [](const auto& profile) {
+                const auto origin = profile->Origin();
+                return origin == OriginTag::Generated || origin == OriginTag::Fragment;
             };
 
             const auto& parents = profile->Parents();
-            if (std::none_of(parents.begin(), parents.end(), isGenerated))
+            if (std::none_of(parents.begin(), parents.end(), isDynamic))
             {
                 continue;
             }
