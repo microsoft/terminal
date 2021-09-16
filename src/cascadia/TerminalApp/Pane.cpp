@@ -694,6 +694,12 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         return false;
     }
 
+    // Similarly don't swap if we have a circular reference
+    if (first->_HasChild(second) || second->_HasChild(first))
+    {
+        return false;
+    }
+
     std::unique_lock lock{ _createCloseLock };
 
     // Recurse through the tree to find the parent panes of each pane that is
