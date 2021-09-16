@@ -9,6 +9,8 @@
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
+#include "VsDevCmdGenerator.h"
+#include "VsDevShellGenerator.h"
 #include "WslDistroGenerator.h"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
@@ -51,6 +53,8 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
         _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
         _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
         _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<VsDevCmdGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<VsDevShellGenerator>());
     }
 }
 

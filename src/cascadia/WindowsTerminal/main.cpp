@@ -25,7 +25,7 @@ TRACELOGGING_DEFINE_PROVIDER(
 // !! BODGY !!
 // Manually use the resources from TerminalApp as our resources.
 // The WindowsTerminal project doesn't actually build a Resources.resw file, but
-// we still need to be able to localize strings for the tray icon menu. Anything
+// we still need to be able to localize strings for the notification icon menu. Anything
 // you want localized for WindowsTerminal.exe should be stuck in
 // ...\TerminalApp\Resources\en-US\Resources.resw
 #include <LibraryResources.h>

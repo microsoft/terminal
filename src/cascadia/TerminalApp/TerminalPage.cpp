@@ -827,7 +827,7 @@ namespace winrt::TerminalApp::implementation
 
         if (altPressed && !debugTap)
         {
-            this->_SplitPane(SplitState::Automatic,
+            this->_SplitPane(SplitDirection::Automatic,
                              SplitType::Manual,
                              0.5f,
                              newTerminalArgs);
@@ -1468,25 +1468,18 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
-    // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
-    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
+    // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
-    void TerminalPage::_SplitPane(const SplitState splitType,
+    void TerminalPage::_SplitPane(const SplitDirection splitDirection,
                                   const SplitType splitMode,
                                   const float splitSize,
                                   const NewTerminalArgs& newTerminalArgs)
     {
-        // Do nothing if we're requesting no split.
-        if (splitType == SplitState::None)
-        {
-            return;
-        }
-
         const auto focusedTab{ _GetFocusedTabImpl() };
 
         // Do nothing if no TerminalTab is focused
@@ -1495,33 +1488,26 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        _SplitPane(*focusedTab, splitType, splitMode, splitSize, newTerminalArgs);
+        _SplitPane(*focusedTab, splitDirection, splitMode, splitSize, newTerminalArgs);
     }
 
     // Method Description:
     // - Split the focused pane of the given tab, either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
-    // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
     // - tab: The tab that is going to be split.
-    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
+    // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(TerminalTab& tab,
-                                  const SplitState splitType,
+                                  const SplitDirection splitDirection,
                                   const SplitType splitMode,
                                   const float splitSize,
                                   const NewTerminalArgs& newTerminalArgs)
     {
-        // Do nothing if we're requesting no split.
-        if (splitType == SplitState::None)
-        {
-            return;
-        }
-
         try
         {
             TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -1567,8 +1553,8 @@ namespace winrt::TerminalApp::implementation
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
             const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
-            auto realSplitType = splitType;
-            if (realSplitType == SplitState::Automatic)
+            auto realSplitType = splitDirection;
+            if (realSplitType == SplitDirection::Automatic)
             {
                 realSplitType = tab.PreCalculateAutoSplit(availableSpace);
             }

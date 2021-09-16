@@ -469,9 +469,6 @@
     <value>Windows Console Host</value>
     <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
   </data>
-  <data name="MinimizeToTrayCommandKey" xml:space="preserve">
-    <value>Minimize current window to tray</value>
-  </data>
   <data name="QuitCommandKey" xml:space="preserve">
     <value>Quit the Terminal</value>
   </data>
