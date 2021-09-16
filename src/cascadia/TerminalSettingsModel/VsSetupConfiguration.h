@@ -39,7 +39,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         {
             std::wstring ResolvePath(std::wstring_view relativePath) const
             {
-                return VsSetupConfiguration::ResolvePath(inst, relativePath);
+                return VsSetupConfiguration::ResolvePath(inst.get(), relativePath);
             }
 
             std::wstring GetDevShellModulePath() const
@@ -60,22 +60,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
             bool VersionInRange(std::wstring_view range) const
             {
-                return InstallationVersionInRange(query, inst, range);
+                return InstallationVersionInRange(query.get(), inst.get(), range);
             }
 
             std::wstring GetVersion() const
             {
-                return GetInstallationVersion(inst);
+                return GetInstallationVersion(inst.get());
             }
 
             std::wstring GetInstallationPath() const
             {
-                return VsSetupConfiguration::GetInstallationPath(inst);
+                return VsSetupConfiguration::GetInstallationPath(inst.get());
             }
 
             std::wstring GetInstanceId() const
             {
-                return VsSetupConfiguration::GetInstanceId(inst);
+                return VsSetupConfiguration::GetInstanceId(inst.get());
             }
 
             ComPtrPropertyStore GetInstancePropertyStore() const
@@ -119,17 +119,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         private:
             friend class VsSetupConfiguration;
 
-            VsSetupInstance(const ComPtrSetupQuery pQuery, const ComPtrSetupInstance pInstance) :
-                query(pQuery),
-                helper(pQuery.query<ISetupHelper>()),
-                inst(pInstance),
+            VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
+                query(std::move(pQuery)),
+                inst(std::move(pInstance)),
                 profileNameSuffix(BuildProfileNameSuffix())
             {
             }
 
-            const ComPtrSetupQuery query;
-            const ComPtrSetupHelper helper;
-            const ComPtrSetupInstance inst;
+            ComPtrSetupQuery query;
+            ComPtrSetupInstance inst;
 
             std::wstring profileNameSuffix;
 
@@ -140,13 +138,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 {
                     std::wstring suffix;
 
-                    std::wstring productLine{ GetProductLineVersion(catalogProperties) };
+                    std::wstring productLine{ GetProductLineVersion(catalogProperties.get()) };
                     suffix.append(productLine);
 
                     ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
                     if (customProperties != nullptr)
                     {
-                        std::wstring nickname{ GetNickname(customProperties) };
+                        std::wstring nickname{ GetNickname(customProperties.get()) };
                         if (!nickname.empty())
                         {
                             suffix.append(L" (" + nickname + L")");
@@ -154,13 +152,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                         else
                         {
                             ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
-                            suffix.append(GetChannelNameSuffixTag(instanceProperties));
+                            suffix.append(GetChannelNameSuffixTag(instanceProperties.get()));
                         }
                     }
                     else
                     {
                         ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
-                        suffix.append(GetChannelNameSuffixTag(instanceProperties));
+                        suffix.append(GetChannelNameSuffixTag(instanceProperties.get()));
                     }
 
                     return suffix;
@@ -169,7 +167,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return GetVersion();
             }
 
-            static std::wstring GetChannelNameSuffixTag(ComPtrPropertyStore instanceProperties)
+            static std::wstring GetChannelNameSuffixTag(ISetupPropertyStore* instanceProperties)
             {
                 std::wstring tag;
                 std::wstring channelName{ GetChannelName(instanceProperties) };
@@ -187,12 +185,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return tag;
             }
 
-            static std::wstring GetChannelId(ComPtrPropertyStore instanceProperties)
+            static std::wstring GetChannelId(ISetupPropertyStore* instanceProperties)
             {
                 return GetStringProperty(instanceProperties, L"channelId");
             }
 
-            static std::wstring GetChannelName(ComPtrPropertyStore instanceProperties)
+            static std::wstring GetChannelName(ISetupPropertyStore* instanceProperties)
             {
                 std::wstring channelId{ GetChannelId(instanceProperties) };
                 if (channelId.empty())
@@ -212,12 +210,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return channelName;
             }
 
-            static std::wstring GetNickname(ComPtrCustomPropertyStore customProperties)
+            static std::wstring GetNickname(ISetupPropertyStore* customProperties)
             {
                 return GetStringProperty(customProperties, L"nickname");
             }
 
-            static std::wstring GetProductLineVersion(ComPtrCatalogPropertyStore customProperties)
+            static std::wstring GetProductLineVersion(ISetupPropertyStore* customProperties)
             {
                 return GetStringProperty(customProperties, L"productLineVersion");
             }
@@ -226,11 +224,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         static std::vector<VsSetupInstance> QueryInstances();
 
     private:
-        static bool InstallationVersionInRange(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInst, std::wstring_view range);
-        static std::wstring ResolvePath(ComPtrSetupInstance pInst, std::wstring_view relativePath);
-        static std::wstring GetInstallationVersion(ComPtrSetupInstance pInst);
-        static std::wstring GetInstallationPath(ComPtrSetupInstance pInst);
-        static std::wstring GetInstanceId(ComPtrSetupInstance pInst);
-        static std::wstring GetStringProperty(ComPtrPropertyStore pProps, std::wstring_view name);
+        static bool InstallationVersionInRange(ISetupConfiguration2* pQuery, ISetupInstance* pInst, std::wstring_view range);
+        static std::wstring ResolvePath(ISetupInstance* pInst, std::wstring_view relativePath);
+        static std::wstring GetInstallationVersion(ISetupInstance* pInst);
+        static std::wstring GetInstallationPath(ISetupInstance* pInst);
+        static std::wstring GetInstanceId(ISetupInstance* pInst);
+        static std::wstring GetStringProperty(ISetupPropertyStore* pProps, std::wstring_view name);
     };
 };
