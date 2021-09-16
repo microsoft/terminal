@@ -196,7 +196,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             return;
         }
 
-        _clearOldMruEntries(peasantId);
+        _clearOldMruEntries({ peasantId });
         {
             std::unique_lock lock{ _peasantsMutex };
             _peasants.erase(peasantId);
@@ -275,7 +275,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             {
                 // Remove the peasant from the list of MRU windows. They're dead.
                 // They can't be the MRU anymore.
-                _clearOldMruEntries(peasantID);
+                _clearOldMruEntries({ peasantID });
             }
             return nullptr;
         }
@@ -371,29 +371,35 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     //   activated (so that we don't leave an old entry for it in the list).
     // - NB: This takes a unique lock on _mruPeasantsMutex.
     // Arguments:
-    // - peasantID: The ID of the peasant to remove from the MRU list
+    // - peasantIds: The list of peasant IDs to remove from the MRU list
     // Return Value:
     // - <none>
-    void Monarch::_clearOldMruEntries(const uint64_t peasantID)
+    void Monarch::_clearOldMruEntries(const std::unordered_set<uint64_t>& peasantIds)
     {
-        std::unique_lock lock{ _mruPeasantsMutex };
-        auto result = std::find_if(_mruPeasants.begin(),
-                                   _mruPeasants.end(),
-                                   [peasantID](auto&& other) {
-                                       return peasantID == other.PeasantID();
-                                   });
-
-        if (result != std::end(_mruPeasants))
+        if (peasantIds.size() == 0)
         {
-            TraceLoggingWrite(g_hRemotingProvider,
-                              "Monarch_RemovedPeasantFromDesktop",
-                              TraceLoggingUInt64(peasantID, "peasantID", "The ID of the peasant"),
-                              TraceLoggingGuid(result->DesktopID(), "desktopGuid", "The GUID of the previous desktop the window was on"),
-                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-
-            _mruPeasants.erase(result);
+            return;
         }
+
+        std::unique_lock lock{ _mruPeasantsMutex };
+        auto partition = std::remove_if(_mruPeasants.begin(), _mruPeasants.end(), [&](const auto& p) {
+            const auto id = p.PeasantID();
+            // remove the element if it was found in the list to erase.
+            if (peasantIds.count(id) == 1)
+            {
+                TraceLoggingWrite(g_hRemotingProvider,
+                                  "Monarch_RemovedPeasantFromDesktop",
+                                  TraceLoggingUInt64(id, "peasantID", "The ID of the peasant"),
+                                  TraceLoggingGuid(p.DesktopID(), "desktopGuid", "The GUID of the previous desktop the window was on"),
+                                  TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                                  TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+                return true;
+            }
+            return false;
+        });
+
+        // Remove everything that was in the list
+        _mruPeasants.erase(partition, _mruPeasants.end());
     }
 
     // Method Description:
@@ -409,7 +415,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         // * Check all the current lists to look for this peasant.
         //   remove it from any where it exists.
-        _clearOldMruEntries(localArgs->PeasantID());
+        _clearOldMruEntries({ localArgs->PeasantID() });
 
         // * If the current desktop doesn't have a vector, add one.
         const auto desktopGuid{ localArgs->DesktopID() };
@@ -501,7 +507,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //     following peasant.
         // * If we don't care, then we'll just return that one.
         uint64_t result = 0;
-        std::vector<uint64_t> peasantsToErase{};
+        std::unordered_set<uint64_t> peasantsToErase{};
         for (const auto& mruWindowArgs : _mruPeasants)
         {
             // Try to get the peasant, but do not have _getPeasant clean up old
@@ -524,7 +530,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // We'll go through the loop again. We removed the current one
                 // at positionInList, so the next one in positionInList will be
                 // a new, different peasant.
-                peasantsToErase.push_back(mruWindowArgs.PeasantID());
+                peasantsToErase.emplace(mruWindowArgs.PeasantID());
                 continue;
             }
 
@@ -586,17 +592,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (peasantsToErase.size() > 0)
         {
-            std::unique_lock uniqueLock{ _mruPeasantsMutex };
-
-            auto partition = std::remove_if(_mruPeasants.begin(), _mruPeasants.end(), [&](const auto& p) {
-                const auto id = p.PeasantID();
-                const auto it = std::find(peasantsToErase.cbegin(), peasantsToErase.cend(), id);
-                // remove the element if it was found in the list to erase.
-                return it != peasantsToErase.cend();
-            });
-
-            // Remove everything that was in the list
-            _mruPeasants.erase(partition, _mruPeasants.end());
+            _clearOldMruEntries(peasantsToErase);
         }
 
         if (result == 0)

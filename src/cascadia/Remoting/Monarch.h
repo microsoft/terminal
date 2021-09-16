@@ -92,7 +92,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
         void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
-        void _clearOldMruEntries(const uint64_t peasantID);
+        void _clearOldMruEntries(const std::unordered_set<uint64_t>& peasantIds);
 
         void _forAllPeasantsIgnoringTheDead(std::function<void(const winrt::Microsoft::Terminal::Remoting::IPeasant&, const uint64_t)> callback,
                                             std::function<void(const uint64_t)> errorCallback);
@@ -128,7 +128,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             using R = std::invoke_result_t<F, Map::key_type, Map::mapped_type>;
             static constexpr auto IsVoid = std::is_void_v<R>;
 
-            std::vector<uint64_t> peasantsToErase;
+            std::unordered_set<uint64_t> peasantsToErase;
             {
                 std::shared_lock lock{ _peasantsMutex };
 
@@ -154,7 +154,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
                         if (exception.code() == 0x800706ba) // The RPC server is unavailable.
                         {
-                            peasantsToErase.emplace_back(id);
+                            peasantsToErase.emplace(id);
                         }
                         else
                         {
@@ -176,10 +176,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                         _peasants.erase(id);
                     }
                 }
-                for (const auto& id : peasantsToErase)
-                {
-                    _clearOldMruEntries(id);
-                }
+                _clearOldMruEntries(peasantsToErase);
             }
         }
 
