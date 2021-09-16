@@ -588,13 +588,11 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             std::unique_lock uniqueLock{ _mruPeasantsMutex };
 
-            // I wish I had std::erase_if (C++20) but I don't yet
-            // partition the array into [not dead | dead ]
-            auto partition = std::stable_partition(_mruPeasants.begin(), _mruPeasants.end(), [&](const auto& p) {
+            auto partition = std::remove_if(_mruPeasants.begin(), _mruPeasants.end(), [&](const auto& p) {
                 const auto id = p.PeasantID();
                 const auto it = std::find(peasantsToErase.cbegin(), peasantsToErase.cend(), id);
-                // keep the element if it was not found in the list to erase.
-                return it == peasantsToErase.cend();
+                // remove the element if it was found in the list to erase.
+                return it != peasantsToErase.cend();
             });
 
             // Remove everything that was in the list
