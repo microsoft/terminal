@@ -564,6 +564,11 @@ std::shared_ptr<Pane> Pane::NextPane(const std::shared_ptr<Pane> targetPane)
     bool foundTarget = false;
 
     auto foundNext = WalkTree([&](auto pane) {
+        // If we are a parent pane we don't want to move to one of our children
+        if (foundTarget && targetPane->_HasChild(pane))
+        {
+            return false;
+        }
         // In case the target pane is the last pane in the tree, keep a reference
         // to the first leaf so we can wrap around.
         if (firstLeaf == nullptr && pane->_IsLeaf())
