@@ -462,8 +462,8 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     {
         if (const auto parent = _FindParentOfPane(sourcePane))
         {
-            // Capture a weak reference to the source pane if it is a leaf so that
-            // we can keep the same terminal focused and take the same path back down
+            // Capture a weak reference to the original leaf pane so that
+            // we can keep the same TermControl focused and take the same path back down
             // if a child movement is requested.
             parent->_previouslyFocusedTerminal = sourcePane->_IsLeaf() ? sourcePane->weak_from_this() : sourcePane->_previouslyFocusedTerminal;
 
