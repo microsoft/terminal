@@ -487,6 +487,14 @@
     <value>Actions</value>
     <comment>Header for the "actions" menu item. This navigates to a page that lets you see and modify commands, key bindings, and actions that can be done in the app.</comment>
   </data>
+  <data name="Profile_AcrylicOpacity.Header" xml:space="preserve">
+    <value>Acrylic opacity</value>
+    <comment>Header for a control to determine the level of opacity for the acrylic rendering material. The user can choose to make the acrylic background of the app more or less opaque.</comment>
+  </data>
+  <data name="Profile_AcrylicOpacity.HelpText" xml:space="preserve">
+    <value>Sets the transparency of the window.</value>
+    <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
+  </data>
   <data name="Profile_Opacity.Header" xml:space="preserve">
     <value>Background Opacity</value>
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
@@ -981,6 +989,10 @@
   <data name="Profile_Name.Header" xml:space="preserve">
     <value>Name</value>
     <comment>Header for a control to determine the name of the profile. This is a text box.</comment>
+  </data>
+  <data name="Profile_AcrylicHeader.Text" xml:space="preserve">
+    <value>Acrylic</value>
+    <comment>Header for a group of settings related to the acrylic texture rendering on the background of the app.</comment>
   </data>
   <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
     <value>Transparency</value>
