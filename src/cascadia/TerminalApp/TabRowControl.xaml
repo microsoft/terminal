@@ -11,7 +11,11 @@
                   xmlns:mux="using:Microsoft.UI.Xaml.Controls"
                   mc:Ignorable="d">
 
-    <StackPanel Orientation="Horizontal">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
 
         <ContentPresenter x:Name="ElevatedShield"
                           Grid.Column="0">
@@ -27,6 +31,7 @@
         </ContentPresenter>
 
         <mux:TabView x:Name="TabView"
+                          Grid.Column="1"
                      VerticalAlignment="Bottom"
                      HorizontalContentAlignment="Stretch"
                      AllowDropTabs="True"
@@ -117,6 +122,6 @@
             </mux:TabView.TabStripFooter>
 
         </mux:TabView>
-    </StackPanel>
+    </Grid>
 
 </ContentPresenter>
