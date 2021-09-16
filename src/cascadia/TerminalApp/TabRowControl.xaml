@@ -31,7 +31,7 @@
         </ContentPresenter>
 
         <mux:TabView x:Name="TabView"
-                          Grid.Column="1"
+                     Grid.Column="1"
                      VerticalAlignment="Bottom"
                      HorizontalContentAlignment="Stretch"
                      AllowDropTabs="True"
