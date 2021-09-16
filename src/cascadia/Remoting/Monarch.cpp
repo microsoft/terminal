@@ -446,8 +446,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         std::shared_lock lock{ _mruPeasantsMutex };
         if (_mruPeasants.empty())
         {
+            // unlock the mruPeasants mutex to make sure we can't deadlock here.
+            lock.unlock();
             // Only need a shared lock for read
-            std::shared_lock lock{ _peasantsMutex };
+            std::shared_lock peasantsLock{ _peasantsMutex };
             // We haven't yet been told the MRU peasant. Just use the first one.
             // This is just gonna be a random one, but really shouldn't happen
             // in practice. The WindowManager should set the MRU peasant
