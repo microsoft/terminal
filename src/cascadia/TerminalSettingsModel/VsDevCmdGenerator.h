@@ -21,15 +21,12 @@ namespace Microsoft::Terminal::Settings::Model
     class VsDevCmdGenerator : public BaseVisualStudioGenerator
     {
     public:
-        VsDevCmdGenerator() = default;
-        ~VsDevCmdGenerator() = default;
-
         std::wstring_view GetNamespace() override
         {
             return std::wstring_view{ L"Windows.Terminal.VisualStudio.CommandPrompt" };
         }
 
-        inline bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance instance) const override
+        bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance&) const override
         {
             // We only support version of VS from 15.0.
             // Per heaths: The [ISetupConfiguration] COM server only supports Visual Studio 15.0 and newer anyway.
@@ -37,17 +34,17 @@ namespace Microsoft::Terminal::Settings::Model
             return true;
         }
 
-        inline std::wstring GetProfileGuidSeed(const VsSetupConfiguration::VsSetupInstance instance) const override
+        std::wstring GetProfileGuidSeed(const VsSetupConfiguration::VsSetupInstance& instance) const override
         {
             return L"VsDevCmd" + instance.GetInstanceId();
         }
 
-        inline std::wstring GetProfileIconPath() const override
+        std::wstring GetProfileIconPath() const override
         {
             return L"ms-appx:///ProfileIcons/{0caa0dad-35be-5f56-a8ff-afceeeaa6101}.png";
         }
 
-        std::wstring GetProfileName(const VsSetupConfiguration::VsSetupInstance instance) const override;
-        std::wstring GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance instance) const override;
+        std::wstring GetProfileName(const VsSetupConfiguration::VsSetupInstance& instance) const override;
+        std::wstring GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const override;
     };
 };

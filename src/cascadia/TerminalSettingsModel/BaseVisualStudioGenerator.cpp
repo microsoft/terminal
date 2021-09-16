@@ -14,18 +14,16 @@ std::vector<Profile> BaseVisualStudioGenerator::GenerateProfiles()
 
     // There's no point in enumerating valid Visual Studio instances more than once,
     // so cache them for use by both Visual Studio profile generators.
-    if (!BaseVisualStudioGenerator::hasQueried)
-    {
-        instances = VsSetupConfiguration::QueryInstances();
-        hasQueried = true;
-    }
+    static const auto instances = VsSetupConfiguration::QueryInstances();
 
-    for (auto const& instance : BaseVisualStudioGenerator::instances)
+    for (auto const& instance : instances)
     {
         try
         {
             if (!IsInstanceValid(instance))
+            {
                 continue;
+            }
 
             auto DevShell{ CreateProfile(GetProfileGuidSeed(instance)) };
             DevShell.Name(GetProfileName(instance));
