@@ -570,7 +570,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
         if (peasantsToErase.size() > 0)
         {
-            std::unique_lock ulock{ _mruPeasantsMutex };
+            std::unique_lock uniqueLock{ _mruPeasantsMutex };
 
             // I wish I had std::erase_if (C++20) but I don't yet
             // partition the array into [not dead | dead ]
