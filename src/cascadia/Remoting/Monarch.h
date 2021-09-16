@@ -79,9 +79,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
-        std::shared_mutex _peasantsMutex{};
-
         std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
+        // These should not be locked at the same time to prevent deadlocks
+        // unless they are both shared_locks.
+        std::shared_mutex _peasantsMutex{};
         std::shared_mutex _mruPeasantsMutex{};
 
         winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID, bool clearMruPeasantOnFailure = true);
@@ -113,6 +114,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //   returns false.
         // - If any single peasant is dead, then we'll call onError and then add it to a
         //   list of peasants to clean up once the loop ends.
+        // - NB: this (separately) takes unique locks on _peasantsMutex and
+        //   _mruPeasantsMutex.
         // Arguments:
         // - func: The function to call on each peasant
         // - onError: The function to call if a peasant is dead.
@@ -126,7 +129,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             static constexpr auto IsVoid = std::is_void_v<R>;
 
             std::vector<uint64_t> peasantsToErase;
-
             {
                 std::shared_lock lock{ _peasantsMutex };
 
@@ -165,10 +167,17 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
             if (peasantsToErase.size() > 0)
             {
-                std::unique_lock lock{ _peasantsMutex };
+                // Don't hold a lock on _peasants and _mruPeasants at the same
+                // time to avoid deadlocks.
+                {
+                    std::unique_lock lock{ _peasantsMutex };
+                    for (const auto& id : peasantsToErase)
+                    {
+                        _peasants.erase(id);
+                    }
+                }
                 for (const auto& id : peasantsToErase)
                 {
-                    _peasants.erase(id);
                     _clearOldMruEntries(id);
                 }
             }

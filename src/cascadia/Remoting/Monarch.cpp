@@ -50,6 +50,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - Add the given peasant to the list of peasants we're tracking. This
     //   Peasant may have already been assigned an ID. If it hasn't, then give
     //   it an ID.
+    // - NB: this takes a unique_lock on _peasantsMutex.
     // Arguments:
     // - peasant: the new Peasant to track.
     // Return Value:
@@ -179,6 +180,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     // Method Description:
     // - Tells the monarch that a peasant is being closed.
+    // - NB: this (separately) takes unique locks on _peasantsMutex and
+    //   _mruPeasantsMutex.
     // Arguments:
     // - peasantId: the id of the peasant
     // Return Value:
@@ -231,6 +234,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // Method Description:
     // - Lookup a peasant by its ID. If the peasant has died, this will also
     //   remove the peasant from our list of peasants.
+    // - NB: this (separately) takes unique locks on _peasantsMutex and
+    //   _mruPeasantsMutex.
     // Arguments:
     // - peasantID: The ID Of the peasant to find
     // - clearMruPeasantOnFailure: When true this function will handle clearing
@@ -364,6 +369,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - Helper for removing a peasant from the list of MRU peasants. We want to
     //   do this both when the peasant dies, and also when the peasant is newly
     //   activated (so that we don't leave an old entry for it in the list).
+    // - NB: This takes a unique lock on _mruPeasantsMutex.
     // Arguments:
     // - peasantID: The ID of the peasant to remove from the MRU list
     // Return Value:
@@ -392,6 +398,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
 
     // Method Description:
     // - Actually handle inserting the WindowActivatedArgs into our list of MRU windows.
+    // - NB: this takes a unique_lock on _mruPeasantsMutex.
     // Arguments:
     // - localArgs: an in-proc WindowActivatedArgs that we should add to our list of MRU windows.
     // Return Value:
@@ -431,6 +438,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // Method Description:
     // - Retrieves the ID of the MRU peasant window. If requested, will limit
     //   the search to windows that are on the current desktop.
+    // - NB: This method will hold a shared lock on _mruPeasantsMutex and
+    //   potentially a unique_lock on _peasantsMutex at the same time.
+    //   Separately it might hold a unique_lock on _mruPeasantsMutex.
     // Arguments:
     // - limitToCurrentDesktop: if true, only return the MRU peasant that's
     //   actually on the current desktop.
@@ -496,6 +506,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         {
             // Try to get the peasant, but do not have _getPeasant clean up old
             // _mruPeasants because we are iterating here.
+            // SAFETY: _getPeasant can take a unique_lock on _peasantsMutex if
+            // it detects a peasant is dead. Currently _getMostRecentPeasantId
+            // is the only method that holds a lock on both _mruPeasantsMutex and
+            // _peasantsMutex at the same time so there cannot be a deadlock here.
             const auto peasant{ _getPeasant(mruWindowArgs.PeasantID(), false) };
             if (!peasant)
             {
