@@ -746,7 +746,10 @@ namespace winrt::TerminalApp::implementation
 
     bool TerminalTab::FocusPane(const uint32_t id)
     {
-        return _rootPane->FocusPane(id);
+        _changingActivePane = true;
+        const auto res = _rootPane->FocusPane(id);
+        _changingActivePane = false;
+        return res;
     }
 
     // Method Description:
@@ -1628,11 +1631,12 @@ namespace winrt::TerminalApp::implementation
     // - Toggle read-only mode on the active pane
     void TerminalTab::TogglePaneReadOnly()
     {
-        auto control = GetActiveTerminalControl();
-        if (control)
-        {
-            control.ToggleReadOnly();
-        }
+        _activePane->WalkTree([](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                control.ToggleReadOnly();
+            }
+        });
     }
 
     // Method Description:

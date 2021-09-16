@@ -377,10 +377,18 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<AdjustFontSizeArgs>())
         {
-            if (const auto& termControl{ _GetActiveControl() })
+            if (const auto tab{ _GetFocusedTabImpl() })
             {
-                termControl.AdjustFontSize(realArgs.Delta());
-                args.Handled(true);
+                if (const auto activePane = tab->GetActivePane())
+                {
+                    activePane->WalkTree([&](auto p) {
+                        if (const auto& control{ p->GetTerminalControl() })
+                        {
+                            control.AdjustFontSize(realArgs.Delta());
+                        }
+                    });
+                    args.Handled(true);
+                }
             }
         }
     }
@@ -395,20 +403,36 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        if (const auto& termControl{ _GetActiveControl() })
+        if (const auto tab{ _GetFocusedTabImpl() })
         {
-            termControl.ResetFontSize();
-            args.Handled(true);
+            if (const auto activePane = tab->GetActivePane())
+            {
+                activePane->WalkTree([](auto p) {
+                    if (const auto& control{ p->GetTerminalControl() })
+                    {
+                        control.ResetFontSize();
+                    }
+                });
+                args.Handled(true);
+            }
         }
     }
 
     void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
                                                   const ActionEventArgs& args)
     {
-        if (const auto& termControl{ _GetActiveControl() })
+        if (const auto tab{ _GetFocusedTabImpl() })
         {
-            termControl.ToggleShaderEffects();
-            args.Handled(true);
+            if (const auto activePane = tab->GetActivePane())
+            {
+                activePane->WalkTree([](auto p) {
+                    if (const auto& control{ p->GetTerminalControl() })
+                    {
+                        control.ToggleShaderEffects();
+                    }
+                });
+                args.Handled(true);
+            }
         }
     }
 
@@ -454,32 +478,37 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto activeTab{ _GetFocusedTabImpl() })
             {
-                if (auto activeControl = activeTab->GetActiveTerminalControl())
+                if (auto activePane = activeTab->GetActivePane())
                 {
                     if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
                     {
-                        // Start by getting the current settings of the control
-                        auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        auto parentSettings = controlSettings;
-                        // Those are the _runtime_ settings however. What we
-                        // need to do is:
-                        //
-                        //   1. Blow away any colors set in the runtime settings.
-                        //   2. Apply the color scheme to the parent settings.
-                        //
-                        // 1 is important to make sure that the effects of
-                        // something like `colortool` are cleared when setting
-                        // the scheme.
-                        if (controlSettings.GetParent() != nullptr)
-                        {
-                            parentSettings = controlSettings.GetParent();
-                        }
+                        activePane->WalkTree([&](auto p) {
+                            if (const auto control = p->GetTerminalControl())
+                            {
+                                // Start by getting the current settings of the control
+                                auto controlSettings = control.Settings().as<TerminalSettings>();
+                                auto parentSettings = controlSettings;
+                                // Those are the _runtime_ settings however. What we
+                                // need to do is:
+                                //
+                                //   1. Blow away any colors set in the runtime settings.
+                                //   2. Apply the color scheme to the parent settings.
+                                //
+                                // 1 is important to make sure that the effects of
+                                // something like `colortool` are cleared when setting
+                                // the scheme.
+                                if (controlSettings.GetParent() != nullptr)
+                                {
+                                    parentSettings = controlSettings.GetParent();
+                                }
 
-                        // ApplyColorScheme(nullptr) will clear the old color scheme.
-                        controlSettings.ApplyColorScheme(nullptr);
-                        parentSettings.ApplyColorScheme(scheme);
+                                // ApplyColorScheme(nullptr) will clear the old color scheme.
+                                controlSettings.ApplyColorScheme(nullptr);
+                                parentSettings.ApplyColorScheme(scheme);
 
-                        activeControl.UpdateSettings();
+                                control.UpdateSettings();
+                            }
+                        });
                         args.Handled(true);
                     }
                 }
@@ -896,10 +925,18 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto& realArgs = args.ActionArgs().try_as<ClearBufferArgs>())
             {
-                if (const auto termControl{ _GetActiveControl() })
+                if (const auto tab{ _GetFocusedTabImpl() })
                 {
-                    termControl.ClearBuffer(realArgs.Clear());
-                    args.Handled(true);
+                    if (const auto activePane = tab->GetActivePane())
+                    {
+                        activePane->WalkTree([&](auto p) {
+                            if (const auto& control{ p->GetTerminalControl() })
+                            {
+                                control.ClearBuffer(realArgs.Clear());
+                            }
+                        });
+                        args.Handled(true);
+                    }
                 }
             }
         }

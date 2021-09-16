@@ -734,31 +734,32 @@ namespace winrt::TerminalApp::implementation
         {
             _UnZoomIfNeeded();
 
-            auto pane = terminalTab->GetActivePane();
-
             if (const auto pane{ terminalTab->GetActivePane() })
             {
-                if (const auto control{ pane->GetTerminalControl() })
+                if (pane->ContainsReadOnly())
                 {
-                    if (control.ReadOnly())
+                    ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+                    // If the user didn't explicitly click on close tab - leave
+                    if (warningResult != ContentDialogResult::Primary)
                     {
-                        ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
-
-                        // If the user didn't explicitly click on close tab - leave
-                        if (warningResult != ContentDialogResult::Primary)
-                        {
-                            co_return;
-                        }
-
-                        // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
-                        if (control.ReadOnly())
-                        {
-                            control.ToggleReadOnly();
-                        }
+                        co_return;
                     }
 
-                    pane->Close();
+                    // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
+                    pane->WalkTree([](auto p) {
+                        if (const auto control{ p->GetTerminalControl() })
+                        {
+                            if (control.ReadOnly())
+                            {
+                                control.ToggleReadOnly();
+                            }
+                        }
+                        return false;
+                    });
                 }
+
+                pane->Close();
             }
         }
         else if (auto index{ _GetFocusedTabIndex() })

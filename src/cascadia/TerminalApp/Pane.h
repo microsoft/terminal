@@ -150,19 +150,34 @@ public:
     // - true if the predicate returned true on any pane.
     template<typename F>
     //requires std::predicate<F, std::shared_ptr<Pane>>
-    bool WalkTree(F f)
+    auto WalkTree(F f) -> decltype(f(shared_from_this()))
     {
-        if (f(shared_from_this()))
-        {
-            return true;
-        }
+        using R = std::invoke_result_t<F, std::shared_ptr<Pane>>;
+        static constexpr auto IsVoid = std::is_void_v<R>;
 
-        if (!_IsLeaf())
+        if constexpr (IsVoid)
         {
-            return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+            f(shared_from_this());
+            if (!_IsLeaf())
+            {
+                _firstChild->WalkTree(f);
+                _secondChild->WalkTree(f);
+            }
         }
+        else
+        {
+            if (f(shared_from_this()))
+            {
+                return true;
+            }
 
-        return false;
+            if (!_IsLeaf())
+            {
+                return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+            }
+
+            return false;
+        }
     }
 
     void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
