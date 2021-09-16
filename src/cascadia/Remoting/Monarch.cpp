@@ -233,9 +233,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     //   remove the peasant from our list of peasants.
     // Arguments:
     // - peasantID: The ID Of the peasant to find
+    // - clearMruPeasantOnFailure: When true this function will handle clearing
+    //   from _mruPeasants if a peasant was not found, otherwise the caller is
+    //   expected to handle that cleanup themselves.
     // Return Value:
     // - the peasant if it exists in our map, otherwise null
-    Remoting::IPeasant Monarch::_getPeasant(uint64_t peasantID)
+    Remoting::IPeasant Monarch::_getPeasant(uint64_t peasantID, bool clearMruPeasantOnFailure)
     {
         try
         {
@@ -263,9 +266,12 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 _peasants.erase(peasantID);
             }
 
-            // Remove the peasant from the list of MRU windows. They're dead.
-            // They can't be the MRU anymore.
-            _clearOldMruEntries(peasantID);
+            if (clearMruPeasantOnFailure)
+            {
+                // Remove the peasant from the list of MRU windows. They're dead.
+                // They can't be the MRU anymore.
+                _clearOldMruEntries(peasantID);
+            }
             return nullptr;
         }
     }
@@ -364,7 +370,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none>
     void Monarch::_clearOldMruEntries(const uint64_t peasantID)
     {
-        std::lock_guard lock{ _mruPeasantsMutex };
+        std::unique_lock lock{ _mruPeasantsMutex };
         auto result = std::find_if(_mruPeasants.begin(),
                                    _mruPeasants.end(),
                                    [peasantID](auto&& other) {
@@ -402,7 +408,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         const auto desktopGuid{ localArgs->DesktopID() };
 
         {
-            std::lock_guard lock{ _mruPeasantsMutex };
+            std::unique_lock lock{ _mruPeasantsMutex };
             // * Add this args list. By using lower_bound with insert, we can get it
             //   into exactly the right spot, without having to re-sort the whole
             //   array.
@@ -437,7 +443,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - the ID of the most recent peasant, otherwise 0 if we could not find one.
     uint64_t Monarch::_getMostRecentPeasantID(const bool limitToCurrentDesktop, const bool ignoreQuakeWindow)
     {
-        std::lock_guard lock{ _mruPeasantsMutex };
+        std::shared_lock lock{ _mruPeasantsMutex };
         if (_mruPeasants.empty())
         {
             // Only need a shared lock for read
@@ -482,15 +488,13 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //   - If it isn't on the current desktop, we'll loop again, on the
         //     following peasant.
         // * If we don't care, then we'll just return that one.
-        //
-        // We're not just using an iterator because the contents of the list
-        // might change while we're iterating here (if the peasant is dead we'll
-        // remove it from the list).
-        int positionInList = 0;
-        while (_mruPeasants.cbegin() + positionInList < _mruPeasants.cend())
+        uint64_t result = 0;
+        std::vector<uint64_t> peasantsToErase{};
+        for (const auto& mruWindowArgs : _mruPeasants)
         {
-            const auto mruWindowArgs{ *(_mruPeasants.begin() + positionInList) };
-            const auto peasant{ _getPeasant(mruWindowArgs.PeasantID()) };
+            // Try to get the peasant, but do not have _getPeasant clean up old
+            // _mruPeasants because we are iterating here.
+            const auto peasant{ _getPeasant(mruWindowArgs.PeasantID(), false) };
             if (!peasant)
             {
                 TraceLoggingWrite(g_hRemotingProvider,
@@ -504,6 +508,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                 // We'll go through the loop again. We removed the current one
                 // at positionInList, so the next one in positionInList will be
                 // a new, different peasant.
+                peasantsToErase.push_back(mruWindowArgs.PeasantID());
                 continue;
             }
 
@@ -541,7 +546,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                                        "true if this window was in fact on the current desktop"),
                                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
-                    return mruWindowArgs.PeasantID();
+                    result = mruWindowArgs.PeasantID();
+                    break;
                 }
                 // If this window wasn't on the current desktop, another one
                 // might be. We'll increment positionInList below, and try
@@ -555,20 +561,42 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                                   TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                                   TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
-                return mruWindowArgs.PeasantID();
+                result = mruWindowArgs.PeasantID();
+                break;
             }
-            positionInList++;
         }
 
-        // Here, we've checked all the windows, and none of them was both alive
-        // and the most recent (on this desktop). Just return 0 - the caller
-        // will use this to create a new window.
-        TraceLoggingWrite(g_hRemotingProvider,
-                          "Monarch_getMostRecentPeasantID_NotFound",
-                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        lock.unlock();
 
-        return 0;
+        if (peasantsToErase.size() > 0)
+        {
+            std::unique_lock ulock{ _mruPeasantsMutex };
+
+            // I wish I had std::erase_if (C++20) but I don't yet
+            // partition the array into [not dead | dead ]
+            auto partition = std::stable_partition(_mruPeasants.begin(), _mruPeasants.end(), [&](const auto& p) {
+                const auto id = p.PeasantID();
+                const auto it = std::find(peasantsToErase.cbegin(), peasantsToErase.cend(), id);
+                // keep the element if it was not found in the list to erase.
+                return it == peasantsToErase.cend();
+            });
+
+            // Remove everything that was in the list
+            _mruPeasants.erase(partition, _mruPeasants.end());
+        }
+
+        if (result == 0)
+        {
+            // Here, we've checked all the windows, and none of them was both alive
+            // and the most recent (on this desktop). Just return 0 - the caller
+            // will use this to create a new window.
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_getMostRecentPeasantID_NotFound",
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        }
+
+        return result;
     }
 
     // Method Description:

@@ -82,9 +82,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         std::shared_mutex _peasantsMutex{};
 
         std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
-        std::recursive_mutex _mruPeasantsMutex{};
+        std::shared_mutex _mruPeasantsMutex{};
 
-        winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
+        winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID, bool clearMruPeasantOnFailure = true);
         uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop, const bool ignoreQuakeWindow);
         uint64_t _lookupPeasantIdForName(std::wstring_view name);
 
