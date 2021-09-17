@@ -143,7 +143,7 @@ void SettingsLoader::GenerateProfiles()
         CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
 
         // If the generator produced some profiles we're going to give them default attributes.
-        // By settings the Origin/Source/... here, we deduplicate some code and ensure they aren't accidentally missing.
+        // By settings the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
         if (inboxSettings.profiles.size() > previousSize)
         {
             const winrt::hstring source{ generatorNamespace };

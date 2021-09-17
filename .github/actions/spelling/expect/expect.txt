@@ -557,6 +557,7 @@ DECSTR
 DECSWL
 DECTCEM
 Dedupe
+deduplicate
 deduplicated
 DEFAPP
 DEFAULTBACKGROUND
