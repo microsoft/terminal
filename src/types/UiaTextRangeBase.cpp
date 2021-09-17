@@ -1522,6 +1522,12 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             {
                 success = false;
             }
+            else if (const auto wordStart{ buffer.GetWordStart(nextPos, _wordDelimiters, true, documentEnd) }; allowBottomExclusive && nextPos != wordStart)
+            {
+                // Degenerate ranges first move to the beginning of the word
+                resultPos = wordStart;
+                (*pAmountMoved)--;
+            }
             else if (buffer.MoveToPreviousWord(nextPos, _wordDelimiters))
             {
                 resultPos = nextPos;
