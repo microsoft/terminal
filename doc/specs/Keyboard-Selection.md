@@ -1,7 +1,7 @@
 ---
 author: Carlos Zamora @carlos-zamora
 created on: 2019-08-30
-last updated: 2021-09-14
+last updated: 2021-09-17
 issue id: 715
 ---
 
@@ -9,7 +9,7 @@ issue id: 715
 
 ## Abstract
 
-This spec describes a new set of keybindings that allows the user to create and update a selection without the use of a mouse or stylus.
+This spec describes a new set of non-configurable keybindings that allows the user to update a selection without the use of a mouse or stylus.
 
 ## Inspiration
 
@@ -22,15 +22,57 @@ Mark mode allows the user to create a selection using only the keyboard, then ed
 
 The fundamental solution design for keyboard selection is that the responsibilities between the Terminal Control and Terminal Core must be very distinct. The Terminal Control is responsible for handling user interaction and directing the Terminal Core to update the selection. The Terminal Core will need to update the selection according to the preferences of the Terminal Control.
 
+Relatively recently, TerminalControl was split into `TerminalControl`, `ControlInteractivity`, and `ControlCore`. Changes made to `ControlInteractivity`, `ControlCore`, and below propagate functionality to all consumers, meaning that the WPF terminal would benefit from these changes with no additional work required.
 
 ### Fundamental Terminal Control Changes
 
-`TermControl::_KeyDownHandler()` is responsible for interpreting the key events. At the time of writing this spec, there are 3 cases handled in this order:
-- Alt+Gr events
-- Keybindings
-- Send Key Event (also clears selection)
+`ControlCore::TrySendKeyEvent()` is responsible for handling the key events after key bindings are dealt with in `TermControl`. At the time of writing this spec, there are 2 cases handled in this order:
+- Clear the selection (except in a few key scenarios)
+- Send Key Event
 
-Conditionally effective keybindings can be introduced to update the selection accordingly. A well known conditionally effective keybinding is the `Copy` action where text is copied if a selection is active, otherwise the key event is marked as `handled = false`. See "UI/UX Design" --> "Keybindings" for more information regarding keybindings.
+The first branch will be updated to _modify_ the selection instead of usually _clearing_ it. This will happen by converting the key event into parameters to forward to `TerminalCore`, which then updates the selection appropriately.
+
+#### Idea: Make keyboard selection a collection of standard keybindings
+One idea is to introduce an `updateSelection` action that conditionally works if a seleciton is active (similar to the `copy` action). For these key bindings, if there is no selection, the key events are forwarded to the application.
+
+Thanks to Keybinding Args, there would only be 1 new command:
+| Action | Keybinding Args | Description |
+|--|--|--|
+| `updateSelection` |                                                | If a selection exists, moves the last selection endpoint. |
+|                       | `Enum direction { up, down, left, right }` | The direction the selection will be moved in. |
+|                       | `Enum mode { char, word, view, buffer }`   | The context for which to move the selection endpoint to. (defaults to `char`) |
+
+
+By default, the following keybindings will be set:
+```JS
+// Character Selection
+{ "command": {"action": "updateSelection", "direction": "left",  "mode": "char" }, "keys": "shift+left" },
+{ "command": {"action": "updateSelection", "direction": "right", "mode": "char" }, "keys": "shift+right" },
+{ "command": {"action": "updateSelection", "direction": "up",    "mode": "char" }, "keys": "shift+up" },
+{ "command": {"action": "updateSelection", "direction": "down",  "mode": "char" }, "keys": "shift+down" },
+
+// Word Selection
+{ "command": {"action": "updateSelection", "direction": "left",  "mode": "word" }, "keys": "ctrl+shift+left" },
+{ "command": {"action": "updateSelection", "direction": "right", "mode": "word" }, "keys": "ctrl+shift+right" },
+
+// Viewport Selection
+{ "command": {"action": "updateSelection", "direction": "left",  "mode": "view" }, "keys": "shift+home" },
+{ "command": {"action": "updateSelection", "direction": "right", "mode": "view" }, "keys": "shift+end" },
+{ "command": {"action": "updateSelection", "direction": "up",    "mode": "view" }, "keys": "shift+pgup" },
+{ "command": {"action": "updateSelection", "direction": "down",  "mode": "view" }, "keys": "shift+pgdn" },
+
+// Buffer Corner Selection
+{ "command": {"action": "updateSelection", "direction": "up",    "mode": "buffer" }, "keys": "ctrl+shift+home" },
+{ "command": {"action": "updateSelection", "direction": "down",  "mode": "buffer" }, "keys": "ctrl+shift+end" },
+```
+These are in accordance with ConHost's keyboard selection model.
+
+This idea was abondoned due to several reasons:
+1. Keyboard selection should be a standard way to interact with a terminal across all consumers (i.e. WPF control, etc.)
+2. There isn't really another set of key bindings that makes sense for this. We already hardcoded <kbd>ESC</kbd> as a way to clear the selection. This is just an extension of that.
+3. Adding 12 conditionally effective key bindings takes the spot of 12 potential non-conditional key bindings. It would be nice if a different key binding could be set when the selection is not active, but that makes the settings design much more complicated.
+4. 12 new items in the command palette is also pretty excessive.
+5. If proven wrong when this is in WT Preview, we can revisit this and make them customizable then. It's better to add customizability later than take it away.
 
 #### Idea: Make keyboard selection a simulation of mouse selection
 It may seem that some effort can be saved by making the keyboard selection act as a simulation of mouse selection. There is a union of mouse and keyboard activity that can be represented in a single set of selection motion interfaces that are commanded by the TermControl's Mouse/Keyboard handler and adapted into appropriate motions in the Terminal Core.
@@ -75,43 +117,17 @@ Every combination of the `SelectionDirection` and `SelectionExpansion` will map 
 
 ## UI/UX Design
 
-### Keybindings
+### Key Bindings
 
-Thanks to Keybinding Args, there will only be 2 new commands that need to be added:
+There will only be 1 new command that needs to be added:
 | Action | Keybinding Args | Description |
 |--|--|--|
-| `updateSelection` |                                                               | If a selection exists, moves the last selection endpoint.
-|                       | `Enum direction { up, down, left, right }`                     | The direction the selection will be moved in. |
-|                       | `Enum mode { char, word, view, buffer }`   | The context for which to move the selection endpoint to. (defaults to `char`)
 | `selectAll`  | | Select the entire text buffer.
 
-
-By default, the following keybindings will be set:
+By default, the following key binding will be set:
 ```JS
-// Character Selection
-{ "command": {"action": "updateSelection", "direction": "left",  "mode": "char" }, "keys": "shift+left" },
-{ "command": {"action": "updateSelection", "direction": "right", "mode": "char" }, "keys": "shift+right" },
-{ "command": {"action": "updateSelection", "direction": "up",    "mode": "char" }, "keys": "shift+up" },
-{ "command": {"action": "updateSelection", "direction": "down",  "mode": "char" }, "keys": "shift+down" },
-
-// Word Selection
-{ "command": {"action": "updateSelection", "direction": "left",  "mode": "word" }, "keys": "ctrl+shift+left" },
-{ "command": {"action": "updateSelection", "direction": "right", "mode": "word" }, "keys": "ctrl+shift+right" },
-
-// Viewport Selection
-{ "command": {"action": "updateSelection", "direction": "left",  "mode": "view" }, "keys": "shift+home" },
-{ "command": {"action": "updateSelection", "direction": "right", "mode": "view" }, "keys": "shift+end" },
-{ "command": {"action": "updateSelection", "direction": "up",    "mode": "view" }, "keys": "shift+pgup" },
-{ "command": {"action": "updateSelection", "direction": "down",  "mode": "view" }, "keys": "shift+pgdn" },
-
-// Buffer Corner Selection
-{ "command": {"action": "updateSelection", "direction": "up",    "mode": "buffer" }, "keys": "ctrl+shift+home" },
-{ "command": {"action": "updateSelection", "direction": "down",  "mode": "buffer" }, "keys": "ctrl+shift+end" },
-
-// Select All
 { "command": "selectAll", "keys": "ctrl+shift+a" },
 ```
-These are in accordance with ConHost's keyboard selection model.
 
 ## Capabilities
 
@@ -137,18 +153,13 @@ N/A
 
 ## Potential Issues
 
-The settings model makes all of these features easy to disable, if the user wishes to do so.
-
-## Future considerations
-
 ### Grapheme Clusters
 When grapheme cluster support is inevitably added to the Text Buffer, moving by "cell" is expected to move by "character" or "cluster". This is similar to how wide glyphs are handled today. Either all of it is selected, or none of it.
 
+## Future considerations
+
 ### Word Selection Wrap
 At the time of writing this spec, expanding or moving by word is interrupted by the beginning or end of the line, regardless of the wrap flag being set. In the future, selection and the accessibility models will respect the wrap flag on the text buffer.
-
-### Contextual Keybindings
-This feature introduces a large number of keybindings that only work if a selection is active. Currently, key bindings cannot be bound to a context, so if a user binds `moveSelectionPoint` to `shift+up` and there is no selection, `shift+up` is sent directly to the Terminal. In the future, a `context` key could be added to new bindings to get around this problem. That way, users could bind other actions to `shift+up` to run specifically when a selection is not active.
 
 ## Mark Mode
 
