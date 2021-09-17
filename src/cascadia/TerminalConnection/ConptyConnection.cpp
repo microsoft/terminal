@@ -421,7 +421,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto hr = wil::ResultFromCaughtException();
 
         winrt::hstring failureText{ fmt::format(std::wstring_view{ RS_(L"ProcessFailedToLaunch") },
-                                                gsl::narrow_cast<unsigned long>(hr),
+                                                fmt::format(_errorFormat, hr),
                                                 _commandline) };
         _TerminalOutputHandlers(failureText);
 
@@ -448,7 +448,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         try
         {
-            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, status) };
+            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);
         }
