@@ -20,9 +20,12 @@ Author(s):
 #include "CascadiaSettings.g.h"
 
 #include "GlobalAppSettings.h"
-
 #include "Profile.h"
-#include "ColorScheme.h"
+
+namespace winrt::Microsoft::Terminal::Settings::Model
+{
+    class IDynamicProfileGenerator;
+}
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -52,8 +55,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ApplyRuntimeInitialSettings();
         void MergeInboxIntoUserSettings();
         void FindFragmentsAndMergeIntoUserSettings();
-        bool DisableDeletedProfiles();
         void FinalizeLayering();
+        bool DisableDeletedProfiles();
 
         ParsedSettings inboxSettings;
         ParsedSettings userSettings;

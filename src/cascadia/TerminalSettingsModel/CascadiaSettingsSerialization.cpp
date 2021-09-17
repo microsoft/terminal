@@ -295,6 +295,25 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
     }
 }
 
+// Call this method before passing SettingsLoader to the CascadiaSettings constructor.
+// It layers all remaining objects onto each other (those that aren't covered by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
+
+void SettingsLoader::FinalizeLayering()
+{
+    // Layer default globals -> user globals
+    userSettings.globals->InsertParent(inboxSettings.globals);
+    userSettings.globals->_FinalizeInheritance();
+    // Layer default profile defaults -> user profile defaults
+    userSettings.baseLayerProfile->InsertParent(inboxSettings.baseLayerProfile);
+    userSettings.baseLayerProfile->_FinalizeInheritance();
+    // Layer user profile defaults -> user profiles
+    for (const auto& profile : userSettings.profiles)
+    {
+        profile->InsertParent(0, userSettings.baseLayerProfile);
+        profile->_FinalizeInheritance();
+    }
+}
+
 // Let's say a user doesn't know that they need to write `"hidden": true` in
 // order to prevent a profile from showing up (and a settings UI doesn't exist).
 // Naturally they would open settings.json and try to remove the profile object.
@@ -327,25 +346,6 @@ bool SettingsLoader::DisableDeletedProfiles()
     }
 
     return newGeneratedProfiles;
-}
-
-// Call this method before passing SettingsLoader to the CascadiaSettings constructor.
-// It layers all remaining objects onto each other (those that aren't covered by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
-
-void SettingsLoader::FinalizeLayering()
-{
-    // Layer default globals -> user globals
-    userSettings.globals->InsertParent(inboxSettings.globals);
-    userSettings.globals->_FinalizeInheritance();
-    // Layer default profile defaults -> user profile defaults
-    userSettings.baseLayerProfile->InsertParent(inboxSettings.baseLayerProfile);
-    userSettings.baseLayerProfile->_FinalizeInheritance();
-    // Layer user profile defaults -> user profiles
-    for (const auto& profile : userSettings.profiles)
-    {
-        profile->InsertParent(0, userSettings.baseLayerProfile);
-        profile->_FinalizeInheritance();
-    }
 }
 
 // Give a string of length N and a position of [0,N) this function returns
@@ -602,11 +602,12 @@ try
     // Fragments might reference user profiles created by a generator.
     // --> FindFragmentsAndMergeIntoUserSettings must be called after MergeInboxIntoUserSettings.
     loader.FindFragmentsAndMergeIntoUserSettings();
+    loader.FinalizeLayering();
+
     // DisableDeletedProfiles returns true whenever we encountered any new generated/dynamic profiles.
     // Coincidentally this is also the time we should write the new settings.json
     // to disk (so that it contains the new profiles for manual editing by the user).
     mustWriteToDisk |= loader.DisableDeletedProfiles();
-    loader.FinalizeLayering();
 
     // If this throws, the app will catch it and use the default settings.
     const auto settings = winrt::make_self<CascadiaSettings>(std::move(loader));
