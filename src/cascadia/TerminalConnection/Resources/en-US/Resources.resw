@@ -204,7 +204,7 @@
     <comment>This is shorthand for "no". The user must enter this character to DECLINE a prompt.</comment>
   </data>
   <data name="ProcessExited" xml:space="preserve">
-    <value>[process exited with code {0})]</value>
+    <value>[process exited with code {0}]</value>
     <comment>The first argument {0} is the error code of the process. When there is no error, the number ZERO will be displayed. </comment>
   </data>
   <data name="ProcessFailedToLaunch" xml:space="preserve">
