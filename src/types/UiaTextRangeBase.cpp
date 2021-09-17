@@ -1522,10 +1522,12 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             {
                 success = false;
             }
-            else if (const auto wordStart{ buffer.GetWordStart(nextPos, _wordDelimiters, true, documentEnd) }; allowBottomExclusive && nextPos != wordStart)
+            else if (allowBottomExclusive && _tryMoveToWordStart(buffer, documentEnd, resultPos))
             {
-                // Degenerate ranges first move to the beginning of the word
-                resultPos = wordStart;
+                // IMPORTANT: _isNextPosWordStart modifies resultPos if successful
+                // Degenerate ranges first move to the beginning of the word,
+                // but if we're already at the beginning of the word, we continue
+                // to the next branch and move to the previous word!
                 (*pAmountMoved)--;
             }
             else if (buffer.MoveToPreviousWord(nextPos, _wordDelimiters))
@@ -1545,6 +1547,26 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     }
 
     SetEndpoint(endpoint, resultPos);
+}
+
+// Routine Description:
+// - tries to move resultingPos to the beginning of the word
+// Arguments:
+// - buffer - the text buffer we're operating on
+// - documentEnd - the document end of the buffer (see _getDocumentEnd())
+// - resultingPos - the position we're starting from and modifying
+// Return Value:
+// - true --> we were not at the beginning of the word, and we updated resultingPos to be so
+// - false --> otherwise (we're already at the beginning of the word)
+bool UiaTextRangeBase::_tryMoveToWordStart(const TextBuffer& buffer, const til::point documentEnd, COORD& resultingPos) const
+{
+    const auto wordStart{ buffer.GetWordStart(resultingPos, _wordDelimiters, true, documentEnd) };
+    if (resultingPos != wordStart)
+    {
+        resultingPos = wordStart;
+        return true;
+    }
+    return false;
 }
 
 // Routine Description:

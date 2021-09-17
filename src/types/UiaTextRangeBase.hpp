@@ -182,6 +182,7 @@ namespace Microsoft::Console::Types
 
         std::optional<bool> _verifyAttr(TEXTATTRIBUTEID attributeId, VARIANT val, const TextAttribute& attr) const;
         bool _initializeAttrQuery(TEXTATTRIBUTEID attributeId, VARIANT* pRetVal, const TextAttribute& attr) const;
+        bool _tryMoveToWordStart(const TextBuffer& buffer, const til::point documentEnd, COORD& resultingPos) const;
 
         COORD _getInclusiveEnd() noexcept;
 
