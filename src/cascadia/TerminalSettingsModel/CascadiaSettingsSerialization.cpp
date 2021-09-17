@@ -127,40 +127,11 @@ SettingsLoader::SettingsLoader(const std::string_view& userJSON, const std::stri
 // (meaning profiles specified by the application rather by the user).
 void SettingsLoader::GenerateProfiles()
 {
-    const auto executeGenerator = [&](const auto& generator) {
-        const auto generatorNamespace = generator.GetNamespace();
-        if (_ignoredNamespaces.count(generatorNamespace))
-        {
-            return;
-        }
-
-        const auto previousSize = inboxSettings.profiles.size();
-
-        try
-        {
-            generator.GenerateProfiles(inboxSettings.profiles);
-        }
-        CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
-
-        // If the generator produced some profiles we're going to give them default attributes.
-        // By settings the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
-        if (inboxSettings.profiles.size() > previousSize)
-        {
-            const winrt::hstring source{ generatorNamespace };
-
-            for (const auto& profile : gsl::span(inboxSettings.profiles).subspan(previousSize))
-            {
-                profile->Origin(OriginTag::Generated);
-                profile->Source(source);
-            }
-        }
-    };
-
-    executeGenerator(PowershellCoreProfileGenerator{});
-    executeGenerator(WslDistroGenerator{});
-    executeGenerator(AzureCloudShellGenerator{});
-    executeGenerator(VsDevCmdGenerator{});
-    executeGenerator(VsDevShellGenerator{});
+    _executeGenerator(PowershellCoreProfileGenerator{});
+    _executeGenerator(WslDistroGenerator{});
+    _executeGenerator(AzureCloudShellGenerator{});
+    _executeGenerator(VsDevCmdGenerator{});
+    _executeGenerator(VsDevShellGenerator{});
 }
 
 // A new settings.json gets a special treatment:
@@ -559,6 +530,38 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, ParsedSet
     else
     {
         duplicateProfile = true;
+    }
+}
+
+// As the name implies it executes a generator.
+// Generated profiles are added to .inboxSettings. Used by GenerateProfiles().
+void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator)
+{
+    const auto generatorNamespace = generator.GetNamespace();
+    if (_ignoredNamespaces.count(generatorNamespace))
+    {
+        return;
+    }
+
+    const auto previousSize = inboxSettings.profiles.size();
+
+    try
+    {
+        generator.GenerateProfiles(inboxSettings.profiles);
+    }
+    CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
+
+    // If the generator produced some profiles we're going to give them default attributes.
+    // By settings the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
+    if (inboxSettings.profiles.size() > previousSize)
+    {
+        const winrt::hstring source{ generatorNamespace };
+
+        for (const auto& profile : gsl::span(inboxSettings.profiles).subspan(previousSize))
+        {
+            profile->Origin(OriginTag::Generated);
+            profile->Source(source);
+        }
     }
 }
 
