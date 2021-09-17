@@ -86,6 +86,10 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         std::wstring _u16Str{};
         std::array<char, 4096> _buffer{};
 
+#if TIL_FEATURE_VTPASSTHROUGHMODE_ENABLED
+        bool _passthroughMode{};
+#endif
+
         DWORD _OutputThread();
     };
 }
