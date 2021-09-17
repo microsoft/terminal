@@ -104,7 +104,7 @@ const bool Terminal::IsBlockSelection() const noexcept
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
 // - expansionMode: the SelectionExpansion to dictate the boundaries of the selection anchors
-void Terminal::MultiClickSelection(const COORD viewportPos, InternalSelectionExpansion expansionMode)
+void Terminal::MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode)
 {
     // set the selection pivot to expand the selection using SetSelectionEnd()
     _selection = SelectionAnchors{};
@@ -127,7 +127,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
     _selection = SelectionAnchors{};
     _selection->pivot = _ConvertToBufferCell(viewportPos);
 
-    _multiClickSelectionMode = InternalSelectionExpansion::Char;
+    _multiClickSelectionMode = SelectionExpansion::Char;
     SetSelectionEnd(viewportPos);
 
     _selection->start = _selection->pivot;
@@ -139,7 +139,7 @@ void Terminal::SetSelectionAnchor(const COORD viewportPos)
 // Arguments:
 // - viewportPos: the (x,y) coordinate on the visible viewport
 // - newExpansionMode: overwrites the _multiClickSelectionMode for this function call. Used for ShiftClick
-void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<InternalSelectionExpansion> newExpansionMode)
+void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionExpansion> newExpansionMode)
 {
     if (!_selection.has_value())
     {
@@ -216,15 +216,15 @@ std::pair<COORD, COORD> Terminal::_ExpandSelectionAnchors(std::pair<COORD, COORD
     const auto bufferSize = _buffer->GetSize();
     switch (_multiClickSelectionMode)
     {
-    case InternalSelectionExpansion::Line:
+    case SelectionExpansion::Line:
         start = { bufferSize.Left(), start.Y };
         end = { bufferSize.RightInclusive(), end.Y };
         break;
-    case InternalSelectionExpansion::Word:
+    case SelectionExpansion::Word:
         start = _buffer->GetWordStart(start, _wordDelimiters);
         end = _buffer->GetWordEnd(end, _wordDelimiters);
         break;
-    case InternalSelectionExpansion::Char:
+    case SelectionExpansion::Char:
     default:
         // no expansion is necessary
         break;
@@ -241,7 +241,7 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
-void Terminal::UpdateSelection(InternalSelectionDirection direction, InternalSelectionExpansion mode)
+void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode)
 {
     // 1. Figure out which endpoint to update
     // One of the endpoints is the pivot, signifying that the other endpoint is the one we want to move.
@@ -251,16 +251,16 @@ void Terminal::UpdateSelection(InternalSelectionDirection direction, InternalSel
     // 2. Perform the movement
     switch (mode)
     {
-    case InternalSelectionExpansion::Char:
+    case SelectionExpansion::Char:
         _MoveByChar(direction, targetPos);
         break;
-    case InternalSelectionExpansion::Word:
+    case SelectionExpansion::Word:
         _MoveByWord(direction, targetPos);
         break;
-    case InternalSelectionExpansion::Viewport:
+    case SelectionExpansion::Viewport:
         _MoveByViewport(direction, targetPos);
         break;
-    case InternalSelectionExpansion::Buffer:
+    case SelectionExpansion::Buffer:
         _MoveByBuffer(direction, targetPos);
         break;
     }
@@ -287,25 +287,25 @@ void Terminal::UpdateSelection(InternalSelectionDirection direction, InternalSel
     }
 }
 
-void Terminal::_MoveByChar(InternalSelectionDirection direction, COORD& pos)
+void Terminal::_MoveByChar(SelectionDirection direction, COORD& pos)
 {
     switch (direction)
     {
-    case InternalSelectionDirection::Left:
+    case SelectionDirection::Left:
         _buffer->GetSize().DecrementInBounds(pos);
         pos = _buffer->GetGlyphStart(pos);
         break;
-    case InternalSelectionDirection::Right:
+    case SelectionDirection::Right:
         _buffer->GetSize().IncrementInBounds(pos);
         pos = _buffer->GetGlyphEnd(pos);
         break;
-    case InternalSelectionDirection::Up:
+    case SelectionDirection::Up:
     {
         const auto bufferSize{ _buffer->GetSize() };
         pos = { pos.X, std::clamp(base::ClampSub<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
         break;
     }
-    case InternalSelectionDirection::Down:
+    case SelectionDirection::Down:
     {
         const auto bufferSize{ _buffer->GetSize() };
         pos = { pos.X, std::clamp(base::ClampAdd<short, short>(pos.Y, 1).RawValue(), bufferSize.Top(), bufferSize.BottomInclusive()) };
@@ -314,11 +314,11 @@ void Terminal::_MoveByChar(InternalSelectionDirection direction, COORD& pos)
     }
 }
 
-void Terminal::_MoveByWord(InternalSelectionDirection direction, COORD& pos)
+void Terminal::_MoveByWord(SelectionDirection direction, COORD& pos)
 {
     switch (direction)
     {
-    case InternalSelectionDirection::Left:
+    case SelectionDirection::Left:
         const auto wordStartPos{ _buffer->GetWordStart(pos, _wordDelimiters) };
         if (_buffer->GetSize().CompareInBounds(_selection->pivot, pos) < 0)
         {
@@ -339,7 +339,7 @@ void Terminal::_MoveByWord(InternalSelectionDirection direction, COORD& pos)
             pos = wordStartPos;
         }
         break;
-    case InternalSelectionDirection::Right:
+    case SelectionDirection::Right:
         const auto wordEndPos{ _buffer->GetWordEnd(pos, _wordDelimiters) };
         if (_buffer->GetSize().CompareInBounds(pos, _selection->pivot) < 0)
         {
@@ -360,36 +360,36 @@ void Terminal::_MoveByWord(InternalSelectionDirection direction, COORD& pos)
             pos = wordEndPos;
         }
         break;
-    case InternalSelectionDirection::Up:
+    case SelectionDirection::Up:
         _MoveByChar(direction, pos);
         pos = _buffer->GetWordStart(pos, _wordDelimiters);
         break;
-    case InternalSelectionDirection::Down:
+    case SelectionDirection::Down:
         _MoveByChar(direction, pos);
         pos = _buffer->GetWordEnd(pos, _wordDelimiters);
         break;
     }
 }
 
-void Terminal::_MoveByViewport(InternalSelectionDirection direction, COORD& pos)
+void Terminal::_MoveByViewport(SelectionDirection direction, COORD& pos)
 {
     const auto bufferSize{ _buffer->GetSize() };
     switch (direction)
     {
-    case InternalSelectionDirection::Left:
+    case SelectionDirection::Left:
         pos = { bufferSize.Left(), pos.Y };
         break;
-    case InternalSelectionDirection::Right:
+    case SelectionDirection::Right:
         pos = { bufferSize.RightInclusive(), pos.Y };
         break;
-    case InternalSelectionDirection::Up:
+    case SelectionDirection::Up:
     {
         const auto viewportHeight{ _mutableViewport.Height() };
         const auto newY{ base::ClampSub<short, short>(pos.Y, viewportHeight) };
         pos = newY < bufferSize.Top() ? bufferSize.Origin() : COORD{ pos.X, newY };
         break;
     }
-    case InternalSelectionDirection::Down:
+    case SelectionDirection::Down:
     {
         const auto viewportHeight{ _mutableViewport.Height() };
         const auto mutableBottom{ _mutableViewport.BottomInclusive() };
@@ -400,17 +400,17 @@ void Terminal::_MoveByViewport(InternalSelectionDirection direction, COORD& pos)
     }
 }
 
-void Terminal::_MoveByBuffer(InternalSelectionDirection direction, COORD& pos)
+void Terminal::_MoveByBuffer(SelectionDirection direction, COORD& pos)
 {
     const auto bufferSize{ _buffer->GetSize() };
     switch (direction)
     {
-    case InternalSelectionDirection::Left:
-    case InternalSelectionDirection::Up:
+    case SelectionDirection::Left:
+    case SelectionDirection::Up:
         pos = bufferSize.Origin();
         break;
-    case InternalSelectionDirection::Right:
-    case InternalSelectionDirection::Down:
+    case SelectionDirection::Right:
+    case SelectionDirection::Down:
         pos = { bufferSize.RightInclusive(), _mutableViewport.BottomInclusive() };
         break;
     }

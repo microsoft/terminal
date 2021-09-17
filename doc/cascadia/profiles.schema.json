@@ -304,7 +304,6 @@
         "toggleSplitOrientation",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
-        "updateSelection",
         "wt",
         "quit",
         "unbound"
@@ -330,24 +329,6 @@
         "right",
         "up",
         "down"
-      ],
-      "type": "string"
-    },
-    "SelectionDirection": {
-      "enum": [
-        "left",
-        "right",
-        "up",
-        "down"
-      ],
-      "type": "string"
-    },
-    "SelectionMode": {
-      "enum": [
-        "char",
-        "word",
-        "view",
-        "buffer"
       ],
       "type": "string"
     },
@@ -599,28 +580,6 @@
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
               "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
-            }
-          }
-        }
-      ],
-      "required": [ "direction" ]
-    },
-    "UpdateSelectionAction": {
-      "description": "Arguments corresponding to a Update Selection Action",
-      "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
-        {
-          "properties": {
-            "action": { "type": "string", "pattern": "updateSelection" },
-            "direction": {
-              "$ref": "#/definitions/SelectionDirection",
-              "default": "left",
-              "description": "The direction to move the selection endpoint in."
-            },
-            "mode": {
-              "$ref": "#/definitions/SelectionMode",
-              "default": "cell",
-              "description": "The expansion mode to move the selection endpoint by."
             }
           }
         }
@@ -888,7 +847,7 @@
         }
       ],
       "required": [ "actions" ]
-    }, 
+    },
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
       "allOf": [
@@ -1107,7 +1066,6 @@
               { "$ref": "#/definitions/FocusPaneAction" },
               { "$ref": "#/definitions/GlobalSummonAction" },
               { "$ref": "#/definitions/QuakeModeAction" },
-              { "$ref": "#/definitions/UpdateSelectionAction" },
               { "type": "null" }
             ]
         },

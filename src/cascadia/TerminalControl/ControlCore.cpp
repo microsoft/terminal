@@ -33,38 +33,72 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
-static constexpr InternalSelectionDirection ConvertToInternalSelectionDirection(winrt::Microsoft::Terminal::Core::SelectionDirection dir)
+static constexpr std::optional<Terminal::SelectionDirection> ConvertVKeyToSelectionDirection(WORD vkey)
 {
-    switch (dir)
+    switch (vkey)
     {
+    case VK_LEFT:
+    case VK_HOME:
+        return Terminal::SelectionDirection::Left;
+    case VK_RIGHT:
+    case VK_END:
+        return Terminal::SelectionDirection::Right;
+    case VK_UP:
+    case VK_PRIOR:
+        return Terminal::SelectionDirection::Up;
+    case VK_DOWN:
+    case VK_NEXT:
+        return Terminal::SelectionDirection::Down;
     default:
-    case winrt::Microsoft::Terminal::Core::SelectionDirection::Left:
-        return InternalSelectionDirection::Left;
-    case winrt::Microsoft::Terminal::Core::SelectionDirection::Right:
-        return InternalSelectionDirection::Right;
-    case winrt::Microsoft::Terminal::Core::SelectionDirection::Up:
-        return InternalSelectionDirection::Up;
-    case winrt::Microsoft::Terminal::Core::SelectionDirection::Down:
-        return InternalSelectionDirection::Down;
+        return std::nullopt;
     }
 }
 
-static constexpr InternalSelectionExpansion ConvertToInternalSelectionExpansion(winrt::Microsoft::Terminal::Core::SelectionExpansion mode)
+static constexpr std::optional<std::tuple<Terminal::SelectionDirection, Terminal::SelectionExpansion>> ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey)
 {
-    switch (mode)
+    if (mods.IsShiftPressed() && !mods.IsAltPressed())
     {
-    default:
-    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Char:
-        return InternalSelectionExpansion::Char;
-    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Word:
-        return InternalSelectionExpansion::Word;
-    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Line:
-        return InternalSelectionExpansion::Line;
-    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Viewport:
-        return InternalSelectionExpansion::Viewport;
-    case winrt::Microsoft::Terminal::Core::SelectionExpansion::Buffer:
-        return InternalSelectionExpansion::Buffer;
+        if (const auto dir{ ConvertVKeyToSelectionDirection(vkey) })
+        {
+            if (mods.IsCtrlPressed())
+            {
+                switch (vkey)
+                {
+                case VK_LEFT:
+                case VK_RIGHT:
+                    // Move by word
+                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Word);
+                case VK_HOME:
+                case VK_END:
+                    // Move by buffer
+                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Buffer);
+                default:
+                    __fallthrough;
+                }
+            }
+            else
+            {
+                switch (vkey)
+                {
+                case VK_HOME:
+                case VK_END:
+                case VK_PRIOR:
+                case VK_NEXT:
+                    // Move by viewport
+                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Viewport);
+                case VK_LEFT:
+                case VK_RIGHT:
+                case VK_UP:
+                case VK_DOWN:
+                    // Move by character
+                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Char);
+                default:
+                    __fallthrough;
+                }
+            }
+        }
     }
+    return std::nullopt;
 }
 
 namespace winrt::Microsoft::Terminal::Control::implementation
@@ -393,21 +427,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
     {
-        // When there is a selection active, escape should clear it and NOT flow through
-        // to the terminal. With any other keypress, it should clear the selection AND
-        // flow through to the terminal.
+        // Update the selection, if it's present
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
-        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
+        // modify on key up, then there's chance that we'll immediately dismiss
         // a selection created by an action bound to a keydown.
         if (HasSelection() &&
             !KeyEvent::IsModifierKey(vkey) &&
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
+            // try to update the selection
+            if (const auto updateSlnParams{ ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(std::get<0>(*updateSlnParams), std::get<1>(*updateSlnParams));
+                _renderer->TriggerSelection();
+                return true;
+            }
+
             // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
             if (!modifiers.IsWinPressed())
             {
@@ -415,6 +456,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderer->TriggerSelection();
             }
 
+            // When there is a selection active, escape should clear it and NOT flow through
+            // to the terminal. With any other keypress, it should clear the selection AND
+            // flow through to the terminal.
             if (vkey == VK_ESCAPE)
             {
                 return true;
@@ -961,21 +1005,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderer->TriggerSelection();
     }
 
-    bool ControlCore::UpdateSelection(Core::SelectionDirection direction, Core::SelectionExpansion mode)
-    {
-        // - SelectionDirection cannot be none
-        // - A selection must be active for us to update it
-        if (direction == Core::SelectionDirection::None || !HasSelection())
-        {
-            return false;
-        }
-
-        auto lock = _terminal->LockForWriting();
-        _terminal->UpdateSelection(ConvertToInternalSelectionDirection(direction), ConvertToInternalSelectionExpansion(mode));
-        _renderer->TriggerSelection();
-        return true;
-    }
-
     // Called when the Terminal wants to set something to the clipboard, i.e.
     // when an OSC 52 is emitted.
     void ControlCore::_terminalCopyToClipboard(std::wstring_view wstr)
@@ -1471,18 +1500,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        Core::SelectionExpansion mode = Core::SelectionExpansion::Char;
+        ::Terminal::SelectionExpansion mode = ::Terminal::SelectionExpansion::Char;
         if (numberOfClicks == 1)
         {
-            mode = Core::SelectionExpansion::Char;
+            mode = ::Terminal::SelectionExpansion::Char;
         }
         else if (numberOfClicks == 2)
         {
-            mode = Core::SelectionExpansion::Word;
+            mode = ::Terminal::SelectionExpansion::Word;
         }
         else if (numberOfClicks == 3)
         {
-            mode = Core::SelectionExpansion::Line;
+            mode = ::Terminal::SelectionExpansion::Line;
         }
 
         // Update the selection appropriately
@@ -1504,15 +1533,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If shift is pressed and there is a selection we extend it using
             // the selection mode (expand the "end" selection point)
-            _terminal->SetSelectionEnd(terminalPosition, ConvertToInternalSelectionExpansion(mode));
+            _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (mode != Core::SelectionExpansion::Char || shiftEnabled)
+        else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
         {
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
             // (expand both "start" and "end" selection points)
-            _terminal->MultiClickSelection(terminalPosition, ConvertToInternalSelectionExpansion(mode));
+            _terminal->MultiClickSelection(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
 
