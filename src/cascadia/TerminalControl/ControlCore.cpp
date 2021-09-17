@@ -77,9 +77,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This event is explicitly revoked in the destructor: does not need weak_ref
         _connectionOutputEventToken = _connection.TerminalOutput({ this, &ControlCore::_connectionOutputHandler });
 
-        _terminal->SetWriteInputCallback([this](std::wstring& wstr) {
-            _sendInputToConnection(wstr);
-        });
+        auto pfnWriteInput = std::bind(&ControlCore::_sendInputToConnection, this, std::placeholders::_1);
+        _terminal->SetWriteInputCallback(pfnWriteInput);
 
         // GH#8969: pre-seed working directory to prevent potential races
         _terminal->SetWorkingDirectory(_settings->StartingDirectory());

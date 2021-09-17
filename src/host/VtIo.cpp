@@ -177,6 +177,14 @@ VtIo::VtIo() :
                     vtapi->m_pUsualRoutines = new ApiRoutines();
                 }
 
+                xtermEngine->SetPassthroughMode(true);
+
+                if (_pVtInputThread)
+                {
+                    auto pfnSetListenForDSR = std::bind(&VtInputThread::SetLookingForDSR, _pVtInputThread.get(), std::placeholders::_1);
+                    xtermEngine->SetLookingForDSRCallback(pfnSetListenForDSR);
+                }
+
                 globals.api = vtapi;
 
                 _pVtRenderEngine = std::move(xtermEngine);

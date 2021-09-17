@@ -54,7 +54,8 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
     _bufferLine{},
     _buffer{},
     _formatBuffer{},
-    _conversionBuffer{}
+    _conversionBuffer{},
+    _pfnSetLookingForDSR{}
 {
 #ifndef UNIT_TESTING
     // When unit testing, we can instantiate a VtEngine without a pipe.
@@ -446,12 +447,35 @@ void VtEngine::EndResizeRequest()
 //   conpty scenario.
 // - See also: GH#3490, #4354, #4741
 // Arguments:
-// - <none>
+// - resizeQuirk - True to turn on the quirk. False otherwise.
 // Return Value:
 // - true iff we were started with the `--resizeQuirk` flag enabled.
 void VtEngine::SetResizeQuirk(const bool resizeQuirk)
 {
     _resizeQuirk = resizeQuirk;
+}
+
+// Method Description:
+// - Configure the renderer to understand that we're operating in limited-draw
+//   passthrough mode. We do not need to handle full responsibility for replicating
+//   buffer state to the attached terminal.
+// Arguments:
+// - passthrough - True to turn on passthrough mode. False otherwise.
+// Return Value:
+// - true iff we were started with an output mode for passthrough. false otherwise.
+void VtEngine::SetPassthroughMode(const bool passthrough) noexcept
+{
+    _passthrough = passthrough;
+}
+
+void VtEngine::SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept
+{
+    _pfnSetLookingForDSR = pfnLooking;
+}
+
+void VtEngine::SetTerminalCursorTextPosition(const COORD cursor) noexcept
+{
+    _lastText = cursor;
 }
 
 // Method Description:

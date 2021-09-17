@@ -960,8 +960,10 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
         //
         // If wch is a surrogate character we need to read 2 code units
         // from the stringView to form a single code point.
-        const auto isSurrogate = wch >= 0xD800 && wch <= 0xDFFF;
-        const auto view = stringView.substr(i, isSurrogate ? 2 : 1);
+        const auto remaining = stringView.substr(i);
+        const auto isSurrogate = [](wchar_t wch) -> bool { return wch >= 0xD800 && wch <= 0xDFFF; };
+        const auto foundLast = std::find_if(remaining.cbegin(), remaining.cend(), isSurrogate);
+        const std::wstring_view view(remaining.data(), std::distance(remaining.cbegin(), foundLast));
         const OutputCellIterator it{ view, _buffer->GetCurrentAttributes() };
         const auto end = _buffer->Write(it);
         const auto cellDistance = end.GetCellDistance(it);
@@ -1158,7 +1160,7 @@ void Terminal::_NotifyTerminalCursorPositionChanged() noexcept
     }
 }
 
-void Terminal::SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept
+void Terminal::SetWriteInputCallback(std::function<void(std::wstring_view)> pfn) noexcept
 {
     _pfnWriteInput.swap(pfn);
 }

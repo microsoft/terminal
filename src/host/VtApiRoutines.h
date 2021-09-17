@@ -384,5 +384,6 @@ public:
     UINT& m_outputCodepage;
     ULONG m_inputMode;
     ULONG m_outputMode;
+    bool m_listeningForDSR;
     Microsoft::Console::Render::Xterm256Engine* m_pVtEngine;
 };

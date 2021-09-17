@@ -24,7 +24,8 @@ VtApiRoutines::VtApiRoutines() :
     m_inputMode(),
     m_outputMode(),
     m_pUsualRoutines(),
-    m_pVtEngine()
+    m_pVtEngine(),
+    m_listeningForDSR(false)
 {
 }
 
@@ -83,7 +84,17 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return m_pUsualRoutines->PeekConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    const auto hr = m_pUsualRoutines->PeekConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
+    // the terminal is presenting in case there's a cooked read going on.
+    // TODO: we only need to do this in cooked read mode.
+    if (waiter)
+    {
+        m_listeningForDSR = true;
+        (void)m_pVtEngine->_ListenForDSR();
+        (void)m_pVtEngine->RequestCursor();
+    }
+    return hr;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::PeekConsoleInputWImpl(IConsoleInputObject& context,
@@ -92,7 +103,17 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return m_pUsualRoutines->PeekConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    const auto hr = m_pUsualRoutines->PeekConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
+    // the terminal is presenting in case there's a cooked read going on.
+    // TODO: we only need to do this in cooked read mode.
+    if (waiter)
+    {
+        m_listeningForDSR = true;
+        (void)m_pVtEngine->_ListenForDSR();
+        (void)m_pVtEngine->RequestCursor();
+    }
+    return hr;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputAImpl(IConsoleInputObject& context,
@@ -101,7 +122,17 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return m_pUsualRoutines->ReadConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    const auto hr = m_pUsualRoutines->ReadConsoleInputAImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
+    // the terminal is presenting in case there's a cooked read going on.
+    // TODO: we only need to do this in cooked read mode.
+    if (waiter)
+    {
+        m_listeningForDSR = true;
+        (void)m_pVtEngine->_ListenForDSR();
+        (void)m_pVtEngine->RequestCursor();
+    }
+    return hr;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleInputWImpl(IConsoleInputObject& context,
@@ -110,7 +141,17 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                            INPUT_READ_HANDLE_DATA& readHandleState,
                                                            std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    return m_pUsualRoutines->ReadConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    const auto hr = m_pUsualRoutines->ReadConsoleInputWImpl(context, outEvents, eventsToRead, readHandleState, waiter);
+    // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
+    // the terminal is presenting in case there's a cooked read going on.
+    // TODO: we only need to do this in cooked read mode.
+    if (waiter)
+    {
+        m_listeningForDSR = true;
+        (void)m_pVtEngine->_ListenForDSR();
+        (void)m_pVtEngine->RequestCursor();
+    }
+    return hr;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleAImpl(IConsoleInputObject& context,
@@ -124,7 +165,17 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                       const DWORD controlWakeupMask,
                                                       DWORD& controlKeyState) noexcept
 {
-    return m_pUsualRoutines->ReadConsoleAImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
+    const auto hr = m_pUsualRoutines->ReadConsoleAImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
+    // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
+    // the terminal is presenting in case there's a cooked read going on.
+    // TODO: we only need to do this in cooked read mode.
+    if (clientHandle)
+    {
+        m_listeningForDSR = true;
+        (void)m_pVtEngine->_ListenForDSR();
+        (void)m_pVtEngine->RequestCursor();
+    }
+    return hr;
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::ReadConsoleWImpl(IConsoleInputObject& context,
@@ -138,7 +189,19 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                       const DWORD controlWakeupMask,
                                                       DWORD& controlKeyState) noexcept
 {
-    return m_pUsualRoutines->ReadConsoleWImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
+   
+    const auto hr = m_pUsualRoutines->ReadConsoleWImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
+    // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
+    // the terminal is presenting in case there's a cooked read going on.
+    // TODO: we only need to do this in cooked read mode.
+    if (clientHandle)
+    {
+        m_listeningForDSR = true;
+        (void)m_pVtEngine->_ListenForDSR();
+        (void)m_pVtEngine->RequestCursor();
+    }
+    return hr;
+
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
@@ -314,8 +377,16 @@ void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& c
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleCursorPositionImpl(SCREEN_INFORMATION& context,
                                                                   const COORD position) noexcept
 {
-    (void)m_pVtEngine->_CursorPosition(position);
-    (void)m_pVtEngine->_Flush();
+    if (m_listeningForDSR)
+    {
+        context.GetActiveBuffer().GetTextBuffer().GetCursor().SetPosition(position);
+        m_pVtEngine->SetTerminalCursorTextPosition(position);
+    }
+    else
+    {
+        (void)m_pVtEngine->_CursorPosition(position);
+        (void)m_pVtEngine->_Flush();
+    }
     return S_OK;
 }
 
