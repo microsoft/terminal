@@ -97,7 +97,7 @@ private:
                      const DWORD serverHandle,
                      const DWORD signalHandle,
                      const bool inheritCursor,
-                     const bool runAsComServer
+                     const bool runAsComServer,
                      const bool passthroughMode) :
         _commandline(commandline),
         _clientCommandline(clientCommandline),
@@ -194,7 +194,7 @@ namespace WEX
                                                            L"Signal Handle: '0x%x'\r\n",
                                                            L"Inherit Cursor: '%ws'\r\n",
                                                            L"Run As Com Server: '%ws'\r\n",
-                                                           L"Passthrough Mode: '%ws'\r\n"
+                                                           L"Passthrough Mode: '%ws'\r\n",
                                                            ci.GetClientCommandline().c_str(),
                                                            s_ToBoolString(ci.HasVtHandles()),
                                                            ci.GetVtInHandle(),
