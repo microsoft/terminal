@@ -331,7 +331,7 @@ void VtApiRoutines::GetConsoleCursorInfoImpl(const SCREEN_INFORMATION& context,
                                              ULONG& size,
                                              bool& isVisible) noexcept
 {
-    // TODO: good luck capturing this out of the input buffer when it comes back in. yeesh.
+    // TODO: good luck capturing this out of the input buffer when it comes back in.
     //m_pVtEngine->RequestCursor();
     return;
 }

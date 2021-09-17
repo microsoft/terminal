@@ -518,6 +518,7 @@ DECAUPSS
 DECAWM
 DECCKM
 DECCOLM
+DECCRA
 DECDHL
 decdld
 DECDLD
@@ -2628,6 +2629,7 @@ VSTS
 VSTT
 vstudio
 vswhere
+vtapi
 vtapp
 VTE
 VTID

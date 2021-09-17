@@ -8,7 +8,7 @@ enum class VtIoMode
     INVALID,
     XTERM,
     XTERM_256,
-    XTERM_ASCII,
+    XTERM_ASCII
 };
 
 const wchar_t* const XTERM_STRING = L"xterm";
