@@ -5,10 +5,7 @@
 #include "Terminal.hpp"
 #include "unicode.hpp"
 
-#include <winrt/Microsoft.Terminal.Core.h>
-
 using namespace Microsoft::Terminal::Core;
-using namespace winrt::Microsoft::Terminal::Core;
 
 /* Selection Pivot Description:
  *   The pivot helps properly update the selection when a user moves a selection over itself

@@ -549,11 +549,11 @@ try
 
     if (multiClickMapper == 3)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, InternalSelectionExpansion::Line);
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Line);
     }
     else if (multiClickMapper == 2)
     {
-        _terminal->MultiClickSelection(cursorPosition / fontSize, InternalSelectionExpansion::Word);
+        _terminal->MultiClickSelection(cursorPosition / fontSize, ::Terminal::SelectionExpansion::Word);
     }
     else
     {

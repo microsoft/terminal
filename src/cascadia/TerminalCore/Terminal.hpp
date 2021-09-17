@@ -239,7 +239,7 @@ public:
     {
         Char,
         Word,
-        Line, // Mouse selection only! Not a setting!
+        Line, // Mouse selection only!
         Viewport,
         Buffer
     };
