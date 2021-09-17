@@ -129,14 +129,30 @@ void SettingsLoader::GenerateProfiles()
 {
     const auto executeGenerator = [&](const auto& generator) {
         const auto generatorNamespace = generator.GetNamespace();
-
-        if (!_ignoredNamespaces.count(generatorNamespace))
+        if (_ignoredNamespaces.count(generatorNamespace))
         {
-            try
+            return;
+        }
+
+        const auto previousSize = inboxSettings.profiles.size();
+
+        try
+        {
+            generator.GenerateProfiles(inboxSettings.profiles);
+        }
+        CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
+
+        // If the generator produced some profiles we're going to give them default attributes.
+        // By settings the Origin/Source/... here, we deduplicate some code and ensure they aren't accidentally missing.
+        if (inboxSettings.profiles.size() > previousSize)
+        {
+            const winrt::hstring source{ generatorNamespace };
+
+            for (const auto& profile : gsl::span(inboxSettings.profiles).subspan(previousSize))
             {
-                generator.GenerateProfiles(inboxSettings.profiles);
+                profile->Origin(OriginTag::Generated);
+                profile->Source(source);
             }
-            CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
         }
     };
 

@@ -25,7 +25,6 @@ void BaseVisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<impl
             const auto seed = GetProfileGuidSeed(instance);
             const winrt::guid profileGuid{ ::Microsoft::Console::Utils::CreateV5Uuid(TERMINAL_PROFILE_NAMESPACE_GUID, gsl::as_bytes(gsl::make_span(seed))) };
             auto profile = winrt::make_self<implementation::Profile>(profileGuid);
-            profile->Origin(OriginTag::Generated);
             profile->Name(winrt::hstring{ GetProfileName(instance) });
             profile->Commandline(winrt::hstring{ GetProfileCommandLine(instance) });
             profile->StartingDirectory(winrt::hstring{ instance.GetInstallationPath() });
