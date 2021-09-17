@@ -1,4 +1,4 @@
-// Copyright (c) Microsoft Corporation.
+﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -326,8 +326,7 @@ bool SettingsLoader::DisableDeletedProfiles()
     auto generatedProfileIds = state->GeneratedProfiles();
     bool newGeneratedProfiles = false;
 
-    // See member description of _userProfileCount for an explanation of this gsl::span trickery.
-    for (const auto& profile : gsl::make_span(userSettings.profiles).subspan(_userProfileCount))
+    for (const auto& profile : _getNonUserOriginProfiles())
     {
         if (generatedProfileIds.emplace(profile->Guid()).second)
         {
@@ -439,6 +438,19 @@ bool SettingsLoader::_isValidProfileObject(const Json::Value& profileJson)
     return profileJson.isObject() &&
            (profileJson.isMember(NameKey.data(), NameKey.data() + NameKey.size()) || // has a name (can generate a guid)
             profileJson.isMember(GuidKey.data(), GuidKey.data() + GuidKey.size())); // or has a guid
+}
+
+// We treat userSettings.profiles as an append-only array and will
+// append profiles into the userSettings as necessary in this function.
+// _userProfileCount stores the number of profiles that were in userJSON during construction.
+//
+// Thus no matter how many profiles are added later on, the following condition holds true:
+// The userSettings.profiles in the range [0, _userProfileCount) contain all profiles specified by the user.
+// In turn all profiles in the range [_userProfileCount, ∞) contain newly generated/added profiles.
+// gsl::make_span(userSettings.profiles).subspan(_userProfileCount) gets us the latter range.
+gsl::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfiles() const
+{
+    return gsl::make_span(userSettings.profiles).subspan(_userProfileCount);
 }
 
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.

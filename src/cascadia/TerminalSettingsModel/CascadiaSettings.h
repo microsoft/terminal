@@ -68,15 +68,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         static bool _isValidProfileObject(const Json::Value& profileJson);
+        gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;
-        // We treat userSettings.profiles as an append-only array and will
-        // append profiles into the userSettings as necessary in this function.
-        // We can thus get the gsl::span of user-given profiles, by preserving the size here
-        // and restoring it with gsl::make_span(userSettings.profiles).subspan(_userProfileCount).
+        // See _getNonUserOriginProfiles().
         size_t _userProfileCount = 0;
     };
 
