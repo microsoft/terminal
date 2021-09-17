@@ -33,7 +33,7 @@ Relatively recently, TerminalControl was split into `TerminalControl`, `ControlI
 The first branch will be updated to _modify_ the selection instead of usually _clearing_ it. This will happen by converting the key event into parameters to forward to `TerminalCore`, which then updates the selection appropriately.
 
 #### Idea: Make keyboard selection a collection of standard keybindings
-One idea is to introduce an `updateSelection` action that conditionally works if a seleciton is active (similar to the `copy` action). For these key bindings, if there is no selection, the key events are forwarded to the application.
+One idea is to introduce an `updateSelection` action that conditionally works if a selection is active (similar to the `copy` action). For these key bindings, if there is no selection, the key events are forwarded to the application.
 
 Thanks to Keybinding Args, there would only be 1 new command:
 | Action | Keybinding Args | Description |
@@ -67,12 +67,12 @@ By default, the following keybindings will be set:
 ```
 These are in accordance with ConHost's keyboard selection model.
 
-This idea was abondoned due to several reasons:
+This idea was abandoned due to several reasons:
 1. Keyboard selection should be a standard way to interact with a terminal across all consumers (i.e. WPF control, etc.)
 2. There isn't really another set of key bindings that makes sense for this. We already hardcoded <kbd>ESC</kbd> as a way to clear the selection. This is just an extension of that.
 3. Adding 12 conditionally effective key bindings takes the spot of 12 potential non-conditional key bindings. It would be nice if a different key binding could be set when the selection is not active, but that makes the settings design much more complicated.
 4. 12 new items in the command palette is also pretty excessive.
-5. If proven wrong when this is in WT Preview, we can revisit this and make them customizable then. It's better to add customizability later than take it away.
+5. If proven wrong when this is in WT Preview, we can revisit this and make them customizable then. It's better to add the ability to customize it later than take it away.
 
 #### Idea: Make keyboard selection a simulation of mouse selection
 It may seem that some effort can be saved by making the keyboard selection act as a simulation of mouse selection. There is a union of mouse and keyboard activity that can be represented in a single set of selection motion interfaces that are commanded by the TermControl's Mouse/Keyboard handler and adapted into appropriate motions in the Terminal Core.
