@@ -189,7 +189,6 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                       const DWORD controlWakeupMask,
                                                       DWORD& controlKeyState) noexcept
 {
-   
     const auto hr = m_pUsualRoutines->ReadConsoleWImpl(context, buffer, written, waiter, initialData, exeName, readHandleState, clientHandle, controlWakeupMask, controlKeyState);
     // If we're about to tell the caller to wait, let's synchronize the cursor we have with what
     // the terminal is presenting in case there's a cooked read going on.
@@ -201,7 +200,6 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
         (void)m_pVtEngine->RequestCursor();
     }
     return hr;
-
 }
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleAImpl(IConsoleOutputObject& context,
@@ -485,8 +483,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 }
 
 extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
-                                                     gsl::span<CHAR_INFO> buffer,
-                                                     const Viewport& rectangle) noexcept;
+                                       gsl::span<CHAR_INFO> buffer,
+                                       const Viewport& rectangle) noexcept;
 
 [[nodiscard]] HRESULT VtApiRoutines::WriteConsoleOutputAImpl(SCREEN_INFORMATION& context,
                                                              gsl::span<CHAR_INFO> buffer,

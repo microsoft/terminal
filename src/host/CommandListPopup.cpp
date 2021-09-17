@@ -380,9 +380,9 @@ void CommandListPopup::_drawList()
         WriteCoord.X = _region.Left + 1i16;
 
         LOG_IF_FAILED(api->WriteConsoleOutputCharacterAImpl(_screenInfo,
-                                                           { CommandNumberPtr, CommandNumberLength },
-                                                           WriteCoord,
-                                                           CommandNumberLength));
+                                                            { CommandNumberPtr, CommandNumberLength },
+                                                            WriteCoord,
+                                                            CommandNumberLength));
 
         // write command to screen
         auto command = _history.GetNth(i);
@@ -418,9 +418,9 @@ void CommandListPopup::_drawList()
         WriteCoord.X = gsl::narrow<SHORT>(WriteCoord.X + CommandNumberLength);
         size_t used;
         LOG_IF_FAILED(api->WriteConsoleOutputCharacterWImpl(_screenInfo,
-                                                           { command.data(), lStringLength },
-                                                           WriteCoord,
-                                                           used));
+                                                            { command.data(), lStringLength },
+                                                            WriteCoord,
+                                                            used));
 
         // write attributes to screen
         if (i == _currentCommand)

@@ -161,7 +161,7 @@ VtIo::VtIo() :
             case VtIoMode::XTERM_256:
             {
                 auto xterm256Engine = std::make_unique<Xterm256Engine>(std::move(_hOutput),
-                                                                    initialViewport);
+                                                                       initialViewport);
                 if (_passthroughMode)
                 {
                     auto vtapi = new VtApiRoutines();
