@@ -16,6 +16,10 @@
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
+using namespace std::string_view_literals;
+
+// Format is: "DecimalResult (HexadecimalForm)"
+static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
 // Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
