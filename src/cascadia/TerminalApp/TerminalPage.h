@@ -324,6 +324,8 @@ namespace winrt::TerminalApp::implementation
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
 
+        std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs);
+
         void _RefreshUIForSettingsReload();
 
         void _SetNonClientAreaColors(const Windows::UI::Color& selectedTabColor);

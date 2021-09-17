@@ -825,14 +825,7 @@ namespace winrt::TerminalApp::implementation
                         WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        if (altPressed && !debugTap)
-        {
-            this->_SplitPane(SplitDirection::Automatic,
-                             SplitType::Manual,
-                             0.5f,
-                             newTerminalArgs);
-        }
-        else if (shiftPressed && !debugTap)
+        if (shiftPressed && !debugTap)
         {
             // Manually fill in the evaluated profile.
             if (newTerminalArgs.ProfileIndex() != nullptr)
@@ -848,7 +841,20 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            LOG_IF_FAILED(this->_OpenNewTab(newTerminalArgs));
+            const auto newPane = _MakePane(newTerminalArgs);
+            newPane->SetActive();
+            if (altPressed && !debugTap)
+            {
+                this->_SplitPane(SplitDirection::Automatic,
+                                 SplitType::Manual,
+                                 0.5f,
+                                 newTerminalArgs);
+            }
+            else
+            {
+                //LOG_IF_FAILED(this->_OpenNewTab(newTerminalArgs));
+                _CreateNewTabFromPane(newPane);
+            }
         }
     }
 
@@ -2149,6 +2155,16 @@ namespace winrt::TerminalApp::implementation
         term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
 
         return term;
+    }
+
+    std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs)
+    {
+        const auto profile = _settings.GetProfileForArgs(newTerminalArgs);
+        const auto controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+        const auto connection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+        const auto control = _InitControl(controlSettings, connection);
+        _RegisterTerminalEvents(control);
+        return std::make_shared<Pane>(profile, control);
     }
 
     // Method Description:
