@@ -491,16 +491,8 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // Fixed movement
     if (direction == FocusDirection::First)
     {
-        std::shared_ptr<Pane> firstPane = nullptr;
-        WalkTree([&](auto p) {
-            if (p->_IsLeaf())
-            {
-                firstPane = p;
-                return true;
-            }
-
-            return false;
-        });
+        // Just get the first leaf pane.
+        auto firstPane = _FindPane([](auto p) { return p->_IsLeaf(); });
 
         // Don't need to do any movement if we are the source and target pane.
         if (firstPane == sourcePane)
@@ -657,22 +649,9 @@ std::shared_ptr<Pane> Pane::PreviousPane(const std::shared_ptr<Pane> targetPane)
 // - the parent of `pane` if pane is in this tree.
 std::shared_ptr<Pane> Pane::_FindParentOfPane(const std::shared_ptr<Pane> pane)
 {
-    if (_IsLeaf())
-    {
-        return nullptr;
-    }
-
-    if (_firstChild == pane || _secondChild == pane)
-    {
-        return shared_from_this();
-    }
-
-    if (auto p = _firstChild->_FindParentOfPane(pane))
-    {
-        return p;
-    }
-
-    return _secondChild->_FindParentOfPane(pane);
+    return _FindPane([&](auto p) {
+        return p->_firstChild == pane || p->_secondChild == pane;
+    });
 }
 
 // Method Description:
@@ -800,23 +779,15 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         }
 
         // Refocus the last pane if there was a pane focused
-        first->WalkTree([](auto p) {
-            if (p->_lastActive)
-            {
-                p->_Focus();
-                return true;
-            }
-            return false;
-        });
+        if (const auto focus = first->GetActivePane())
+        {
+            focus->_Focus();
+        }
 
-        second->WalkTree([](auto p) {
-            if (p->_lastActive)
-            {
-                p->_Focus();
-                return true;
-            }
-            return false;
-        });
+        if (const auto focus = second->GetActivePane())
+        {
+            focus->_Focus();
+        }
 
         return true;
     }
@@ -1222,21 +1193,7 @@ Controls::Grid Pane::GetRootElement()
 //   `_lastActive`, else returns this
 std::shared_ptr<Pane> Pane::GetActivePane()
 {
-    if (_lastActive)
-    {
-        return shared_from_this();
-    }
-    if (_IsLeaf())
-    {
-        return nullptr;
-    }
-
-    auto firstFocused = _firstChild->GetActivePane();
-    if (firstFocused != nullptr)
-    {
-        return firstFocused;
-    }
-    return _secondChild->GetActivePane();
+    return _FindPane([](auto p) { return p->_lastActive; });
 }
 
 // Method Description:
@@ -1482,18 +1439,10 @@ std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitDirectio
 
     // If the new pane has a child that was the focus, re-focus it
     // to steal focus from the currently focused pane.
-    if (pane->_HasFocusedChild())
+    if (const auto focus = pane->GetActivePane())
     {
-        pane->WalkTree([](auto p) {
-            if (p->_lastActive)
-            {
-                p->_Focus();
-                return true;
-            }
-            return false;
-        });
+        focus->_Focus();
     }
-
     return first;
 }
 
@@ -1535,7 +1484,6 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         // Trigger the detached event on each child
         detached->WalkTree([](auto pane) {
             pane->_PaneDetachedHandlers(pane);
-            return false;
         });
 
         return detached;
@@ -1624,7 +1572,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
                 }
-                return false;
             });
         }
 
@@ -1714,7 +1661,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
                 }
-                return false;
             });
         }
 
@@ -2641,24 +2587,19 @@ void Pane::Id(uint32_t id) noexcept
 bool Pane::FocusPane(const uint32_t id)
 {
     // Always clear the parent child path if we are focusing a leaf
-    _parentChildPath.reset();
-    if (_IsLeaf() && id == _id)
-    {
-        // Make sure to use _FocusFirstChild here - that'll properly update the
-        // focus if we're in startup.
-        _FocusFirstChild();
-        return true;
-    }
-    else
-    {
-        if (_firstChild && _secondChild)
+    return WalkTree([=](auto p) {
+        p->_parentChildPath.reset();
+        if (p->_id == id)
         {
-            return _firstChild->FocusPane(id) ||
-                   _secondChild->FocusPane(id);
+            // Make sure to use _FocusFirstChild here - that'll properly update the
+            // focus if we're in startup.
+            p->_FocusFirstChild();
+            return true;
         }
-    }
-    return false;
+        return false;
+    });
 }
+
 // Method Description:
 // - Focuses the given pane if it is in the tree.
 // - This is different than FocusPane(id) in that it allows focusing
@@ -2669,22 +2610,16 @@ bool Pane::FocusPane(const uint32_t id)
 // - true if focus was set
 bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 {
-    if (this == pane.get())
-    {
-        _Focus();
-        return true;
-    }
-    else
-    {
-        // clear the parent child path if we are not the pane being focused.
-        _parentChildPath.reset();
-        if (_firstChild && _secondChild)
+    return WalkTree([&](auto p) {
+        if (p == pane)
         {
-            return _firstChild->FocusPane(pane) ||
-                   _secondChild->FocusPane(pane);
+            p->_Focus();
+            return true;
         }
-    }
-    return false;
+        // clear the parent child path if we are not the pane being focused.
+        p->_parentChildPath.reset();
+        return false;
+    });
 }
 
 // Method Description:
@@ -2695,17 +2630,14 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 // - true if the child was found.
 bool Pane::_HasChild(const std::shared_ptr<Pane> child)
 {
-    if (_IsLeaf())
+    if (child == nullptr)
     {
         return false;
     }
 
-    if (_firstChild == child || _secondChild == child)
-    {
-        return true;
-    }
-
-    return _firstChild->_HasChild(child) || _secondChild->_HasChild(child);
+    return WalkTree([&](auto p) {
+        return p->_firstChild == child || p->_secondChild == child;
+    });
 }
 
 // Method Description:
@@ -2716,26 +2648,7 @@ bool Pane::_HasChild(const std::shared_ptr<Pane> child)
 // - A pointer to the pane with the given ID, if found.
 std::shared_ptr<Pane> Pane::FindPane(const uint32_t id)
 {
-    if (_IsLeaf())
-    {
-        if (id == _id)
-        {
-            return shared_from_this();
-        }
-    }
-    else
-    {
-        if (auto pane = _firstChild->FindPane(id))
-        {
-            return pane;
-        }
-        if (auto pane = _secondChild->FindPane(id))
-        {
-            return pane;
-        }
-    }
-
-    return nullptr;
+    return _FindPane([=](auto p) { return p->_IsLeaf() && p->_id == id; });
 }
 
 // Method Description:

@@ -56,8 +56,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _activePane = pane;
             }
-
-            return false;
         });
 
         // In case none of the panes were already marked as the focus, just
@@ -217,7 +215,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _AttachEventHandlersToControl(pane->Id().value(), control);
             }
-            return false;
         });
     }
 
@@ -586,7 +583,6 @@ namespace winrt::TerminalApp::implementation
         auto p = _rootPane;
         p->WalkTree([](auto pane) {
             pane->_PaneDetachedHandlers(pane);
-            return false;
         });
 
         // Clean up references and close the tab
@@ -614,13 +610,9 @@ namespace winrt::TerminalApp::implementation
             if (p->_IsLeaf())
             {
                 p->Id(_nextPaneId);
+                _AttachEventHandlersToControl(p->Id().value(), p->_control);
                 _nextPaneId++;
             }
-            if (auto control = p->GetTerminalControl())
-            {
-                _AttachEventHandlersToControl(p->Id().value(), control);
-            }
-            return false;
         });
 
         // pass the old id to the new child
@@ -641,14 +633,10 @@ namespace winrt::TerminalApp::implementation
         _AttachEventHandlersToPane(first);
 
         // Make sure that we have the right pane set as the active pane
-        pane->WalkTree([&](auto p) {
-            if (p->_lastActive)
-            {
-                _UpdateActivePane(p);
-                return true;
-            }
-            return false;
-        });
+        if (const auto focus = pane->GetActivePane())
+        {
+            _UpdateActivePane(focus);
+        }
     }
 
     // Method Description:

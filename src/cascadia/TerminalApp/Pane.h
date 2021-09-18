@@ -142,14 +142,15 @@ public:
 
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
-    //   tree, calling a predicate on each pane in a depth-first pattern.
-    // - If the predicate returns true, recursion is stopped early.
+    //   tree, calling a function on each pane in a depth-first pattern.
+    // - If that function returns void, then it will be called on every pane.
+    // - Otherwise, iteration will continue until a value with operator bool
+    //   returns true.
     // Arguments:
     // - f: The function to be applied to each pane.
     // Return Value:
-    // - true if the predicate returned true on any pane.
+    // - The value of the function applied on a Pane
     template<typename F>
-    //requires std::predicate<F, std::shared_ptr<Pane>>
     auto WalkTree(F f) -> decltype(f(shared_from_this()))
     {
         using R = std::invoke_result_t<F, std::shared_ptr<Pane>>;
@@ -166,18 +167,34 @@ public:
         }
         else
         {
-            if (f(shared_from_this()))
+            if (const auto res = f(shared_from_this()))
             {
-                return true;
+                return res;
             }
 
             if (!_IsLeaf())
             {
-                return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+                if (const auto res = _firstChild->WalkTree(f))
+                {
+                    return res;
+                }
+                return _secondChild->WalkTree(f);
             }
 
-            return false;
+            return R{};
         }
+    }
+
+    template<typename F>
+    std::shared_ptr<Pane> _FindPane(F f)
+    {
+        return WalkTree([f](auto pane) -> std::shared_ptr<Pane> {
+            if (f(pane))
+            {
+                return pane;
+            }
+            return nullptr;
+        });
     }
 
     void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
