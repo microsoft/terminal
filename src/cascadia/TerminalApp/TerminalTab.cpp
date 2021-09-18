@@ -657,20 +657,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Update the size of our panes to fill the new given size. This happens when
-    //   the window is resized.
-    // Arguments:
-    // - newSize: the amount of space that the panes have to fill now.
-    // Return Value:
-    // - <none>
-    void TerminalTab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
-    {
-        // NOTE: This _must_ be called on the root pane, so that it can propagate
-        // throughout the entire tree.
-        _rootPane->ResizeContent(newSize);
-    }
-
-    // Method Description:
     // - Attempt to move a separator between panes, as to resize each child on
     //   either size of the separator. See Pane::ResizePane for details.
     // Arguments:
@@ -823,7 +809,6 @@ namespace winrt::TerminalApp::implementation
             auto& events = it->second;
 
             control.TitleChanged(events.titleToken);
-            control.FontSizeChanged(events.fontToken);
             control.TabColorChanged(events.colorToken);
             control.SetTaskbarProgress(events.taskbarToken);
             control.ReadOnlyChanged(events.readOnlyToken);
@@ -857,20 +842,6 @@ namespace winrt::TerminalApp::implementation
                 // The title of the control changed, but not necessarily the title of the tab.
                 // Set the tab's text to the active panes' text.
                 tab->UpdateTitle();
-            }
-        });
-
-        // This is called when the terminal changes its font size or sets it for the first
-        // time (because when we just create terminal via its ctor it has invalid font size).
-        // On the latter event, we tell the root pane to resize itself so that its descendants
-        // (including ourself) can properly snap to character grids. In future, we may also
-        // want to do that on regular font changes.
-        events.fontToken = control.FontSizeChanged([this](const int /* fontWidth */,
-                                                          const int /* fontHeight */,
-                                                          const bool isInitialChange) {
-            if (isInitialChange)
-            {
-                _rootPane->Relayout();
             }
         });
 

@@ -241,8 +241,6 @@ namespace winrt::TerminalApp::implementation
 
         _UpdateTabWidthMode();
 
-        _tabContent.SizeChanged({ this, &TerminalPage::_OnContentSizeChanged });
-
         // When the visibility of the command palette changes to "collapsed",
         // the palette has been closed. Toss focus back to the currently active
         // control.
@@ -2117,20 +2115,6 @@ namespace winrt::TerminalApp::implementation
                 break;
             }
         }
-    }
-
-    // Method Description:
-    // - Called when our tab content size changes. This updates each tab with
-    //   the new size, so they have a chance to update each of their panes with
-    //   the new size.
-    // Arguments:
-    // - e: the SizeChangedEventArgs with the new size of the tab content area.
-    // Return Value:
-    // - <none>
-    void TerminalPage::_OnContentSizeChanged(const IInspectable& /*sender*/, Windows::UI::Xaml::SizeChangedEventArgs const& e)
-    {
-        const auto newSize = e.NewSize();
-        _ResizeTabContent(newSize);
     }
 
     // Method Description:

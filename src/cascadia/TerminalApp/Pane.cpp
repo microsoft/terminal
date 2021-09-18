@@ -267,54 +267,6 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 }
 
 // Method Description:
-// - Update the size of this pane. Resizes each of our columns so they have the
-//   same relative sizes, given the newSize.
-// - Because we're just manually setting the row/column sizes in pixels, we have
-//   to be told our new size, we can't just use our own OnSized event, because
-//   that _won't fire when we get smaller_.
-// Arguments:
-// - newSize: the amount of space that this pane has to fill now.
-// Return Value:
-// - <none>
-void Pane::ResizeContent(const Size& newSize)
-{
-    const auto width = newSize.Width;
-    const auto height = newSize.Height;
-
-    _CreateRowColDefinitions();
-
-    if (_splitState == SplitState::Vertical)
-    {
-        const auto paneSizes = _CalcChildrenSizes(width);
-
-        const Size firstSize{ paneSizes.first, height };
-        const Size secondSize{ paneSizes.second, height };
-        _firstChild->ResizeContent(firstSize);
-        _secondChild->ResizeContent(secondSize);
-    }
-    else if (_splitState == SplitState::Horizontal)
-    {
-        const auto paneSizes = _CalcChildrenSizes(height);
-
-        const Size firstSize{ width, paneSizes.first };
-        const Size secondSize{ width, paneSizes.second };
-        _firstChild->ResizeContent(firstSize);
-        _secondChild->ResizeContent(secondSize);
-    }
-}
-
-// Method Description:
-// - Recalculates and reapplies sizes of all descendant panes.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Pane::Relayout()
-{
-    ResizeContent(_root.ActualSize());
-}
-
-// Method Description:
 // - Adjust our child percentages to increase the size of one of our children
 //   and decrease the size of the other.
 // - Adjusts the separation amount by 5%
@@ -350,7 +302,7 @@ bool Pane::_Resize(const ResizeDirection& direction)
     _desiredSplitPosition = _ClampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
 
     // Resize our columns to match the new percentages.
-    ResizeContent(actualSize);
+    _CreateRowColDefinitions();
 
     return true;
 }

@@ -55,7 +55,6 @@ namespace winrt::TerminalApp::implementation
                                                                                                         const float splitSize,
                                                                                                         winrt::Windows::Foundation::Size availableSpace) const;
 
-        void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
@@ -123,7 +122,6 @@ namespace winrt::TerminalApp::implementation
         struct ControlEventTokens
         {
             winrt::event_token titleToken;
-            winrt::event_token fontToken;
             winrt::event_token colorToken;
             winrt::event_token taskbarToken;
             winrt::event_token readOnlyToken;

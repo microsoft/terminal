@@ -97,8 +97,6 @@ public:
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
-    void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-    void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,

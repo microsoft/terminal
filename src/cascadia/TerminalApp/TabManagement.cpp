@@ -1036,15 +1036,4 @@ namespace winrt::TerminalApp::implementation
         std::copy(begin(_tabs), end(_tabs), std::back_inserter(tabsToRemove));
         _RemoveTabs(tabsToRemove);
     }
-
-    void TerminalPage::_ResizeTabContent(const winrt::Windows::Foundation::Size& newSize)
-    {
-        for (auto tab : _tabs)
-        {
-            if (auto terminalTab = _GetTerminalTabImpl(tab))
-            {
-                terminalTab->ResizeContent(newSize);
-            }
-        }
-    }
 }
