@@ -2208,7 +2208,7 @@ void Pane::_SetupEntranceAnimation()
 //   tree, we'll reduce the size passed to each subsequent recursive call. The
 //   size passed to this method represents how much space this Pane _will_ have
 //   to use.
-//   * If this pane is a leaf, and it's the pane we're looking for, use the
+//   * If this pane is the pane we're looking for, use the
 //     available space to calculate which direction to split in.
 //   * If this pane is _any other leaf_, then just return nullopt, to indicate
 //     that the `target` Pane is not down this branch.
@@ -2219,22 +2219,26 @@ void Pane::_SetupEntranceAnimation()
 // - splitType: The direction we're attempting to split in.
 // - availableSpace: The theoretical space that's available for this pane to be able to split.
 // Return Value:
-// - nullopt if `target` is not this pane or a child of this pane, otherwise
-//   true iff we could split this pane, given `availableSpace`
-// Note:
-// - This method is highly similar to Pane::PreCalculateAutoSplit
-std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                               SplitDirection splitType,
-                                               const float splitSize,
-                                               const winrt::Windows::Foundation::Size availableSpace) const
+// - nullopt if the target is not found, or if there is not enough space to fit.
+//   Otherwise will return the "real split direction" (converting automatic splits),
+//   and will return either the split direction or nullopt.
+std::optional<std::optional<SplitDirection>> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                                                        SplitDirection splitType,
+                                                                        const float splitSize,
+                                                                        const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (target.get() == this)
     {
         const auto firstPercent = 1.0f - splitSize;
         const auto secondPercent = splitSize;
-        // If this pane is a leaf, and it's the pane we're looking for, use
+        // If this pane is the pane we're looking for, use
         // the available space to calculate which direction to split in.
         const Size minSize = _GetMinSize();
+
+        if (splitType == SplitDirection::Automatic)
+        {
+            splitType = availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
+        }
 
         if (splitType == SplitDirection::Left || splitType == SplitDirection::Right)
         {
@@ -2242,7 +2246,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             const auto newFirstWidth = widthMinusSeparator * firstPercent;
             const auto newSecondWidth = widthMinusSeparator * secondPercent;
 
-            return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
+            return newFirstWidth > minSize.Width && newSecondWidth > minSize.Width ? std::optional{ splitType } : std::nullopt;
         }
 
         else if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
@@ -2251,7 +2255,8 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             const auto newFirstHeight = heightMinusSeparator * firstPercent;
             const auto newSecondHeight = heightMinusSeparator * secondPercent;
 
-            return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
+            return newFirstHeight > minSize.Height && newSecondHeight > minSize.Height ? std::optional{ splitType } : std::nullopt;
+            ;
         }
     }
     else if (_IsLeaf())
@@ -3084,68 +3089,6 @@ void Pane::_SetupResources()
 int Pane::GetLeafPaneCount() const noexcept
 {
     return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
-}
-
-// Method Description:
-// - This is a helper to determine which direction an "Automatic" split should
-//   happen in for a given pane, but without using the ActualWidth() and
-//   ActualHeight() methods. This is used during the initialization of the
-//   Terminal, when we could be processing many "split-pane" commands _before_
-//   we've ever laid out the Terminal for the first time. When this happens, the
-//   Pane's don't have an actual size yet. However, we'd still like to figure
-//   out how to do an "auto" split when these Panes are all laid out.
-// - This method assumes that the Pane we're attempting to split is `target`,
-//   and this method should be called on the root of a tree of Panes.
-// - We'll walk down the tree attempting to find `target`. As we traverse the
-//   tree, we'll reduce the size passed to each subsequent recursive call. The
-//   size passed to this method represents how much space this Pane _will_ have
-//   to use.
-//   * If this pane is a leaf, and it's the pane we're looking for, use the
-//     available space to calculate which direction to split in.
-//   * If this pane is _any other leaf_, then just return nullopt, to indicate
-//     that the `target` Pane is not down this branch.
-//   * If this pane is a parent, calculate how much space our children will be
-//     able to use, and recurse into them.
-// Arguments:
-// - target: The Pane we're attempting to split.
-// - availableSpace: The theoretical space that's available for this pane to be able to split.
-// Return Value:
-// - nullopt if `target` is not this pane or a child of this pane, otherwise the
-//   SplitDirection that `target` would use for an `Automatic` split given
-//   `availableSpace`
-std::optional<SplitDirection> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                          const winrt::Windows::Foundation::Size availableSpace) const
-{
-    if (target.get() == this)
-    {
-        // If this pane is the pane we are looking for, use the available space
-        // to calculate which direction to split in.
-        return availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
-    }
-    else if (_IsLeaf())
-    {
-        // If this pane is _any other leaf_, then just return nullopt, to
-        // indicate that the `target` Pane is not down this branch.
-        return std::nullopt;
-    }
-    else
-    {
-        // If this pane is a parent, calculate how much space our children will
-        // be able to use, and recurse into them.
-
-        const bool isVerticalSplit = _splitState == SplitState::Vertical;
-        const float firstWidth = isVerticalSplit ? (availableSpace.Width * _desiredSplitPosition) : availableSpace.Width;
-        const float secondWidth = isVerticalSplit ? (availableSpace.Width - firstWidth) : availableSpace.Width;
-        const float firstHeight = !isVerticalSplit ? (availableSpace.Height * _desiredSplitPosition) : availableSpace.Height;
-        const float secondHeight = !isVerticalSplit ? (availableSpace.Height - firstHeight) : availableSpace.Height;
-
-        const auto firstResult = _firstChild->PreCalculateAutoSplit(target, { firstWidth, firstHeight });
-        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateAutoSplit(target, { secondWidth, secondHeight });
-    }
-
-    // We should not possibly be getting here - both the above branches should
-    // return a value.
-    FAIL_FAST();
 }
 
 // Method Description:

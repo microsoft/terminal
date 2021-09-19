@@ -114,12 +114,10 @@ public:
                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
-    std::optional<bool> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                             winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                                             const float splitSize,
-                                             const winrt::Windows::Foundation::Size availableSpace) const;
+    std::optional<std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection>> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                                                                                                   winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                                                                                                   const float splitSize,
+                                                                                                                   const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
 
@@ -297,8 +295,6 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
-
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

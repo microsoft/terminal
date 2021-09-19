@@ -1569,14 +1569,10 @@ namespace winrt::TerminalApp::implementation
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
             const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
-            auto realSplitType = splitDirection;
-            if (realSplitType == SplitDirection::Automatic)
-            {
-                realSplitType = tab.PreCalculateAutoSplit(availableSpace);
-            }
-
-            const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
-            if (!canSplit)
+            // PreCalculateCanSplit will convert automatic splits to the appropriate direction
+            // and if there is space to split will return the split direction to use.
+            const auto realSplitType = tab.PreCalculateCanSplit(splitDirection, splitSize, availableSpace);
+            if (!realSplitType)
             {
                 return;
             }
@@ -1587,8 +1583,7 @@ namespace winrt::TerminalApp::implementation
             _RegisterTerminalEvents(newControl);
 
             _UnZoomIfNeeded();
-
-            tab.SplitPane(realSplitType, splitSize, profile, newControl);
+            tab.SplitPane(realSplitType.value(), splitSize, profile, newControl);
 
             // After GH#6586, the control will no longer focus itself
             // automatically when it's finished being laid out. Manually focus
@@ -2223,7 +2218,6 @@ namespace winrt::TerminalApp::implementation
                             pane->UpdateSettings(pair.second, pair.first);
                         }
                     }
-                    return false;
                 });
 
                 // Update the icon of the tab for the currently focused profile in that tab.

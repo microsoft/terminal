@@ -1565,25 +1565,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This is a helper to determine which direction an "Automatic" split should
-    //   happen in for the active pane of this tab, but without using the ActualWidth() and
-    //   ActualHeight() methods.
-    // - See Pane::PreCalculateAutoSplit
+    // - Calculate if a split is possible with the given direction and size.
+    // - Converts Automatic splits to an appropriate direction depending on space.
     // Arguments:
-    // - availableSpace: The theoretical space that's available for this Tab's content
-    // Return Value:
-    // - The SplitDirection that we should use for an `Automatic` split given
-    //   `availableSpace`
-    SplitDirection TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
+    // - splitType: what direction to split.
+    // - splitSize: how big the new split should be.
+    // - availableSpace: how much space there is to work with.
+    // Return value:
+    // - This will return nullopt if a split of the given size/direction was not possible,
+    //   or it will return the split direction with automatic converted to a cardinal direction.
+    std::optional<SplitDirection> TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
+                                                                    const float splitSize,
+                                                                    winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitDirection::Right);
-    }
-
-    bool TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
-                                           const float splitSize,
-                                           winrt::Windows::Foundation::Size availableSpace) const
-    {
-        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(false);
+        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(std::nullopt);
     }
 
     // Method Description:

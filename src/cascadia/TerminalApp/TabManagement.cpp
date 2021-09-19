@@ -757,7 +757,6 @@ namespace winrt::TerminalApp::implementation
                                 control.ToggleReadOnly();
                             }
                         }
-                        return false;
                     });
                 }
 
