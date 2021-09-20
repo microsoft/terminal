@@ -11,7 +11,6 @@
                   xmlns:mux="using:Microsoft.UI.Xaml.Controls"
                   mc:Ignorable="d">
 
-
     <mux:TabView x:Name="TabView"
                  VerticalAlignment="Bottom"
                  HorizontalContentAlignment="Stretch"
