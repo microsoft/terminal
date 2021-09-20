@@ -7,7 +7,7 @@
 #include "LegacyProfileGeneratorNamespaces.h"
 
 #include "../../inc/DefaultSettings.h"
-#include "DefaultProfileUtils.h"
+#include "DynamicProfileUtils.h"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model;

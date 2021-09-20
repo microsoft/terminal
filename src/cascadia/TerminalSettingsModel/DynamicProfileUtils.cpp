@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "DefaultProfileUtils.h"
+#include "DynamicProfileUtils.h"
 #include "../../types/inc/utils.hpp"
 
 static constexpr std::wstring_view PACKAGED_PROFILE_ICON_PATH{ L"ms-appx:///ProfileIcons/" };

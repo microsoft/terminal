@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "BaseVisualStudioGenerator.h"
-#include "DefaultProfileUtils.h"
+#include "DynamicProfileUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 

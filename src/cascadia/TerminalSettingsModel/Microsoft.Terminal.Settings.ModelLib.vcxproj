@@ -44,7 +44,7 @@
     <ClInclude Include="Command.h">
       <DependentUpon>Command.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="DefaultProfileUtils.h" />
+    <ClInclude Include="DynamicProfileUtils.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="GlobalAppSettings.h">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
@@ -123,7 +123,7 @@
     <ClCompile Include="Command.cpp">
       <DependentUpon>Command.idl</DependentUpon>
     </ClCompile>
-    <ClCompile Include="DefaultProfileUtils.cpp" />
+    <ClCompile Include="DynamicProfileUtils.cpp" />
     <ClCompile Include="FileUtils.cpp" />
     <ClCompile Include="GlobalAppSettings.cpp">
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>

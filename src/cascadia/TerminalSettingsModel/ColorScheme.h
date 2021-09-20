@@ -51,10 +51,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;
 
         WINRT_PROPERTY(winrt::hstring, Name);
-        WINRT_PROPERTY(Core::Color, Foreground, static_cast<Core::Color>(DEFAULT_FOREGROUND)); // defined in constructor
-        WINRT_PROPERTY(Core::Color, Background, static_cast<Core::Color>(DEFAULT_BACKGROUND)); // defined in constructor
-        WINRT_PROPERTY(Core::Color, SelectionBackground, static_cast<Core::Color>(DEFAULT_FOREGROUND)); // defined in constructor
-        WINRT_PROPERTY(Core::Color, CursorColor, static_cast<Core::Color>(DEFAULT_CURSOR_COLOR)); // defined in constructor
+        WINRT_PROPERTY(Core::Color, Foreground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
+        WINRT_PROPERTY(Core::Color, Background, static_cast<Core::Color>(DEFAULT_BACKGROUND));
+        WINRT_PROPERTY(Core::Color, SelectionBackground, static_cast<Core::Color>(DEFAULT_FOREGROUND));
+        WINRT_PROPERTY(Core::Color, CursorColor, static_cast<Core::Color>(DEFAULT_CURSOR_COLOR));
 
     private:
         bool _layerJson(const Json::Value& json);

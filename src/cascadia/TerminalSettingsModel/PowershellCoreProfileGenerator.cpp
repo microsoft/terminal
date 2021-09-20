@@ -8,7 +8,7 @@
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
 #include "Utils.h"
-#include "DefaultProfileUtils.h"
+#include "DynamicProfileUtils.h"
 
 // These four are headers we do not want proliferating, so they're not in the PCH.
 #include <winrt/Windows.ApplicationModel.h>

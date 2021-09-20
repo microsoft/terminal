@@ -296,8 +296,8 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
 }
 
 // Call this method before passing SettingsLoader to the CascadiaSettings constructor.
-// It layers all remaining objects onto each other (those that aren't covered by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
-
+// It layers all remaining objects onto each other (those that aren't covered
+// by MergeInboxIntoUserSettings/FindFragmentsAndMergeIntoUserSettings).
 void SettingsLoader::FinalizeLayering()
 {
     // Layer default globals -> user globals
@@ -564,7 +564,7 @@ void SettingsLoader::_executeGenerator(const IDynamicProfileGenerator& generator
     CATCH_LOG_MSG("Dynamic Profile Namespace: \"%.*s\"", gsl::narrow<int>(generatorNamespace.size()), generatorNamespace.data())
 
     // If the generator produced some profiles we're going to give them default attributes.
-    // By settings the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
+    // By setting the Origin/Source/etc. here, we deduplicate some code and ensure they aren't missing accidentally.
     if (inboxSettings.profiles.size() > previousSize)
     {
         const winrt::hstring source{ generatorNamespace };

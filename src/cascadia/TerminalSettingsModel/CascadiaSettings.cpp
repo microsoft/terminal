@@ -559,7 +559,7 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
 }
 
 // Method Description:
-// - Helper to get the of a profile given a name that could be a guid or an actual name.
+// - Helper to get a profile given a name that could be a guid or an actual name.
 // Arguments:
 // - name: a guid string _or_ the name of a profile
 // Return Value:
@@ -600,15 +600,12 @@ Model::Profile CascadiaSettings::GetProfileByName(const winrt::hstring& name) co
 }
 
 // Method Description:
-// - Helper to find the profile for a the profile at the given index in the
-//   list of profiles. If no index is provided, this instead returns the default
-//   profile's guid. This is used by the NewTabProfile<N> ShortcutActions to
-//   create a tab for the Nth profile in the list of profiles.
+// - Helper to get the profile at the given index in the list of profiles.
+// - Returns a nullptr if the index is out of bounds.
 // Arguments:
-// - index: if provided, the index in the list of profiles to get the GUID for.
-//   If omitted, instead return the default profile's GUID
+// - index: The profile index in ActiveProfiles()
 // Return Value:
-// - the Nth profile's GUID, or the default profile's GUID
+// - the Nth profile
 Model::Profile CascadiaSettings::GetProfileByIndex(uint32_t index) const
 {
     return index < _activeProfiles.Size() ? _activeProfiles.GetAt(index) : nullptr;
