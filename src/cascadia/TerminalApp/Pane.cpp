@@ -53,10 +53,6 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
         _SetupResources();
     }
 
-    // Use the unfocused border color as the pane background, so an actual color
-    // appears behind panes as we animate them sliding in.
-    _root.Background(s_unfocusedBorderBrush);
-
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
     _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
@@ -1616,6 +1612,8 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         // Create the dummy grid. This grid will be the one we actually animate,
         // in the place of the closed pane.
         Controls::Grid dummyGrid;
+        // GH#603 - we can safely add a BG here, as the control is gone right
+        // away, to fill the space as the rest of the pane expands.
         dummyGrid.Background(s_unfocusedBorderBrush);
         // It should be the size of the closed pane.
         dummyGrid.Width(removedOriginalSize.Width);
@@ -1871,6 +1869,19 @@ void Pane::_SetupEntranceAnimation()
         return;
     }
 
+    // Use the unfocused border color as the pane background, so an actual color
+    // appears behind panes as we animate them sliding in.
+    //
+    // GH#603 - We set only the background of the new pane, while it animates
+    // in. Once the animation is done, we'll remove that background, so if the
+    // user wants vintage opacity, they'll be able to see what's under the
+    // window.
+    // * If we don't give it a background, then the BG will be entirely transparent.
+    // * If we give the parent (us) root BG a color, then a transparent pane
+    //   will flash opaque during the animation, then back to transparent, which
+    //   looks bad.
+    _secondChild->_root.Background(s_unfocusedBorderBrush);
+
     const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
 
     // This is safe to capture this, because it's only being called in the
@@ -1938,11 +1949,12 @@ void Pane::_SetupEntranceAnimation()
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control](auto&&, auto&&) {
+            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
                 control.Width(NAN);
                 childGrid.Width(NAN);
                 childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
                 control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                root.Background(nullptr);
             });
         }
         else
@@ -1956,11 +1968,12 @@ void Pane::_SetupEntranceAnimation()
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control](auto&&, auto&&) {
+            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
                 control.Height(NAN);
                 childGrid.Height(NAN);
                 childGrid.VerticalAlignment(VerticalAlignment::Stretch);
                 control.VerticalAlignment(VerticalAlignment::Stretch);
+                root.Background(nullptr);
             });
         }
 

@@ -26,6 +26,8 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 static constexpr std::string_view IntenseTextStyleKey{ "intenseTextStyle" };
+static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
+static constexpr std::string_view OpacityKey{ "opacity" };
 
 AppearanceConfig::AppearanceConfig(winrt::weak_ref<Profile> sourceProfile) :
     _sourceProfile(std::move(sourceProfile))
@@ -70,6 +72,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::SetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 
     return json;
 }
@@ -101,6 +104,8 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::GetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
+    JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()

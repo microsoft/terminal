@@ -35,7 +35,6 @@ static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
 static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontInfoKey{ "font" };
-static constexpr std::string_view AcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
 static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
 static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
@@ -207,7 +206,6 @@ void Profile::LayerJson(const Json::Value& json)
     // Control Settings
     JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::GetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::GetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
     JsonUtils::GetValueForKey(json, CloseOnExitKey, _CloseOnExit);
@@ -364,7 +362,6 @@ Json::Value Profile::ToJson() const
     // Control Settings
     JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
     JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::SetValueForKey(json, AcrylicTransparencyKey, _AcrylicOpacity);
     JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
     JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
