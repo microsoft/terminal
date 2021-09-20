@@ -21,7 +21,6 @@
     <ClInclude Include="IconPathConverter.h">
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClInclude>
-    <ClInclude Include="BaseApplicationState.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="ActionArgs.h">
       <DependentUpon>ActionArgs.idl</DependentUpon>
@@ -93,7 +92,6 @@
       <DependentUpon>IconPathConverter.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="init.cpp" />
-    <ClCompile Include="BaseApplicationState.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

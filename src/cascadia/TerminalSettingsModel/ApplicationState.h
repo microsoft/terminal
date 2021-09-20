@@ -12,7 +12,6 @@ Abstract:
 --*/
 #pragma once
 
-#include "BaseApplicationState.h"
 #include "ApplicationState.g.h"
 #include "WindowLayout.g.h"
 
@@ -40,14 +39,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
     };
 
-    struct ApplicationState : public BaseApplicationState, ApplicationStateT<ApplicationState>
+    struct ApplicationState : public ApplicationStateT<ApplicationState>
     {
         static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
 
         ApplicationState(std::filesystem::path path) noexcept;
+        ~ApplicationState();
 
-        virtual void FromJson(const Json::Value& root) const noexcept override;
-        virtual Json::Value ToJson() const noexcept override;
+        // Methods
+        void Reload() const noexcept;
+        void FromJson(const Json::Value& root) const noexcept;
+        Json::Value ToJson() const noexcept;
+
+        // General getters/setters
+        winrt::hstring FilePath() const noexcept;
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
@@ -64,9 +69,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef MTSM_APPLICATION_STATE_GEN
         };
         til::shared_mutex<state_t> _state;
+        std::filesystem::path _path;
+        til::throttled_func_trailing<> _throttler;
 
-        virtual std::optional<std::string> _readFileContents() const override;
-        virtual void _writeFileContents(const std::string_view content) const override;
+        void _write() const noexcept;
+        void _read() const noexcept;
+
+        std::optional<std::string> _readFileContents() const;
+        void _writeFileContents(const std::string_view content) const;
     };
 }
 
