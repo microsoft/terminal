@@ -8,7 +8,6 @@
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
-constexpr std::wstring_view stateFileName{ L"state.json" };
 using namespace ::Microsoft::Terminal::Settings::Model;
 
 BaseApplicationState::BaseApplicationState(std::filesystem::path path) noexcept :
@@ -85,13 +84,3 @@ try
     _writeFileContents(content);
 }
 CATCH_LOG()
-
-std::optional<std::string> BaseApplicationState::_readFileContents() const
-{
-    return ReadUTF8FileIfExists(_path);
-}
-
-void BaseApplicationState::_writeFileContents(const std::string_view content) const
-{
-    WriteUTF8FileAtomic(_path, content);
-}

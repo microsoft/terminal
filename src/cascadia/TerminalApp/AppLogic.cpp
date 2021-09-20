@@ -11,6 +11,8 @@
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
 
+#include "../../types/inc/utils.hpp"
+
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -134,19 +136,8 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 // Return Value:
 // - true if the user is an administrator
 static bool _isUserAdmin() noexcept
-try
 {
-    SID_IDENTIFIER_AUTHORITY ntAuthority{ SECURITY_NT_AUTHORITY };
-    wil::unique_sid adminGroupSid{};
-    THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
-    BOOL b;
-    THROW_IF_WIN32_BOOL_FALSE(CheckTokenMembership(NULL, adminGroupSid.get(), &b));
-    return !!b;
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
+    return Microsoft::Console::Utils::IsElevated();
 }
 
 namespace winrt::TerminalApp::implementation
@@ -189,7 +180,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     AppLogic::AppLogic() :
-        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); ElevatedState::SharedInstance().Reload(); } }
+        _reloadState{ std::chrono::milliseconds(100), []() { ApplicationState::SharedInstance().Reload(); } }
     {
         // For your own sanity, it's better to do setup outside the ctor.
         // If you do any setup in the ctor that ends up throwing an exception,
@@ -916,7 +907,6 @@ namespace winrt::TerminalApp::implementation
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
             [this, settingsPath](wil::FolderChangeEvent, PCWSTR fileModified) {
                 static const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
-                static const std::filesystem::path elevatedStatePath{ std::wstring_view{ ElevatedState::SharedInstance().FilePath() } };
 
                 const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
 
@@ -924,7 +914,7 @@ namespace winrt::TerminalApp::implementation
                 {
                     _reloadSettings->Run();
                 }
-                else if (modifiedBasename == statePath.filename() || modifiedBasename == elevatedStatePath.filename())
+                else if (modifiedBasename == statePath.filename())
                 {
                     _reloadState();
                 }

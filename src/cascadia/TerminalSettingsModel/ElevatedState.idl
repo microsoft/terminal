@@ -10,6 +10,5 @@ namespace Microsoft.Terminal.Settings.Model
 
         String FilePath { get; };
 
-        Windows.Foundation.Collections.IVector<String> AllowedCommandlines { get; set; };
     }
 }
