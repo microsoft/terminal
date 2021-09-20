@@ -256,9 +256,13 @@ namespace SettingsModelLocalTests
                                             ])" };
 
         // complex command with key chords
-        const std::string actionsString4{ R"([
+        const std::string actionsString4A{ R"([
                                                 { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
                                                 { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
+                                            ])" };
+        const std::string actionsString4B{ R"([
+                                                { "command": { "action": "findMatch", "direction": "next" }, "keys": "ctrl+shift+s" },
+                                                { "command": { "action": "findMatch", "direction": "prev" }, "keys": "ctrl+shift+r" }
                                             ])" };
 
         // command with name and icon and multiple key chords
@@ -372,7 +376,8 @@ namespace SettingsModelLocalTests
         RoundtripTest<implementation::ActionMap>(actionsString3);
 
         Log::Comment(L"complex commands with key chords");
-        RoundtripTest<implementation::ActionMap>(actionsString4);
+        RoundtripTest<implementation::ActionMap>(actionsString4A);
+        RoundtripTest<implementation::ActionMap>(actionsString4B);
 
         Log::Comment(L"command with name and icon and multiple key chords");
         RoundtripTest<implementation::ActionMap>(actionsString5);

@@ -346,11 +346,13 @@
       ],
       "type": "string"
     },
-    "SplitState": {
+    "SplitDirection": {
       "enum": [
-        "vertical",
-        "horizontal",
-        "auto"
+        "auto",
+        "up",
+        "right",
+        "down",
+        "left"
       ],
       "type": "string"
     },
@@ -629,9 +631,9 @@
           "properties": {
             "action": { "type": "string", "pattern": "splitPane" },
             "split": {
-              "$ref": "#/definitions/SplitState",
+              "$ref": "#/definitions/SplitDirection",
               "default": "auto",
-              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"horizontal\" (think [-])\n -\"vertical\" (think [|])"
+              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"up\" (think [-] and above)\n -\"down\" (think [-] and below)\n -\"left\" (think [|] and to the left)\n -\"right\"(think [|] and to the right)"
             },
             "splitMode": {
               "default": "duplicate",
