@@ -280,52 +280,50 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
 void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
 {
     const auto& buffer = _pData->GetTextBuffer();
-    const auto bufferSize = _getBufferSize();
-    const auto bufferEnd = bufferSize.EndExclusive();
+    const auto bufferSize{ buffer.GetSize() };
+    const auto documentEnd{ _getDocumentEnd() };
+
+    // If we're past document end,
+    // set us to ONE BEFORE the document end.
+    // This allows us to expand properly.
+    if (bufferSize.CompareInBounds(_start, documentEnd, true) >= 0)
+    {
+        _start = documentEnd;
+        bufferSize.DecrementInBounds(_start, true);
+    }
 
     if (unit == TextUnit_Character)
     {
-        _start = buffer.GetGlyphStart(_start);
-        _end = buffer.GetGlyphEnd(_start);
+        _start = buffer.GetGlyphStart(_start, documentEnd);
+        _end = buffer.GetGlyphEnd(_start, documentEnd);
     }
     else if (unit <= TextUnit_Word)
     {
         // expand to word
-        _start = buffer.GetWordStart(_start, _wordDelimiters, true);
-        _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
-
-        // GetWordEnd may return the actual end of the TextBuffer.
-        // If so, just set it to this value of bufferEnd
-        if (!bufferSize.IsInBounds(_end))
-        {
-            _end = bufferEnd;
-        }
+        _start = buffer.GetWordStart(_start, _wordDelimiters, true, documentEnd);
+        _end = buffer.GetWordEnd(_start, _wordDelimiters, true, documentEnd);
     }
     else if (unit <= TextUnit_Line)
     {
-        if (_start == bufferEnd)
+        // expand to line
+        _start.X = 0;
+        if (_start.Y == documentEnd.y())
         {
-            // Special case: if we are at the bufferEnd,
-            //   move _start back one, instead of _end forward
-            _start.X = 0;
-            _start.Y = base::ClampSub(_start.Y, 1);
-            _end = bufferEnd;
+            // we're on the last line
+            _end = documentEnd;
+            bufferSize.IncrementInBounds(_end, true);
         }
         else
         {
-            // expand to line
-            _start.X = 0;
             _end.X = 0;
             _end.Y = base::ClampAdd(_start.Y, 1);
         }
     }
     else
     {
-        // TODO GH#6986: properly handle "end of buffer" as last character
-        // instead of last cell
         // expand to document
         _start = bufferSize.Origin();
-        _end = bufferSize.EndExclusive();
+        _end = documentEnd;
     }
 }
 
@@ -608,7 +606,7 @@ try
     *ppRetVal = nullptr;
 
     const std::wstring queryText{ text, SysStringLen(text) };
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = _getOptimizedBufferSize();
     const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
 
     auto searchDirection = Search::Direction::Forward;
@@ -1016,11 +1014,24 @@ try
         _pData->UnlockConsole();
     });
 
+    // We can abstract this movement by moving _start
+    // GH#7342: check if we're past the documentEnd
+    // If so, clamp each endpoint to the end of the document.
+    constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
+    const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
+    const COORD documentEnd = _getDocumentEnd();
+    if (bufferSize.CompareInBounds(_start, documentEnd, true) > 0)
+    {
+        _start = documentEnd;
+    }
+    if (bufferSize.CompareInBounds(_end, documentEnd, true) > 0)
+    {
+        _end = documentEnd;
+    }
+
     const auto wasDegenerate = IsDegenerate();
     if (count != 0)
     {
-        // We can abstract this movement by moving _start
-        constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
         const auto preventBoundary = !wasDegenerate;
         if (unit == TextUnit::TextUnit_Character)
         {
@@ -1028,13 +1039,7 @@ try
         }
         else if (unit <= TextUnit::TextUnit_Word)
         {
-            // TODO GH#10925: passing in "true" instead of "preventBoundary"
-            // We still need to go through the process of writing
-            // tests, finding failing cases, and fixing them.
-            // For now, just use true because we've been doing that so far.
-            // The tests at the time of writing don't report any failures
-            // if we use one over the other.
-            _moveEndpointByUnitWord(count, endpoint, pRetVal, true);
+            _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBoundary);
         }
         else if (unit <= TextUnit::TextUnit_Line)
         {
@@ -1079,6 +1084,26 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+
+    // GH#7342: check if we're past the documentEnd
+    // If so, clamp each endpoint to the end of the document.
+    const auto bufferSize{ _pData->GetTextBuffer().GetSize() };
+
+    auto documentEnd = bufferSize.EndExclusive();
+    try
+    {
+        documentEnd = _getDocumentEnd();
+    }
+    CATCH_LOG();
+
+    if (bufferSize.CompareInBounds(_start, documentEnd, true) > 0)
+    {
+        _start = documentEnd;
+    }
+    if (bufferSize.CompareInBounds(_end, documentEnd, true) > 0)
+    {
+        _end = documentEnd;
+    }
 
     try
     {
@@ -1307,7 +1332,7 @@ const unsigned int UiaTextRangeBase::_getViewportHeight(const SMALL_RECT viewpor
 // - <none>
 // Return Value:
 // - A viewport representing the portion of the TextBuffer that has valid text
-const Viewport UiaTextRangeBase::_getBufferSize() const noexcept
+const Viewport UiaTextRangeBase::_getOptimizedBufferSize() const noexcept
 {
     // we need to add 1 to the X/Y of textBufferEnd
     // because we want the returned viewport to include this COORD
@@ -1316,6 +1341,20 @@ const Viewport UiaTextRangeBase::_getBufferSize() const noexcept
     const auto height = base::ClampAdd<short>(1, textBufferEnd.Y);
 
     return Viewport::FromDimensions({ 0, 0 }, width, height);
+}
+
+// We consider the "document end" to be the line beneath the cursor or
+// last legible character (whichever is further down). In the event where
+// the last legible character is on the last line of the buffer,
+// we use the "end exclusive" position (left-most point on a line one past the end of the buffer).
+// NOTE: "end exclusive" is naturally computed using the heuristic above.
+const til::point UiaTextRangeBase::_getDocumentEnd() const
+{
+    const auto optimizedBufferSize{ _getOptimizedBufferSize() };
+    const auto& buffer{ _pData->GetTextBuffer() };
+    const auto lastCharPos{ buffer.GetLastNonSpaceCharacter(optimizedBufferSize) };
+    const auto cursorPos{ buffer.GetCursor().GetPosition() };
+    return { optimizedBufferSize.Left(), std::max(lastCharPos.Y, cursorPos.Y) + 1 };
 }
 
 // Routine Description:
@@ -1388,19 +1427,20 @@ void UiaTextRangeBase::_moveEndpointByUnitCharacter(_In_ const int moveCount,
 
     bool success = true;
     til::point target = GetEndpoint(endpoint);
+    const auto documentEnd{ _getDocumentEnd() };
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         switch (moveDirection)
         {
         case MovementDirection::Forward:
-            success = buffer.MoveToNextGlyph(target, allowBottomExclusive);
+            success = buffer.MoveToNextGlyph(target, allowBottomExclusive, documentEnd);
             if (success)
             {
                 (*pAmountMoved)++;
             }
             break;
         case MovementDirection::Backward:
-            success = buffer.MoveToPreviousGlyph(target);
+            success = buffer.MoveToPreviousGlyph(target, documentEnd);
             if (success)
             {
                 (*pAmountMoved)--;
@@ -1441,10 +1481,9 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
     const bool allowBottomExclusive = !preventBufferEnd;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
     const auto& buffer = _pData->GetTextBuffer();
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = buffer.GetSize();
     const auto bufferOrigin = bufferSize.Origin();
-    const auto bufferEnd = bufferSize.EndExclusive();
-    const auto lastCharPos = buffer.GetLastNonSpaceCharacter(bufferSize);
+    const auto documentEnd = _getDocumentEnd();
 
     auto resultPos = GetEndpoint(endpoint);
     auto nextPos = resultPos;
@@ -1457,18 +1496,18 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            if (nextPos == bufferEnd)
+            if (bufferSize.CompareInBounds(nextPos, documentEnd, true) >= 0)
             {
                 success = false;
             }
-            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters, lastCharPos))
+            else if (buffer.MoveToNextWord(nextPos, _wordDelimiters, documentEnd))
             {
                 resultPos = nextPos;
                 (*pAmountMoved)++;
             }
             else if (allowBottomExclusive)
             {
-                resultPos = bufferEnd;
+                resultPos = documentEnd;
                 (*pAmountMoved)++;
             }
             else
@@ -1529,10 +1568,18 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
 
     const bool allowBottomExclusive = !preventBoundary;
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = _getOptimizedBufferSize();
+
+    auto documentEnd{ bufferSize.EndExclusive() };
+    try
+    {
+        documentEnd = _getDocumentEnd();
+    }
+    CATCH_LOG();
 
     bool success = true;
     auto resultPos = GetEndpoint(endpoint);
+
     while (std::abs(*pAmountMoved) < std::abs(moveCount) && success)
     {
         auto nextPos = resultPos;
@@ -1540,22 +1587,29 @@ void UiaTextRangeBase::_moveEndpointByUnitLine(_In_ const int moveCount,
         {
         case MovementDirection::Forward:
         {
-            // can't move past end
-            if (nextPos.Y >= bufferSize.BottomInclusive())
+            if (nextPos.Y >= documentEnd.Y)
             {
-                if (preventBoundary || nextPos == bufferSize.EndExclusive())
-                {
-                    success = false;
-                    break;
-                }
+                // Corner Case: we're past the limit
+                // Clamp us to the limit
+                resultPos = documentEnd;
+                success = false;
             }
-
-            nextPos.X = bufferSize.RightInclusive();
-            success = bufferSize.IncrementInBounds(nextPos, allowBottomExclusive);
-            if (success)
+            else if (preventBoundary && nextPos.Y == base::ClampSub(documentEnd.Y, 1))
             {
-                resultPos = nextPos;
-                (*pAmountMoved)++;
+                // Corner Case: we're just before the limit
+                // and we're not allowed onto the exclusive end.
+                // Fail to move.
+                success = false;
+            }
+            else
+            {
+                nextPos.X = bufferSize.RightInclusive();
+                success = bufferSize.IncrementInBounds(nextPos, allowBottomExclusive);
+                if (success)
+                {
+                    resultPos = nextPos;
+                    (*pAmountMoved)++;
+                }
             }
             break;
         }
@@ -1621,15 +1675,21 @@ void UiaTextRangeBase::_moveEndpointByUnitDocument(_In_ const int moveCount,
     }
 
     const MovementDirection moveDirection = (moveCount > 0) ? MovementDirection::Forward : MovementDirection::Backward;
-    const auto bufferSize = _getBufferSize();
+    const auto bufferSize = _getOptimizedBufferSize();
 
     const auto target = GetEndpoint(endpoint);
     switch (moveDirection)
     {
     case MovementDirection::Forward:
     {
-        const auto documentEnd = bufferSize.EndExclusive();
-        if (preventBoundary || target == documentEnd)
+        auto documentEnd{ bufferSize.EndExclusive() };
+        try
+        {
+            documentEnd = _getDocumentEnd();
+        }
+        CATCH_LOG();
+
+        if (preventBoundary || bufferSize.CompareInBounds(target, documentEnd, true) >= 0)
         {
             return;
         }

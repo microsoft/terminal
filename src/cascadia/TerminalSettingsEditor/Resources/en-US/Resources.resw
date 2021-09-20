@@ -1106,13 +1106,13 @@
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
-  <data name="Globals_AlwaysShowTrayIcon.Header" xml:space="preserve">
+  <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
     <value>Always display an icon in the notification area</value>
-    <comment>Header for a control to toggle whether the tray icon should always be shown.</comment>
+    <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
   </data>
-  <data name="Globals_MinimizeToTray.Header" xml:space="preserve">
+  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
     <value>Hide Terminal in the notification area when it is minimized</value>
-    <comment>Header for a control to toggle whether the terminal should hide itself in the tray instead of the taskbar when minimized.</comment>
+    <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Reset to inherited value.</value>

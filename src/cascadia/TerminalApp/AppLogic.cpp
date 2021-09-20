@@ -10,6 +10,7 @@
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
+#include <wil/token_helpers.h >
 
 #include "../../types/inc/utils.hpp"
 
@@ -133,6 +134,8 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 // Method Description:
 // - Returns whether the user is either a member of the Administrators group or
 //   is currently elevated.
+// - This will return **FALSE** if the user has UAC disabled entirely, because
+//   there's no separation of power between the user and an admin in that case.
 // Return Value:
 // - true if the user is an administrator
 static bool _isUserAdmin() noexcept
@@ -1478,9 +1481,9 @@ namespace winrt::TerminalApp::implementation
         return _root->IsQuakeWindow();
     }
 
-    bool AppLogic::GetMinimizeToTray()
+    bool AppLogic::GetMinimizeToNotificationArea()
     {
-        if constexpr (Feature_TrayIcon::IsEnabled())
+        if constexpr (Feature_NotificationIcon::IsEnabled())
         {
             if (!_loadedInitialSettings)
             {
@@ -1488,7 +1491,7 @@ namespace winrt::TerminalApp::implementation
                 LoadSettings();
             }
 
-            return _settings.GlobalSettings().MinimizeToTray();
+            return _settings.GlobalSettings().MinimizeToNotificationArea();
         }
         else
         {
@@ -1496,9 +1499,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool AppLogic::GetAlwaysShowTrayIcon()
+    bool AppLogic::GetAlwaysShowNotificationIcon()
     {
-        if constexpr (Feature_TrayIcon::IsEnabled())
+        if constexpr (Feature_NotificationIcon::IsEnabled())
         {
             if (!_loadedInitialSettings)
             {
@@ -1506,7 +1509,7 @@ namespace winrt::TerminalApp::implementation
                 LoadSettings();
             }
 
-            return _settings.GlobalSettings().AlwaysShowTrayIcon();
+            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
         }
         else
         {
