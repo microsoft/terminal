@@ -67,6 +67,7 @@ Abstract:
 #include <winrt/Windows.ui.xaml.media.h>
 #include <winrt/Windows.ApplicationModel.h>
 #include <winrt/Windows.ApplicationModel.Resources.Core.h>
+#include <winrt/Windows.UI.Composition.h>
 
 #include <winrt/TerminalApp.h>
 #include <winrt/Microsoft.Terminal.Settings.Model.h>

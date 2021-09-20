@@ -61,8 +61,8 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.Collections.IVector<String> GetAllWindowLayouts();
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
         event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
         event Windows.Foundation.TypedEventHandler<Object, QuitAllRequestedArgs> QuitAllRequested;

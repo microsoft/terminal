@@ -9,6 +9,8 @@
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
+#include "VsDevCmdGenerator.h"
+#include "VsDevShellGenerator.h"
 #include "WslDistroGenerator.h"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
@@ -51,6 +53,8 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
         _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
         _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
         _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<VsDevCmdGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<VsDevShellGenerator>());
     }
 }
 
@@ -303,7 +307,6 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_SETTING_MACRO(TabColor);
     DUPLICATE_SETTING_MACRO(SuppressApplicationTitle);
     DUPLICATE_SETTING_MACRO(UseAcrylic);
-    DUPLICATE_SETTING_MACRO(AcrylicOpacity);
     DUPLICATE_SETTING_MACRO(ScrollState);
     DUPLICATE_SETTING_MACRO(Padding);
     DUPLICATE_SETTING_MACRO(Commandline);
@@ -343,6 +346,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, RetroTerminalEffect);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorShape);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorHeight);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
     }
 
     // UnfocusedAppearance is treated as a single setting,

@@ -67,7 +67,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         INHERITABLE_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         INHERITABLE_PROFILE_SETTING(Boolean, UseAcrylic);
-        INHERITABLE_PROFILE_SETTING(Double, AcrylicOpacity);
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         INHERITABLE_PROFILE_SETTING(String, Padding);
         INHERITABLE_PROFILE_SETTING(String, Commandline);

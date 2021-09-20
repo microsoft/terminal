@@ -12,9 +12,9 @@
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="BaseVisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
     </ClInclude>
@@ -77,10 +77,14 @@
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="VsDevCmdGenerator.h" />
+    <ClInclude Include="VsDevShellGenerator.h" />
+    <ClInclude Include="VsSetupConfiguration.h" />
     <ClInclude Include="WslDistroGenerator.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
+    <ClCompile Include="BaseVisualStudioGenerator.cpp" />
     <ClCompile Include="DefaultTerminal.cpp">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
     </ClCompile>
@@ -143,6 +147,9 @@
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="VsDevCmdGenerator.cpp" />
+    <ClCompile Include="VsDevShellGenerator.cpp" />
+    <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
     <!-- You _NEED_ to include this file and the jsoncpp IncludePath (below) if
     you want to use jsoncpp -->
@@ -234,13 +241,13 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
     <Error Condition="!Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets'))" />
+    <Error Condition="!Exists('..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets'))" />
   </Target>
   <!-- This target will take our defaults.json and stamp it into a .h file that
   we can include in the code directly. This way, we don't need to worry about
@@ -256,6 +263,6 @@
   <Target Name="_TerminalAppGenerateUserSettingsH" Inputs="userDefaults.json" Outputs="Generated Files\userDefaults.h" BeforeTargets="BeforeClCompile">
     <Exec Command="powershell.exe -noprofile –ExecutionPolicy Unrestricted $(OpenConsoleDir)\tools\GenerateHeaderForJson.ps1 -JsonFile userDefaults.json -OutPath '&quot;Generated Files\userDefaults.h&quot;' -VariableName UserSettingsJson" />
   </Target>
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+  <Import Project="..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="Exists('..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
 </Project>

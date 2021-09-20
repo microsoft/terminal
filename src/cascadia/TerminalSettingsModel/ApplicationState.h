@@ -28,7 +28,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                \
     X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                          \
     X(Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts") \
-    X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")
+    X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                             \
+    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages")
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {

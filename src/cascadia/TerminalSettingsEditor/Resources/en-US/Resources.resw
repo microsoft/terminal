@@ -495,6 +495,14 @@
     <value>Sets the transparency of the window.</value>
     <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
   </data>
+  <data name="Profile_Opacity.Header" xml:space="preserve">
+    <value>Background Opacity</value>
+    <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
+  </data>
+  <data name="Profile_Opacity.HelpText" xml:space="preserve">
+    <value>Sets the transparency of the window.</value>
+    <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
+  </data>
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Advanced</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
@@ -986,6 +994,10 @@
     <value>Acrylic</value>
     <comment>Header for a group of settings related to the acrylic texture rendering on the background of the app.</comment>
   </data>
+  <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
+    <value>Transparency</value>
+    <comment>Header for a group of settings related to transparency, including the acrylic texture rendering on the background of the app.</comment>
+  </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>
     <comment>Header for a group of settings that control the image presented on the background of the app. Presented near "Profile_BackgroundImage" and other keys starting with "Profile_BackgroundImage".</comment>
@@ -1106,13 +1118,13 @@
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
   </data>
-  <data name="Globals_AlwaysShowTrayIcon.Header" xml:space="preserve">
+  <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
     <value>Always display an icon in the notification area</value>
-    <comment>Header for a control to toggle whether the tray icon should always be shown.</comment>
+    <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
   </data>
-  <data name="Globals_MinimizeToTray.Header" xml:space="preserve">
+  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
     <value>Hide Terminal in the notification area when it is minimized</value>
-    <comment>Header for a control to toggle whether the terminal should hide itself in the tray instead of the taskbar when minimized.</comment>
+    <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Reset to inherited value.</value>

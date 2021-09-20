@@ -53,10 +53,6 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
         _SetupResources();
     }
 
-    // Use the unfocused border color as the pane background, so an actual color
-    // appears behind panes as we animate them sliding in.
-    _root.Background(s_unfocusedBorderBrush);
-
     // Register an event with the control to have it inform us when it gains focus.
     _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
     _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
@@ -152,7 +148,8 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
         const auto terminalArgs{ newPane->GetTerminalArgsForPane() };
         // When creating a pane the split size is the size of the new pane
         // and not position.
-        SplitPaneArgs args{ SplitType::Manual, _splitState, 1. - _desiredSplitPosition, terminalArgs };
+        const auto splitDirection = _splitState == SplitState::Horizontal ? SplitDirection::Down : SplitDirection::Right;
+        SplitPaneArgs args{ SplitType::Manual, splitDirection, 1. - _desiredSplitPosition, terminalArgs };
         actionAndArgs.Args(args);
 
         return actionAndArgs;
@@ -1296,7 +1293,7 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
 // - splitType: How the pane should be attached
 // Return Value:
 // - the new reference to the child created from the current pane.
-std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitState splitType)
+std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitDirection splitType)
 {
     // Splice the new pane into the tree
     const auto [first, _] = _Split(splitType, .5, pane);
@@ -1620,6 +1617,8 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         // Create the dummy grid. This grid will be the one we actually animate,
         // in the place of the closed pane.
         Controls::Grid dummyGrid;
+        // GH#603 - we can safely add a BG here, as the control is gone right
+        // away, to fill the space as the rest of the pane expands.
         dummyGrid.Background(s_unfocusedBorderBrush);
         // It should be the size of the closed pane.
         dummyGrid.Width(removedOriginalSize.Width);
@@ -1875,6 +1874,19 @@ void Pane::_SetupEntranceAnimation()
         return;
     }
 
+    // Use the unfocused border color as the pane background, so an actual color
+    // appears behind panes as we animate them sliding in.
+    //
+    // GH#603 - We set only the background of the new pane, while it animates
+    // in. Once the animation is done, we'll remove that background, so if the
+    // user wants vintage opacity, they'll be able to see what's under the
+    // window.
+    // * If we don't give it a background, then the BG will be entirely transparent.
+    // * If we give the parent (us) root BG a color, then a transparent pane
+    //   will flash opaque during the animation, then back to transparent, which
+    //   looks bad.
+    _secondChild->_root.Background(s_unfocusedBorderBrush);
+
     const auto [firstSize, secondSize] = _CalcChildrenSizes(::base::saturated_cast<float>(totalSize));
 
     // This is safe to capture this, because it's only being called in the
@@ -1942,11 +1954,12 @@ void Pane::_SetupEntranceAnimation()
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control](auto&&, auto&&) {
+            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
                 control.Width(NAN);
                 childGrid.Width(NAN);
                 childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
                 control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                root.Background(nullptr);
             });
         }
         else
@@ -1960,11 +1973,12 @@ void Pane::_SetupEntranceAnimation()
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
-            animation.Completed([childGrid, control](auto&&, auto&&) {
+            animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
                 control.Height(NAN);
                 childGrid.Height(NAN);
                 childGrid.VerticalAlignment(VerticalAlignment::Stretch);
                 control.VerticalAlignment(VerticalAlignment::Stretch);
+                root.Background(nullptr);
             });
         }
 
@@ -2007,7 +2021,7 @@ void Pane::_SetupEntranceAnimation()
 // Note:
 // - This method is highly similar to Pane::PreCalculateAutoSplit
 std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                               SplitState splitType,
+                                               SplitDirection splitType,
                                                const float splitSize,
                                                const winrt::Windows::Foundation::Size availableSpace) const
 {
@@ -2021,12 +2035,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             // the available space to calculate which direction to split in.
             const Size minSize = _GetMinSize();
 
-            if (splitType == SplitState::None)
-            {
-                return { false };
-            }
-
-            else if (splitType == SplitState::Vertical)
+            if (splitType == SplitDirection::Left || splitType == SplitDirection::Right)
             {
                 const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
                 const auto newFirstWidth = widthMinusSeparator * firstPrecent;
@@ -2035,7 +2044,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                 return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
             }
 
-            else if (splitType == SplitState::Horizontal)
+            else if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
             {
                 const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
                 const auto newFirstHeight = heightMinusSeparator * firstPrecent;
@@ -2088,8 +2097,8 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 // - profile: The profile to associate with the newly created pane.
 // - control: A TermControl to use in the new pane.
 // Return Value:
-// - The two newly created Panes
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitState splitType,
+// - The two newly created Panes, with the original pane first
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
                                                                     const Profile& profile,
                                                                     const TermControl& control)
@@ -2152,18 +2161,18 @@ bool Pane::ToggleSplitOrientation()
 // Method Description:
 // - Converts an "automatic" split type into either Vertical or Horizontal,
 //   based upon the current dimensions of the Pane.
-// - If any of the other SplitState values are passed in, they're returned
-//   unmodified.
+// - Similarly, if Up/Down or Left/Right are provided a Horizontal or Vertical
+//   split type will be returned.
 // Arguments:
-// - splitType: The SplitState to attempt to convert
+// - splitType: The SplitDirection to attempt to convert
 // Return Value:
-// - None if splitType was None, otherwise one of Horizontal or Vertical
-SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
+// - One of Horizontal or Vertical
+SplitState Pane::_convertAutomaticOrDirectionalSplitState(const SplitDirection& splitType) const
 {
     // Careful here! If the pane doesn't yet have a size, these dimensions will
     // be 0, and we'll always return Vertical.
 
-    if (splitType == SplitState::Automatic)
+    if (splitType == SplitDirection::Automatic)
     {
         // If the requested split type was "auto", determine which direction to
         // split based on our current dimensions
@@ -2171,7 +2180,12 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
                                gsl::narrow_cast<float>(_root.ActualHeight()) };
         return actualSize.Width >= actualSize.Height ? SplitState::Vertical : SplitState::Horizontal;
     }
-    return splitType;
+    if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
+    {
+        return SplitState::Horizontal;
+    }
+    // All that is left is Left / Right which are vertical splits
+    return SplitState::Vertical;
 }
 
 // Method Description:
@@ -2182,17 +2196,12 @@ SplitState Pane::_convertAutomaticSplitState(const SplitState& splitType) const
 // - splitSize: what fraction of the pane the new pane should get
 // - newPane: the pane to add as a child
 // Return Value:
-// - The two newly created Panes
-std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState splitType,
+// - The two newly created Panes, with the original pane as the first pane.
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirection splitType,
                                                                      const float splitSize,
                                                                      std::shared_ptr<Pane> newPane)
 {
-    if (splitType == SplitState::None)
-    {
-        return { nullptr, nullptr };
-    }
-
-    auto actualSplitType = _convertAutomaticSplitState(splitType);
+    auto actualSplitType = _convertAutomaticOrDirectionalSplitState(splitType);
 
     // Lock the create/close lock so that another operation won't concurrently
     // modify our tree
@@ -2223,9 +2232,16 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     //   Move the new guid, control into the second.
     _firstChild = std::make_shared<Pane>(_profile, _control);
     _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
+    _secondChild = newPane;
+
+    // If we want the new pane to be the first child, swap the children
+    if (splitType == SplitDirection::Up || splitType == SplitDirection::Left)
+    {
+        std::swap(_firstChild, _secondChild);
+    }
+
     _profile = nullptr;
     _control = { nullptr };
-    _secondChild = newPane;
 
     _CreateRowColDefinitions();
 
@@ -2244,6 +2260,12 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitState 
     // Clear out our ID, only leaves should have IDs
     _id = {};
 
+    // Regardless of which child the new child is, we want to return the
+    // original one first.
+    if (splitType == SplitDirection::Up || splitType == SplitDirection::Left)
+    {
+        return { _secondChild, _firstChild };
+    }
     return { _firstChild, _secondChild };
 }
 
@@ -2879,10 +2901,10 @@ int Pane::GetLeafPaneCount() const noexcept
 // - availableSpace: The theoretical space that's available for this pane to be able to split.
 // Return Value:
 // - nullopt if `target` is not this pane or a child of this pane, otherwise the
-//   SplitState that `target` would use for an `Automatic` split given
+//   SplitDirection that `target` would use for an `Automatic` split given
 //   `availableSpace`
-std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                      const winrt::Windows::Foundation::Size availableSpace) const
+std::optional<SplitDirection> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                          const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (_IsLeaf())
     {
@@ -2890,7 +2912,7 @@ std::optional<SplitState> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane
         {
             //If this pane is a leaf, and it's the pane we're looking for, use
             //the available space to calculate which direction to split in.
-            return availableSpace.Width > availableSpace.Height ? SplitState::Vertical : SplitState::Horizontal;
+            return availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
         }
         else
         {

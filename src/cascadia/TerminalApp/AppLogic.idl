@@ -79,8 +79,8 @@ namespace TerminalApp
         String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
         void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
-        Boolean GetMinimizeToTray();
-        Boolean GetAlwaysShowTrayIcon();
+        Boolean GetMinimizeToNotificationArea();
+        Boolean GetAlwaysShowNotificationIcon();
         Boolean GetShowTitleInTitlebar();
 
         FindTargetWindowResult FindTargetWindow(String[] args);
@@ -106,6 +106,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
     }
 }

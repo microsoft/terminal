@@ -87,7 +87,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingFloat64(settings.DefaultSettings().Opacity(), "TintOpacity", "Opacity preference from the settings"),
             TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(settings, debugConnection);
             _RegisterTerminalEvents(newControl);
             // Split (auto) with the debug tap.
-            newTabImpl->SplitPane(SplitState::Automatic, 0.5f, profile, newControl);
+            newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, profile, newControl);
         }
     }
 
@@ -399,7 +399,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(tab);
-            _SplitPane(tab, SplitState::Automatic, SplitType::Duplicate);
+            _SplitPane(tab, SplitDirection::Automatic, SplitType::Duplicate);
         }
         CATCH_LOG();
     }
