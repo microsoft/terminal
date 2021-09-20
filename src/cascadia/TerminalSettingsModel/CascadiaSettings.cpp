@@ -307,7 +307,6 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
     DUPLICATE_SETTING_MACRO(TabColor);
     DUPLICATE_SETTING_MACRO(SuppressApplicationTitle);
     DUPLICATE_SETTING_MACRO(UseAcrylic);
-    DUPLICATE_SETTING_MACRO(AcrylicOpacity);
     DUPLICATE_SETTING_MACRO(ScrollState);
     DUPLICATE_SETTING_MACRO(Padding);
     DUPLICATE_SETTING_MACRO(Commandline);
@@ -347,6 +346,7 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::Duplicate
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, RetroTerminalEffect);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorShape);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorHeight);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
     }
 
     // UnfocusedAppearance is treated as a single setting,
