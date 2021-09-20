@@ -276,7 +276,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // GH#5098: Inform the engine of the opacity of the default text background.
             if (_settings.UseAcrylic())
             {
-                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.Opacity()));
             }
 
             THROW_IF_FAILED(_renderEngine->Enable());
@@ -425,41 +425,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto newOpacity = std::clamp(_settings.TintOpacity() + adjustment,
+        auto newOpacity = std::clamp(_settings.Opacity() + adjustment,
                                      0.0,
                                      1.0);
-        if (_settings.UseAcrylic())
-        {
-            try
-            {
-                _settings.TintOpacity(newOpacity);
 
-                if (newOpacity >= 1.0)
-                {
-                    _settings.UseAcrylic(false);
-                }
-                else
-                {
-                    // GH#5098: Inform the engine of the new opacity of the default text background.
-                    SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
-                }
+        // GH#5098: Inform the engine of the new opacity of the default text background.
+        SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
 
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-                _TransparencyChangedHandlers(*this, *eventArgs);
-            }
-            CATCH_LOG();
-        }
-        else if (adjustment < 0)
-        {
-            _settings.UseAcrylic(true);
+        _settings.Opacity(newOpacity);
 
-            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            newOpacity = std::clamp(1.0 + adjustment, 0.0, 1.0);
-            _settings.TintOpacity(newOpacity);
-
-            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-            _TransparencyChangedHandlers(*this, *eventArgs);
-        }
+        auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
+        _TransparencyChangedHandlers(*this, *eventArgs);
     }
 
     void ControlCore::ToggleShaderEffects()

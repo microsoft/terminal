@@ -7,6 +7,8 @@
 #include "resource.h"
 #include "icon.h"
 #include "NotificationIcon.h"
+#include <dwmapi.h>
+#include <TerminalThemeHelpers.h>
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -59,7 +61,14 @@ void IslandWindow::MakeWindow() noexcept
     // Create the window with the default size here - During the creation of the
     // window, the system will give us a chance to set its size in WM_CREATE.
     // WM_CREATE will be handled synchronously, before CreateWindow returns.
-    WINRT_VERIFY(CreateWindowEx(_alwaysOnTop ? WS_EX_TOPMOST : 0,
+    //
+    // We need WS_EX_NOREDIRECTIONBITMAP for vintage style opacity, GH#603
+    //
+    // WS_EX_LAYERED acts REAL WEIRD with TerminalTrySetTransparentBackground,
+    // but it works just fine when the window is in the TOPMOST group. But if
+    // you enable it always, activating the window will remove our DWM frame
+    // entirely. Weird.
+    WINRT_VERIFY(CreateWindowEx(WS_EX_NOREDIRECTIONBITMAP | (_alwaysOnTop ? WS_EX_TOPMOST : 0),
                                 wc.lpszClassName,
                                 L"Windows Terminal",
                                 WS_OVERLAPPEDWINDOW,
@@ -311,6 +320,10 @@ void IslandWindow::Initialize()
             _taskbar = std::move(taskbar);
         }
     }
+
+    // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
+    // We don't really care if this failed or not.
+    TerminalTrySetTransparentBackground(true);
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
@@ -424,6 +437,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         {
             _WindowActivatedHandlers();
         }
+
         break;
     }
 
@@ -828,7 +842,7 @@ void IslandWindow::SetTaskbarProgress(const size_t state, const size_t progress)
 }
 
 // From GdiEngine::s_SetWindowLongWHelper
-void _SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
+void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept
 {
     // SetWindowLong has strange error handling. On success, it returns the
     // previous Window Long value and doesn't modify the Last Error state. To
@@ -919,14 +933,14 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
     // First, modify regular window styles as appropriate
     auto windowStyle = _getDesiredWindowStyle();
-    _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
+    SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
     // Now modify extended window styles as appropriate
     // When moving to fullscreen, remove the window edge style to avoid an
     // ugly border when not focused.
     auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
     WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
-    _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
+    SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
 
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
@@ -1064,14 +1078,14 @@ void IslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 
     // First, modify regular window styles as appropriate
     auto windowStyle = _getDesiredWindowStyle();
-    _SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
+    SetWindowLongWHelper(hWnd, GWL_STYLE, windowStyle);
 
     // Now modify extended window styles as appropriate
     // When moving to fullscreen, remove the window edge style to avoid an
     // ugly border when not focused.
     auto exWindowStyle = GetWindowLongW(hWnd, GWL_EXSTYLE);
     WI_UpdateFlag(exWindowStyle, WS_EX_WINDOWEDGE, !_fullscreen);
-    _SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
+    SetWindowLongWHelper(hWnd, GWL_EXSTYLE, exWindowStyle);
 
     // Only change the window position if changing fullscreen state.
     if (fChangingFullscreen)
