@@ -6,7 +6,7 @@
 #include "../types/inc/Viewport.hpp"
 #include "resource.h"
 #include "icon.h"
-#include "TrayIcon.h"
+#include "NotificationIcon.h"
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
@@ -570,20 +570,20 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             }
         }
     }
-    case CM_NOTIFY_FROM_TRAY:
+    case CM_NOTIFY_FROM_NOTIFICATION_AREA:
     {
         switch (LOWORD(lparam))
         {
         case NIN_SELECT:
         case NIN_KEYSELECT:
         {
-            _NotifyTrayIconPressedHandlers();
+            _NotifyNotificationIconPressedHandlers();
             return 0;
         }
         case WM_CONTEXTMENU:
         {
             const til::point eventPoint{ GET_X_LPARAM(wparam), GET_Y_LPARAM(wparam) };
-            _NotifyShowTrayContextMenuHandlers(eventPoint);
+            _NotifyShowNotificationIconContextMenuHandlers(eventPoint);
             return 0;
         }
         }
@@ -591,17 +591,17 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_MENUCOMMAND:
     {
-        _NotifyTrayMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
+        _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         return 0;
     }
     default:
         // We'll want to receive this message when explorer.exe restarts
-        // so that we can re-add our icon to the tray.
+        // so that we can re-add our icon to the notification area.
         // This unfortunately isn't a switch case because we register the
         // message at runtime.
         if (message == WM_TASKBARCREATED)
         {
-            _NotifyReAddTrayIconHandlers();
+            _NotifyReAddNotificationIconHandlers();
             return 0;
         }
     }
@@ -628,7 +628,7 @@ void IslandWindow::OnResize(const UINT width, const UINT height)
 void IslandWindow::OnMinimize()
 {
     // TODO GH#1989 Stop rendering island content when the app is minimized.
-    if (_minimizeToTray)
+    if (_minimizeToNotificationArea)
     {
         HideWindow();
     }
@@ -1640,9 +1640,9 @@ void IslandWindow::HideWindow()
     ShowWindow(GetHandle(), SW_HIDE);
 }
 
-void IslandWindow::SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept
+void IslandWindow::SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept
 {
-    _minimizeToTray = minimizeToTray;
+    _minimizeToNotificationArea = MinimizeToNotificationArea;
 }
 
 // Method Description:

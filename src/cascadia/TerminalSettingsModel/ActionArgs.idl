@@ -41,12 +41,13 @@ namespace Microsoft.Terminal.Settings.Model
         First
     };
 
-    enum SplitState
+    enum SplitDirection
     {
-        Automatic = -1,
-        None = 0,
-        Vertical = 1,
-        Horizontal = 2
+        Automatic = 0,
+        Up,
+        Right,
+        Down,
+        Left
     };
 
     enum SplitType
@@ -187,12 +188,12 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
 
-        SplitState SplitStyle { get; };
+        SplitDirection SplitDirection { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
         Double SplitSize { get; };

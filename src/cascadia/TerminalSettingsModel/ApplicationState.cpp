@@ -9,8 +9,11 @@
 #include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include "FileUtils.h"
+#include "../../types/inc/utils.hpp"
 
 static constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::wstring_view elevatedStateFileName{ L"elevated-state.json" };
+
 static constexpr std::string_view TabLayoutKey{ "tabLayout" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view InitialSizeKey{ "initialSize" };
@@ -66,7 +69,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / stateFileName);
+        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / (::Microsoft::Console::Utils::IsElevated() ? elevatedStateFileName : stateFileName));
         state->Reload();
         return *state;
     }
@@ -117,4 +120,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
+    void ApplicationState::_writeFileContents(const std::string_view content) const
+    {
+        if (::Microsoft::Console::Utils::IsElevated())
+        {
+            // DON'T use WriteUTF8FileAtomic, which will write to a temporary file
+            // then rename that file to the final filename. That actually lets us
+            // overwrite the elevate file's contents even when unelevated, because
+            // we're effectively deleting the original file, then renaming a
+            // different file in it's place.
+            //
+            // We're not worried about someone else doing that though, if they do
+            // that with the wrong permissions, then we'll just ignore the file and
+            // start over.
+            WriteUTF8File(_path, content, true);
+        }
+        else
+        {
+            WriteUTF8FileAtomic(_path, content);
+        }
+    }
+
+    std::optional<std::string> ApplicationState::_readFileContents() const
+    {
+        return ReadUTF8FileIfExists(_path, ::Microsoft::Console::Utils::IsElevated());
+    }
 }

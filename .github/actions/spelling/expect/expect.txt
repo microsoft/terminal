@@ -2578,6 +2578,7 @@ VREDRAW
 vsc
 vscprintf
 VSCROLL
+vsdevshell
 vsinfo
 vsnprintf
 vso

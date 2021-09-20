@@ -24,11 +24,12 @@ Abstract:
 //   (type, function name, JSON key, ...variadic construction arguments)
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                \
-    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                          \
-    X(Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts") \
-    X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                             \
-    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages")
+#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                              \
+    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
+    X(Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                               \
+    X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                                                           \
+    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages") \
+    X(Windows::Foundation::Collections::IVector<hstring>, AllowedCommandlines, "allowedCommandlines")
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
@@ -63,6 +64,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef MTSM_APPLICATION_STATE_GEN
         };
         til::shared_mutex<state_t> _state;
+
+        virtual std::optional<std::string> _readFileContents() const override;
+        virtual void _writeFileContents(const std::string_view content) const override;
     };
 }
 
