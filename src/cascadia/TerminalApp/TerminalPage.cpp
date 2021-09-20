@@ -1569,7 +1569,7 @@ namespace winrt::TerminalApp::implementation
                 // Using the string following "-d "...
                 const auto afterDashD{ arguments.substr(dashD + 3) };
                 // Find the next space
-                const auto afterFirstWord = afterDashD.substr(firstNonSpace).find(L" ");
+                const auto afterFirstWord = afterDashD.substr(dashD + 3).find(L" ");
                 // if that space _wasn't_ at the end of the commandline, then
                 // there were some other args. That means it was `wsl -d distro
                 // anything`, and we should ask the user.
@@ -1609,7 +1609,7 @@ namespace winrt::TerminalApp::implementation
                 return false;
             }
 
-            if (const auto& allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() })
+            if (const auto& allowedCommandlines{ ApplicationState::SharedInstance().AllowedCommandlines() })
             {
                 for (const auto& approved : allowedCommandlines)
                 {
@@ -1668,7 +1668,7 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Update the list of approved commandlines.
-        auto allowedCommandlines{ ElevatedState::SharedInstance().AllowedCommandlines() };
+        auto allowedCommandlines{ ApplicationState::SharedInstance().AllowedCommandlines() };
         if (!allowedCommandlines)
         {
             allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
@@ -1689,7 +1689,7 @@ namespace winrt::TerminalApp::implementation
         {
             allowedCommandlines.Append(cmdline);
         }
-        ElevatedState::SharedInstance().AllowedCommandlines(allowedCommandlines);
+        ApplicationState::SharedInstance().AllowedCommandlines(allowedCommandlines);
     }
 
     void TerminalPage::_adminWarningCancelClicked(const TerminalApp::AdminWarningPlaceholder& sender,
