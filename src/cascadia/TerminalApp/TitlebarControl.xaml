@@ -32,7 +32,6 @@
         <ColumnDefinition Width="Auto" />
     </Grid.ColumnDefinitions>
 
-
     <ContentPresenter x:Name="ContentRoot"
                       Grid.Column="0" />
 
@@ -45,3 +44,4 @@
                               Grid.Column="2"
                               HorizontalAlignment="Right" />
 </Grid>
+

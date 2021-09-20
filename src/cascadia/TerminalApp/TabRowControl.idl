@@ -8,6 +8,6 @@ namespace TerminalApp
     {
         TabRowControl();
         Microsoft.UI.Xaml.Controls.TabView TabView { get; };
-        Boolean ShowUacShield;
+        Boolean ShowElevationShield;
     }
 }

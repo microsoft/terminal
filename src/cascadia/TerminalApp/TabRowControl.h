@@ -19,7 +19,7 @@ namespace winrt::TerminalApp::implementation
         void OnNewTabButtonDragOver(winrt::Windows::Foundation::IInspectable const& sender, winrt::Windows::UI::Xaml::DragEventArgs const& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_OBSERVABLE_PROPERTY(bool, ShowUacShield, _PropertyChangedHandlers, false);
+        WINRT_OBSERVABLE_PROPERTY(bool, ShowElevationShield, _PropertyChangedHandlers, false);
     };
 }
 
