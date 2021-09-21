@@ -178,6 +178,10 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
                     }
                 }
                 _clearOldMruEntries(peasantsToErase);
+
+                // A peasant died, let the app host know that the number of
+                // windows has changed.
+                _WindowClosedHandlers(nullptr, nullptr);
             }
         }
 
