@@ -979,6 +979,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
+        _renderer->TriggerSelection();
         _terminal->TrySnapOnInput();
     }
 
