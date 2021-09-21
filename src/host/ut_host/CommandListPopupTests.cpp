@@ -49,7 +49,6 @@ class CommandListPopupTests
         m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareReadHandle();
-        m_state->PrepareCookedReadData();
         m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
         // resize command history storage to 50 items so that we don't cycle on accident
         // when PopupTestHelper::InitLongHistory() is called.
@@ -58,6 +57,8 @@ class CommandListPopupTests
         {
             return false;
         }
+        // History must be prepared before COOKED_READ (as it uses s_Find to get at it)
+        m_state->PrepareCookedReadData();
         return true;
     }
 
