@@ -842,17 +842,15 @@ namespace winrt::TerminalApp::implementation
         else
         {
             const auto newPane = _MakePane(newTerminalArgs);
-            newPane->SetActive();
             if (altPressed && !debugTap)
             {
-                this->_SplitPane(SplitDirection::Automatic,
-                                 SplitType::Manual,
-                                 0.5f,
-                                 newTerminalArgs);
+                this->_SplitPane(newPane,
+                                 SplitDirection::Automatic,
+                                 0.5f);
             }
             else
             {
-                //LOG_IF_FAILED(this->_OpenNewTab(newTerminalArgs));
+                newPane->SetActive();
                 _CreateNewTabFromPane(newPane);
             }
         }
@@ -1481,10 +1479,9 @@ namespace winrt::TerminalApp::implementation
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
-    void TerminalPage::_SplitPane(const SplitDirection splitDirection,
-                                  const SplitType splitMode,
-                                  const float splitSize,
-                                  const NewTerminalArgs& newTerminalArgs)
+    void TerminalPage::_SplitPane(std::shared_ptr<Pane> newPane,
+                                  const SplitDirection splitDirection,
+                                  const float splitSize)
     {
         const auto focusedTab{ _GetFocusedTabImpl() };
 
@@ -1494,7 +1491,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        _SplitPane(*focusedTab, splitDirection, splitMode, splitSize, newTerminalArgs);
+        _SplitPane(*focusedTab, newPane, splitDirection, splitSize);
     }
 
     // Method Description:
@@ -1509,86 +1506,33 @@ namespace winrt::TerminalApp::implementation
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(TerminalTab& tab,
+                                  std::shared_ptr<Pane> newPane,
                                   const SplitDirection splitDirection,
-                                  const SplitType splitMode,
-                                  const float splitSize,
-                                  const NewTerminalArgs& newTerminalArgs)
+                                  const float splitSize)
     {
-        try
+        const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+        const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
+
+        auto realSplitType = splitDirection;
+        if (realSplitType == SplitDirection::Automatic)
         {
-            TerminalSettingsCreateResult controlSettings{ nullptr };
-            Profile profile{ nullptr };
-
-            if (splitMode == SplitType::Duplicate)
-            {
-                profile = tab.GetFocusedProfile();
-                if (profile)
-                {
-                    // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
-                    profile = GetClosestProfileForDuplicationOfProfile(profile);
-                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
-                    const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
-                    const auto validWorkingDirectory = !workingDirectory.empty();
-                    if (validWorkingDirectory)
-                    {
-                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
-                    }
-                }
-                // TODO: GH#5047 - In the future, we should get the Profile of
-                // the focused pane, and use that to build a new instance of the
-                // settings so we can duplicate this tab/pane.
-                //
-                // Currently, if the profile doesn't exist anymore in our
-                // settings, we'll silently do nothing.
-                //
-                // In the future, it will be preferable to just duplicate the
-                // current control's settings, but we can't do that currently,
-                // because we won't be able to create a new instance of the
-                // connection without keeping an instance of the original Profile
-                // object around.
-            }
-            if (!profile)
-            {
-                profile = _settings.GetProfileForArgs(newTerminalArgs);
-                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-            }
-
-            const auto controlConnection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
-
-            const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
-            const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
-            const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
-
-            auto realSplitType = splitDirection;
-            if (realSplitType == SplitDirection::Automatic)
-            {
-                realSplitType = tab.PreCalculateAutoSplit(availableSpace);
-            }
-
-            const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
-            if (!canSplit)
-            {
-                return;
-            }
-
-            auto newControl = _InitControl(controlSettings, controlConnection);
-
-            // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl);
-
-            _UnZoomIfNeeded();
-
-            tab.SplitPane(realSplitType, splitSize, profile, newControl);
-
-            // After GH#6586, the control will no longer focus itself
-            // automatically when it's finished being laid out. Manually focus
-            // the control here instead.
-            if (_startupState == StartupState::Initialized)
-            {
-                _GetActiveControl().Focus(FocusState::Programmatic);
-            }
+            realSplitType = tab.PreCalculateAutoSplit(availableSpace);
         }
-        CATCH_LOG();
+
+        const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
+        if (!canSplit)
+        {
+            return;
+        }
+
+        _UnZoomIfNeeded();
+        tab.SplitPane(realSplitType, splitSize, newPane);
+
+        if (_startupState == StartupState::Initialized)
+        {
+            _GetActiveControl().Focus(FocusState::Programmatic);
+        }
     }
 
     // Method Description:
@@ -2157,14 +2101,72 @@ namespace winrt::TerminalApp::implementation
         return term;
     }
 
-    std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs)
+    std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs, const bool duplicate, TerminalConnection::ITerminalConnection existingConnection)
     {
-        const auto profile = _settings.GetProfileForArgs(newTerminalArgs);
-        const auto controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-        const auto connection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+        TerminalSettingsCreateResult controlSettings{ nullptr };
+        Profile profile{ nullptr };
+
+        if (duplicate)
+        {
+            const auto focusedTab{ _GetFocusedTabImpl() };
+            // Do nothing if no TerminalTab is focused
+            if (focusedTab)
+            {
+                profile = focusedTab->GetFocusedProfile();
+                if (profile)
+                {
+                    // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+                    profile = GetClosestProfileForDuplicationOfProfile(profile);
+                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                    }
+                }
+            }
+        }
+        if (!profile)
+        {
+            profile = _settings.GetProfileForArgs(newTerminalArgs);
+            controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+        }
+
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+        if (existingConnection)
+        {
+            connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
+        }
+
+        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+            const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+            const bool bothAltsPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+            if (bothAltsPressed)
+            {
+                std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+            }
+        }
+
         const auto control = _InitControl(controlSettings, connection);
         _RegisterTerminalEvents(control);
-        return std::make_shared<Pane>(profile, control);
+
+        auto resultPane = std::make_shared<Pane>(profile, control);
+
+        if (debugConnection) // this will only be set if global debugging is on and tap is active
+        {
+            auto newControl = _InitControl(controlSettings, debugConnection);
+            _RegisterTerminalEvents(newControl);
+            // Split (auto) with the debug tap.
+            resultPane->Split(SplitDirection::Automatic, 0.5f, std::make_shared<Pane>(profile, newControl));
+        }
+
+        return resultPane;
     }
 
     // Method Description:

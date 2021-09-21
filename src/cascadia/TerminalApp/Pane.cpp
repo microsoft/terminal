@@ -2103,6 +2103,27 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirecti
     return _Split(splitType, splitSize, newPane);
 }
 
+std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
+                                                                    const float splitSize,
+                                                                    std::shared_ptr<Pane> newPane)
+{
+    if (!_IsLeaf())
+    {
+        if (_firstChild->_HasFocusedChild())
+        {
+            return _firstChild->Split(splitType, splitSize, newPane);
+        }
+        else if (_secondChild->_HasFocusedChild())
+        {
+            return _secondChild->Split(splitType, splitSize, newPane);
+        }
+
+        return { nullptr, nullptr };
+    }
+
+    return _Split(splitType, splitSize, newPane);
+}
+
 // Method Description:
 // - Toggle the split orientation of the currently focused pane
 // Arguments:

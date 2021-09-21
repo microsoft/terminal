@@ -40,8 +40,7 @@ namespace winrt::TerminalApp::implementation
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                        const float splitSize,
-                       const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                       winrt::Microsoft::Terminal::Control::TermControl& control);
+                       std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);

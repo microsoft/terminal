@@ -289,7 +289,7 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(settings, debugConnection);
             _RegisterTerminalEvents(newControl);
             // Split (auto) with the debug tap.
-            newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, profile, newControl);
+            newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, std::make_shared<Pane>(profile, newControl));
         }
     }
 
@@ -399,7 +399,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(tab);
-            _SplitPane(tab, SplitDirection::Automatic, SplitType::Duplicate);
+            _SplitPane(tab, _MakePane(nullptr, true), SplitDirection::Automatic);
         }
         CATCH_LOG();
     }
