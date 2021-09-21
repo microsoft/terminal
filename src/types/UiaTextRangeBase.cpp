@@ -1524,7 +1524,7 @@ void UiaTextRangeBase::_moveEndpointByUnitWord(_In_ const int moveCount,
             }
             else if (allowBottomExclusive && _tryMoveToWordStart(buffer, documentEnd, resultPos))
             {
-                // IMPORTANT: _isNextPosWordStart modifies resultPos if successful
+                // IMPORTANT: _tryMoveToWordStart modifies resultPos if successful
                 // Degenerate ranges first move to the beginning of the word,
                 // but if we're already at the beginning of the word, we continue
                 // to the next branch and move to the previous word!
