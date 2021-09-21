@@ -1180,10 +1180,10 @@ namespace winrt::TerminalApp::implementation
             // we should save our state.
             if (_root->ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
             {
-                if (auto layout = _root->GetWindowLayout())
+                if (const auto layout = _root->GetWindowLayout())
                 {
                     layout.InitialPosition(pos);
-                    auto state = ApplicationState::SharedInstance();
+                    const auto state = ApplicationState::SharedInstance();
                     state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
                 }
             }
@@ -1495,7 +1495,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_root != nullptr)
         {
-            if (auto layout = _root->GetWindowLayout())
+            if (const auto layout = _root->GetWindowLayout())
             {
                 layout.InitialPosition(position);
                 return WindowLayout::ToJson(layout);

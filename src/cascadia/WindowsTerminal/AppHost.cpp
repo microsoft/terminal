@@ -820,7 +820,7 @@ winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
 
     if (_logic.ShouldUsePersistedLayout())
     {
-        auto layoutJsons = _windowManager.GetAllWindowLayouts();
+        const auto layoutJsons = _windowManager.GetAllWindowLayouts();
         _logic.SaveWindowLayoutJsons(layoutJsons);
     }
 

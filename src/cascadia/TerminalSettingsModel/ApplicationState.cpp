@@ -82,9 +82,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
         }
         JsonUtils::ConversionTrait<Model::WindowLayout> trait;
-        auto obj = trait.FromJson(root);
-
-        return obj;
+        return trait.FromJson(root);
     }
 
     // Returns the application-global ApplicationState object.
