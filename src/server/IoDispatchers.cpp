@@ -431,7 +431,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         CommandHistory::s_Free((HANDLE)ProcessData);
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
-    
+
     Tracing::s_TraceConsoleAttachDetach(ProcessData, true);
 
     UnlockConsole();

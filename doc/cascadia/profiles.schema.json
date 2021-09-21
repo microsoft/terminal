@@ -4,13 +4,13 @@
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
   "definitions": {
     "KeyChordSegment": {
-      "pattern": "^(?<modifier>(?<mod1>ctrl|alt|shift|win)(?:\\+(?<mod2>ctrl|alt|shift|win)(?<!\\k<mod1>))?(?:\\+(?<mod3>ctrl|alt|shift|win)(?<!\\k<mod1>|\\k<mod2>))?(?:\\+(?<mod4>ctrl|alt|shift|win)(?<!\\k<mod1>|\\k<mod2>|\\k<mod3>))?\\+)?(?<key>[^\\s+]|app|menu|backspace|tab|enter|esc|escape|space|pgup|pageup|pgdn|pagedown|end|home|left|up|right|down|insert|delete|(?<!shift.+)(?:numpad_?[0-9]|numpad_(?:period|decimal))|numpad_(?:multiply|plus|add|minus|subtract|divide)|f[1-9]|f1[0-9]|f2[0-4]|plus)$",
+      "pattern": "^(?:(?:ctrl|alt|shift|win)\\+)*(?:app|backspace|browser_(?:back|forward|refresh|stop|search|favorites|home)|comma|delete|down|end|enter|esc|escape|home|insert|left|menu|minus|pagedown|pageup|period|pgdn|pgup|plus|right|space|tab|up|f(?:1\\d?|2[0-4]?|[3-9])|numpad\\d|numpad_(?:\\d|add|decimal|divide|minus|multiply|period|plus|subtract)|(?:vk|sc)\\((?:[1-9]|1?\\d{2}|2[0-4]\\d|25[0-5])\\)|[^\\s+])(?:\\+(?:ctrl|alt|shift|win))*$",
       "type": "string",
-      "description": "The string should fit the format \"[ctrl+][alt+][shift+][win+]<keyName>\", where each modifier is optional, separated by + symbols, and keyName is either one of the names listed in the table below, or any single key character. The string should be written in full lowercase.\napp, menu\tMENU key\nbackspace\tBACKSPACE key\ntab\tTAB key\nenter\tENTER key\nesc, escape\tESC key\nspace\tSPACEBAR\npgup, pageup\tPAGE UP key\npgdn, pagedown\tPAGE DOWN key\nend\tEND key\nhome\tHOME key\nleft\tLEFT ARROW key\nup\tUP ARROW key\nright\tRIGHT ARROW key\ndown\tDOWN ARROW key\ninsert\tINS key\ndelete\tDEL key\nnumpad_0-numpad_9, numpad0-numpad9\tNumeric keypad keys 0 to 9. Can't be combined with the shift modifier.\nnumpad_multiply\tNumeric keypad MULTIPLY key (*)\nnumpad_plus, numpad_add\tNumeric keypad ADD key (+)\nnumpad_minus, numpad_subtract\tNumeric keypad SUBTRACT key (-)\nnumpad_period, numpad_decimal\tNumeric keypad DECIMAL key (.). Can't be combined with the shift modifier.\nnumpad_divide\tNumeric keypad DIVIDE key (/)\nf1-f24\tF1 to F24 function keys\nplus\tADD key (+)"
+      "description": "The string should fit the format \"[ctrl+][alt+][shift+][win+]<KeyName>\", where each modifier is optional. KeyName is either any single key character, an explicit virtual key or scan code in the form vk(nnn) and sc(nnn) respectively, or one of the special names listed at https://docs.microsoft.com/en-us/windows/terminal/customize-settings/actions#accepted-modifiers-and-keys"
     },
     "Color": {
       "default": "#",
-      "pattern": "^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$",
+      "pattern": "^#[A-Fa-f0-9]{3}(?:[A-Fa-f0-9]{3})?$",
       "type": "string",
       "format": "color"
     },
@@ -154,6 +154,17 @@
           "description": "Sets how the background image aligns to the boundaries of the window when unfocused. Possible values: \"center\", \"left\", \"top\", \"right\", \"bottom\", \"topLeft\", \"topRight\", \"bottomLeft\", \"bottomRight\"",
           "type": "string"
         },
+        "intenseTextStyle": {
+          "default": "bright",
+          "description": "Controls how 'intense' text is rendered. Values are \"bold\", \"bright\", \"all\" and \"none\"",
+          "enum": [
+            "none",
+            "bold",
+            "bright",
+            "all"
+          ],
+          "type": "string"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -238,6 +249,8 @@
         "identifyWindow",
         "identifyWindows",
         "moveFocus",
+        "movePane",
+        "swapPane",
         "moveTab",
         "newTab",
         "newWindow",
@@ -270,6 +283,7 @@
         "toggleFocusMode",
         "toggleFullscreen",
         "togglePaneZoom",
+        "toggleSplitOrientation",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
@@ -283,7 +297,9 @@
         "right",
         "up",
         "down",
-        "previous"
+        "previous",
+        "nextInOrder",
+        "previousInOrder"
       ],
       "type": "string"
     },
@@ -491,6 +507,23 @@
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+          }
+        }
+      }
+    ],
+    "required": [ "index" ]
+  },
+  "MovePaneAction": {
+      "description": "Arguments corresponding to a Move Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "movePane" },
+            "index": {
+              "type": "integer",
+              "default": 0,
+              "description": "Which tab to move the pane to, with the first being 0"
             }
           }
         }
@@ -507,7 +540,24 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane."
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
+            }
+          }
+        }
+      ],
+      "required": [ "direction" ]
+    },
+    "SwapPaneAction": {
+      "description": "Arguments corresponding to a Swap Pane Action",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "swapPane" },
+            "direction": {
+              "$ref": "#/definitions/FocusDirection",
+              "default": "left",
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
             }
           }
         }
@@ -596,7 +646,7 @@
                 "defaultsFile",
                 "allFiles",
                 "settingsUI"
-                
+
               ]
             }
           }
@@ -952,6 +1002,8 @@
               { "$ref": "#/definitions/NewTabAction" },
               { "$ref": "#/definitions/SwitchToTabAction" },
               { "$ref": "#/definitions/MoveFocusAction" },
+              { "$ref": "#/definitions/MovePaneAction" },
+              { "$ref": "#/definitions/SwapPaneAction" },
               { "$ref": "#/definitions/ResizePaneAction" },
               { "$ref": "#/definitions/SendInputAction" },
               { "$ref": "#/definitions/SplitPaneAction" },
@@ -1116,6 +1168,10 @@
           "description": "When set to true, we will use the software renderer (a.k.a. WARP) instead of the hardware one.",
           "type": "boolean"
         },
+        "experimental.input.forceVT": {
+          "description": "Force the terminal to use the legacy input encoding. Certain keys in some applications may stop working when enabling this setting.",
+          "type": "boolean"
+        },
         "initialCols": {
           "default": 120,
           "description": "The number of columns displayed in the window upon first load. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), this property is ignored.",
@@ -1158,6 +1214,16 @@
           "minimum": 0,
           "type": [ "integer", "string" ],
           "deprecated": true
+        },
+        "minimizeToTray": {
+          "default": "false",
+          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the system tray through which the user can access their windows.",
+          "type": "boolean"
+        },
+        "alwaysShowTrayIcon": {
+          "default": "false",
+          "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "type": "boolean"
         },
 		"actions": {
 			"description": "Properties are specific to each custom action.",

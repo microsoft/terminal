@@ -1640,6 +1640,30 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
+// - A private API call for updating the active soft font.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                          const SIZE cellSize,
+                                          const size_t centeringHint) noexcept
+{
+    try
+    {
+        auto* pRender = ServiceLocator::LocateGlobals().pRender;
+        if (pRender)
+        {
+            pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return S_OK;
+    }
+    CATCH_RETURN();
+}
+
+// Routine Description:
 // - A private API call for forcing the renderer to repaint the screen. If the
 //      input screen buffer is not the active one, then just do nothing. We only
 //      want to redraw the screen buffer that requested the repaint, and
@@ -1931,15 +1955,11 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     //      to embed control characters in that string.
     if (gci.IsInVtIoMode())
     {
-        std::wstring sanitized;
-        sanitized.reserve(title.size());
-        for (size_t i = 0; i < title.size(); i++)
-        {
-            if (title.at(i) >= UNICODE_SPACE)
-            {
-                sanitized.push_back(title.at(i));
-            }
-        }
+        std::wstring sanitized{ title };
+        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](auto ch) {
+                            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                        }),
+                        sanitized.end());
 
         gci.SetTitle({ sanitized });
     }

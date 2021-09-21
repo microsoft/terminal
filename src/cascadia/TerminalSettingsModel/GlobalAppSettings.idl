@@ -36,6 +36,9 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass GlobalAppSettings {
         Guid DefaultProfile;
+
+        void SetInvertedDisableAnimationsValue(Boolean invertedDisableAnimationsValue);
+
         INHERITABLE_SETTING(String, UnparsedDefaultProfile);
 
         INHERITABLE_SETTING(Int32, InitialRows);
@@ -46,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(String, Language);
         INHERITABLE_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
         INHERITABLE_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
+        INHERITABLE_SETTING(Boolean, UseAcrylicInTabRow);
         INHERITABLE_SETTING(Boolean, ShowTabsInTitlebar);
         INHERITABLE_SETTING(String, WordDelimiters);
         INHERITABLE_SETTING(Boolean, CopyOnSelect);
@@ -70,6 +74,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(WindowingMode, WindowingBehavior);
         INHERITABLE_SETTING(Boolean, TrimBlockSelection);
         INHERITABLE_SETTING(Boolean, DetectURLs);
+        INHERITABLE_SETTING(Boolean, MinimizeToTray);
+        INHERITABLE_SETTING(Boolean, AlwaysShowTrayIcon);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

@@ -52,7 +52,8 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false }
+    _trimBlockSelection{ false },
+    _intenseIsBright{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -173,6 +174,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     til::color newBackgroundColor{ appearance.DefaultBackground() };
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
+    _intenseIsBright = appearance.IntenseIsBright();
 
     for (int i = 0; i < 16; i++)
     {
@@ -230,15 +232,9 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
-
-    const auto oldTop = _mutableViewport.Top();
-
     const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
     COORD bufferSize{ viewportSize.X, newBufferHeight };
-
-    // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
@@ -600,14 +596,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
 
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    // (This doesn't apply to Ctrl+Alt+Space.)
-    if (isAltOnlyPressed && vkey == VK_SPACE)
-    {
-        return false;
-    }
-
     // By default Windows treats Ctrl+Alt as an alias for AltGr.
     // When the altGrAliasing setting is set to false, this behaviour should be disabled.
     //
@@ -678,13 +666,6 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
 // - false otherwise.
 bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
-    {
-        return false;
-    }
-
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
     {
@@ -1010,6 +991,31 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
+
+            // Update our selection too, so it doesn't move as the buffer is cycled
+            if (_selection)
+            {
+                // If the start of the selection is above 0, we can reduce both the start and end by 1
+                if (_selection->start.Y > 0)
+                {
+                    _selection->start.Y -= 1;
+                    _selection->end.Y -= 1;
+                }
+                else
+                {
+                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
+                    if (_selection->end.Y > 0)
+                    {
+                        _selection->start.X = 0;
+                        _selection->end.Y -= 1;
+                    }
+                    else
+                    {
+                        // Both the start and end of the selection are at 0, clear the selection
+                        _selection.reset();
+                    }
+                }
+            }
         }
 
         // manually erase our pattern intervals since the locations have changed now
@@ -1070,7 +1076,12 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
-    _NotifyTerminalCursorPositionChanged();
+    // Firing the CursorPositionChanged event is very expensive so we try not to do that when
+    // the cursor does not need to be redrawn.
+    if (!cursor.IsDeferDrawing())
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)

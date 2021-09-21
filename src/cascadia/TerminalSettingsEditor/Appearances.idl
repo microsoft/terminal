@@ -23,6 +23,10 @@ namespace Microsoft.Terminal.Settings.Editor
     {
         Boolean IsDefault;
 
+        void SetFontWeightFromDouble(Double fontWeight);
+        void SetBackgroundImageOpacityFromPercentageValue(Double percentageValue);
+        void SetBackgroundImagePath(String path);
+
         Boolean UseDesktopBGImage;
         Boolean BackgroundImageSettingsVisible { get; };
 
@@ -41,6 +45,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Double, BackgroundImageOpacity);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Windows.UI.Xaml.Media.Stretch, BackgroundImageStretchMode);
         OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.ConvergedAlignment, BackgroundImageAlignment);
+        OBSERVABLE_PROJECTED_APPEARANCE_SETTING(Microsoft.Terminal.Settings.Model.IntenseStyle, IntenseTextStyle);
     }
 
     [default_interface] runtimeclass Appearances : Windows.UI.Xaml.Controls.UserControl, Windows.UI.Xaml.Data.INotifyPropertyChanged
@@ -68,5 +73,9 @@ namespace Microsoft.Terminal.Settings.Editor
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> FontWeightList { get; };
 
         IInspectable CurrentFontFace { get; };
+        Windows.UI.Xaml.Controls.Slider BIOpacitySlider { get; };
+
+        IInspectable CurrentIntenseTextStyle;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> IntenseTextStyleList { get; };
     }
 }

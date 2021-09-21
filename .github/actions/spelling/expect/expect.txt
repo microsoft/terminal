@@ -105,6 +105,7 @@ autoscrolling
 Autowrap
 AVerify
 AVI
+AVX
 awch
 azuredevopspodcast
 azzle
@@ -168,6 +169,7 @@ brandings
 BRK
 Browsable
 bsearch
+Bspace
 bstr
 BTNFACE
 buf
@@ -190,6 +192,7 @@ CARETBLINKINGENABLED
 CARRIAGERETURN
 cascadia
 cassert
+castsi
 catid
 cazamor
 CBash
@@ -268,9 +271,12 @@ cmder
 CMDEXT
 Cmdlet
 cmdline
+cmh
 CMOUSEBUTTONS
 cmp
+cmpeq
 cmt
+cmw
 cmyk
 CNL
 cnt
@@ -403,11 +409,13 @@ csbiex
 csharp
 CSHORT
 CSIDL
+Cspace
 csproj
 Csr
 csrmsg
 CSRSS
 csrutil
+css
 cstdarg
 cstddef
 cstdio
@@ -506,6 +514,8 @@ DECAWM
 DECCKM
 DECCOLM
 DECDHL
+decdld
+DECDLD
 DECDWL
 DECEKBD
 DECID
@@ -778,6 +788,7 @@ flyout
 fmodern
 fmtarg
 fmtid
+FNV
 FOLDERID
 FONTCHANGE
 fontdlg
@@ -786,6 +797,7 @@ FONTENUMPROC
 FONTFACE
 FONTFAMILY
 FONTHEIGHT
+FONTINFO
 fontlist
 FONTOK
 FONTSIZE
@@ -899,6 +911,7 @@ github
 gitlab
 gle
 globals
+GLYPHENTRY
 gmail
 GMEM
 GNUC
@@ -947,6 +960,7 @@ hdrstop
 HEIGHTSCROLL
 hfile
 hfont
+hfontresource
 hglobal
 hhh
 HHmm
@@ -1021,6 +1035,7 @@ IAction
 IApi
 IApplication
 IBase
+ICache
 icacls
 iccex
 icch
@@ -1260,6 +1275,7 @@ lnkd
 lnkfile
 LNM
 LOADONCALL
+loadu
 LOBYTE
 localappdata
 localhost
@@ -1267,6 +1283,7 @@ locsrc
 locstudio
 Loewen
 LOGFONT
+LOGFONTA
 LOGFONTW
 logissue
 lowercased
@@ -1420,6 +1437,7 @@ MOUSEFIRST
 MOUSEHWHEEL
 MOUSEMOVE
 mousewheel
+movemask
 MOVESTART
 msb
 msbuild
@@ -1452,6 +1470,7 @@ Mul
 multiline
 munged
 munges
+murmurhash
 mutex
 mutexes
 muxes
@@ -1502,6 +1521,7 @@ nfe
 nlength
 Nls
 NLSMODE
+nnn
 NOACTIVATE
 NOAPPLYNOW
 NOCLIP
@@ -1582,6 +1602,7 @@ NTVDM
 ntverp
 NTWIN
 nuget
+nullability
 nullness
 nullonfailure
 nullopt
@@ -1927,6 +1948,7 @@ realloc
 reamapping
 rects
 redef
+redefinable
 Redir
 redirector
 redist
@@ -1972,6 +1994,7 @@ rfc
 rftp
 rgb
 rgba
+RGBCOLOR
 rgbi
 rgci
 rgfae
@@ -2141,6 +2164,7 @@ SIGDN
 SINGLEFLAG
 SINGLETHREADED
 siup
+sixel
 SIZEBOX
 sizeof
 SIZESCROLL
@@ -2245,6 +2269,7 @@ SWMR
 SWP
 swprintf
 SYMED
+symlink
 SYNCPAINT
 sys
 syscalls
@@ -2528,6 +2553,7 @@ vcvarsall
 vcxitems
 vcxproj
 vec
+vectorized
 VERCTRL
 versioning
 VERTBAR
@@ -2745,6 +2771,7 @@ WTo
 wtof
 wtoi
 WTs
+WTSOFTFONT
 wtw
 wtypes
 Wubi
@@ -2774,6 +2801,7 @@ xes
 xff
 XFile
 XFORM
+xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2806,6 +2834,7 @@ YCast
 YCENTER
 YCount
 YDPI
+yIcon
 yml
 YOffset
 YPosition

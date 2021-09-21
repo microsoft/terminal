@@ -33,14 +33,14 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->
                 <local:SettingContainer x:Uid="Globals_DefaultProfile"
                                         Margin="0">
                     <ComboBox x:Name="DefaultProfile"
-                              ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
+                              ItemsSource="{x:Bind DefaultProfiles}"
                               SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>

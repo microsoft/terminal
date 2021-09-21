@@ -262,59 +262,71 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
 
     try
     {
-        const auto& buffer = _pData->GetTextBuffer();
-        const auto bufferSize = _getBufferSize();
-        const auto bufferEnd = bufferSize.EndExclusive();
-
-        if (unit == TextUnit_Character)
-        {
-            _start = buffer.GetGlyphStart(_start);
-            _end = buffer.GetGlyphEnd(_start);
-        }
-        else if (unit <= TextUnit_Word)
-        {
-            // expand to word
-            _start = buffer.GetWordStart(_start, _wordDelimiters, true);
-            _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
-
-            // GetWordEnd may return the actual end of the TextBuffer.
-            // If so, just set it to this value of bufferEnd
-            if (!bufferSize.IsInBounds(_end))
-            {
-                _end = bufferEnd;
-            }
-        }
-        else if (unit <= TextUnit_Line)
-        {
-            if (_start == bufferEnd)
-            {
-                // Special case: if we are at the bufferEnd,
-                //   move _start back one, instead of _end forward
-                _start.X = 0;
-                _start.Y = base::ClampSub(_start.Y, 1);
-                _end = bufferEnd;
-            }
-            else
-            {
-                // expand to line
-                _start.X = 0;
-                _end.X = 0;
-                _end.Y = base::ClampAdd(_start.Y, 1);
-            }
-        }
-        else
-        {
-            // TODO GH#6986: properly handle "end of buffer" as last character
-            // instead of last cell
-            // expand to document
-            _start = bufferSize.Origin();
-            _end = bufferSize.EndExclusive();
-        }
-
+        _expandToEnclosingUnit(unit);
         UiaTracing::TextRange::ExpandToEnclosingUnit(unit, *this);
         return S_OK;
     }
     CATCH_RETURN();
+}
+
+// Method Description:
+// - Moves _start and _end endpoints to encompass the enclosing text unit.
+//   (i.e. word --> enclosing word, line --> enclosing line)
+// - IMPORTANT: this does _not_ lock the console
+// Arguments:
+// - attributeId - the UIA text attribute identifier we're expanding by
+// Return Value:
+// - <none>
+void UiaTextRangeBase::_expandToEnclosingUnit(TextUnit unit)
+{
+    const auto& buffer = _pData->GetTextBuffer();
+    const auto bufferSize = _getBufferSize();
+    const auto bufferEnd = bufferSize.EndExclusive();
+
+    if (unit == TextUnit_Character)
+    {
+        _start = buffer.GetGlyphStart(_start);
+        _end = buffer.GetGlyphEnd(_start);
+    }
+    else if (unit <= TextUnit_Word)
+    {
+        // expand to word
+        _start = buffer.GetWordStart(_start, _wordDelimiters, true);
+        _end = buffer.GetWordEnd(_start, _wordDelimiters, true);
+
+        // GetWordEnd may return the actual end of the TextBuffer.
+        // If so, just set it to this value of bufferEnd
+        if (!bufferSize.IsInBounds(_end))
+        {
+            _end = bufferEnd;
+        }
+    }
+    else if (unit <= TextUnit_Line)
+    {
+        if (_start == bufferEnd)
+        {
+            // Special case: if we are at the bufferEnd,
+            //   move _start back one, instead of _end forward
+            _start.X = 0;
+            _start.Y = base::ClampSub(_start.Y, 1);
+            _end = bufferEnd;
+        }
+        else
+        {
+            // expand to line
+            _start.X = 0;
+            _end.X = 0;
+            _end.Y = base::ClampAdd(_start.Y, 1);
+        }
+    }
+    else
+    {
+        // TODO GH#6986: properly handle "end of buffer" as last character
+        // instead of last cell
+        // expand to document
+        _start = bufferSize.Origin();
+        _end = bufferSize.EndExclusive();
+    }
 }
 
 // Method Description:
@@ -926,7 +938,12 @@ try
     const auto maxLengthOpt = (maxLength == -1) ?
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([this]() noexcept {
+        _pData->UnlockConsole();
+    });
     const auto text = _getTextValue(maxLengthOpt);
+    Unlock.reset();
 
     *pRetVal = SysAllocString(text.c_str());
     RETURN_HR_IF_NULL(E_OUTOFMEMORY, *pRetVal);
@@ -946,11 +963,6 @@ CATCH_RETURN();
 #pragma warning(disable : 26447) // compiler isn't filtering throws inside the try/catch
 std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLength) const
 {
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([&]() noexcept {
-        _pData->UnlockConsole();
-    });
-
     std::wstring textData{};
     if (!IsDegenerate())
     {
@@ -994,6 +1006,7 @@ std::wstring UiaTextRangeBase::_getTextValue(std::optional<unsigned int> maxLeng
 IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
                                       _In_ int count,
                                       _Out_ int* pRetVal) noexcept
+try
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
@@ -1011,26 +1024,22 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
     constexpr auto endpoint = TextPatternRangeEndpoint::TextPatternRangeEndpoint_Start;
     constexpr auto preventBufferEnd = true;
     const auto wasDegenerate = IsDegenerate();
-    try
+    if (unit == TextUnit::TextUnit_Character)
     {
-        if (unit == TextUnit::TextUnit_Character)
-        {
-            _moveEndpointByUnitCharacter(count, endpoint, pRetVal, preventBufferEnd);
-        }
-        else if (unit <= TextUnit::TextUnit_Word)
-        {
-            _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBufferEnd);
-        }
-        else if (unit <= TextUnit::TextUnit_Line)
-        {
-            _moveEndpointByUnitLine(count, endpoint, pRetVal, preventBufferEnd);
-        }
-        else if (unit <= TextUnit::TextUnit_Document)
-        {
-            _moveEndpointByUnitDocument(count, endpoint, pRetVal, preventBufferEnd);
-        }
+        _moveEndpointByUnitCharacter(count, endpoint, pRetVal, preventBufferEnd);
     }
-    CATCH_RETURN();
+    else if (unit <= TextUnit::TextUnit_Word)
+    {
+        _moveEndpointByUnitWord(count, endpoint, pRetVal, preventBufferEnd);
+    }
+    else if (unit <= TextUnit::TextUnit_Line)
+    {
+        _moveEndpointByUnitLine(count, endpoint, pRetVal, preventBufferEnd);
+    }
+    else if (unit <= TextUnit::TextUnit_Document)
+    {
+        _moveEndpointByUnitDocument(count, endpoint, pRetVal, preventBufferEnd);
+    }
 
     // If we actually moved...
     if (*pRetVal != 0)
@@ -1044,13 +1053,14 @@ IFACEMETHODIMP UiaTextRangeBase::Move(_In_ TextUnit unit,
         else
         {
             // then just expand to get our _end
-            ExpandToEnclosingUnit(unit);
+            _expandToEnclosingUnit(unit);
         }
     }
 
     UiaTracing::TextRange::Move(unit, count, *pRetVal, *this);
     return S_OK;
 }
+CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoint endpoint,
                                                     _In_ TextUnit unit,

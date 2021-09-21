@@ -21,7 +21,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <Button x:Uid="AddProfile_AddNewButton"
                     AutomationProperties.AutomationId="AddProfile_AddNewButton"

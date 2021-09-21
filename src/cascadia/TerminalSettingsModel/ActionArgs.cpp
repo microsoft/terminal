@@ -12,6 +12,8 @@
 #include "SwitchToTabArgs.g.cpp"
 #include "ResizePaneArgs.g.cpp"
 #include "MoveFocusArgs.g.cpp"
+#include "MovePaneArgs.g.cpp"
+#include "SwapPaneArgs.g.cpp"
 #include "AdjustFontSizeArgs.g.cpp"
 #include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
@@ -117,7 +119,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!StartingDirectory().empty())
         {
-            ss << fmt::format(L"--startingDirectory \"{}\" ", StartingDirectory());
+            // If the directory ends in a '\', we need to add another one on so that the enclosing quote added
+            // afterwards isn't escaped
+            const auto trailingBackslashEscape = StartingDirectory().back() == L'\\' ? L"\\" : L"";
+            ss << fmt::format(L"--startingDirectory \"{}{}\" ", StartingDirectory(), trailingBackslashEscape);
         }
 
         if (!TabTitle().empty())
@@ -225,8 +230,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
     }
 
+    winrt::hstring MovePaneArgs::GenerateName() const
+    {
+        return winrt::hstring{
+            fmt::format(L"{}, tab index:{}", RS_(L"MovePaneCommandKey"), TabIndex())
+        };
+    }
+
     winrt::hstring SwitchToTabArgs::GenerateName() const
     {
+        if (TabIndex() == UINT32_MAX)
+        {
+            return RS_(L"SwitchToLastTabCommandKey");
+        }
+
         return winrt::hstring{
             fmt::format(L"{}, index:{}", RS_(L"SwitchToTabCommandKey"), TabIndex())
         };
@@ -275,9 +292,43 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             break;
         case FocusDirection::Previous:
             return RS_(L"MoveFocusToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"MoveFocusNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"MoveFocusPreviousInOrder");
         }
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
+                        directionString)
+        };
+    }
+
+    winrt::hstring SwapPaneArgs::GenerateName() const
+    {
+        winrt::hstring directionString;
+        switch (Direction())
+        {
+        case FocusDirection::Left:
+            directionString = RS_(L"DirectionLeft");
+            break;
+        case FocusDirection::Right:
+            directionString = RS_(L"DirectionRight");
+            break;
+        case FocusDirection::Up:
+            directionString = RS_(L"DirectionUp");
+            break;
+        case FocusDirection::Down:
+            directionString = RS_(L"DirectionDown");
+            break;
+        case FocusDirection::Previous:
+            return RS_(L"SwapPaneToLastUsedPane");
+        case FocusDirection::NextInOrder:
+            return RS_(L"SwapPaneNextInOrder");
+        case FocusDirection::PreviousInOrder:
+            return RS_(L"SwapPanePreviousInOrder");
+        }
+        return winrt::hstring{
+            fmt::format(std::wstring_view(RS_(L"SwapPaneWithArgCommandKey")),
                         directionString)
         };
     }

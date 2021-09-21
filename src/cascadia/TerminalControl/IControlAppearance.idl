@@ -11,6 +11,8 @@ namespace Microsoft.Terminal.Control
         Windows.UI.Xaml.Media.Stretch BackgroundImageStretchMode;
         Windows.UI.Xaml.HorizontalAlignment BackgroundImageHorizontalAlignment;
         Windows.UI.Xaml.VerticalAlignment BackgroundImageVerticalAlignment;
+        Boolean IntenseIsBold;
+        // IntenseIsBright is in Core Appearance
 
         // Experimental settings
         Boolean RetroTerminalEffect;

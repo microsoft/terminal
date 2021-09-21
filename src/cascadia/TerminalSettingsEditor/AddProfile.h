@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         WINRT_CALLBACK(AddNew, AddNewArgs);
     };
 
-    struct AddProfile : AddProfileT<AddProfile>
+    struct AddProfile : public HasScrollViewer<AddProfile>, AddProfileT<AddProfile>
     {
     public:
         AddProfile();

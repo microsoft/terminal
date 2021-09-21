@@ -21,12 +21,10 @@
                           x:DataType="local:EnumEntry">
                 <RadioButton Content="{x:Bind EnumName, Mode=OneWay}" />
             </DataTemplate>
-
-            <local:InvertedBooleanConverter x:Key="InvertedBooleanConverter" />
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Language  -->
             <local:SettingContainer x:Uid="Globals_Language"
@@ -59,6 +57,11 @@
                 <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Show Acrylic in Tab Row  -->
+            <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.UseAcrylicInTabRow, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Show Title in Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}" />
@@ -79,7 +82,7 @@
             <!--  Disable Animations  -->
             <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
             <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.DisableAnimations, Mode=TwoWay, Converter={StaticResource InvertedBooleanConverter}}" />
+                <ToggleSwitch IsOn="{x:Bind local:Converters.InvertBoolean(State.Globals.DisableAnimations), BindBack=State.Globals.SetInvertedDisableAnimationsValue, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>

@@ -29,6 +29,8 @@
     "disableAnimations": false,
     "startupActions": "",
     "focusFollowMouse": false,
+    "minimizeToTray": false,
+    "alwaysShowTrayIcon": false,
 
     "profiles":
     [
@@ -298,7 +300,7 @@
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
-        { "command": "quakeMode", "keys":"win+`" },
+        { "command": "quakeMode", "keys":"win+sc(41)" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -329,7 +331,7 @@
         { "command": { "action": "switchToTab", "index": 5 }, "keys": "ctrl+alt+6" },
         { "command": { "action": "switchToTab", "index": 6 }, "keys": "ctrl+alt+7" },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": "ctrl+alt+8" },
-        { "command": { "action": "switchToTab", "index": 8 }, "keys": "ctrl+alt+9" },
+        { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
 
         // Pane Management
         { "command": "closePane", "keys": "ctrl+shift+w" },
@@ -343,9 +345,28 @@
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
-        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
+        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left"},
+        { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
+        { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
+        { "command": { "action": "swapPane", "direction": "down" } },
+        { "command": { "action": "swapPane", "direction": "left" } },
+        { "command": { "action": "swapPane", "direction": "right" } },
+        { "command": { "action": "swapPane", "direction": "up" } },
+        { "command": { "action": "swapPane", "direction": "previous"} },
+        { "command": { "action": "swapPane", "direction": "previousInOrder"} },
+        { "command": { "action": "swapPane", "direction": "nextInOrder"} },
         { "command": "togglePaneZoom" },
+        { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
+        { "command": { "action": "movePane", "index": 0 } },
+        { "command": { "action": "movePane", "index": 1 } },
+        { "command": { "action": "movePane", "index": 2 } },
+        { "command": { "action": "movePane", "index": 3 } },
+        { "command": { "action": "movePane", "index": 4 } },
+        { "command": { "action": "movePane", "index": 5 } },
+        { "command": { "action": "movePane", "index": 6 } },
+        { "command": { "action": "movePane", "index": 7 } },
+        { "command": { "action": "movePane", "index": 8 } },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -362,8 +383,8 @@
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
 
         // Visual Adjustments
-        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
-        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
+        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
+        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+minus" },
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+numpad_plus" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+numpad_minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },

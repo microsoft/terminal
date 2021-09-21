@@ -143,6 +143,20 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_HandleMovePane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (args == nullptr)
+        {
+            args.Handled(false);
+        }
+        else if (const auto& realArgs = args.ActionArgs().try_as<MovePaneArgs>())
+        {
+            auto moved = _MovePane(realArgs.TabIndex());
+            args.Handled(moved);
+        }
+    }
+
     void TerminalPage::_HandleSplitPane(const IInspectable& /*sender*/,
                                         const ActionEventArgs& args)
     {
@@ -159,6 +173,13 @@ namespace winrt::TerminalApp::implementation
                        realArgs.TerminalArgs());
             args.Handled(true);
         }
+    }
+
+    void TerminalPage::_HandleToggleSplitOrientation(const IInspectable& /*sender*/,
+                                                     const ActionEventArgs& args)
+    {
+        _ToggleSplitOrientation();
+        args.Handled(true);
     }
 
     void TerminalPage::_HandleTogglePaneZoom(const IInspectable& /*sender*/,
@@ -257,12 +278,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            _OpenNewTab(nullptr);
+            LOG_IF_FAILED(_OpenNewTab(nullptr));
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            _OpenNewTab(realArgs.TerminalArgs());
+            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
     }
@@ -307,8 +328,29 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                _MoveFocus(realArgs.FocusDirection());
-                args.Handled(true);
+                // Mark as handled only when the move succeeded (e.g. when there
+                // is a pane to move to), otherwise mark as unhandled so the
+                // keychord can propagate to the terminal (GH#6129)
+                const auto moveSucceeded = _MoveFocus(realArgs.FocusDirection());
+                args.Handled(moveSucceeded);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleSwapPane(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SwapPaneArgs>())
+        {
+            if (realArgs.Direction() == FocusDirection::None)
+            {
+                // Do nothing
+                args.Handled(false);
+            }
+            else
+            {
+                auto swapped = _SwapPane(realArgs.Direction());
+                args.Handled(swapped);
             }
         }
     }
@@ -711,11 +753,10 @@ namespace winrt::TerminalApp::implementation
             newTerminalArgs = NewTerminalArgs();
         }
 
-        const auto profileGuid{ _settings.GetProfileForArgs(newTerminalArgs) };
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
+        const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
 
         // Manually fill in the evaluated profile.
-        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profileGuid));
+        newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
         _OpenNewWindow(false, newTerminalArgs);
         actionArgs.Handled(true);
     }

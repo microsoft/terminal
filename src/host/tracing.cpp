@@ -407,9 +407,9 @@ void Tracing::s_TraceInputRecord(const INPUT_RECORD& inputRecord)
 }
 
 void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength)
-{    
-    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::CookedRead)) {
-
+{
+    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::CookedRead))
+    {
         TraceLoggingWrite(
             g_hConhostV2EventTraceProvider,
             "CookedRead",
@@ -423,9 +423,9 @@ void Tracing::s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcess
 }
 
 void Tracing::s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_ bool bIsAttach)
-{    
-    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach)) {
-        
+{
+    if (TraceLoggingProviderEnabled(g_hConhostV2EventTraceProvider, 0, TraceKeywords::ConsoleAttachDetach))
+    {
         bool bIsUserInteractive = Telemetry::Instance().IsUserInteractive();
 
         TraceLoggingWrite(

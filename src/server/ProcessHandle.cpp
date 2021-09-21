@@ -79,8 +79,8 @@ const HANDLE ConsoleProcessHandle::GetRawHandle() const
 // - The creation time is lazily populated on first call
 const ULONG64 ConsoleProcessHandle::GetProcessCreationTime() const
 {
-    if (_processCreationTime == 0 && _hProcess != nullptr) {
-
+    if (_processCreationTime == 0 && _hProcess != nullptr)
+    {
         FILETIME ftCreationTime, ftDummyTime = { 0 };
         ULARGE_INTEGER creationTime = { 0 };
 
@@ -88,7 +88,8 @@ const ULONG64 ConsoleProcessHandle::GetProcessCreationTime() const
                               &ftCreationTime,
                               &ftDummyTime,
                               &ftDummyTime,
-                              &ftDummyTime)) {
+                              &ftDummyTime))
+        {
             creationTime.HighPart = ftCreationTime.dwHighDateTime;
             creationTime.LowPart = ftCreationTime.dwLowDateTime;
         }

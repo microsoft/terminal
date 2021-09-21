@@ -34,16 +34,6 @@
                 <TextBlock FontFamily="{x:Bind Name}"
                            Text="{x:Bind LocalizedName}" />
             </DataTemplate>
-
-            <local:ColorToBrushConverter x:Key="ColorToBrushConverter" />
-            <local:PercentageConverter x:Key="PercentageConverter" />
-            <local:PercentageSignConverter x:Key="PercentageSignConverter" />
-            <local:FontWeightConverter x:Key="FontWeightConverter" />
-            <local:InvertedBooleanToVisibilityConverter x:Key="InvertedBooleanToVisibilityConverter" />
-            <local:StringIsEmptyConverter x:Key="StringIsEmptyConverter" />
-            <local:PaddingConverter x:Key="PaddingConverter" />
-            <local:StringIsNotDesktopConverter x:Key="StringIsNotDesktopConverter" />
-            <local:DesktopWallpaperToEmptyStringConverter x:Key="DesktopWallpaperToEmptyStringConverter" />
         </ResourceDictionary>
     </UserControl.Resources>
 
@@ -87,7 +77,7 @@
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                               SelectionChanged="FontFace_SelectionChanged"
                               Style="{StaticResource ComboBoxSettingStyle}"
-                              Visibility="{x:Bind ShowAllFonts, Mode=OneWay, Converter={StaticResource InvertedBooleanToVisibilityConverter}}" />
+                              Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ShowAllFonts), Mode=OneWay}" />
                     <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                               ItemsSource="{x:Bind SourceProfile.CompleteFontList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
@@ -144,7 +134,7 @@
                                 Minimum="0"
                                 TickFrequency="50"
                                 TickPlacement="Outside"
-                                Value="{x:Bind Appearance.FontWeight, Converter={StaticResource FontWeightConverter}, Mode=TwoWay}" />
+                                Value="{x:Bind local:Converters.FontWeightToDouble(Appearance.FontWeight), BindBack=Appearance.SetFontWeightFromDouble, Mode=TwoWay}" />
                         <TextBlock Grid.Column="1"
                                    Margin="10,0,0,0"
                                    Style="{StaticResource SliderValueLabelStyle}"
@@ -215,12 +205,12 @@
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
-                        <TextBox IsEnabled="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
+                        <TextBox IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                  Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind Appearance.BackgroundImagePath, Mode=TwoWay, Converter={StaticResource DesktopWallpaperToEmptyStringConverter}}" />
+                                 Text="{x:Bind local:Converters.StringFallBackToEmptyString('desktopWallpaper', Appearance.BackgroundImagePath), Mode=TwoWay, BindBack=Appearance.SetBackgroundImagePath}" />
                         <Button x:Uid="Profile_BackgroundImageBrowse"
                                 Click="BackgroundImage_Click"
-                                IsEnabled="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay, Converter={StaticResource StringIsNotDesktopConverter}}"
+                                IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
                                 Style="{StaticResource BrowseButtonStyle}" />
                     </StackPanel>
                     <CheckBox x:Name="UseDesktopImageCheckBox"
@@ -431,12 +421,30 @@
                     </Grid.ColumnDefinitions>
                     <Slider x:Name="BIOpacitySlider"
                             Grid.Column="0"
-                            Value="{x:Bind Appearance.BackgroundImageOpacity, Converter={StaticResource PercentageConverter}, Mode=TwoWay}" />
+                            Value="{x:Bind local:Converters.PercentageToPercentageValue(Appearance.BackgroundImageOpacity), BindBack=Appearance.SetBackgroundImageOpacityFromPercentageValue, Mode=TwoWay}" />
                     <TextBlock Grid.Column="1"
                                Style="{StaticResource SliderValueLabelStyle}"
-                               Text="{Binding ElementName=BIOpacitySlider, Path=Value, Mode=OneWay, Converter={StaticResource PercentageSignConverter}}" />
+                               Text="{x:Bind local:Converters.AppendPercentageSign(BIOpacitySlider.Value), Mode=OneWay}" />
                 </Grid>
             </local:SettingContainer>
         </StackPanel>
+
+        <!--  Grouping: Text Formatting  -->
+        <StackPanel Style="{StaticResource PivotStackStyle}">
+            <TextBlock x:Uid="Appearance_TextFormattingHeader"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+
+            <!--  Intense is bold, bright  -->
+            <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
+                                    Margin="0"
+                                    ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
+                                    HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                   ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}" />
+            </local:SettingContainer>
+        </StackPanel>
+
     </StackPanel>
 </UserControl>

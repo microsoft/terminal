@@ -17,9 +17,6 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="CommonResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
-            <local:StringIsEmptyConverter x:Key="CommandKeyChordVisibilityConverter" />
-
             <!--
                 Template for actions. This is _heavily_ copied from the command
                 palette, with modifications:
@@ -185,7 +182,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <TextBlock x:Uid="Globals_KeybindingsDisclaimer"
                        Style="{StaticResource DisclaimerStyle}" />

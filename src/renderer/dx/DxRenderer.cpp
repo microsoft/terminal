@@ -61,7 +61,6 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
-    _invalidateFullRows{ true },
     _pool{ til::pmr::get_default_resource() },
     _invalidMap{ &_pool },
     _invalidScroll{},
@@ -95,6 +94,7 @@ DxEngine::DxEngine() :
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _prevScale{ 1.0f },
+    _intenseIsBold{ true },
     _chainMode{ SwapChainMode::ForComposition },
     _customLayout{},
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
@@ -963,8 +963,6 @@ CATCH_RETURN()
 try
 {
     _sizeTarget = Pixels;
-
-    _invalidMap.resize(_sizeTarget / _fontRenderData->GlyphCell(), true);
     return S_OK;
 }
 CATCH_RETURN();
@@ -1035,6 +1033,17 @@ try
 }
 CATCH_LOG()
 
+void DxEngine::SetIntenseIsBold(bool enable) noexcept
+try
+{
+    if (_intenseIsBold != enable)
+    {
+        _intenseIsBold = enable;
+        LOG_IF_FAILED(InvalidateAll());
+    }
+}
+CATCH_LOG()
+
 HANDLE DxEngine::GetSwapChainHandle()
 {
     if (!_swapChainHandle)
@@ -1047,14 +1056,10 @@ HANDLE DxEngine::GetSwapChainHandle()
 
 void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
 {
-    auto invalidate = rc;
-
-    if (_invalidateFullRows)
-    {
-        invalidate = til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
-    }
-
-    _invalidMap.set(invalidate);
+    const auto size = _invalidMap.size();
+    const auto topLeft = til::point{ 0, std::min(size.height(), rc.top()) };
+    const auto bottomRight = til::point{ size.width(), std::min(size.height(), rc.bottom()) };
+    _invalidMap.set({ topLeft, bottomRight });
 }
 
 bool DxEngine::_IsAllInvalid() const noexcept
@@ -1273,7 +1278,7 @@ try
     // so the entire frame is repainted.
     if (_FullRepaintNeeded())
     {
-        _invalidMap.set_all();
+        RETURN_IF_FAILED(InvalidateAll());
     }
 
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -1292,6 +1297,7 @@ try
     if (_isEnabled)
     {
         const auto clientSize = _GetClientSize();
+        const auto glyphCellSize = _fontRenderData->GlyphCell();
 
         // If we don't have device resources or if someone has requested that we
         // recreate the device... then make new resources. (Create will dump the old ones.)
@@ -1321,9 +1327,12 @@ try
 
             // And persist the new size.
             _displaySizePixels = clientSize;
+        }
 
-            // Mark this as the first frame on the new target. We can't use incremental drawing on the first frame.
-            _firstFrame = true;
+        if (const auto size = clientSize / glyphCellSize; size != _invalidMap.size())
+        {
+            _invalidMap.resize(size);
+            RETURN_IF_FAILED(InvalidateAll());
         }
 
         _d2dDeviceContext->BeginDraw();
@@ -1341,7 +1350,7 @@ try
                                                                _ShouldForceGrayscaleAA(),
                                                                _dwriteFactory.Get(),
                                                                spacing,
-                                                               _fontRenderData->GlyphCell(),
+                                                               glyphCellSize,
                                                                _d2dDeviceContext->GetSize(),
                                                                std::nullopt,
                                                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
@@ -1910,11 +1919,13 @@ CATCH_RETURN()
 // Arguments:
 // - textAttributes - Text attributes to use for the brush color
 // - pData - The interface to console data structures required for rendering
+// - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                      const gsl::not_null<IRenderData*> pData,
+                                                     const bool /*usingSoftFont*/,
                                                      const bool isSettingDefaultBrushes) noexcept
 {
     // GH#5098: If we're rendering with cleartype text, we need to always render
@@ -1961,7 +1972,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
-        _drawingContext->useBoldFont = textAttributes.IsBold();
+        _drawingContext->useBoldFont = _intenseIsBold && textAttributes.IsBold();
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
@@ -1978,15 +1989,30 @@ CATCH_RETURN()
 
 // Routine Description:
 // - Updates the font used for drawing
+// - This is the version that complies with the IRenderEngine interface
 // Arguments:
 // - pfiFontInfoDesired - Information specifying the font that is requested
 // - fiFontInfo - Filled with the nearest font actually chosen for drawing
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
+{
+    return UpdateFont(pfiFontInfoDesired, fiFontInfo, {}, {});
+}
+
+// Routine Description:
+// - Updates the font used for drawing
+// Arguments:
+// - pfiFontInfoDesired - Information specifying the font that is requested
+// - fiFontInfo - Filled with the nearest font actually chosen for drawing
+// - features - The map of font features to use
+// - axes - The map of font axes to use
+// Return Value:
+// - S_OK or relevant DirectX error
+[[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
-    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi));
+    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi, features, axes));
 
     // Prepare the text layout.
     _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());

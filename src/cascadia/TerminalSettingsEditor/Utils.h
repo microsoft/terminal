@@ -138,3 +138,41 @@ namespace winrt::Microsoft::Terminal::Settings
     winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);
     winrt::hstring LocalizedNameForEnumName(const std::wstring_view sectionAndType, const std::wstring_view enumValue, const std::wstring_view propertyType);
 }
+
+// BODGY!
+//
+// The following function and struct are a workaround for GH#9320.
+//
+// DismissAllPopups can be used to dismiss all popups for a particular UI
+// element. However, we've got a bunch of pages with scroll viewers that may or
+// may not have popups in them. Rather than define the same exact body for all
+// their ViewChanging events, the HasScrollViewer struct will just do it for
+// you!
+inline void DismissAllPopups(winrt::Windows::UI::Xaml::XamlRoot const& xamlRoot)
+{
+    const auto popups{ winrt::Windows::UI::Xaml::Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(xamlRoot) };
+    for (const auto& p : popups)
+    {
+        p.IsOpen(false);
+    }
+}
+
+template<typename T>
+struct HasScrollViewer
+{
+    // When the ScrollViewer scrolls, dismiss any popups we might have.
+    void ViewChanging(winrt::Windows::Foundation::IInspectable const& sender,
+                      const winrt::Windows::UI::Xaml::Controls::ScrollViewerViewChangingEventArgs& /*e*/)
+    {
+        // Inside this struct, we can't get at the XamlRoot() that our subclass
+        // implements. I mean, _we_ can, but when XAML does it's code
+        // generation, _XAML_ won't be able to figure it out.
+        //
+        // Fortunately for us, we don't need to! The sender is a UIElement, so
+        // we can just get _their_ XamlRoot().
+        if (const auto& uielem{ sender.try_as<winrt::Windows::UI::Xaml::UIElement>() })
+        {
+            DismissAllPopups(uielem.XamlRoot());
+        }
+    }
+};
