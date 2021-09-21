@@ -252,25 +252,21 @@ void AppHost::_HandleCommandlineArgs()
                     si.cb = sizeof(si);
                     memset(&pi, 0, sizeof(pi));
 
-                    try
-                    {
-                        THROW_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
-                                                                 newWindowArgs.data(),
-                                                                 nullptr, // lpProcessAttributes
-                                                                 nullptr, // lpThreadAttributes
-                                                                 false, // bInheritHandles
-                                                                 DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
-                                                                 nullptr, // lpEnvironment
-                                                                 nullptr, // lpStartingDirectory
-                                                                 &si, // lpStartupInfo
-                                                                 &pi // lpProcessInformation
-                                                                 ));
+                    LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+                                                           newWindowArgs.data(),
+                                                           nullptr, // lpProcessAttributes
+                                                           nullptr, // lpThreadAttributes
+                                                           false, // bInheritHandles
+                                                           DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
+                                                           nullptr, // lpEnvironment
+                                                           nullptr, // lpStartingDirectory
+                                                           &si, // lpStartupInfo
+                                                           &pi // lpProcessInformation
+                                                           ));
 
-                        // immediately dispose of handles
-                        CloseHandle(pi.hProcess);
-                        CloseHandle(pi.hThread);
-                    }
-                    CATCH_LOG()
+                    // immediately dispose of handles
+                    CloseHandle(pi.hProcess);
+                    CloseHandle(pi.hThread);
                 }
             }
             _logic.SetNumberOfOpenWindows(numPeasants);

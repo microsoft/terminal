@@ -1477,18 +1477,18 @@ namespace winrt::TerminalApp::implementation
 
     void AppLogic::SaveWindowLayoutJsons(Windows::Foundation::Collections::IVector<hstring> layouts)
     {
-        auto converted = winrt::single_threaded_vector<WindowLayout>();
+        std::vector<WindowLayout> converted;
+        converted.reserve(layouts.Size());
 
         for (const auto& json : layouts)
         {
             if (json != L"")
             {
-                converted.Append(WindowLayout::FromJson(json));
+                converted.emplace_back(WindowLayout::FromJson(json));
             }
         }
 
-        auto state = ApplicationState::SharedInstance();
-        state.PersistedWindowLayouts(converted);
+        ApplicationState::SharedInstance().PersistedWindowLayouts(winrt::single_threaded_vector(std::move(converted)));
     }
 
     hstring AppLogic::GetWindowLayoutJson(LaunchPosition position)

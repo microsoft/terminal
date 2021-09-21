@@ -932,10 +932,9 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - The collection of window layouts from each peasant.
     Windows::Foundation::Collections::IVector<winrt::hstring> Monarch::GetAllWindowLayouts()
     {
-        auto vec = winrt::single_threaded_vector<winrt::hstring>();
+        std::vector<winrt::hstring> vec;
         auto callback = [&](const auto& /*id*/, const auto& p) {
-            auto layout = p.GetWindowLayout();
-            vec.Append(layout);
+            vec.emplace_back(p.GetWindowLayout());
         };
         auto onError = [](auto&& id) {
             TraceLoggingWrite(g_hRemotingProvider,
@@ -946,6 +945,6 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         };
         _forEachPeasant(callback, onError);
 
-        return vec;
+        return winrt::single_threaded_vector(std::move(vec));
     }
 }

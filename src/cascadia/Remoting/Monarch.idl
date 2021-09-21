@@ -31,7 +31,7 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.IReference<UInt64> WindowID;
     }
 
-	[default_interface] runtimeclass QuitAllRequestedArgs 
+    [default_interface] runtimeclass QuitAllRequestedArgs 
     {
         QuitAllRequestedArgs();
         Windows.Foundation.IAsyncAction BeforeQuitAllAction;

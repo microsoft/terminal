@@ -30,11 +30,11 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.DateTime ActivatedTime { get; };
     };
 
-	[default_interface] runtimeclass GetWindowLayoutArgs {
+    [default_interface] runtimeclass GetWindowLayoutArgs {
         GetWindowLayoutArgs();
         String WindowLayoutJson;
         Windows.Foundation.IAsyncOperation<String> WindowLayoutJsonAsync;
-	}
+    }
 
     enum MonitorBehavior
     {
