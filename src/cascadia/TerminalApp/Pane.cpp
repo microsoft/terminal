@@ -2222,7 +2222,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 {
     if (target.get() == this)
     {
-        const auto firstPrecent = 1.0f - splitSize;
+        const auto firstPercent = 1.0f - splitSize;
         const auto secondPercent = splitSize;
         // If this pane is a leaf, and it's the pane we're looking for, use
         // the available space to calculate which direction to split in.
@@ -2231,7 +2231,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
         if (splitType == SplitDirection::Left || splitType == SplitDirection::Right)
         {
             const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
-            const auto newFirstWidth = widthMinusSeparator * firstPrecent;
+            const auto newFirstWidth = widthMinusSeparator * firstPercent;
             const auto newSecondWidth = widthMinusSeparator * secondPercent;
 
             return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
@@ -2240,7 +2240,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
         else if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
         {
             const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
-            const auto newFirstHeight = heightMinusSeparator * firstPrecent;
+            const auto newFirstHeight = heightMinusSeparator * firstPercent;
             const auto newSecondHeight = heightMinusSeparator * secondPercent;
 
             return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
