@@ -2714,9 +2714,7 @@ namespace winrt::TerminalApp::implementation
                 // TODO GH#5047: When we hang on to the N.T.A., try not to spawn "default... .exe" :)
                 newTerminalArgs.Commandline(L"default-terminal-invocation-placeholder");
 
-                const auto newPane = _MakePane(newTerminalArgs, false, nullptr);
-                newPane->SetActive();
-                _CreateNewTabFromPane(newPane);
+                _OpenNewTab(newTerminalArgs);
 
                 // Request a summon of this window to the foreground
                 _SummonWindowRequestedHandlers(*this, nullptr);
