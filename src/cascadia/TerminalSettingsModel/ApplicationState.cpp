@@ -13,6 +13,7 @@
 
 static constexpr std::wstring_view stateFileName{ L"state.json" };
 static constexpr std::wstring_view elevatedStateFileName{ L"elevated-state.json" };
+static constexpr std::wstring_view unelevatedStateFileName{ L"user-state.json" };
 
 static constexpr std::string_view TabLayoutKey{ "tabLayout" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
@@ -63,10 +64,10 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    ApplicationState::ApplicationState(std::filesystem::path sharedPath,
-                                       std::filesystem::path elevatedPath) noexcept :
-        _sharedPath{ std::move(sharedPath) },
-        _elevatedPath{ std::move(elevatedPath) },
+    ApplicationState::ApplicationState(const std::filesystem::path& stateRoot) noexcept :
+        _sharedPath{ stateRoot / stateFileName },
+        _userPath{ stateRoot / unelevatedStateFileName },
+        _elevatedPath{ stateRoot / elevatedStateFileName },
         _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
     {
         _read();
@@ -113,18 +114,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             FromJson(root, FileSource::Shared);
         }
-        if (::Microsoft::Console::Utils::IsElevated())
+        if (const auto localData{ _readLocalContents().value_or(std::string{}) }; !localData.empty())
         {
-            if (const auto elevatedData{ _readElevatedContents().value_or(std::string{}) }; !elevatedData.empty())
+            Json::Value root;
+            if (!reader->parse(localData.data(), localData.data() + localData.size(), &root, &errs))
             {
-                Json::Value root;
-                if (!reader->parse(elevatedData.data(), elevatedData.data() + elevatedData.size(), &root, &errs))
-                {
-                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-                }
-
-                FromJson(root, FileSource::Local);
+                throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
             }
+
+            FromJson(root, FileSource::Local);
         }
     }
     CATCH_LOG()
@@ -138,23 +136,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::StreamWriterBuilder wbuilder;
 
-        if (::Microsoft::Console::Utils::IsElevated())
-        {
-            _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared)));
-            _writeElevatedContents(Json::writeString(wbuilder, ToJson(FileSource::Local)));
-        }
-        else
-        {
-            _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared | FileSource::Local)));
-        }
+        _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared)));
+        _writeLocalContents(Json::writeString(wbuilder, ToJson(FileSource::Local)));
     }
     CATCH_LOG()
 
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / stateFileName,
-                                                               GetBaseSettingsPath() / elevatedStateFileName);
+        std::filesystem::path root{ GetBaseSettingsPath() };
+        static auto state = winrt::make_self<ApplicationState>(root);
         return *state;
     }
 
@@ -216,9 +207,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return ReadUTF8FileIfExists(_sharedPath);
     }
 
-    std::optional<std::string> ApplicationState::_readElevatedContents() const
+    std::optional<std::string> ApplicationState::_readLocalContents() const
     {
-        return ::Microsoft::Console::Utils::IsElevated() ? ReadUTF8FileIfExists(_elevatedPath, true) : std::nullopt;
+        return ::Microsoft::Console::Utils::IsElevated() ?
+                   ReadUTF8FileIfExists(_elevatedPath, true) :
+                   ReadUTF8FileIfExists(_userPath, false);
     }
 
     void ApplicationState::_writeSharedContents(const std::string_view content) const
@@ -226,7 +219,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WriteUTF8FileAtomic(_sharedPath, content);
     }
 
-    void ApplicationState::_writeElevatedContents(const std::string_view content) const
+    void ApplicationState::_writeLocalContents(const std::string_view content) const
     {
         if (::Microsoft::Console::Utils::IsElevated())
         {
@@ -243,7 +236,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
-            // do nothing
+            WriteUTF8FileAtomic(_userPath, content);
         }
     }
 

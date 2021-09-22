@@ -51,8 +51,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
 
-        ApplicationState(std::filesystem::path sharedPath,
-                         std::filesystem::path elevatedPath) noexcept;
+        ApplicationState(const std::filesystem::path& stateRoot) noexcept;
         ~ApplicationState();
 
         // Methods
@@ -79,6 +78,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
         til::shared_mutex<state_t> _state;
         std::filesystem::path _sharedPath;
+        std::filesystem::path _userPath;
         std::filesystem::path _elevatedPath;
         til::throttled_func_trailing<> _throttler;
 
@@ -87,8 +87,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         std::optional<std::string> _readSharedContents() const;
         void _writeSharedContents(const std::string_view content) const;
-        std::optional<std::string> _readElevatedContents() const;
-        void _writeElevatedContents(const std::string_view content) const;
+        std::optional<std::string> _readLocalContents() const;
+        void _writeLocalContents(const std::string_view content) const;
     };
 }
 
