@@ -25,7 +25,7 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const Profile& profile, const WUX::Controls::UserControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
 
@@ -430,7 +430,10 @@ namespace winrt::TerminalApp::implementation
     winrt::fire_and_forget TerminalTab::Scroll(const int delta)
     {
         auto control = GetActiveTerminalControl();
-
+        if (!control)
+        {
+            co_return;
+        }
         co_await winrt::resume_foreground(control.Dispatcher());
 
         const auto currentOffset = control.ScrollOffset();
@@ -493,7 +496,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::SplitPane(SplitDirection splitType,
                                 const float splitSize,
                                 const Profile& profile,
-                                TermControl& control)
+                                const WUX::Controls::UserControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
@@ -518,7 +521,8 @@ namespace winrt::TerminalApp::implementation
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToControl(newPane->Id().value(), control);
+        const auto& termControl{ control.try_as<TermControl>() };
+        _AttachEventHandlersToControl(newPane->Id().value(), termControl);
         _AttachEventHandlersToPane(original);
         _AttachEventHandlersToPane(newPane);
 
@@ -830,6 +834,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_AttachEventHandlersToControl(const uint32_t paneId, const TermControl& control)
     {
+        if (!control)
+        {
+            return;
+        }
         auto weakThis{ get_weak() };
         auto dispatcher = TabViewItem().Dispatcher();
         ControlEventTokens events{};
@@ -1290,7 +1298,12 @@ namespace winrt::TerminalApp::implementation
     // - The tab's color, if any
     std::optional<winrt::Windows::UI::Color> TerminalTab::GetTabColor()
     {
-        const auto currControlColor{ GetActiveTerminalControl().TabColor() };
+        const auto& termControl{ GetActiveTerminalControl() };
+        if (!termControl)
+        {
+            return std::nullopt;
+        }
+        const auto currControlColor{ termControl.TabColor() };
         std::optional<winrt::Windows::UI::Color> controlTabColor;
         if (currControlColor != nullptr)
         {

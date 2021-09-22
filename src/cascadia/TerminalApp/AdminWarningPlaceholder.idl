@@ -1,0 +1,11 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass AdminWarningPlaceholder : Windows.UI.Xaml.Controls.UserControl,
+                                                               Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        String Commandline { get; };
+    }
+}

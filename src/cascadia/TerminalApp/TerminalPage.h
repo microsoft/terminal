@@ -197,12 +197,13 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCloseReadOnlyDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowMultiLinePasteWarningDialog();
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowLargePasteWarningDialog();
+        winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> _ShowCommandlineApproveWarning();
 
         void _CreateNewTabFlyout();
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane);
-        void _CreateNewTabWithProfileAndSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
+        void _CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
@@ -377,6 +378,12 @@ namespace winrt::TerminalApp::implementation
         bool _isElevated() const noexcept;
 
         winrt::fire_and_forget _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+
+        bool _shouldPromptForCommandline(const winrt::hstring& cmdline) const;
+        void _adminWarningPrimaryClicked(const winrt::TerminalApp::AdminWarningPlaceholder& sender,
+                                         const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
+        void _adminWarningCancelClicked(const winrt::TerminalApp::AdminWarningPlaceholder& sender,
+                                        const winrt::Windows::UI::Xaml::RoutedEventArgs& args);
 
         winrt::fire_and_forget _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;

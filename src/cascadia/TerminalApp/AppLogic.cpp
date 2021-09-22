@@ -12,6 +12,8 @@
 #include <WtExeUtils.h>
 #include <wil/token_helpers.h >
 
+#include "../../types/inc/utils.hpp"
+
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -139,28 +141,8 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 // Return Value:
 // - true if the user is an administrator
 static bool _isUserAdmin() noexcept
-try
 {
-    wil::unique_handle processToken{ GetCurrentProcessToken() };
-    const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
-    const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
-    if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
-    {
-        // In this case, the user has UAC entirely disabled. This is sort of
-        // weird, we treat this like the user isn't an admin at all. There's no
-        // separation of powers, so the things we normally want to gate on
-        // "having special powers" doesn't apply.
-        //
-        // See GH#7754, GH#11096
-        return false;
-    }
-
-    return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
+    return Microsoft::Console::Utils::IsElevated();
 }
 
 namespace winrt::TerminalApp::implementation
@@ -899,8 +881,6 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_RegisterSettingsChange()
     {
         const std::filesystem::path settingsPath{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
-        const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
-
         _reader.create(
             settingsPath.parent_path().c_str(),
             false,
@@ -909,14 +889,15 @@ namespace winrt::TerminalApp::implementation
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
-            [this, settingsBasename = settingsPath.filename(), stateBasename = statePath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
-                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
+            [this, settingsBasename = settingsPath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
+                static const auto appState{ ApplicationState::SharedInstance() };
+                const winrt::hstring modifiedBasename{ std::filesystem::path{ fileModified }.filename().c_str() };
 
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
                 }
-                else if (modifiedBasename == stateBasename)
+                else if (appState.IsStatePath(modifiedBasename))
                 {
                     _reloadState();
                 }

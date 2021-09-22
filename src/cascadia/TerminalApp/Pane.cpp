@@ -34,7 +34,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
 
-Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
+Pane::Pane(const Profile& profile, const Controls::UserControl& control, const bool lastFocused) :
     _control{ control },
     _lastActive{ lastFocused },
     _profile{ profile }
@@ -42,8 +42,12 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     _root.Children().Append(_border);
     _border.Child(_control);
 
-    _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-    _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (termControl)
+    {
+        _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
+        _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    }
 
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
@@ -80,7 +84,19 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     assert(_IsLeaf());
 
     NewTerminalArgs args{};
-    auto controlSettings = _control.Settings().as<TerminalSettings>();
+    auto termControl{ _control.try_as<TermControl>() };
+    if (!termControl)
+    {
+        if (auto adminWarning{ _control.try_as<AdminWarningPlaceholder>() })
+        {
+            termControl = adminWarning.Content().try_as<TermControl>();
+        }
+    }
+    if (!termControl)
+    {
+        return nullptr;
+    }
+    auto controlSettings = termControl.Settings().as<TerminalSettings>();
 
     args.Profile(controlSettings.ProfileName());
     args.StartingDirectory(controlSettings.StartingDirectory());
@@ -166,6 +182,7 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
     if (_firstChild->_IsLeaf() && _secondChild->_IsLeaf())
     {
         auto actionAndArgs = buildSplitPane(_secondChild);
+
         std::optional<uint32_t> focusedPaneId = std::nullopt;
         if (_firstChild->_lastActive)
         {
@@ -697,6 +714,33 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
     return false;
 }
 
+winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt::Windows::UI::Xaml::Controls::UserControl& control)
+{
+    if (!_IsLeaf())
+    {
+        return nullptr;
+    }
+
+    const auto& oldControl = _control;
+    const auto& oldTermControl{ _control.try_as<TermControl>() };
+    if (oldTermControl)
+    {
+        oldTermControl.ConnectionStateChanged(_connectionStateChangedToken);
+        oldTermControl.WarningBell(_warningBellToken);
+    }
+
+    _control = control;
+    _border.Child(_control);
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (termControl)
+    {
+        _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
+        _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+    }
+
+    return oldControl;
+}
+
 // Method Description:
 // - Given two panes' offsets, test whether the `direction` side of first is adjacent to second.
 // Arguments:
@@ -944,8 +988,12 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     {
         return;
     }
-
-    const auto newConnectionState = _control.ConnectionState();
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (!termControl)
+    {
+        return;
+    }
+    const auto newConnectionState = termControl.ConnectionState();
     const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
 
     if (newConnectionState < ConnectionState::Closed)
@@ -988,7 +1036,9 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
     {
         return;
     }
-    if (_profile)
+
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (_profile && termControl)
     {
         // We don't want to do anything if nothing is set, so check for that first
         if (static_cast<int>(_profile.BellStyle()) != 0)
@@ -1002,7 +1052,7 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
 
             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
             {
-                _control.BellLightOn();
+                termControl.BellLightOn();
             }
 
             // raise the event with the bool value corresponding to the taskbar flag
@@ -1057,7 +1107,11 @@ void Pane::Shutdown()
     std::unique_lock lock{ _createCloseLock };
     if (_IsLeaf())
     {
-        _control.Close();
+        const auto& termControl{ _control.try_as<TermControl>() };
+        if (termControl)
+        {
+            termControl.Close();
+        }
     }
     else
     {
@@ -1067,7 +1121,7 @@ void Pane::Shutdown()
 }
 
 // Method Description:
-// - Get the root UIElement of this pane. There may be a single TermControl as a
+// - Get the root UIElement of this pane. There may be a single UserControl as a
 //   child, or an entire tree of grids and panes as children of this element.
 // Arguments:
 // - <none>
@@ -1108,8 +1162,14 @@ std::shared_ptr<Pane> Pane::GetActivePane()
 // Arguments:
 // - <none>
 // Return Value:
-// - nullptr if this Pane is a parent, otherwise the TermControl of this Pane.
-TermControl Pane::GetTerminalControl()
+// - nullptr if this Pane is a parent or isn't hosting a Terminal, otherwise the
+//   TermControl of this Pane.
+TermControl Pane::GetTerminalControl() const
+{
+    return _IsLeaf() ? _control.try_as<TermControl>() : nullptr;
+}
+
+Controls::UserControl Pane::GetUserControl() const
 {
     return _IsLeaf() ? _control : nullptr;
 }
@@ -1262,9 +1322,13 @@ void Pane::_FocusFirstChild()
 void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Profile& profile)
 {
     assert(_IsLeaf());
-
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (!termControl)
+    {
+        return;
+    }
     _profile = profile;
-    auto controlSettings = _control.Settings().as<TerminalSettings>();
+    auto controlSettings = termControl.Settings().as<TerminalSettings>();
     // Update the parent of the control's settings object (and not the object itself) so
     // that any overrides made by the control don't get affected by the reload
     controlSettings.SetParent(settings.DefaultSettings());
@@ -1277,8 +1341,8 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
         // sure the unfocused settings inherit from that.
         unfocusedSettings.SetParent(controlSettings);
     }
-    _control.UnfocusedAppearance(unfocusedSettings);
-    _control.UpdateSettings();
+    termControl.UnfocusedAppearance(unfocusedSettings);
+    termControl.UpdateSettings();
 }
 
 // Method Description:
@@ -1409,8 +1473,12 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _id = remainingChild->Id();
 
         // Add our new event handler before revoking the old one.
-        _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-        _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        const auto& termControl{ _control.try_as<TermControl>() };
+        if (termControl)
+        {
+            _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
+            _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
+        }
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1421,21 +1489,30 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // handlers since it is just getting moved.
         if (!isDetaching)
         {
-            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+            const auto& closedControl{ closedChild->_control.try_as<TermControl>() };
+            if (closedControl)
+            {
+                closedControl.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+                closedControl.WarningBell(closedChild->_warningBellToken);
+            }
         }
 
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
-        remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
-        remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
+
+        const auto& remainingControl{ remainingChild->_control.try_as<TermControl>() };
+        if (remainingControl)
+        {
+            remainingControl.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
+            remainingControl.WarningBell(remainingChild->_warningBellToken);
+        }
 
         // If either of our children was focused, we want to take that focus from
         // them.
         _lastActive = _firstChild->_lastActive || _secondChild->_lastActive;
 
         // Remove all the ui elements of the remaining child. This'll make sure
-        // we can re-attach the TermControl to our Grid.
+        // we can re-attach the UserControl to our Grid.
         remainingChild->_root.Children().Clear();
         remainingChild->_border.Child(nullptr);
 
@@ -1445,7 +1522,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
-        // Reattach the TermControl to our grid.
+        // Reattach the UserControl to our grid.
         _root.Children().Append(_border);
         _border.Child(_control);
 
@@ -1504,8 +1581,12 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         closedChild->Closed(closedChildClosedToken);
         if (!isDetaching)
         {
-            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+            const auto& closedControl{ closedChild->_control.try_as<TermControl>() };
+            if (closedControl)
+            {
+                closedControl.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
+                closedControl.WarningBell(closedChild->_warningBellToken);
+            }
         }
 
         // Reset our UI:
@@ -2085,18 +2166,18 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 
 // Method Description:
 // - Split the focused pane in our tree of panes, and place the given
-//   TermControl into the newly created pane. If we're the focused pane, then
+//   UserControl into the newly created pane. If we're the focused pane, then
 //   we'll create two new children, and place them side-by-side in our Grid.
 // Arguments:
 // - splitType: what type of split we want to create.
 // - profile: The profile to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
+// - control: A UserControl to use in the new pane.
 // Return Value:
 // - The two newly created Panes, with the original pane first
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
                                                                     const Profile& profile,
-                                                                    const TermControl& control)
+                                                                    const Controls::UserControl& control)
 {
     if (!_IsLeaf())
     {
@@ -2202,11 +2283,15 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
 
-    // revoke our handler - the child will take care of the control now.
-    _control.ConnectionStateChanged(_connectionStateChangedToken);
-    _connectionStateChangedToken.value = 0;
-    _control.WarningBell(_warningBellToken);
-    _warningBellToken.value = 0;
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (termControl)
+    {
+        // revoke our handler - the child will take care of the control now.
+        termControl.ConnectionStateChanged(_connectionStateChangedToken);
+        termControl.WarningBell(_warningBellToken);
+        _connectionStateChangedToken.value = 0;
+        _warningBellToken.value = 0;
+    }
 
     // Remove our old GotFocus handler from the control. We don't what the
     // control telling us that it's now focused, we want it telling its new
@@ -2218,7 +2303,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     _desiredSplitPosition = 1.0f - splitSize;
 
     // Remove any children we currently have. We can't add the existing
-    // TermControl to a new grid until we do this.
+    // UserControl to a new grid until we do this.
     _root.Children().Clear();
     _border.Child(nullptr);
 
@@ -2553,8 +2638,13 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 //   If requested size is already snapped, then both returned values equal this value.
 Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
 {
+    const auto& termControl{ _control.try_as<TermControl>() };
     if (_IsLeaf())
     {
+        if (!termControl)
+        {
+            return { dimension, dimension };
+        }
         // If we're a leaf pane, align to the grid of controlling terminal
 
         const auto minSize = _GetMinSize();
@@ -2565,7 +2655,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
             return { minDimension, minDimension };
         }
 
-        float lower = _control.SnapDimensionToGrid(widthOrHeight, dimension);
+        float lower = termControl.SnapDimensionToGrid(widthOrHeight, dimension);
         if (widthOrHeight)
         {
             lower += WI_IsFlagSet(_borders, Borders::Left) ? PaneBorderSize : 0;
@@ -2585,7 +2675,7 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
         }
         else
         {
-            const auto cellSize = _control.CharacterDimensions();
+            const auto cellSize = termControl.CharacterDimensions();
             const auto higher = lower + (widthOrHeight ? cellSize.Width : cellSize.Height);
             return { lower, higher };
         }
@@ -2630,7 +2720,8 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
 // - <none>
 void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
 {
-    if (_IsLeaf())
+    const auto& termControl{ _control.try_as<TermControl>() };
+    if (_IsLeaf() && termControl)
     {
         // We're a leaf pane, so just add one more row or column (unless isMinimumSize
         // is true, see below).
@@ -2645,11 +2736,20 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
         }
         else
         {
-            const auto cellSize = _control.CharacterDimensions();
+            const auto cellSize = termControl.CharacterDimensions();
             sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
         }
     }
-    else
+    else if (_IsLeaf())
+    {
+        // If we're a leaf that didn't have a TermControl, then just increment
+        // by one. We have to increment by _some_ value, because this is used in
+        // a while() loop to find the next bigger size we can snap to. But since
+        // a non-terminal control doesn't really care what size it's snapped to,
+        // we can just say "one pixel larger is the next snap point"
+        sizeNode.size += 1;
+    }
+    else if (!_IsLeaf())
     {
         // We're a parent pane, so we have to advance dimension of our children panes. In
         // fact, we advance only one child (chosen later) to keep the growth fine-grained.
@@ -2751,7 +2851,8 @@ Size Pane::_GetMinSize() const
 {
     if (_IsLeaf())
     {
-        auto controlSize = _control.MinimumSize();
+        const auto& termControl{ _control.try_as<TermControl>() };
+        auto controlSize = termControl ? termControl.MinimumSize() : Size{ 1, 1 };
         auto newWidth = controlSize.Width;
         auto newHeight = controlSize.Height;
 
@@ -2940,7 +3041,10 @@ std::optional<SplitDirection> Pane::PreCalculateAutoSplit(const std::shared_ptr<
 // - Returns true if the pane or one of its descendants is read-only
 bool Pane::ContainsReadOnly() const
 {
-    return _IsLeaf() ? _control.ReadOnly() : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly());
+    const auto& termControl{ GetTerminalControl() };
+    return termControl ?
+               termControl.ReadOnly() :
+               (_IsLeaf() ? false : (_firstChild->ContainsReadOnly() || _secondChild->ContainsReadOnly()));
 }
 
 // Method Description:
@@ -2953,13 +3057,14 @@ bool Pane::ContainsReadOnly() const
 // - <none>
 void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states)
 {
-    if (_IsLeaf())
+    const auto& termControl{ GetTerminalControl() };
+    if (termControl)
     {
-        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(_control.TaskbarState(),
-                                                                                    _control.TaskbarProgress()) };
+        auto tbState{ winrt::make<winrt::TerminalApp::implementation::TaskbarState>(termControl.TaskbarState(),
+                                                                                    termControl.TaskbarProgress()) };
         states.push_back(tbState);
     }
-    else
+    else if (!_IsLeaf())
     {
         _firstChild->CollectTaskbarStates(states);
         _secondChild->CollectTaskbarStates(states);

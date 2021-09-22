@@ -63,6 +63,9 @@
     <Page Include="CommandPalette.xaml">
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="AdminWarningPlaceholder.xaml">
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
@@ -140,6 +143,9 @@
     </ClInclude>
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="AdminWarningPlaceholder.h">
+      <DependentUpon>AdminWarningPlaceholder.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Toast.h" />
   </ItemGroup>
@@ -234,6 +240,9 @@
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AdminWarningPlaceholder.cpp">
+      <DependentUpon>AdminWarningPlaceholder.xaml</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
   </ItemGroup>
@@ -293,6 +302,10 @@
     </Midl>
     <Midl Include="CommandPalette.idl">
       <DependentUpon>CommandPalette.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="AdminWarningPlaceholder.idl">
+      <DependentUpon>AdminWarningPlaceholder.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="FilteredCommand.idl" />

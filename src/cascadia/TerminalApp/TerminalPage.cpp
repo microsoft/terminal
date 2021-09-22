@@ -19,6 +19,7 @@
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
 #include "RenameWindowRequestedArgs.g.cpp"
+#include "AdminWarningPlaceholder.h"
 #include "../inc/WindowingBehavior.h"
 
 #include <til/latch.h>
@@ -153,19 +154,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // GH#2455 - Make sure to try/catch calls to Application::Current,
-        // because that _won't_ be an instance of TerminalApp::App in the
-        // LocalTests
-        auto isElevated = false;
-        try
-        {
-            // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
-            // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
-            // but that process is running at a different IL than us.
-            // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
-        }
-        CATCH_LOG();
+        const auto isElevated = _isElevated();
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
@@ -686,6 +675,15 @@ namespace winrt::TerminalApp::implementation
         if (auto presenter{ _dialogPresenter.get() })
         {
             co_return co_await presenter.ShowDialog(FindName(L"LargePasteDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
+    }
+
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCommandlineApproveWarning()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"ApproveCommandlineWarning").try_as<WUX::Controls::ContentDialog>());
         }
         co_return ContentDialogResult::None;
     }
@@ -1523,6 +1521,242 @@ namespace winrt::TerminalApp::implementation
         return true;
     }
 
+    // Function Description:
+    // - Returns true if this commandline is precisely an executable in
+    //   system32. We can use this to bypass the elevated state check, because
+    //   we're confident that executables in that path won't have been hijacked.
+    // - Will attempt to resolve environment strings.
+    // - Will also manually allow commandlines as generated for the default WSL
+    //   distros.
+    // Arguments:
+    // - commandLine: the command to check.
+    // Return Value (example):
+    // - C:\windows\system32\cmd.exe -> returns true
+    // - cmd.exe -> returns false
+    // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
+    // - %SystemRoot%\System32\cmd.exe -> returns true
+    // - %SystemRoot%\System32\wsl.exe -d <distroname> -> returns true
+    static bool _isInSystem32(std::wstring_view commandLine)
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        static std::wstring systemDirectory = []() -> std::wstring {
+            // *** THIS IS A SINGLETON ***
+            static std::wstring sys32{};
+            if (FAILED(wil::GetSystemDirectoryW(sys32)))
+            {
+                // we couldn't look up where system32 is?? Then it's definitely not
+                // in System32
+                return {};
+            }
+            return sys32;
+        }();
+
+        if (systemDirectory.empty())
+        {
+            return false;
+        }
+
+        const std::filesystem::path fullCommandlinePath{
+            wil::ExpandEnvironmentStringsW<std::wstring>(commandLine.data())
+        };
+
+        if (fullCommandlinePath.wstring().size() > systemDirectory.size())
+        {
+            // Get the first part of the executable path
+            const auto start = fullCommandlinePath.wstring().substr(0, systemDirectory.size());
+            const auto pathEquals = til::equals_insensitive_ascii(start, systemDirectory);
+            if (pathEquals && std::filesystem::exists(fullCommandlinePath))
+            {
+                return true;
+            }
+        }
+
+        // Also, if the path is literally
+        //   %SystemRoot%\System32\wsl.exe -d <distroname>
+        // then allow it.
+
+        // Stolen from _tryMangleStartingDirectoryForWSL
+        // Find the first space, quote or the end of the string -- we'll look
+        // for wsl before that.
+        const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+        const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+        const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
+        const auto executableFilename{ executablePath.filename().wstring() };
+
+        if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
+        {
+            // We've got a WSL -- let's just make sure it's the right one.
+            if (executablePath.has_parent_path())
+            {
+                if (executablePath.parent_path().wstring() != systemDirectory)
+                {
+                    return false; // it wasn't in system32!
+                }
+            }
+            else
+            {
+                // Unqualified WSL, this is dangerous, so return false.
+                return false;
+            }
+
+            // Get everything after the wsl.exe
+            const auto arguments{ terminator == std::wstring_view::npos ? std::wstring_view{} : commandLine.substr(terminator + 1) };
+            const auto dashD{ arguments.find(L"-d ") };
+
+            // If we found a "-d " IMMEDIATELY AFTER wsl.exe. If it wasn't
+            // immediately after, it could have been `wsl.exe --doSomethingEvil`
+            if (dashD == 0)
+            {
+                // Using the string following "-d "...
+                const auto afterDashD{ arguments.substr(dashD + 3) };
+                // Find the next space
+                const auto afterFirstWord = afterDashD.substr(dashD + 3).find(L" ");
+                // if that space _wasn't_ at the end of the commandline, then
+                // there were some other args. That means it was `wsl -d distro
+                // anything`, and we should ask the user.
+                //
+                // So if it was at the end of the commandline, then there were
+                // no other args besides the distro name.
+                if (afterFirstWord == std::wstring::npos)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    // Method Description:
+    // - For a given commandline, determines if we should prompt the user for
+    //   approval. We only do this check when elevated. This will check the
+    //   AllowedCommandlines in `elevated-state.json`, to see if the commandline
+    //   already exists in that list.
+    // Arguments:
+    // - cmdline: The commandline to check
+    // Return Value:
+    // - true if we should prompt the user for approval.
+    bool TerminalPage::_shouldPromptForCommandline(const winrt::hstring& cmdline) const
+    {
+        // NOTE: For debugging purposes, changing this to `true || _isElevated()`
+        // is a handy way of forcing the elevation logic, even when unelevated.
+        if (_isElevated())
+        {
+            // If the cmdline is EXACTLY an executable in
+            // `C:\WINDOWS\System32`, then ignore this check.
+            if (_isInSystem32(cmdline))
+            {
+                return false;
+            }
+
+            if (const auto& allowedCommandlines{ ApplicationState::SharedInstance().AllowedCommandlines() })
+            {
+                for (const auto& approved : allowedCommandlines)
+                {
+                    if (approved == cmdline)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    void TerminalPage::_adminWarningPrimaryClicked(const TerminalApp::AdminWarningPlaceholder& sender,
+                                                   const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
+        const auto& cmdline{ warningControl->Commandline() };
+        // Look through the tabs and panes to look for us. Whichever pane had us
+        // as content - replace their content with the TermControl we were
+        // holding on to.
+        for (const auto& tab : _tabs)
+        {
+            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                tabImpl->GetRootPane()->WalkTree([warningControl, cmdline, tabImpl](std::shared_ptr<Pane> pane) -> bool {
+                    if (pane->GetUserControl() == *warningControl)
+                    {
+                        // Hooray, we found us!
+                        pane->ReplaceControl(warningControl->Control());
+                        // Update the title, because replacing the control like
+                        // this is a little weird, and doesn't actually trigger
+                        // a TitleChanged by itself.
+                        tabImpl->UpdateTitle();
+                        // Don't return true here. We want to make sure to check
+                        // all the panes for the same commandline we just
+                        // approved.
+                    }
+                    else if (const auto& otherWarning{ winrt::get_self<AdminWarningPlaceholder>(pane->GetUserControl().try_as<TerminalApp::AdminWarningPlaceholder>()) })
+                    {
+                        // This pane wasn't us, but it did have a warning in it.
+                        // Was it a warning for the same commandline that we
+                        // just approved?
+                        if (otherWarning->Commandline() == cmdline)
+                        {
+                            // Go ahead and allow them as well.
+                            pane->ReplaceControl(otherWarning->Control());
+                            tabImpl->UpdateTitle();
+                        }
+                    }
+                    return false;
+                });
+            }
+        }
+
+        // Update the list of approved commandlines.
+        auto allowedCommandlines{ ApplicationState::SharedInstance().AllowedCommandlines() };
+        if (!allowedCommandlines)
+        {
+            allowedCommandlines = winrt::single_threaded_vector<winrt::hstring>();
+        }
+
+        // But of course, we don't need to add this commandline if it's already
+        // in the list of approved commandlines.
+        bool foundCopy = false;
+        for (const auto& approved : allowedCommandlines)
+        {
+            if (approved == cmdline)
+            {
+                foundCopy = true;
+                break;
+            }
+        }
+        if (!foundCopy)
+        {
+            allowedCommandlines.Append(cmdline);
+        }
+        ApplicationState::SharedInstance().AllowedCommandlines(allowedCommandlines);
+    }
+
+    void TerminalPage::_adminWarningCancelClicked(const TerminalApp::AdminWarningPlaceholder& sender,
+                                                  const winrt::Windows::UI::Xaml::RoutedEventArgs& /*args*/)
+    {
+        auto warningControl{ winrt::get_self<AdminWarningPlaceholder>(sender) };
+
+        for (const auto& tab : _tabs)
+        {
+            if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
+            {
+                tabImpl->GetRootPane()->WalkTree([warningControl](std::shared_ptr<Pane> pane) -> bool {
+                    if (pane->GetUserControl() == *warningControl)
+                    {
+                        pane->Close();
+                        return true;
+                    }
+                    // We're not going to auto-close all the other panes with
+                    // the same commandline warning, akin to what we're doing in
+                    // the approve handler. If they want to reject one pane, but
+                    // accept the next one, that's okay.
+                    return false;
+                });
+            }
+        }
+    }
+
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
@@ -1641,20 +1875,34 @@ namespace winrt::TerminalApp::implementation
             }
 
             auto newControl = _InitControl(controlSettings, controlConnection);
+            WUX::Controls::UserControl controlToAdd{ newControl };
+
+            const auto& cmdline{ controlSettings.DefaultSettings().Commandline() };
+            const bool doAdminWarning = _shouldPromptForCommandline(cmdline);
+            if (doAdminWarning)
+            {
+                auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(newControl, cmdline) };
+                warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
+                warningControl->CancelButtonClicked({ get_weak(), &TerminalPage::_adminWarningCancelClicked });
+                controlToAdd = *warningControl;
+            }
 
             // Hookup our event handlers to the new terminal
             _RegisterTerminalEvents(newControl);
 
             _UnZoomIfNeeded();
 
-            tab.SplitPane(realSplitType, splitSize, profile, newControl);
+            tab.SplitPane(realSplitType, splitSize, profile, controlToAdd);
 
             // After GH#6586, the control will no longer focus itself
             // automatically when it's finished being laid out. Manually focus
             // the control here instead.
             if (_startupState == StartupState::Initialized)
             {
-                _GetActiveControl().Focus(FocusState::Programmatic);
+                if (const auto& activeControl{ _GetActiveControl() })
+                {
+                    activeControl.Focus(FocusState::Programmatic);
+                }
             }
         }
         CATCH_LOG();

@@ -16,6 +16,7 @@
 #include <LibraryResources.h>
 
 #include "TabRowControl.h"
+#include "AdminWarningPlaceholder.h"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
@@ -268,7 +269,7 @@ namespace winrt::TerminalApp::implementation
     // - profile: profile settings for this connection
     // - settings: the TerminalSettings object to use to create the TerminalControl with.
     // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
-    void TerminalPage::_CreateNewTabWithProfileAndSettings(const Profile& profile, const TerminalSettingsCreateResult& settings, TerminalConnection::ITerminalConnection existingConnection)
+    void TerminalPage::_CreateNewTabWithProfileAndSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult settings, TerminalConnection::ITerminalConnection existingConnection)
     {
         // Initialize the new tab
         // Create a connection based on the values in our settings object if we weren't given one.
@@ -299,8 +300,19 @@ namespace winrt::TerminalApp::implementation
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
         auto term = _InitControl(settings, connection);
+        WUX::Controls::UserControl controlToAdd{ term };
 
-        auto newTabImpl = winrt::make_self<TerminalTab>(profile, term);
+        const auto& cmdline{ settings.DefaultSettings().Commandline() };
+        const bool doAdminWarning = _shouldPromptForCommandline(cmdline);
+        if (doAdminWarning)
+        {
+            auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(term, cmdline) };
+            warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
+            warningControl->CancelButtonClicked({ get_weak(), &TerminalPage::_adminWarningCancelClicked });
+            controlToAdd = *warningControl;
+        }
+
+        auto newTabImpl = winrt::make_self<TerminalTab>(profile, controlToAdd);
         _RegisterTerminalEvents(term);
         _InitializeTab(newTabImpl);
 
