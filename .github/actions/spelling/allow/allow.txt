@@ -1,6 +1,7 @@
 apc
 calt
 ccmp
+changelog
 cybersecurity
 Apc
 clickable
@@ -38,6 +39,7 @@ lorem
 maxed
 mkmk
 mru
+noreply
 nje
 ogonek
 ok'd
