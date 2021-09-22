@@ -223,6 +223,11 @@ try
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
 
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     // get the text range that we're comparing to
     const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
     if (range == nullptr)
@@ -259,6 +264,11 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
 
     try
     {
@@ -444,6 +454,11 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     // AttributeIDs that require special handling
     switch (attributeId)
     {
@@ -605,6 +620,11 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     const std::wstring queryText{ text, SysStringLen(text) };
     const auto bufferSize = _getOptimizedBufferSize();
     const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
@@ -730,6 +750,11 @@ try
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     VariantInit(pRetVal);
 
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     // AttributeIDs that require special handling
     switch (attributeId)
     {
@@ -824,6 +849,11 @@ IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_
 
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
+
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
 
     try
     {
@@ -933,6 +963,11 @@ try
         return E_INVALIDARG;
     }
 
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     const auto maxLengthOpt = (maxLength == -1) ?
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
@@ -1009,6 +1044,11 @@ try
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
 
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
@@ -1075,7 +1115,11 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
-    if (count == 0)
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+    else if (count == 0)
     {
         return S_OK;
     }
@@ -1145,6 +1189,10 @@ try
     {
         return E_INVALIDARG;
     }
+    else if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
 
     // TODO GH#5406: create a different UIA parent object for each TextBuffer
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
@@ -1167,6 +1215,11 @@ CATCH_RETURN();
 IFACEMETHODIMP UiaTextRangeBase::Select() noexcept
 try
 {
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
@@ -1211,6 +1264,11 @@ IFACEMETHODIMP UiaTextRangeBase::RemoveFromSelection() noexcept
 IFACEMETHODIMP UiaTextRangeBase::ScrollIntoView(_In_ BOOL alignToTop) noexcept
 try
 {
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();

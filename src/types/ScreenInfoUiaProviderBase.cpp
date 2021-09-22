@@ -235,6 +235,10 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
     {
         return E_OUTOFMEMORY;
     }
+    else if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
 
     WRL::ComPtr<UiaTextRangeBase> range;
     if (!_pData->IsSelectionActive())
@@ -272,12 +276,16 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
+    if (!_pData->IsUiaDataInitialized())
+    {
+        return E_FAIL;
+    }
+
     _LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
-
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
 
     // make a safe array
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);

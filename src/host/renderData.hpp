@@ -69,5 +69,6 @@ public:
     const COORD GetSelectionAnchor() const noexcept;
     const COORD GetSelectionEnd() const noexcept;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
+    const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
 };

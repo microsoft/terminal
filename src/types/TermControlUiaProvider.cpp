@@ -16,9 +16,6 @@ HRESULT TermControlUiaProvider::RuntimeClassInitialize(_In_ ::Microsoft::Console
     RETURN_IF_FAILED(ScreenInfoUiaProviderBase::RuntimeClassInitialize(uiaData));
 
     _controlInfo = controlInfo;
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    //Tracing::s_TraceUia(nullptr, ApiCall::Constructor, nullptr);
     return S_OK;
 }
 
@@ -26,11 +23,6 @@ IFACEMETHODIMP TermControlUiaProvider::Navigate(_In_ NavigateDirection direction
                                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) noexcept
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppProvider);
-
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    /*ApiMsgNavigate apiMsg;
-    apiMsg.Direction = direction;
-    Tracing::s_TraceUia(this, ApiCall::Navigate, &apiMsg);*/
     *ppProvider = nullptr;
 
     if (direction == NavigateDirection_Parent)
@@ -121,6 +113,10 @@ HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
+    if (!_pData->IsUiaDataInitialized() || !_pData->IsSelectionActive())
+    {
+        return E_FAIL;
+    }
 
     const auto start = _pData->GetSelectionAnchor();
 

@@ -250,3 +250,12 @@ bool Terminal::IsScreenReversed() const noexcept
 {
     return _screenReversed;
 }
+
+const bool Terminal::IsUiaDataInitialized() const noexcept
+{
+    // GH#11135: Windows Terminal needs to create and return an automation peer
+    // when a screen reader requests it. However, the terminal might not be fully
+    // initialized yet. So we use this to check if any crucial components of
+    // UiaData are not yet initialized.
+    return !!_buffer;
+}
