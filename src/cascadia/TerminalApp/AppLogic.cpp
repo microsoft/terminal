@@ -1475,7 +1475,7 @@ namespace winrt::TerminalApp::implementation
         return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
     }
 
-    void AppLogic::SaveWindowLayoutJsons(Windows::Foundation::Collections::IVector<hstring> layouts)
+    void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
     {
         std::vector<WindowLayout> converted;
         converted.reserve(layouts.Size());
