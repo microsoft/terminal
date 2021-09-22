@@ -34,6 +34,8 @@ namespace Microsoft.Terminal.Settings.Model
         TerminalSettings GetParent();
         void ApplyColorScheme(ColorScheme scheme);
 
+        ColorScheme AppliedColorScheme;
+
         Boolean Elevate;
     };
 }

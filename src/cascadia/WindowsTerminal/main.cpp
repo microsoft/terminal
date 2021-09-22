@@ -25,7 +25,7 @@ TRACELOGGING_DEFINE_PROVIDER(
 // !! BODGY !!
 // Manually use the resources from TerminalApp as our resources.
 // The WindowsTerminal project doesn't actually build a Resources.resw file, but
-// we still need to be able to localize strings for the tray icon menu. Anything
+// we still need to be able to localize strings for the notification icon menu. Anything
 // you want localized for WindowsTerminal.exe should be stuck in
 // ...\TerminalApp\Resources\en-US\Resources.resw
 #include <LibraryResources.h>
@@ -184,16 +184,13 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
             }
         }
 
-        // GH#7125 = System XAML will show a system dialog on Alt Space. We might want to
-        // explicitly prevent that - for example when an action is bound to it. So similar to
-        // above, we steal the event and hand it off to the host. When the host does not process
-        // it, we will still dispatch like normal.
+        // GH#7125 = System XAML will show a system dialog on Alt Space. We want to
+        // explicitly prevent that because we handle that ourselves. So similar to
+        // above, we steal the event and hand it off to the host.
         if (_messageIsAltSpaceKeypress(message))
         {
-            if (host.OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true))
-            {
-                continue;
-            }
+            host.OnDirectKeyEvent(VK_SPACE, LOBYTE(HIWORD(message.lParam)), true);
+            continue;
         }
 
         TranslateMessage(&message);

@@ -199,8 +199,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
     }
 
-    bool GlobalAppearance::FeatureTrayIconEnabled() const noexcept
+    bool GlobalAppearance::FeatureNotificationIconEnabled() const noexcept
     {
-        return Feature_TrayIcon::IsEnabled();
+        return Feature_NotificationIcon::IsEnabled();
     }
 }

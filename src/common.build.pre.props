@@ -83,7 +83,8 @@
 
   <!-- For ALL build types-->
   <PropertyGroup Label="Configuration">
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset Condition="$(MSBuildVersion) &lt; '17.0.0'">v142</PlatformToolset>
+    <PlatformToolset Condition="$(MSBuildVersion) &gt;= '17.0.0'">v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <LinkIncremental>false</LinkIncremental>
     <PreferredToolArchitecture>x64</PreferredToolArchitecture>

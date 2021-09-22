@@ -44,21 +44,21 @@ The Test Table Writer was written as a method to generate UI Automation tests fo
         - "Command Arguments" --> `$(TargetPath) /name:*uiatextrange*generated* /inproc`
 
 # Position chart
-The text buffer is assumed to be partially filled. Specifically, the top half of the text buffer contains text, and each row is filled with 9 segments of alternating text. For visualization,
+The text buffer is assumed to be partially filled. Specifically, the top half of the text buffer contains text, and each row is filled with 10 segments of alternating text. For visualization,
 the ascii diagram below shows what the text buffer may look like.
 ```
-+---------------------------+
-|1XX   XXX   X2X   XXX   XXX|
-|XXX   XXX   XXX   XXX   XXX|
-|XXX   XXX   X3X   XXX   XXX|
-|XXX   XXX   XXX   XXX   XXX|
-|XXX   XXX   X4X   XXX   XX5|
-|6                          |
-|                           |
-|             7             |
-|                           |
-|                          8|
-+---------------------------+
++------------------------------+
+|1XX   XXX   X2X   XXX   XXX   |
+|XXX   XXX   XXX   XXX   XXX   |
+|XXX   XXX   X3X   XXX   XXX   |
+|XXX   XXX   XXX   XXX   XXX   |
+|XXX   XXX   X4X   XXX   XX5   |
+|6                             |
+|                              |
+|             7                |
+|                              |
+|                             8|
++------------------------------+
 9
 ```
 The following positions are being tested:
@@ -84,6 +84,11 @@ Each position above already has a predefined variable name. However, a few heuri
     - `C`: move by character. For simplicity, assumes that each character is one-cell wide.
 - `<name>P<number>L`, `<name>M<number>L`:
     - same as above, except move by line. For simplicity, assumes that you won't hit a buffer boundary.
+- `segment#L<name>`
+    - This is mainly used for word navigation to target a segment of text in the buffer.
+    - `segment#` refers to the beginning of a segment of text in a row. The leftmost run of text is `segment0`, whereas the rightmost run of text is `segment4`.
+    - `L<name>` refers to the line number we're targeting, relative to the `<name>` variable. For example, `Lorigin` means that the y-position should be that of `origin`.
+    - Overall, this allows us to target the beginning of segments of text. `segment0Lorigin` and `segment0LmidTop` both refer to the beginning of the first segment of text on the top line (aka `origin`).
 
 # Helpful terms and concepts
 - *degenerate*: the text range encompasses no text. Also, means the start and end endpoints are the same.

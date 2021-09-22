@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
+        INITIALIZE_BINDABLE_ENUM_SETTING(FirstWindowPreference, FirstWindowPreference, FirstWindowPreference, L"Globals_FirstWindowPreference", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_LaunchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
 
@@ -33,7 +34,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::LaunchPageNavigationState>();
-        _State.Settings().RefreshDefaultTerminals();
     }
 
     IInspectable Launch::CurrentDefaultProfile()
@@ -67,5 +67,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
 
         return winrt::single_threaded_observable_vector(std::move(profiles));
+    }
+
+    bool Launch::ShowFirstWindowPreference() const noexcept
+    {
+        return Feature_PersistedWindowLayout::IsEnabled();
     }
 }

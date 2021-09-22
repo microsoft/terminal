@@ -39,6 +39,8 @@ namespace TerminalApp
         String ParseCommandlineMessage { get; };
         Boolean ShouldExitEarly { get; };
 
+        void Quit();
+
         void LoadSettings();
         Windows.UI.Xaml.UIElement GetRoot();
 
@@ -53,6 +55,7 @@ namespace TerminalApp
         void IdentifyWindow();
         String WindowName;
         UInt64 WindowId;
+        void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         Boolean IsQuakeWindow();
 
@@ -70,8 +73,9 @@ namespace TerminalApp
 
         TaskbarState TaskbarState{ get; };
 
-        Boolean GetMinimizeToTray();
-        Boolean GetAlwaysShowTrayIcon();
+        Boolean GetMinimizeToNotificationArea();
+        Boolean GetAlwaysShowNotificationIcon();
+        Boolean GetShowTitleInTitlebar();
 
         FindTargetWindowResult FindTargetWindow(String[] args);
 
@@ -95,5 +99,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
     }
 }

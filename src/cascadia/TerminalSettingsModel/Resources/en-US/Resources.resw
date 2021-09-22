@@ -178,6 +178,9 @@
   <data name="CloseWindowCommandKey" xml:space="preserve">
     <value>Close window</value>
   </data>
+  <data name="OpenSystemMenuCommandKey" xml:space="preserve">
+    <value>Open system menu</value>
+  </data>
   <data name="CommandPromptDisplayName" xml:space="preserve">
     <value>Command Prompt</value>
     <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
@@ -466,7 +469,7 @@
     <value>Windows Console Host</value>
     <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
   </data>
-  <data name="MinimizeToTrayCommandKey" xml:space="preserve">
-    <value>Minimize current window to tray</value>
+  <data name="QuitCommandKey" xml:space="preserve">
+    <value>Quit the Terminal</value>
   </data>
 </root>

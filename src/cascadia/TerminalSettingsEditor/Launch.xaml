@@ -74,7 +74,7 @@
                                         x:Uid="Globals_DefaultTerminal"
                                         x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
-                              ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
+                              ItemsSource="{x:Bind State.Settings.DefaultTerminals}"
                               SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
@@ -132,6 +132,15 @@
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
                     <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
                 </local:SettingContainer>
+
+                <!--  First Window Behavior  -->
+                <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
+                                        Visibility="{x:Bind ShowFirstWindowPreference}">
+                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                       ItemsSource="{x:Bind FirstWindowPreferenceList}"
+                                       SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />
+                </local:SettingContainer>
+
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_LaunchMode">

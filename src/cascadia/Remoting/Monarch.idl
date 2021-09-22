@@ -31,21 +31,33 @@ namespace Microsoft.Terminal.Remoting
         Windows.Foundation.IReference<UInt64> WindowID;
     }
 
+    struct PeasantInfo
+    {
+        UInt64 Id;
+        String Name;
+        String TabTitle;
+    };
 
     [default_interface] runtimeclass Monarch {
         Monarch();
 
         UInt64 GetPID();
         UInt64 AddPeasant(IPeasant peasant);
+        UInt64 GetNumberOfPeasants();
         ProposeCommandlineResult ProposeCommandline(CommandlineArgs args);
         void HandleActivatePeasant(WindowActivatedArgs args);
         void SummonWindow(SummonWindowSelectionArgs args);
+        void SignalClose(UInt64 peasantId);
 
         void SummonAllWindows();
-        Windows.Foundation.Collections.IMapView<UInt64, String> GetPeasantNames { get; };
+        Boolean DoesQuakeWindowExist();
+        Windows.Foundation.Collections.IVectorView<PeasantInfo> GetPeasantInfos { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, FindTargetWindowArgs> FindTargetWindowRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> ShowTrayIconRequested;
-        event Windows.Foundation.TypedEventHandler<Object, Object> HideTrayIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> ShowNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> HideNotificationIconRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowCreated;
+        event Windows.Foundation.TypedEventHandler<Object, Object> WindowClosed;
+        event Windows.Foundation.TypedEventHandler<Object, Object> QuitAllRequested;
     };
 }
