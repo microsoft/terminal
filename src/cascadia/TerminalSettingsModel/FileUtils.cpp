@@ -75,8 +75,8 @@ namespace Microsoft::Terminal::Settings::Model
         // Now, get the Everyone and Admins SIDS so we can make sure they're
         // the ones in this file.
 
-        wil::unique_sid everyoneSid{};
-        wil::unique_sid adminGroupSid{};
+        wil::unique_sid everyoneSid;
+        wil::unique_sid adminGroupSid;
         SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
         SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
 
@@ -94,17 +94,17 @@ namespace Microsoft::Terminal::Settings::Model
 
         // For grfAccessPermissions, GENERIC_ALL turns into STANDARD_RIGHTS_ALL,
         // and GENERIC_READ -> READ_CONTROL
-        hadExpectedPermissions = hadExpectedPermissions && WI_AreAllFlagsSet(pEA[0].grfAccessPermissions, STANDARD_RIGHTS_ALL);
-        hadExpectedPermissions = hadExpectedPermissions && pEA[0].grfInheritance == NO_INHERITANCE;
-        hadExpectedPermissions = hadExpectedPermissions && pEA[0].Trustee.TrusteeForm == TRUSTEE_IS_SID;
+        hadExpectedPermissions &= WI_AreAllFlagsSet(pEA[0].grfAccessPermissions, STANDARD_RIGHTS_ALL);
+        hadExpectedPermissions &= pEA[0].grfInheritance == NO_INHERITANCE;
+        hadExpectedPermissions &= pEA[0].Trustee.TrusteeForm == TRUSTEE_IS_SID;
         // SIDs are void*'s that happen to convert to a wchar_t
-        hadExpectedPermissions = hadExpectedPermissions && *(pEA[0].Trustee.ptstrName) == *(LPWSTR)(adminGroupSid.get());
+        hadExpectedPermissions &= *(pEA[0].Trustee.ptstrName) == *(LPWSTR)(adminGroupSid.get());
 
         // Now check the other EXPLICIT_ACCESS
-        hadExpectedPermissions = hadExpectedPermissions && WI_IsFlagSet(pEA[1].grfAccessPermissions, READ_CONTROL);
-        hadExpectedPermissions = hadExpectedPermissions && pEA[1].grfInheritance == NO_INHERITANCE;
-        hadExpectedPermissions = hadExpectedPermissions && pEA[1].Trustee.TrusteeForm == TRUSTEE_IS_SID;
-        hadExpectedPermissions = hadExpectedPermissions && *(pEA[1].Trustee.ptstrName) == *(LPWSTR)(everyoneSid.get());
+        hadExpectedPermissions &= WI_IsFlagSet(pEA[1].grfAccessPermissions, READ_CONTROL);
+        hadExpectedPermissions &= pEA[1].grfInheritance == NO_INHERITANCE;
+        hadExpectedPermissions &= pEA[1].Trustee.TrusteeForm == TRUSTEE_IS_SID;
+        hadExpectedPermissions &= *(pEA[1].Trustee.ptstrName) == *(LPWSTR)(everyoneSid.get());
 
         return hadExpectedPermissions;
     }
@@ -206,8 +206,8 @@ namespace Microsoft::Terminal::Settings::Model
             // SYSTEM, but if I did that, then even we can't write the file
             // while elevated, which isn't what we want.
 
-            wil::unique_sid everyoneSid{};
-            wil::unique_sid adminGroupSid{};
+            wil::unique_sid everyoneSid;
+            wil::unique_sid adminGroupSid;
             SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
             SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
 
@@ -217,8 +217,8 @@ namespace Microsoft::Terminal::Settings::Model
             // Create a well-known SID for the Everyone group.
             THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &everyoneSid));
 
-            EXPLICIT_ACCESS ea[2];
-            ZeroMemory(&ea, 2 * sizeof(EXPLICIT_ACCESS));
+            EXPLICIT_ACCESS ea[2]{};
+
             // Grant Admins all permissions on this file
             ea[0].grfAccessPermissions = GENERIC_ALL;
             ea[0].grfAccessMode = SET_ACCESS;
