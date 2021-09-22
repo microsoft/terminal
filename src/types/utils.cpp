@@ -39,10 +39,10 @@ std::wstring Utils::GuidToString(const GUID guid)
 // Return Value:
 // - A GUID if the string could successfully be parsed. On failure, throws the
 //      failing HRESULT.
-GUID Utils::GuidFromString(const std::wstring wstr)
+GUID Utils::GuidFromString(_Null_terminated_ const wchar_t* str)
 {
-    GUID result{};
-    THROW_IF_FAILED(IIDFromString(wstr.c_str(), &result));
+    GUID result;
+    THROW_IF_FAILED(IIDFromString(str, &result));
     return result;
 }
 

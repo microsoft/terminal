@@ -18,7 +18,6 @@ Author(s):
 
 #include "AppearanceConfig.g.h"
 #include "JsonUtils.h"
-#include "../inc/cppwinrt_utils.h"
 #include "IInheritable.h"
 #include <DefaultSettings.h>
 
@@ -27,8 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct AppearanceConfig : AppearanceConfigT<AppearanceConfig>, IInheritable<AppearanceConfig>
     {
     public:
-        AppearanceConfig(const winrt::weak_ref<Profile> sourceProfile);
-        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const winrt::com_ptr<AppearanceConfig> source, const winrt::weak_ref<Profile> sourceProfile);
+        AppearanceConfig(winrt::weak_ref<Profile> sourceProfile);
+        static winrt::com_ptr<AppearanceConfig> CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
 
@@ -53,6 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::IAppearanceConfig, bool, RetroTerminalEffect, false);
         INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, PixelShaderPath, L"");
         INHERITABLE_SETTING(Model::IAppearanceConfig, Model::IntenseStyle, IntenseTextStyle, Model::IntenseStyle::Bright);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;

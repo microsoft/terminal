@@ -274,18 +274,18 @@ void AppCommandlineArgs::_buildSplitPaneParser()
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
             auto terminalArgs{ _getNewTerminalArgs(subcommand) };
-            auto style{ SplitState::Automatic };
+            auto style{ SplitDirection::Automatic };
             // Make sure to use the `Option`s here to check if they were set -
             // _getNewTerminalArgs might reset them while parsing a commandline
             if ((*subcommand._horizontalOption || *subcommand._verticalOption))
             {
                 if (_splitHorizontal)
                 {
-                    style = SplitState::Horizontal;
+                    style = SplitDirection::Down;
                 }
                 else if (_splitVertical)
                 {
-                    style = SplitState::Vertical;
+                    style = SplitDirection::Right;
                 }
             }
             const auto splitMode{ subcommand._duplicateOption && _splitDuplicate ? SplitType::Duplicate : SplitType::Manual };

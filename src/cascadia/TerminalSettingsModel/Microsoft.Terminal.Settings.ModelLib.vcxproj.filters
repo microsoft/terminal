@@ -24,7 +24,7 @@
     <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
-    <ClCompile Include="DefaultProfileUtils.cpp">
+    <ClCompile Include="DynamicProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
@@ -34,6 +34,18 @@
     <ClCompile Include="IconPathConverter.cpp" />
     <ClCompile Include="DefaultTerminal.cpp" />
     <ClCompile Include="FileUtils.cpp" />
+    <ClCompile Include="BaseVisualStudioGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsDevCmdGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsDevShellGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
+    <ClCompile Include="VsSetupConfiguration.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -57,7 +69,7 @@
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="DefaultProfileUtils.h">
+    <ClInclude Include="DynamicProfileUtils.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="JsonUtils.h">
@@ -68,6 +80,18 @@
     <ClInclude Include="DefaultTerminal.h" />
     <ClInclude Include="FileUtils.h" />
     <ClInclude Include="HashUtils.h" />
+    <ClInclude Include="BaseVisualStudioGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsDevCmdGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsDevShellGenerator.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsSetupConfiguration.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />

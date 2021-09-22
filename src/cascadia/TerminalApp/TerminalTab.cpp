@@ -490,40 +490,43 @@ namespace winrt::TerminalApp::implementation
     // - control: A TermControl to use in the new pane.
     // Return Value:
     // - <none>
-    void TerminalTab::SplitPane(SplitState splitType,
+    void TerminalTab::SplitPane(SplitDirection splitType,
                                 const float splitSize,
                                 const Profile& profile,
                                 TermControl& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
-        auto [first, second] = _activePane->Split(splitType, splitSize, profile, control);
+        // Depending on which direction will be split, the new pane can be
+        // either the first or second child, but this will always return the
+        // original pane first.
+        auto [original, newPane] = _activePane->Split(splitType, splitSize, profile, control);
         if (activePaneId)
         {
-            first->Id(activePaneId.value());
-            second->Id(_nextPaneId);
+            original->Id(activePaneId.value());
+            newPane->Id(_nextPaneId);
             ++_nextPaneId;
         }
         else
         {
-            first->Id(_nextPaneId);
+            original->Id(_nextPaneId);
             ++_nextPaneId;
-            second->Id(_nextPaneId);
+            newPane->Id(_nextPaneId);
             ++_nextPaneId;
         }
-        _activePane = first;
+        _activePane = original;
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToControl(second->Id().value(), control);
-        _AttachEventHandlersToPane(first);
-        _AttachEventHandlersToPane(second);
+        _AttachEventHandlersToControl(newPane->Id().value(), control);
+        _AttachEventHandlersToPane(original);
+        _AttachEventHandlersToPane(newPane);
 
         // Immediately update our tracker of the focused pane now. If we're
         // splitting panes during startup (from a commandline), then it's
         // possible that the focus events won't propagate immediately. Updating
         // the focus here will give the same effect though.
-        _UpdateActivePane(second);
+        _UpdateActivePane(newPane);
     }
 
     // Method Description:
@@ -609,7 +612,7 @@ namespace winrt::TerminalApp::implementation
         const auto previousId = _activePane->Id();
 
         // Add the new pane as an automatic split on the active pane.
-        auto first = _activePane->AttachPane(pane, SplitState::Automatic);
+        auto first = _activePane->AttachPane(pane, SplitDirection::Automatic);
 
         // under current assumptions this condition should always be true.
         if (previousId)
@@ -1397,11 +1400,22 @@ namespace winrt::TerminalApp::implementation
         deselectedTabBrush.Color(deselectedTabColor);
 
         // currently if a tab has a custom color, a deselected state is
-        // signified by using the same color with a bit ot transparency
+        // signified by using the same color with a bit of transparency
+        //
+        // Prior to MUX 2.7, we set TabViewItemHeaderBackground, but now we can
+        // use TabViewItem().Background() for that. HOWEVER,
+        // TabViewItem().Background() only sets the color of the tab background
+        // when the TabViewItem is unselected. So we still need to set the other
+        // properties ourselves.
+        TabViewItem().Background(deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
+
+        // TabViewItem().Foreground() unfortunately does not work for us. It
+        // sets the color for the text when the TabViewItem isn't selected, but
+        // not when it is hovered, pressed, dragged, or selected, so we'll need
+        // to just set them all anyways.
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForeground"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundSelected"), fontBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderForegroundPointerOver"), fontBrush);
@@ -1439,7 +1453,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_ClearTabBackgroundColor()
     {
         winrt::hstring keys[] = {
-            L"TabViewItemHeaderBackground",
             L"TabViewItemHeaderBackgroundSelected",
             L"TabViewItemHeaderBackgroundPointerOver",
             L"TabViewItemHeaderForeground",
@@ -1459,6 +1472,9 @@ namespace winrt::TerminalApp::implementation
                 TabViewItem().Resources().Remove(key);
             }
         }
+
+        // Clear out the Background.
+        TabViewItem().Background(nullptr);
 
         _RefreshVisualState();
         _colorCleared();
@@ -1484,7 +1500,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::_RefreshVisualState()
     {
-        if (_focusState != FocusState::Unfocused)
+        if (TabViewItem().IsSelected())
         {
             VisualStateManager::GoToState(TabViewItem(), L"Normal", true);
             VisualStateManager::GoToState(TabViewItem(), L"Selected", true);
@@ -1515,14 +1531,14 @@ namespace winrt::TerminalApp::implementation
     // Arguments:
     // - availableSpace: The theoretical space that's available for this Tab's content
     // Return Value:
-    // - The SplitState that we should use for an `Automatic` split given
+    // - The SplitDirection that we should use for an `Automatic` split given
     //   `availableSpace`
-    SplitState TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
+    SplitDirection TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitState::Vertical);
+        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitDirection::Right);
     }
 
-    bool TerminalTab::PreCalculateCanSplit(SplitState splitType,
+    bool TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
                                            const float splitSize,
                                            winrt::Windows::Foundation::Size availableSpace) const
     {

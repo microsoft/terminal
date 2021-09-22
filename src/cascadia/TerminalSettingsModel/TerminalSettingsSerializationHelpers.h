@@ -342,6 +342,34 @@ struct ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<::winr
     }
 };
 
+struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<double>
+{
+    double FromJson(const Json::Value& json)
+    {
+        return ::base::saturated_cast<double>(json.asUInt()) / 100.0;
+    }
+
+    bool CanConvert(const Json::Value& json)
+    {
+        if (!json.isUInt())
+        {
+            return false;
+        }
+        const auto value = json.asUInt();
+        return value >= 0 && value <= 100;
+    }
+
+    Json::Value ToJson(const double& val)
+    {
+        return std::clamp(::base::saturated_cast<uint32_t>(std::round(val * 100.0)), 0u, 100u);
+    }
+
+    std::string TypeDescription() const
+    {
+        return "number (>= 0, <=100)";
+    }
+};
+
 // Possible FocusDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
 {
@@ -369,12 +397,16 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::ResizeDirection)
 };
 
 // Possible SplitState values
-JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitState)
+JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::SplitDirection)
 {
-    JSON_MAPPINGS(3) = {
-        pair_type{ "vertical", ValueType::Vertical },
-        pair_type{ "horizontal", ValueType::Horizontal },
+    JSON_MAPPINGS(7) = {
         pair_type{ "auto", ValueType::Automatic },
+        pair_type{ "up", ValueType::Up },
+        pair_type{ "right", ValueType::Right },
+        pair_type{ "down", ValueType::Down },
+        pair_type{ "left", ValueType::Left },
+        pair_type{ "vertical", ValueType::Right },
+        pair_type{ "horizontal", ValueType::Down },
     };
 };
 
