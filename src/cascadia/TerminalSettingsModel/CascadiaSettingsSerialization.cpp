@@ -70,7 +70,8 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
     return finalVal.value();
 }
 
-// Concatenates the two given strings and returns them as a path.
+// Concatenates the two given strings (!) and returns them as a path.
+// You better make sure there's a path seperator at the end of lhs or at the start of rhs.
 static std::filesystem::path buildPath(const std::wstring_view& lhs, const std::wstring_view& rhs)
 {
     std::wstring buffer;
@@ -175,20 +176,23 @@ void SettingsLoader::ApplyRuntimeInitialSettings()
 // If a matching profile doesn't exist yet in .userSettings, one will be created.
 void SettingsLoader::MergeInboxIntoUserSettings()
 {
-    for (const auto& generatedProfile : inboxSettings.profiles)
+    for (const auto& profile : inboxSettings.profiles)
     {
-        if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(generatedProfile->Guid(), generatedProfile); !inserted)
+        if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), profile); !inserted)
         {
             // If inserted is false, we got a matching user profile with identical GUID.
             // --> The generated profile is a parent of the existing user profile.
-            it->second->InsertParent(generatedProfile);
+            it->second->InsertParent(profile);
         }
         else
         {
             // If inserted is true, then this is a generated profile that doesn't exist in the user's settings.
             // While emplace() has already created an appropriate entry in .profilesByGuid, we still need to
             // add it to .profiles (which is basically a sorted list of .profilesByGuid's values).
-            userSettings.profiles.emplace_back(CreateChild(generatedProfile));
+            //
+            // When a user modifies a profile they shouldn't modify the (static/constant)
+            // inbox profile of course. That's why we need to call CreateChild here.
+            userSettings.profiles.emplace_back(CreateChild(profile));
         }
     }
 }

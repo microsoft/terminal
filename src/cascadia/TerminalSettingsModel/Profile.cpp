@@ -123,7 +123,6 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_TabColor = _TabColor;
     profile->_SuppressApplicationTitle = _SuppressApplicationTitle;
     profile->_UseAcrylic = _UseAcrylic;
-    profile->_AcrylicOpacity = _AcrylicOpacity;
     profile->_ScrollState = _ScrollState;
     profile->_Padding = _Padding;
     profile->_Commandline = _Commandline;

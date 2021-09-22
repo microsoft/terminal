@@ -51,6 +51,7 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const Appearan
     appearance->_RetroTerminalEffect = source->_RetroTerminalEffect;
     appearance->_PixelShaderPath = source->_PixelShaderPath;
     appearance->_IntenseTextStyle = source->_IntenseTextStyle;
+    appearance->_Opacity = source->_Opacity;
     return appearance;
 }
 
