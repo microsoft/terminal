@@ -23,12 +23,13 @@ Abstract:
 //   (type, function name, JSON key, ...variadic construction arguments)
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    enum FileSource
+    enum FileSource : int
     {
-        Shared,
-        Local,
+        Shared = 0x1,
+        Local = 0x2,
         // ElevatedOnly
     };
+    DEFINE_ENUM_FLAG_OPERATORS(FileSource);
 
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                                  \
     X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
