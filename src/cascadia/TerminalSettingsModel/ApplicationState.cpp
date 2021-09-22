@@ -138,8 +138,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Json::StreamWriterBuilder wbuilder;
 
-        _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared)));
-        _writeElevatedContents(Json::writeString(wbuilder, ToJson(FileSource::Local)));
+        if (::Microsoft::Console::Utils::IsElevated())
+        {
+            _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared)));
+            _writeElevatedContents(Json::writeString(wbuilder, ToJson(FileSource::Local)));
+        }
+        else
+        {
+            _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared | FileSource::Local)));
+        }
     }
     CATCH_LOG()
 
@@ -174,7 +181,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             auto state = _state.lock_shared();
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
-    if (parseSource == source)                                   \
+    if (WI_IsFlagSet(parseSource, source))                       \
         JsonUtils::SetValueForKey(root, key, state->name);
 
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
