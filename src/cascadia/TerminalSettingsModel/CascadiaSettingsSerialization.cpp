@@ -71,7 +71,7 @@ static auto extractValueFromTaskWithoutMainThreadAwait(TTask&& task) -> decltype
 }
 
 // Concatenates the two given strings (!) and returns them as a path.
-// You better make sure there's a path seperator at the end of lhs or at the start of rhs.
+// You better make sure there's a path separator at the end of lhs or at the start of rhs.
 static std::filesystem::path buildPath(const std::wstring_view& lhs, const std::wstring_view& rhs)
 {
     std::wstring buffer;
