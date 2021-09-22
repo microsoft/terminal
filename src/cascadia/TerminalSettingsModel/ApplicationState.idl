@@ -25,7 +25,7 @@ namespace Microsoft.Terminal.Settings.Model
 
         void Reload();
 
-        String FilePath { get; };
+        Boolean IsStatePath(String filename);
 
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts { get; set; };
 

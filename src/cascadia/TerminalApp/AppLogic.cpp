@@ -908,17 +908,15 @@ namespace winrt::TerminalApp::implementation
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
-            [this, settingsPath](wil::FolderChangeEvent, PCWSTR fileModified) {
-                // TODO!
-                static const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
+            [this, settingsBasename = settingsPath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
+                static const auto appState{ ApplicationState::SharedInstance() };
+                const winrt::hstring modifiedBasename{ std::filesystem::path{ fileModified }.filename().c_str() };
 
-                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
-
-                if (modifiedBasename == settingsPath.filename())
+                if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
                 }
-                else if (modifiedBasename == statePath.filename())
+                else if (appState.IsStatePath(modifiedBasename))
                 {
                     _reloadState();
                 }
