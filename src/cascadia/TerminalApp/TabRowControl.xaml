@@ -26,6 +26,7 @@
                       Margin="9,4,0,0"
                       FontFamily="Segoe MDL2 Assets"
                       FontSize="16"
+                      Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                       Glyph="&#xEA18;"
                       Visibility="{x:Bind ShowElevationShield, Mode=OneWay}" />
         </mux:TabView.TabStripHeader>
