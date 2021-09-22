@@ -284,18 +284,12 @@ namespace winrt::TerminalApp::implementation
     {
         if (args == nullptr)
         {
-            //LOG_IF_FAILED(_OpenNewTab(nullptr));
-            const auto newPane = _MakePane(nullptr);
-            newPane->SetActive();
-            _CreateNewTabFromPane(newPane);
+            LOG_IF_FAILED(_OpenNewTab(nullptr));
             args.Handled(true);
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
-            //LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
-            const auto newPane = _MakePane(realArgs.TerminalArgs());
-            newPane->SetActive();
-            _CreateNewTabFromPane(newPane);
+            LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }
     }
