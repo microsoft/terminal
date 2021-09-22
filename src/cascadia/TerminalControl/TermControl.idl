@@ -71,5 +71,7 @@ namespace Microsoft.Terminal.Control
         void ToggleReadOnly();
 
         String ReadEntireBuffer();
+
+        Windows.UI.Xaml.Media.Brush BackgroundBrush { get; };
     }
 }

@@ -42,7 +42,7 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     wil::unique_cotaskmem_string systemPath;
     THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
     std::wstring command(systemPath.get());
-    WSLDistro->Commandline(command + L"\\wsl.exe -d " + distName);
+    WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
     WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
     WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
     WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");

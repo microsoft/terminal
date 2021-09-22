@@ -1597,10 +1597,9 @@ namespace winrt::TerminalApp::implementation
     // - true if we should prompt the user for approval.
     bool TerminalPage::_shouldPromptForCommandline(const winrt::hstring& cmdline) const
     {
-        // NOTE: For debugging purposes, changing this to `true ||
-        // _isElevated()` is a handy way of forcing the elevation logic, even
-        // when unelevated.
-        if (_isElevated())
+        // NOTE: For debugging purposes, changing this to `true || _isElevated()`
+        // is a handy way of forcing the elevation logic, even when unelevated.
+        if (true || _isElevated())
         {
             // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.

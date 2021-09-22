@@ -11,50 +11,63 @@
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              mc:Ignorable="d">
 
-    <Grid HorizontalAlignment="Center"
-          VerticalAlignment="Center">
-        <Border Margin="8,8,8,8"
-                Padding="16,8,16,8"
-                Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
-                BorderBrush="{ThemeResource SystemAccentColor}"
-                BorderThickness="2,2,2,2"
-                CornerRadius="{ThemeResource OverlayCornerRadius}">
-            <StackPanel Orientation="Vertical">
-                <TextBlock x:Uid="ApproveCommandlineWarningTitle"
-                           Padding="0,0,0,16"
-                           HorizontalAlignment="Left"
-                           FontSize="20"
-                           FontWeight="Normal"
-                           TextWrapping="WrapWholeWords" />
+    <!--
+        We have to use two grids to be tricky here:
+        - The outer grid will get its background from the control it hosts, and
+        expands to fit its container. This will make it look like the background
+        fills the space available.
+        - The inner grid is set to Center,Center, so that the "dialog" appears
+        centered
+    -->
 
-                <TextBlock x:Uid="ApproveCommandlineWarningPrefixTextBlock"
-                           HorizontalAlignment="Left"
-                           TextWrapping="WrapWholeWords" />
+    <Grid x:Name="RootGrid"
+          HorizontalAlignment="Stretch"
+          VerticalAlignment="Stretch">
+        <Grid HorizontalAlignment="Center"
+              VerticalAlignment="Center">
+            <Border Margin="8,8,8,8"
+                    Padding="16,8,16,8"
+                    Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
+                    BorderBrush="{ThemeResource SystemAccentColor}"
+                    BorderThickness="2,2,2,2"
+                    CornerRadius="{ThemeResource OverlayCornerRadius}">
+                <StackPanel Orientation="Vertical">
+                    <TextBlock x:Uid="ApproveCommandlineWarningTitle"
+                               Padding="0,0,0,16"
+                               HorizontalAlignment="Left"
+                               FontSize="20"
+                               FontWeight="Normal"
+                               TextWrapping="WrapWholeWords" />
 
-                <TextBlock Margin="0,8,0,8"
-                           HorizontalAlignment="Center"
-                           FontFamily="Cascadia Code"
-                           Text="{x:Bind Commandline, Mode=OneWay}"
-                           TextWrapping="WrapWholeWords" />
+                    <TextBlock x:Uid="ApproveCommandlineWarningPrefixTextBlock"
+                               HorizontalAlignment="Left"
+                               TextWrapping="WrapWholeWords" />
 
-                <TextBlock x:Uid="ApproveCommandlineWarningSuffixTextBlock"
-                           HorizontalAlignment="Left"
-                           TextWrapping="WrapWholeWords" />
-                <StackPanel HorizontalAlignment="Right"
-                            Orientation="Horizontal">
-                    <Button x:Name="PrimaryButton"
-                            x:Uid="ApproveCommandlineWarning_PrimaryButton"
-                            Margin="8"
-                            HorizontalAlignment="Right"
-                            Click="_primaryButtonClick"
-                            Style="{StaticResource AccentButtonStyle}" />
-                    <Button x:Name="CancelButton"
-                            x:Uid="ApproveCommandlineWarning_CancelButton"
-                            HorizontalAlignment="Right"
-                            Click="_cancelButtonClick" />
+                    <TextBlock Margin="0,8,0,8"
+                               HorizontalAlignment="Center"
+                               FontFamily="Cascadia Code"
+                               Text="{x:Bind Commandline, Mode=OneWay}"
+                               TextWrapping="WrapWholeWords" />
+
+                    <TextBlock x:Uid="ApproveCommandlineWarningSuffixTextBlock"
+                               HorizontalAlignment="Left"
+                               TextWrapping="WrapWholeWords" />
+                    <StackPanel HorizontalAlignment="Right"
+                                Orientation="Horizontal">
+                        <Button x:Name="PrimaryButton"
+                                x:Uid="ApproveCommandlineWarning_PrimaryButton"
+                                Margin="8"
+                                HorizontalAlignment="Right"
+                                Click="_primaryButtonClick"
+                                Style="{StaticResource AccentButtonStyle}" />
+                        <Button x:Name="CancelButton"
+                                x:Uid="ApproveCommandlineWarning_CancelButton"
+                                HorizontalAlignment="Right"
+                                Click="_cancelButtonClick" />
+                    </StackPanel>
                 </StackPanel>
-            </StackPanel>
-        </Border>
+            </Border>
+        </Grid>
     </Grid>
 
 </UserControl>
