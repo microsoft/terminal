@@ -63,8 +63,10 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
-    ApplicationState::ApplicationState(std::filesystem::path path) noexcept :
-        _path{ std::move(path) },
+    ApplicationState::ApplicationState(std::filesystem::path sharedPath,
+                                       std::filesystem::path elevatedPath) noexcept :
+        _sharedPath{ std::move(sharedPath) },
+        _elevatedPath{ std::move(elevatedPath) },
         _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
     {
         _read();
@@ -87,33 +89,43 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Returns the state.json path on the disk.
     winrt::hstring ApplicationState::FilePath() const noexcept
     {
-        return winrt::hstring{ _path.wstring() };
+        return winrt::hstring{ _sharedPath.wstring() };
     }
 
+    // TODO!
     // Deserializes the state.json at _path into this ApplicationState.
     // * ANY errors during app state will result in the creation of a new empty state.
     // * ANY errors during runtime will result in changes being partially ignored.
     void ApplicationState::_read() const noexcept
     try
     {
-        // Use the derived class's implementation of _readFileContents to get the
-        // actual contents of the file.
-        const auto data = _readFileContents().value_or(std::string{});
-        if (data.empty())
-        {
-            return;
-        }
-
         std::string errs;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
-        Json::Value root;
-        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        const auto sharedData = _readSharedContents().value_or(std::string{});
+        if (!sharedData.empty())
         {
-            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-        }
+            Json::Value root;
+            if (!reader->parse(sharedData.data(), sharedData.data() + sharedData.size(), &root, &errs))
+            {
+                throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+            }
 
-        FromJson(root);
+            FromJson(root, FileSource::Shared);
+        }
+        if (::Microsoft::Console::Utils::IsElevated())
+        {
+            if (const auto elevatedData{ _readElevatedContents().value_or(std::string{}) }; !elevatedData.empty())
+            {
+                Json::Value root;
+                if (!reader->parse(elevatedData.data(), elevatedData.data() + elevatedData.size(), &root, &errs))
+                {
+                    throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+                }
+
+                FromJson(root, FileSource::Local);
+            }
+        }
     }
     CATCH_LOG()
 
@@ -124,25 +136,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ApplicationState::_write() const noexcept
     try
     {
-        Json::Value root{ this->ToJson() };
-
         Json::StreamWriterBuilder wbuilder;
-        const auto content = Json::writeString(wbuilder, root);
 
-        // Use the derived class's implementation of _writeFileContents to write the
-        // file to disk.
-        _writeFileContents(content);
+        _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared)));
+        _writeElevatedContents(Json::writeString(wbuilder, ToJson(FileSource::Local)));
     }
     CATCH_LOG()
 
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
-        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / (::Microsoft::Console::Utils::IsElevated() ? elevatedStateFileName : stateFileName));
+        static auto state = winrt::make_self<ApplicationState>(GetBaseSettingsPath() / stateFileName,
+                                                               GetBaseSettingsPath() / elevatedStateFileName);
         return *state;
     }
 
-    void ApplicationState::FromJson(const Json::Value& root) const noexcept
+    void ApplicationState::FromJson(const Json::Value& root, FileSource parseSource) const noexcept
     {
         auto state = _state.lock();
         // GetValueForKey() comes in two variants:
@@ -150,17 +159,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // * return std::optional<T> by value
         // At the time of writing the former version skips missing fields in the json,
         // but we want to explicitly clear state fields that were removed from state.json.
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) state->name = JsonUtils::GetValueForKey<std::optional<type>>(root, key);
+#define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
+    if (parseSource == source)                                   \
+        state->name = JsonUtils::GetValueForKey<std::optional<type>>(root, key);
+
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
     }
-    Json::Value ApplicationState::ToJson() const noexcept
+
+    Json::Value ApplicationState::ToJson(FileSource parseSource) const noexcept
     {
         Json::Value root{ Json::objectValue };
 
         {
             auto state = _state.lock_shared();
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) JsonUtils::SetValueForKey(root, key, state->name);
+#define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
+    if (parseSource == source)                                   \
+        JsonUtils::SetValueForKey(root, key, state->name);
+
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         }
@@ -168,27 +184,42 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
 
     // Generate all getter/setters
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)    \
-    type ApplicationState::name() const noexcept            \
-    {                                                       \
-        const auto state = _state.lock_shared();            \
-        const auto& value = state->name;                    \
-        return value ? *value : type{ __VA_ARGS__ };        \
-    }                                                       \
-                                                            \
-    void ApplicationState::name(const type& value) noexcept \
-    {                                                       \
-        {                                                   \
-            auto state = _state.lock();                     \
-            state->name.emplace(value);                     \
-        }                                                   \
-                                                            \
-        _throttler();                                       \
+#define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
+    type ApplicationState::name() const noexcept                 \
+    {                                                            \
+        const auto state = _state.lock_shared();                 \
+        const auto& value = state->name;                         \
+        return value ? *value : type{ __VA_ARGS__ };             \
+    }                                                            \
+                                                                 \
+    void ApplicationState::name(const type& value) noexcept      \
+    {                                                            \
+        {                                                        \
+            auto state = _state.lock();                          \
+            state->name.emplace(value);                          \
+        }                                                        \
+                                                                 \
+        _throttler();                                            \
     }
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
-    void ApplicationState::_writeFileContents(const std::string_view content) const
+    std::optional<std::string> ApplicationState::_readSharedContents() const
+    {
+        return ReadUTF8FileIfExists(_sharedPath);
+    }
+
+    std::optional<std::string> ApplicationState::_readElevatedContents() const
+    {
+        return ::Microsoft::Console::Utils::IsElevated() ? ReadUTF8FileIfExists(_elevatedPath, true) : std::nullopt;
+    }
+
+    void ApplicationState::_writeSharedContents(const std::string_view content) const
+    {
+        WriteUTF8FileAtomic(_sharedPath, content);
+    }
+
+    void ApplicationState::_writeElevatedContents(const std::string_view content) const
     {
         if (::Microsoft::Console::Utils::IsElevated())
         {
@@ -201,16 +232,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // We're not worried about someone else doing that though, if they do
             // that with the wrong permissions, then we'll just ignore the file and
             // start over.
-            WriteUTF8File(_path, content, true);
+            WriteUTF8File(_elevatedPath, content, true);
         }
         else
         {
-            WriteUTF8FileAtomic(_path, content);
+            // do nothing
         }
     }
 
-    std::optional<std::string> ApplicationState::_readFileContents() const
-    {
-        return ReadUTF8FileIfExists(_path, ::Microsoft::Console::Utils::IsElevated());
-    }
 }
