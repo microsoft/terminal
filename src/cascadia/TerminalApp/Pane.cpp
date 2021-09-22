@@ -434,6 +434,42 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return nullptr;
     }
 
+    // Check if moving up or down the tree
+    if (direction == FocusDirection::Parent)
+    {
+        if (const auto parent = _FindParentOfPane(sourcePane))
+        {
+            // Keep a reference to which child we came from
+            parent->_parentChildPath = sourcePane->weak_from_this();
+
+            return parent;
+        }
+        return nullptr;
+    }
+
+    if (direction == FocusDirection::Child)
+    {
+        if (!sourcePane->_IsLeaf())
+        {
+            auto child = sourcePane->_firstChild;
+            // If we've recorded path try to go back down it
+            if (const auto prevFocus = sourcePane->_parentChildPath.lock())
+            {
+                child = prevFocus;
+            }
+            // clean up references
+            sourcePane->_parentChildPath.reset();
+            return child;
+        }
+        return nullptr;
+    }
+
+    // Since we are not doing parent/child movement we will be focusing a leaf
+    // pane next, so clear any set parent paths
+    sourcePane->WalkTree([](auto p) {
+        p->_parentChildPath.reset();
+    });
+
     // Previous movement relies on the last used panes
     if (direction == FocusDirection::Previous)
     {
@@ -455,43 +491,6 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     if (direction == FocusDirection::PreviousInOrder)
     {
         return PreviousPane(sourcePane);
-    }
-
-    // Check if moving up or down the tree
-    if (direction == FocusDirection::Parent)
-    {
-        if (const auto parent = _FindParentOfPane(sourcePane))
-        {
-            // Capture a weak reference to the original leaf pane so that
-            // we can keep the same TermControl focused and take the same path back down
-            // if a child movement is requested.
-            parent->_previouslyFocusedTerminal = sourcePane->_IsLeaf() ? sourcePane->weak_from_this() : sourcePane->_previouslyFocusedTerminal;
-
-            return parent;
-        }
-        return nullptr;
-    }
-
-    if (direction == FocusDirection::Child)
-    {
-        if (!sourcePane->_IsLeaf())
-        {
-            auto child = sourcePane->_firstChild;
-            // If we've recorded an originally focused terminal try to find it
-            if (const auto prevFocus = sourcePane->_previouslyFocusedTerminal.lock())
-            {
-                // We default to the first child, so just check if the second child
-                // has the terminal we are looking for.
-                if (const auto p = sourcePane->_secondChild->FindPane(prevFocus->_id.value()))
-                {
-                    child = sourcePane->_secondChild;
-                }
-            }
-            // clean up references
-            sourcePane->_previouslyFocusedTerminal.reset();
-            return child;
-        }
-        return nullptr;
     }
 
     // Fixed movement
@@ -1259,10 +1258,16 @@ TermControl Pane::GetLastFocusedTerminalControl()
     {
         if (_lastActive)
         {
-            if (const auto p = _previouslyFocusedTerminal.lock())
+            std::shared_ptr<Pane> pane = shared_from_this();
+            while (const auto p = pane->_parentChildPath.lock())
             {
-                return p->_control;
+                if (p->_IsLeaf())
+                {
+                    return p->_control;
+                }
+                pane = p;
             }
+            // We didn't find our child somehow, they might have closed under us.
         }
         return _firstChild->GetLastFocusedTerminalControl();
     }
@@ -1581,6 +1586,18 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
     auto closedChildClosedToken = closeFirst ? _firstClosedToken : _secondClosedToken;
     auto remainingChildClosedToken = closeFirst ? _secondClosedToken : _firstClosedToken;
 
+    // If we were a parent pane, and we pointed into the now closed child
+    // clear it. We will set it to something else later if
+    bool usedToFocusClosedChildsTerminal = false;
+    if (const auto prev = _parentChildPath.lock())
+    {
+        if (closedChild == prev)
+        {
+            _parentChildPath.reset();
+            usedToFocusClosedChildsTerminal = true;
+        }
+    }
+
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
@@ -1621,9 +1638,9 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
 
-        // If either of our children was focused, we want to take that focus from
-        // them.
-        _lastActive = _firstChild->_lastActive || _secondChild->_lastActive;
+        // If we or either of our children was focused, we want to take that
+        // focus from them.
+        _lastActive = _lastActive || _firstChild->_lastActive || _secondChild->_lastActive;
 
         // Remove all the ui elements of the remaining child. This'll make sure
         // we can re-attach the TermControl to our Grid.
@@ -1653,7 +1670,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
-        if (_lastActive)
+        if (usedToFocusClosedChildsTerminal || _lastActive)
         {
             _control.Focus(FocusState::Programmatic);
 
@@ -1746,9 +1763,28 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _borders = remainingBorders;
         _ApplySplitDefinitions();
 
-        // If the closed child was focused, transfer the focus to it's first sibling.
+        // If our child had focus and closed, just transfer to the first remaining
+        // child
         if (closedChild->_lastActive)
         {
+            _FocusFirstChild();
+        }
+        // We might not have focus currently, but if our parent does then we
+        // want to make sure we have a valid path to one of our children.
+        else if (usedToFocusClosedChildsTerminal)
+        {
+            // update our path to our first remaining leaf
+            _parentChildPath = _firstChild;
+            _firstChild->WalkTree([](auto p) {
+                if (p->_IsLeaf())
+                {
+                    return true;
+                }
+                p->_parentChildPath = p->_firstChild;
+                return false;
+            });
+            // This will focus the first terminal, and will set that leaf pane
+            // to the active pane if we nor one of our parents is not itself focused.
             _FocusFirstChild();
         }
 

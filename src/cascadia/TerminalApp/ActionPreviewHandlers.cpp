@@ -113,6 +113,9 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_PreviewColorScheme(const Settings::Model::SetColorSchemeArgs& args)
     {
         // Get the focused control
+        // TODO: GH#11153 Really this should apply to all active controls
+        // but right now we only keep one original setting, and handling for
+        // all controls is non-trivial.
         if (const auto& activeControl{ _GetActiveControl() })
         {
             if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })

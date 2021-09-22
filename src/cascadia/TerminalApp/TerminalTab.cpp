@@ -1098,8 +1098,19 @@ namespace winrt::TerminalApp::implementation
                     tab->Content(tab->_rootPane->GetRootElement());
                     tab->ExitZoom();
                 }
+
                 if (auto pane = weakPane.lock())
                 {
+                    // When a parent pane is selected, but one of its children
+                    // close out under it we still need to update title/focus information
+                    // but the GotFocus handler will rightly see that the _activePane
+                    // did not actually change. Triggering
+                    if (pane != tab->_activePane && !tab->_activePane->_IsLeaf())
+                    {
+                        co_await winrt::resume_foreground(tab->Content().Dispatcher());
+                        tab->_UpdateActivePane(tab->_activePane);
+                    }
+
                     for (auto i = tab->_mruPanes.begin(); i != tab->_mruPanes.end(); ++i)
                     {
                         if (*i == pane->Id())

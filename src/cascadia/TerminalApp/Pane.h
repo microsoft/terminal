@@ -212,7 +212,7 @@ private:
     float _desiredSplitPosition;
 
     std::optional<uint32_t> _id;
-    std::weak_ptr<Pane> _previouslyFocusedTerminal;
+    std::weak_ptr<Pane> _parentChildPath{};
 
     bool _lastActive{ false };
     winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
