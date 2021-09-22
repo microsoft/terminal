@@ -87,14 +87,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _read();
     }
 
-    // Returns the state.json path on the disk.
-    winrt::hstring ApplicationState::FilePath() const noexcept
+    bool ApplicationState::IsStatePath(const winrt::hstring& filename)
     {
-        return winrt::hstring{ _sharedPath.wstring() };
+        static const auto sharedPath{ _sharedPath.filename() };
+        static const auto elevatedPath{ _elevatedPath.filename() };
+        static const auto userPath{ _userPath.filename() };
+        return filename == sharedPath || filename == elevatedPath || filename == userPath;
     }
 
-    // TODO!
-    // Deserializes the state.json at _path into this ApplicationState.
+    // Deserializes the state.json and user-state (or elevated-state if
+    // elevated) into this ApplicationState.
     // * ANY errors during app state will result in the creation of a new empty state.
     // * ANY errors during runtime will result in changes being partially ignored.
     void ApplicationState::_read() const noexcept
@@ -103,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::string errs;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
+        // First get shared state out of `state.json` into us
         const auto sharedData = _readSharedContents().value_or(std::string{});
         if (!sharedData.empty())
         {
@@ -114,6 +117,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             FromJson(root, FileSource::Shared);
         }
+
+        // Then, try and get anything in user-state/elevated-state
         if (const auto localData{ _readLocalContents().value_or(std::string{}) }; !localData.empty())
         {
             Json::Value root;
@@ -149,6 +154,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return *state;
     }
 
+    // Method Description:
+    // - Loads data from the given json blob. Will only read the data that's in
+    //   the specified parseSource - so if we're reading the Local state file,
+    //   we won't destroy previously parsed Shared data.
+    // - READ: there's no layering for app state.
     void ApplicationState::FromJson(const Json::Value& root, FileSource parseSource) const noexcept
     {
         auto state = _state.lock();
@@ -202,11 +212,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
+    // Method Description:
+    // - Read the contents of our "shared" state - state that should be shared
+    //   for elevated and unelevated instances. This is things like the list of
+    //   generated profiles, the cmdpal commandlines.
     std::optional<std::string> ApplicationState::_readSharedContents() const
     {
         return ReadUTF8FileIfExists(_sharedPath);
     }
 
+    // Method Description:
+    // - Read the contents of our "local" state - state that should be kept in
+    //   separate files for elevated and unelevated instances. This is things
+    //   like the persisted window state, and the approved commandlines (though,
+    //   those don't matter when unelevated).
+    // - When elevated, this will DELETE `elevated-state.json` if it has bad
+    //   permissions, so we don't potentially read malicious data.
     std::optional<std::string> ApplicationState::_readLocalContents() const
     {
         return ::Microsoft::Console::Utils::IsElevated() ?
@@ -214,11 +235,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                    ReadUTF8FileIfExists(_userPath, false);
     }
 
+    // Method Description:
+    // - Write the contents of our "shared" state - state that should be shared
+    //   for elevated and unelevated instances. This will atomically write to
+    //   `state.json`
     void ApplicationState::_writeSharedContents(const std::string_view content) const
     {
         WriteUTF8FileAtomic(_sharedPath, content);
     }
 
+    // Method Description:
+    // - Write the contents of our "local" state - state that should be kept in
+    //   separate files for elevated and unelevated instances. When elevated,
+    //   this will write to `elevated-state.json`, and when unelevated, this
+    //   will atomically write to `user-state.json`
     void ApplicationState::_writeLocalContents(const std::string_view content) const
     {
         if (::Microsoft::Console::Utils::IsElevated())

@@ -18,19 +18,22 @@ Abstract:
 #include <inc/cppwinrt_utils.h>
 #include <JsonUtils.h>
 
-// This macro generates all getters and setters for ApplicationState.
-// It provides X with the following arguments:
-//   (type, function name, JSON key, ...variadic construction arguments)
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    // If a property is Shared, then it'll be stored in `state.json`, and used
+    // in both elevated and unelevated instances of the Terminal. If a property
+    // is marked Local, then it will have separate values for elevated and
+    // unelevated instances.
     enum FileSource : int
     {
         Shared = 0x1,
-        Local = 0x2,
-        // ElevatedOnly
+        Local = 0x2
     };
     DEFINE_ENUM_FLAG_OPERATORS(FileSource);
 
+// This macro generates all getters and setters for ApplicationState.
+// It provides X with the following arguments:
+//   (source, type, function name, JSON key, ...variadic construction arguments)
 #define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                                                                  \
     X(FileSource::Shared, std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                                                        \
     X(FileSource::Local, Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts")                                \
@@ -60,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson(FileSource parseSource) const noexcept;
 
         // General getters/setters
-        winrt::hstring FilePath() const noexcept;
+        bool IsStatePath(const winrt::hstring& filename);
 
         // State getters/setters
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
