@@ -13,7 +13,7 @@ param (
 )
 
 $fullPath = Resolve-Path $JsonFile
-$jsonData = Get-Content $JsonFile
+$jsonData = Get-Content -Raw $JsonFile | ConvertFrom-Json | ConvertTo-Json -Compress -Depth 100
 
 @(
     "// Copyright (c) Microsoft Corporation",
@@ -21,7 +21,5 @@ $jsonData = Get-Content $JsonFile
     "",
     "// THIS IS AN AUTO-GENERATED FILE",
     "// Generated from $($fullPath.Path)",
-    "constexpr std::string_view $($VariableName){",
-    ($jsonData | ForEach-Object { "R`"#($_`n)#`"" }),
-    "};"
+    "constexpr std::string_view $VariableName{ R`"#($jsonData)#`" };"
 ) | Out-File -FilePath $OutPath -Encoding utf8
