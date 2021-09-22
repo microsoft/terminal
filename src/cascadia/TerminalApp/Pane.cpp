@@ -2103,6 +2103,15 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirecti
     return _Split(splitType, splitSize, newPane);
 }
 
+// Method Description:
+// - The same as above, except this takes in the pane directly instead of a
+//   profile and control to make a pane with
+// Arguments:
+// - splitType: what type of split we want to create.
+// - splitSize: the desired size of the split
+// - newPane: the new pane
+// Return Value:
+// - The two newly created Panes, with the original pane first
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
                                                                     std::shared_ptr<Pane> newPane)

@@ -483,11 +483,11 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Split the focused pane in our tree of panes, and place the
-    //   given TermControl into the newly created pane.
+    //   given pane into the tree of panes according to the split
     // Arguments:
     // - splitType: The type of split we want to create.
-    // - profile: The profile GUID to associate with the newly created pane.
-    // - control: A TermControl to use in the new pane.
+    // - splitSize: The size of the split we want to create
+    // - pane: The new pane to add to the tree of panes
     // Return Value:
     // - <none>
     void TerminalTab::SplitPane(SplitDirection splitType,

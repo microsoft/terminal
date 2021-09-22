@@ -1471,14 +1471,12 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
-    //   given TermControl into the newly created pane.
+    //   given pane accordingly in the tree
     // Arguments:
+    // - newPane: the pane to add to our tree of panes
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
-    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
-    // - newTerminalArgs: An object that may contain a blob of parameters to
-    //   control which profile is created and with possible other
-    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    // - splitSize: the size of the split
     void TerminalPage::_SplitPane(std::shared_ptr<Pane> newPane,
                                   const SplitDirection splitDirection,
                                   const float splitSize)
@@ -1496,15 +1494,13 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Split the focused pane of the given tab, either horizontally or vertically, and place the
-    //   given TermControl into the newly created pane.
+    //   given pane accordingly
     // Arguments:
     // - tab: The tab that is going to be split.
+    // - newPane: the pane to add to our tree of panes
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
-    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
-    // - newTerminalArgs: An object that may contain a blob of parameters to
-    //   control which profile is created and with possible other
-    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    // - splitSize: the size of the split
     void TerminalPage::_SplitPane(TerminalTab& tab,
                                   std::shared_ptr<Pane> newPane,
                                   const SplitDirection splitDirection,
@@ -2101,6 +2097,18 @@ namespace winrt::TerminalApp::implementation
         return term;
     }
 
+    // Method Description:
+    // - Creates a pane and returns a shared_ptr to it
+    // - The caller should handle where the pane goes after creation,
+    //   either to split an already existing pane or to create a new tab with it
+    // Arguments:
+    // - newTerminalArgs: an object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    // - duplicate: a boolean to indicate whether the pane we create should be
+    //   a duplicate of the currently focused pane
+    // - existingConnection: optionally receives a connection from the outside
+    //   world instead of attempting to create one
     std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs, const bool duplicate, TerminalConnection::ITerminalConnection existingConnection)
     {
         TerminalSettingsCreateResult controlSettings{ nullptr };
