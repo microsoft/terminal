@@ -1599,7 +1599,7 @@ namespace winrt::TerminalApp::implementation
     {
         // NOTE: For debugging purposes, changing this to `true || _isElevated()`
         // is a handy way of forcing the elevation logic, even when unelevated.
-        if (true || _isElevated())
+        if (_isElevated())
         {
             // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.
