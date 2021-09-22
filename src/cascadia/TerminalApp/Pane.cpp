@@ -464,12 +464,6 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return nullptr;
     }
 
-    // Since we are not doing parent/child movement we will be focusing a leaf
-    // pane next, so clear any set parent paths
-    sourcePane->WalkTree([](auto p) {
-        p->_parentChildPath.reset();
-    });
-
     // Previous movement relies on the last used panes
     if (direction == FocusDirection::Previous)
     {
