@@ -132,6 +132,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
         TYPED_EVENT(ScrollPositionChanged, IInspectable, Control::ScrollPositionChangedArgs);
+        
+        bool _sendMouseEventHelper(const til::point terminalPosition,
+                                   const unsigned int pointerUpdateKind,
+                                   const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                   const SHORT wheelDelta,
+                                   Control::MouseButtonState buttonState);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;

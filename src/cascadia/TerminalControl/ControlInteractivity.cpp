@@ -182,12 +182,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else if (_canSendVTMouseInput(modifiers))
         {
-            const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
-            // If the click happened outside the active region, just don't send any mouse event
-            if (const auto adjustedY = terminalPosition.y() - adjustment; adjustedY >= 0)
-            {
-                _core->SendMouseEvent({ terminalPosition.x(), adjustedY }, pointerUpdateKind, modifiers, 0, buttonState);
-            }
+            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
         }
         else if (buttonState.isLeftButtonDown)
         {
@@ -254,7 +249,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (focused && !_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
         }
         else if (focused && buttonState.isLeftButtonDown)
         {
@@ -333,7 +328,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Short-circuit isReadOnly check to avoid warning dialog
         if (!_core->IsInReadOnlyMode() && _canSendVTMouseInput(modifiers))
         {
-            _core->SendMouseEvent(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
+            _sendMouseEventHelper(terminalPosition, pointerUpdateKind, modifiers, 0, buttonState);
             return;
         }
 
@@ -383,11 +378,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // here with a PointerPoint. However, as of #979, we don't have a
             // PointerPoint to work with. So, we're just going to do a
             // mousewheel event manually
-            return _core->SendMouseEvent(terminalPosition,
+            return _sendMouseEventHelper(terminalPosition,
                                          WM_MOUSEWHEEL,
                                          modifiers,
                                          ::base::saturated_cast<short>(delta),
-                                         state);
+                                         buttonState);
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
@@ -562,4 +557,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Convert the location in pixels to characters within the current viewport.
         return til::point{ pixelPosition / fontSize };
     }
+
+    bool ControlInteractivity::_sendMouseEventHelper(const til::point terminalPosition,
+                                                     const unsigned int pointerUpdateKind,
+                                                     const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
+                                                     const SHORT wheelDelta,
+                                                     Control::MouseButtonState buttonState)
+    {
+        const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
+        // If the click happened outside the active region, just don't send any mouse event
+        if (const auto adjustedY = terminalPosition.y() - adjustment; adjustedY >= 0)
+        {
+            return _core->SendMouseEvent({ terminalPosition.x(), adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
+        }
+        return false;
+    }
+
 }
