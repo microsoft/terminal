@@ -215,7 +215,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Method Description:
     // - Read the contents of our "shared" state - state that should be shared
     //   for elevated and unelevated instances. This is things like the list of
-    //   generated profiles, the cmdpal commandlines.
+    //   generated profiles, the command palette commandlines.
     std::optional<std::string> ApplicationState::_readSharedContents() const
     {
         return ReadUTF8FileIfExists(_sharedPath);
