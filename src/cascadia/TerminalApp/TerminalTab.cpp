@@ -1640,12 +1640,32 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Toggle read-only mode on the active pane
+    // - If a parent pane is selected, this will ensure that all children have
+    //   the same read-only status.
     void TerminalTab::TogglePaneReadOnly()
     {
-        _activePane->WalkTree([](auto p) {
+        auto hasReadOnly = false;
+        auto allReadOnly = true;
+        _activePane->WalkTree([&](auto p) {
             if (const auto& control{ p->GetTerminalControl() })
             {
-                control.ToggleReadOnly();
+                hasReadOnly |= control.ReadOnly();
+                allReadOnly &= control.ReadOnly();
+            }
+        });
+        _activePane->WalkTree([&](auto p) {
+            if (const auto& control{ p->GetTerminalControl() })
+            {
+                // If all controls have the same read only state then just toggle
+                if (allReadOnly || !hasReadOnly)
+                {
+                    control.ToggleReadOnly();
+                }
+                // otherwise set to all read only.
+                else if (!control.ReadOnly())
+                {
+                    control.ToggleReadOnly();
+                }
             }
         });
     }
