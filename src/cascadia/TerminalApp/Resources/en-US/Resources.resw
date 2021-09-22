@@ -239,6 +239,17 @@
     <value>&#x2022; Found a keybinding that was missing a required parameter value. This keybinding will be ignored.</value>
     <comment>{Locked="&#x2022;"} This glyph is a bullet, used in a bulleted list.</comment>
   </data>
+  <data name="LegacyGlobalsProperty" xml:space="preserve">
+    <value>The "globals" property is deprecated - your settings might need updating. </value>
+    <comment>{Locked="\"globals\""} </comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefUrl" xml:space="preserve">
+    <value>https://go.microsoft.com/fwlink/?linkid=2128258</value>
+    <comment>{Locked}This is a FWLink, so it will be localized with the fwlink tool</comment>
+  </data>
+  <data name="LegacyGlobalsPropertyHrefLabel" xml:space="preserve">
+    <value>For more info, see this web page.</value>
+  </data>
   <data name="FailedToParseCommandJson" xml:space="preserve">
     <value>Failed to expand a command with "iterateOn" set. This command will be ignored.</value>
     <comment>{Locked="\"iterateOn\""} </comment>
