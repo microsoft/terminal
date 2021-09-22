@@ -1417,11 +1417,13 @@ class UiaTextRangeTests
         // reset the UTR
         if (degenerate)
         {
+            // UTR: (exclusive, exclusive) range
             const auto utrStart{ atDocumentEnd ? documentEndExclusive : endExclusive };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
         else
         {
+            // UTR: (inclusive, exclusive) range
             const auto utrStart{ atDocumentEnd ? documentEndInclusive : endInclusive };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
@@ -1443,8 +1445,8 @@ class UiaTextRangeTests
         else if (textUnit <= TextUnit::TextUnit_Word)
         {
             VERIFY_ARE_EQUAL(-1, moveAmt);
-            VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? origin : writeTarget, til::point{ utr->_end });
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? writeTarget : origin, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(writeTarget, til::point{ utr->_end });
         }
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
