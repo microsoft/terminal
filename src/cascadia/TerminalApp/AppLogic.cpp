@@ -909,6 +909,7 @@ namespace winrt::TerminalApp::implementation
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
             [this, settingsPath](wil::FolderChangeEvent, PCWSTR fileModified) {
+                // TODO!
                 static const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
 
                 const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
