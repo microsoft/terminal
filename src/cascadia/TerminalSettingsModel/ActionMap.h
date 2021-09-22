@@ -73,6 +73,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Json::Value ToJson() const;
 
         // modification
+        void DeleteAction(const InternalActionID& id);
         bool RebindKeys(Control::KeyChord const& oldKeys, Control::KeyChord const& newKeys);
         void DeleteKeyBinding(Control::KeyChord const& keys);
         void RegisterKeyBinding(Control::KeyChord keys, Model::ActionAndArgs action);
@@ -92,9 +93,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _TryUpdateName(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateKeyChord(const Model::Command& cmd, const Model::Command& oldCmd, const Model::Command& consolidatedCmd);
         void _TryUpdateExternalID(const Model::Command& cmd, Model::Command& oldCmd, Model::Command& consolidatedCmd);
-        void _TryUpdateAction(const InternalActionID oldActionID, const Model::Command& action);
-        void _AddIncompleteActions();
-        void _StashIncompleteActions(const Model::Command& cmd);
+        void _AddStashedActions();
+        void _StashExternalIDActions(const Model::Command& cmd);
 
         Windows::Foundation::Collections::IMap<hstring, Model::ActionAndArgs> _AvailableActionsCache{ nullptr };
         Windows::Foundation::Collections::IMap<hstring, Model::Command> _NameMapCache{ nullptr };
@@ -106,6 +106,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::unordered_map<Control::KeyChord, InternalActionID, KeyChordHash, KeyChordEquality> _KeyMap;
         std::unordered_map<InternalActionID, Model::Command> _ActionMap;
         std::unordered_map<winrt::hstring, InternalActionID> _ExternalIDMap;
+        std::unordered_map<winrt::hstring, Model::Command> _ExternalIDToSpecialCommands;
         std::unordered_map<winrt::hstring, Model::Command> _ExternalIDStaging;
 
         // Masking Actions:

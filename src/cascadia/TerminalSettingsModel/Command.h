@@ -38,6 +38,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         Command();
         com_ptr<Command> Copy() const;
+        void Merge(const com_ptr<Command>& cmd);
 
         static winrt::com_ptr<Command> FromJson(const Json::Value& json,
                                                 std::vector<SettingsLoadWarnings>& warnings);
@@ -54,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool HasNestedCommands() const;
         bool IsNestedCommand() const noexcept;
         Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command> NestedCommands() const;
+        void NestedCommands(const Windows::Foundation::Collections::IMapView<winrt::hstring, Model::Command>& commands);
 
         bool HasName() const noexcept;
         hstring Name() const noexcept;
@@ -67,6 +69,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring IconPath() const noexcept;
         void IconPath(const hstring& val);
+
+        void LayerCommand(const Model::Command& cmd);
 
         winrt::Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker propertyChangedRevoker;
 

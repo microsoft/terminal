@@ -115,8 +115,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // These are special cases.
         // - QuakeMode: deserializes into a GlobalSummon, so we don't need a serializer
         // - Invalid: has no args
+        // - ExplicitlyUnbound: specifically for the "unbound" case.
         { ShortcutAction::QuakeMode, { GlobalSummonArgs::QuakeModeFromJson, nullptr } },
         { ShortcutAction::Invalid, { nullptr, nullptr } },
+        { ShortcutAction::Unbound, { nullptr, nullptr } },
 
 #define ON_ALL_ACTIONS_WITH_ARGS(action) ACTION_TO_SERIALIZERS_PAIR(action)
         ALL_SHORTCUT_ACTIONS_WITH_ARGS
@@ -161,6 +163,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - The ShortcutAction corresponding to the given string, if a match exists.
     static ShortcutAction GetActionFromString(const std::string_view actionString)
     {
+        if (actionString == UnboundKey)
+        {
+            return ShortcutAction::Unbound;
+        }
+
         // Try matching the command to one we have. If we can't find the
         // action name in our list of names, let's just unbind that key.
         const auto found = ActionAndArgs::ActionKeyNamesMap.find(actionString);
@@ -304,6 +311,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         copy->_Action = _Action;
         copy->_Args = _Args ? _Args.Copy() : IActionArgs{ nullptr };
         return copy;
+    }
+
+    bool ActionAndArgs::IsUnbound() const
+    {
+        return _Action == ShortcutAction::Invalid || _Action == ShortcutAction::Unbound;
     }
 
     winrt::hstring ActionAndArgs::GenerateName() const

@@ -67,6 +67,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return _subcommands ? _subcommands.GetView() : nullptr;
     }
 
+    void Command::NestedCommands(const IMapView<winrt::hstring, Model::Command>& commands)
+    {
+        _subcommands.Clear();
+        for (auto kv : commands)
+        {
+            const auto subCmd{ winrt::get_self<Command>(kv.Value()) };
+            _subcommands.Insert(kv.Key(), *subCmd->Copy());
+        }
+    }
+
     // Function Description:
     // - reports if the current command has nested commands
     // - This CANNOT detect { "name": "foo", "commands": null }
@@ -255,6 +265,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         auto result = winrt::make_self<Command>();
 
+        if (const auto idJson{ json[JsonKey(IdKey)] })
+        {
+            if (idJson.isString())
+            {
+                result->ExternalID(to_hstring(idJson.asCString()));
+            }
+        }
+
         bool nested = false;
         JsonUtils::GetValueForKey(json, IterateOnKey, result->_IterateOn);
 
@@ -293,14 +311,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // If we're a nested command, we can ignore the current action.
         if (!nested)
         {
-            if (const auto idJson{ json[JsonKey(IdKey)] })
-            {
-                if (idJson.isString())
-                {
-                    result->ExternalID(to_hstring(idJson.asCString()));
-                }
-            }
-
             if (const auto actionJson{ json[JsonKey(ActionKey)] })
             {
                 result->_ActionAndArgs = *ActionAndArgs::FromJson(actionJson, warnings);
@@ -645,5 +655,39 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
 
         return newCommands;
+    }
+
+    void Command::LayerCommand(const Model::Command& cmd)
+    {
+        // Merge the incoming cmd with the one found in staging.
+        // We'll overwrite the staging cmd's values if the incoming cmd has those values.
+        const auto cmdImpl{ get_self<Command>(cmd) };
+        if (cmdImpl->HasName())
+        {
+            Name(cmdImpl->Name());
+        }
+
+        for (const auto& keys : cmdImpl->KeyMappings())
+        {
+            RegisterKey(keys);
+        }
+
+        if (!cmdImpl->IconPath().empty())
+        {
+            IconPath(cmd.IconPath());
+        }
+
+        // Copy over the nested commands if there are some.
+        // Otherwise just copy the ActionAndArgs if they're valid.
+        IterateOn(cmdImpl->IterateOn());
+        if (cmdImpl->HasNestedCommands())
+        {
+            NestedCommands(cmd.NestedCommands());
+        }
+
+        if (cmd.ActionAndArgs().Action() != ShortcutAction::Invalid)
+        {
+            ActionAndArgs(cmd.ActionAndArgs());
+        }
     }
 }

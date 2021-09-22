@@ -26,6 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         hstring GenerateName() const;
 
+        bool IsUnbound() const;
+
         WINRT_PROPERTY(ShortcutAction, Action, ShortcutAction::Invalid);
         WINRT_PROPERTY(IActionArgs, Args, nullptr);
     };

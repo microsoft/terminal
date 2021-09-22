@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
             if (!cmd->ExternalID().empty())
             {
-                _StashIncompleteActions(*cmd);
+                _StashExternalIDActions(*cmd);
             }
             else
             {
@@ -62,7 +62,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
         }
 
-        _AddIncompleteActions();
+        _AddStashedActions();
 
         return warnings;
     }
