@@ -2109,7 +2109,6 @@ namespace winrt::TerminalApp::implementation
         if (duplicate)
         {
             const auto focusedTab{ _GetFocusedTabImpl() };
-            // Do nothing if no TerminalTab is focused
             if (focusedTab)
             {
                 profile = focusedTab->GetFocusedProfile();
@@ -2714,10 +2713,10 @@ namespace winrt::TerminalApp::implementation
                 // in the future, it can make a better decision based on the value we pull out of the process handle.
                 // TODO GH#5047: When we hang on to the N.T.A., try not to spawn "default... .exe" :)
                 newTerminalArgs.Commandline(L"default-terminal-invocation-placeholder");
-                const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-                const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
 
-                _CreateNewTabWithProfileAndSettings(profile, settings, connection);
+                const auto newPane = _MakePane(newTerminalArgs, false, nullptr);
+                newPane->SetActive();
+                _CreateNewTabFromPane(newPane);
 
                 // Request a summon of this window to the foreground
                 _SummonWindowRequestedHandlers(*this, nullptr);
