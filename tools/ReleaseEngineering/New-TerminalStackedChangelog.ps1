@@ -4,9 +4,9 @@
 #################################
 # New-TerminalStackedChangelog generates a markdown file with attribution
 # over a set of revision ranges.
-# Dustin uses it when he's writing changelogs.
+# Dustin uses it when he's writing the changelog.
 # 
-## For example, generating the changelogs for both 1.9 and 1.10 might look like this:
+## For example, generating the changelog for both 1.9 and 1.10 might look like this:
 # $ New-TerminalStackedChangelog 1.9..release-1.9, 1.10..release-1.10
 ## The output will be a markdown-like document. Each commit will be converted into a
 ## single-line entry with attribution and an optional count:
