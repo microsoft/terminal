@@ -1274,6 +1274,11 @@
           "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
+        "showAdminShield": {
+          "default": "true",
+          "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
+          "type": "boolean"
+        },
         "useAcrylicInTabRow": {
           "default": "false",
           "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
