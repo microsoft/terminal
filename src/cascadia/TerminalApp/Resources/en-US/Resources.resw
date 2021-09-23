@@ -382,7 +382,7 @@
     <value>Launch the window in focus mode</value>
   </data>
   <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
-    <value>Specify a saved window layout index (from state.json "persistedWindowLayouts") to initially load layout from. </value>
+    <value>This parameter is an internal implementation detail and should not be used.</value>
   </data>
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>

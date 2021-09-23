@@ -233,8 +233,12 @@ void AppHost::_HandleCommandlineArgs()
             if (_logic.ShouldUsePersistedLayout() && layouts && layouts.Size() > 0)
             {
                 uint32_t startIdx = 0;
+                // We want to create a window for every saved layout.
                 // If we are the only window, and no commandline arguments were provided
-                // then we should just use the current window to load the first layout
+                // then we should just use the current window to load the first layout.
+                // Otherwise create this window normally with its commandline, and create
+                // a new window using the first saved layout information.
+                // The 2nd+ layout will always get a new window.
                 if (numPeasants == 1 && !_logic.HasCommandlineArguments())
                 {
                     _logic.SetPersistedLayoutIdx(startIdx);
@@ -247,10 +251,9 @@ void AppHost::_HandleCommandlineArgs()
                     auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args[0], startIdx);
 
                     STARTUPINFO si;
-                    PROCESS_INFORMATION pi;
                     memset(&si, 0, sizeof(si));
                     si.cb = sizeof(si);
-                    memset(&pi, 0, sizeof(pi));
+                    wil::unique_process_information pi;
 
                     LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
                                                            newWindowArgs.data(),
@@ -263,10 +266,6 @@ void AppHost::_HandleCommandlineArgs()
                                                            &si, // lpStartupInfo
                                                            &pi // lpProcessInformation
                                                            ));
-
-                    // immediately dispose of handles
-                    CloseHandle(pi.hProcess);
-                    CloseHandle(pi.hThread);
                 }
             }
             _logic.SetNumberOfOpenWindows(numPeasants);
@@ -834,9 +833,12 @@ winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
 
     co_await _SaveWindowLayouts();
 
-    // don't need to save too frequently
+    // Don't need to save too frequently.
     co_await 30s;
 
+    // As long as we are supposed to keep saving, request another save.
+    // This will be delayed by the throttler so that at most one save happens
+    // per 10 seconds, if a save is requested by another source simultaneously.
     if (_getWindowLayoutThrottler.has_value())
     {
         _getWindowLayoutThrottler.value()();
