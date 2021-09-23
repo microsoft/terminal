@@ -24,7 +24,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     X(bool, AltGrAliasing, true)                                                                                  \
     X(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS)                                                    \
     X(bool, CopyOnSelect, false)                                                                                  \
-    X(bool, InputServiceWarning, true)                                                                            \
     X(bool, FocusFollowMouse, false)                                                                              \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr)         \
     X(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr) \
@@ -62,7 +61,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         CONTROL_SETTINGS(CONTROL_SETTINGS_GEN)
 #undef CONTROL_SETTINGS_GEN
 
+    private:
+        winrt::com_ptr<ControlAppearance> _unfocusedAppearance{ nullptr };
+        winrt::com_ptr<ControlAppearance> _focusedAppearance{ nullptr };
+
     public:
+        ControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance)
+        {
+            _focusedAppearance = winrt::make_self<implementation::ControlAppearance>(settings);
+            _unfocusedAppearance = unfocusedAppearance ?
+                                       winrt::make_self<implementation::ControlAppearance>(unfocusedAppearance) :
+                                       _focusedAppearance;
+
+#define COPY_SETTING(type, name, ...) _##name = settings.name();
+            CORE_SETTINGS(COPY_SETTING)
+            CONTROL_SETTINGS(COPY_SETTING)
+#undef COPY_SETTING
+        }
+
         winrt::com_ptr<ControlAppearance> UnfocusedAppearance()
         {
             return _unfocusedAppearance;
@@ -71,18 +87,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             return _focusedAppearance;
         };
-
-    private:
-        winrt::com_ptr<ControlAppearance> _unfocusedAppearance{ nullptr };
-        winrt::com_ptr<ControlAppearance> _focusedAppearance{ nullptr };
-
-        // ControlSettings()
-        // {
-        //     const auto campbellSpan = ::Microsoft::Console::Utils::CampbellColorTable();
-        //     std::transform(campbellSpan.begin(), campbellSpan.end(), _ColorTable.begin(), [](auto&& color) {
-        //         return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
-        //     });
-        // }
     };
 }
 

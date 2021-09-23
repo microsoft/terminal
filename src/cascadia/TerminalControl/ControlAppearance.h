@@ -27,7 +27,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //  All of these settings are defined in IControlSettings.
 #define CONTROL_APPEARANCE_SETTINGS(X)                                                                                                          \
     X(til::color, SelectionBackground, DEFAULT_FOREGROUND)                                                                                      \
-    X(double, Opacity, .5)                                                                                                                      \
+    X(double, Opacity, 1.0)                                                                                                                     \
     X(winrt::hstring, BackgroundImage)                                                                                                          \
     X(double, BackgroundImageOpacity, 1.0)                                                                                                      \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill)            \
@@ -55,13 +55,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::array<winrt::Microsoft::Terminal::Core::Color, 16> ColorTable() { return _ColorTable; }
         void ColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> /*colors*/) {}
 
-        // ControlSettings()
-        // {
-        //     const auto campbellSpan = ::Microsoft::Console::Utils::CampbellColorTable();
-        //     std::transform(campbellSpan.begin(), campbellSpan.end(), _ColorTable.begin(), [](auto&& color) {
-        //         return static_cast<winrt::Microsoft::Terminal::Core::Color>(til::color{ color });
-        //     });
-        // }
+        ControlAppearance(Control::IControlAppearance appearance)
+        {
+#define COPY_SETTING(type, name, ...) _##name = appearance.name();
+            CORE_APPEARANCE_SETTINGS(COPY_SETTING)
+            CONTROL_APPEARANCE_SETTINGS(COPY_SETTING)
+#undef COPY_SETTING
+        }
     };
 }
 

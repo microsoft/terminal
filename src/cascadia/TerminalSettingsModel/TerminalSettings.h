@@ -95,7 +95,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
