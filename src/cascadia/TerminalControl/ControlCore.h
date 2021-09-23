@@ -17,6 +17,7 @@
 
 #include "EventArgs.h"
 #include "ControlCore.g.h"
+#include "ControlSettings.h"
 #include "../../renderer/base/Renderer.hpp"
 #include "../../renderer/dx/DxRenderer.hpp"
 #include "../../renderer/uia/UiaRenderer.hpp"
