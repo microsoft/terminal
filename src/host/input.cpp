@@ -8,9 +8,9 @@
 #include "dbcs.h"
 #include "stream.h"
 
-#include "..\terminal\input\terminalInput.hpp"
+#include "../terminal/input/terminalInput.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #pragma hdrstop
 

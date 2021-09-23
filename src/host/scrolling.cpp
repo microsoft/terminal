@@ -7,7 +7,7 @@
 
 #include "selection.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 using Microsoft::Console::VirtualTerminal::StateMachine;
 using namespace Microsoft::Console::Interactivity;

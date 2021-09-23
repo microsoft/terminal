@@ -1,0 +1,17 @@
+http
+www
+ecma
+rapidtables
+WCAG
+freedesktop
+ycombinator
+robertelder
+kovidgoyal
+leonerd
+fixterms
+winui
+appshellintegration
+mdtauk
+cppreference
+gfycat
+Guake

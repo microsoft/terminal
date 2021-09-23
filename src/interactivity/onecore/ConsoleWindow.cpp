@@ -5,8 +5,8 @@
 
 #include "ConsoleWindow.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
-#include "..\..\types\inc\Viewport.hpp"
+#include "../inc/ServiceLocator.hpp"
+#include "../../types/inc/Viewport.hpp"
 
 using namespace Microsoft::Console::Interactivity::OneCore;
 using namespace Microsoft::Console::Types;

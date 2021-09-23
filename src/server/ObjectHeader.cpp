@@ -6,7 +6,7 @@
 #include "ObjectHeader.h"
 #include "ObjectHandle.h"
 
-#include "..\host\inputReadHandleData.h"
+#include "../host/inputReadHandleData.h"
 
 ConsoleObjectHeader::ConsoleObjectHeader() :
     _ulOpenCount(0),

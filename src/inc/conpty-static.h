@@ -22,7 +22,11 @@ HRESULT WINAPI ConptyCreatePseudoConsole(COORD size, HANDLE hInput, HANDLE hOutp
 
 HRESULT WINAPI ConptyResizePseudoConsole(HPCON hPC, COORD size);
 
+HRESULT WINAPI ConptyClearPseudoConsole(HPCON hPC);
+
 VOID WINAPI ConptyClosePseudoConsole(HPCON hPC);
+
+HRESULT WINAPI ConptyPackPseudoConsole(HANDLE hServerProcess, HANDLE hRef, HANDLE hSignal, HPCON* phPC);
 
 #ifdef __cplusplus
 }

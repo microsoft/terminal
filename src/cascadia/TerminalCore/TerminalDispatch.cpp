@@ -3,6 +3,9 @@
 
 #include "pch.h"
 #include "TerminalDispatch.hpp"
+#include "../../types/inc/utils.hpp"
+
+using namespace Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
 using namespace ::Microsoft::Console::VirtualTerminal;
 
@@ -109,6 +112,13 @@ try
 }
 CATCH_LOG_RETURN_FALSE()
 
+bool TerminalDispatch::WarningBell() noexcept
+try
+{
+    return _terminalApi.WarningBell();
+}
+CATCH_LOG_RETURN_FALSE()
+
 bool TerminalDispatch::CarriageReturn() noexcept
 try
 {
@@ -123,6 +133,74 @@ try
     return _terminalApi.SetWindowTitle(title);
 }
 CATCH_LOG_RETURN_FALSE()
+
+bool TerminalDispatch::HorizontalTabSet() noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto column = _terminalApi.GetCursorPosition().X;
+
+    _InitTabStopsForWidth(width);
+    _tabStopColumns.at(column) = true;
+    return true;
+}
+
+bool TerminalDispatch::ForwardTab(const size_t numTabs) noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto cursorPosition = _terminalApi.GetCursorPosition();
+    auto column = cursorPosition.X;
+    const auto row = cursorPosition.Y;
+    auto tabsPerformed = 0u;
+    _InitTabStopsForWidth(width);
+    while (column + 1 < width && tabsPerformed < numTabs)
+    {
+        column++;
+        if (til::at(_tabStopColumns, column))
+        {
+            tabsPerformed++;
+        }
+    }
+
+    return _terminalApi.SetCursorPosition(column, row);
+}
+
+bool TerminalDispatch::BackwardsTab(const size_t numTabs) noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto cursorPosition = _terminalApi.GetCursorPosition();
+    auto column = cursorPosition.X;
+    const auto row = cursorPosition.Y;
+    auto tabsPerformed = 0u;
+    _InitTabStopsForWidth(width);
+    while (column > 0 && tabsPerformed < numTabs)
+    {
+        column--;
+        if (til::at(_tabStopColumns, column))
+        {
+            tabsPerformed++;
+        }
+    }
+
+    return _terminalApi.SetCursorPosition(column, row);
+}
+
+bool TerminalDispatch::TabClear(const DispatchTypes::TabClearType clearType) noexcept
+{
+    bool success = false;
+    switch (clearType)
+    {
+    case DispatchTypes::TabClearType::ClearCurrentColumn:
+        success = _ClearSingleTabStop();
+        break;
+    case DispatchTypes::TabClearType::ClearAllColumns:
+        success = _ClearAllTabStops();
+        break;
+    default:
+        success = false;
+        break;
+    }
+    return success;
+}
 
 // Method Description:
 // - Sets a single entry of the colortable to a new value
@@ -143,6 +221,13 @@ bool TerminalDispatch::SetCursorStyle(const DispatchTypes::CursorStyle cursorSty
 try
 {
     return _terminalApi.SetCursorStyle(cursorStyle);
+}
+CATCH_LOG_RETURN_FALSE()
+
+bool TerminalDispatch::SetCursorColor(const DWORD color) noexcept
+try
+{
+    return _terminalApi.SetCursorColor(color);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -354,82 +439,175 @@ bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
     return true;
 }
 
-bool TerminalDispatch::SetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+//Routine Description:
+// Enable Bracketed Paste Mode -  this changes the behavior of pasting.
+//      See: https://www.xfree86.org/current/ctlseqs.html#Bracketed%20Paste%20Mode
+//Arguments:
+// - enabled - true to enable, false to disable.
+// Return value:
+// True if handled successfully. False otherwise.
+bool TerminalDispatch::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {
-    return _SetResetPrivateModes(params, true);
+    _terminalApi.EnableXtermBracketedPasteMode(enabled);
+    return true;
 }
 
-bool TerminalDispatch::ResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params) noexcept
+bool TerminalDispatch::SetMode(const DispatchTypes::ModeParams param) noexcept
 {
-    return _SetResetPrivateModes(params, false);
+    return _ModeParamsHelper(param, true);
 }
 
-// Routine Description:
-// - Generalized handler for the setting/resetting of DECSET/DECRST parameters.
-//     All params in the rgParams will attempt to be executed, even if one
-//     fails, to allow us to successfully re/set params that are chained with
-//     params we don't yet support.
+bool TerminalDispatch::ResetMode(const DispatchTypes::ModeParams param) noexcept
+{
+    return _ModeParamsHelper(param, false);
+}
+
+// Method Description:
+// - Start a hyperlink
 // Arguments:
-// - params - array of params to set/reset
-// - enable - True for set, false for unset.
+// - uri - the hyperlink URI
+// - params - the optional custom ID
 // Return Value:
-// - True if ALL params were handled successfully. False otherwise.
-bool TerminalDispatch::_SetResetPrivateModes(const std::basic_string_view<DispatchTypes::PrivateModeParams> params, const bool enable) noexcept
+// - true
+bool TerminalDispatch::AddHyperlink(const std::wstring_view uri, const std::wstring_view params) noexcept
 {
-    // because the user might chain together params we don't support with params we DO support, execute all
-    // params in the sequence, and only return failure if we failed at least one of them
-    size_t failures = 0;
-    for (const auto& p : params)
+    return _terminalApi.AddHyperlink(uri, params);
+}
+
+// Method Description:
+// - End a hyperlink
+// Return Value:
+// - true
+bool TerminalDispatch::EndHyperlink() noexcept
+{
+    return _terminalApi.EndHyperlink();
+}
+
+// Method Description:
+// - Performs a ConEmu action
+// - Currently, the only action we support is setting the taskbar state/progress
+// Arguments:
+// - string: contains the parameters that define which action we do
+// Return Value:
+// - true
+bool TerminalDispatch::DoConEmuAction(const std::wstring_view string) noexcept
+{
+    unsigned int state = 0;
+    unsigned int progress = 0;
+
+    const auto parts = Utils::SplitString(string, L';');
+    unsigned int subParam = 0;
+
+    if (parts.size() < 1 || !Utils::StringToUint(til::at(parts, 0), subParam))
     {
-        failures += _PrivateModeParamsHelper(p, enable) ? 0 : 1; // increment the number of failures if we fail.
+        return false;
     }
-    return failures == 0;
+
+    // 4 is SetProgressBar, which sets the taskbar state/progress.
+    if (subParam == 4)
+    {
+        if (parts.size() >= 2)
+        {
+            // A state parameter is defined, parse it out
+            const auto stateSuccess = Utils::StringToUint(til::at(parts, 1), state);
+            if (!stateSuccess && !til::at(parts, 1).empty())
+            {
+                return false;
+            }
+            if (parts.size() >= 3)
+            {
+                // A progress parameter is also defined, parse it out
+                const auto progressSuccess = Utils::StringToUint(til::at(parts, 2), progress);
+                if (!progressSuccess && !til::at(parts, 2).empty())
+                {
+                    return false;
+                }
+            }
+        }
+
+        if (state > TaskbarMaxState)
+        {
+            // state is out of bounds, return false
+            return false;
+        }
+        if (progress > TaskbarMaxProgress)
+        {
+            // progress is greater than the maximum allowed value, clamp it to the max
+            progress = TaskbarMaxProgress;
+        }
+        return _terminalApi.SetTaskbarProgress(static_cast<DispatchTypes::TaskbarState>(state), progress);
+    }
+    // 9 is SetWorkingDirectory, which informs the terminal about the current working directory.
+    else if (subParam == 9)
+    {
+        if (parts.size() >= 2)
+        {
+            const auto path = til::at(parts, 1);
+            // The path should be surrounded with '"' according to the documentation of ConEmu.
+            // An example: 9;"D:/"
+            if (path.at(0) == L'"' && path.at(path.size() - 1) == L'"' && path.size() >= 3)
+            {
+                return _terminalApi.SetWorkingDirectory(path.substr(1, path.size() - 2));
+            }
+            else
+            {
+                // If we fail to find the surrounding quotation marks, we'll give the path a try anyway.
+                // ConEmu also does this.
+                return _terminalApi.SetWorkingDirectory(path);
+            }
+        }
+    }
+
+    return false;
 }
 
 // Routine Description:
 // - Support routine for routing private mode parameters to be set/reset as flags
 // Arguments:
-// - params - array of params to set/reset
+// - param - mode parameter to set/reset
 // - enable - True for set, false for unset.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateModeParams param, const bool enable) noexcept
+bool TerminalDispatch::_ModeParamsHelper(const DispatchTypes::ModeParams param, const bool enable) noexcept
 {
     bool success = false;
     switch (param)
     {
-    case DispatchTypes::PrivateModeParams::DECCKM_CursorKeysMode:
+    case DispatchTypes::ModeParams::DECCKM_CursorKeysMode:
         // set - Enable Application Mode, reset - Normal mode
         success = SetCursorKeysMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECSCNM_ScreenMode:
+    case DispatchTypes::ModeParams::DECSCNM_ScreenMode:
         success = SetScreenMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::VT200_MOUSE_MODE:
+    case DispatchTypes::ModeParams::VT200_MOUSE_MODE:
         success = EnableVT200MouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::BUTTON_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::BUTTON_EVENT_MOUSE_MODE:
         success = EnableButtonEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ANY_EVENT_MOUSE_MODE:
+    case DispatchTypes::ModeParams::ANY_EVENT_MOUSE_MODE:
         success = EnableAnyEventMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::UTF8_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::UTF8_EXTENDED_MODE:
         success = EnableUTF8ExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::SGR_EXTENDED_MODE:
+    case DispatchTypes::ModeParams::SGR_EXTENDED_MODE:
         success = EnableSGRExtendedMouseMode(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ALTERNATE_SCROLL:
+    case DispatchTypes::ModeParams::ALTERNATE_SCROLL:
         success = EnableAlternateScroll(enable);
         break;
-    case DispatchTypes::PrivateModeParams::DECTCEM_TextCursorEnableMode:
+    case DispatchTypes::ModeParams::DECTCEM_TextCursorEnableMode:
         success = CursorVisibility(enable);
         break;
-    case DispatchTypes::PrivateModeParams::ATT610_StartCursorBlink:
+    case DispatchTypes::ModeParams::ATT610_StartCursorBlink:
         success = EnableCursorBlinking(enable);
         break;
-    case DispatchTypes::PrivateModeParams::W32IM_Win32InputMode:
+    case DispatchTypes::ModeParams::XTERM_BracketedPasteMode:
+        success = EnableXtermBracketedPasteMode(enable);
+        break;
+    case DispatchTypes::ModeParams::W32IM_Win32InputMode:
         success = EnableWin32InputMode(enable);
         break;
     default:
@@ -438,6 +616,48 @@ bool TerminalDispatch::_PrivateModeParamsHelper(const DispatchTypes::PrivateMode
         break;
     }
     return success;
+}
+
+bool TerminalDispatch::_ClearSingleTabStop() noexcept
+{
+    const auto width = _terminalApi.GetBufferSize().Dimensions().X;
+    const auto column = _terminalApi.GetCursorPosition().X;
+
+    _InitTabStopsForWidth(width);
+    _tabStopColumns.at(column) = false;
+    return true;
+}
+
+bool TerminalDispatch::_ClearAllTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = false;
+    return true;
+}
+
+void TerminalDispatch::_ResetTabStops() noexcept
+{
+    _tabStopColumns.clear();
+    _initDefaultTabStops = true;
+}
+
+void TerminalDispatch::_InitTabStopsForWidth(const size_t width)
+{
+    const auto initialWidth = _tabStopColumns.size();
+    if (width > initialWidth)
+    {
+        _tabStopColumns.resize(width);
+        if (_initDefaultTabStops)
+        {
+            for (auto column = 8u; column < _tabStopColumns.size(); column += 8)
+            {
+                if (column >= initialWidth)
+                {
+                    til::at(_tabStopColumns, column) = true;
+                }
+            }
+        }
+    }
 }
 
 bool TerminalDispatch::SoftReset() noexcept
@@ -468,8 +688,7 @@ bool TerminalDispatch::SoftReset() noexcept
     //     success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     // }
 
-    const auto opt = DispatchTypes::GraphicsOptions::Off;
-    success = SetGraphicsRendition({ &opt, 1 }) && success; // Normal rendition.
+    success = SetGraphicsRendition({}) && success; // Normal rendition.
 
     // // Reset the saved cursor state.
     // // Note that XTerm only resets the main buffer state, but that
@@ -514,8 +733,12 @@ bool TerminalDispatch::HardReset() noexcept
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;
 
-    // // Delete all current tab stops and reapply
-    // _ResetTabStops();
+    // Reset the mouse mode
+    success = EnableSGRExtendedMouseMode(false) && success;
+    success = EnableAnyEventMouseMode(false) && success;
+
+    // Delete all current tab stops and reapply
+    _ResetTabStops();
 
     return success;
 }

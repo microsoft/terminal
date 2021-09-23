@@ -7,7 +7,7 @@
 #include "stream.h"
 #include "../types/inc/GlyphWidth.hpp"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Constructs raw read data class to hold context across sessions
@@ -217,4 +217,13 @@ bool RAW_READ_DATA::Notify(const WaitTerminationReason TerminationReason,
         }
     }
     return RetVal;
+}
+
+void RAW_READ_DATA::MigrateUserBuffersOnTransitionToBackgroundWait(const void* oldBuffer, void* newBuffer)
+{
+    // See the comment in WaitBlock.cpp for more information.
+    if (_BufPtr == reinterpret_cast<const wchar_t*>(oldBuffer))
+    {
+        _BufPtr = reinterpret_cast<wchar_t*>(newBuffer);
+    }
 }

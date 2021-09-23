@@ -3,9 +3,11 @@
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass TabRowControl : Windows.UI.Xaml.Controls.ContentPresenter
+    [default_interface] runtimeclass TabRowControl : Windows.UI.Xaml.Controls.ContentPresenter,
+                                                     Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         TabRowControl();
         Microsoft.UI.Xaml.Controls.TabView TabView { get; };
+        Boolean ShowElevationShield;
     }
 }

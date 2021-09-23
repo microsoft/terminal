@@ -166,7 +166,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::InvalidateCursor(const COORD* const /*pcoordCursor*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::InvalidateCursor(const SMALL_RECT* const /*psrRegion*/) noexcept
 {
     return S_OK;
 }
@@ -258,7 +258,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(std::basic_string_view<Cluster> const clusters,
+[[nodiscard]] HRESULT WddmConEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
                                                      const COORD coord,
                                                      const bool /*trimLeft*/,
                                                      const bool /*lineWrapped*/) noexcept
@@ -278,7 +278,7 @@ bool WddmConEngine::IsInitialized()
             OldChar->Character = NewChar->Character;
             OldChar->Attribute = NewChar->Attribute;
 
-            NewChar->Character = clusters.at(i).GetTextAsSingle();
+            NewChar->Character = til::at(clusters, i).GetTextAsSingle();
             NewChar->Attribute = _currentLegacyColorAttribute;
         }
 
@@ -307,6 +307,7 @@ bool WddmConEngine::IsInitialized()
 
 [[nodiscard]] HRESULT WddmConEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                           const gsl::not_null<IRenderData*> /*pData*/,
+                                                          const bool /*usingSoftFont*/,
                                                           bool const /*isSettingDefaultBrushes*/) noexcept
 {
     _currentLegacyColorAttribute = textAttributes.GetLegacyAttributes();
@@ -353,7 +354,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-std::vector<til::rectangle> WddmConEngine::GetDirtyArea()
+[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
 {
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;
@@ -361,7 +362,12 @@ std::vector<til::rectangle> WddmConEngine::GetDirtyArea()
     r.Left = 0;
     r.Right = _displayWidth > 0 ? (SHORT)(_displayWidth - 1) : 0;
 
-    return { r };
+    _dirtyArea = r;
+
+    area = { &_dirtyArea,
+             1 };
+
+    return S_OK;
 }
 
 RECT WddmConEngine::GetDisplaySize()
@@ -409,7 +415,7 @@ RECT WddmConEngine::GetDisplaySize()
 // - newTitle: the new string to use for the title of the window
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT WddmConEngine::_DoUpdateTitle(_In_ const std::wstring& /*newTitle*/) noexcept
+[[nodiscard]] HRESULT WddmConEngine::_DoUpdateTitle(_In_ const std::wstring_view /*newTitle*/) noexcept
 {
     return S_OK;
 }

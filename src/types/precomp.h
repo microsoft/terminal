@@ -29,6 +29,7 @@ Abstract:
 
 // Windows Header Files:
 #include <windows.h>
+#include <userenv.h>
 #include <combaseapi.h>
 #include <UIAutomation.h>
 #include <objbase.h>
@@ -47,7 +48,7 @@ Abstract:
 // private dependencies
 #pragma warning(push)
 #pragma warning(disable: ALL_CPPCORECHECK_WARNINGS)
-#include "..\host\conddkrefs.h"
+#include "../host/conddkrefs.h"
 #pragma warning(pop)
 
 #include <conmsgl1.h>

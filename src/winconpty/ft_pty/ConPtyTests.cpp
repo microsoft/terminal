@@ -440,10 +440,11 @@ void ConPtyTests::DiesOnClose()
     VERIFY_IS_TRUE(GetExitCodeProcess(piClient.hProcess, &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 
-    // Stash the pty process, it'll get zero'd after the call to close
-    const auto hConPtyProcess = pty.hConPtyProcess;
+    // Duplicate the pty process, it'll get closed and zero'd after the call to close
+    wil::unique_handle hConPtyProcess{};
+    THROW_IF_WIN32_BOOL_FALSE(DuplicateHandle(GetCurrentProcess(), pty.hConPtyProcess, GetCurrentProcess(), hConPtyProcess.put(), 0, FALSE, DUPLICATE_SAME_ACCESS));
 
-    VERIFY_IS_TRUE(GetExitCodeProcess(hConPtyProcess, &dwExit));
+    VERIFY_IS_TRUE(GetExitCodeProcess(hConPtyProcess.get(), &dwExit));
     VERIFY_ARE_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 
     Log::Comment(NoThrowString().Format(L"Sleep a bit to let the process attach"));
@@ -451,6 +452,6 @@ void ConPtyTests::DiesOnClose()
 
     _ClosePseudoConsoleMembers(&pty);
 
-    GetExitCodeProcess(hConPtyProcess, &dwExit);
+    GetExitCodeProcess(hConPtyProcess.get(), &dwExit);
     VERIFY_ARE_NOT_EQUAL(dwExit, (DWORD)STILL_ACTIVE);
 }

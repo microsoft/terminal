@@ -1,8 +1,0 @@
-Consolas
-emoji
-Extralight
-Gabriola
-Iosevka
-MDL
-Monofur
-Segoe

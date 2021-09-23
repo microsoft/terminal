@@ -84,5 +84,18 @@ class Microsoft::Console::VirtualTerminal::Base64Test
 
         success = Base64::s_Decode(L"Zm9vYg=", result);
         VERIFY_ARE_EQUAL(false, success);
+
+        // U+306b U+307b U+3093 U+3054 U+6c49 U+8bed U+d55c U+ad6d
+        result = L"";
+        success = Base64::s_Decode(L"44Gr44G744KT44GU5rGJ6K+t7ZWc6rWt", result);
+        VERIFY_ARE_EQUAL(true, success);
+        VERIFY_ARE_EQUAL(L"にほんご汉语한국", result);
+
+        // U+d83d U+dc4d U+d83d U+dc4d U+d83c U+dffb U+d83d U+dc4d U+d83c U+dffc U+d83d
+        // U+dc4d U+d83c U+dffd U+d83d U+dc4d U+d83c U+dffe U+d83d U+dc4d U+d83c U+dfff
+        result = L"";
+        success = Base64::s_Decode(L"8J+RjfCfkY3wn4+78J+RjfCfj7zwn5GN8J+PvfCfkY3wn4++8J+RjfCfj78=", result);
+        VERIFY_ARE_EQUAL(true, success);
+        VERIFY_ARE_EQUAL(L"👍👍🏻👍🏼👍🏽👍🏾👍🏿", result);
     }
 };

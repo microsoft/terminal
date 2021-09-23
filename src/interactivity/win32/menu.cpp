@@ -8,15 +8,15 @@
 #include "icon.hpp"
 #include "window.hpp"
 
-#include "..\..\host\dbcs.h"
-#include "..\..\host\getset.h"
-#include "..\..\host\handle.h"
-#include "..\..\host\misc.h"
-#include "..\..\host\server.h"
-#include "..\..\host\scrolling.hpp"
-#include "..\..\host\telemetry.hpp"
+#include "../../host/dbcs.h"
+#include "../../host/getset.h"
+#include "../../host/handle.h"
+#include "../../host/misc.h"
+#include "../../host/server.h"
+#include "../../host/scrolling.hpp"
+#include "../../host/telemetry.hpp"
 
-#include "..\inc\ServiceLocator.hpp"
+#include "../inc/ServiceLocator.hpp"
 
 using namespace Microsoft::Console::Interactivity::Win32;
 

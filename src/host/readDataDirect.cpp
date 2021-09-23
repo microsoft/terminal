@@ -6,7 +6,7 @@
 #include "dbcs.h"
 #include "misc.h"
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 // Routine Description:
 // - Constructs direct read data class to hold context across sessions
@@ -189,4 +189,9 @@ bool DirectReadData::Notify(const WaitTerminationReason TerminationReason,
         pOutputDeque->swap(_outEvents);
     }
     return retVal;
+}
+
+void DirectReadData::MigrateUserBuffersOnTransitionToBackgroundWait(const void* /*oldBuffer*/, void* /*newBuffer*/)
+{
+    // Direct read doesn't hold API message buffers
 }

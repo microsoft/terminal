@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-#include "../TerminalApp/Profile.h"
+#include "../TerminalSettingsModel/Profile.h"
 #include "../TerminalApp/ColorHelper.h"
 
 using namespace Microsoft::Console;

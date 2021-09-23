@@ -1,7 +1,7 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
 // Used by Host.EXE.rc
-#include "..\\resource.h"
+#include "..//resource.h"
 // Next default values for new objects
 //
 #ifdef APSTUDIO_INVOKED

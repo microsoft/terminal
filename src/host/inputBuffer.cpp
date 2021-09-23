@@ -9,12 +9,13 @@
 
 #include <functional>
 
-#include "..\interactivity\inc\ServiceLocator.hpp"
+#include "../interactivity/inc/ServiceLocator.hpp"
 
 #define INPUT_BUFFER_DEFAULT_INPUT_MODE (ENABLE_LINE_INPUT | ENABLE_PROCESSED_INPUT | ENABLE_ECHO_INPUT | ENABLE_MOUSE_INPUT)
 
 using Microsoft::Console::Interactivity::ServiceLocator;
 using Microsoft::Console::VirtualTerminal::TerminalInput;
+using namespace Microsoft::Console;
 
 // Routine Description:
 // - This method creates an input buffer.
@@ -25,6 +26,7 @@ using Microsoft::Console::VirtualTerminal::TerminalInput;
 InputBuffer::InputBuffer() :
     InputMode{ INPUT_BUFFER_DEFAULT_INPUT_MODE },
     WaitQueue{},
+    _pTtyConnection(nullptr),
     _termInput(std::bind(&InputBuffer::_HandleTerminalInputCallback, this, std::placeholders::_1))
 {
     // The _termInput's constructor takes a reference to this object's _HandleTerminalInputCallback.
@@ -216,6 +218,26 @@ void InputBuffer::FlushAllButKeys()
         return event->EventType() != InputEventType::KeyEvent;
     });
     _storage.erase(newEnd, _storage.end());
+}
+
+void InputBuffer::SetTerminalConnection(_In_ ITerminalOutputConnection* const pTtyConnection)
+{
+    this->_pTtyConnection = pTtyConnection;
+}
+
+void InputBuffer::PassThroughWin32MouseRequest(bool enable)
+{
+    if (_pTtyConnection)
+    {
+        if (enable)
+        {
+            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003;1006h"));
+        }
+        else
+        {
+            LOG_IF_FAILED(_pTtyConnection->WriteTerminalW(L"\x1b[?1003;1006l"));
+        }
+    }
 }
 
 // Routine Description:

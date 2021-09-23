@@ -1,6 +1,6 @@
 #include "pch.h"
 
-#include "Generated Files\winrt\TerminalApp.h"
+#include "winrt/TerminalApp.h"
 
 int __stdcall wWinMain(HINSTANCE, HINSTANCE, PWSTR, int)
 {

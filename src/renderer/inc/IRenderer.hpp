@@ -39,7 +39,7 @@ namespace Microsoft::Console::Render
         virtual void TriggerRedrawCursor(const COORD* const pcoord) = 0;
 
         virtual void TriggerRedrawAll() = 0;
-        virtual void TriggerTeardown() = 0;
+        virtual void TriggerTeardown() noexcept = 0;
 
         virtual void TriggerSelection() = 0;
         virtual void TriggerScroll() = 0;
@@ -49,6 +49,10 @@ namespace Microsoft::Console::Render
         virtual void TriggerFontChange(const int iDpi,
                                        const FontInfoDesired& FontInfoDesired,
                                        _Out_ FontInfo& FontInfo) = 0;
+
+        virtual void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                    const SIZE cellSize,
+                                    const size_t centeringHint) = 0;
 
         [[nodiscard]] virtual HRESULT GetProposedFont(const int iDpi,
                                                       const FontInfoDesired& FontInfoDesired,

@@ -22,7 +22,6 @@ unit testing projects in the codebase without a bunch of overhead.
 
 #define VERIFY_SUCCESS_NTSTATUS(x) VERIFY_IS_TRUE(NT_SUCCESS(x))
 
-#include "precomp.h"
 #include "../host/globals.h"
 #include "../host/inputReadHandleData.h"
 #include "../buffer/out/CharRow.hpp"
@@ -290,11 +289,11 @@ private:
         // odd rows forced a wrap
         if (pRow->GetId() % 2 != 0)
         {
-            pRow->GetCharRow().SetWrapForced(true);
+            pRow->SetWrapForced(true);
         }
         else
         {
-            pRow->GetCharRow().SetWrapForced(false);
+            pRow->SetWrapForced(false);
         }
     }
 
@@ -303,7 +302,7 @@ private:
         const CONSOLE_INFORMATION& gci = Microsoft::Console::Interactivity::ServiceLocator::LocateGlobals().getConsoleInformation();
         // length 80 string of text with bisecting characters at the beginning and end.
         // positions of き(\x304d) are at 0, 27-28, 39-40, 67-68, 79
-        PWCHAR pwszText =
+        auto pwszText =
             L"\x304d"
             L"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
             L"\x304d\x304d"
@@ -332,6 +331,6 @@ private:
         // everything gets default attributes
         pRow->GetAttrRow().Reset(gci.GetActiveOutputBuffer().GetAttributes());
 
-        pRow->GetCharRow().SetWrapForced(true);
+        pRow->SetWrapForced(true);
     }
 };

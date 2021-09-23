@@ -20,38 +20,33 @@ Revision History:
 
 #pragma once
 
-#include "TextAttributeRun.hpp"
-#include "AttrRowIterator.hpp"
+#include "til/rle.h"
+#include "TextAttribute.hpp"
 
 class ATTR_ROW final
 {
+    using rle_vector = til::small_rle<TextAttribute, uint16_t, 1>;
+
 public:
-    using const_iterator = typename AttrRowIterator;
+    using const_iterator = rle_vector::const_iterator;
 
-    ATTR_ROW(const UINT cchRowWidth, const TextAttribute attr);
+    ATTR_ROW(uint16_t width, TextAttribute attr);
 
-    void Reset(const TextAttribute attr);
+    ~ATTR_ROW() = default;
 
-    TextAttribute GetAttrByColumn(const size_t column) const;
-    TextAttribute GetAttrByColumn(const size_t column,
-                                  size_t* const pApplies) const;
+    ATTR_ROW(const ATTR_ROW&) = default;
+    ATTR_ROW& operator=(const ATTR_ROW&) = default;
+    ATTR_ROW(ATTR_ROW&&)
+    noexcept = default;
+    ATTR_ROW& operator=(ATTR_ROW&&) noexcept = default;
 
-    size_t GetNumberOfRuns() const noexcept;
+    TextAttribute GetAttrByColumn(uint16_t column) const;
+    std::vector<uint16_t> GetHyperlinks() const;
 
-    size_t FindAttrIndex(const size_t index,
-                         size_t* const pApplies) const;
-
-    bool SetAttrToEnd(const UINT iStart, const TextAttribute attr);
-    void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith) noexcept;
-
-    void Resize(const size_t newWidth);
-
-    [[nodiscard]] HRESULT InsertAttrRuns(const std::basic_string_view<TextAttributeRun> newAttrs,
-                                         const size_t iStart,
-                                         const size_t iEnd,
-                                         const size_t cBufferWidth);
-
-    static std::vector<TextAttributeRun> PackAttrs(const std::vector<TextAttribute>& attrs);
+    bool SetAttrToEnd(uint16_t beginIndex, TextAttribute attr);
+    void ReplaceAttrs(const TextAttribute& toBeReplacedAttr, const TextAttribute& replaceWith);
+    void Resize(uint16_t newWidth);
+    void Replace(uint16_t beginIndex, uint16_t endIndex, const TextAttribute& newAttr);
 
     const_iterator begin() const noexcept;
     const_iterator end() const noexcept;
@@ -60,13 +55,14 @@ public:
     const_iterator cend() const noexcept;
 
     friend bool operator==(const ATTR_ROW& a, const ATTR_ROW& b) noexcept;
-    friend class AttrRowIterator;
+    friend class ROW;
 
 private:
-    std::vector<TextAttributeRun> _list;
-    size_t _cchRowWidth;
+    void Reset(const TextAttribute attr);
+
+    rle_vector _data;
 
 #ifdef UNIT_TESTING
-    friend class AttrRowTests;
+    friend class CommonState;
 #endif
 };

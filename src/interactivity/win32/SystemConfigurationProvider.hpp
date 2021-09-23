@@ -16,7 +16,7 @@ Author(s):
 
 #include "precomp.h"
 
-#include "..\inc\ISystemConfigurationProvider.hpp"
+#include "../inc/ISystemConfigurationProvider.hpp"
 
 namespace Microsoft::Console::Interactivity::Win32
 {

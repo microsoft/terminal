@@ -133,6 +133,11 @@ Class UnicodeRange : System.IComparable {
             Return $false
         }
 
+        # Comments are different: do not merge
+        If ($this.Comment -ne $Other.Comment) {
+            Return $false
+        }
+
         # Flags are different: do not merge
         If ($this.Flags -ne $Other.Flags) {
             Return $false
@@ -261,6 +266,7 @@ If (-not $NoOverrides) {
 "    // {0} (0x{0:X}) codepoints covered." -f $c
 If (-not $NoOverrides) {
 "    // {0} (0x{0:X}) codepoints overridden." -f $overrideCount
+"    // Override path: {0}" -f $OverridePath
 }
 "    static constexpr std::array<UnicodeRange, {0}> s_wideAndAmbiguousTable{{" -f $ranges.Count
 ForEach($_ in $ranges) {
