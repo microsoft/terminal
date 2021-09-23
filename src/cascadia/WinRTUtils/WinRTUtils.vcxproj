@@ -28,7 +28,6 @@
     </ClCompile>
     <ClCompile Include="LibraryResources.cpp" />
     <ClCompile Include="ScopedResourceLoader.cpp" />
-    <ClCompile Include="WtExeUtils.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>
