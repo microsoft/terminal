@@ -104,3 +104,5 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
     }();
     return exePath;
 }
+
+std::wstring EscapeCommandlineArg(const std::wstring_view arg);
