@@ -25,22 +25,15 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
-    {
-        _rootPane = std::make_shared<Pane>(profile, control, true);
-
-        _rootPane->Id(_nextPaneId);
-        _activePane = _rootPane;
-        _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
-        ++_nextPaneId;
-
-        _Setup();
-    }
-
     TerminalTab::TerminalTab(std::shared_ptr<Pane> rootPane)
     {
         _rootPane = rootPane;
         _activePane = nullptr;
+
+        if (_rootPane->_IsLeaf())
+        {
+            _rootPane->SetActive();
+        }
 
         auto firstId = _nextPaneId;
 

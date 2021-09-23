@@ -102,10 +102,6 @@ public:
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                   const float splitSize,
-                                                                  const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                                                                  const winrt::Microsoft::Terminal::Control::TermControl& control);
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                                                                  const float splitSize,
                                                                   std::shared_ptr<Pane> pane);
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;

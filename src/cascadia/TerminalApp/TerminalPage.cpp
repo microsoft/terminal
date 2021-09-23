@@ -850,7 +850,6 @@ namespace winrt::TerminalApp::implementation
             }
             else
             {
-                newPane->SetActive();
                 _CreateNewTabFromPane(newPane);
             }
         }

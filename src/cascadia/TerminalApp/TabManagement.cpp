@@ -65,9 +65,7 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        const auto newPane = _MakePane(newTerminalArgs, false, existingConnection);
-        newPane->SetActive();
-        _CreateNewTabFromPane(newPane);
+        _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -312,9 +310,7 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
-            const auto newPane = _MakePane(nullptr, true, nullptr);
-            newPane->SetActive();
-            _CreateNewTabFromPane(newPane);
+            _CreateNewTabFromPane(_MakePane(nullptr, true, nullptr));
 
             const auto runtimeTabText{ tab.GetTabText() };
             if (!runtimeTabText.empty())
