@@ -220,15 +220,18 @@ IFACEMETHODIMP UiaTextRangeBase::CompareEndpoints(_In_ TextPatternRangeEndpoint 
                                                   _Out_ int* pRetVal) noexcept
 try
 {
-    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRetVal);
     *pRetVal = 0;
+
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // get the text range that we're comparing to
     const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
-    if (range == nullptr)
-    {
-        return E_INVALIDARG;
-    }
+    RETURN_HR_IF_NULL(E_INVALIDARG, range);
 
     // get endpoint value that we're comparing to
     const auto other = range->GetEndpoint(targetEndpoint);
@@ -240,10 +243,7 @@ try
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
     //   Ensure both endpoints fit in the current buffer.
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
-    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
-    {
-        return E_FAIL;
-    }
+    RETURN_HR_IF(E_FAIL, !bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true));
 
     // compare them
     *pRetVal = bufferSize.CompareInBounds(mine, other, true);
@@ -259,6 +259,7 @@ IFACEMETHODIMP UiaTextRangeBase::ExpandToEnclosingUnit(_In_ TextUnit unit) noexc
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     try
     {
@@ -446,6 +447,12 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+
     // AttributeIDs that require special handling
     switch (attributeId)
     {
@@ -607,6 +614,12 @@ try
     RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
     *ppRetVal = nullptr;
 
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+
     const std::wstring queryText{ text, SysStringLen(text) };
     const auto bufferSize = _getBufferSize();
     const auto sensitivity = ignoreCase ? Search::Sensitivity::CaseInsensitive : Search::Sensitivity::CaseSensitive;
@@ -732,6 +745,12 @@ try
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     VariantInit(pRetVal);
 
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+
     // AttributeIDs that require special handling
     switch (attributeId)
     {
@@ -819,13 +838,14 @@ CATCH_RETURN();
 
 IFACEMETHODIMP UiaTextRangeBase::GetBoundingRectangles(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal) noexcept
 {
+    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
+    *ppRetVal = nullptr;
+
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
-
-    RETURN_HR_IF(E_INVALIDARG, ppRetVal == nullptr);
-    *ppRetVal = nullptr;
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     try
     {
@@ -927,21 +947,19 @@ CATCH_RETURN();
 IFACEMETHODIMP UiaTextRangeBase::GetText(_In_ int maxLength, _Out_ BSTR* pRetVal) noexcept
 try
 {
-    RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
+    RETURN_HR_IF_NULL(E_INVALIDARG, pRetVal);
+    RETURN_HR_IF(E_INVALIDARG, maxLength < -1);
     *pRetVal = nullptr;
 
-    if (maxLength < -1)
-    {
-        return E_INVALIDARG;
-    }
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const auto maxLengthOpt = (maxLength == -1) ?
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
-    _pData->LockConsole();
-    auto Unlock = wil::scope_exit([this]() noexcept {
-        _pData->UnlockConsole();
-    });
     const auto text = _getTextValue(maxLengthOpt);
     Unlock.reset();
 
@@ -1015,6 +1033,7 @@ try
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const auto wasDegenerate = IsDegenerate();
     if (count != 0)
@@ -1070,15 +1089,13 @@ IFACEMETHODIMP UiaTextRangeBase::MoveEndpointByUnit(_In_ TextPatternRangeEndpoin
 {
     RETURN_HR_IF(E_INVALIDARG, pRetVal == nullptr);
     *pRetVal = 0;
-    if (count == 0)
-    {
-        return S_OK;
-    }
 
     _pData->LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
+    RETURN_HR_IF(S_OK, count == 0);
 
     try
     {
@@ -1116,10 +1133,8 @@ try
     });
 
     const UiaTextRangeBase* range = static_cast<UiaTextRangeBase*>(pTargetRange);
-    if (range == nullptr)
-    {
-        return E_INVALIDARG;
-    }
+    RETURN_HR_IF_NULL(E_INVALIDARG, range);
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // TODO GH#5406: create a different UIA parent object for each TextBuffer
     //   This is a temporary solution to comparing two UTRs from different TextBuffers
@@ -1127,10 +1142,7 @@ try
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
     const auto mine = GetEndpoint(endpoint);
     const auto other = range->GetEndpoint(targetEndpoint);
-    if (!bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true))
-    {
-        return E_FAIL;
-    }
+    RETURN_HR_IF(E_FAIL, !bufferSize.IsInBounds(mine, true) || !bufferSize.IsInBounds(other, true));
 
     SetEndpoint(endpoint, range->GetEndpoint(targetEndpoint));
 
@@ -1146,6 +1158,7 @@ try
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     if (IsDegenerate())
     {
@@ -1190,6 +1203,7 @@ try
     auto Unlock = wil::scope_exit([&]() noexcept {
         _pData->UnlockConsole();
     });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     const auto oldViewport = _pData->GetViewport().ToInclusive();
     const auto viewportHeight = _getViewportHeight(oldViewport);
