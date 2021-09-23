@@ -5,7 +5,7 @@
 #include "VsDevShellGenerator.h"
 #include "VsSetupConfiguration.h"
 
-using namespace Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 std::wstring VsDevShellGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance& instance) const
 {

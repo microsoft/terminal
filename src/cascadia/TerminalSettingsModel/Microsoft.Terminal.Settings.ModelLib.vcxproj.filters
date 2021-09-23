@@ -24,7 +24,7 @@
     <ClCompile Include="KeyChordSerialization.cpp" />
     <ClCompile Include="Profile.cpp" />
     <ClCompile Include="ColorScheme.cpp" />
-    <ClCompile Include="DefaultProfileUtils.cpp">
+    <ClCompile Include="DynamicProfileUtils.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
     <ClCompile Include="$(OpenConsoleDir)\dep\jsoncpp\jsoncpp.cpp">
@@ -69,7 +69,7 @@
     <ClInclude Include="SettingsTypes.h" />
     <ClInclude Include="TerminalWarnings.h" />
     <ClInclude Include="ColorScheme.h" />
-    <ClInclude Include="DefaultProfileUtils.h">
+    <ClInclude Include="DynamicProfileUtils.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="JsonUtils.h">

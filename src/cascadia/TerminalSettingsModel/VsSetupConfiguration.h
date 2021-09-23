@@ -17,7 +17,7 @@ Author(s):
 
 #include "Setup.Configuration.h"
 
-namespace Microsoft::Terminal::Settings::Model
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
     /// <summary>
     /// See https://docs.microsoft.com/en-us/dotnet/api/microsoft.visualstudio.setup.configuration?view=visualstudiosdk-2019

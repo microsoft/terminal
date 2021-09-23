@@ -7,44 +7,34 @@ Module Name:
 
 Abstract:
 - This class is a helper that can be used to quickly create tests that need to
-  read & parse json data. Test classes that need to read JSON should make sure
-  to derive from this class, and also make sure to call InitializeJsonReader()
-  in the TEST_CLASS_SETUP().
+  read & parse json data.
 
 Author(s):
     Mike Griese (migrie) August-2019
 --*/
 
+#pragma once
+
 class JsonTestClass
 {
 public:
-    void InitializeJsonReader()
+    static Json::Value VerifyParseSucceeded(const std::string_view& content)
     {
-        _reader = std::unique_ptr<Json::CharReader>(Json::CharReaderBuilder::CharReaderBuilder().newCharReader());
-    };
+        static const std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
-    void InitializeJsonWriter()
-    {
-        _writer = std::unique_ptr<Json::StreamWriter>(Json::StreamWriterBuilder::StreamWriterBuilder().newStreamWriter());
-    }
-
-    Json::Value VerifyParseSucceeded(std::string content)
-    {
         Json::Value root;
         std::string errs;
-        const bool parseResult = _reader->parse(content.c_str(), content.c_str() + content.size(), &root, &errs);
+        const bool parseResult = reader->parse(content.data(), content.data() + content.size(), &root, &errs);
         VERIFY_IS_TRUE(parseResult, winrt::to_hstring(errs).c_str());
         return root;
     };
 
-    std::string toString(const Json::Value& json)
+    static std::string toString(const Json::Value& json)
     {
+        static const std::unique_ptr<Json::StreamWriter> writer{ Json::StreamWriterBuilder::StreamWriterBuilder().newStreamWriter() };
+
         std::stringstream s;
-        _writer->write(json, &s);
+        writer->write(json, &s);
         return s.str();
     }
-
-protected:
-    std::unique_ptr<Json::CharReader> _reader;
-    std::unique_ptr<Json::StreamWriter> _writer;
 };

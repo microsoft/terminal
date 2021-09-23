@@ -1057,9 +1057,10 @@ const DelimiterClass TextBuffer::_GetDelimiterClassAt(const COORD pos, const std
 // - accessibilityMode - when enabled, we continue expanding left until we are at the beginning of a readable word.
 //                        Otherwise, expand left until a character of a new delimiter class is found
 //                        (or a row boundary is encountered)
+// - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
 // - The COORD for the first character on the "word" (inclusive)
-const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode) const
+const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
     // Consider a buffer with this text in it:
     // "  word   other  "
@@ -1072,10 +1073,9 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
     // NOTE: the start anchor (this one) is inclusive, whereas the end anchor (GetWordEnd) is exclusive
 
 #pragma warning(suppress : 26496)
-    // GH#7664: Treat EndExclusive as EndInclusive so
-    // that it actually points to a space in the buffer
     auto copy{ target };
     const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
     if (target == bufferSize.Origin())
     {
         // can't expand left
@@ -1083,8 +1083,14 @@ const COORD TextBuffer::GetWordStart(const COORD target, const std::wstring_view
     }
     else if (target == bufferSize.EndExclusive())
     {
-        // treat EndExclusive as EndInclusive
+        // GH#7664: Treat EndExclusive as EndInclusive so
+        // that it actually points to a space in the buffer
         copy = { bufferSize.RightInclusive(), bufferSize.BottomInclusive() };
+    }
+    else if (bufferSize.CompareInBounds(target, limit, true) >= 0)
+    {
+        // if at/past the limit --> clamp to limit
+        copy = *limitOptional;
     }
 
     if (accessibilityMode)
@@ -1179,9 +1185,10 @@ const COORD TextBuffer::_GetWordStartForSelection(const COORD target, const std:
 // - accessibilityMode - when enabled, we continue expanding right until we are at the beginning of the next READABLE word
 //                        Otherwise, expand right until a character of a new delimiter class is found
 //                        (or a row boundary is encountered)
+// - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
 // - The COORD for the last character on the "word" (inclusive)
-const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode) const
+const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
     // Consider a buffer with this text in it:
     // "  word   other  "
@@ -1193,16 +1200,17 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
     //  so the words in the example include ["word   ", "other  "]
     // NOTE: the end anchor (this one) is exclusive, whereas the start anchor (GetWordStart) is inclusive
 
-    // Already at the end. Can't move forward.
-    if (target == GetSize().EndExclusive())
+    // Already at/past the limit. Can't move forward.
+    const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
         return target;
     }
 
     if (accessibilityMode)
     {
-        const auto lastCharPos{ GetLastNonSpaceCharacter() };
-        return _GetWordEndForAccessibility(target, wordDelimiters, lastCharPos);
+        return _GetWordEndForAccessibility(target, wordDelimiters, limit);
     }
     else
     {
@@ -1215,44 +1223,46 @@ const COORD TextBuffer::GetWordEnd(const COORD target, const std::wstring_view w
 // Arguments:
 // - target - a COORD on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
-// - lastCharPos - the position of the last nonspace character in the text buffer (to improve performance)
+// - limit - the last "valid" position in the text buffer (to improve performance)
 // Return Value:
 // - The COORD for the first character of the next readable "word". If no next word, return one past the end of the buffer
-const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD lastCharPos) const
+const COORD TextBuffer::_GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD limit) const
 {
-    const auto bufferSize = GetSize();
-    COORD result = target;
+    const auto bufferSize{ GetSize() };
+    COORD result{ target };
 
-    // Check if we're already on/past the last RegularChar
-    if (bufferSize.CompareInBounds(result, lastCharPos, true) >= 0)
+    if (bufferSize.CompareInBounds(target, limit, true) >= 0)
     {
-        return bufferSize.EndExclusive();
+        // if we're already on/past the last RegularChar,
+        // clamp result to that position
+        result = limit;
+
+        // make the result exclusive
+        bufferSize.IncrementInBounds(result, true);
     }
-
-    // ignore right boundary. Continue through readable text found
-    while (_GetDelimiterClassAt(result, wordDelimiters) == DelimiterClass::RegularChar)
+    else
     {
-        if (!bufferSize.IncrementInBounds(result, true))
+        auto iter{ GetCellDataAt(result, bufferSize) };
+        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) == DelimiterClass::RegularChar)
         {
-            break;
+            // Iterate through readable text
+            ++iter;
         }
-    }
 
-    // we are already on/past the last RegularChar
-    if (bufferSize.CompareInBounds(result, lastCharPos, true) >= 0)
-    {
-        return bufferSize.EndExclusive();
-    }
-
-    // make sure we expand to the beginning of the NEXT word
-    while (_GetDelimiterClassAt(result, wordDelimiters) != DelimiterClass::RegularChar)
-    {
-        if (!bufferSize.IncrementInBounds(result, true))
+        while (iter && iter.Pos() != limit && _GetDelimiterClassAt(iter.Pos(), wordDelimiters) != DelimiterClass::RegularChar)
         {
-            // we are at the EndInclusive COORD
-            // this signifies that we must include the last char in the buffer
-            // but the position of the COORD points to nothing
-            break;
+            // expand to the beginning of the NEXT word
+            ++iter;
+        }
+
+        result = iter.Pos();
+
+        // Special case: we tried to move one past the end of the buffer,
+        // but iter prevented that (because that pos doesn't exist).
+        // Manually increment onto the EndExclusive point.
+        if (!iter)
+        {
+            bufferSize.IncrementInBounds(result, true);
         }
     }
 
@@ -1345,18 +1355,20 @@ void TextBuffer::_PruneHyperlinks()
 // Arguments:
 // - pos - a COORD on the word you are currently on
 // - wordDelimiters - what characters are we considering for the separation of words
-// - lastCharPos - the position of the last nonspace character in the text buffer (to improve performance)
+// - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
 // - pos - The COORD for the first character on the "word" (inclusive)
-bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const
+bool TextBuffer::MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional) const
 {
     // move to the beginning of the next word
     // NOTE: _GetWordEnd...() returns the exclusive position of the "end of the word"
     //       This is also the inclusive start of the next word.
-    auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, lastCharPos) };
+    const auto bufferSize{ GetSize() };
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+    const auto copy{ _GetWordEndForAccessibility(pos, wordDelimiters, limit) };
 
-    if (copy == GetSize().EndExclusive())
+    if (bufferSize.CompareInBounds(copy, limit, true) >= 0)
     {
         return false;
     }
@@ -1393,19 +1405,23 @@ bool TextBuffer::MoveToPreviousWord(COORD& pos, std::wstring_view wordDelimiters
 // - Update pos to be the beginning of the current glyph/character. This is used for accessibility
 // Arguments:
 // - pos - a COORD on the word you are currently on
+// - limitOptional - (optional) the last possible position in the buffer that can be explored. This can be used to improve performance.
 // Return Value:
 // - pos - The COORD for the first cell of the current glyph (inclusive)
-const til::point TextBuffer::GetGlyphStart(const til::point pos) const
+const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<til::point> limitOptional) const
 {
     COORD resultPos = pos;
     const auto bufferSize = GetSize();
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
-    if (resultPos == bufferSize.EndExclusive())
+    // Clamp pos to limit
+    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
     {
-        bufferSize.DecrementInBounds(resultPos, true);
+        resultPos = limit;
     }
 
-    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    // limit is exclusive, so we need to move back to be within valid bounds
+    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
     {
         bufferSize.DecrementInBounds(resultPos, true);
     }
@@ -1414,23 +1430,34 @@ const til::point TextBuffer::GetGlyphStart(const til::point pos) const
 }
 
 // Method Description:
-// - Update pos to be the end of the current glyph/character. This is used for accessibility
+// - Update pos to be the end of the current glyph/character.
 // Arguments:
 // - pos - a COORD on the word you are currently on
+// - accessibilityMode - this is being used for accessibility; make the end exclusive.
 // Return Value:
 // - pos - The COORD for the last cell of the current glyph (exclusive)
-const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
+const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
     COORD resultPos = pos;
-
     const auto bufferSize = GetSize();
-    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+
+    // Clamp pos to limit
+    if (bufferSize.CompareInBounds(resultPos, limit, true) > 0)
+    {
+        resultPos = limit;
+    }
+
+    if (resultPos != limit && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {
         bufferSize.IncrementInBounds(resultPos, true);
     }
 
     // increment one more time to become exclusive
-    bufferSize.IncrementInBounds(resultPos, true);
+    if (accessibilityMode)
+    {
+        bufferSize.IncrementInBounds(resultPos, true);
+    }
     return resultPos;
 }
 
@@ -1438,29 +1465,43 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos) const
 // - Update pos to be the beginning of the next glyph/character. This is used for accessibility
 // Arguments:
 // - pos - a COORD on the word you are currently on
-// - allowBottomExclusive - allow the nonexistent end-of-buffer cell to be encountered
+// - allowExclusiveEnd - allow result to be the exclusive limit (one past limit)
+// - limit - boundaries for the iterator to operate within
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
 // - pos - The COORD for the first cell of the current glyph (inclusive)
-bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) const
+bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowExclusiveEnd, std::optional<til::point> limitOptional) const
 {
-    COORD resultPos = pos;
     const auto bufferSize = GetSize();
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
 
-    if (resultPos == GetSize().EndExclusive())
+    const auto distanceToLimit{ bufferSize.CompareInBounds(pos, limit, true) };
+    if (distanceToLimit >= 0)
     {
-        // we're already at the end
+        // Corner Case: we're on/past the limit
+        // Clamp us to the limit
+        pos = limit;
+        return false;
+    }
+    else if (!allowExclusiveEnd && distanceToLimit == -1)
+    {
+        // Corner Case: we're just before the limit
+        // and we are not allowed onto the exclusive end.
+        // Fail to move.
         return false;
     }
 
-    // try to move. If we can't, we're done.
-    const bool success = bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
-    if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsTrailing())
+    // Try to move forward, but if we hit the buffer boundary, we fail to move.
+    auto iter{ GetCellDataAt(pos, bufferSize) };
+    const bool success{ ++iter };
+
+    // Move again if we're on a wide glyph
+    if (success && iter->DbcsAttr().IsTrailing())
     {
-        bufferSize.IncrementInBounds(resultPos, allowBottomExclusive);
+        ++iter;
     }
 
-    pos = resultPos;
+    pos = iter.Pos();
     return success;
 }
 
@@ -1471,12 +1512,21 @@ bool TextBuffer::MoveToNextGlyph(til::point& pos, bool allowBottomExclusive) con
 // Return Value:
 // - true, if successfully updated pos. False, if we are unable to move (usually due to a buffer boundary)
 // - pos - The COORD for the first cell of the previous glyph (inclusive)
-bool TextBuffer::MoveToPreviousGlyph(til::point& pos) const
+bool TextBuffer::MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional) const
 {
     COORD resultPos = pos;
+    const auto bufferSize = GetSize();
+    const auto limit{ limitOptional.value_or(bufferSize.EndExclusive()) };
+
+    if (bufferSize.CompareInBounds(pos, limit, true) > 0)
+    {
+        // we're past the end
+        // clamp us to the limit
+        pos = limit;
+        return true;
+    }
 
     // try to move. If we can't, we're done.
-    const auto bufferSize = GetSize();
     const bool success = bufferSize.DecrementInBounds(resultPos, true);
     if (resultPos != bufferSize.EndExclusive() && GetCellDataAt(resultPos)->DbcsAttr().IsLeading())
     {

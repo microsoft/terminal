@@ -227,16 +227,30 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    enum class SelectionExpansionMode
+    enum class SelectionDirection
     {
-        Cell,
-        Word,
-        Line
+        Left,
+        Right,
+        Up,
+        Down
     };
-    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
+
+    enum class SelectionExpansion
+    {
+        Char,
+        Word,
+        Line, // Mouse selection only!
+        Viewport,
+        Buffer
+    };
+    void MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
+    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
+    void UpdateSelection(SelectionDirection direction, SelectionExpansion mode);
+
+    using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
+    static UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey);
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -308,7 +322,7 @@ private:
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
     std::wstring _wordDelimiters;
-    SelectionExpansionMode _multiClickSelectionMode;
+    SelectionExpansion _multiClickSelectionMode;
 #pragma endregion
 
     // TODO: These members are not shared by an alt-buffer. They should be
@@ -375,6 +389,10 @@ private:
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    void _MoveByChar(SelectionDirection direction, COORD& pos);
+    void _MoveByWord(SelectionDirection direction, COORD& pos);
+    void _MoveByViewport(SelectionDirection direction, COORD& pos);
+    void _MoveByBuffer(SelectionDirection direction, COORD& pos);
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;

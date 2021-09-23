@@ -79,7 +79,7 @@ namespace TerminalAppLocalTests
         // containing a ${profile.name} to replace. When we expand it, it should
         // have created one command for each profile.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -111,10 +111,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        const auto guid0 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
@@ -207,7 +204,7 @@ namespace TerminalAppLocalTests
         // For this test, put an iterable command without a given `name` to
         // replace. When we expand it, it should still work.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -238,10 +235,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        const auto guid0 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
@@ -335,7 +329,7 @@ namespace TerminalAppLocalTests
         // cause bad json to be filled in. Something like a profile with a name
         // of "Foo\"", so the trailing '"' might break the json parsing.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -367,10 +361,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        const auto guid0 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
@@ -468,7 +459,7 @@ namespace TerminalAppLocalTests
         //    ├─ first.com
         //    └─ second.com
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -508,7 +499,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -558,7 +549,7 @@ namespace TerminalAppLocalTests
         //       ├─ child1
         //       └─ child2
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -603,7 +594,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -691,7 +682,7 @@ namespace TerminalAppLocalTests
         //     ├─ Split pane, direction: right, profile: profile2
         //     └─ Split pane, direction: down, profile: profile2
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -727,7 +718,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -828,7 +819,7 @@ namespace TerminalAppLocalTests
         //    ├─ Profile 2
         //    └─ Profile 3
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -864,7 +855,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -926,7 +917,7 @@ namespace TerminalAppLocalTests
         //       ├─ Split right
         //       └─ Split down
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -967,7 +958,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -1071,7 +1062,7 @@ namespace TerminalAppLocalTests
         // containing a ${profile.name} to replace. When we expand it, it should
         // have created one command for each profile.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -1107,7 +1098,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         // Since at least one profile does not reference a color scheme,
         // we add a warning saying "the color scheme is unknown"

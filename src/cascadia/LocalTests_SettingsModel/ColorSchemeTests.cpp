@@ -5,9 +5,11 @@
 
 #include "../TerminalSettingsModel/ColorScheme.h"
 #include "../TerminalSettingsModel/CascadiaSettings.h"
+#include "../types/inc/colorTable.hpp"
 #include "JsonTestClass.h"
 
 using namespace Microsoft::Console;
+using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 using namespace WEX::Logging;
 using namespace WEX::TestExecution;
@@ -32,339 +34,293 @@ namespace SettingsModelLocalTests
             TEST_CLASS_PROPERTY(L"UAP:AppXManifest", L"TestHostAppXManifest.xml")
         END_TEST_CLASS()
 
-        TEST_METHOD(CanLayerColorScheme);
-        TEST_METHOD(LayerColorSchemeProperties);
+        TEST_METHOD(ParseSimpleColorScheme);
         TEST_METHOD(LayerColorSchemesOnArray);
         TEST_METHOD(UpdateSchemeReferences);
 
-        TEST_CLASS_SETUP(ClassSetup)
+        static Core::Color rgb(uint8_t r, uint8_t g, uint8_t b) noexcept
         {
-            InitializeJsonReader();
-            return true;
+            return Core::Color{ r, g, b, 255 };
         }
     };
 
-    void ColorSchemeTests::CanLayerColorScheme()
+    void ColorSchemeTests::ParseSimpleColorScheme()
     {
-        const std::string scheme0String{ R"({
-            "name": "scheme0",
-            "foreground": "#000000",
-            "background": "#010101"
-        })" };
-        const std::string scheme1String{ R"({
-            "name": "scheme1",
-            "foreground": "#020202",
-            "background": "#030303"
-        })" };
-        const std::string scheme2String{ R"({
-            "name": "scheme0",
-            "foreground": "#040404",
-            "background": "#050505"
-        })" };
-        const std::string scheme3String{ R"({
-            // "name": "scheme3",
-            "foreground": "#060606",
-            "background": "#070707"
-        })" };
+        const std::string campbellScheme{ "{"
+                                          "\"background\" : \"#0C0C0C\","
+                                          "\"black\" : \"#0C0C0C\","
+                                          "\"blue\" : \"#0037DA\","
+                                          "\"brightBlack\" : \"#767676\","
+                                          "\"brightBlue\" : \"#3B78FF\","
+                                          "\"brightCyan\" : \"#61D6D6\","
+                                          "\"brightGreen\" : \"#16C60C\","
+                                          "\"brightPurple\" : \"#B4009E\","
+                                          "\"brightRed\" : \"#E74856\","
+                                          "\"brightWhite\" : \"#F2F2F2\","
+                                          "\"brightYellow\" : \"#F9F1A5\","
+                                          "\"cursorColor\" : \"#FFFFFF\","
+                                          "\"cyan\" : \"#3A96DD\","
+                                          "\"foreground\" : \"#F2F2F2\","
+                                          "\"green\" : \"#13A10E\","
+                                          "\"name\" : \"Campbell\","
+                                          "\"purple\" : \"#881798\","
+                                          "\"red\" : \"#C50F1F\","
+                                          "\"selectionBackground\" : \"#131313\","
+                                          "\"white\" : \"#CCCCCC\","
+                                          "\"yellow\" : \"#C19C00\""
+                                          "}" };
 
-        const auto scheme0Json = VerifyParseSucceeded(scheme0String);
-        const auto scheme1Json = VerifyParseSucceeded(scheme1String);
-        const auto scheme2Json = VerifyParseSucceeded(scheme2String);
-        const auto scheme3Json = VerifyParseSucceeded(scheme3String);
+        const auto schemeObject = VerifyParseSucceeded(campbellScheme);
+        auto scheme = ColorScheme::FromJson(schemeObject);
+        VERIFY_ARE_EQUAL(L"Campbell", scheme->Name());
+        VERIFY_ARE_EQUAL(til::color(0xf2, 0xf2, 0xf2, 255), til::color{ scheme->Foreground() });
+        VERIFY_ARE_EQUAL(til::color(0x0c, 0x0c, 0x0c, 255), til::color{ scheme->Background() });
+        VERIFY_ARE_EQUAL(til::color(0x13, 0x13, 0x13, 255), til::color{ scheme->SelectionBackground() });
+        VERIFY_ARE_EQUAL(til::color(0xFF, 0xFF, 0xFF, 255), til::color{ scheme->CursorColor() });
 
-        const auto scheme0 = ColorScheme::FromJson(scheme0Json);
+        std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
+        const auto campbellSpan = gsl::make_span(expectedCampbellTable);
+        Utils::InitializeCampbellColorTable(campbellSpan);
+        Utils::SetColorTableAlpha(campbellSpan, 0);
 
-        VERIFY_IS_TRUE(scheme0->ShouldBeLayered(scheme0Json));
-        VERIFY_IS_FALSE(scheme0->ShouldBeLayered(scheme1Json));
-        VERIFY_IS_TRUE(scheme0->ShouldBeLayered(scheme2Json));
-        VERIFY_IS_FALSE(scheme0->ShouldBeLayered(scheme3Json));
+        for (size_t i = 0; i < expectedCampbellTable.size(); i++)
+        {
+            const auto& expected = expectedCampbellTable.at(i);
+            const til::color actual{ scheme->Table().at(static_cast<uint32_t>(i)) };
+            VERIFY_ARE_EQUAL(expected, actual);
+        }
 
-        const auto scheme1 = ColorScheme::FromJson(scheme1Json);
-
-        VERIFY_IS_FALSE(scheme1->ShouldBeLayered(scheme0Json));
-        VERIFY_IS_TRUE(scheme1->ShouldBeLayered(scheme1Json));
-        VERIFY_IS_FALSE(scheme1->ShouldBeLayered(scheme2Json));
-        VERIFY_IS_FALSE(scheme1->ShouldBeLayered(scheme3Json));
-
-        const auto scheme3 = ColorScheme::FromJson(scheme3Json);
-
-        VERIFY_IS_FALSE(scheme3->ShouldBeLayered(scheme0Json));
-        VERIFY_IS_FALSE(scheme3->ShouldBeLayered(scheme1Json));
-        VERIFY_IS_FALSE(scheme3->ShouldBeLayered(scheme2Json));
-        VERIFY_IS_FALSE(scheme3->ShouldBeLayered(scheme3Json));
-    }
-
-    void ColorSchemeTests::LayerColorSchemeProperties()
-    {
-        const std::string scheme0String{ R"({
-            "name": "scheme0",
-            "foreground": "#000000",
-            "background": "#010101",
-            "selectionBackground": "#010100",
-            "cursorColor": "#010001",
-            "red": "#010000",
-            "green": "#000100",
-            "blue": "#000001"
-        })" };
-        const std::string scheme1String{ R"({
-            "name": "scheme1",
-            "foreground": "#020202",
-            "background": "#030303",
-            "selectionBackground": "#020200",
-            "cursorColor": "#040004",
-            "red": "#020000",
-
-            "blue": "#000002"
-        })" };
-        const std::string scheme2String{ R"({
-            "name": "scheme0",
-            "foreground": "#040404",
-            "background": "#050505",
-            "selectionBackground": "#030300",
-            "cursorColor": "#060006",
-            "red": "#030000",
-            "green": "#000300"
-        })" };
-
-        const auto scheme0Json = VerifyParseSucceeded(scheme0String);
-        const auto scheme1Json = VerifyParseSucceeded(scheme1String);
-        const auto scheme2Json = VerifyParseSucceeded(scheme2String);
-
-        auto scheme0 = ColorScheme::FromJson(scheme0Json);
-        VERIFY_ARE_EQUAL(L"scheme0", scheme0->_Name);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_Foreground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_Background);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 0), scheme0->_SelectionBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 0, 1), scheme0->_CursorColor);
-        VERIFY_ARE_EQUAL(ARGB(0, 1, 0, 0), scheme0->_table[XTERM_RED_ATTR]);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 1, 0), scheme0->_table[XTERM_GREEN_ATTR]);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 1), scheme0->_table[XTERM_BLUE_ATTR]);
-
-        Log::Comment(NoThrowString().Format(
-            L"Layering scheme1 on top of scheme0"));
-        scheme0->LayerJson(scheme1Json);
-
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme0->_Foreground);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme0->_Background);
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 0), scheme0->_SelectionBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 4, 0, 4), scheme0->_CursorColor);
-        VERIFY_ARE_EQUAL(ARGB(0, 2, 0, 0), scheme0->_table[XTERM_RED_ATTR]);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 1, 0), scheme0->_table[XTERM_GREEN_ATTR]);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 2), scheme0->_table[XTERM_BLUE_ATTR]);
-
-        Log::Comment(NoThrowString().Format(
-            L"Layering scheme2Json on top of (scheme0+scheme1)"));
-        scheme0->LayerJson(scheme2Json);
-
-        VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_Foreground);
-        VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_Background);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 0), scheme0->_SelectionBackground);
-        VERIFY_ARE_EQUAL(ARGB(0, 6, 0, 6), scheme0->_CursorColor);
-        VERIFY_ARE_EQUAL(ARGB(0, 3, 0, 0), scheme0->_table[XTERM_RED_ATTR]);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 3, 0), scheme0->_table[XTERM_GREEN_ATTR]);
-        VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 2), scheme0->_table[XTERM_BLUE_ATTR]);
+        Log::Comment(L"Roundtrip Test for Color Scheme");
+        Json::Value outJson{ scheme->ToJson() };
+        VERIFY_ARE_EQUAL(schemeObject, outJson);
     }
 
     void ColorSchemeTests::LayerColorSchemesOnArray()
     {
-        const std::string scheme0String{ R"({
-            "name": "scheme0",
-            "foreground": "#000000",
-            "background": "#010101"
+        static constexpr std::string_view inboxSettings{ R"({
+            "schemes": [
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                }
+            ]
         })" };
-        const std::string scheme1String{ R"({
-            "name": "scheme1",
-            "foreground": "#020202",
-            "background": "#030303"
+        static constexpr std::string_view userSettings{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0"
+                }
+            ],
+            "schemes": [
+                {
+                    "background": "#121314",
+                    "black": "#121314",
+                    "blue": "#121314",
+                    "brightBlack": "#121314",
+                    "brightBlue": "#121314",
+                    "brightCyan": "#121314",
+                    "brightGreen": "#121314",
+                    "brightPurple": "#121314",
+                    "brightRed": "#121314",
+                    "brightWhite": "#121314",
+                    "brightYellow": "#121314",
+                    "cursorColor": "#121314",
+                    "cyan": "#121314",
+                    "foreground": "#121314",
+                    "green": "#121314",
+                    "name": "Campbell",
+                    "purple": "#121314",
+                    "red": "#121314",
+                    "selectionBackground": "#121314",
+                    "white": "#121314",
+                    "yellow": "#121314"
+                },
+                {
+                    "background": "#012456",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell Powershell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                }
+            ]
         })" };
-        const std::string scheme2String{ R"({
-            "name": "scheme0",
-            "foreground": "#040404",
-            "background": "#050505"
-        })" };
-        const std::string scheme3String{ R"({
-            // by not providing a name, the scheme will have the name ""
-            "foreground": "#060606",
-            "background": "#070707"
-        })" };
 
-        const auto scheme0Json = VerifyParseSucceeded(scheme0String);
-        const auto scheme1Json = VerifyParseSucceeded(scheme1String);
-        const auto scheme2Json = VerifyParseSucceeded(scheme2String);
-        const auto scheme3Json = VerifyParseSucceeded(scheme3String);
+        const auto settings = winrt::make_self<CascadiaSettings>(userSettings, inboxSettings);
 
-        auto settings = winrt::make_self<CascadiaSettings>();
+        const auto colorSchemes = settings->GlobalSettings().ColorSchemes();
+        VERIFY_ARE_EQUAL(2u, colorSchemes.Size());
 
-        VERIFY_ARE_EQUAL(0u, settings->_globals->ColorSchemes().Size());
-        VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme0Json));
-        VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme1Json));
-        VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme2Json));
-        VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
+        const auto scheme0 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell"));
+        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x12, 0x13, 0x14), scheme0->Background());
 
-        settings->_LayerOrCreateColorScheme(scheme0Json);
-        {
-            for (auto kv : settings->_globals->ColorSchemes())
-            {
-                Log::Comment(NoThrowString().Format(
-                    L"kv:%s->%s", kv.Key().data(), kv.Value().Name().data()));
-            }
-            VERIFY_ARE_EQUAL(1u, settings->_globals->ColorSchemes().Size());
-
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
-            auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
-
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
-            VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme1Json));
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
-            VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_Background);
-        }
-
-        settings->_LayerOrCreateColorScheme(scheme1Json);
-
-        {
-            VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
-
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
-            auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme1"));
-            auto scheme1Proj = settings->_globals->ColorSchemes().Lookup(L"scheme1");
-            auto scheme1 = winrt::get_self<ColorScheme>(scheme1Proj);
-
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme1Json));
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
-            VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 0, 0, 0), scheme0->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 1, 1, 1), scheme0->_Background);
-            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_Background);
-        }
-        settings->_LayerOrCreateColorScheme(scheme2Json);
-
-        {
-            VERIFY_ARE_EQUAL(2u, settings->_globals->ColorSchemes().Size());
-
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
-            auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme1"));
-            auto scheme1Proj = settings->_globals->ColorSchemes().Lookup(L"scheme1");
-            auto scheme1 = winrt::get_self<ColorScheme>(scheme1Proj);
-
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme1Json));
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
-            VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_Background);
-            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_Background);
-        }
-        settings->_LayerOrCreateColorScheme(scheme3Json);
-
-        {
-            VERIFY_ARE_EQUAL(3u, settings->_globals->ColorSchemes().Size());
-
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme0"));
-            auto scheme0Proj = settings->_globals->ColorSchemes().Lookup(L"scheme0");
-            auto scheme0 = winrt::get_self<ColorScheme>(scheme0Proj);
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L"scheme1"));
-            auto scheme1Proj = settings->_globals->ColorSchemes().Lookup(L"scheme1");
-            auto scheme1 = winrt::get_self<ColorScheme>(scheme1Proj);
-            VERIFY_IS_TRUE(settings->_globals->ColorSchemes().HasKey(L""));
-            auto scheme2Proj = settings->_globals->ColorSchemes().Lookup(L"");
-            auto scheme2 = winrt::get_self<ColorScheme>(scheme2Proj);
-
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme0Json));
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme1Json));
-            VERIFY_IS_NOT_NULL(settings->_FindMatchingColorScheme(scheme2Json));
-            VERIFY_IS_NULL(settings->_FindMatchingColorScheme(scheme3Json));
-            VERIFY_ARE_EQUAL(ARGB(0, 4, 4, 4), scheme0->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 5, 5, 5), scheme0->_Background);
-            VERIFY_ARE_EQUAL(ARGB(0, 2, 2, 2), scheme1->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 3, 3, 3), scheme1->_Background);
-            VERIFY_ARE_EQUAL(ARGB(0, 6, 6, 6), scheme2->_Foreground);
-            VERIFY_ARE_EQUAL(ARGB(0, 7, 7, 7), scheme2->_Background);
-        }
+        const auto scheme1 = winrt::get_self<ColorScheme>(colorSchemes.Lookup(L"Campbell Powershell"));
+        VERIFY_ARE_EQUAL(rgb(0xCC, 0xCC, 0xCC), scheme1->Foreground());
+        VERIFY_ARE_EQUAL(rgb(0x01, 0x24, 0x56), scheme1->Background());
     }
 
     void ColorSchemeTests::UpdateSchemeReferences()
     {
-        const std::string settingsString{ R"json({
-                                                "defaultProfile": "Inherited reference",
-                                                "profiles": {
-                                                    "defaults": {
-                                                        "colorScheme": "Scheme 1"
-                                                    },
-                                                    "list": [
-                                                        {
-                                                            "name": "Explicit scheme reference",
-                                                            "colorScheme": "Scheme 1"
-                                                        },
-                                                        {
-                                                            "name": "Explicit reference; hidden",
-                                                            "colorScheme": "Scheme 1",
-                                                            "hidden": true
-                                                        },
-                                                        {
-                                                            "name": "Inherited reference"
-                                                        },
-                                                        {
-                                                            "name": "Different reference",
-                                                            "colorScheme": "Scheme 2"
-                                                        }
-                                                    ]
-                                                },
-                                                "schemes": [
-                                                    { "name": "Scheme 1" },
-                                                    { "name": "Scheme 2" },
-                                                    { "name": "Scheme 1 (renamed)" }
-                                                ]
-                                            })json" };
+        static constexpr std::string_view settingsString{ R"json({
+            "defaultProfile": "Inherited reference",
+            "profiles": {
+                "defaults": {
+                    "colorScheme": "Campbell"
+                },
+                "list": [
+                    {
+                        "name": "Explicit scheme reference",
+                        "colorScheme": "Campbell"
+                    },
+                    {
+                        "name": "Explicit reference; hidden",
+                        "colorScheme": "Campbell",
+                        "hidden": true
+                    },
+                    {
+                        "name": "Inherited reference"
+                    },
+                    {
+                        "name": "Different reference",
+                        "colorScheme": "One Half Dark"
+                    }
+                ]
+            },
+            "schemes": [
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                },
+                {
+                    "background": "#0C0C0C",
+                    "black": "#0C0C0C",
+                    "blue": "#0037DA",
+                    "brightBlack": "#767676",
+                    "brightBlue": "#3B78FF",
+                    "brightCyan": "#61D6D6",
+                    "brightGreen": "#16C60C",
+                    "brightPurple": "#B4009E",
+                    "brightRed": "#E74856",
+                    "brightWhite": "#F2F2F2",
+                    "brightYellow": "#F9F1A5",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#3A96DD",
+                    "foreground": "#CCCCCC",
+                    "green": "#13A10E",
+                    "name": "Campbell (renamed)",
+                    "purple": "#881798",
+                    "red": "#C50F1F",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#CCCCCC",
+                    "yellow": "#C19C00"
+                },
+                {
+                    "background": "#282C34",
+                    "black": "#282C34",
+                    "blue": "#61AFEF",
+                    "brightBlack": "#5A6374",
+                    "brightBlue": "#61AFEF",
+                    "brightCyan": "#56B6C2",
+                    "brightGreen": "#98C379",
+                    "brightPurple": "#C678DD",
+                    "brightRed": "#E06C75",
+                    "brightWhite": "#DCDFE4",
+                    "brightYellow": "#E5C07B",
+                    "cursorColor": "#FFFFFF",
+                    "cyan": "#56B6C2",
+                    "foreground": "#DCDFE4",
+                    "green": "#98C379",
+                    "name": "One Half Dark",
+                    "purple": "#C678DD",
+                    "red": "#E06C75",
+                    "selectionBackground": "#FFFFFF",
+                    "white": "#DCDFE4",
+                    "yellow": "#E5C07B"
+                }
+            ]
+        })json" };
 
-        auto settings{ winrt::make_self<CascadiaSettings>(false) };
-        settings->_ParseJsonString(settingsString, false);
-        settings->_ApplyDefaultsFromUserSettings();
-        settings->LayerJson(settings->_userSettings);
-        settings->_ValidateSettings();
+        const auto settings{ winrt::make_self<CascadiaSettings>(settingsString) };
 
-        // update all references to "Scheme 1"
-        const auto newName{ L"Scheme 1 (renamed)" };
-        settings->UpdateColorSchemeReferences(L"Scheme 1", newName);
+        const auto newName{ L"Campbell (renamed)" };
+        settings->UpdateColorSchemeReferences(L"Campbell", newName);
 
-        // verify profile defaults
-        Log::Comment(L"Profile Defaults");
         VERIFY_ARE_EQUAL(newName, settings->ProfileDefaults().DefaultAppearance().ColorSchemeName());
         VERIFY_IS_TRUE(settings->ProfileDefaults().DefaultAppearance().HasColorSchemeName());
 
-        // verify all other profiles
         const auto& profiles{ settings->AllProfiles() };
         {
             const auto& prof{ profiles.GetAt(0) };
-            Log::Comment(prof.Name().c_str());
             VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
             VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(1) };
-            Log::Comment(prof.Name().c_str());
             VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
             VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(2) };
-            Log::Comment(prof.Name().c_str());
             VERIFY_ARE_EQUAL(newName, prof.DefaultAppearance().ColorSchemeName());
             VERIFY_IS_FALSE(prof.DefaultAppearance().HasColorSchemeName());
         }
         {
             const auto& prof{ profiles.GetAt(3) };
-            Log::Comment(prof.Name().c_str());
-            VERIFY_ARE_EQUAL(L"Scheme 2", prof.DefaultAppearance().ColorSchemeName());
+            VERIFY_ARE_EQUAL(L"One Half Dark", prof.DefaultAppearance().ColorSchemeName());
             VERIFY_IS_TRUE(prof.DefaultAppearance().HasColorSchemeName());
         }
     }

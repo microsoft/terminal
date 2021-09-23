@@ -8,7 +8,6 @@
 #include "JsonTestClass.h"
 #include "TestUtils.h"
 #include <defaults.h>
-#include "../ut_app/TestDynamicProfileGenerator.h"
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -42,13 +41,6 @@ namespace SettingsModelLocalTests
         TEST_METHOD(Actions);
         TEST_METHOD(CascadiaSettings);
         TEST_METHOD(LegacyFontSettings);
-
-        TEST_CLASS_SETUP(ClassSetup)
-        {
-            InitializeJsonReader();
-            InitializeJsonWriter();
-            return true;
-        }
 
     private:
         // Method Description:
@@ -309,10 +301,10 @@ namespace SettingsModelLocalTests
                                             ])" };
         const std::string actionsString9B{ R"([
                                                 {
-                                                    "commands": 
+                                                    "commands":
                                                     [
                                                         {
-                                                            "command": 
+                                                            "command":
                                                             {
                                                                 "action": "sendInput",
                                                                 "input": "${profile.name}"
@@ -325,13 +317,13 @@ namespace SettingsModelLocalTests
                                         ])" };
         const std::string actionsString9C{ R""([
                                                 {
-                                                    "commands": 
+                                                    "commands":
                                                     [
                                                         {
-                                                            "commands": 
+                                                            "commands":
                                                             [
                                                                 {
-                                                                    "command": 
+                                                                    "command":
                                                                     {
                                                                         "action": "sendInput",
                                                                         "input": "${profile.name} ${scheme.name}"
@@ -348,7 +340,7 @@ namespace SettingsModelLocalTests
                                             ])"" };
         const std::string actionsString9D{ R""([
                                                 {
-                                                    "command": 
+                                                    "command":
                                                     {
                                                         "action": "newTab",
                                                         "profile": "${profile.name}"
@@ -404,75 +396,71 @@ namespace SettingsModelLocalTests
     void SerializationTests::CascadiaSettings()
     {
         const std::string settingsString{ R"({
-                                                "$schema": "https://aka.ms/terminal-profiles-schema",
-                                                "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
-                                                "disabledProfileSources": [ "Windows.Terminal.Wsl" ],
+            "$help" : "https://aka.ms/terminal-documentation",
+            "$schema" : "https://aka.ms/terminal-profiles-schema",
+            "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+            "disabledProfileSources": [ "Windows.Terminal.Wsl" ],
+            "profiles": {
+                "defaults": {
+                    "font": {
+                        "face": "Zamora Code"
+                    }
+                },
+                "list": [
+                    {
+                        "font": { "face": "Cascadia Code" },
+                        "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
+                        "name": "HowettShell"
+                    },
+                    {
+                        "hidden": true,
+                        "guid": "{c08b0496-e71c-5503-b84e-3af7a7a6d2a7}",
+                        "name": "BhojwaniShell"
+                    },
+                    {
+                        "antialiasingMode": "aliased",
+                        "guid": "{fe9df758-ac22-5c20-922d-c7766cdd13af}",
+                        "name": "NiksaShell"
+                    }
+                ]
+            },
+            "schemes": [
+                {
+                    "name": "Cinnamon Roll",
 
-                                                "profiles": {
-                                                    "defaults": {
-                                                        "font": {
-                                                            "face": "Zamora Code"
-                                                        }
-                                                    },
-                                                    "list": [
-                                                        {
-                                                            "font": { "face": "Cascadia Code" },
-                                                            "guid": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
-                                                            "name": "HowettShell"
-                                                        },
-                                                        {
-                                                            "hidden": true,
-                                                            "name": "BhojwaniShell"
-                                                        },
-                                                        {
-                                                            "antialiasingMode": "aliased",
-                                                            "name": "NiksaShell"
-                                                        }
-                                                    ]
-                                                },
-                                                "schemes": [
-                                                    {
-                                                        "name": "Cinnamon Roll",
+                    "cursorColor": "#FFFFFD",
+                    "selectionBackground": "#FFFFFF",
 
-                                                        "cursorColor": "#FFFFFD",
-                                                        "selectionBackground": "#FFFFFF",
+                    "background": "#3C0315",
+                    "foreground": "#FFFFFD",
 
-                                                        "background": "#3C0315",
-                                                        "foreground": "#FFFFFD",
+                    "black": "#282A2E",
+                    "blue": "#0170C5",
+                    "cyan": "#3F8D83",
+                    "green": "#76AB23",
+                    "purple": "#7D498F",
+                    "red": "#BD0940",
+                    "white": "#FFFFFD",
+                    "yellow": "#E0DE48",
+                    "brightBlack": "#676E7A",
+                    "brightBlue": "#5C98C5",
+                    "brightCyan": "#8ABEB7",
+                    "brightGreen": "#B5D680",
+                    "brightPurple": "#AC79BB",
+                    "brightRed": "#BD6D85",
+                    "brightWhite": "#FFFFFD",
+                    "brightYellow": "#FFFD76"
+                }
+            ],
+            "actions": [
+                { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "keys": "ctrl+k" }
+            ]
+        })" };
 
-                                                        "black": "#282A2E",
-                                                        "blue": "#0170C5",
-                                                        "cyan": "#3F8D83",
-                                                        "green": "#76AB23",
-                                                        "purple": "#7D498F",
-                                                        "red": "#BD0940",
-                                                        "white": "#FFFFFD",
-                                                        "yellow": "#E0DE48",
-                                                        "brightBlack": "#676E7A",
-                                                        "brightBlue": "#5C98C5",
-                                                        "brightCyan": "#8ABEB7",
-                                                        "brightGreen": "#B5D680",
-                                                        "brightPurple": "#AC79BB",
-                                                        "brightRed": "#BD6D85",
-                                                        "brightWhite": "#FFFFFD",
-                                                        "brightYellow": "#FFFD76"
-                                                    }
-                                                ],
-                                                "actions": [
-                                                    { "command": { "action": "renameTab", "title": "Liang Tab" }, "keys": "ctrl+t" },
-                                                    { "command": { "action": "sendInput", "input": "VT Griese Mode" }, "keys": "ctrl+k" },
-                                                    { "command": { "action": "renameWindow", "name": "Hecker Window" }, "keys": "ctrl+l" }
-                                                ]
-                                            })" };
-
-        auto settings{ winrt::make_self<implementation::CascadiaSettings>(false) };
-        settings->_ParseJsonString(settingsString, false);
-        settings->_ApplyDefaultsFromUserSettings();
-        settings->LayerJson(settings->_userSettings);
-        settings->_ValidateSettings();
+        const auto settings{ winrt::make_self<implementation::CascadiaSettings>(settingsString) };
 
         const auto result{ settings->ToJson() };
-        VERIFY_ARE_EQUAL(toString(settings->_userSettings), toString(result));
+        VERIFY_ARE_EQUAL(toString(VerifyParseSucceeded(settingsString)), toString(result));
     }
 
     void SerializationTests::LegacyFontSettings()

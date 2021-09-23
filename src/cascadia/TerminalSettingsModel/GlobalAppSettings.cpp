@@ -4,9 +4,7 @@
 #include "pch.h"
 #include "GlobalAppSettings.h"
 #include "../../types/inc/Utils.hpp"
-#include "../../inc/DefaultSettings.h"
 #include "JsonUtils.h"
-#include "TerminalSettingsSerializationHelpers.h"
 #include "KeyChordSerialization.h"
 
 #include "GlobalAppSettings.g.cpp"
@@ -52,6 +50,8 @@ static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
 static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
 static constexpr std::string_view AlwaysShowNotificationIconKey{ "alwaysShowNotificationIcon" };
 static constexpr std::string_view MinimizeToNotificationAreaKey{ "minimizeToNotificationArea" };
+static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
+static constexpr std::string_view ShowAdminShieldKey{ "showAdminShield" };
 
 static constexpr std::string_view DebugFeaturesKey{ "debugFeatures" };
 
@@ -59,26 +59,6 @@ static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.re
 static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
 static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
 static constexpr std::string_view DetectURLsKey{ "experimental.detectURLs" };
-
-#ifdef _DEBUG
-static constexpr bool debugFeaturesDefault{ true };
-#else
-static constexpr bool debugFeaturesDefault{ false };
-#endif
-
-bool GlobalAppSettings::_getDefaultDebugFeaturesValue()
-{
-    return debugFeaturesDefault;
-}
-
-GlobalAppSettings::GlobalAppSettings() :
-    _actionMap{ winrt::make_self<implementation::ActionMap>() },
-    _keybindingsWarnings{},
-    _validDefaultProfile{ false },
-    _defaultProfile{}
-{
-    _colorSchemes = winrt::single_threaded_map<winrt::hstring, Model::ColorScheme>();
-}
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -88,13 +68,17 @@ GlobalAppSettings::GlobalAppSettings() :
 // - <none>
 void GlobalAppSettings::_FinalizeInheritance()
 {
-    // Globals only ever has 1 parent
-    FAIL_FAST_IF(_parents.size() > 1);
-    for (auto parent : _parents)
+    for (const auto& parent : _parents)
     {
         _actionMap->InsertParent(parent->_actionMap);
-        _keybindingsWarnings = std::move(parent->_keybindingsWarnings);
-        _colorSchemes = std::move(parent->_colorSchemes);
+        _keybindingsWarnings.insert(_keybindingsWarnings.end(), parent->_keybindingsWarnings.begin(), parent->_keybindingsWarnings.end());
+        for (const auto& [k, v] : parent->_colorSchemes)
+        {
+            if (!_colorSchemes.HasKey(k))
+            {
+                _colorSchemes.Insert(k, v);
+            }
+        }
     }
 }
 
@@ -137,12 +121,14 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_DetectURLs = _DetectURLs;
     globals->_MinimizeToNotificationArea = _MinimizeToNotificationArea;
     globals->_AlwaysShowNotificationIcon = _AlwaysShowNotificationIcon;
+    globals->_DisabledProfileSources = _DisabledProfileSources;
+    globals->_ShowAdminShield = _ShowAdminShield;
 
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
-    globals->_validDefaultProfile = _validDefaultProfile;
+
     globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
-    std::copy(_keybindingsWarnings.begin(), _keybindingsWarnings.end(), std::back_inserter(globals->_keybindingsWarnings));
+    globals->_keybindingsWarnings = _keybindingsWarnings;
 
     if (_colorSchemes)
     {
@@ -153,9 +139,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
         }
     }
 
-    // Globals only ever has 1 parent
-    FAIL_FAST_IF(_parents.size() > 1);
-    for (auto parent : _parents)
+    for (const auto& parent : _parents)
     {
         globals->InsertParent(parent->Copy());
     }
@@ -168,69 +152,18 @@ winrt::Windows::Foundation::Collections::IMapView<winrt::hstring, winrt::Microso
 }
 
 #pragma region DefaultProfile
+
 void GlobalAppSettings::DefaultProfile(const winrt::guid& defaultProfile) noexcept
 {
-    _validDefaultProfile = true;
     _defaultProfile = defaultProfile;
     _UnparsedDefaultProfile = Utils::GuidToString(defaultProfile);
 }
 
 winrt::guid GlobalAppSettings::DefaultProfile() const
 {
-    // If we have an unresolved default profile, we should likely explode.
-    THROW_HR_IF(E_INVALIDARG, !_validDefaultProfile);
     return _defaultProfile;
 }
 
-bool GlobalAppSettings::HasUnparsedDefaultProfile() const
-{
-    return _UnparsedDefaultProfile.has_value();
-}
-
-winrt::hstring GlobalAppSettings::UnparsedDefaultProfile() const
-{
-    const auto val{ _getUnparsedDefaultProfileImpl() };
-    return val ? *val : hstring{ L"" };
-}
-
-void GlobalAppSettings::UnparsedDefaultProfile(const hstring& value)
-{
-    if (_UnparsedDefaultProfile != value)
-    {
-        _UnparsedDefaultProfile = value;
-        _validDefaultProfile = false;
-    }
-}
-
-void GlobalAppSettings::ClearUnparsedDefaultProfile()
-{
-    if (HasUnparsedDefaultProfile())
-    {
-        _UnparsedDefaultProfile = std::nullopt;
-    }
-}
-
-std::optional<winrt::hstring> GlobalAppSettings::_getUnparsedDefaultProfileImpl() const
-{
-    /*return user set value*/
-    if (_UnparsedDefaultProfile)
-    {
-        return _UnparsedDefaultProfile;
-    }
-
-    /*user set value was not set*/
-    /*iterate through parents to find a value*/
-    for (auto parent : _parents)
-    {
-        if (auto val{ parent->_getUnparsedDefaultProfileImpl() })
-        {
-            return val;
-        }
-    }
-
-    /*no value was found*/
-    return std::nullopt;
-}
 #pragma endregion
 
 winrt::Microsoft::Terminal::Settings::Model::ActionMap GlobalAppSettings::ActionMap() const noexcept
@@ -253,92 +186,55 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::FromJson(const Json::Value&
 
 void GlobalAppSettings::LayerJson(const Json::Value& json)
 {
-    // _validDefaultProfile keeps track of whether we've verified that DefaultProfile points to something
-    // CascadiaSettings::_ResolveDefaultProfile performs a validation and updates DefaultProfile() with the
-    // resolved value, then making it valid.
-    _validDefaultProfile = false;
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
-
     JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
-
     JsonUtils::GetValueForKey(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
-
     JsonUtils::GetValueForKey(json, InitialRowsKey, _InitialRows);
-
     JsonUtils::GetValueForKey(json, InitialColsKey, _InitialCols);
-
     JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
-
     JsonUtils::GetValueForKey(json, CenterOnLaunchKey, _CenterOnLaunch);
-
     JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
-
     JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
-
     JsonUtils::GetValueForKey(json, WordDelimitersKey, _WordDelimiters);
-
     JsonUtils::GetValueForKey(json, CopyOnSelectKey, _CopyOnSelect);
-
     JsonUtils::GetValueForKey(json, InputServiceWarningKey, _InputServiceWarning);
-
     JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
-
     JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
-
     JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
-
     JsonUtils::GetValueForKey(json, FirstWindowPreferenceKey, _FirstWindowPreference);
-
     JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
-
     JsonUtils::GetValueForKey(json, LanguageKey, _Language);
-
     JsonUtils::GetValueForKey(json, ThemeKey, _Theme);
-
     JsonUtils::GetValueForKey(json, TabWidthModeKey, _TabWidthMode);
-
     JsonUtils::GetValueForKey(json, UseAcrylicInTabRowKey, _UseAcrylicInTabRow);
-
     JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
-
     // GetValueForKey will only override the current value if the key exists
     JsonUtils::GetValueForKey(json, DebugFeaturesKey, _DebugFeaturesEnabled);
-
     JsonUtils::GetValueForKey(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
-
     JsonUtils::GetValueForKey(json, SoftwareRenderingKey, _SoftwareRendering);
     JsonUtils::GetValueForKey(json, ForceVTInputKey, _ForceVTInput);
-
     JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
-
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
-
     // GH#8076 - when adding enum values to this key, we also changed it from
     // "useTabSwitcher" to "tabSwitcherMode". Continue supporting
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
     JsonUtils::GetValueForKey(json, TabSwitcherModeKey, _TabSwitcherMode);
-
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
-
     JsonUtils::GetValueForKey(json, StartupActionsKey, _StartupActions);
-
     JsonUtils::GetValueForKey(json, FocusFollowMouseKey, _FocusFollowMouse);
-
     JsonUtils::GetValueForKey(json, WindowingBehaviorKey, _WindowingBehavior);
-
     JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
-
     JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
-
     JsonUtils::GetValueForKey(json, MinimizeToNotificationAreaKey, _MinimizeToNotificationArea);
-
     JsonUtils::GetValueForKey(json, AlwaysShowNotificationIconKey, _AlwaysShowNotificationIcon);
+    JsonUtils::GetValueForKey(json, DisabledProfileSourcesKey, _DisabledProfileSources);
 
-    // This is a helper lambda to get the keybindings and commands out of both
-    // and array of objects. We'll use this twice, once on the legacy
-    // `keybindings` key, and again on the newer `bindings` key.
-    auto parseBindings = [this, &json](auto jsonKey) {
+    JsonUtils::GetValueForKey(json, ShowAdminShieldKey, _ShowAdminShield);
+
+    static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
+    for (const auto& jsonKey : bindingsKeys)
+    {
         if (auto bindings{ json[JsonKey(jsonKey)] })
         {
             auto warnings = _actionMap->LayerJson(bindings);
@@ -351,9 +247,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
             // list of warnings.
             _keybindingsWarnings.insert(_keybindingsWarnings.end(), warnings.begin(), warnings.end());
         }
-    };
-    parseBindings(LegacyKeybindingsKey);
-    parseBindings(ActionsKey);
+    }
 }
 
 // Method Description:
@@ -381,7 +275,7 @@ void GlobalAppSettings::RemoveColorScheme(hstring schemeName)
 // - <none>
 // Return Value:
 // - <none>
-std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings> GlobalAppSettings::KeybindingsWarnings() const
+const std::vector<winrt::Microsoft::Terminal::Settings::Model::SettingsLoadWarnings>& GlobalAppSettings::KeybindingsWarnings() const
 {
     return _keybindingsWarnings;
 }
@@ -433,7 +327,9 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
     JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
     JsonUtils::SetValueForKey(json, MinimizeToNotificationAreaKey,  _MinimizeToNotificationArea);
-    JsonUtils::SetValueForKey(json, AlwaysShowNotificationIconKey,          _AlwaysShowNotificationIcon);
+    JsonUtils::SetValueForKey(json, AlwaysShowNotificationIconKey,  _AlwaysShowNotificationIcon);
+    JsonUtils::SetValueForKey(json, DisabledProfileSourcesKey,      _DisabledProfileSources);
+    JsonUtils::SetValueForKey(json, ShowAdminShieldKey,             _ShowAdminShield);
     // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();

@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "FontConfig.h"
 #include "FontConfig.g.cpp"
+
 #include "TerminalSettingsSerializationHelpers.h"
 #include "JsonUtils.h"
 
@@ -25,7 +26,7 @@ winrt::Microsoft::Terminal::Settings::Model::implementation::FontConfig::FontCon
 {
 }
 
-winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const winrt::com_ptr<FontConfig> source, winrt::weak_ref<Profile> sourceProfile)
+winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, winrt::weak_ref<Profile> sourceProfile)
 {
     auto fontInfo{ winrt::make_self<FontConfig>(std::move(sourceProfile)) };
     fontInfo->_FontFace = source->_FontFace;
