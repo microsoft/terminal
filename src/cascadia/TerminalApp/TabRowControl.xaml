@@ -20,6 +20,17 @@
                  IsAddTabButtonVisible="false"
                  TabWidthMode="Equal">
 
+        <mux:TabView.TabStripHeader>
+            <!--  EA18 is the "Shield" glyph  -->
+            <FontIcon x:Uid="ElevationShield"
+                      Margin="9,4,0,0"
+                      FontFamily="Segoe MDL2 Assets"
+                      FontSize="16"
+                      Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                      Glyph="&#xEA18;"
+                      Visibility="{x:Bind ShowElevationShield, Mode=OneWay}" />
+        </mux:TabView.TabStripHeader>
+
         <mux:TabView.TabStripFooter>
             <mux:SplitButton x:Name="NewTabButton"
                              x:Uid="NewTabSplitButton"

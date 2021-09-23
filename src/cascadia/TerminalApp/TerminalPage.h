@@ -118,6 +118,7 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
+        bool IsElevated() const noexcept;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -213,8 +214,6 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
         void _OpenNewTerminal(const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
-
-        bool _IsElevated() const noexcept;
 
         bool _displayingCloseDialog{ false };
         void _SettingsButtonOnClick(const IInspectable& sender, const Windows::UI::Xaml::RoutedEventArgs& eventArgs);

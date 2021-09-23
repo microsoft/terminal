@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ColorScheme.h"
-#include "DefaultSettings.h"
 #include "../../types/inc/Utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 #include "Utils.h"
@@ -41,25 +40,16 @@ static constexpr std::array<std::string_view, 16> TableColors = {
     "brightWhite"
 };
 
-ColorScheme::ColorScheme() :
-    ColorScheme(L"", DEFAULT_FOREGROUND, DEFAULT_BACKGROUND, DEFAULT_CURSOR_COLOR)
+ColorScheme::ColorScheme() noexcept :
+    ColorScheme{ winrt::hstring{} }
 {
-    Utils::InitializeCampbellColorTable(_table);
 }
 
-ColorScheme::ColorScheme(winrt::hstring name) :
-    ColorScheme(name, DEFAULT_FOREGROUND, DEFAULT_BACKGROUND, DEFAULT_CURSOR_COLOR)
+ColorScheme::ColorScheme(const winrt::hstring& name) noexcept :
+    _Name{ name }
 {
-    Utils::InitializeCampbellColorTable(_table);
-}
-
-ColorScheme::ColorScheme(winrt::hstring name, til::color defaultFg, til::color defaultBg, til::color cursorColor) :
-    _Name{ name },
-    _Foreground{ defaultFg },
-    _Background{ defaultBg },
-    _SelectionBackground{ DEFAULT_FOREGROUND },
-    _CursorColor{ cursorColor }
-{
+    const auto table = Utils::CampbellColorTable();
+    std::copy_n(table.data(), table.size(), _table.data());
 }
 
 winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
@@ -79,30 +69,11 @@ winrt::com_ptr<ColorScheme> ColorScheme::Copy() const
 // Arguments:
 // - json: an object which should be a serialization of a ColorScheme object.
 // Return Value:
-// - a new ColorScheme instance created from the values in `json`
+// - Returns nullptr for invalid JSON.
 winrt::com_ptr<ColorScheme> ColorScheme::FromJson(const Json::Value& json)
 {
-    auto result = winrt::make_self<ColorScheme>();
-    result->LayerJson(json);
-    return result;
-}
-
-// Method Description:
-// - Returns true if we think the provided json object represents an instance of
-//   the same object as this object. If true, we should layer that json object
-//   on us, instead of creating a new object.
-// Arguments:
-// - json: The json object to query to see if it's the same
-// Return Value:
-// - true iff the json object has the same `name` as we do.
-bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
-{
-    std::wstring nameFromJson{};
-    if (JsonUtils::GetValueForKey(json, NameKey, nameFromJson))
-    {
-        return nameFromJson == _Name;
-    }
-    return false;
+    auto result = winrt::make_self<ColorScheme>(uninitialized_t{});
+    return result->_layerJson(json) ? result : nullptr;
 }
 
 // Method Description:
@@ -112,21 +83,27 @@ bool ColorScheme::ShouldBeLayered(const Json::Value& json) const
 //   the new json object. Properties that _aren't_ in the json object will _not_
 //   be replaced.
 // Arguments:
-// - json: an object which should be a partial serialization of a ColorScheme object.
+// - json: an object which should be a full serialization of a ColorScheme object.
 // Return Value:
-// <none>
-void ColorScheme::LayerJson(const Json::Value& json)
+// - Returns true if the given JSON was valid.
+bool ColorScheme::_layerJson(const Json::Value& json)
 {
-    JsonUtils::GetValueForKey(json, NameKey, _Name);
+    // Required fields
+    auto isValid = JsonUtils::GetValueForKey(json, NameKey, _Name);
+
+    // Optional fields (they have defaults in ColorScheme.h)
     JsonUtils::GetValueForKey(json, ForegroundKey, _Foreground);
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
 
+    // Required fields
     for (unsigned int i = 0; i < TableColors.size(); ++i)
     {
-        JsonUtils::GetValueForKey(json, til::at(TableColors, i), _table.at(i));
+        isValid &= JsonUtils::GetValueForKey(json, til::at(TableColors, i), til::at(_table, i));
     }
+
+    return isValid;
 }
 
 // Method Description:
@@ -147,7 +124,7 @@ Json::Value ColorScheme::ToJson() const
 
     for (unsigned int i = 0; i < TableColors.size(); ++i)
     {
-        JsonUtils::SetValueForKey(json, til::at(TableColors, i), _table.at(i));
+        JsonUtils::SetValueForKey(json, til::at(TableColors, i), til::at(_table, i));
     }
 
     return json;
@@ -155,9 +132,7 @@ Json::Value ColorScheme::ToJson() const
 
 winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() const noexcept
 {
-    winrt::com_array<winrt::Microsoft::Terminal::Core::Color> result{ base::checked_cast<uint32_t>(_table.size()) };
-    std::transform(_table.begin(), _table.end(), result.begin(), [](til::color c) -> winrt::Microsoft::Terminal::Core::Color { return c; });
-    return result;
+    return winrt::com_array<Core::Color>{ _table };
 }
 
 // Method Description:
@@ -167,44 +142,8 @@ winrt::com_array<winrt::Microsoft::Terminal::Core::Color> ColorScheme::Table() c
 // - value: the color value we are setting the color table color to
 // Return Value:
 // - none
-void ColorScheme::SetColorTableEntry(uint8_t index, const winrt::Microsoft::Terminal::Core::Color& value) noexcept
+void ColorScheme::SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept
 {
-    THROW_HR_IF(E_INVALIDARG, index > _table.size() - 1);
+    THROW_HR_IF(E_INVALIDARG, index >= _table.size());
     _table[index] = value;
-}
-
-// Method Description:
-// - Validates a given color scheme
-// - A color scheme is valid if it has a name and defines all the colors
-// Arguments:
-// - The color scheme to validate
-// Return Value:
-// - true if the scheme is valid, false otherwise
-bool ColorScheme::ValidateColorScheme(const Json::Value& scheme)
-{
-    for (const auto& key : TableColors)
-    {
-        if (!scheme.isMember(JsonKey(key)))
-        {
-            return false;
-        }
-    }
-    if (!scheme.isMember(JsonKey(NameKey)))
-    {
-        return false;
-    }
-    return true;
-}
-
-// Method Description:
-// - Parse the name from the JSON representation of a ColorScheme.
-// Arguments:
-// - json: an object which should be a serialization of a ColorScheme object.
-// Return Value:
-// - the name of the color scheme represented by `json` as a std::wstring optional
-//   i.e. the value of the `name` property.
-// - returns std::nullopt if `json` doesn't have the `name` property
-std::optional<std::wstring> ColorScheme::GetNameFromJson(const Json::Value& json)
-{
-    return JsonUtils::GetValueForKey<std::optional<std::wstring>>(json, NameKey);
 }

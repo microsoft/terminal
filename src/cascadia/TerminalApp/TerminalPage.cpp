@@ -96,20 +96,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool TerminalPage::_IsElevated() const noexcept
-    {
-        // GH#2455 - Make sure to try/catch calls to Application::Current,
-        // because that _won't_ be an instance of TerminalApp::App in the
-        // LocalTests
-        try
-        {
-            return ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
-        }
-        CATCH_LOG();
-
-        return false;
-    }
-
     void TerminalPage::SetSettings(CascadiaSettings settings, bool needRefreshUI)
     {
         _settings = settings;
@@ -132,6 +118,29 @@ namespace winrt::TerminalApp::implementation
         _systemRowsToScroll = _ReadSystemRowsToScroll();
     }
 
+    bool TerminalPage::IsElevated() const noexcept
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
+
+        static const bool isElevated = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isElevated;
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -142,11 +151,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
-        // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
-        // but that process is running at a different IL than us.
-        // For now, we're disabling elevated drag.
-        const auto isElevated = _IsElevated();
+        const auto isElevated = IsElevated();
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
@@ -273,6 +278,8 @@ namespace winrt::TerminalApp::implementation
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
+        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
+
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
         try
@@ -294,7 +301,7 @@ namespace winrt::TerminalApp::implementation
         // GH#5000 Until there is a separate state file for elevated sessions we should just not
         // save at all while in an elevated window.
         return Feature_PersistedWindowLayout::IsEnabled() &&
-               !_IsElevated() &&
+               !IsElevated() &&
                settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
     }
 
@@ -2251,6 +2258,8 @@ namespace winrt::TerminalApp::implementation
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
+
+        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
