@@ -302,7 +302,9 @@ If you would like to ask a question that you feel doesn't warrant an issue
   * Universal Windows Platform Development
   * **The following Individual Components**
     * C++ (v142) Universal Windows Platform Tools
-
+* You need to install some version of [PowerShell Core](https://github.com/PowerShell/PowerShell#get-powershell)
+  (`pwsh.exe`) and have it on your path. You can install this easily with `winget install pwsh`
+  
 ## Building the Code
 
 This repository uses [git
