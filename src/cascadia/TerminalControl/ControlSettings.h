@@ -39,6 +39,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
     X(int32_t, FontSize, DEFAULT_FONT_SIZE)                                                                                                              \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight)                                                                                                  \
+    X(IFontFeatureMap, FontFeatures)                                                                                                                     \
+    X(IFontAxesMap, FontAxes)                                                                                                                            \
     X(winrt::Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr)                                                                           \
     X(winrt::hstring, Commandline)                                                                                                                       \
     X(winrt::hstring, StartingDirectory)                                                                                                                 \
@@ -89,8 +91,3 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
     };
 }
-
-// namespace winrt::Microsoft::Terminal::Control::factory_implementation
-// {
-//     BASIC_FACTORY(ControlSettings);
-// }
