@@ -113,10 +113,12 @@ HRESULT TermControlUiaProvider::GetSelectionRange(_In_ IRawElementProviderSimple
 {
     RETURN_HR_IF_NULL(E_INVALIDARG, ppUtr);
     *ppUtr = nullptr;
-    if (!_pData->IsUiaDataInitialized() || !_pData->IsSelectionActive())
-    {
-        return E_FAIL;
-    }
+
+    _pData->LockConsole();
+    auto Unlock = wil::scope_exit([&]() noexcept {
+        _pData->UnlockConsole();
+    });
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized() || !_pData->IsSelectionActive());
 
     const auto start = _pData->GetSelectionAnchor();
 
