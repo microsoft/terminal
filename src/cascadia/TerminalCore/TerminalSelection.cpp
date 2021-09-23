@@ -151,9 +151,8 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
     // Otherwise, we may accidentally expand during other selection-based actions
     _multiClickSelectionMode = newExpansionMode.has_value() ? *newExpansionMode : _multiClickSelectionMode;
 
-    std::pair<COORD, COORD> anchors;
-    bool targetStart;
-    std::tie(anchors.first, anchors.second, targetStart) = _PivotSelection(textBufferPos);
+    bool targetStart = false;
+    const auto anchors = _PivotSelection(textBufferPos, targetStart);
     const auto expandedAnchors = _ExpandSelectionAnchors(anchors);
 
     if (newExpansionMode.has_value())
@@ -178,24 +177,22 @@ void Terminal::SetSelectionEnd(const COORD viewportPos, std::optional<SelectionE
 // - This ensures start < end when compared
 // Arguments:
 // - targetPos: the (x,y) coordinate we are moving to on the text buffer
+// - targetStart: if true, target will be the new start. Otherwise, target will be the new end.
 // Return Value:
-// - COORD: the new start for a selection
-// - COORD: the new end for a selection
-// - bool: if true, target will be the new start. Otherwise, target will be the new end.
-std::tuple<COORD, COORD, bool> Terminal::_PivotSelection(const COORD targetPos) const
+// - the new start/end for a selection
+std::pair<COORD, COORD> Terminal::_PivotSelection(const COORD targetPos, bool& targetStart) const
 {
-    const bool targetStart{ _buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0 };
-    if (targetStart)
+    if (targetStart = _buffer->GetSize().CompareInBounds(targetPos, _selection->pivot) <= 0)
     {
         // target is before pivot
         // treat target as start
-        return { targetPos, _selection->pivot, targetStart };
+        return std::make_pair(targetPos, _selection->pivot);
     }
     else
     {
         // target is after pivot
         // treat pivot as start
-        return { _selection->pivot, targetPos, targetStart };
+        return std::make_pair(_selection->pivot, targetPos);
     }
 }
 
@@ -238,6 +235,52 @@ void Terminal::SetBlockSelection(const bool isEnabled) noexcept
     _blockSelection = isEnabled;
 }
 
+Terminal::UpdateSelectionParams Terminal::ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey)
+{
+    if (mods.IsShiftPressed() && !mods.IsAltPressed())
+    {
+        if (mods.IsCtrlPressed())
+        {
+            // Ctrl + Shift + _
+            switch (vkey)
+            {
+            case VK_LEFT:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Left, SelectionExpansion::Word };
+            case VK_RIGHT:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Right, SelectionExpansion::Word };
+            case VK_HOME:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Left, SelectionExpansion::Buffer };
+            case VK_END:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Right, SelectionExpansion::Buffer };
+            }
+        }
+        else
+        {
+            // Shift + _
+            switch (vkey)
+            {
+            case VK_HOME:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Left, SelectionExpansion::Viewport };
+            case VK_END:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Right, SelectionExpansion::Viewport };
+            case VK_PRIOR:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Up, SelectionExpansion::Viewport };
+            case VK_NEXT:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Down, SelectionExpansion::Viewport };
+            case VK_LEFT:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Left, SelectionExpansion::Char };
+            case VK_RIGHT:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Right, SelectionExpansion::Char };
+            case VK_UP:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Up, SelectionExpansion::Char };
+            case VK_DOWN:
+                return UpdateSelectionParams{ std::in_place, SelectionDirection::Down, SelectionExpansion::Char };
+            }
+        }
+    }
+    return std::nullopt;
+}
+
 void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion mode)
 {
     // 1. Figure out which endpoint to update
@@ -263,7 +306,9 @@ void Terminal::UpdateSelection(SelectionDirection direction, SelectionExpansion 
     }
 
     // 3. Actually modify the selection
-    std::tie(_selection->start, _selection->end, std::ignore) = _PivotSelection(targetPos);
+    // NOTE: targetStart doesn't matter here
+    bool targetStart = false;
+    std::tie(_selection->start, _selection->end) = _PivotSelection(targetPos, targetStart);
 
     // 4. Scroll (if necessary)
     if (const auto viewport = _GetVisibleViewport(); !viewport.IsInBounds(targetPos))

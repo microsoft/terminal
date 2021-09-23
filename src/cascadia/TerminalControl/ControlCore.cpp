@@ -33,74 +33,6 @@ constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
 // The minimum delay between updating the locations of regex patterns
 constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
-static constexpr std::optional<Terminal::SelectionDirection> ConvertVKeyToSelectionDirection(WORD vkey)
-{
-    switch (vkey)
-    {
-    case VK_LEFT:
-    case VK_HOME:
-        return Terminal::SelectionDirection::Left;
-    case VK_RIGHT:
-    case VK_END:
-        return Terminal::SelectionDirection::Right;
-    case VK_UP:
-    case VK_PRIOR:
-        return Terminal::SelectionDirection::Up;
-    case VK_DOWN:
-    case VK_NEXT:
-        return Terminal::SelectionDirection::Down;
-    default:
-        return std::nullopt;
-    }
-}
-
-static constexpr std::optional<std::tuple<Terminal::SelectionDirection, Terminal::SelectionExpansion>> ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey)
-{
-    if (mods.IsShiftPressed() && !mods.IsAltPressed())
-    {
-        if (const auto dir{ ConvertVKeyToSelectionDirection(vkey) })
-        {
-            if (mods.IsCtrlPressed())
-            {
-                switch (vkey)
-                {
-                case VK_LEFT:
-                case VK_RIGHT:
-                    // Move by word
-                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Word);
-                case VK_HOME:
-                case VK_END:
-                    // Move by buffer
-                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Buffer);
-                default:
-                    __fallthrough;
-                }
-            }
-            else
-            {
-                switch (vkey)
-                {
-                case VK_HOME:
-                case VK_END:
-                case VK_PRIOR:
-                case VK_NEXT:
-                    // Move by viewport
-                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Viewport);
-                case VK_LEFT:
-                case VK_RIGHT:
-                case VK_UP:
-                case VK_DOWN:
-                    // Move by character
-                    return std::make_tuple(*dir, Terminal::SelectionExpansion::Char);
-                default:
-                    __fallthrough;
-                }
-            }
-        }
-    }
-    return std::nullopt;
-}
-
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
@@ -441,10 +373,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             keyDown)
         {
             // try to update the selection
-            if (const auto updateSlnParams{ ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            if (const auto updateSlnParams{ ::Terminal::ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
             {
                 auto lock = _terminal->LockForWriting();
-                _terminal->UpdateSelection(std::get<0>(*updateSlnParams), std::get<1>(*updateSlnParams));
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second);
                 _renderer->TriggerSelection();
                 return true;
             }

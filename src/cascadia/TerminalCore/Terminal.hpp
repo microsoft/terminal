@@ -249,6 +249,9 @@ public:
     void SetBlockSelection(const bool isEnabled) noexcept;
     void UpdateSelection(SelectionDirection direction, SelectionExpansion mode);
 
+    using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
+    static UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey);
+
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
 
@@ -383,7 +386,7 @@ private:
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
-    std::tuple<COORD, COORD, bool> _PivotSelection(const COORD targetPos) const;
+    std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
     void _MoveByChar(SelectionDirection direction, COORD& pos);
