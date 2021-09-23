@@ -35,5 +35,9 @@ namespace Microsoft.Terminal.Settings.Model
         void ApplyColorScheme(ColorScheme scheme);
 
         ColorScheme AppliedColorScheme;
+
+        String Commandline { set; };
+        String StartingDirectory { set; };
+        String EnvironmentVariables { set; };
     };
 }

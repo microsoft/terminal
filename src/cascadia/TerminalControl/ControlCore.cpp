@@ -435,14 +435,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto newOpacity = std::clamp(_settings.Opacity() + adjustment,
+        auto newOpacity = std::clamp(Opacity() + adjustment,
                                      0.0,
                                      1.0);
 
         // GH#5098: Inform the engine of the new opacity of the default text background.
         SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
 
-        _settings.Opacity(newOpacity);
+        Opacity(newOpacity);
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);
@@ -568,6 +568,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         _settings = settings;
+
+        _runtimeOpacity = std::nullopt;
 
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();

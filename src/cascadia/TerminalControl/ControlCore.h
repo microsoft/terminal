@@ -30,6 +30,14 @@ namespace ControlUnitTests
     class ControlInteractivityTests;
 };
 
+#define RUNTIME_SETTING(type, name, setting)                      \
+private:                                                          \
+    std::optional<type> _runtime##name{ std::nullopt };           \
+    void name(const type newValue) { _runtime##name = newValue; } \
+                                                                  \
+public:                                                           \
+    type name() const { return _runtime##name ? *_runtime##name : setting; }
+
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ControlCore : ControlCoreT<ControlCore>
@@ -148,6 +156,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ToggleReadOnlyMode();
 
         hstring ReadEntireBuffer() const;
+
+        RUNTIME_SETTING(double, Opacity, _settings.Opacity());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

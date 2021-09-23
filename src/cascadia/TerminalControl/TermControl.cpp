@@ -450,7 +450,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             acrylic.TintColor(bgColor);
 
             // Apply brush settings
-            acrylic.TintOpacity(appearance.Opacity());
+            acrylic.TintOpacity(_core.Opacity());
 
             // Apply brush to control if it's not already there
             if (RootGrid().Background() != acrylic)
@@ -459,16 +459,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(::base::saturated_cast<float>(appearance.Opacity()));
+            _core.SetBackgroundOpacity(::base::saturated_cast<float>(_core.Opacity()));
         }
         else
         {
             Media::SolidColorBrush solidColor{};
-            solidColor.Opacity(_settings.Opacity());
+            solidColor.Opacity(_core.Opacity());
             RootGrid().Background(solidColor);
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(appearance.Opacity());
+            _core.SetBackgroundOpacity(_core.Opacity());
         }
     }
 
