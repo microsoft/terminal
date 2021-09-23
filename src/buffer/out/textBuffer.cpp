@@ -1430,12 +1430,13 @@ const til::point TextBuffer::GetGlyphStart(const til::point pos, std::optional<t
 }
 
 // Method Description:
-// - Update pos to be the end of the current glyph/character. This is used for accessibility
+// - Update pos to be the end of the current glyph/character.
 // Arguments:
 // - pos - a COORD on the word you are currently on
+// - accessibilityMode - this is being used for accessibility; make the end exclusive.
 // Return Value:
 // - pos - The COORD for the last cell of the current glyph (exclusive)
-const til::point TextBuffer::GetGlyphEnd(const til::point pos, std::optional<til::point> limitOptional) const
+const til::point TextBuffer::GetGlyphEnd(const til::point pos, bool accessibilityMode, std::optional<til::point> limitOptional) const
 {
     COORD resultPos = pos;
     const auto bufferSize = GetSize();
@@ -1453,7 +1454,10 @@ const til::point TextBuffer::GetGlyphEnd(const til::point pos, std::optional<til
     }
 
     // increment one more time to become exclusive
-    bufferSize.IncrementInBounds(resultPos, true);
+    if (accessibilityMode)
+    {
+        bufferSize.IncrementInBounds(resultPos, true);
+    }
     return resultPos;
 }
 

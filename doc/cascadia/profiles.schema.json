@@ -847,7 +847,7 @@
         }
       ],
       "required": [ "actions" ]
-    }, 
+    },
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
       "allOf": [
