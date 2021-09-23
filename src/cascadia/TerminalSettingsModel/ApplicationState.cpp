@@ -141,12 +141,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
-    Json::Value ApplicationState::_getRoot() const noexcept
+    Json::Value ApplicationState::_getRoot(const locked_hfile& file) const noexcept
     {
         Json::Value root;
         try
         {
-            const auto data = ReadUTF8FileIfExists(_path).value_or(std::string{});
+            const auto data = ReadUTF8FileLocked(file);
             if (data.empty())
             {
                 return root;
@@ -171,14 +171,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     void ApplicationState::_read() const noexcept
     try
     {
-        auto root = _getRoot();
         auto state = _state.lock();
+        const auto file = OpenFileReadSharedLocked(_path);
+
+        auto root = _getRoot(file);
         // GetValueForKey() comes in two variants:
         // * take a std::optional<T> reference
         // * return std::optional<T> by value
         // At the time of writing the former version skips missing fields in the json,
         // but we want to explicitly clear state fields that were removed from state.json.
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) state->name = JsonUtils::GetValueForKey<std::optional<type>>(root, key);
+#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)                         \
+    if (!state->name##Changed)                                                   \
+    {                                                                            \
+        state->name = JsonUtils::GetValueForKey<std::optional<type>>(root, key); \
+    }
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
     }
@@ -188,15 +194,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // * Errors are only logged.
     // * _state->_writeScheduled is set to false, signaling our
     //   setters that _synchronize() needs to be called again.
-    void ApplicationState::_write() const noexcept
+    void ApplicationState::_write() noexcept
     try
     {
         // re-read the state so that we can only update the properties that were changed.
         Json::Value root{};
-
         {
             auto state = _state.lock();
-            root = _getRoot();
+            const auto file = OpenFileRWExclusiveLocked(_path);
+            root = _getRoot(file);
+
 #define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)   \
     if (state->name##Changed)                              \
     {                                                      \
@@ -205,11 +212,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     }
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
-        }
 
-        Json::StreamWriterBuilder wbuilder;
-        const auto content = Json::writeString(wbuilder, root);
-        WriteUTF8FileAtomic(_path, content);
+            Json::StreamWriterBuilder wbuilder;
+            const auto content = Json::writeString(wbuilder, root);
+            WriteUTF8FileLocked(file, content);
+        }
     }
     CATCH_LOG()
 }

@@ -18,6 +18,7 @@ Abstract:
 #include <inc/cppwinrt_utils.h>
 #include <til/mutex.h>
 #include <til/throttled_func.h>
+#include "FileUtils.h"
 #include <JsonUtils.h>
 
 // This macro generates all getters and setters for ApplicationState.
@@ -74,8 +75,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 #undef MTSM_APPLICATION_STATE_GEN
         };
 
-        Json::Value _getRoot() const noexcept;
-        void _write() const noexcept;
+        Json::Value _getRoot(const winrt::Microsoft::Terminal::Settings::Model::locked_hfile& file) const noexcept;
+        void _write() noexcept;
         void _read() const noexcept;
 
         std::filesystem::path _path;
