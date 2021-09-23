@@ -206,7 +206,7 @@ namespace winrt::TerminalApp::implementation
         void _UpdateTabIcon(TerminalTab& tab);
         void _UpdateTabView();
         void _UpdateTabWidthMode();
-        void _UpdateCommandsForPalette();
+        winrt::fire_and_forget _UpdateCommandsForPalette();
 
         static winrt::Windows::Foundation::Collections::IMap<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> _ExpandCommands(Windows::Foundation::Collections::IMapView<winrt::hstring, Microsoft::Terminal::Settings::Model::Command> commandsToExpand,
                                                                                                                                             Windows::Foundation::Collections::IVectorView<Microsoft::Terminal::Settings::Model::Profile> profiles,

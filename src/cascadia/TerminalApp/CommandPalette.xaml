@@ -414,6 +414,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
@@ -434,7 +435,7 @@
                        Text="{x:Bind PrefixCharacter, Mode=OneWay}"
                        Visibility="{x:Bind PrefixCharacter, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}" />
 
-            <StackPanel Grid.Row="1"
+            <StackPanel Grid.Row="2"
                         Padding="16,0,16,4"
                         Orientation="Horizontal"
                         Visibility="{x:Bind ParentCommandName, Mode=OneWay, Converter={StaticResource ParentCommandVisibilityConverter}}">
@@ -459,13 +460,13 @@
             </StackPanel>
 
             <TextBlock x:Name="_noMatchesText"
-                       Grid.Row="1"
+                       Grid.Row="2"
                        Padding="16"
                        FontStyle="Italic"
                        Text="{x:Bind NoMatchesText, Mode=OneWay}"
                        Visibility="Collapsed" />
 
-            <Border Grid.Row="1"
+            <Border Grid.Row="2"
                     Padding="16"
                     HorizontalAlignment="Stretch"
                     VerticalAlignment="Center"
@@ -481,7 +482,7 @@
             </Border>
 
             <ListView x:Name="_filteredActionsView"
-                      Grid.Row="2"
+                      Grid.Row="3"
                       HorizontalAlignment="Stretch"
                       VerticalAlignment="Stretch"
                       AllowDrop="False"
@@ -491,7 +492,16 @@
                       IsItemClickEnabled="True"
                       ItemClick="_listItemClicked"
                       ItemsSource="{x:Bind FilteredActions}"
-                      SelectionMode="Single" />
+                      SelectionMode="Single"
+                      Visibility="{x:Bind Loaded, Mode=OneWay}" />
+
+            <Grid Grid.Row="1"
+                  MinHeight="60"
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Visibility="{x:Bind Loading, Mode=OneWay}">
+                <mux:ProgressRing IsActive="{x:Bind Loading, Mode=OneWay}" />
+            </Grid>
 
         </Grid>
 

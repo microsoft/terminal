@@ -107,8 +107,16 @@ winrt::fire_and_forget Jumplist::UpdateJumplist(const CascadiaSettings& settings
 {
     try
     {
+        size_t i{};
         for (const auto& profile : profiles)
         {
+            if (++i == 13)
+            {
+                // Only process the first 13 profiles.
+                // Empirically observed as the limit for tasks in Windows 10
+                break;
+            }
+
             // Craft the arguments following "wt.exe"
             auto args = fmt::format(L"-p {}", to_hstring(profile.Guid()));
 

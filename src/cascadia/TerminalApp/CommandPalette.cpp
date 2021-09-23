@@ -886,17 +886,24 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::SetCommands(Collections::IVector<Command> const& actions)
     {
         _allCommands.Clear();
-        for (const auto& action : actions)
+        if (actions)
         {
-            auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
-            auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
-            _allCommands.Append(filteredCommand);
+            for (const auto& action : actions)
+            {
+                auto actionPaletteItem{ winrt::make<winrt::TerminalApp::implementation::ActionPaletteItem>(action) };
+                auto filteredCommand{ winrt::make<FilteredCommand>(actionPaletteItem) };
+                _allCommands.Append(filteredCommand);
+            }
         }
 
         if (Visibility() == Visibility::Visible && _currentMode == CommandPaletteMode::ActionMode)
         {
-            _updateFilteredActions();
+            _filterTextChanged(nullptr, nullptr);
+            //_updateFilteredActions();
         }
+
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Loading" });
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Loaded" });
     }
 
     // Method Description:
@@ -1003,6 +1010,9 @@ namespace winrt::TerminalApp::implementation
         // clear + append when switching between modes.
         _filteredActions.Clear();
         _updateFilteredActions();
+
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Loading" });
+        _PropertyChangedHandlers(*this, Windows::UI::Xaml::Data::PropertyChangedEventArgs{ L"Loaded" });
     }
 
     // Method Description:

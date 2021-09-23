@@ -1950,19 +1950,41 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_UpdateCommandsForPalette()
+    winrt::fire_and_forget TerminalPage::_UpdateCommandsForPalette()
     {
-        IMap<winrt::hstring, Command> copyOfCommands = _ExpandCommands(_settings.GlobalSettings().ActionMap().NameMap(),
-                                                                       _settings.ActiveProfiles().GetView(),
-                                                                       _settings.GlobalSettings().ColorSchemes());
+        auto settings{ _settings };
+        CommandPalette().SetCommands(nullptr);
 
-        _recursiveUpdateCommandKeybindingLabels(_settings, copyOfCommands.GetView());
+        co_await winrt::resume_background();
+
+        if (settings != _settings)
+        { // check before each expensive operation!
+            co_return;
+        }
+
+        IMap<winrt::hstring, Command> copyOfCommands = _ExpandCommands(settings.GlobalSettings().ActionMap().NameMap(),
+                                                                       settings.ActiveProfiles().GetView(),
+                                                                       settings.GlobalSettings().ColorSchemes());
+
+        if (settings != _settings)
+        { // check before each expensive operation!
+            co_return;
+        }
+
+        _recursiveUpdateCommandKeybindingLabels(settings, copyOfCommands.GetView());
 
         // Update the command palette when settings reload
         auto commandsCollection = winrt::single_threaded_vector<Command>();
         for (const auto& nameAndCommand : copyOfCommands)
         {
             commandsCollection.Append(nameAndCommand.Value());
+        }
+
+        co_await winrt::resume_foreground(Dispatcher());
+
+        if (settings != _settings)
+        {
+            co_return;
         }
 
         CommandPalette().SetCommands(commandsCollection);

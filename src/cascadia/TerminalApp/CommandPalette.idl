@@ -19,6 +19,9 @@ namespace TerminalApp
         String ParentCommandName { get; };
         String ParsedCommandLineText { get; };
 
+        Boolean Loading { get; };
+        Boolean Loaded { get; };
+
         Windows.Foundation.Collections.IObservableVector<FilteredCommand> FilteredActions { get; };
 
         void SetCommands(Windows.Foundation.Collections.IVector<Microsoft.Terminal.Settings.Model.Command> actions);

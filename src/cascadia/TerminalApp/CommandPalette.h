@@ -47,6 +47,9 @@ namespace winrt::TerminalApp::implementation
         void EnableTabSwitcherMode(const uint32_t startIdx, Microsoft::Terminal::Settings::Model::TabSwitcherMode tabSwitcherMode);
         void EnableTabSearchMode();
 
+        bool Loading() const { return _currentMode == CommandPaletteMode::ActionMode && _allCommands.Size() == 0; }
+        bool Loaded() const { return !Loading(); }
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, NoMatchesText, _PropertyChangedHandlers);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, SearchBoxPlaceholderText, _PropertyChangedHandlers);
