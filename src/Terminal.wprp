@@ -12,6 +12,7 @@
     <EventProvider Id="EventProvider_TerminalWin32Host" Name="56c06166-2e2e-5f4d-7ff3-74f4b78c87d6" />
     <EventProvider Id="EventProvider_TerminalRemoting" Name="d6f04aad-629f-539a-77c1-73f5c3e4aa7b" />
     <EventProvider Id="EventProvider_TerminalDirectX" Name="c93e739e-ae50-5a14-78e7-f171e947535d" />
+    <EventProvider Id="EventProvider_TerminalUIA" Name="e7ebce59-2161-572d-b263-2f16a6afb9e5"/>
     <Profile Id="Terminal.Verbose.File" Name="Terminal" Description="Terminal" LoggingMode="File" DetailLevel="Verbose">
       <Collectors>
         <EventCollectorId Value="EventCollector_Terminal">
@@ -23,6 +24,7 @@
             <EventProviderId Value="EventProvider_TerminalWin32Host" />
             <EventProviderId Value="EventProvider_TerminalRemoting" />
             <EventProviderId Value="EventProvider_TerminalDirectX" />
+            <EventProviderId Value="EventProvider_TerminalUIA" />
           </EventProviders>
         </EventCollectorId>
       </Collectors>

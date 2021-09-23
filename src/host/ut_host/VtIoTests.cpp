@@ -392,6 +392,11 @@ public:
     {
     }
 
+    const bool IsUiaDataInitialized() const noexcept
+    {
+        return true;
+    }
+
     const std::wstring GetHyperlinkUri(uint16_t /*id*/) const noexcept
     {
         return {};
