@@ -310,6 +310,20 @@ namespace winrt::TerminalApp::implementation
         return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
     }
 
+    WindowLayout TerminalPage::LoadPersistedLayout(CascadiaSettings& settings) const
+    {
+        if (const auto idx = LoadPersistedLayoutIdx(settings))
+        {
+            const auto i = idx.value();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (layouts && layouts.Size() > i)
+            {
+                return layouts.GetAt(i);
+            }
+        }
+        return nullptr;
+    }
+
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
     {
         Windows::Foundation::Collections::IVectorView<Windows::Storage::IStorageItem> items;
@@ -393,34 +407,13 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            // If the user selected to save their tab layout, we are the first
-            // window opened, and wt was not run with any other arguments, then
-            // we should use the saved settings.
-            auto firstActionIsDefault = [](ActionAndArgs action) {
-                if (action.Action() != ShortcutAction::NewTab)
-                {
-                    return false;
-                }
-
-                // If no commands were given, we will have default args
-                if (const auto args = action.Args().try_as<NewTabArgs>())
-                {
-                    NewTerminalArgs defaultArgs{};
-                    return args.TerminalArgs() == nullptr || args.TerminalArgs().Equals(defaultArgs);
-                }
-
-                return false;
-            };
-            const auto idx = LoadPersistedLayoutIdx(_settings);
-            // It is not well defined what should happen if a user specifies a
-            // command line and also to load from a particular layout.
-            if (idx && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
+            // If we are provided with an index, the cases where we have
+            // commandline args and startup actions are already handled.
+            if (const auto layout = LoadPersistedLayout(_settings))
             {
-                const auto i = idx.value();
-                const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-                if (layouts && layouts.Size() > i && layouts.GetAt(i).TabLayout() && layouts.GetAt(i).TabLayout().Size() > 0)
+                if (layout.TabLayout().Size() > 0)
                 {
-                    _startupActions = layouts.GetAt(i).TabLayout();
+                    _startupActions = layout.TabLayout();
                 }
             }
 

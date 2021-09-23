@@ -239,14 +239,14 @@ void AppHost::_HandleCommandlineArgs()
                 // Otherwise create this window normally with its commandline, and create
                 // a new window using the first saved layout information.
                 // The 2nd+ layout will always get a new window.
-                if (numPeasants == 1 && !_logic.HasCommandlineArguments())
+                if (numPeasants == 1 && !_logic.HasCommandlineArguments() && !_logic.HasSettingsStartupActions())
                 {
                     _logic.SetPersistedLayoutIdx(startIdx);
                     startIdx += 1;
                 }
 
                 // Create new windows for each of the other saved layouts.
-                for (auto size = layouts.Size(); startIdx < size; startIdx += 1)
+                for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
                 {
                     auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args[0], startIdx);
 

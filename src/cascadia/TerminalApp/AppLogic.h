@@ -56,6 +56,7 @@ namespace winrt::TerminalApp::implementation
         void Quit();
 
         bool HasCommandlineArguments() const noexcept;
+        bool HasSettingsStartupActions() const noexcept;
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);

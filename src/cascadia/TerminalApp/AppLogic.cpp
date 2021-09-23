@@ -619,14 +619,11 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size proposedSize{};
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-        if (const auto idx = _root->LoadPersistedLayoutIdx(_settings))
+        if (const auto layout = _root->LoadPersistedLayout(_settings))
         {
-            const auto i = idx.value();
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-
-            if (layouts && layouts.Size() > i && layouts.GetAt(i).InitialSize())
+            if (layout.InitialSize())
             {
-                proposedSize = layouts.GetAt(i).InitialSize().Value();
+                proposedSize = layout.InitialSize().Value();
                 // The size is saved as a non-scaled real pixel size,
                 // so we need to scale it appropriately.
                 proposedSize.Height = proposedSize.Height * scale;
@@ -724,14 +721,11 @@ namespace winrt::TerminalApp::implementation
 
         auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
 
-        if (const auto idx = _root->LoadPersistedLayoutIdx(_settings))
+        if (const auto layout = _root->LoadPersistedLayout(_settings))
         {
-            const auto i = idx.value();
-            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-
-            if (layouts && layouts.Size() > i && layouts.GetAt(i).InitialPosition())
+            if (layout.InitialPosition())
             {
-                initialPosition = layouts.GetAt(i).InitialPosition().Value();
+                initialPosition = layout.InitialPosition().Value();
             }
         }
 
@@ -1204,6 +1198,11 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::HasCommandlineArguments() const noexcept
     {
         return _hasCommandLineArguments;
+    }
+
+    bool AppLogic::HasSettingsStartupActions() const noexcept
+    {
+        return _hasSettingsStartupActions;
     }
 
     // Method Description:
