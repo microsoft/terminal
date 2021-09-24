@@ -106,27 +106,38 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
 }
 
 // Method Description:
-// - Escapes the given string so that it can be used as a command-line arg within a quoted string.
-// - e.g. given `";foo\` will return `\"\;foo\\` so that the caller can construct a command-line
-//   using something such as `fmt::format(L"wt --title \"{}\"", EscapeCommandlineArg(TabTitle()))`.
+// - Quotes and escapes the given string so that it can be used as a command-line arg.
+// - e.g. given `\";foo\` will return `"\\\"\;foo\\"` so that the caller can construct a command-line
+//   using something such as `fmt::format(L"wt --title {}", QuoteAndQuoteAndEscapeCommandlineArg(TabTitle()))`.
 // Arguments:
-// - arg - the command-line argument to escape.
+// - arg - the command-line argument to quote and escape.
 // Return Value:
-// - the escaped command-line argument.
-_TIL_INLINEPREFIX std::wstring EscapeCommandlineArg(const std::wstring_view arg)
+// - the quoted and escaped command-line argument.
+_TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_view& arg)
 {
-    std::wstringstream stream;
-    for (auto it = arg.cbegin(); it != arg.cend(); ++it)
+    std::wstring out;
+    out.reserve(arg.size() + 2);
+    out.push_back(L'"');
+
+    size_t backslashes = 0;
+    for (const auto ch : arg)
     {
-        if (*it == L';' || *it == L'"')
+        if (ch == L'\\')
         {
-            stream << L'\\';
+            backslashes++;
         }
-        stream << *it;
+        else
+        {
+            if (ch == L';' || ch == L'"')
+            {
+                out.append(backslashes + 1, L'\\');
+            }
+            backslashes = 0;
+        }
+        out.push_back(ch);
     }
-    if (arg.back() == L'\\')
-    {
-        stream << L'\\';
-    }
-    return stream.str();
+
+    out.append(backslashes, L'\\');
+    out.push_back(L'"');
+    return out;
 }

@@ -122,12 +122,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!StartingDirectory().empty())
         {
-            ss << fmt::format(L"--startingDirectory \"{}\" ", EscapeCommandlineArg(StartingDirectory()));
+            ss << fmt::format(L"--startingDirectory {} ", QuoteAndEscapeCommandlineArg(StartingDirectory()));
         }
 
         if (!TabTitle().empty())
         {
-            ss << fmt::format(L"--title \"{}\" ", EscapeCommandlineArg(TabTitle()));
+            ss << fmt::format(L"--title {} ", QuoteAndEscapeCommandlineArg(TabTitle()));
         }
 
         if (TabColor())
@@ -150,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!ColorScheme().empty())
         {
-            ss << fmt::format(L"--colorScheme \"{}\" ", EscapeCommandlineArg(ColorScheme()));
+            ss << fmt::format(L"--colorScheme {} ", QuoteAndEscapeCommandlineArg(ColorScheme()));
         }
 
         if (!Commandline().empty())

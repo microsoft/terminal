@@ -55,7 +55,7 @@ HRESULT OpenTerminalHere::Invoke(IShellItemArray* psiItemArray,
         STARTUPINFOEX siEx{ 0 };
         siEx.StartupInfo.cb = sizeof(STARTUPINFOEX);
 
-        auto cmdline{ wil::str_printf<std::wstring>(LR"-("%s" -d "%s")-", GetWtExePath().c_str(), EscapeCommandlineArg(pszName.get()).c_str()) };
+        auto cmdline{ wil::str_printf<std::wstring>(LR"-("%s" -d %s)-", GetWtExePath().c_str(), QuoteAndEscapeCommandlineArg(pszName.get()).c_str()) };
         RETURN_IF_WIN32_BOOL_FALSE(CreateProcessW(
             nullptr, // lpApplicationName
             cmdline.data(),

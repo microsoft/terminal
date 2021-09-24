@@ -467,7 +467,7 @@ namespace SettingsModelLocalTests
             },
             {
                 "name":"action8_tabTitleEscaping",
-                "command": { "action": "newWindow", "tabTitle":"\";foo\\" }
+                "command": { "action": "newWindow", "tabTitle":"\\\";foo\\" }
             }
         ])" };
 
@@ -603,7 +603,7 @@ namespace SettingsModelLocalTests
             auto cmdline = terminalArgs.ToCommandline();
             Log::Comment(NoThrowString().Format(
                 L"cmdline: \"%s\"", cmdline.c_str()));
-            VERIFY_ARE_EQUAL(LR"-(--title "\"\;foo\\")-", terminalArgs.ToCommandline());
+            VERIFY_ARE_EQUAL(LR"-(--title "\\\"\;foo\\")-", terminalArgs.ToCommandline());
         }
     }
 }
