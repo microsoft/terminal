@@ -464,91 +464,77 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return nullptr;
     }
 
-    // since we are not doing a parent-child movement, if we succeed a leaf will
-    // be focused instead so we should clean up any of the path state.
-    const auto result = [&]() -> std::shared_ptr<Pane> {
-        // Previous movement relies on the last used panes
-        if (direction == FocusDirection::Previous)
-        {
-            // If there is actually a previous pane.
-            if (mruPanes.size() > 1)
-            {
-                // This could return nullptr if the id is not actually in the tree.
-                return FindPane(mruPanes.at(1));
-            }
-            return nullptr;
-        }
-
-        // Check if we in-order traversal is requested
-        if (direction == FocusDirection::NextInOrder)
-        {
-            return NextPane(sourcePane);
-        }
-
-        if (direction == FocusDirection::PreviousInOrder)
-        {
-            return PreviousPane(sourcePane);
-        }
-
-        // Fixed movement
-        if (direction == FocusDirection::First)
-        {
-            std::shared_ptr<Pane> firstPane = nullptr;
-            WalkTree([&](auto p) {
-                if (p->_IsLeaf())
-                {
-                    firstPane = p;
-                    return true;
-                }
-
-                return false;
-            });
-
-            // Don't need to do any movement if we are the source and target pane.
-            if (firstPane == sourcePane)
-            {
-                return nullptr;
-            }
-            return firstPane;
-        }
-
-        // We are left with directional traversal now
-        // If the focus direction does not match the split direction, the source pane
-        // and its neighbor must necessarily be contained within the same child.
-        if (!DirectionMatchesSplit(direction, _splitState))
-        {
-            if (const auto p = _firstChild->NavigateDirection(sourcePane, direction, mruPanes))
-            {
-                return p;
-            }
-            return _secondChild->NavigateDirection(sourcePane, direction, mruPanes);
-        }
-
-        // Since the direction is the same as our split, it is possible that we must
-        // move focus from from one child to another child.
-        // We now must keep track of state while we recurse.
-        // If we have it, get the size of this pane.
-        const auto scaleX = _root.ActualWidth() > 0 ? gsl::narrow_cast<float>(_root.ActualWidth()) : 1.f;
-        const auto scaleY = _root.ActualHeight() > 0 ? gsl::narrow_cast<float>(_root.ActualHeight()) : 1.f;
-        const auto paneNeighborPair = _FindPaneAndNeighbor(sourcePane, direction, { 0, 0, scaleX, scaleY });
-
-        if (paneNeighborPair.source && paneNeighborPair.neighbor)
-        {
-            return paneNeighborPair.neighbor;
-        }
-
-        return nullptr;
-    }();
-
-    // If we found another pane to move to, we should clear any parent/child state
-    if (result)
+    // Previous movement relies on the last used panes
+    if (direction == FocusDirection::Previous)
     {
-        sourcePane->WalkTree([](auto p) {
-            p->_parentChildPath.reset();
-        });
+        // If there is actually a previous pane.
+        if (mruPanes.size() > 1)
+        {
+            // This could return nullptr if the id is not actually in the tree.
+            return FindPane(mruPanes.at(1));
+        }
+        return nullptr;
     }
 
-    return result;
+    // Check if we in-order traversal is requested
+    if (direction == FocusDirection::NextInOrder)
+    {
+        return NextPane(sourcePane);
+    }
+
+    if (direction == FocusDirection::PreviousInOrder)
+    {
+        return PreviousPane(sourcePane);
+    }
+
+    // Fixed movement
+    if (direction == FocusDirection::First)
+    {
+        std::shared_ptr<Pane> firstPane = nullptr;
+        WalkTree([&](auto p) {
+            if (p->_IsLeaf())
+            {
+                firstPane = p;
+                return true;
+            }
+
+            return false;
+        });
+
+        // Don't need to do any movement if we are the source and target pane.
+        if (firstPane == sourcePane)
+        {
+            return nullptr;
+        }
+        return firstPane;
+    }
+
+    // We are left with directional traversal now
+    // If the focus direction does not match the split direction, the source pane
+    // and its neighbor must necessarily be contained within the same child.
+    if (!DirectionMatchesSplit(direction, _splitState))
+    {
+        if (const auto p = _firstChild->NavigateDirection(sourcePane, direction, mruPanes))
+        {
+            return p;
+        }
+        return _secondChild->NavigateDirection(sourcePane, direction, mruPanes);
+    }
+
+    // Since the direction is the same as our split, it is possible that we must
+    // move focus from from one child to another child.
+    // We now must keep track of state while we recurse.
+    // If we have it, get the size of this pane.
+    const auto scaleX = _root.ActualWidth() > 0 ? gsl::narrow_cast<float>(_root.ActualWidth()) : 1.f;
+    const auto scaleY = _root.ActualHeight() > 0 ? gsl::narrow_cast<float>(_root.ActualHeight()) : 1.f;
+    const auto paneNeighborPair = _FindPaneAndNeighbor(sourcePane, direction, { 0, 0, scaleX, scaleY });
+
+    if (paneNeighborPair.source && paneNeighborPair.neighbor)
+    {
+        return paneNeighborPair.neighbor;
+    }
+
+    return nullptr;
 }
 
 // Method Description:
@@ -2623,6 +2609,8 @@ void Pane::Id(uint32_t id) noexcept
 // - The ID of the pane we want to focus
 bool Pane::FocusPane(const uint32_t id)
 {
+    // Always clear the parent child path if we are focusing a leaf
+    _parentChildPath.reset();
     if (_IsLeaf() && id == _id)
     {
         // Make sure to use _FocusFirstChild here - that'll properly update the
@@ -2657,6 +2645,8 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
     }
     else
     {
+        // clear the parent child path if we are not the pane being focused.
+        _parentChildPath.reset();
         if (_firstChild && _secondChild)
         {
             return _firstChild->FocusPane(pane) ||
