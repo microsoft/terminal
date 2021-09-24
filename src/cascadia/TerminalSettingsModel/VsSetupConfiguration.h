@@ -37,7 +37,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     public:
         struct VsSetupInstance
         {
-            VsSetupInstance(VsSetupInstance&&) = default;
+            VsSetupInstance(VsSetupInstance&& other) :
+                query(std::move(other.query)),
+                inst(std::move(other.inst)),
+                profileNameSuffix(std::move(other.profileNameSuffix)),
+                installDate(other.installDate),
+                version(other.version)
+            {
+            }
 
             std::wstring ResolvePath(std::wstring_view relativePath) const
             {
