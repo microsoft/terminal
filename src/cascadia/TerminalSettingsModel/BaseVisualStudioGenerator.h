@@ -31,5 +31,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         virtual std::wstring GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const = 0;
         virtual std::wstring GetProfileGuidSeed(const VsSetupConfiguration::VsSetupInstance& instance) const = 0;
         virtual std::wstring GetProfileIconPath() const = 0;
+
+    private:
+        static bool Compare(const VsSetupConfiguration::VsSetupInstance& a, const VsSetupConfiguration::VsSetupInstance& b);
     };
 };

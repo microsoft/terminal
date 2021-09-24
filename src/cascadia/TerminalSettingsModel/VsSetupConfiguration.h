@@ -37,6 +37,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     public:
         struct VsSetupInstance
         {
+            VsSetupInstance(VsSetupInstance&&) = default;
+
             std::wstring ResolvePath(std::wstring_view relativePath) const
             {
                 return VsSetupConfiguration::ResolvePath(inst.get(), relativePath);
@@ -65,7 +67,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
             std::wstring GetVersion() const
             {
-                return GetInstallationVersion(inst.get());
+                return VsSetupConfiguration::GetInstallationVersion(inst.get());
+            }
+
+            unsigned long long GetComparableInstallDate() const
+            {
+                return installDate;
+            }
+
+            unsigned long long GetComparableVersion() const
+            {
+                return version;
             }
 
             std::wstring GetInstallationPath() const
@@ -116,13 +128,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return profileNameSuffix;
             }
 
+            VsSetupInstance& operator=(VsSetupInstance&&) = default;
+
         private:
             friend class VsSetupConfiguration;
 
             VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
                 query(std::move(pQuery)),
                 inst(std::move(pInstance)),
-                profileNameSuffix(BuildProfileNameSuffix())
+                profileNameSuffix(BuildProfileNameSuffix()),
+                installDate(GetInstallDate()),
+                version(GetInstallationVersion())
             {
             }
 
@@ -130,6 +146,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             ComPtrSetupInstance inst;
 
             std::wstring profileNameSuffix;
+
+            // Cache oft-accessed properties used in sorting.
+            unsigned long long installDate;
+            unsigned long long version;
 
             std::wstring BuildProfileNameSuffix() const
             {
@@ -165,6 +185,22 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 }
 
                 return GetVersion();
+            }
+
+            unsigned long long GetInstallDate() const
+            {
+                return VsSetupConfiguration::GetInstallDate(inst.get());
+            }
+
+            unsigned long long GetInstallationVersion() const
+            {
+                const auto helper = wil::com_query<ISetupHelper>(query);
+
+                std::wstring versionString{ GetVersion() };
+                unsigned long long version{ 0 };
+
+                THROW_IF_FAILED(helper->ParseVersion(versionString.data(), &version));
+                return version;
             }
 
             static std::wstring GetChannelNameSuffixTag(ISetupPropertyStore* instanceProperties)
@@ -229,6 +265,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         static std::wstring GetInstallationVersion(ISetupInstance* pInst);
         static std::wstring GetInstallationPath(ISetupInstance* pInst);
         static std::wstring GetInstanceId(ISetupInstance* pInst);
+        static unsigned long long GetInstallDate(ISetupInstance* pInst);
         static std::wstring GetStringProperty(ISetupPropertyStore* pProps, std::wstring_view name);
     };
 };

@@ -95,6 +95,13 @@ std::wstring VsSetupConfiguration::GetInstanceId(ISetupInstance* pInst)
     return bstrInstanceId.get();
 }
 
+unsigned long long VsSetupConfiguration::GetInstallDate(ISetupInstance* pInst)
+{
+    FILETIME ftInstallDate{ 0 };
+    THROW_IF_FAILED(pInst->GetInstallDate(&ftInstallDate));
+    return wil::filetime::to_int64(ftInstallDate);
+}
+
 std::wstring VsSetupConfiguration::GetStringProperty(ISetupPropertyStore* pProps, std::wstring_view name)
 {
     if (pProps == nullptr)
