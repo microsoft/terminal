@@ -2122,6 +2122,7 @@ void Pane::_SetupEntranceAnimation()
     auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
         auto child = isFirstChild ? _firstChild : _secondChild;
         auto childGrid = child->_root;
+        // If we are splitting a parent pane this may be null
         auto control = child->_control;
         // Build up our animation:
         // * it'll take as long as our duration (200ms)
@@ -2177,16 +2178,22 @@ void Pane::_SetupEntranceAnimation()
             // the parent pane, otherwise use the bottom/right. This is always
             // the "outside" of the parent pane.
             childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
-            control.HorizontalAlignment(HorizontalAlignment::Left);
-            control.Width(isFirstChild ? totalSize : size);
+            if (control)
+            {
+                control.HorizontalAlignment(HorizontalAlignment::Left);
+                control.Width(isFirstChild ? totalSize : size);
+            }
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
             animation.Completed([childGrid, control](auto&&, auto&&) {
-                control.Width(NAN);
                 childGrid.Width(NAN);
                 childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                if (control)
+                {
+                    control.Width(NAN);
+                    control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                }
             });
         }
         else
@@ -2195,16 +2202,22 @@ void Pane::_SetupEntranceAnimation()
             // the parent pane, otherwise use the bottom/right. This is always
             // the "outside" of the parent pane.
             childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
-            control.VerticalAlignment(VerticalAlignment::Top);
-            control.Height(isFirstChild ? totalSize : size);
+            if (control)
+            {
+                control.VerticalAlignment(VerticalAlignment::Top);
+                control.Height(isFirstChild ? totalSize : size);
+            }
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
             animation.Completed([childGrid, control](auto&&, auto&&) {
-                control.Height(NAN);
                 childGrid.Height(NAN);
                 childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                control.VerticalAlignment(VerticalAlignment::Stretch);
+                if (control)
+                {
+                    control.Height(NAN);
+                    control.VerticalAlignment(VerticalAlignment::Stretch);
+                }
             });
         }
 
