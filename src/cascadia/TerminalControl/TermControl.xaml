@@ -14,6 +14,7 @@
              d:DesignWidth="1024"
              AllowDrop="True"
              AllowFocusOnInteraction="True"
+             Background="Transparent"
              CharacterReceived="_CharacterHandler"
              DragOver="_DragOverHandler"
              Drop="_DragDropHandler"

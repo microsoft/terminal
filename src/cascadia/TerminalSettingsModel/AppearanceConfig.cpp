@@ -26,30 +26,32 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 static constexpr std::string_view IntenseTextStyleKey{ "intenseTextStyle" };
+static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
+static constexpr std::string_view OpacityKey{ "opacity" };
 
-winrt::Microsoft::Terminal::Settings::Model::implementation::AppearanceConfig::AppearanceConfig(const winrt::weak_ref<Profile> sourceProfile) :
-    _sourceProfile(sourceProfile)
+AppearanceConfig::AppearanceConfig(winrt::weak_ref<Profile> sourceProfile) :
+    _sourceProfile(std::move(sourceProfile))
 {
 }
 
-winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const winrt::com_ptr<AppearanceConfig> source, const winrt::weak_ref<Profile> sourceProfile)
+winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const AppearanceConfig* source, winrt::weak_ref<Profile> sourceProfile)
 {
-    auto appearance{ winrt::make_self<AppearanceConfig>(sourceProfile) };
-    auto const sourceAppearance = source.try_as<AppearanceConfig>();
-    appearance->_BackgroundImagePath = sourceAppearance->_BackgroundImagePath;
-    appearance->_BackgroundImageOpacity = sourceAppearance->_BackgroundImageOpacity;
-    appearance->_BackgroundImageStretchMode = sourceAppearance->_BackgroundImageStretchMode;
-    appearance->_ColorSchemeName = sourceAppearance->_ColorSchemeName;
-    appearance->_Foreground = sourceAppearance->_Foreground;
-    appearance->_Background = sourceAppearance->_Background;
-    appearance->_SelectionBackground = sourceAppearance->_SelectionBackground;
-    appearance->_CursorColor = sourceAppearance->_CursorColor;
-    appearance->_CursorShape = sourceAppearance->_CursorShape;
-    appearance->_CursorHeight = sourceAppearance->_CursorHeight;
-    appearance->_BackgroundImageAlignment = sourceAppearance->_BackgroundImageAlignment;
-    appearance->_RetroTerminalEffect = sourceAppearance->_RetroTerminalEffect;
-    appearance->_PixelShaderPath = sourceAppearance->_PixelShaderPath;
-    appearance->_IntenseTextStyle = sourceAppearance->_IntenseTextStyle;
+    auto appearance{ winrt::make_self<AppearanceConfig>(std::move(sourceProfile)) };
+    appearance->_BackgroundImagePath = source->_BackgroundImagePath;
+    appearance->_BackgroundImageOpacity = source->_BackgroundImageOpacity;
+    appearance->_BackgroundImageStretchMode = source->_BackgroundImageStretchMode;
+    appearance->_ColorSchemeName = source->_ColorSchemeName;
+    appearance->_Foreground = source->_Foreground;
+    appearance->_Background = source->_Background;
+    appearance->_SelectionBackground = source->_SelectionBackground;
+    appearance->_CursorColor = source->_CursorColor;
+    appearance->_CursorShape = source->_CursorShape;
+    appearance->_CursorHeight = source->_CursorHeight;
+    appearance->_BackgroundImageAlignment = source->_BackgroundImageAlignment;
+    appearance->_RetroTerminalEffect = source->_RetroTerminalEffect;
+    appearance->_PixelShaderPath = source->_PixelShaderPath;
+    appearance->_IntenseTextStyle = source->_IntenseTextStyle;
+    appearance->_Opacity = source->_Opacity;
     return appearance;
 }
 
@@ -71,6 +73,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::SetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 
     return json;
 }
@@ -102,6 +105,8 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::GetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
+    JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 }
 
 winrt::Microsoft::Terminal::Settings::Model::Profile AppearanceConfig::SourceProfile()

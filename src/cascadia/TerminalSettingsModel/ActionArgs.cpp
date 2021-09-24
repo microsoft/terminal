@@ -38,6 +38,7 @@
 #include "MultipleActionsArgs.g.cpp"
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 using namespace winrt::Microsoft::Terminal::Control;
 
@@ -121,15 +122,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!StartingDirectory().empty())
         {
-            // If the directory ends in a '\', we need to add another one on so that the enclosing quote added
-            // afterwards isn't escaped
-            const auto trailingBackslashEscape = StartingDirectory().back() == L'\\' ? L"\\" : L"";
-            ss << fmt::format(L"--startingDirectory \"{}{}\" ", StartingDirectory(), trailingBackslashEscape);
+            ss << fmt::format(L"--startingDirectory {} ", QuoteAndEscapeCommandlineArg(StartingDirectory()));
         }
 
         if (!TabTitle().empty())
         {
-            ss << fmt::format(L"--title \"{}\" ", TabTitle());
+            ss << fmt::format(L"--title {} ", QuoteAndEscapeCommandlineArg(TabTitle()));
         }
 
         if (TabColor())
@@ -152,7 +150,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         if (!ColorScheme().empty())
         {
-            ss << fmt::format(L"--colorScheme \"{}\" ", ColorScheme());
+            ss << fmt::format(L"--colorScheme {} ", QuoteAndEscapeCommandlineArg(ColorScheme()));
         }
 
         if (!Commandline().empty())
@@ -399,13 +397,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This text is intentionally _not_ localized, to attempt to mirror the
         // exact syntax that the property would have in JSON.
-        switch (SplitStyle())
+        switch (SplitDirection())
         {
-        case SplitState::Vertical:
-            ss << L"split: vertical, ";
+        case SplitDirection::Up:
+            ss << L"split: up, ";
             break;
-        case SplitState::Horizontal:
-            ss << L"split: horizontal, ";
+        case SplitDirection::Right:
+            ss << L"split: right, ";
+            break;
+        case SplitDirection::Down:
+            ss << L"split: down, ";
+            break;
+        case SplitDirection::Left:
+            ss << L"split: left, ";
             break;
         }
 

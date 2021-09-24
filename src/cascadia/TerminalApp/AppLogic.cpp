@@ -10,6 +10,7 @@
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
+#include <wil/token_helpers.h >
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -28,12 +29,12 @@ namespace winrt
     using IInspectable = Windows::Foundation::IInspectable;
 }
 
-static const winrt::hstring StartupTaskName = L"StartTerminalOnLoginTask";
+static constexpr std::wstring_view StartupTaskName = L"StartTerminalOnLoginTask";
 // clang-format off
 // !!! IMPORTANT !!!
 // Make sure that these keys are in the same order as the
 // SettingsLoadWarnings/Errors enum is!
-static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWarnings::WARNINGS_SIZE)> settingsLoadWarningsLabels {
+static const std::array settingsLoadWarningsLabels {
     USES_RESOURCE(L"MissingDefaultProfileText"),
     USES_RESOURCE(L"DuplicateProfileText"),
     USES_RESOURCE(L"UnknownColorSchemeText"),
@@ -42,7 +43,6 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"AtLeastOneKeybindingWarning"),
     USES_RESOURCE(L"TooManyKeysForChord"),
     USES_RESOURCE(L"MissingRequiredParameter"),
-    USES_RESOURCE(L"LegacyGlobalsProperty"),
     USES_RESOURCE(L"FailedToParseCommandJson"),
     USES_RESOURCE(L"FailedToWriteToSettings"),
     USES_RESOURCE(L"InvalidColorSchemeInCmd"),
@@ -50,11 +50,14 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadWar
     USES_RESOURCE(L"FailedToParseStartupActions"),
     USES_RESOURCE(L"FailedToParseSubCommands"),
 };
-static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErrors::ERRORS_SIZE)> settingsLoadErrorsLabels {
+static const std::array settingsLoadErrorsLabels {
     USES_RESOURCE(L"NoProfilesText"),
     USES_RESOURCE(L"AllProfilesHiddenText")
 };
 // clang-format on
+
+static_assert(settingsLoadWarningsLabels.size() == static_cast<size_t>(SettingsLoadWarnings::WARNINGS_SIZE));
+static_assert(settingsLoadErrorsLabels.size() == static_cast<size_t>(SettingsLoadErrors::ERRORS_SIZE));
 
 // Function Description:
 // - General-purpose helper for looking up a localized string for a
@@ -67,12 +70,12 @@ static const std::array<std::wstring_view, static_cast<uint32_t>(SettingsLoadErr
 // - map: A map of keys->Resource keys.
 // Return Value:
 // - the localized string for the given type, if it exists.
-template<std::size_t N>
-static winrt::hstring _GetMessageText(uint32_t index, std::array<std::wstring_view, N> keys)
+template<typename T>
+winrt::hstring _GetMessageText(uint32_t index, const T& keys)
 {
     if (index < keys.size())
     {
-        return GetLibraryResourceString(keys.at(index));
+        return GetLibraryResourceString(til::at(keys, index));
     }
     return {};
 }
@@ -131,17 +134,28 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 // Method Description:
 // - Returns whether the user is either a member of the Administrators group or
 //   is currently elevated.
+// - This will return **FALSE** if the user has UAC disabled entirely, because
+//   there's no separation of power between the user and an admin in that case.
 // Return Value:
 // - true if the user is an administrator
 static bool _isUserAdmin() noexcept
 try
 {
-    SID_IDENTIFIER_AUTHORITY ntAuthority{ SECURITY_NT_AUTHORITY };
-    wil::unique_sid adminGroupSid{};
-    THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
-    BOOL b;
-    THROW_IF_WIN32_BOOL_FALSE(CheckTokenMembership(NULL, adminGroupSid.get(), &b));
-    return !!b;
+    wil::unique_handle processToken{ GetCurrentProcessToken() };
+    const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
+    const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
+    if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
+    {
+        // In this case, the user has UAC entirely disabled. This is sort of
+        // weird, we treat this like the user isn't an admin at all. There's no
+        // separation of powers, so the things we normally want to gate on
+        // "having special powers" doesn't apply.
+        //
+        // See GH#7754, GH#11096
+        return false;
+    }
+
+    return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
 }
 catch (...)
 {
@@ -476,27 +490,6 @@ namespace winrt::TerminalApp::implementation
             if (!warningText.empty())
             {
                 warningsTextBlock.Inlines().Append(_BuildErrorRun(warningText, ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Resources()));
-
-                // The "LegacyGlobalsProperty" warning is special - it has a URL
-                // that goes with it. So we need to manually construct a
-                // Hyperlink and insert it along with the warning text.
-                if (warning == SettingsLoadWarnings::LegacyGlobalsProperty)
-                {
-                    // Add the URL here too
-                    const auto legacyGlobalsLinkLabel = RS_(L"LegacyGlobalsPropertyHrefLabel");
-                    const auto legacyGlobalsLinkUriValue = RS_(L"LegacyGlobalsPropertyHrefUrl");
-
-                    winrt::Windows::UI::Xaml::Documents::Run legacyGlobalsLinkText;
-                    winrt::Windows::UI::Xaml::Documents::Hyperlink legacyGlobalsLink;
-                    winrt::Windows::Foundation::Uri legacyGlobalsLinkUri{ legacyGlobalsLinkUriValue };
-
-                    legacyGlobalsLinkText.Text(legacyGlobalsLinkLabel);
-                    legacyGlobalsLink.NavigateUri(legacyGlobalsLinkUri);
-                    legacyGlobalsLink.Inlines().Append(legacyGlobalsLinkText);
-
-                    warningsTextBlock.Inlines().Append(legacyGlobalsLink);
-                }
-
                 warningsTextBlock.Inlines().Append(Documents::LineBreak{});
             }
         }
@@ -1487,9 +1480,9 @@ namespace winrt::TerminalApp::implementation
         return _root->IsQuakeWindow();
     }
 
-    bool AppLogic::GetMinimizeToTray()
+    bool AppLogic::GetMinimizeToNotificationArea()
     {
-        if constexpr (Feature_TrayIcon::IsEnabled())
+        if constexpr (Feature_NotificationIcon::IsEnabled())
         {
             if (!_loadedInitialSettings)
             {
@@ -1497,7 +1490,7 @@ namespace winrt::TerminalApp::implementation
                 LoadSettings();
             }
 
-            return _settings.GlobalSettings().MinimizeToTray();
+            return _settings.GlobalSettings().MinimizeToNotificationArea();
         }
         else
         {
@@ -1505,9 +1498,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool AppLogic::GetAlwaysShowTrayIcon()
+    bool AppLogic::GetAlwaysShowNotificationIcon()
     {
-        if constexpr (Feature_TrayIcon::IsEnabled())
+        if constexpr (Feature_NotificationIcon::IsEnabled())
         {
             if (!_loadedInitialSettings)
             {
@@ -1515,7 +1508,7 @@ namespace winrt::TerminalApp::implementation
                 LoadSettings();
             }
 
-            return _settings.GlobalSettings().AlwaysShowTrayIcon();
+            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
         }
         else
         {

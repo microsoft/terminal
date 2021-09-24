@@ -44,6 +44,13 @@ enum class Borders : int
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
 
+enum class SplitState : int
+{
+    None = 0,
+    Horizontal = 1,
+    Vertical = 2
+};
+
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
@@ -93,23 +100,23 @@ public:
     std::shared_ptr<Pane> NextPane(const std::shared_ptr<Pane> pane);
     std::shared_ptr<Pane> PreviousPane(const std::shared_ptr<Pane> pane);
 
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                   const float splitSize,
                                                                   const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                                                                 const winrt::Windows::Foundation::Size parentSize) const;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
     std::optional<bool> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                             winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                             winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                              const float splitSize,
                                              const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
 
     std::shared_ptr<Pane> AttachPane(std::shared_ptr<Pane> pane,
-                                     winrt::Microsoft::Terminal::Settings::Model::SplitState splitType);
+                                     winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType);
     std::shared_ptr<Pane> DetachPane(std::shared_ptr<Pane> pane);
 
     int GetLeafPaneCount() const noexcept;
@@ -174,7 +181,7 @@ private:
 
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
-    winrt::Microsoft::Terminal::Settings::Model::SplitState _splitState{ winrt::Microsoft::Terminal::Settings::Model::SplitState::None };
+    SplitState _splitState{ SplitState::None };
     float _desiredSplitPosition;
 
     std::optional<uint32_t> _id;
@@ -199,7 +206,7 @@ private:
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
 
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                    const float splitSize,
                                                                    std::shared_ptr<Pane> newPane);
 
@@ -242,9 +249,9 @@ private:
     LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
-    winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType) const;
+    SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
 
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
@@ -255,24 +262,24 @@ private:
     // - Also used for moving focus between panes, which again happens _across_ a separator.
     // Arguments:
     // - direction: The Direction to compare
-    // - splitType: The winrt::TerminalApp::SplitState to compare
+    // - splitType: The SplitState to compare
     // Return Value:
     // - true iff the direction is perpendicular to the splitType. False for
-    //   winrt::TerminalApp::SplitState::None.
+    //   SplitState::None.
     template<typename T>
     static constexpr bool DirectionMatchesSplit(const T& direction,
-                                                const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType)
+                                                const SplitState& splitType)
     {
-        if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::None)
+        if (splitType == SplitState::None)
         {
             return false;
         }
-        else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Horizontal)
+        else if (splitType == SplitState::Horizontal)
         {
             return direction == T::Up ||
                    direction == T::Down;
         }
-        else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Vertical)
+        else if (splitType == SplitState::Vertical)
         {
             return direction == T::Left ||
                    direction == T::Right;

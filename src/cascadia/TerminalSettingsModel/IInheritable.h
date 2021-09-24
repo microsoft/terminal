@@ -48,13 +48,13 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void InsertParent(com_ptr<T> parent)
         {
-            _parents.push_back(parent);
+            _parents.emplace_back(std::move(parent));
         }
 
         void InsertParent(size_t index, com_ptr<T> parent)
         {
             auto pos{ _parents.begin() + index };
-            _parents.insert(pos, parent);
+            _parents.emplace(pos, std::move(parent));
         }
 
         const std::vector<com_ptr<T>>& Parents()

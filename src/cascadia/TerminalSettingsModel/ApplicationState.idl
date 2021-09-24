@@ -5,6 +5,12 @@ import "GlobalAppSettings.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
+    enum InfoBarMessage
+    {
+        CloseOnExitInfo = 0,
+        KeyboardServiceWarning
+    };
+
     runtimeclass WindowLayout
     {
         WindowLayout();
@@ -24,5 +30,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts { get; set; };
 
         Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
+
+        Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages { get; set; };
     }
 }
