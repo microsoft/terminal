@@ -495,6 +495,14 @@
     <value>Sets the transparency of the window.</value>
     <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
   </data>
+  <data name="Profile_Opacity.Header" xml:space="preserve">
+    <value>Background Opacity</value>
+    <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
+  </data>
+  <data name="Profile_Opacity.HelpText" xml:space="preserve">
+    <value>Sets the transparency of the window.</value>
+    <comment>A description for what the "opacity" setting does. Presented near "Profile_Opacity.Header".</comment>
+  </data>
   <data name="Profile_Advanced.Header" xml:space="preserve">
     <value>Advanced</value>
     <comment>Header for a sub-page of profile settings focused on more advanced scenarios.</comment>
@@ -985,6 +993,10 @@
   <data name="Profile_AcrylicHeader.Text" xml:space="preserve">
     <value>Acrylic</value>
     <comment>Header for a group of settings related to the acrylic texture rendering on the background of the app.</comment>
+  </data>
+  <data name="Profile_TransparencyHeader.Text" xml:space="preserve">
+    <value>Transparency</value>
+    <comment>Header for a group of settings related to transparency, including the acrylic texture rendering on the background of the app.</comment>
   </data>
   <data name="Profile_BackgroundHeader.Text" xml:space="preserve">
     <value>Background image</value>

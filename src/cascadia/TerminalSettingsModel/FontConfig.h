@@ -32,7 +32,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
     public:
         FontConfig(winrt::weak_ref<Profile> sourceProfile);
-        static winrt::com_ptr<FontConfig> CopyFontInfo(const winrt::com_ptr<FontConfig> source, winrt::weak_ref<Profile> sourceProfile);
+        static winrt::com_ptr<FontConfig> CopyFontInfo(const FontConfig* source, winrt::weak_ref<Profile> sourceProfile);
         Json::Value ToJson() const;
         void LayerJson(const Json::Value& json);
         bool HasAnyOptionSet() const;

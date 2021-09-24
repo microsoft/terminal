@@ -29,7 +29,6 @@ namespace Microsoft.Terminal.Control
         String ProfileName;
 
         Boolean UseAcrylic;
-        Double TintOpacity;
         ScrollbarState ScrollState;
 
         String FontFace;

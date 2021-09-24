@@ -29,9 +29,9 @@
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
     <ClCompile Include="ColorHelperTests.cpp" />
-    <ClCompile Include="JsonTests.cpp" />
+
     <ClCompile Include="JsonUtilsTests.cpp" />
-    <ClCompile Include="DynamicProfileTests.cpp" />
+
     <ClCompile Include="precomp.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
@@ -92,7 +92,7 @@
     <!-- From Microsoft.UI.Xaml.targets -->
     <Native-Platform Condition="'$(Platform)' == 'Win32'">x86</Native-Platform>
     <Native-Platform Condition="'$(Platform)' != 'Win32'">$(Platform)</Native-Platform>
-    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
+    <_MUXBinRoot>&quot;$(OpenConsoleDir)packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\runtimes\win10-$(Native-Platform)\native\&quot;</_MUXBinRoot>
   </PropertyGroup>
 
   <ItemDefinitionGroup>

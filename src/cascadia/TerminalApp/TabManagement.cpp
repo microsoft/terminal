@@ -87,7 +87,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingFloat64(settings.DefaultSettings().Opacity(), "TintOpacity", "Opacity preference from the settings"),
             TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),

@@ -1,6 +1,7 @@
 apc
 calt
 ccmp
+changelog
 cybersecurity
 Apc
 clickable
@@ -35,9 +36,13 @@ liga
 lje
 locl
 lorem
+Llast
+Lmid
+Lorigin
 maxed
 mkmk
 mru
+noreply
 nje
 ogonek
 ok'd

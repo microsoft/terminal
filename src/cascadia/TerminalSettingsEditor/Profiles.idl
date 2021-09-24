@@ -47,7 +47,7 @@ namespace Microsoft.Terminal.Settings.Editor
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAcrylic);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, AcrylicOpacity);
+        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, Opacity);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
         OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
@@ -109,6 +109,6 @@ namespace Microsoft.Terminal.Settings.Editor
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
 
-        Windows.UI.Xaml.Controls.Slider AcrylicOpacitySlider { get; };
+        Windows.UI.Xaml.Controls.Slider OpacitySlider { get; };
     }
 }

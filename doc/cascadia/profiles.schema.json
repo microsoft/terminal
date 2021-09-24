@@ -1276,6 +1276,11 @@
           "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
+        "showAdminShield": {
+          "default": "true",
+          "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
+          "type": "boolean"
+        },
         "useAcrylicInTabRow": {
           "default": "false",
           "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
@@ -1403,7 +1408,8 @@
       "properties": {
         "acrylicOpacity": {
           "default": 0.5,
-          "description": "When useAcrylic is set to true, it sets the transparency of the window for the profile. Accepts floating point values from 0-1 (default 0.5).",
+          "description": "[deprecated] Please use `opacity` instead.",
+          "deprecated": true,
           "maximum": 1,
           "minimum": 0,
           "type": "number"
@@ -1615,6 +1621,13 @@
           "description": "Name of the profile. Displays in the dropdown menu.",
           "minLength": 1,
           "type": "string"
+        },
+        "opacity": {
+          "default": 100,
+          "description": "Sets the opacity of the window for the profile. Accepts values from 0-100. Defaults to 50 when useAcrylic is set to true.",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
         },
         "padding": {
           "default": "8, 8, 8, 8",

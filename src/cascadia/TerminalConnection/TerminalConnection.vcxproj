@@ -56,7 +56,9 @@
     <Midl Include="AzureConnection.idl" />
   </ItemGroup>
   <ItemGroup>
-    <PRIResource Include="Resources\en-US\Resources.resw" />
+    <PRIResource Include="Resources\en-US\Resources.resw">
+      <SubType>Designer</SubType>
+    </PRIResource>
     <OCResourceDirectory Include="Resources" />
     <None Include="packages.config" />
   </ItemGroup>
@@ -88,7 +90,7 @@
   </Target>
   <ItemDefinitionGroup>
     <ClCompile>
-        <AdditionalIncludeDirectories>$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(IntDir)..\OpenConsoleProxy;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(OpenConsoleCommonOutDir)\conptylib.lib;%(AdditionalDependencies)</AdditionalDependencies>
