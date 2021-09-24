@@ -220,21 +220,19 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::SetFocus()
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
+    *ppRetVal = nullptr;
+
     _LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
-
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
-    *ppRetVal = nullptr;
-    HRESULT hr = S_OK;
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // make a safe array
+    HRESULT hr = S_OK;
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
-    if (*ppRetVal == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
+    RETURN_HR_IF_NULL(E_OUTOFMEMORY, *ppRetVal);
 
     WRL::ComPtr<UiaTextRangeBase> range;
     if (!_pData->IsSelectionActive())
@@ -272,19 +270,18 @@ IFACEMETHODIMP ScreenInfoUiaProviderBase::GetSelection(_Outptr_result_maybenull_
 
 IFACEMETHODIMP ScreenInfoUiaProviderBase::GetVisibleRanges(_Outptr_result_maybenull_ SAFEARRAY** ppRetVal)
 {
+    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
+    *ppRetVal = nullptr;
+
     _LockConsole();
     auto Unlock = wil::scope_exit([&]() noexcept {
         _UnlockConsole();
     });
-
-    RETURN_HR_IF_NULL(E_INVALIDARG, ppRetVal);
+    RETURN_HR_IF(E_FAIL, !_pData->IsUiaDataInitialized());
 
     // make a safe array
     *ppRetVal = SafeArrayCreateVector(VT_UNKNOWN, 0, 1);
-    if (*ppRetVal == nullptr)
-    {
-        return E_OUTOFMEMORY;
-    }
+    RETURN_HR_IF_NULL(E_OUTOFMEMORY, *ppRetVal);
 
     WRL::ComPtr<UiaTextRangeBase> range;
     const auto bufferSize = _pData->GetTextBuffer().GetSize();
