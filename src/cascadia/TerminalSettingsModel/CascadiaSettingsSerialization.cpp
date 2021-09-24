@@ -178,22 +178,7 @@ void SettingsLoader::MergeInboxIntoUserSettings()
 {
     for (const auto& profile : inboxSettings.profiles)
     {
-        if (const auto [it, inserted] = userSettings.profilesByGuid.emplace(profile->Guid(), profile); !inserted)
-        {
-            // If inserted is false, we got a matching user profile with identical GUID.
-            // --> The generated profile is a parent of the existing user profile.
-            it->second->InsertParent(profile);
-        }
-        else
-        {
-            // If inserted is true, then this is a generated profile that doesn't exist in the user's settings.
-            // While emplace() has already created an appropriate entry in .profilesByGuid, we still need to
-            // add it to .profiles (which is basically a sorted list of .profilesByGuid's values).
-            //
-            // When a user modifies a profile they shouldn't modify the (static/constant)
-            // inbox profile of course. That's why we need to call CreateChild here.
-            userSettings.profiles.emplace_back(CreateChild(profile));
-        }
+        _addParentProfile(profile, userSettings);
     }
 }
 
@@ -229,7 +214,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                         }
                         else
                         {
-                            _appendProfile(CreateChild(fragmentProfile), userSettings);
+                            _addParentProfile(fragmentProfile, userSettings);
                         }
                     }
 
@@ -546,6 +531,28 @@ void SettingsLoader::_appendProfile(winrt::com_ptr<Profile>&& profile, ParsedSet
     else
     {
         duplicateProfile = true;
+    }
+}
+
+// If the given ParsedSettings instance contains a profile with the given profile's GUID,
+// the profile is added as a parent. Otherwise a new child profile is created.
+void SettingsLoader::_addParentProfile(const winrt::com_ptr<implementation::Profile>& profile, ParsedSettings& settings)
+{
+    if (const auto [it, inserted] = settings.profilesByGuid.emplace(profile->Guid(), profile); !inserted)
+    {
+        // If inserted is false, we got a matching user profile with identical GUID.
+        // --> The generated profile is a parent of the existing user profile.
+        it->second->InsertParent(profile);
+    }
+    else
+    {
+        // If inserted is true, then this is a generated profile that doesn't exist in the user's settings.
+        // While emplace() has already created an appropriate entry in .profilesByGuid, we still need to
+        // add it to .profiles (which is basically a sorted list of .profilesByGuid's values).
+        //
+        // When a user modifies a profile they shouldn't modify the (static/constant)
+        // inbox profile of course. That's why we need to call CreateChild here.
+        settings.profiles.emplace_back(CreateChild(profile));
     }
 }
 

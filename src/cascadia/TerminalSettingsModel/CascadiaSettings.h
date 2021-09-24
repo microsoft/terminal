@@ -71,6 +71,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
         void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
+        static void _addParentProfile(const winrt::com_ptr<implementation::Profile>& profile, ParsedSettings& settings);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
         std::unordered_set<std::wstring_view> _ignoredNamespaces;
