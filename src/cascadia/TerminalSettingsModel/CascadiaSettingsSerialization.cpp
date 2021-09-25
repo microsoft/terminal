@@ -11,8 +11,7 @@
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
-#include "VsDevCmdGenerator.h"
-#include "VsDevShellGenerator.h"
+#include "VisualStudioGenerator.h"
 #include "WslDistroGenerator.h"
 
 // The following files are generated at build time into the "Generated Files" directory.
@@ -131,8 +130,7 @@ void SettingsLoader::GenerateProfiles()
     _executeGenerator(PowershellCoreProfileGenerator{});
     _executeGenerator(WslDistroGenerator{});
     _executeGenerator(AzureCloudShellGenerator{});
-    _executeGenerator(VsDevCmdGenerator{});
-    _executeGenerator(VsDevShellGenerator{});
+    _executeGenerator(VisualStudioGenerator{});
 }
 
 // A new settings.json gets a special treatment:

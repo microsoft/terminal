@@ -10,6 +10,7 @@ Abstract:
 
 Author(s):
 - Charles Willis - October 2020
+- Heath Stewart - September 2021
 
 --*/
 
@@ -59,6 +60,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             std::wstring GetDevCmdScriptPath() const
             {
                 return ResolvePath(L"Common7\\Tools\\VsDevCmd.bat");
+            }
+
+            std::wstring GetVcCmdScriptDirectory() const
+            {
+                return ResolvePath(L"VC\\Auxiliary\\Build\\");
             }
 
             bool VersionInRange(std::wstring_view range) const
