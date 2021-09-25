@@ -32,6 +32,20 @@ std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryIn
 
     THROW_IF_FAILED(result);
 
+    // Sort instances based on version and install date from latest to oldest.
+    std::sort(instances.begin(), instances.end(), [](const VsSetupInstance& a, const VsSetupInstance& b)
+    {
+        auto const aVersion = a.GetComparableVersion();
+        auto const bVersion = b.GetComparableVersion();
+
+        if (aVersion == bVersion)
+        {
+            return a.GetComparableInstallDate() > b.GetComparableInstallDate();
+        }
+
+        return aVersion > bVersion;
+    });
+
     return instances;
 }
 

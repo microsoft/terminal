@@ -37,14 +37,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     public:
         struct VsSetupInstance
         {
-            VsSetupInstance(VsSetupInstance&& other) :
-                query(std::move(other.query)),
-                inst(std::move(other.inst)),
-                profileNameSuffix(std::move(other.profileNameSuffix)),
-                installDate(other.installDate),
-                version(other.version)
-            {
-            }
+            VsSetupInstance(VsSetupInstance&& other) = default;
+            VsSetupInstance& operator=(VsSetupInstance&&) = default;
 
             std::wstring ResolvePath(std::wstring_view relativePath) const
             {
@@ -135,14 +129,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return profileNameSuffix;
             }
 
-            VsSetupInstance& operator=(VsSetupInstance&&) = default;
-
         private:
             friend class VsSetupConfiguration;
 
             VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
-                query(std::move(pQuery)),
-                inst(std::move(pInstance)),
+                query(pQuery),               // Copy and AddRef the query object.
+                inst(std::move(pInstance)),  // Take ownership of the instance object.
                 profileNameSuffix(BuildProfileNameSuffix()),
                 installDate(GetInstallDate()),
                 version(GetInstallationVersion())

@@ -11,17 +11,12 @@ void BaseVisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<impl
 {
     // There's no point in enumerating valid Visual Studio instances more than once,
     // so cache them for use by both Visual Studio profile generators.
-    static auto instances = VsSetupConfiguration::QueryInstances();
+    static const auto instances = VsSetupConfiguration::QueryInstances();
 
-    // Sort instances based on version and install date.
-    std::sort(instances.begin(), instances.end(), BaseVisualStudioGenerator::Compare);
-
-    // Iterate through instances from newest to oldest.
+    // Instances are ordered from latest to oldest.
     bool latest = true;
-    for (auto it = instances.rbegin(); it != instances.rend(); it++)
+    for (auto const& instance : instances)
     {
-        auto const& instance = *it;
-
         try
         {
             if (!IsInstanceValid(instance))
@@ -45,15 +40,3 @@ void BaseVisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<impl
     }
 }
 
-bool BaseVisualStudioGenerator::Compare(const VsSetupConfiguration::VsSetupInstance& a, const VsSetupConfiguration::VsSetupInstance& b)
-{
-    auto const aVersion = a.GetComparableVersion();
-    auto const bVersion = b.GetComparableVersion();
-
-    if (aVersion == bVersion)
-    {
-        return a.GetComparableInstallDate() < b.GetComparableInstallDate();
-    }
-
-    return aVersion < bVersion;
-}
