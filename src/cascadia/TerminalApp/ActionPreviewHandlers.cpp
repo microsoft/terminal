@@ -74,7 +74,6 @@ namespace winrt::TerminalApp::implementation
         _restorePreviewFuncs.clear();
     }
 
-
     // Method Description:
     // - Preview handler for the SetColorScheme action.
     // - This method will stash the settings of the current control in
