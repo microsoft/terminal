@@ -16,7 +16,7 @@ void VcDevCmdGenerator::GenerateProfiles(const VsSetupConfiguration::VsSetupInst
             return;
         }
 
-        const std::filesystem::path root{  GetVcCmdScriptDirectory(instance) };
+        const std::filesystem::path root{ GetVcCmdScriptDirectory(instance) };
         if (!std::filesystem::exists(root))
         {
             return;

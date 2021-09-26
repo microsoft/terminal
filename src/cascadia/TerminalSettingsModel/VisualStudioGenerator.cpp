@@ -34,4 +34,3 @@ void VisualStudioGenerator::GenerateProfiles(std::vector<winrt::com_ptr<implemen
         hidden = true;
     }
 }
-

@@ -118,8 +118,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             friend class VsSetupConfiguration;
 
             VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
-                query(pQuery),               // Copy and AddRef the query object.
-                inst(std::move(pInstance)),  // Take ownership of the instance object.
+                query(pQuery), // Copy and AddRef the query object.
+                inst(std::move(pInstance)), // Take ownership of the instance object.
                 profileNameSuffix(BuildProfileNameSuffix()),
                 installDate(GetInstallDate()),
                 version(GetInstallationVersion())
