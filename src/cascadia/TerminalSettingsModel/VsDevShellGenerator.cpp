@@ -43,9 +43,20 @@ std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfigurati
     // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
     // so the path in the profile will be used instead.
     std::wstring commandLine{ L"powershell.exe -NoExit -Command \"& {" };
-    commandLine.append(L"Import-Module \"\"\"" + instance.GetDevShellModulePath() + L"\"\"\";");
+    commandLine.append(L"Import-Module \"\"\"" + GetDevShellModulePath(instance) + L"\"\"\";");
     commandLine.append(L"Enter-VsDevShell " + instance.GetInstanceId() + L" -SkipAutomaticLocation");
     commandLine.append(L"}\"");
 
     return commandLine;
+}
+
+std::wstring VsDevShellGenerator::GetDevShellModulePath(const VsSetupConfiguration::VsSetupInstance& instance) const
+{
+    // The path of Microsoft.VisualStudio.DevShell.dll changed in 16.3
+    if (instance.VersionInRange(L"[16.3,"))
+    {
+        return instance.ResolvePath(L"Common7\\Tools\\Microsoft.VisualStudio.DevShell.dll");
+    }
+
+    return instance.ResolvePath(L"Common7\\Tools\\vsdevshell\\Microsoft.VisualStudio.DevShell.dll");
 }

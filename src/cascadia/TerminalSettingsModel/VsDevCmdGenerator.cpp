@@ -38,7 +38,12 @@ std::wstring VsDevCmdGenerator::GetProfileName(const VsSetupConfiguration::VsSet
 
 std::wstring VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const
 {
-    std::wstring commandLine{ L"cmd.exe /k \"" + instance.GetDevCmdScriptPath() + L"\"" };
+    std::wstring commandLine{ L"cmd.exe /k \"" + GetDevCmdScriptPath(instance) + L"\"" };
 
     return commandLine;
+}
+
+std::wstring VsDevCmdGenerator::GetDevCmdScriptPath(const VsSetupConfiguration::VsSetupInstance& instance) const
+{
+    return instance.ResolvePath(L"Common7\\Tools\\VsDevCmd.bat");
 }

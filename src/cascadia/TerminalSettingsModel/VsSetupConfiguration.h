@@ -46,27 +46,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return VsSetupConfiguration::ResolvePath(inst.get(), relativePath);
             }
 
-            std::wstring GetDevShellModulePath() const
-            {
-                // The path of Microsoft.VisualStudio.DevShell.dll changed in 16.3
-                if (VersionInRange(L"[16.3,"))
-                {
-                    return ResolvePath(L"Common7\\Tools\\Microsoft.VisualStudio.DevShell.dll");
-                }
-
-                return ResolvePath(L"Common7\\Tools\\vsdevshell\\Microsoft.VisualStudio.DevShell.dll");
-            }
-
-            std::wstring GetDevCmdScriptPath() const
-            {
-                return ResolvePath(L"Common7\\Tools\\VsDevCmd.bat");
-            }
-
-            std::wstring GetVcCmdScriptDirectory() const
-            {
-                return ResolvePath(L"VC\\Auxiliary\\Build\\");
-            }
-
             bool VersionInRange(std::wstring_view range) const
             {
                 return InstallationVersionInRange(query.get(), inst.get(), range);

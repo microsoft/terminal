@@ -43,5 +43,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
         std::wstring GetProfileName(const VsSetupConfiguration::VsSetupInstance& instance) const;
         std::wstring GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const;
+        std::wstring GetDevShellModulePath(const VsSetupConfiguration::VsSetupInstance& instance) const;
     };
 };
