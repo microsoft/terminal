@@ -2169,7 +2169,9 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(controlSettings, debugConnection);
             _RegisterTerminalEvents(newControl);
             // Split (auto) with the debug tap.
-            resultPane->Split(SplitDirection::Automatic, 0.5f, std::make_shared<Pane>(profile, newControl));
+            auto debugPane = std::make_shared<Pane>(profile, newControl);
+            auto [original, _] = resultPane->Split(SplitDirection::Automatic, 0.5f, debugPane);
+            original->SetActive();
         }
 
         return resultPane;
