@@ -27,7 +27,7 @@ static constexpr unsigned int MAX_CLICK_COUNT = 3;
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    ControlInteractivity::ControlInteractivity(IControlSettings settings,
+        ControlInteractivity::ControlInteractivity(IControlSettings settings,
                                                TerminalConnection::ITerminalConnection connection) :
         _touchAnchor{ std::nullopt },
         _lastMouseClickTimestamp{},
@@ -382,7 +382,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                          WM_MOUSEWHEEL,
                                          modifiers,
                                          ::base::saturated_cast<short>(delta),
-                                         buttonState);
+                                         state);
         }
 
         const auto ctrlPressed = modifiers.IsCtrlPressed();
@@ -562,13 +562,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const unsigned int pointerUpdateKind,
                                                      const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                                      const SHORT wheelDelta,
-                                                     Control::MouseButtonState buttonState)
+                                                     TerminalInput::MouseButtonState buttonState)
     {
         const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
         // If the click happened outside the active region, just don't send any mouse event
         if (const auto adjustedY = terminalPosition.y() - adjustment; adjustedY >= 0)
         {
-            return _core->SendMouseEvent({ terminalPosition.x(), adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
+            return _core->SendMouseEvent({ terminalPosition.x(), adjustedY }, pointerUpdateKind, modifiers, wheelDelta, buttonState);
         }
         return false;
     }
