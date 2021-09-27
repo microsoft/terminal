@@ -25,6 +25,7 @@ DWINRT
 enablewttlogging
 Intelli
 LKG
+LOCKFILE
 Lxss
 mfcribbon
 microsoft

@@ -381,6 +381,9 @@
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
   </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>This parameter is an internal implementation detail and should not be used.</value>
+  </data>
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
   </data>

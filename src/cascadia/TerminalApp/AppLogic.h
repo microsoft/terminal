@@ -55,6 +55,8 @@ namespace winrt::TerminalApp::implementation
 
         void Quit();
 
+        bool HasCommandlineArguments() const noexcept;
+        bool HasSettingsStartupActions() const noexcept;
         int32_t SetStartupCommandline(array_view<const winrt::hstring> actions);
         int32_t ExecuteCommandline(array_view<const winrt::hstring> actions, const winrt::hstring& cwd);
         TerminalApp::FindTargetWindowResult FindTargetWindow(array_view<const winrt::hstring> actions);
@@ -65,12 +67,16 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
 
+        bool ShouldUsePersistedLayout();
+        hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
+        void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
         void IdentifyWindow();
         void RenameFailed();
         winrt::hstring WindowName();
         void WindowName(const winrt::hstring& name);
         uint64_t WindowId();
         void WindowId(const uint64_t& id);
+        void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         bool IsQuakeWindow() const noexcept;
 
@@ -91,7 +97,7 @@ namespace winrt::TerminalApp::implementation
         void TitlebarClicked();
         bool OnDirectKeyEvent(const uint32_t vkey, const uint8_t scanCode, const bool down);
 
-        void WindowCloseButtonClicked();
+        void CloseWindow(Microsoft::Terminal::Settings::Model::LaunchPosition position);
 
         winrt::TerminalApp::TaskbarState TaskbarState();
 
@@ -122,6 +128,8 @@ namespace winrt::TerminalApp::implementation
         winrt::hstring _settingsLoadExceptionText;
         HRESULT _settingsLoadedResult = S_OK;
         bool _loadedInitialSettings = false;
+
+        uint64_t _numOpenWindows{ 0 };
 
         std::shared_mutex _dialogLock;
 
@@ -175,6 +183,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs, _root, RenameWindowRequested);
         FORWARDED_TYPED_EVENT(IsQuakeWindowChanged, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, IsQuakeWindowChanged);
         FORWARDED_TYPED_EVENT(SummonWindowRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, SummonWindowRequested);
+        FORWARDED_TYPED_EVENT(CloseRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, CloseRequested);
         FORWARDED_TYPED_EVENT(OpenSystemMenu, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, OpenSystemMenu);
         FORWARDED_TYPED_EVENT(QuitRequested, Windows::Foundation::IInspectable, Windows::Foundation::IInspectable, _root, QuitRequested);
 

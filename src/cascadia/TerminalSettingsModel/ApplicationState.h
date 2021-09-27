@@ -18,6 +18,7 @@ Abstract:
 #include <inc/cppwinrt_utils.h>
 #include <til/mutex.h>
 #include <til/throttled_func.h>
+#include "FileUtils.h"
 #include <JsonUtils.h>
 
 // This macro generates all getters and setters for ApplicationState.
@@ -33,6 +34,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
+        static winrt::hstring ToJson(const Model::WindowLayout& layout);
+        static Model::WindowLayout FromJson(const winrt::hstring& json);
+
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);
@@ -63,12 +67,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         struct state_t
         {
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) std::optional<type> name{ __VA_ARGS__ };
+#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
+    std::optional<type> name{ __VA_ARGS__ };             \
+    bool name##Changed = false;
+
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         };
 
-        void _write() const noexcept;
+        Json::Value _getRoot(const winrt::Microsoft::Terminal::Settings::Model::locked_hfile& file) const noexcept;
+        void _write() noexcept;
         void _read() const noexcept;
 
         std::filesystem::path _path;
