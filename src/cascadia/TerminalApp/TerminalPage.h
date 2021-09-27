@@ -334,7 +334,7 @@ namespace winrt::TerminalApp::implementation
 
         void _StartInboundListener();
 
-        winrt::fire_and_forget _CompleteInitialization();
+        void _CompleteInitialization();
 
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 

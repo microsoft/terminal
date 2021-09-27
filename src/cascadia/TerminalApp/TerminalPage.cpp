@@ -537,7 +537,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TerminalPage::_CompleteInitialization()
+    void TerminalPage::_CompleteInitialization()
     {
         _startupState = StartupState::Initialized;
 
@@ -550,7 +550,7 @@ namespace winrt::TerminalApp::implementation
         // However, we need to make sure to close this window in that scenario.
         // Since there aren't any _tabs_ in this window, we won't ever get a
         // closed event. So do it manually.
-        auto weakThis{ get_weak() };
+        // auto weakThis{ get_weak() };
         if (_tabs.Size() == 0)
         {
             // This is MENTAL. If we exit right away after spawning the elevated
@@ -562,13 +562,14 @@ namespace winrt::TerminalApp::implementation
             // execution, and _then_ close the window.
             //
             // TODO! There's no way this is the right answer, right?
-            co_await winrt::resume_background();
-            if (auto page{ weakThis.get() })
-            {
-                Sleep(5000);
-                co_await winrt::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
-                page->_LastTabClosedHandlers(*page, nullptr);
-            }
+            // co_await winrt::resume_background();
+            // if (auto page{ weakThis.get() })
+            // {
+            // Sleep(5000);
+            // co_await winrt::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
+            // page->_LastTabClosedHandlers(*page, nullptr);
+            _LastTabClosedHandlers(*this, nullptr);
+            // }
         }
         else
         {
@@ -3574,6 +3575,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Hop to the BG thread
         co_await winrt::resume_background();
+        // co_await winrt::resume_foreground(Dispatcher());
 
         // This will get us the correct exe for dev/preview/release. If you
         // don't stick this in a local, it'll get mangled by ShellExecute. I
@@ -3593,14 +3595,25 @@ namespace winrt::TerminalApp::implementation
         // actually spawn.
         SHELLEXECUTEINFOW seInfo{ 0 };
         seInfo.cbSize = sizeof(seInfo);
+        seInfo.fMask = SEE_MASK_ASYNCOK; // SEE_MASK_DEFAULT; // SEE_MASK_NOASYNC;
+        seInfo.fMask = SEE_MASK_DEFAULT; // SEE_MASK_NOASYNC;
         seInfo.fMask = SEE_MASK_NOASYNC;
         seInfo.lpVerb = L"runas";
         seInfo.lpFile = exePath.c_str();
         seInfo.lpParameters = cmdline.c_str();
         seInfo.nShow = SW_SHOWNORMAL;
         LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
+        co_await winrt::resume_foreground(Dispatcher());
 
-        co_return;
+        // SEE_MASK_ASYNCOK on the main thread (no await): just doesn't work. Exits immediately, no UAC
+        // SEE_MASK_DEFAULT on the main thread (no await): window waits like 10s each to spawn each child elevated. "works", but it's just hanging the UI thread...?
+        // SEE_MASK_NOASYNC on the main thread (no await): Like, hangs the origin window, then eventually spawns the new child. Weird.
+
+        // SEE_MASK_ASYNCOK on the bg:
+        // SEE_MASK_DEFAULT on the bg:
+        // SEE_MASK_NOASYNC on the bg: Spawns a UAC, but nothing happens
+
+        // co_return;
     }
 
     // Method Description:
