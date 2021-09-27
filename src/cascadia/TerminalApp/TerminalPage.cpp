@@ -550,26 +550,9 @@ namespace winrt::TerminalApp::implementation
         // However, we need to make sure to close this window in that scenario.
         // Since there aren't any _tabs_ in this window, we won't ever get a
         // closed event. So do it manually.
-        // auto weakThis{ get_weak() };
         if (_tabs.Size() == 0)
         {
-            // This is MENTAL. If we exit right away after spawning the elevated
-            // WT, then ShellExecute might not successfully complete the
-            // elevation. What's even more, the Terminal will mysteriously crash
-            // somewhere in XAML land.
-            //
-            // So I'm introducing a 5s delay here for the Shell to complete the
-            // execution, and _then_ close the window.
-            //
-            // TODO! There's no way this is the right answer, right?
-            // co_await winrt::resume_background();
-            // if (auto page{ weakThis.get() })
-            // {
-            // Sleep(5000);
-            // co_await winrt::resume_foreground(page->Dispatcher(), CoreDispatcherPriority::Normal);
-            // page->_LastTabClosedHandlers(*page, nullptr);
             _LastTabClosedHandlers(*this, nullptr);
-            // }
         }
         else
         {
@@ -3576,11 +3559,12 @@ namespace winrt::TerminalApp::implementation
         // Hop to the BG thread
         co_await winrt::resume_background();
 
-        // This is supremely dumb. We're going to construct the commandline we
-        // want, then toss it to a helper process called `elevate-shim.exe` that
-        // happens to live next to us. elevate-shim.exe will be the one to call
-        // ShellExecute with the args that we want (to elevate the given
-        // profile).
+        // BODGY
+        //
+        // We're going to construct the commandline we want, then toss it to a
+        // helper process called `elevate-shim.exe` that happens to live next to
+        // us. elevate-shim.exe will be the one to call ShellExecute with the
+        // args that we want (to elevate the given profile).
         //
         // We can't be the one to call ShellExecute ourselves. ShellExecute
         // requires that the calling process stays alive until the child is
@@ -3611,6 +3595,10 @@ namespace winrt::TerminalApp::implementation
                                                nullptr,
                                                &si,
                                                &pi));
+
+        // TODO: GH#8592 - It may be useful to pop a Toast here in the original
+        // Terminal window informing the user that the tab was opened in a new
+        // window.
     }
 
     // Method Description:
