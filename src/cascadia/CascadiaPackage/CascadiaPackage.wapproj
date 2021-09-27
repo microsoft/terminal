@@ -68,6 +68,7 @@
     <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
     <ProjectReference Include="..\ShellExtension\WindowsTerminalShellExt.vcxproj" />
     <ProjectReference Include="..\wt\wt.vcxproj" />
+    <ProjectReference Include="..\ElevateShim\elevate-shim.vcxproj" />
   </ItemGroup>
 
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">

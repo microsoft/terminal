@@ -3559,10 +3559,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
-    // - Helper to launch a new WT instance elevated. It'll do this by asking
-    //   the shell to elevate the process for us. This might cause a UAC prompt.
-    //   The elevation is performed on a background thread, as to not block the
-    //   UI thread.
+    // - Helper to launch a new WT instance elevated. It'll do this by spawning
+    //   a helper process, who will asking the shell to elevate the process for
+    //   us. This might cause a UAC prompt. The elevation is performed on a
+    //   background thread, as to not block the UI thread.
     // Arguments:
     // - newTerminalArgs: A NewTerminalArgs describing the terminal instance
     //   that should be spawned. The Profile should be filled in with the GUID
@@ -3575,45 +3575,42 @@ namespace winrt::TerminalApp::implementation
     {
         // Hop to the BG thread
         co_await winrt::resume_background();
-        // co_await winrt::resume_foreground(Dispatcher());
 
-        // This will get us the correct exe for dev/preview/release. If you
-        // don't stick this in a local, it'll get mangled by ShellExecute. I
-        // have no idea why.
-        const auto exePath{ GetWtExePath() };
+        // This is supremely dumb. We're going to construct the commandline we
+        // want, then toss it to a helper process called `elevate-shim.exe` that
+        // happens to live next to us. elevate-shim.exe will be the one to call
+        // ShellExecute with the args that we want (to elevate the given
+        // profile).
+        //
+        // We can't be the one to call ShellExecute ourselves. ShellExecute
+        // requires that the calling process stays alive until the child is
+        // spawned. However, in the case of something like `wt -p
+        // AlwaysElevateMe`, then the original WT will try to ShellExecute a new
+        // wt.exe (elevated) and immediately exit, preventing ShellExecute from
+        // successfully spawning the elevated WT.
+
+        std::filesystem::path exePath = wil::GetModuleFileNameW<std::wstring>(nullptr);
+        exePath.replace_filename(L"elevate-shim.exe");
 
         // Build the commandline to pass to wt for this set of NewTerminalArgs
-        winrt::hstring cmdline{
+        std::wstring cmdline{
             fmt::format(L"new-tab {}", newTerminalArgs.ToCommandline().c_str())
         };
 
-        // Build the args to ShellExecuteEx. We need to use ShellExecuteEx so we
-        // can pass the SEE_MASK_NOASYNC flag. That flag allows us to safely
-        // call this on the background thread, and have ShellExecute _not_ call
-        // back to us on the main thread. Without this, if you close the
-        // Terminal quickly after the UAC prompt, the elevated WT will never
-        // actually spawn.
-        SHELLEXECUTEINFOW seInfo{ 0 };
-        seInfo.cbSize = sizeof(seInfo);
-        seInfo.fMask = SEE_MASK_ASYNCOK; // SEE_MASK_DEFAULT; // SEE_MASK_NOASYNC;
-        seInfo.fMask = SEE_MASK_DEFAULT; // SEE_MASK_NOASYNC;
-        seInfo.fMask = SEE_MASK_NOASYNC;
-        seInfo.lpVerb = L"runas";
-        seInfo.lpFile = exePath.c_str();
-        seInfo.lpParameters = cmdline.c_str();
-        seInfo.nShow = SW_SHOWNORMAL;
-        LOG_IF_WIN32_BOOL_FALSE(ShellExecuteExW(&seInfo));
-        co_await winrt::resume_foreground(Dispatcher());
+        wil::unique_process_information pi;
+        STARTUPINFOW si{};
+        si.cb = sizeof(si);
 
-        // SEE_MASK_ASYNCOK on the main thread (no await): just doesn't work. Exits immediately, no UAC
-        // SEE_MASK_DEFAULT on the main thread (no await): window waits like 10s each to spawn each child elevated. "works", but it's just hanging the UI thread...?
-        // SEE_MASK_NOASYNC on the main thread (no await): Like, hangs the origin window, then eventually spawns the new child. Weird.
-
-        // SEE_MASK_ASYNCOK on the bg:
-        // SEE_MASK_DEFAULT on the bg:
-        // SEE_MASK_NOASYNC on the bg: Spawns a UAC, but nothing happens
-
-        // co_return;
+        LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(exePath.c_str(),
+                                               cmdline.data(),
+                                               nullptr,
+                                               nullptr,
+                                               FALSE,
+                                               0,
+                                               nullptr,
+                                               nullptr,
+                                               &si,
+                                               &pi));
     }
 
     // Method Description:
