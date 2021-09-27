@@ -380,7 +380,6 @@ namespace winrt::TerminalApp::implementation
         void _EndPreviewColorScheme();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
         winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
-        winrt::Microsoft::Terminal::Settings::Model::TerminalSettings _originalSettings{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 
         HRESULT _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);

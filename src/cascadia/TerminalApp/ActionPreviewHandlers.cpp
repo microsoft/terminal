@@ -76,8 +76,8 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Preview handler for the SetColorScheme action.
-    // - This method will stash the settings of the current control in
-    //   _originalSettings. Then it will create a new TerminalSettings object
+    // - This method will stash functions to reset the settings of the selected controls in
+    //   _restorePreviewFuncs. Then it will create a new TerminalSettings object
     //   with only the properties from the ColorScheme set. It'll _insert_ a
     //   TerminalSettings between the control's root settings (built from
     //   CascadiaSettings) and the control's runtime settings. That'll cause the
