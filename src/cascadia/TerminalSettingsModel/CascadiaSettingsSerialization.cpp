@@ -201,7 +201,7 @@ void SettingsLoader::FindFragmentsAndMergeIntoUserSettings()
                 try
                 {
                     const auto content = ReadUTF8File(fragmentExt.path());
-                    _parse(OriginTag::Fragment, source, content, fragmentSettings);
+                    _parse(OriginTag::Fragment, source, content, fragmentSettings, true);
 
                     for (const auto& fragmentProfile : fragmentSettings.profiles)
                     {
@@ -418,17 +418,6 @@ const Json::Value& SettingsLoader::_getJSONValue(const Json::Value& json, const 
     return Json::Value::nullSingleton();
 }
 
-// Returns true if the given Json::Value looks like a profile.
-// We introduced a bug (GH#9962, fixed in GH#9964) that would result in one or
-// more nameless, guid-less profiles being emitted into the user's settings file.
-// Those profiles would show up in the list as "Default" later.
-bool SettingsLoader::_isValidProfileObject(const Json::Value& profileJson)
-{
-    return profileJson.isObject() &&
-           (profileJson.isMember(NameKey.data(), NameKey.data() + NameKey.size()) || // has a name (can generate a guid)
-            profileJson.isMember(GuidKey.data(), GuidKey.data() + GuidKey.size())); // or has a guid
-}
-
 // We treat userSettings.profiles as an append-only array and will
 // append profiles into the userSettings as necessary in this function.
 // _userProfileCount stores the number of profiles that were in userJSON during construction.
@@ -443,7 +432,7 @@ gsl::span<const winrt::com_ptr<Profile>> SettingsLoader::_getNonUserOriginProfil
 }
 
 // Parses the given JSON string ("content") and fills a ParsedSettings instance with it.
-void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings)
+void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, bool updatesKeyAllowed)
 {
     const auto json = content.empty() ? Json::Value{ Json::ValueType::objectValue } : _parseJSON(content);
     const auto& profilesObject = _getJSONValue(json, ProfilesKey);
@@ -492,28 +481,39 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
 
         for (const auto& profileJson : profilesArray)
         {
-            if (_isValidProfileObject(profileJson))
+            auto profile = Profile::FromJson(profileJson);
+            profile->Origin(origin);
+
+            // The Guid() generation below depends on the value of Source().
+            // --> Provide one if we got one.
+            if (!source.empty())
             {
-                auto profile = Profile::FromJson(profileJson);
-                profile->Origin(origin);
+                profile->Source(source);
+            }
 
-                // The Guid() generation below depends on the value of Source().
-                // --> Provide one if we got one.
-                if (!source.empty())
-                {
-                    profile->Source(source);
-                }
-
-                // The Guid() getter generates one from Name() and Source() if none exists otherwise.
-                // We want to ensure that every profile has a GUID no matter what, not just to
-                // cache the value, but also to make them consistently identifiable later on.
-                if (!profile->HasGuid())
+            // The Guid() getter generates one from Name() and Source() if none exists otherwise.
+            // We want to ensure that every profile has a GUID no matter what, not just to
+            // cache the value, but also to make them consistently identifiable later on.
+            if (!profile->HasGuid())
+            {
+                if (profile->HasName())
                 {
                     profile->Guid(profile->Guid());
                 }
-
-                _appendProfile(std::move(profile), settings);
+                else if (!updatesKeyAllowed || profile->Updates() == winrt::guid{})
+                {
+                    // We introduced a bug (GH#9962, fixed in GH#9964) that would result in one or
+                    // more nameless, guid-less profiles being emitted into the user's settings file.
+                    // Those profiles would show up in the list as "Default" later.
+                    //
+                    // Fragments however can contain an alternative "updates" key, which works similar to the "guid".
+                    // If updatesKeyAllowed is true (see FindFragmentsAndMergeIntoUserSettings) we permit
+                    // such Guid-less, Name-less profiles as long as they have a valid Updates field.
+                    continue;
+                }
             }
+
+            _appendProfile(std::move(profile), settings);
         }
     }
 }
