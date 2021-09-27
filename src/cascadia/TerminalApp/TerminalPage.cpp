@@ -1484,6 +1484,10 @@ namespace winrt::TerminalApp::implementation
     // - Returns true if this commandline is precisely an executable in
     //   system32. We can use this to bypass the elevated state check, because
     //   we're confident that executables in that path won't have been hijacked.
+    //   - TECHNICALLY a user can take ownership of a file in system32 and
+    //     replace it as the system administrator. You could say it's OK though
+    //     because you'd already have to have had admin rights to mess that
+    //     folder up or something.
     // - Will attempt to resolve environment strings.
     // - Will also manually allow commandlines as generated for the default WSL
     //   distros.
@@ -1494,7 +1498,7 @@ namespace winrt::TerminalApp::implementation
     // - cmd.exe -> returns false
     // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
     // - %SystemRoot%\System32\cmd.exe -> returns true
-    // - %SystemRoot%\System32\wsl.exe -d <distroname> -> returns true
+    // - %SystemRoot%\System32\wsl.exe -d <distro name> -> returns true
     static bool _isInSystem32(std::wstring_view commandLine)
     {
         // use C++11 magic statics to make sure we only do this once.
@@ -1523,6 +1527,9 @@ namespace winrt::TerminalApp::implementation
         {
             // Get the first part of the executable path
             const auto start = fullCommandlinePath.wstring().substr(0, systemDirectory.size());
+            // Doing this as an ASCII only check might be wrong, but I'm
+            // guessing if system32 isn't at X:\windows\system32... this isn't
+            // the only thing that is going to be sad in Windows.
             const auto pathEquals = til::equals_insensitive_ascii(start, systemDirectory);
             if (pathEquals && std::filesystem::exists(fullCommandlinePath))
             {
@@ -1531,10 +1538,10 @@ namespace winrt::TerminalApp::implementation
         }
 
         // Also, if the path is literally
-        //   %SystemRoot%\System32\wsl.exe -d <distroname>
+        //   %SystemRoot%\System32\wsl.exe -d <distro name>
         // then allow it.
 
-        // Stolen from _tryMangleStartingDirectoryForWSL
+        // Largely stolen from _tryMangleStartingDirectoryForWSL in ConptyConnection.
         // Find the first space, quote or the end of the string -- we'll look
         // for wsl before that.
         const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
@@ -1559,7 +1566,9 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Get everything after the wsl.exe
-            const auto arguments{ terminator == std::wstring_view::npos ? std::wstring_view{} : commandLine.substr(terminator + 1) };
+            const auto arguments{ terminator == std::wstring_view::npos ?
+                                      std::wstring_view{} :
+                                      commandLine.substr(terminator + 1) };
             const auto dashD{ arguments.find(L"-d ") };
 
             // If we found a "-d " IMMEDIATELY AFTER wsl.exe. If it wasn't
@@ -1661,6 +1670,7 @@ namespace winrt::TerminalApp::implementation
                             tabImpl->UpdateTitle();
                         }
                     }
+                    // return false so we make sure to iterate on every leaf.
                     return false;
                 });
             }

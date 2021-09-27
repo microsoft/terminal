@@ -109,11 +109,6 @@
             </TextBlock>
         </ContentDialog>
 
-        <!-- <ContentDialog x:Name="ApproveCommandlineWarning"
-                       x:Uid="ApproveCommandlineWarning"
-                       x:Load="False"
-                       DefaultButton="Primary" />-->
-
         <local:CommandPalette x:Name="CommandPalette"
                               Grid.Row="1"
                               VerticalAlignment="Stretch"

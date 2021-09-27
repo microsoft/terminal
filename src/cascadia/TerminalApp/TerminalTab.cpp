@@ -522,6 +522,8 @@ namespace winrt::TerminalApp::implementation
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
         const auto& termControl{ control.try_as<TermControl>() };
+        // _AttachEventHandlersToControl will immediately bail if the provided
+        // control is null (READ: if the pane didn't have a TermControl)
         _AttachEventHandlersToControl(newPane->Id().value(), termControl);
         _AttachEventHandlersToPane(original);
         _AttachEventHandlersToPane(newPane);
