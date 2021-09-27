@@ -1358,7 +1358,7 @@ namespace TerminalAppLocalTests
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
             // And we should have stored a function to revert the change.
-            VERIFY_ARE_EQUAL(1, page->_restorePreviewFuncs.size());
+            VERIFY_ARE_EQUAL(1u, page->_restorePreviewFuncs.size());
         });
 
         TestOnUIThread([&page]() {
@@ -1385,7 +1385,7 @@ namespace TerminalAppLocalTests
             Log::Comment(L"Color should be changed");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
             // After preview there should be no more restore functions to execute.
-            VERIFY_ARE_EQUAL(0, page->_restorePreviewFuncs.size());
+            VERIFY_ARE_EQUAL(0u, page->_restorePreviewFuncs.size());
         });
     }
 
