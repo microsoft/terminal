@@ -32,6 +32,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             CORE_APPEARANCE_SETTINGS(COPY_SETTING)
             CONTROL_APPEARANCE_SETTINGS(COPY_SETTING)
 #undef COPY_SETTING
+
+            for (int32_t i = 0; i < _ColorTable.size(); i++)
+            {
+                _ColorTable[i] = appearance.GetColorTableEntry(i);
+            }
         }
     };
 }

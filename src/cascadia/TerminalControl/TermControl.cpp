@@ -274,7 +274,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _core.UpdateSettings(newSettings); // TODO!
+        _core.UpdateSettings(newSettings.try_as<IControlSettings>()); // TODO!
 
         // Update our control settings
         _ApplyUISettings(newSettings);
@@ -2373,7 +2373,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void TermControl::UnfocusedAppearance(IControlAppearance newAppearance)
     {
-        _settings = winrt::make_self<ControlSettings>(_settings, newAppearance);
+        _settings = winrt::make_self<ControlSettings>(_settings.try_as<IControlSettings>(), newAppearance);
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept

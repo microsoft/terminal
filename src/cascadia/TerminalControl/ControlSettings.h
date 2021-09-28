@@ -15,7 +15,7 @@ using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstrin
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct ControlSettings
+    struct ControlSettings : public winrt::implements<ControlSettings, Microsoft::Terminal::Control::IControlSettings, Microsoft::Terminal::Control::IControlAppearance, Microsoft::Terminal::Core::ICoreSettings, Microsoft::Terminal::Core::ICoreAppearance>
     {
 #define SETTINGS_GEN(type, name, ...) WINRT_PROPERTY(type, name, __VA_ARGS__);
         CORE_SETTINGS(SETTINGS_GEN)
@@ -42,5 +42,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::com_ptr<ControlAppearance> UnfocusedAppearance() { return _unfocusedAppearance; }
         winrt::com_ptr<ControlAppearance> FocusedAppearance() { return _focusedAppearance; }
+
+#define APPEARANCE_GEN(type, name, ...)                               \
+    type name() const noexcept { return _focusedAppearance->name(); } \
+    void name(const type& value) noexcept { _focusedAppearance->name(value); }
+
+        CORE_APPEARANCE_SETTINGS(APPEARANCE_GEN)
+        CONTROL_APPEARANCE_SETTINGS(APPEARANCE_GEN)
+#undef APPEARANCE_GEN
+
+        winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+        {
+            return _focusedAppearance->GetColorTableEntry(index);
+        }
     };
 }
