@@ -25,12 +25,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         void GenerateProfiles(const VsSetupConfiguration::VsSetupInstance& instance, bool hidden, std::vector<winrt::com_ptr<implementation::Profile>>& profiles) const override;
 
     private:
-        bool IsInstanceValid(const VsSetupConfiguration::VsSetupInstance&) const
-        {
-            // TODO: Need to determine when these VC environment scripts were added. vcvars32.bat at least was there since 15.0.
-            return true;
-        }
-
         winrt::com_ptr<implementation::Profile> CreateProfile(const VsSetupConfiguration::VsSetupInstance& instance, const std::wstring_view& prefix, const std::filesystem::path& path, bool hidden) const;
 
         std::wstring GetProfileIconPath() const
