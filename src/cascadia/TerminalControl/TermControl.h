@@ -15,6 +15,7 @@
 #include "SearchBoxControl.h"
 
 #include "ControlInteractivity.h"
+#include "ControlSettings.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {
@@ -28,7 +29,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
 
         winrt::fire_and_forget UpdateSettings();
-        winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
 
         hstring GetProfileName() const;
 
@@ -90,6 +90,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         IControlSettings Settings() const;
         void Settings(IControlSettings newSettings);
+        IControlAppearance UnfocusedAppearance() const;
+        void UnfocusedAppearance(IControlAppearance newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
@@ -133,8 +135,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
         // clang-format on
 
-        WINRT_PROPERTY(IControlAppearance, UnfocusedAppearance);
-
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
@@ -152,7 +152,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
-        IControlSettings _settings;
+        winrt::com_ptr<ControlSettings> _settings{ nullptr };
         bool _closing{ false };
         bool _focused{ false };
         bool _initializedTerminal{ false };
@@ -199,9 +199,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return _closing;
         }
 
-        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
-        void _ApplyUISettings(const IControlSettings&);
+        void _UpdateSettingsFromUIThread(winrt::com_ptr<ControlSettings> newSettings);
+        void _UpdateAppearanceFromUIThread(winrt::com_ptr<ControlAppearance> newAppearance);
+        void _ApplyUISettings(const winrt::com_ptr<ControlSettings>& newSettings);
+        winrt::fire_and_forget UpdateAppearance(winrt::com_ptr<ControlAppearance> newAppearance);
 
         void _InitializeBackgroundBrush();
         void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);
