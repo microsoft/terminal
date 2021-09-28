@@ -1742,6 +1742,41 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - If the requested settings want us to elevate this new terminal
+    //   instance, and we're not currently elevated, then open the new terminal
+    //   as an elevated instance (using _OpenElevatedWT). Does nothing if we're
+    //   already elevated, or if the control settings don't want to be elevated.
+    // Arguments:
+    // - newTerminalArgs: The NewTerminalArgs for this terminal instance
+    // - controlSettings: The constructed TerminalSettingsCreateResult for this Terminal instance
+    // - profile: The Profile we're using to launch this Terminal instance
+    // Return Value:
+    // - true iff we tossed this request to an elevated window. Callers can use
+    //   this result to early-return if needed.
+    bool TerminalPage::_maybeElevate(const NewTerminalArgs& newTerminalArgs,
+                                     const TerminalSettingsCreateResult& controlSettings,
+                                     const Profile& profile)
+    {
+        // Try to handle auto-elevation
+        const bool requestedElevation = controlSettings.DefaultSettings().Elevate();
+        const bool currentlyElevated = _isElevated();
+
+        // We aren't elevated, but we want to be.
+        if (requestedElevation && !currentlyElevated)
+        {
+            // Manually set the Profile of the NewTerminalArgs to the guid we've
+            // resolved to. If there was a profile in the NewTerminalArgs, this
+            // will be that profile's GUID. If there wasn't, then we'll use
+            // whatever the default profile's GUID is.
+
+            newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
+            _OpenElevatedWT(newTerminalArgs);
+            return true;
+        }
+        return false;
+    }
+
+    // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
     // Arguments:
@@ -1761,6 +1796,25 @@ namespace winrt::TerminalApp::implementation
         // Do nothing if no TerminalTab is focused
         if (!focusedTab)
         {
+            // GH#632
+            // If there's no tab, but we're requesting a elevated split,
+            // we still want to toss that over to the elevated window. This is
+            // for something like
+            //
+            //   `wtd nt -p "elevated cmd" ; sp -p "elevated cmd"`
+            //
+            // We should just make two elevated tabs for that.
+
+            // Note: If the action was a "duplicate pane" action, but there's no
+            // existing tab to duplicate, then we can't resolve the profile from
+            // the existing pane. So in that scenario, we won't be able to toss
+            // anything over to the elevated window.
+            TerminalSettingsCreateResult controlSettings{ TerminalSettings::CreateWithNewTerminalArgs(_settings,
+                                                                                                      newTerminalArgs,
+                                                                                                      *_bindings) };
+            Profile profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            _maybeElevate(newTerminalArgs, controlSettings, profile);
+
             return;
         }
 
@@ -1824,19 +1878,8 @@ namespace winrt::TerminalApp::implementation
             }
 
             // Try to handle auto-elevation
-            const bool requestedElevation = controlSettings.DefaultSettings().Elevate();
-            const bool currentlyElevated = _isElevated();
-
-            // We aren't elevated, but we want to be.
-            if (requestedElevation && !currentlyElevated)
+            if (_maybeElevate(newTerminalArgs, controlSettings, profile))
             {
-                // Manually set the Profile of the NewTerminalArgs to the guid we've
-                // resolved to. If there was a profile in the NewTerminalArgs, this
-                // will be that profile's GUID. If there wasn't, then we'll use
-                // whatever the default profile's GUID is.
-
-                newTerminalArgs.Profile(::Microsoft::Console::Utils::GuidToString(profile.Guid()));
-                _OpenElevatedWT(newTerminalArgs);
                 return;
             }
 
@@ -3554,11 +3597,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Important: Don't take the param by reference, since we'll be doing work
     // on another thread.
-    fire_and_forget TerminalPage::_OpenElevatedWT(NewTerminalArgs newTerminalArgs)
+    void TerminalPage::_OpenElevatedWT(NewTerminalArgs newTerminalArgs)
     {
-        // Hop to the BG thread
-        co_await winrt::resume_background();
-
         // BODGY
         //
         // We're going to construct the commandline we want, then toss it to a
@@ -3599,6 +3639,9 @@ namespace winrt::TerminalApp::implementation
         // TODO: GH#8592 - It may be useful to pop a Toast here in the original
         // Terminal window informing the user that the tab was opened in a new
         // window.
+
+        // Hop to the BG thread
+        // co_await winrt::resume_background();
     }
 
     // Method Description:

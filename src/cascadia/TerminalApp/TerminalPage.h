@@ -377,7 +377,10 @@ namespace winrt::TerminalApp::implementation
 
         bool _isElevated() const noexcept;
 
-        winrt::fire_and_forget _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
+        bool _maybeElevate(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                           const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,
+                           const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
         bool _shouldPromptForCommandline(const winrt::hstring& cmdline) const;
         void _adminWarningPrimaryClicked(const winrt::TerminalApp::AdminWarningPlaceholder& sender,
