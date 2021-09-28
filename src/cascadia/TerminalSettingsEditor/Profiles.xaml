@@ -81,7 +81,9 @@
                                                 SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox IsSpellCheckEnabled="False"
+                                <TextBox
+                                            x:Uid="Profile_CommandlineBox"
+                                           IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
                                          Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_CommandlineBrowse"
@@ -99,7 +101,9 @@
                                                 SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                    <TextBox
+                                            x:Uid="Profile_StartingDirectoryBox"
+                                            IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                              IsSpellCheckEnabled="False"
                                              Style="{StaticResource TextBoxSettingStyle}"
                                              Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" />
@@ -121,7 +125,9 @@
                                                 HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox FontFamily="Segoe UI, Segoe MDL2 Assets"
+                                <TextBox
+                                            x:Uid="Profile_IconBox"
+                                            FontFamily="Segoe UI, Segoe MDL2 Assets"
                                          IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
                                          Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" />
@@ -441,6 +447,7 @@
                             <muxc:NumberBox LargeChange="100"
                                             Minimum="0"
                                             SmallChange="10"
+                                             x:Uid="Profile_HistorySizeBox"
                                             Style="{StaticResource NumberBoxSettingStyle}"
                                             Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}" />
                         </local:SettingContainer>

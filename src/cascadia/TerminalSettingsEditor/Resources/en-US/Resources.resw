@@ -663,6 +663,10 @@
     <value>Command line</value>
     <comment>Header for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
   </data>
+  <data name="Profile_CommandlineBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Command line</value>
+    <comment>Name for a control to determine commandline executable (i.e. a .exe file) to run when a terminal session of this profile is launched.</comment>
+  </data>
   <data name="Profile_Commandline.HelpText" xml:space="preserve">
     <value>Executable used in the profile.</value>
     <comment>A description for what the "command line" setting does. Presented near "Profile_Commandline".</comment>
@@ -711,6 +715,10 @@
     <value>Font face</value>
     <comment>Header for a control to select the font for text in the app.</comment>
   </data>
+  <data name="Profile_FontFaceBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font face</value>
+    <comment>Name for a control to select the font for text in the app.</comment>
+  </data>
   <data name="Profile_FontFace.HelpText" xml:space="preserve">
     <value>Name of the font face used in the profile.</value>
     <comment>A description for what the "font face" setting does. Presented near "Profile_FontFace".</comment>
@@ -718,6 +726,10 @@
   <data name="Profile_FontSize.Header" xml:space="preserve">
     <value>Font size</value>
     <comment>Header for a control to determine the size of the text in the app.</comment>
+  </data>
+  <data name="Profile_FontSizeBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Font size</value>
+    <comment>Name for a control to determine the size of the text in the app.</comment>
   </data>
   <data name="Profile_FontSize.HelpText" xml:space="preserve">
     <value>Size of the font in points.</value>
@@ -747,6 +759,10 @@
     <value>History size</value>
     <comment>Header for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
   </data>
+  <data name="Profile_HistorySizeBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>History size</value>
+    <comment>Name for a control to determine how many lines of text can be saved in a session. In terminals, the "history" is the output generated within your session.</comment>
+  </data>
   <data name="Profile_HistorySize.HelpText" xml:space="preserve">
     <value>The number of lines above the ones displayed in the window you can scroll back to.</value>
     <comment>A description for what the "history size" setting does. Presented near "Profile_HistorySize".</comment>
@@ -754,6 +770,10 @@
   <data name="Profile_Icon.Header" xml:space="preserve">
     <value>Icon</value>
     <comment>Header for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
+  </data>
+  <data name="Profile_IconBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Icon</value>
+    <comment>Name for a control to determine what icon can be used to represent this profile. This is not necessarily a file path, but can be one.</comment>
   </data>
   <data name="Profile_Icon.HelpText" xml:space="preserve">
     <value>Emoji or image file location of the icon used in the profile.</value>
@@ -798,6 +818,10 @@
   <data name="Profile_StartingDirectory.Header" xml:space="preserve">
     <value>Starting directory</value>
     <comment>Header for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
+  </data>
+  <data name="Profile_StartingDirectoryBox.[using:Windows.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve">
+    <value>Starting directory</value>
+    <comment>Name for a control to determine the directory the session opens it at launch. This is on a text box that accepts folder paths.</comment>
   </data>
   <data name="Profile_StartingDirectory.HelpText" xml:space="preserve">
     <value>The directory the profile starts in when it is loaded.</value>
