@@ -202,15 +202,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
-        // If the user set an opacity, then just use that. Otherwise, change the
-        // default value based off of whether useAcrylic was set or not. If they
-        // want acrylic, then default to 50%. Otherwise, default to 100% (fully
-        // opaque)
-        _Opacity = appearance.HasOpacity() ?
-                       appearance.Opacity() :
-                       UseAcrylic() ?
-                       .5 :
-                       1.0;
+        _Opacity = appearance.Opacity();
     }
 
     // Method Description:
