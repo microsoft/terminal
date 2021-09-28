@@ -43,6 +43,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
+        static winrt::hstring ToJson(const Model::WindowLayout& layout);
+        static Model::WindowLayout FromJson(const winrt::hstring& json);
+
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);

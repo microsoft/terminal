@@ -450,12 +450,25 @@ namespace winrt::TerminalApp::implementation
         // 1 for the child after the first split.
         auto state = _rootPane->BuildStartupActions(0, 1);
 
-        ActionAndArgs newTabAction{};
-        newTabAction.Action(ShortcutAction::NewTab);
-        NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
-        newTabAction.Args(newTabArgs);
+        {
+            ActionAndArgs newTabAction{};
+            newTabAction.Action(ShortcutAction::NewTab);
+            NewTabArgs newTabArgs{ state.firstPane->GetTerminalArgsForPane() };
+            newTabAction.Args(newTabArgs);
 
-        state.args.emplace(state.args.begin(), std::move(newTabAction));
+            state.args.emplace(state.args.begin(), std::move(newTabAction));
+        }
+
+        if (_runtimeTabColor)
+        {
+            ActionAndArgs setColorAction{};
+            setColorAction.Action(ShortcutAction::SetTabColor);
+
+            SetTabColorArgs setColorArgs{ _runtimeTabColor.value() };
+            setColorAction.Args(setColorArgs);
+
+            state.args.emplace_back(std::move(setColorAction));
+        }
 
         // If we only have one arg, we only have 1 pane so we don't need any
         // special focus logic

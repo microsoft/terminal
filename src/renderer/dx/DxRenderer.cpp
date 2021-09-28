@@ -493,6 +493,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 //   actual failure from the API itself.
 [[nodiscard]] HRESULT DxEngine::_CreateSurfaceHandle() noexcept
 {
+#pragma warning(suppress : 26447)
     wil::unique_hmodule hDComp{ LoadLibraryEx(L"Dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
     RETURN_LAST_ERROR_IF(hDComp.get() == nullptr);
 
