@@ -78,7 +78,14 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
-        CloseWindow();
+        _CloseRequestedHandlers(nullptr, nullptr);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleQuit(const IInspectable& /*sender*/,
+                                   const ActionEventArgs& args)
+    {
+        RequestQuit();
         args.Handled(true);
     }
 
@@ -166,7 +173,7 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
-            _SplitPane(realArgs.SplitStyle(),
+            _SplitPane(realArgs.SplitDirection(),
                        realArgs.SplitMode(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
@@ -370,11 +377,10 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& realArgs = args.ActionArgs().try_as<AdjustFontSizeArgs>())
         {
-            if (const auto& termControl{ _GetActiveControl() })
-            {
-                termControl.AdjustFontSize(realArgs.Delta());
-                args.Handled(true);
-            }
+            const auto res = _ApplyToActiveControls([&](auto& control) {
+                control.AdjustFontSize(realArgs.Delta());
+            });
+            args.Handled(res);
         }
     }
 
@@ -388,21 +394,19 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_HandleResetFontSize(const IInspectable& /*sender*/,
                                             const ActionEventArgs& args)
     {
-        if (const auto& termControl{ _GetActiveControl() })
-        {
-            termControl.ResetFontSize();
-            args.Handled(true);
-        }
+        const auto res = _ApplyToActiveControls([](auto& control) {
+            control.ResetFontSize();
+        });
+        args.Handled(res);
     }
 
     void TerminalPage::_HandleToggleShaderEffects(const IInspectable& /*sender*/,
                                                   const ActionEventArgs& args)
     {
-        if (const auto& termControl{ _GetActiveControl() })
-        {
-            termControl.ToggleShaderEffects();
-            args.Handled(true);
-        }
+        const auto res = _ApplyToActiveControls([](auto& control) {
+            control.ToggleShaderEffects();
+        });
+        args.Handled(res);
     }
 
     void TerminalPage::_HandleToggleFocusMode(const IInspectable& /*sender*/,
@@ -445,37 +449,33 @@ namespace winrt::TerminalApp::implementation
         args.Handled(false);
         if (const auto& realArgs = args.ActionArgs().try_as<SetColorSchemeArgs>())
         {
-            if (const auto activeTab{ _GetFocusedTabImpl() })
+            if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
-                if (auto activeControl = activeTab->GetActiveTerminalControl())
-                {
-                    if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    // Start by getting the current settings of the control
+                    auto controlSettings = control.Settings().as<TerminalSettings>();
+                    auto parentSettings = controlSettings;
+                    // Those are the _runtime_ settings however. What we
+                    // need to do is:
+                    //
+                    //   1. Blow away any colors set in the runtime settings.
+                    //   2. Apply the color scheme to the parent settings.
+                    //
+                    // 1 is important to make sure that the effects of
+                    // something like `colortool` are cleared when setting
+                    // the scheme.
+                    if (controlSettings.GetParent() != nullptr)
                     {
-                        // Start by getting the current settings of the control
-                        auto controlSettings = activeControl.Settings().as<TerminalSettings>();
-                        auto parentSettings = controlSettings;
-                        // Those are the _runtime_ settings however. What we
-                        // need to do is:
-                        //
-                        //   1. Blow away any colors set in the runtime settings.
-                        //   2. Apply the color scheme to the parent settings.
-                        //
-                        // 1 is important to make sure that the effects of
-                        // something like `colortool` are cleared when setting
-                        // the scheme.
-                        if (controlSettings.GetParent() != nullptr)
-                        {
-                            parentSettings = controlSettings.GetParent();
-                        }
-
-                        // ApplyColorScheme(nullptr) will clear the old color scheme.
-                        controlSettings.ApplyColorScheme(nullptr);
-                        parentSettings.ApplyColorScheme(scheme);
-
-                        activeControl.UpdateSettings();
-                        args.Handled(true);
+                        parentSettings = controlSettings.GetParent();
                     }
-                }
+
+                    // ApplyColorScheme(nullptr) will clear the old color scheme.
+                    controlSettings.ApplyColorScheme(nullptr);
+                    parentSettings.ApplyColorScheme(scheme);
+
+                    control.UpdateSettings();
+                });
+                args.Handled(res);
             }
         }
     }
@@ -871,6 +871,45 @@ namespace winrt::TerminalApp::implementation
                     _UnZoomIfNeeded();
                     args.Handled(activeTab->FocusPane(paneId));
                 }
+            }
+        }
+    }
+
+    void TerminalPage::_HandleOpenSystemMenu(const IInspectable& /*sender*/,
+                                             const ActionEventArgs& args)
+    {
+        _OpenSystemMenuHandlers(*this, nullptr);
+        args.Handled(true);
+    }
+
+    void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
+                                          const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<ClearBufferArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.ClearBuffer(realArgs.Clear());
+                });
+                args.Handled(res);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleMultipleActions(const IInspectable& /*sender*/,
+                                              const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<MultipleActionsArgs>())
+            {
+                for (const auto& action : realArgs.Actions())
+                {
+                    _actionDispatch->DoAction(action);
+                }
+
+                args.Handled(true);
             }
         }
     }

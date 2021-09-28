@@ -39,6 +39,7 @@ public:
     const std::string& GetExitMessage();
     bool ShouldExitEarly() const noexcept;
 
+    std::optional<uint32_t> GetPersistedLayoutIdx() const noexcept;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> GetLaunchMode() const noexcept;
 
     int ParseArgs(const winrt::Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
@@ -123,6 +124,7 @@ private:
     std::string _exitMessage;
     bool _shouldExitEarly{ false };
 
+    int _loadPersistedLayoutIdx{};
     std::string _windowTarget{};
     // Are you adding more args or attributes here? If they are not reset in _resetStateToDefault, make sure to reset them in FullResetState
 

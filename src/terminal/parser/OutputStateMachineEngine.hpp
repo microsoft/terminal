@@ -147,6 +147,7 @@ namespace Microsoft::Console::VirtualTerminal
         enum DcsActionCodes : uint64_t
         {
             DECDLD_DownloadDRCS = VTID("{"),
+            DECRQSS_RequestSetting = VTID("$q")
         };
 
         enum Vt52ActionCodes : uint64_t

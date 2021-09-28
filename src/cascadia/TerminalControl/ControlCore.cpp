@@ -276,7 +276,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // GH#5098: Inform the engine of the opacity of the default text background.
             if (_settings.UseAcrylic())
             {
-                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.Opacity()));
             }
 
             THROW_IF_FAILED(_renderEngine->Enable());
@@ -359,21 +359,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
     {
-        // When there is a selection active, escape should clear it and NOT flow through
-        // to the terminal. With any other keypress, it should clear the selection AND
-        // flow through to the terminal.
+        // Update the selection, if it's present
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
-        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
+        // modify on key up, then there's chance that we'll immediately dismiss
         // a selection created by an action bound to a keydown.
         if (HasSelection() &&
             !KeyEvent::IsModifierKey(vkey) &&
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
+            // try to update the selection
+            if (const auto updateSlnParams{ ::Terminal::ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second);
+                _renderer->TriggerSelection();
+                return true;
+            }
+
             // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
             if (!modifiers.IsWinPressed())
             {
@@ -381,6 +388,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderer->TriggerSelection();
             }
 
+            // When there is a selection active, escape should clear it and NOT flow through
+            // to the terminal. With any other keypress, it should clear the selection AND
+            // flow through to the terminal.
             if (vkey == VK_ESCAPE)
             {
                 return true;
@@ -425,41 +435,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto newOpacity = std::clamp(_settings.TintOpacity() + adjustment,
+        auto newOpacity = std::clamp(_settings.Opacity() + adjustment,
                                      0.0,
                                      1.0);
-        if (_settings.UseAcrylic())
-        {
-            try
-            {
-                _settings.TintOpacity(newOpacity);
 
-                if (newOpacity >= 1.0)
-                {
-                    _settings.UseAcrylic(false);
-                }
-                else
-                {
-                    // GH#5098: Inform the engine of the new opacity of the default text background.
-                    SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
-                }
+        // GH#5098: Inform the engine of the new opacity of the default text background.
+        SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
 
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-                _TransparencyChangedHandlers(*this, *eventArgs);
-            }
-            CATCH_LOG();
-        }
-        else if (adjustment < 0)
-        {
-            _settings.UseAcrylic(true);
+        _settings.Opacity(newOpacity);
 
-            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            newOpacity = std::clamp(1.0 + adjustment, 0.0, 1.0);
-            _settings.TintOpacity(newOpacity);
-
-            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-            _TransparencyChangedHandlers(*this, *eventArgs);
-        }
+        auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
+        _TransparencyChangedHandlers(*this, *eventArgs);
     }
 
     void ControlCore::ToggleShaderEffects()
@@ -483,6 +469,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderEngine->ToggleShaderEffects();
         }
+        // Always redraw after toggling effects. This way even if the control
+        // does not have focus it will update immediately.
+        _renderer->TriggerRedrawAll();
     }
 
     // Method Description:
@@ -1003,6 +992,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
+        _renderer->TriggerSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -1422,18 +1412,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+        ::Terminal::SelectionExpansion mode = ::Terminal::SelectionExpansion::Char;
         if (numberOfClicks == 1)
         {
-            mode = ::Terminal::SelectionExpansionMode::Cell;
+            mode = ::Terminal::SelectionExpansion::Char;
         }
         else if (numberOfClicks == 2)
         {
-            mode = ::Terminal::SelectionExpansionMode::Word;
+            mode = ::Terminal::SelectionExpansion::Word;
         }
         else if (numberOfClicks == 3)
         {
-            mode = ::Terminal::SelectionExpansionMode::Line;
+            mode = ::Terminal::SelectionExpansion::Line;
         }
 
         // Update the selection appropriately
@@ -1458,7 +1448,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (mode != ::Terminal::SelectionExpansionMode::Cell || shiftEnabled)
+        else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
         {
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
@@ -1499,4 +1489,62 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _updatePatternLocations->Run();
     }
 
+    // Method Description:
+    // - Clear the contents of the buffer. The region cleared is given by
+    //   clearType:
+    //   * Screen: Clear only the contents of the visible viewport, leaving the
+    //     cursor row at the top of the viewport.
+    //   * Scrollback: Clear the contents of the scrollback.
+    //   * All: Do both - clear the visible viewport and the scrollback, leaving
+    //     only the cursor row at the top of the viewport.
+    // Arguments:
+    // - clearType: The type of clear to perform.
+    // Return Value:
+    // - <none>
+    void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
+    {
+        if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
+        {
+            _terminal->EraseInDisplay(::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType::Scrollback);
+        }
+
+        if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
+        {
+            // Send a signal to conpty to clear the buffer.
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                // ConPTY will emit sequences to sync up our buffer with its new
+                // contents.
+                conpty.ClearBuffer();
+            }
+        }
+    }
+
+    hstring ControlCore::ReadEntireBuffer() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::wstringstream ss;
+        const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
+        {
+            const auto& row = textBuffer.GetRowByOffset(rowIndex);
+            auto rowText = row.GetText();
+            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                rowText.erase(strEnd + 1);
+                ss << rowText;
+            }
+
+            if (!row.WasWrapForced())
+            {
+                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+            }
+        }
+
+        return hstring(ss.str());
+    }
 }

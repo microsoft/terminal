@@ -110,7 +110,7 @@
           "description": "Sets the file location of the image to draw over the window background when unfocused.",
           "oneOf": [
             {
-              "type": ["string", null]
+              "type": ["string", "null"]
             },
             {
               "enum": [
@@ -272,6 +272,7 @@
         "movePane",
         "swapPane",
         "moveTab",
+        "multipleActions",
         "newTab",
         "newWindow",
         "nextTab",
@@ -282,6 +283,7 @@
         "paste",
         "prevTab",
         "renameTab",
+        "openSystemMenu",
         "openTabRenamer",
         "quakeMode",
         "resetFontSize",
@@ -307,6 +309,7 @@
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
+        "quit",
         "unbound"
       ],
       "type": "string"
@@ -320,7 +323,9 @@
         "previous",
         "nextInOrder",
         "previousInOrder",
-        "first"
+        "first",
+        "parent",
+        "child"
       ],
       "type": "string"
     },
@@ -347,11 +352,13 @@
       ],
       "type": "string"
     },
-    "SplitState": {
+    "SplitDirection": {
       "enum": [
-        "vertical",
-        "horizontal",
-        "auto"
+        "auto",
+        "up",
+        "right",
+        "down",
+        "left"
       ],
       "type": "string"
     },
@@ -528,13 +535,13 @@
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+            }
           }
         }
-      }
-    ],
-    "required": [ "index" ]
-  },
-  "MovePaneAction": {
+      ],
+      "required": [ "index" ]
+    },
+    "MovePaneAction": {
       "description": "Arguments corresponding to a Move Pane Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
@@ -561,7 +568,7 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, 'nextInOrder' or 'previousInOrder' to move to the next or previous pane, 'first' to focus the first pane, or 'parent' or 'child' to move up and down the tree."
             }
           }
         }
@@ -578,7 +585,7 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, 'nextInOrder' or 'previousInOrder' to move to the next or previous pane, or 'first' to swap with the first pane."
             }
           }
         }
@@ -630,9 +637,9 @@
           "properties": {
             "action": { "type": "string", "pattern": "splitPane" },
             "split": {
-              "$ref": "#/definitions/SplitState",
+              "$ref": "#/definitions/SplitDirection",
               "default": "auto",
-              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"horizontal\" (think [-])\n -\"vertical\" (think [|])"
+              "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"up\" (think [-] and above)\n -\"down\" (think [-] and below)\n -\"left\" (think [|] and to the left)\n -\"right\"(think [|] and to the right)"
             },
             "splitMode": {
               "default": "duplicate",
@@ -828,6 +835,24 @@
         }
       ],
       "required": [ "direction" ]
+    },
+    "MultipleActionsAction": {
+      "description": "Arguments for the multiple actions command",
+      "allOf": [
+        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "properties": {
+            "action": { "type": "string", "pattern": "multipleActions" },
+            "actions" : {
+              "$ref": "#/definitions/ShortcutAction",
+              "type": "array",
+              "minItems": 1,
+              "description": "A list of other actions."
+            }
+          }
+        }
+      ],
+      "required": [ "actions" ]
     },
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
@@ -1216,6 +1241,15 @@
           "description": "When set to true, this enables the launch of Windows Terminal at startup. Setting this to false will disable the startup task entry. If the Windows Terminal startup task entry is disabled either by org policy or by user action this setting will have no effect.",
           "type": "boolean"
         },
+        "firstWindowPreference": {
+          "default": "defaultProfile",
+          "description": "Defines what behavior the terminal takes when it starts. \"defaultProfile\" will have the terminal launch with one tab of the default profile, and \"persistedWindowLayout\" will cause the terminal to save its layout on close and reload it on open.",
+          "enum": [
+            "defaultProfile",
+            "persistedWindowLayout"
+          ],
+          "type": "string"
+        },
         "launchMode": {
           "default": "default",
           "description": "Defines whether the terminal will launch as maximized, full screen, or in a window. Setting this to \"focus\" is equivalent to launching the terminal in the \"default\" mode, but with the focus mode enabled. Similar, setting this to \"maximizedFocus\" will result in launching the terminal in a maximized window with the focus mode enabled.",
@@ -1236,14 +1270,24 @@
           "type": [ "integer", "string" ],
           "deprecated": true
         },
-        "minimizeToTray": {
+        "minimizeToNotificationArea": {
           "default": "false",
-          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the system tray through which the user can access their windows.",
+          "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the notification area through which the user can access their windows.",
           "type": "boolean"
         },
-        "alwaysShowTrayIcon": {
+        "alwaysShowNotificationIcon": {
           "default": "false",
-          "description": "When set to true, the Terminal's tray icon will always be shown in the system tray.",
+          "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
+          "type": "boolean"
+        },
+        "showAdminShield": {
+          "default": "true",
+          "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
+          "type": "boolean"
+        },
+        "useAcrylicInTabRow": {
+          "default": "false",
+          "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
           "type": "boolean"
         },
 		"actions": {
@@ -1368,7 +1412,8 @@
       "properties": {
         "acrylicOpacity": {
           "default": 0.5,
-          "description": "When useAcrylic is set to true, it sets the transparency of the window for the profile. Accepts floating point values from 0-1 (default 0.5).",
+          "description": "[deprecated] Please use `opacity` instead.",
+          "deprecated": true,
           "maximum": 1,
           "minimum": 0,
           "type": "number"
@@ -1403,7 +1448,7 @@
           "description": "Sets the file location of the image to draw over the window background.",
           "oneOf": [
             {
-              "type": ["string", null]
+              "type": ["string", "null"]
             },
             {
               "enum": [
@@ -1580,6 +1625,13 @@
           "description": "Name of the profile. Displays in the dropdown menu.",
           "minLength": 1,
           "type": "string"
+        },
+        "opacity": {
+          "default": 100,
+          "description": "Sets the opacity of the window for the profile. Accepts values from 0-100. Defaults to 50 when useAcrylic is set to true.",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
         },
         "padding": {
           "default": "8, 8, 8, 8",

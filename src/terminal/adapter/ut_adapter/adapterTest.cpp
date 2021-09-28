@@ -418,6 +418,12 @@ public:
         return TRUE;
     }
 
+    bool PrivateClearBuffer() override
+    {
+        Log::Comment(L"PrivateClearBuffer MOCK called...");
+        return TRUE;
+    }
+
     bool GetUserDefaultCursorStyle(CursorType& style) override
     {
         style = CursorType::Legacy;
@@ -1982,6 +1988,109 @@ public:
         _testGetSet->PrepData();
         _testGetSet->_privateWriteConsoleInputWResult = FALSE;
         VERIFY_IS_FALSE(_pDispatch.get()->RequestTerminalParameters(DispatchTypes::ReportingPermission::Unsolicited));
+    }
+
+    TEST_METHOD(RequestSettingsTests)
+    {
+        const auto requestSetting = [=](const std::wstring_view settingId = {}) {
+            const auto stringHandler = _pDispatch.get()->RequestSetting();
+            for (auto ch : settingId)
+            {
+                stringHandler(ch);
+            }
+            stringHandler(L'\033'); // String terminator
+        };
+
+        Log::Comment(L"Requesting DECSTBM margins (5 to 10).");
+        _testGetSet->PrepData();
+        _pDispatch.get()->SetTopBottomScrollingMargins(5, 10);
+        requestSetting(L"r");
+        _testGetSet->ValidateInputEvent(L"\033P1$r5;10r\033\\");
+
+        Log::Comment(L"Requesting DECSTBM margins (full screen).");
+        _testGetSet->PrepData();
+        // Set screen height to 25 - this will be the expected margin range.
+        _testGetSet->_viewport.Bottom = _testGetSet->_viewport.Top + 25;
+        _pDispatch.get()->SetTopBottomScrollingMargins(0, 0);
+        requestSetting(L"r");
+        _testGetSet->ValidateInputEvent(L"\033P1$r1;25r\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (default).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (bold, underlined, reversed).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetBold(true);
+        _testGetSet->_attribute.SetUnderlined(true);
+        _testGetSet->_attribute.SetReverseVideo(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;1;4;7m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (faint, blinking, invisible).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetFaint(true);
+        _testGetSet->_attribute.SetBlinking(true);
+        _testGetSet->_attribute.SetInvisible(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;2;5;8m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (italic, crossed-out).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetItalic(true);
+        _testGetSet->_attribute.SetCrossedOut(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;3;9m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (doubly underlined, overlined).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetDoublyUnderlined(true);
+        _testGetSet->_attribute.SetOverlined(true);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;21;53m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (standard colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetIndexedForeground((BYTE)::XtermToWindowsIndex(3));
+        _testGetSet->_attribute.SetIndexedBackground((BYTE)::XtermToWindowsIndex(6));
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;33;46m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (AIX colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetIndexedForeground((BYTE)::XtermToWindowsIndex(14));
+        _testGetSet->_attribute.SetIndexedBackground((BYTE)::XtermToWindowsIndex(11));
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;96;103m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (ITU indexed colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetIndexedForeground256(123);
+        _testGetSet->_attribute.SetIndexedBackground256(45);
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;5;123;48;5;45m\033\\");
+
+        Log::Comment(L"Requesting SGR attributes (ITU RGB colors).");
+        _testGetSet->PrepData();
+        _testGetSet->_attribute = {};
+        _testGetSet->_attribute.SetForeground(RGB(12, 34, 56));
+        _testGetSet->_attribute.SetBackground(RGB(65, 43, 21));
+        requestSetting(L"m");
+        _testGetSet->ValidateInputEvent(L"\033P1$r0;38;2;12;34;56;48;2;65;43;21m\033\\");
+
+        Log::Comment(L"Requesting an unsupported setting.");
+        _testGetSet->PrepData();
+        requestSetting(L"x");
+        _testGetSet->ValidateInputEvent(L"\033P0$r\033\\");
     }
 
     TEST_METHOD(CursorKeysModeTest)

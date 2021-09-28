@@ -79,7 +79,7 @@ namespace TerminalAppLocalTests
         // containing a ${profile.name} to replace. When we expand it, it should
         // have created one command for each profile.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -111,10 +111,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        const auto guid0 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
@@ -132,7 +129,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -156,7 +153,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -174,7 +171,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -192,7 +189,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -207,7 +204,7 @@ namespace TerminalAppLocalTests
         // For this test, put an iterable command without a given `name` to
         // replace. When we expand it, it should still work.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -238,10 +235,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        const auto guid0 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
@@ -259,7 +253,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -283,7 +277,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -301,7 +295,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -319,7 +313,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -335,7 +329,7 @@ namespace TerminalAppLocalTests
         // cause bad json to be filled in. Something like a profile with a name
         // of "Foo\"", so the trailing '"' might break the json parsing.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -367,10 +361,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        const auto guid0 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-0000-49a3-80bd-e8fdd045185c}");
-        const auto guid1 = ::Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
-
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
 
@@ -388,7 +379,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -412,7 +403,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -430,7 +421,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -448,7 +439,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -468,7 +459,7 @@ namespace TerminalAppLocalTests
         //    ├─ first.com
         //    └─ second.com
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -508,7 +499,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -558,7 +549,7 @@ namespace TerminalAppLocalTests
         //       ├─ child1
         //       └─ child2
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -603,7 +594,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -680,18 +671,18 @@ namespace TerminalAppLocalTests
         // <Command Palette>
         //  ├─ profile0...
         //  |  ├─ Split pane, profile: profile0
-        //  |  ├─ Split pane, direction: vertical, profile: profile0
-        //  |  └─ Split pane, direction: horizontal, profile: profile0
+        //  |  ├─ Split pane, direction: right, profile: profile0
+        //  |  └─ Split pane, direction: down, profile: profile0
         //  ├─ profile1...
         //  |  ├─Split pane, profile: profile1
-        //  |  ├─Split pane, direction: vertical, profile: profile1
-        //  |  └─Split pane, direction: horizontal, profile: profile1
+        //  |  ├─Split pane, direction: right, profile: profile1
+        //  |  └─Split pane, direction: down, profile: profile1
         //  └─ profile2...
         //     ├─ Split pane, profile: profile2
-        //     ├─ Split pane, direction: vertical, profile: profile2
-        //     └─ Split pane, direction: horizontal, profile: profile2
+        //     ├─ Split pane, direction: right, profile: profile2
+        //     └─ Split pane, direction: down, profile: profile2
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -719,15 +710,15 @@ namespace TerminalAppLocalTests
                     "name": "${profile.name}...",
                     "commands": [
                         { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
-                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
-                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" } },
+                        { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" } }
                     ]
                 }
             ],
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -762,7 +753,7 @@ namespace TerminalAppLocalTests
                 const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
-                VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
                 VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -773,7 +764,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -783,7 +774,7 @@ namespace TerminalAppLocalTests
                 const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
-                VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
                 VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -794,7 +785,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -804,7 +795,7 @@ namespace TerminalAppLocalTests
                 const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
-                VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
                 VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -828,7 +819,7 @@ namespace TerminalAppLocalTests
         //    ├─ Profile 2
         //    └─ Profile 3
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -864,7 +855,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -915,18 +906,18 @@ namespace TerminalAppLocalTests
         // └─ New Pane...
         //    ├─ profile0...
         //    |  ├─ Split automatically
-        //    |  ├─ Split vertically
-        //    |  └─ Split horizontally
+        //    |  ├─ Split right
+        //    |  └─ Split down
         //    ├─ profile1...
         //    |  ├─ Split automatically
-        //    |  ├─ Split vertically
-        //    |  └─ Split horizontally
+        //    |  ├─ Split right
+        //    |  └─ Split down
         //    └─ profile2...
         //       ├─ Split automatically
-        //       ├─ Split vertically
-        //       └─ Split horizontally
+        //       ├─ Split right
+        //       └─ Split down
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -957,8 +948,8 @@ namespace TerminalAppLocalTests
                             "name": "${profile.name}...",
                             "commands": [
                                 { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" } },
-                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" } },
-                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" } }
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" } },
+                                { "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" } }
                             ]
                         }
                     ]
@@ -967,7 +958,7 @@ namespace TerminalAppLocalTests
             "schemes": [ { "name": "Campbell" } ] // This is included here to prevent settings validation errors.
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         VERIFY_ARE_EQUAL(0u, settings.Warnings().Size());
         VERIFY_ARE_EQUAL(3u, settings.ActiveProfiles().Size());
@@ -1010,7 +1001,7 @@ namespace TerminalAppLocalTests
                 const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
-                VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
                 VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -1021,7 +1012,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: horizontal, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: down, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1031,7 +1022,7 @@ namespace TerminalAppLocalTests
                 const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
-                VERIFY_ARE_EQUAL(SplitState::Horizontal, realArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Down, realArgs.SplitDirection());
                 VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -1042,7 +1033,7 @@ namespace TerminalAppLocalTests
                 VERIFY_IS_FALSE(childCommand.HasNestedCommands());
             }
             {
-                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: vertical, profile: {}", name) };
+                winrt::hstring childCommandName{ fmt::format(L"Split pane, split: right, profile: {}", name) };
                 auto childCommand = command.NestedCommands().Lookup(childCommandName);
                 VERIFY_IS_NOT_NULL(childCommand);
                 auto childActionAndArgs = childCommand.ActionAndArgs();
@@ -1052,7 +1043,7 @@ namespace TerminalAppLocalTests
                 const auto& realArgs = childActionAndArgs.Args().try_as<SplitPaneArgs>();
                 VERIFY_IS_NOT_NULL(realArgs);
                 // Verify the args have the expected value
-                VERIFY_ARE_EQUAL(SplitState::Vertical, realArgs.SplitStyle());
+                VERIFY_ARE_EQUAL(SplitDirection::Right, realArgs.SplitDirection());
                 VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
                 VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -1071,7 +1062,7 @@ namespace TerminalAppLocalTests
         // containing a ${profile.name} to replace. When we expand it, it should
         // have created one command for each profile.
 
-        const std::string settingsJson{ R"(
+        static constexpr std::wstring_view settingsJson{ LR"(
         {
             "defaultProfile": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -1107,7 +1098,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings{ til::u8u16(settingsJson) };
+        CascadiaSettings settings{ settingsJson, {} };
 
         // Since at least one profile does not reference a color scheme,
         // we add a warning saying "the color scheme is unknown"
@@ -1127,7 +1118,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -1156,7 +1147,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -1174,7 +1165,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());
@@ -1192,7 +1183,7 @@ namespace TerminalAppLocalTests
             const auto& realArgs = actionAndArgs.Args().try_as<SplitPaneArgs>();
             VERIFY_IS_NOT_NULL(realArgs);
             // Verify the args have the expected value
-            VERIFY_ARE_EQUAL(SplitState::Automatic, realArgs.SplitStyle());
+            VERIFY_ARE_EQUAL(SplitDirection::Automatic, realArgs.SplitDirection());
             VERIFY_IS_NOT_NULL(realArgs.TerminalArgs());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().Commandline().empty());
             VERIFY_IS_TRUE(realArgs.TerminalArgs().StartingDirectory().empty());

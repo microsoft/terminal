@@ -112,6 +112,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const short wheelDelta,
                             const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
         void UserScrollViewport(const int viewTop);
+
+        void ClearBuffer(Control::ClearBufferType clearType);
+
 #pragma endregion
 
         void BlinkAttributeTick();
@@ -143,6 +146,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
+
+        hstring ReadEntireBuffer() const;
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

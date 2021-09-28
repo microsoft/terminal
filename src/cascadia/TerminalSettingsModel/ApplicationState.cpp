@@ -5,96 +5,53 @@
 #include "ApplicationState.h"
 #include "CascadiaSettings.h"
 #include "ApplicationState.g.cpp"
-
+#include "WindowLayout.g.cpp"
+#include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
-constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::string_view TabLayoutKey{ "tabLayout" };
+static constexpr std::string_view InitialPositionKey{ "initialPosition" };
+static constexpr std::string_view InitialSizeKey{ "initialSize" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
-    // This trait exists in order to serialize the std::unordered_set for GeneratedProfiles.
-    template<typename T>
-    struct ConversionTrait<std::unordered_set<T>>
+    using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<WindowLayout>
     {
-        std::unordered_set<T> FromJson(const Json::Value& json) const
+        WindowLayout FromJson(const Json::Value& json)
         {
-            ConversionTrait<T> trait;
-            std::unordered_set<T> val;
-            val.reserve(json.size());
+            auto layout = winrt::make_self<implementation::WindowLayout>();
 
-            for (const auto& element : json)
-            {
-                val.emplace(trait.FromJson(element));
-            }
+            GetValueForKey(json, TabLayoutKey, layout->_TabLayout);
+            GetValueForKey(json, InitialPositionKey, layout->_InitialPosition);
+            GetValueForKey(json, InitialSizeKey, layout->_InitialSize);
 
-            return val;
+            return *layout;
         }
 
-        bool CanConvert(const Json::Value& json) const
+        bool CanConvert(const Json::Value& json)
         {
-            ConversionTrait<T> trait;
-            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) -> bool { return trait.CanConvert(json); });
+            return json.isObject();
         }
 
-        Json::Value ToJson(const std::unordered_set<T>& val)
+        Json::Value ToJson(const WindowLayout& val)
         {
-            ConversionTrait<T> trait;
-            Json::Value json{ Json::arrayValue };
+            Json::Value json{ Json::objectValue };
 
-            for (const auto& key : val)
-            {
-                json.append(trait.ToJson(key));
-            }
+            SetValueForKey(json, TabLayoutKey, val.TabLayout());
+            SetValueForKey(json, InitialPositionKey, val.InitialPosition());
+            SetValueForKey(json, InitialSizeKey, val.InitialSize());
 
             return json;
         }
 
         std::string TypeDescription() const
         {
-            return fmt::format("{}[]", ConversionTrait<GUID>{}.TypeDescription());
-        }
-    };
-
-    template<typename T>
-    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
-    {
-        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json) const
-        {
-            ConversionTrait<T> trait;
-            std::vector<T> val;
-            val.reserve(json.size());
-
-            for (const auto& element : json)
-            {
-                val.push_back(trait.FromJson(element));
-            }
-
-            return winrt::single_threaded_vector(move(val));
-        }
-
-        bool CanConvert(const Json::Value& json) const
-        {
-            ConversionTrait<T> trait;
-            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) -> bool { return trait.CanConvert(json); });
-        }
-
-        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
-        {
-            ConversionTrait<T> trait;
-            Json::Value json{ Json::arrayValue };
-
-            for (const auto& key : val)
-            {
-                json.append(trait.ToJson(key));
-            }
-
-            return json;
-        }
-
-        std::string TypeDescription() const
-        {
-            return fmt::format("vector ({})", ConversionTrait<T>{}.TypeDescription());
+            return "WindowLayout";
         }
     };
 }
@@ -103,6 +60,31 @@ using namespace ::Microsoft::Terminal::Settings::Model;
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+    winrt::hstring WindowLayout::ToJson(const Model::WindowLayout& layout)
+    {
+        JsonUtils::ConversionTrait<Model::WindowLayout> trait;
+        auto json = trait.ToJson(layout);
+
+        Json::StreamWriterBuilder wbuilder;
+        const auto content = Json::writeString(wbuilder, json);
+        return hstring{ til::u8u16(content) };
+    }
+
+    Model::WindowLayout WindowLayout::FromJson(const hstring& str)
+    {
+        auto data = til::u16u8(str);
+        std::string errs;
+        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+        Json::Value root;
+        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+        {
+            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+        }
+        JsonUtils::ConversionTrait<Model::WindowLayout> trait;
+        return trait.FromJson(root);
+    }
+
     // Returns the application-global ApplicationState object.
     Microsoft::Terminal::Settings::Model::ApplicationState ApplicationState::SharedInstance()
     {
@@ -151,6 +133,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {                                                   \
             auto state = _state.lock();                     \
             state->name.emplace(value);                     \
+            state->name##Changed = true;                    \
         }                                                   \
                                                             \
         _throttler();                                       \
@@ -158,34 +141,50 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
+    Json::Value ApplicationState::_getRoot(const locked_hfile& file) const noexcept
+    {
+        Json::Value root;
+        try
+        {
+            const auto data = ReadUTF8FileLocked(file);
+            if (data.empty())
+            {
+                return root;
+            }
+
+            std::string errs;
+            std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
+
+            if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
+            {
+                throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
+            }
+        }
+        CATCH_LOG()
+
+        return root;
+    }
+
     // Deserializes the state.json at _path into this ApplicationState.
     // * ANY errors during app state will result in the creation of a new empty state.
     // * ANY errors during runtime will result in changes being partially ignored.
     void ApplicationState::_read() const noexcept
     try
     {
-        const auto data = ReadUTF8FileIfExists(_path).value_or(std::string{});
-        if (data.empty())
-        {
-            return;
-        }
-
-        std::string errs;
-        std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
-
-        Json::Value root;
-        if (!reader->parse(data.data(), data.data() + data.size(), &root, &errs))
-        {
-            throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
-        }
-
         auto state = _state.lock();
+        const auto file = OpenFileReadSharedLocked(_path);
+
+        auto root = _getRoot(file);
         // GetValueForKey() comes in two variants:
         // * take a std::optional<T> reference
         // * return std::optional<T> by value
         // At the time of writing the former version skips missing fields in the json,
         // but we want to explicitly clear state fields that were removed from state.json.
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) state->name = JsonUtils::GetValueForKey<std::optional<type>>(root, key);
+#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)                         \
+    if (!state->name##Changed)                                                   \
+    {                                                                            \
+        state->name = JsonUtils::GetValueForKey<std::optional<type>>(root, key); \
+    }
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
     }
@@ -195,21 +194,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // * Errors are only logged.
     // * _state->_writeScheduled is set to false, signaling our
     //   setters that _synchronize() needs to be called again.
-    void ApplicationState::_write() const noexcept
+    void ApplicationState::_write() noexcept
     try
     {
-        Json::Value root{ Json::objectValue };
-
+        // re-read the state so that we can only update the properties that were changed.
+        Json::Value root{};
         {
-            auto state = _state.lock_shared();
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) JsonUtils::SetValueForKey(root, key, state->name);
+            auto state = _state.lock();
+            const auto file = OpenFileRWExclusiveLocked(_path);
+            root = _getRoot(file);
+
+#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...)   \
+    if (state->name##Changed)                              \
+    {                                                      \
+        JsonUtils::SetValueForKey(root, key, state->name); \
+        state->name##Changed = false;                      \
+    }
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
-        }
 
-        Json::StreamWriterBuilder wbuilder;
-        const auto content = Json::writeString(wbuilder, root);
-        WriteUTF8FileAtomic(_path, content);
+            Json::StreamWriterBuilder wbuilder;
+            const auto content = Json::writeString(wbuilder, root);
+            WriteUTF8FileLocked(file, content);
+        }
     }
     CATCH_LOG()
 }

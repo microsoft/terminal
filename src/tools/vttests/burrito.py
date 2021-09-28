@@ -14,8 +14,6 @@ terminal and the console without a lot of work.
 This script has both some "simple" emoji - burrito, cheese, etc. and some more
 complex ones - WOMAN COOK is actually two emoji with a zero width joiner.
 """
-import sys
-import time # time.sleep is in seconds
 from common import *
 
 # Run this file with:

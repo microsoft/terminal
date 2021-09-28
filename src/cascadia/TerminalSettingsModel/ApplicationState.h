@@ -13,20 +13,37 @@ Abstract:
 #pragma once
 
 #include "ApplicationState.g.h"
+#include "WindowLayout.g.h"
 
 #include <inc/cppwinrt_utils.h>
 #include <til/mutex.h>
 #include <til/throttled_func.h>
+#include "FileUtils.h"
+#include <JsonUtils.h>
 
 // This macro generates all getters and setters for ApplicationState.
 // It provides X with the following arguments:
 //   (type, function name, JSON key, ...variadic construction arguments)
-#define MTSM_APPLICATION_STATE_FIELDS(X)                                       \
-    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles") \
-    X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")
-
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
+#define MTSM_APPLICATION_STATE_FIELDS(X)                                                                                \
+    X(std::unordered_set<winrt::guid>, GeneratedProfiles, "generatedProfiles")                                          \
+    X(Windows::Foundation::Collections::IVector<Model::WindowLayout>, PersistedWindowLayouts, "persistedWindowLayouts") \
+    X(Windows::Foundation::Collections::IVector<hstring>, RecentCommands, "recentCommands")                             \
+    X(Windows::Foundation::Collections::IVector<winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage>, DismissedMessages, "dismissedMessages")
+
+    struct WindowLayout : WindowLayoutT<WindowLayout>
+    {
+        static winrt::hstring ToJson(const Model::WindowLayout& layout);
+        static Model::WindowLayout FromJson(const winrt::hstring& json);
+
+        WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
+        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
+        WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);
+
+        friend ::Microsoft::Terminal::Settings::Model::JsonUtils::ConversionTrait<Model::WindowLayout>;
+    };
+
     struct ApplicationState : ApplicationStateT<ApplicationState>
     {
         static Microsoft::Terminal::Settings::Model::ApplicationState SharedInstance();
@@ -50,12 +67,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         struct state_t
         {
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) std::optional<type> name{ __VA_ARGS__ };
+#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
+    std::optional<type> name{ __VA_ARGS__ };             \
+    bool name##Changed = false;
+
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         };
 
-        void _write() const noexcept;
+        Json::Value _getRoot(const winrt::Microsoft::Terminal::Settings::Model::locked_hfile& file) const noexcept;
+        void _write() noexcept;
         void _read() const noexcept;
 
         std::filesystem::path _path;
@@ -66,5 +87,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
+    BASIC_FACTORY(WindowLayout)
     BASIC_FACTORY(ApplicationState);
 }

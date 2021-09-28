@@ -20,6 +20,7 @@ using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace ::Microsoft::Console;
 using namespace ::Microsoft::Console::Types;
+using namespace std::chrono_literals;
 
 // This magic flag is "documented" at https://msdn.microsoft.com/en-us/library/windows/desktop/ms646301(v=vs.85).aspx
 // "If the high-order bit is 1, the key is down; otherwise, it is up."
@@ -29,7 +30,8 @@ AppHost::AppHost() noexcept :
     _app{},
     _windowManager{},
     _logic{ nullptr }, // don't make one, we're going to take a ref on app's
-    _window{ nullptr }
+    _window{ nullptr },
+    _getWindowLayoutThrottler{} // this will get set if we become the monarch
 {
     _logic = _app.Logic(); // get a ref to app's logic
 
@@ -63,7 +65,7 @@ AppHost::AppHost() noexcept :
     // Update our own internal state tracking if we're in quake mode or not.
     _IsQuakeWindowChanged(nullptr, nullptr);
 
-    _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
+    _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
 
     // Tell the window to callback to us when it's about to handle a WM_CREATE
     auto pfn = std::bind(&AppHost::_HandleCreateWindow,
@@ -83,6 +85,12 @@ AppHost::AppHost() noexcept :
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
+
+    _windowManager.GetWindowLayoutRequested([this](auto&&, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& args) {
+        // The peasants are running on separate threads, so they'll need to
+        // swap what context they are in to the ui thread to get the actual layout.
+        args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
+    });
 
     _windowManager.BecameMonarch({ this, &AppHost::_BecomeMonarch });
     if (_windowManager.IsMonarch())
@@ -213,7 +221,55 @@ void AppHost::_HandleCommandlineArgs()
         peasant.SummonRequested({ this, &AppHost::_HandleSummon });
 
         peasant.DisplayWindowIdRequested({ this, &AppHost::_DisplayWindowId });
+        peasant.QuitRequested({ this, &AppHost::_QuitRequested });
 
+        // We need this property to be set before we get the InitialSize/Position
+        // and BecameMonarch which normally sets it is only run after the window
+        // is created.
+        if (_windowManager.IsMonarch())
+        {
+            const auto numPeasants = _windowManager.GetNumberOfPeasants();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (_logic.ShouldUsePersistedLayout() && layouts && layouts.Size() > 0)
+            {
+                uint32_t startIdx = 0;
+                // We want to create a window for every saved layout.
+                // If we are the only window, and no commandline arguments were provided
+                // then we should just use the current window to load the first layout.
+                // Otherwise create this window normally with its commandline, and create
+                // a new window using the first saved layout information.
+                // The 2nd+ layout will always get a new window.
+                if (numPeasants == 1 && !_logic.HasCommandlineArguments() && !_logic.HasSettingsStartupActions())
+                {
+                    _logic.SetPersistedLayoutIdx(startIdx);
+                    startIdx += 1;
+                }
+
+                // Create new windows for each of the other saved layouts.
+                for (const auto size = layouts.Size(); startIdx < size; startIdx += 1)
+                {
+                    auto newWindowArgs = fmt::format(L"{0} -w new -s {1}", args[0], startIdx);
+
+                    STARTUPINFO si;
+                    memset(&si, 0, sizeof(si));
+                    si.cb = sizeof(si);
+                    wil::unique_process_information pi;
+
+                    LOG_IF_WIN32_BOOL_FALSE(CreateProcessW(nullptr,
+                                                           newWindowArgs.data(),
+                                                           nullptr, // lpProcessAttributes
+                                                           nullptr, // lpThreadAttributes
+                                                           false, // bInheritHandles
+                                                           DETACHED_PROCESS | CREATE_UNICODE_ENVIRONMENT, // doCreationFlags
+                                                           nullptr, // lpEnvironment
+                                                           nullptr, // lpStartingDirectory
+                                                           &si, // lpStartupInfo
+                                                           &pi // lpProcessInformation
+                                                           ));
+                }
+            }
+            _logic.SetNumberOfOpenWindows(numPeasants);
+        }
         _logic.WindowName(peasant.WindowName());
         _logic.WindowId(peasant.GetID());
     }
@@ -249,7 +305,16 @@ void AppHost::Initialize()
 
     // Register the 'X' button of the window for a warning experience of multiple
     // tabs opened, this is consistent with Alt+F4 closing
-    _window->WindowCloseButtonClicked([this]() { _logic.WindowCloseButtonClicked(); });
+    _window->WindowCloseButtonClicked([this]() {
+        const auto pos = _GetWindowLaunchPosition();
+        _logic.CloseWindow(pos);
+    });
+    // If the user requests a close in another way handle the same as if the 'X'
+    // was clicked.
+    _logic.CloseRequested([this](auto&&, auto&&) {
+        const auto pos = _GetWindowLaunchPosition();
+        _logic.CloseWindow(pos);
+    });
 
     // Add an event handler to plumb clicks in the titlebar area down to the
     // application layer.
@@ -271,6 +336,8 @@ void AppHost::Initialize()
     _logic.SettingsChanged({ this, &AppHost::_HandleSettingsChanged });
     _logic.IsQuakeWindowChanged({ this, &AppHost::_IsQuakeWindowChanged });
     _logic.SummonWindowRequested({ this, &AppHost::_SummonWindowRequested });
+    _logic.OpenSystemMenu({ this, &AppHost::_OpenSystemMenu });
+    _logic.QuitRequested({ this, &AppHost::_RequestQuitAll });
 
     _window->UpdateTitle(_logic.Title());
 
@@ -299,8 +366,9 @@ void AppHost::Initialize()
 }
 
 // Method Description:
-// - Called when the app's title changes. Fires off a window message so we can
-//   update the window's title on the main thread.
+// - Called everytime when the active tab's title changes. We'll also fire off
+//   a window message so we can update the window's title on the main thread,
+//   though we'll only do so if the settings are configured for that.
 // Arguments:
 // - sender: unused
 // - newTitle: the string to use as the new window title
@@ -308,7 +376,11 @@ void AppHost::Initialize()
 // - <none>
 void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*sender*/, winrt::hstring newTitle)
 {
-    _window->UpdateTitle(newTitle);
+    if (_logic.GetShowTitleInTitlebar())
+    {
+        _window->UpdateTitle(newTitle);
+    }
+    _windowManager.UpdateActiveTabTitle(newTitle);
 }
 
 // Method Description:
@@ -320,16 +392,34 @@ void AppHost::AppTitleChanged(const winrt::Windows::Foundation::IInspectable& /*
 // - <none>
 void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*sender*/, const winrt::TerminalApp::LastTabClosedEventArgs& /*args*/)
 {
-    if (_windowManager.IsMonarch() && _trayIcon)
+    if (_windowManager.IsMonarch() && _notificationIcon)
     {
-        _DestroyTrayIcon();
+        _DestroyNotificationIcon();
     }
     else if (_window->IsQuakeWindow())
     {
-        _HideTrayIconRequested();
+        _HideNotificationIconRequested();
     }
 
     _window->Close();
+}
+
+LaunchPosition AppHost::_GetWindowLaunchPosition()
+{
+    // Get the position of the current window. This includes the
+    // non-client already.
+    const auto window = _window->GetWindowRect();
+
+    const auto dpi = _window->GetCurrentDpi();
+    const auto nonClientArea = _window->GetNonClientFrame(dpi);
+
+    // The nonClientArea adjustment is negative, so subtract that out.
+    // This way we save the user-visible location of the terminal.
+    LaunchPosition pos{};
+    pos.X = window.left - nonClientArea.left;
+    pos.Y = window.top;
+
+    return pos;
 }
 
 // Method Description:
@@ -620,6 +710,31 @@ void AppHost::_DispatchCommandline(winrt::Windows::Foundation::IInspectable send
 }
 
 // Method Description:
+// - Asynchronously get the window layout from the current page. This is
+//   done async because we need to switch between the ui thread and the calling
+//   thread.
+// - NB: The peasant calling this must not be running on the UI thread, otherwise
+//   they will crash since they just call .get on the async operation.
+// Arguments:
+// - <none>
+// Return Value:
+// - The window layout as a json string.
+winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowLayoutAsync()
+{
+    winrt::apartment_context peasant_thread;
+
+    // Use the main thread since we are accessing controls.
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+    const auto pos = _GetWindowLaunchPosition();
+    const auto layoutJson = _logic.GetWindowLayoutJson(pos);
+
+    // go back to give the result to the peasant.
+    co_await peasant_thread;
+
+    co_return layoutJson;
+}
+
+// Method Description:
 // - Event handler for the WindowManager::FindTargetWindowRequested event. The
 //   manager will ask us how to figure out what the target window is for a set
 //   of commandline arguments. We'll take those arguments, and ask AppLogic to
@@ -663,14 +778,71 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
 
     if (_windowManager.DoesQuakeWindowExist() ||
         _window->IsQuakeWindow() ||
-        (_logic.GetAlwaysShowTrayIcon() || _logic.GetMinimizeToTray()))
+        (_logic.GetAlwaysShowNotificationIcon() || _logic.GetMinimizeToNotificationArea()))
     {
-        _CreateTrayIcon();
+        _CreateNotificationIcon();
     }
 
+    // Set the number of open windows (so we know if we are the last window)
+    // and subscribe for updates if there are any changes to that number.
+    _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+
+    _windowManager.WindowCreated([this](auto&&, auto&&) {
+        _getWindowLayoutThrottler.value()();
+        _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
+    _windowManager.WindowClosed([this](auto&&, auto&&) {
+        _getWindowLayoutThrottler.value()();
+        _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
+    });
+
     // These events are coming from peasants that become or un-become quake windows.
-    _windowManager.ShowTrayIconRequested([this](auto&&, auto&&) { _ShowTrayIconRequested(); });
-    _windowManager.HideTrayIconRequested([this](auto&&, auto&&) { _HideTrayIconRequested(); });
+    _windowManager.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequested(); });
+    _windowManager.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequested(); });
+    // If the monarch receives a QuitAll event it will signal this event to be
+    // ran before each peasant is closed.
+    _windowManager.QuitAllRequested({ this, &AppHost::_QuitAllRequested });
+
+    // The monarch should be monitoring if it should save the window layout.
+    if (!_getWindowLayoutThrottler.has_value())
+    {
+        // We want at least some delay to prevent the first save from overwriting
+        // the data as we try load windows initially.
+        _getWindowLayoutThrottler.emplace(std::move(std::chrono::seconds(10)), std::move([this]() { _SaveWindowLayoutsRepeat(); }));
+        _getWindowLayoutThrottler.value()();
+    }
+}
+
+winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
+{
+    // Make sure we run on a background thread to not block anything.
+    co_await winrt::resume_background();
+
+    if (_logic.ShouldUsePersistedLayout())
+    {
+        const auto layoutJsons = _windowManager.GetAllWindowLayouts();
+        _logic.SaveWindowLayoutJsons(layoutJsons);
+    }
+
+    co_return;
+}
+
+winrt::fire_and_forget AppHost::_SaveWindowLayoutsRepeat()
+{
+    // Make sure we run on a background thread to not block anything.
+    co_await winrt::resume_background();
+
+    co_await _SaveWindowLayouts();
+
+    // Don't need to save too frequently.
+    co_await 30s;
+
+    // As long as we are supposed to keep saving, request another save.
+    // This will be delayed by the throttler so that at most one save happens
+    // per 10 seconds, if a save is requested by another source simultaneously.
+    if (_getWindowLayoutThrottler.has_value())
+    {
+        _getWindowLayoutThrottler.value()();
+    }
 }
 
 void AppHost::_listenForInboundConnections()
@@ -957,12 +1129,12 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
 {
     _setupGlobalHotkeys();
 
-    // If we're monarch, we need to check some conditions to show the tray icon.
-    // If there's a Quake window somewhere, we'll want to keep the tray icon.
-    // There's two settings - MinimizeToTray and AlwaysShowTrayIcon. If either
-    // one of them are true, we want to make sure there's a tray icon.
-    // If both are false, we want to remove our icon from the tray.
-    // When we remove our icon from the tray, we'll also want to re-summon
+    // If we're monarch, we need to check some conditions to show the notification icon.
+    // If there's a Quake window somewhere, we'll want to keep the notification icon.
+    // There's two settings - MinimizeToNotificationArea and AlwaysShowNotificationIcon. If either
+    // one of them are true, we want to make sure there's a notification icon.
+    // If both are false, we want to remove our icon from the notification area.
+    // When we remove our icon from the notification area, we'll also want to re-summon
     // any hidden windows, but right now we're not keeping track of who's hidden,
     // so just summon them all. Tracking the work to do a "summon all minimized" in
     // GH#10448
@@ -970,39 +1142,69 @@ void AppHost::_HandleSettingsChanged(const winrt::Windows::Foundation::IInspecta
     {
         if (!_windowManager.DoesQuakeWindowExist())
         {
-            if (!_trayIcon && (_logic.GetMinimizeToTray() || _logic.GetAlwaysShowTrayIcon()))
+            if (!_notificationIcon && (_logic.GetMinimizeToNotificationArea() || _logic.GetAlwaysShowNotificationIcon()))
             {
-                _CreateTrayIcon();
+                _CreateNotificationIcon();
             }
-            else if (_trayIcon && !_logic.GetMinimizeToTray() && !_logic.GetAlwaysShowTrayIcon())
+            else if (_notificationIcon && !_logic.GetMinimizeToNotificationArea() && !_logic.GetAlwaysShowNotificationIcon())
             {
                 _windowManager.SummonAllWindows();
-                _DestroyTrayIcon();
+                _DestroyNotificationIcon();
             }
         }
     }
 
-    _window->SetMinimizeToTrayBehavior(_logic.GetMinimizeToTray());
+    _window->SetMinimizeToNotificationAreaBehavior(_logic.GetMinimizeToNotificationArea());
 }
 
 void AppHost::_IsQuakeWindowChanged(const winrt::Windows::Foundation::IInspectable&,
                                     const winrt::Windows::Foundation::IInspectable&)
 {
-    // We want the quake window to be accessible through the tray icon.
-    // This means if there's a quake window _somewhere_, we want the tray icon
-    // to show regardless of the tray icon settings.
-    // This also means we'll need to destroy the tray icon if it was created
+    // We want the quake window to be accessible through the notification icon.
+    // This means if there's a quake window _somewhere_, we want the notification icon
+    // to show regardless of the notification icon settings.
+    // This also means we'll need to destroy the notification icon if it was created
     // specifically for the quake window. If not, it should not be destroyed.
     if (!_window->IsQuakeWindow() && _logic.IsQuakeWindow())
     {
-        _ShowTrayIconRequested();
+        _ShowNotificationIconRequested();
     }
     else if (_window->IsQuakeWindow() && !_logic.IsQuakeWindow())
     {
-        _HideTrayIconRequested();
+        _HideNotificationIconRequested();
     }
 
     _window->IsQuakeWindow(_logic.IsQuakeWindow());
+}
+
+winrt::fire_and_forget AppHost::_QuitRequested(const winrt::Windows::Foundation::IInspectable&,
+                                               const winrt::Windows::Foundation::IInspectable&)
+{
+    // Need to be on the main thread to close out all of the tabs.
+    co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
+
+    _logic.Quit();
+}
+
+void AppHost::_RequestQuitAll(const winrt::Windows::Foundation::IInspectable&,
+                              const winrt::Windows::Foundation::IInspectable&)
+{
+    _windowManager.RequestQuitAll();
+}
+
+void AppHost::_QuitAllRequested(const winrt::Windows::Foundation::IInspectable&,
+                                const winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs& args)
+{
+    // Make sure that the current timer is destroyed so that it doesn't attempt
+    // to run while we are in the middle of quitting.
+    if (_getWindowLayoutThrottler.has_value())
+    {
+        _getWindowLayoutThrottler.reset();
+    }
+
+    // Tell the monarch to wait for the window layouts to save before
+    // everyone quits.
+    args.BeforeQuitAllAction(_SaveWindowLayouts());
 }
 
 void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspectable& sender,
@@ -1016,82 +1218,88 @@ void AppHost::_SummonWindowRequested(const winrt::Windows::Foundation::IInspecta
     _HandleSummon(sender, summonArgs);
 }
 
+void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
+                              const winrt::Windows::Foundation::IInspectable&)
+{
+    _window->OpenSystemMenu(std::nullopt, std::nullopt);
+}
+
 // Method Description:
-// - Creates a Tray Icon and hooks up its handlers
+// - Creates a Notification Icon and hooks up its handlers
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::_CreateTrayIcon()
+void AppHost::_CreateNotificationIcon()
 {
-    if constexpr (Feature_TrayIcon::IsEnabled())
+    if constexpr (Feature_NotificationIcon::IsEnabled())
     {
-        _trayIcon = std::make_unique<TrayIcon>(_window->GetHandle());
+        _notificationIcon = std::make_unique<NotificationIcon>(_window->GetHandle());
 
         // Hookup the handlers, save the tokens for revoking if settings change.
-        _ReAddTrayIconToken = _window->NotifyReAddTrayIcon([this]() { _trayIcon->ReAddTrayIcon(); });
-        _TrayIconPressedToken = _window->NotifyTrayIconPressed([this]() { _trayIcon->TrayIconPressed(); });
-        _ShowTrayContextMenuToken = _window->NotifyShowTrayContextMenu([this](til::point coord) { _trayIcon->ShowTrayContextMenu(coord, _windowManager.GetPeasantNames()); });
-        _TrayMenuItemSelectedToken = _window->NotifyTrayMenuItemSelected([this](HMENU hm, UINT idx) { _trayIcon->TrayMenuItemSelected(hm, idx); });
-        _trayIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
+        _ReAddNotificationIconToken = _window->NotifyReAddNotificationIcon([this]() { _notificationIcon->ReAddNotificationIcon(); });
+        _NotificationIconPressedToken = _window->NotifyNotificationIconPressed([this]() { _notificationIcon->NotificationIconPressed(); });
+        _ShowNotificationIconContextMenuToken = _window->NotifyShowNotificationIconContextMenu([this](til::point coord) { _notificationIcon->ShowContextMenu(coord, _windowManager.GetPeasantInfos()); });
+        _NotificationIconMenuItemSelectedToken = _window->NotifyNotificationIconMenuItemSelected([this](HMENU hm, UINT idx) { _notificationIcon->MenuItemSelected(hm, idx); });
+        _notificationIcon->SummonWindowRequested([this](auto& args) { _windowManager.SummonWindow(args); });
     }
 }
 
 // Method Description:
-// - Deletes our tray icon if we have one.
+// - Deletes our notification icon if we have one.
 // Arguments:
 // - <none>
 // Return Value:
 // - <none>
-void AppHost::_DestroyTrayIcon()
+void AppHost::_DestroyNotificationIcon()
 {
-    if constexpr (Feature_TrayIcon::IsEnabled())
+    if constexpr (Feature_NotificationIcon::IsEnabled())
     {
-        _window->NotifyReAddTrayIcon(_ReAddTrayIconToken);
-        _window->NotifyTrayIconPressed(_TrayIconPressedToken);
-        _window->NotifyShowTrayContextMenu(_ShowTrayContextMenuToken);
-        _window->NotifyTrayMenuItemSelected(_TrayMenuItemSelectedToken);
+        _window->NotifyReAddNotificationIcon(_ReAddNotificationIconToken);
+        _window->NotifyNotificationIconPressed(_NotificationIconPressedToken);
+        _window->NotifyShowNotificationIconContextMenu(_ShowNotificationIconContextMenuToken);
+        _window->NotifyNotificationIconMenuItemSelected(_NotificationIconMenuItemSelectedToken);
 
-        _trayIcon->RemoveIconFromTray();
-        _trayIcon = nullptr;
+        _notificationIcon->RemoveIconFromNotificationArea();
+        _notificationIcon = nullptr;
     }
 }
 
-void AppHost::_ShowTrayIconRequested()
+void AppHost::_ShowNotificationIconRequested()
 {
-    if constexpr (Feature_TrayIcon::IsEnabled())
+    if constexpr (Feature_NotificationIcon::IsEnabled())
     {
         if (_windowManager.IsMonarch())
         {
-            if (!_trayIcon)
+            if (!_notificationIcon)
             {
-                _CreateTrayIcon();
+                _CreateNotificationIcon();
             }
         }
         else
         {
-            _windowManager.RequestShowTrayIcon();
+            _windowManager.RequestShowNotificationIcon();
         }
     }
 }
 
-void AppHost::_HideTrayIconRequested()
+void AppHost::_HideNotificationIconRequested()
 {
-    if constexpr (Feature_TrayIcon::IsEnabled())
+    if constexpr (Feature_NotificationIcon::IsEnabled())
     {
         if (_windowManager.IsMonarch())
         {
             // Destroy it only if our settings allow it
-            if (_trayIcon &&
-                !_logic.GetAlwaysShowTrayIcon() &&
-                !_logic.GetMinimizeToTray())
+            if (_notificationIcon &&
+                !_logic.GetAlwaysShowNotificationIcon() &&
+                !_logic.GetMinimizeToNotificationArea())
             {
-                _DestroyTrayIcon();
+                _DestroyNotificationIcon();
             }
         }
         else
         {
-            _windowManager.RequestHideTrayIcon();
+            _windowManager.RequestHideNotificationIcon();
         }
     }
 }

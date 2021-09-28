@@ -11,7 +11,7 @@
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
-namespace Microsoft::Terminal::Settings::Model
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
     // Returns a path like C:\Users\<username>\AppData\Local\Packages\<packagename>\LocalState
     // You can put your settings.json or state.json in this directory.
@@ -37,6 +37,83 @@ namespace Microsoft::Terminal::Settings::Model
             return parentDirectoryForSettingsFile;
         }();
         return baseSettingsPath;
+    }
+
+    locked_hfile OpenFileReadSharedLocked(const std::filesystem::path& path)
+    {
+        wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
+        THROW_LAST_ERROR_IF(!file);
+        // just lock the entire file
+        OVERLAPPED sOverlapped;
+        sOverlapped.Offset = 0;
+        sOverlapped.OffsetHigh = 0;
+        // Shared lock
+        THROW_LAST_ERROR_IF(!LockFileEx(file.get(),
+                                        0, // lock shared, wait to return until lock is obtained
+                                        0, // reserved, does nothing
+                                        INT_MAX, // lock INT_MAX bytes
+                                        0, // higher-order bytes, if our state file is greater than 2GB I guess this will be a problem
+                                        &sOverlapped));
+        return { std::move(file), sOverlapped };
+    }
+
+    locked_hfile OpenFileRWExclusiveLocked(const std::filesystem::path& path)
+    {
+        wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
+        THROW_LAST_ERROR_IF(!file);
+        // just lock the entire file
+        OVERLAPPED sOverlapped;
+        sOverlapped.Offset = 0;
+        sOverlapped.OffsetHigh = 0;
+        // Shared lock
+        THROW_LAST_ERROR_IF(!LockFileEx(file.get(),
+                                        LOCKFILE_EXCLUSIVE_LOCK, // lock exclusive, wait to return until lock is obtained
+                                        0, // reserved, does nothing
+                                        INT_MAX, // lock INT_MAX bytes
+                                        0, // higher-order bytes, if our state file is greater than 2GB I guess this will be a problem
+                                        &sOverlapped));
+        return { std::move(file), sOverlapped };
+    }
+
+    std::string ReadUTF8FileLocked(const locked_hfile& file)
+    {
+        const auto fileSize = GetFileSize(file.get(), nullptr);
+        THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
+
+        // By making our buffer just slightly larger we can detect if
+        // the file size changed and we've failed to read the full file.
+        std::string buffer(static_cast<size_t>(fileSize) + 1, '\0');
+        DWORD bytesRead = 0;
+        THROW_IF_WIN32_BOOL_FALSE(ReadFile(file.get(), buffer.data(), gsl::narrow<DWORD>(buffer.size()), &bytesRead, nullptr));
+
+        // As mentioned before our buffer was allocated oversized.
+        buffer.resize(bytesRead);
+
+        if (til::starts_with(buffer, Utf8Bom))
+        {
+            // Yeah this memmove()s the entire content.
+            // But I don't really want to deal with UTF8 BOMs any more than necessary,
+            // as basically not a single editor writes a BOM for UTF8.
+            buffer.erase(0, Utf8Bom.size());
+        }
+
+        return buffer;
+    }
+
+    void WriteUTF8FileLocked(const locked_hfile& file, const std::string_view& content)
+    {
+        // truncate the file because we want to overwrite it
+        SetFilePointer(file.get(), 0, nullptr, FILE_BEGIN);
+        THROW_IF_WIN32_BOOL_FALSE(SetEndOfFile(file.get()));
+
+        const auto fileSize = gsl::narrow<DWORD>(content.size());
+        DWORD bytesWritten = 0;
+        THROW_IF_WIN32_BOOL_FALSE(WriteFile(file.get(), content.data(), fileSize, &bytesWritten, nullptr));
+
+        if (bytesWritten != fileSize)
+        {
+            THROW_WIN32_MSG(ERROR_WRITE_FAULT, "failed to write whole file");
+        }
     }
 
     // Tries to read a file somewhat atomically without locking it.
@@ -106,7 +183,7 @@ namespace Microsoft::Terminal::Settings::Model
         }
     }
 
-    void WriteUTF8File(const std::filesystem::path& path, const std::string_view content)
+    void WriteUTF8File(const std::filesystem::path& path, const std::string_view& content)
     {
         wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
         THROW_LAST_ERROR_IF(!file);
@@ -121,7 +198,7 @@ namespace Microsoft::Terminal::Settings::Model
         }
     }
 
-    void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view content)
+    void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view& content)
     {
         // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
         // It's thus important that we first resolve them before generating temporary path.

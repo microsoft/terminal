@@ -118,6 +118,29 @@ namespace winrt::TerminalApp::implementation
         _systemRowsToScroll = _ReadSystemRowsToScroll();
     }
 
+    bool TerminalPage::IsElevated() const noexcept
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
+
+        static const bool isElevated = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isElevated;
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -128,19 +151,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // GH#2455 - Make sure to try/catch calls to Application::Current,
-        // because that _won't_ be an instance of TerminalApp::App in the
-        // LocalTests
-        auto isElevated = false;
-        try
-        {
-            // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
-            // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
-            // but that process is running at a different IL than us.
-            // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
-        }
-        CATCH_LOG();
+        const auto isElevated = IsElevated();
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
@@ -267,6 +278,8 @@ namespace winrt::TerminalApp::implementation
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
+        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
+
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
         try
@@ -274,6 +287,48 @@ namespace winrt::TerminalApp::implementation
             _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
         }
         CATCH_LOG();
+    }
+
+    // Method Description;
+    // - Checks if the current terminal window should load or save its layout information.
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - true if the ApplicationState should be used.
+    bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
+    {
+        // GH#5000 Until there is a separate state file for elevated sessions we should just not
+        // save at all while in an elevated window.
+        return Feature_PersistedWindowLayout::IsEnabled() &&
+               !IsElevated() &&
+               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    }
+
+    // Method Description;
+    // - Checks if the current window is configured to load a particular layout
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - non-null if there is a particular saved layout to use
+    std::optional<uint32_t> TerminalPage::LoadPersistedLayoutIdx(CascadiaSettings& settings) const
+    {
+        return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
+    }
+
+    WindowLayout TerminalPage::LoadPersistedLayout(CascadiaSettings& settings) const
+    {
+        if (const auto idx = LoadPersistedLayoutIdx(settings))
+        {
+            const auto i = idx.value();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (layouts && layouts.Size() > i)
+            {
+                return layouts.GetAt(i);
+            }
+        }
+        return nullptr;
     }
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
@@ -358,6 +413,17 @@ namespace winrt::TerminalApp::implementation
         if (_startupState == StartupState::NotInitialized)
         {
             _startupState = StartupState::InStartup;
+
+            // If we are provided with an index, the cases where we have
+            // commandline args and startup actions are already handled.
+            if (const auto layout = LoadPersistedLayout(_settings))
+            {
+                if (layout.TabLayout().Size() > 0)
+                {
+                    _startupActions = layout.TabLayout();
+                }
+            }
+
             ProcessStartupActions(_startupActions, true);
 
             // If we were told that the COM server needs to be started to listen for incoming
@@ -513,6 +579,21 @@ namespace winrt::TerminalApp::implementation
         std::filesystem::path currentPath{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
         currentPath.replace_filename(L"NOTICE.html");
         ShellExecute(nullptr, nullptr, currentPath.c_str(), nullptr, nullptr, SW_SHOW);
+    }
+
+    // Method Description:
+    // - Displays a dialog to warn the user that they are about to close all open windows.
+    //   Once the user clicks the OK button, shut down the application.
+    //   If cancel is clicked, the dialog will close.
+    // - Only one dialog can be visible at a time. If another dialog is visible
+    //   when this is called, nothing happens. See _ShowDialog for details
+    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowQuitDialog()
+    {
+        if (auto presenter{ _dialogPresenter.get() })
+        {
+            co_return co_await presenter.ShowDialog(FindName(L"QuitDialog").try_as<WUX::Controls::ContentDialog>());
+        }
+        co_return ContentDialogResult::None;
     }
 
     // Method Description:
@@ -769,7 +850,7 @@ namespace winrt::TerminalApp::implementation
 
         if (altPressed && !debugTap)
         {
-            this->_SplitPane(SplitState::Automatic,
+            this->_SplitPane(SplitDirection::Automatic,
                              SplitType::Manual,
                              0.5f,
                              newTerminalArgs);
@@ -1019,7 +1100,7 @@ namespace winrt::TerminalApp::implementation
     {
         auto newTabTitle = tab.Title();
 
-        if (_settings.GlobalSettings().ShowTitleInTitlebar() && tab == _GetFocusedTab())
+        if (tab == _GetFocusedTab())
         {
             _TitleChangedHandlers(*this, newTabTitle);
         }
@@ -1050,6 +1131,8 @@ namespace winrt::TerminalApp::implementation
         // Add an event handler for when the terminal or tab wants to set a
         // progress indicator on the taskbar
         term.SetTaskbarProgress({ get_weak(), &TerminalPage::_SetTaskbarProgressHandler });
+
+        term.ConnectionStateChanged({ get_weak(), &TerminalPage::_ConnectionStateChangedHandler });
     }
 
     // Method Description:
@@ -1164,7 +1247,6 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            _UnZoomIfNeeded();
             return terminalTab->NavigateFocus(direction);
         }
         return false;
@@ -1195,13 +1277,108 @@ namespace winrt::TerminalApp::implementation
         }
         return nullptr;
     }
+    // Method Description:
+    // - Warn the user that they are about to close all open windows, then
+    //   signal that we want to close everything.
+    fire_and_forget TerminalPage::RequestQuit()
+    {
+        if (!_displayingCloseDialog)
+        {
+            _displayingCloseDialog = true;
+            ContentDialogResult warningResult = co_await _ShowQuitDialog();
+            _displayingCloseDialog = false;
+
+            if (warningResult != ContentDialogResult::Primary)
+            {
+                co_return;
+            }
+
+            _QuitRequestedHandlers(nullptr, nullptr);
+        }
+    }
+
+    // Method Description:
+    // - Saves the window position and tab layout to the application state
+    // - This does not create the InitialPosition field, that needs to be
+    //   added externally.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - the window layout
+    WindowLayout TerminalPage::GetWindowLayout()
+    {
+        if (_startupState != StartupState::Initialized)
+        {
+            return nullptr;
+        }
+
+        std::vector<ActionAndArgs> actions;
+
+        for (auto tab : _tabs)
+        {
+            if (auto terminalTab = _GetTerminalTabImpl(tab))
+            {
+                auto tabActions = terminalTab->BuildStartupActions();
+                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
+            }
+            else if (tab.try_as<SettingsTab>())
+            {
+                ActionAndArgs action;
+                action.Action(ShortcutAction::OpenSettings);
+                OpenSettingsArgs args{ SettingsTarget::SettingsUI };
+                action.Args(args);
+
+                actions.emplace_back(std::move(action));
+            }
+        }
+
+        // if the focused tab was not the last tab, restore that
+        auto idx = _GetFocusedTabIndex();
+        if (idx && idx != _tabs.Size() - 1)
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::SwitchToTab);
+            SwitchToTabArgs switchToTabArgs{ idx.value() };
+            action.Args(switchToTabArgs);
+
+            actions.emplace_back(std::move(action));
+        }
+
+        // If the user set a custom name, save it
+        if (_WindowName != L"")
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::RenameWindow);
+            RenameWindowArgs args{ _WindowName };
+            action.Args(args);
+
+            actions.emplace_back(std::move(action));
+        }
+
+        WindowLayout layout{};
+        layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+
+        // Only save the content size because the tab size will be added on load.
+        const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+        const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size windowSize{ contentWidth, contentHeight };
+
+        layout.InitialSize(windowSize);
+
+        return layout;
+    }
 
     // Method Description:
     // - Close the terminal app. If there is more
     //   than one tab opened, show a warning dialog.
-    fire_and_forget TerminalPage::CloseWindow()
+    // Arguments:
+    // - bypassDialog: if true a dialog won't be shown even if the user would
+    //   normally get confirmation. This is used in the case where the user
+    //   has already been prompted by the Quit action.
+    fire_and_forget TerminalPage::CloseWindow(bool bypassDialog)
     {
-        if (_HasMultipleTabs() &&
+        if (!bypassDialog &&
+            _HasMultipleTabs() &&
             _settings.GlobalSettings().ConfirmCloseAllTabs() &&
             !_displayingCloseDialog)
         {
@@ -1213,6 +1390,14 @@ namespace winrt::TerminalApp::implementation
             {
                 co_return;
             }
+        }
+
+        if (ShouldUsePersistedLayout(_settings))
+        {
+            // Don't delete the ApplicationState when all of the tabs are removed.
+            // If there is still a monarch living they will get the event that
+            // a window closed and trigger a new save without this window.
+            _maintainStateOnTabClose = true;
         }
 
         _RemoveAllTabs();
@@ -1299,25 +1484,18 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
-    // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
-    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
+    // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
-    void TerminalPage::_SplitPane(const SplitState splitType,
+    void TerminalPage::_SplitPane(const SplitDirection splitDirection,
                                   const SplitType splitMode,
                                   const float splitSize,
                                   const NewTerminalArgs& newTerminalArgs)
     {
-        // Do nothing if we're requesting no split.
-        if (splitType == SplitState::None)
-        {
-            return;
-        }
-
         const auto focusedTab{ _GetFocusedTabImpl() };
 
         // Do nothing if no TerminalTab is focused
@@ -1326,33 +1504,26 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        _SplitPane(*focusedTab, splitType, splitMode, splitSize, newTerminalArgs);
+        _SplitPane(*focusedTab, splitDirection, splitMode, splitSize, newTerminalArgs);
     }
 
     // Method Description:
     // - Split the focused pane of the given tab, either horizontally or vertically, and place the
     //   given TermControl into the newly created pane.
-    // - If splitType == SplitState::None, this method does nothing.
     // Arguments:
     // - tab: The tab that is going to be split.
-    // - splitType: one value from the TerminalApp::SplitState enum, indicating how the
+    // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
     // - newTerminalArgs: An object that may contain a blob of parameters to
     //   control which profile is created and with possible other
     //   configurations. See CascadiaSettings::BuildSettings for more details.
     void TerminalPage::_SplitPane(TerminalTab& tab,
-                                  const SplitState splitType,
+                                  const SplitDirection splitDirection,
                                   const SplitType splitMode,
                                   const float splitSize,
                                   const NewTerminalArgs& newTerminalArgs)
     {
-        // Do nothing if we're requesting no split.
-        if (splitType == SplitState::None)
-        {
-            return;
-        }
-
         try
         {
             TerminalSettingsCreateResult controlSettings{ nullptr };
@@ -1398,8 +1569,8 @@ namespace winrt::TerminalApp::implementation
             const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
             const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
-            auto realSplitType = splitType;
-            if (realSplitType == SplitState::Automatic)
+            auto realSplitType = splitDirection;
+            if (realSplitType == SplitDirection::Automatic)
             {
                 realSplitType = tab.PreCalculateAutoSplit(availableSpace);
             }
@@ -2087,6 +2258,8 @@ namespace winrt::TerminalApp::implementation
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
+
+        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -2709,11 +2882,14 @@ namespace winrt::TerminalApp::implementation
     // Method Description:
     // - Displays a dialog stating the "Touch Keyboard and Handwriting Panel
     //   Service" is disabled.
-    void TerminalPage::ShowKeyboardServiceWarning()
+    void TerminalPage::ShowKeyboardServiceWarning() const
     {
-        if (auto keyboardWarningInfoBar = FindName(L"KeyboardWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+        if (!_IsMessageDismissed(InfoBarMessage::KeyboardServiceWarning))
         {
-            keyboardWarningInfoBar.IsOpen(true);
+            if (const auto keyboardServiceWarningInfoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+            {
+                keyboardServiceWarningInfoBar.IsOpen(true);
+            }
         }
     }
 
@@ -2933,6 +3109,16 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::SetPersistedLayoutIdx(const uint32_t idx)
+    {
+        _loadFromPersistedLayoutIdx = idx;
+    }
+
+    void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
+    {
+        _numOpenWindows = num;
+    }
+
     // Method Description:
     // - Returns a label like "Window: 1234" for the ID of this window
     // Arguments:
@@ -3069,5 +3255,100 @@ namespace winrt::TerminalApp::implementation
             return _settings.FindProfile(_settings.GlobalSettings().DefaultProfile());
         }
         return profile;
+    }
+
+    // Method Description:
+    // - Handles the change of connection state.
+    // If the connection state is failure show information bar suggesting to configure termination behavior
+    // (unless user asked not to show this message again)
+    // Arguments:
+    // - sender: the ICoreState instance containing the connection state
+    // Return Value:
+    // - <none>
+    winrt::fire_and_forget TerminalPage::_ConnectionStateChangedHandler(const IInspectable& sender, const IInspectable& /*args*/) const
+    {
+        if (const auto coreState{ sender.try_as<winrt::Microsoft::Terminal::Control::ICoreState>() })
+        {
+            const auto newConnectionState = coreState.ConnectionState();
+            if (newConnectionState == ConnectionState::Failed && !_IsMessageDismissed(InfoBarMessage::CloseOnExitInfo))
+            {
+                co_await winrt::resume_foreground(Dispatcher());
+                if (const auto infoBar = FindName(L"CloseOnExitInfoBar").try_as<MUX::Controls::InfoBar>())
+                {
+                    infoBar.IsOpen(true);
+                }
+            }
+        }
+    }
+
+    // Method Description:
+    // - Persists the user's choice not to show information bar guiding to configure termination behavior.
+    // Then hides this information buffer.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_CloseOnExitInfoDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
+    {
+        _DismissMessage(InfoBarMessage::CloseOnExitInfo);
+        if (const auto infoBar = FindName(L"CloseOnExitInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+    }
+
+    // Method Description:
+    // - Persists the user's choice not to show information bar warning about "Touch keyboard and Handwriting Panel Service" disabled
+    // Then hides this information buffer.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_KeyboardServiceWarningInfoDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
+    {
+        _DismissMessage(InfoBarMessage::KeyboardServiceWarning);
+        if (const auto infoBar = FindName(L"KeyboardServiceWarningInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+    }
+
+    // Method Description:
+    // - Checks whether information bar message was dismissed earlier (in the application state)
+    // Arguments:
+    // - message: message to look for in the state
+    // Return Value:
+    // - true, if the message was dismissed
+    bool TerminalPage::_IsMessageDismissed(const InfoBarMessage& message)
+    {
+        if (const auto dismissedMessages{ ApplicationState::SharedInstance().DismissedMessages() })
+        {
+            for (const auto& dismissedMessage : dismissedMessages)
+            {
+                if (dismissedMessage == message)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // Method Description:
+    // - Persists the user's choice to dismiss information bar message (in application state)
+    // Arguments:
+    // - message: message to dismiss
+    // Return Value:
+    // - <none>
+    void TerminalPage::_DismissMessage(const InfoBarMessage& message)
+    {
+        auto dismissedMessages = ApplicationState::SharedInstance().DismissedMessages();
+        if (!dismissedMessages)
+        {
+            dismissedMessages = winrt::single_threaded_vector<InfoBarMessage>();
+        }
+
+        dismissedMessages.Append(message);
+        ApplicationState::SharedInstance().DismissedMessages(dismissedMessages);
     }
 }
