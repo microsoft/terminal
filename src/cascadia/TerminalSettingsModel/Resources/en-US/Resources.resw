@@ -258,6 +258,12 @@
   <data name="MoveFocusFirstPane" xml:space="preserve">
     <value>Move focus to the first pane</value>
   </data>
+  <data name="MoveFocusParentPane" xml:space="preserve">
+    <value>Move focus to the parent pane</value>
+  </data>
+  <data name="MoveFocusChildPane" xml:space="preserve">
+    <value>Move focus to the child pane</value>
+  </data>
   <data name="SwapPaneCommandKey" xml:space="preserve">
     <value>Swap pane</value>
   </data>

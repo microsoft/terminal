@@ -319,7 +319,9 @@
         "previous",
         "nextInOrder",
         "previousInOrder",
-        "first"
+        "first",
+        "parent",
+        "child"
       ],
       "type": "string"
     },
@@ -562,7 +564,7 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, 'nextInOrder' or 'previousInOrder' to move to the next or previous pane, 'first' to focus the first pane, or 'parent' or 'child' to move up and down the tree."
             }
           }
         }
@@ -579,7 +581,7 @@
             "direction": {
               "$ref": "#/definitions/FocusDirection",
               "default": "left",
-              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, 'nextInOrder' or 'previousInOrder' to move to the next or previous pane, or 'first' to swap with the first pane."
             }
           }
         }

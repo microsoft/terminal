@@ -247,6 +247,7 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 void DxEngine::ToggleShaderEffects()
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
+    _recreateDeviceRequested = true;
     LOG_IF_FAILED(InvalidateAll());
 }
 
