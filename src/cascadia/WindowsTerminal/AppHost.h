@@ -92,6 +92,6 @@ private:
     std::unique_ptr<NotificationIcon> _notificationIcon;
     winrt::event_token _ReAddNotificationIconToken;
     winrt::event_token _NotificationIconPressedToken;
-    winrt::event_token _ShowNotificationContextMenuToken;
-    winrt::event_token _NotificationMenuItemSelectedToken;
+    winrt::event_token _ShowNotificationIconContextMenuToken;
+    winrt::event_token _NotificationIconMenuItemSelectedToken;
 };

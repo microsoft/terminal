@@ -24,14 +24,14 @@ public:
     void ReAddNotificationIcon();
 
     void NotificationIconPressed();
-    void ShowContextMenu(const til::point& coord, IMapView<uint64_t, winrt::hstring> peasants);
+    void ShowContextMenu(const til::point& coord, winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
     void MenuItemSelected(const HMENU menu, const UINT menuItemIndex);
 
     WINRT_CALLBACK(SummonWindowRequested, winrt::delegate<void(winrt::Microsoft::Terminal::Remoting::SummonWindowSelectionArgs)>);
 
 private:
     void _CreateWindow();
-    HMENU _CreateContextMenu(IMapView<uint64_t, winrt::hstring> peasant);
+    HMENU _CreateContextMenu(winrt::Windows::Foundation::Collections::IMapView<uint64_t, winrt::hstring> peasants);
 
     wil::unique_hwnd _notificationIconHwnd;
     HWND _owningHwnd;

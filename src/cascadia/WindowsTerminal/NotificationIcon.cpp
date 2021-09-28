@@ -142,7 +142,7 @@ void NotificationIcon::ShowContextMenu(const til::point& coord,
 // - peasants: A map of all peasants' ID to their window name.
 // Return Value:
 // - The handle to the newly created context menu.
-HMENU NotificationIcon::_CreateContextMenu(IMapView<uint64_t, winrt::hstring> peasant)
+HMENU NotificationIcon::_CreateContextMenu(IMapView<uint64_t, winrt::hstring> peasants)
 {
     auto hMenu = CreatePopupMenu();
     if (hMenu)
