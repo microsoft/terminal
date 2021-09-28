@@ -30,11 +30,6 @@ namespace winrt::TerminalApp::implementation
         _rootPane = rootPane;
         _activePane = nullptr;
 
-        if (_rootPane->_IsLeaf())
-        {
-            _rootPane->SetActive();
-        }
-
         auto firstId = _nextPaneId;
 
         _rootPane->WalkTree([&](std::shared_ptr<Pane> pane) {
@@ -57,8 +52,9 @@ namespace winrt::TerminalApp::implementation
         // focus the first one.
         if (_activePane == nullptr)
         {
-            _rootPane->FocusPane(firstId);
-            _activePane = _rootPane->GetActivePane();
+            const auto firstPane = _rootPane->FindPane(firstId);
+            firstPane->SetActive();
+            _activePane = firstPane;
         }
         // Set the active control
         _mruPanes.insert(_mruPanes.begin(), _activePane->Id().value());
@@ -487,6 +483,18 @@ namespace winrt::TerminalApp::implementation
                                 const float splitSize,
                                 std::shared_ptr<Pane> pane)
     {
+        // Add the new event handlers to the new pane(s)
+        // and update their ids.
+        pane->WalkTree([&](auto p) {
+            _AttachEventHandlersToPane(p);
+            if (p->_IsLeaf())
+            {
+                p->Id(_nextPaneId);
+                _AttachEventHandlersToControl(p->Id().value(), p->_control);
+                _nextPaneId++;
+            }
+            return false;
+        });
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         // Depending on which direction will be split, the new pane can be
@@ -496,23 +504,17 @@ namespace winrt::TerminalApp::implementation
         if (activePaneId)
         {
             original->Id(activePaneId.value());
-            newPane->Id(_nextPaneId);
-            ++_nextPaneId;
         }
         else
         {
             original->Id(_nextPaneId);
-            ++_nextPaneId;
-            newPane->Id(_nextPaneId);
             ++_nextPaneId;
         }
         _activePane = original;
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToControl(newPane->Id().value(), newPane->GetTerminalControl());
         _AttachEventHandlersToPane(original);
-        _AttachEventHandlersToPane(newPane);
 
         // Immediately update our tracker of the focused pane now. If we're
         // splitting panes during startup (from a commandline), then it's
