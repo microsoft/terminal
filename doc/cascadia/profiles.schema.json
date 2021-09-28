@@ -110,7 +110,7 @@
           "description": "Sets the file location of the image to draw over the window background when unfocused.",
           "oneOf": [
             {
-              "type": ["string", null]
+              "type": ["string", "null"]
             },
             {
               "enum": [
@@ -531,13 +531,13 @@
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+            }
           }
         }
-      }
-    ],
-    "required": [ "index" ]
-  },
-  "MovePaneAction": {
+      ],
+      "required": [ "index" ]
+    },
+    "MovePaneAction": {
       "description": "Arguments corresponding to a Move Pane Action",
       "allOf": [
         { "$ref": "#/definitions/ShortcutAction" },
@@ -1444,7 +1444,7 @@
           "description": "Sets the file location of the image to draw over the window background.",
           "oneOf": [
             {
-              "type": ["string", null]
+              "type": ["string", "null"]
             },
             {
               "enum": [
