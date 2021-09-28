@@ -50,6 +50,12 @@ Function Get-PossibleUserName($email) {
     return $null
 }
 
+if ($host.version.major -lt 6)
+{
+   Write-Host "Go get Powershell Core to run this script!"
+   return
+}
+
 $Entries = @()
 
 ForEach ($RevisionRange in $RevisionRanges) {
