@@ -16,6 +16,12 @@ Abstract:
 #include "WindowLayout.g.h"
 
 #include <inc/cppwinrt_utils.h>
+<<<<<<< HEAD
+=======
+#include <til/mutex.h>
+#include <til/throttled_func.h>
+#include "FileUtils.h"
+>>>>>>> origin/main
 #include <JsonUtils.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -43,6 +49,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     struct WindowLayout : WindowLayoutT<WindowLayout>
     {
+        static winrt::hstring ToJson(const Model::WindowLayout& layout);
+        static Model::WindowLayout FromJson(const winrt::hstring& json);
+
         WINRT_PROPERTY(Windows::Foundation::Collections::IVector<Model::ActionAndArgs>, TabLayout, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<Model::LaunchPosition>, InitialPosition, nullptr);
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Windows::Foundation::Size>, InitialSize, nullptr);
@@ -75,7 +84,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     private:
         struct state_t
         {
-#define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) std::optional<type> name{ __VA_ARGS__ };
+#define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
+    std::optional<type> name{ __VA_ARGS__ };                     \
+    bool name##Changed = false;
+
             MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
         };
@@ -85,7 +97,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::filesystem::path _elevatedPath;
         til::throttled_func_trailing<> _throttler;
 
-        void _write() const noexcept;
+        Json::Value _getRoot(const winrt::Microsoft::Terminal::Settings::Model::locked_hfile& file) const noexcept;
+        void _write() noexcept;
         void _read() const noexcept;
 
         std::optional<std::string> _readSharedContents() const;

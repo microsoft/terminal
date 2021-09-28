@@ -12,7 +12,6 @@
   </PropertyGroup>
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
-
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
     <ClInclude Include="Monarch.h">
@@ -35,6 +34,12 @@
     </ClInclude>
     <ClInclude Include="WindowActivatedArgs.h">
       <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="GetWindowLayoutArgs.h">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="QuitAllRequestedArgs.h">
+      <DependentUpon>Monarch.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="MonarchFactory.h" />
@@ -70,6 +75,12 @@
     </ClCompile>
     <ClCompile Include="WindowActivatedArgs.cpp">
       <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="GetWindowLayoutArgs.cpp">
+      <DependentUpon>Peasant.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="QuitAllRequestedArgs.cpp">
+      <DependentUpon>Monarch.idl</DependentUpon>
     </ClCompile>
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
@@ -128,6 +139,5 @@
   </ItemDefinitionGroup>
   <!-- ========================= Globals ======================== -->
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>

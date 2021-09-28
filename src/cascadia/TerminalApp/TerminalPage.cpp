@@ -118,6 +118,29 @@ namespace winrt::TerminalApp::implementation
         _systemRowsToScroll = _ReadSystemRowsToScroll();
     }
 
+    bool TerminalPage::IsElevated() const noexcept
+    {
+        // use C++11 magic statics to make sure we only do this once.
+        // This won't change over the lifetime of the application
+
+        static const bool isElevated = []() {
+            // *** THIS IS A SINGLETON ***
+            auto result = false;
+
+            // GH#2455 - Make sure to try/catch calls to Application::Current,
+            // because that _won't_ be an instance of TerminalApp::App in the
+            // LocalTests
+            try
+            {
+                result = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
+            }
+            CATCH_LOG();
+            return result;
+        }();
+
+        return isElevated;
+    }
+
     void TerminalPage::Create()
     {
         // Hookup the key bindings
@@ -128,19 +151,7 @@ namespace winrt::TerminalApp::implementation
         _tabView = _tabRow.TabView();
         _rearranging = false;
 
-        // GH#2455 - Make sure to try/catch calls to Application::Current,
-        // because that _won't_ be an instance of TerminalApp::App in the
-        // LocalTests
-        auto isElevated = false;
-        try
-        {
-            // GH#3581 - There's a platform limitation that causes us to crash when we rearrange tabs.
-            // Xaml tries to send a drag visual (to wit: a screenshot) to the drag hosting process,
-            // but that process is running at a different IL than us.
-            // For now, we're disabling elevated drag.
-            isElevated = ::winrt::Windows::UI::Xaml::Application::Current().as<::winrt::TerminalApp::App>().Logic().IsElevated();
-        }
-        CATCH_LOG();
+        const auto isElevated = IsElevated();
 
         if (_settings.GlobalSettings().UseAcrylicInTabRow())
         {
@@ -267,6 +278,8 @@ namespace winrt::TerminalApp::implementation
         // Setup mouse vanish attributes
         SystemParametersInfoW(SPI_GETMOUSEVANISH, 0, &_shouldMouseVanish, false);
 
+        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
+
         // Store cursor, so we can restore it, e.g., after mouse vanishing
         // (we'll need to adapt this logic once we make cursor context aware)
         try
@@ -285,10 +298,37 @@ namespace winrt::TerminalApp::implementation
     // - true if the ApplicationState should be used.
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
-        // If the setting is enabled, and we are the only window.
+        // GH#5000 Until there is a separate state file for elevated sessions we should just not
+        // save at all while in an elevated window.
         return Feature_PersistedWindowLayout::IsEnabled() &&
-               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout &&
-               _numOpenWindows == 1;
+               !IsElevated() &&
+               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    }
+
+    // Method Description;
+    // - Checks if the current window is configured to load a particular layout
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - non-null if there is a particular saved layout to use
+    std::optional<uint32_t> TerminalPage::LoadPersistedLayoutIdx(CascadiaSettings& settings) const
+    {
+        return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
+    }
+
+    WindowLayout TerminalPage::LoadPersistedLayout(CascadiaSettings& settings) const
+    {
+        if (const auto idx = LoadPersistedLayoutIdx(settings))
+        {
+            const auto i = idx.value();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (layouts && layouts.Size() > i)
+            {
+                return layouts.GetAt(i);
+            }
+        }
+        return nullptr;
     }
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
@@ -374,30 +414,13 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            // If the user selected to save their tab layout, we are the first
-            // window opened, and wt was not run with any other arguments, then
-            // we should use the saved settings.
-            auto firstActionIsDefault = [](ActionAndArgs action) {
-                if (action.Action() != ShortcutAction::NewTab)
-                {
-                    return false;
-                }
-
-                // If no commands were given, we will have default args
-                if (const auto args = action.Args().try_as<NewTabArgs>())
-                {
-                    NewTerminalArgs defaultArgs{};
-                    return args.TerminalArgs() == nullptr || args.TerminalArgs().Equals(defaultArgs);
-                }
-
-                return false;
-            };
-            if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
+            // If we are provided with an index, the cases where we have
+            // commandline args and startup actions are already handled.
+            if (const auto layout = LoadPersistedLayout(_settings))
             {
-                auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-                if (layouts && layouts.Size() > 0 && layouts.GetAt(0).TabLayout() && layouts.GetAt(0).TabLayout().Size() > 0)
+                if (layout.TabLayout().Size() > 0)
                 {
-                    _startupActions = layouts.GetAt(0).TabLayout();
+                    _startupActions = layout.TabLayout();
                 }
             }
 
@@ -1276,12 +1299,19 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Saves the window position and tab layout to the application state
+    // - This does not create the InitialPosition field, that needs to be
+    //   added externally.
     // Arguments:
     // - <none>
     // Return Value:
-    // - <none>
-    void TerminalPage::PersistWindowLayout()
+    // - the window layout
+    WindowLayout TerminalPage::GetWindowLayout()
     {
+        if (_startupState != StartupState::Initialized)
+        {
+            return nullptr;
+        }
+
         std::vector<ActionAndArgs> actions;
 
         for (auto tab : _tabs)
@@ -1289,7 +1319,7 @@ namespace winrt::TerminalApp::implementation
             if (auto terminalTab = _GetTerminalTabImpl(tab))
             {
                 auto tabActions = terminalTab->BuildStartupActions();
-                actions.insert(actions.end(), tabActions.begin(), tabActions.end());
+                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
             }
             else if (tab.try_as<SettingsTab>())
             {
@@ -1298,7 +1328,7 @@ namespace winrt::TerminalApp::implementation
                 OpenSettingsArgs args{ SettingsTarget::SettingsUI };
                 action.Args(args);
 
-                actions.push_back(action);
+                actions.emplace_back(std::move(action));
             }
         }
 
@@ -1311,7 +1341,18 @@ namespace winrt::TerminalApp::implementation
             SwitchToTabArgs switchToTabArgs{ idx.value() };
             action.Args(switchToTabArgs);
 
-            actions.push_back(action);
+            actions.emplace_back(std::move(action));
+        }
+
+        // If the user set a custom name, save it
+        if (_WindowName != L"")
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::RenameWindow);
+            RenameWindowArgs args{ _WindowName };
+            action.Args(args);
+
+            actions.emplace_back(std::move(action));
         }
 
         WindowLayout layout{};
@@ -1324,33 +1365,7 @@ namespace winrt::TerminalApp::implementation
 
         layout.InitialSize(windowSize);
 
-        if (_hostingHwnd)
-        {
-            // Get the position of the current window. This includes the
-            // non-client already.
-            RECT window{};
-            GetWindowRect(_hostingHwnd.value(), &window);
-
-            // We want to remove the non-client area so calculate that.
-            // We don't have access to the (NonClient)IslandWindow directly so
-            // just replicate the logic.
-            const auto windowStyle = static_cast<DWORD>(GetWindowLong(_hostingHwnd.value(), GWL_STYLE));
-
-            auto dpi = GetDpiForWindow(_hostingHwnd.value());
-            RECT nonClientArea{};
-            LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&nonClientArea, windowStyle, false, 0, dpi));
-
-            // The nonClientArea adjustment is negative, so subtract that out.
-            // This way we save the user-visible location of the terminal.
-            LaunchPosition pos{};
-            pos.X = window.left - nonClientArea.left;
-            pos.Y = window.top;
-
-            layout.InitialPosition(pos);
-        }
-
-        auto state = ApplicationState::SharedInstance();
-        state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
+        return layout;
     }
 
     // Method Description:
@@ -1379,8 +1394,9 @@ namespace winrt::TerminalApp::implementation
 
         if (ShouldUsePersistedLayout(_settings))
         {
-            PersistWindowLayout();
-            // don't delete the ApplicationState when all of the tabs are removed.
+            // Don't delete the ApplicationState when all of the tabs are removed.
+            // If there is still a monarch living they will get the event that
+            // a window closed and trigger a new save without this window.
             _maintainStateOnTabClose = true;
         }
 
@@ -2242,6 +2258,8 @@ namespace winrt::TerminalApp::implementation
         // enabled application-wide, so we don't need to check it each time we
         // want to create an animation.
         WUX::Media::Animation::Timeline::AllowDependentAnimations(!_settings.GlobalSettings().DisableAnimations());
+
+        _tabRow.ShowElevationShield(IsElevated() && _settings.GlobalSettings().ShowAdminShield());
     }
 
     // This is a helper to aid in sorting commands by their `Name`s, alphabetically.
@@ -3089,6 +3107,11 @@ namespace winrt::TerminalApp::implementation
             _WindowId = value;
             _PropertyChangedHandlers(*this, WUX::Data::PropertyChangedEventArgs{ L"WindowIdForDisplay" });
         }
+    }
+
+    void TerminalPage::SetPersistedLayoutIdx(const uint32_t idx)
+    {
+        _loadFromPersistedLayoutIdx = idx;
     }
 
     void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)

@@ -6,6 +6,7 @@
 #include "Monarch.h"
 #include "CommandlineArgs.h"
 #include "FindTargetWindowArgs.h"
+#include "QuitAllRequestedArgs.h"
 #include "ProposeCommandlineResult.h"
 
 #include "Monarch.g.cpp"
@@ -135,12 +136,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     // - <none> used
     // Return Value:
     // - <none>
-    void Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
-                                 const winrt::Windows::Foundation::IInspectable& /*args*/)
+    winrt::fire_and_forget Monarch::_handleQuitAll(const winrt::Windows::Foundation::IInspectable& /*sender*/,
+                                                   const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
         // Let the process hosting the monarch run any needed logic before
         // closing all windows.
-        _QuitAllRequestedHandlers(*this, nullptr);
+        auto args = winrt::make_self<implementation::QuitAllRequestedArgs>();
+        _QuitAllRequestedHandlers(*this, *args);
+
+        if (const auto action = args->BeforeQuitAllAction())
+        {
+            co_await action;
+        }
 
         _quitting.store(true);
         // Tell all peasants to exit.
@@ -993,5 +1000,29 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         };
 
         _forEachPeasant(func, onError);
+    }
+
+    // Method Description:
+    // - Ask all peasants to return their window layout as json
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - The collection of window layouts from each peasant.
+    Windows::Foundation::Collections::IVector<winrt::hstring> Monarch::GetAllWindowLayouts()
+    {
+        std::vector<winrt::hstring> vec;
+        auto callback = [&](const auto& /*id*/, const auto& p) {
+            vec.emplace_back(p.GetWindowLayout());
+        };
+        auto onError = [](auto&& id) {
+            TraceLoggingWrite(g_hRemotingProvider,
+                              "Monarch_GetAllWindowLayouts_Failed",
+                              TraceLoggingInt64(id, "peasantID", "The ID of the peasant which we could not get a window layout from"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+        };
+        _forEachPeasant(callback, onError);
+
+        return winrt::single_threaded_vector(std::move(vec));
     }
 }

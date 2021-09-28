@@ -106,7 +106,12 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     if (controlSettings.AppliedColorScheme())
     {
         auto name = controlSettings.AppliedColorScheme().Name();
-        args.ColorScheme(name);
+        // Only save the color scheme if it is different than the profile color
+        // scheme to not override any other profile appearance choices.
+        if (_profile.DefaultAppearance().ColorSchemeName() != name)
+        {
+            args.ColorScheme(name);
+        }
     }
 
     return args;
