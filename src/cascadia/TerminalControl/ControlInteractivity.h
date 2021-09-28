@@ -137,7 +137,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                    const unsigned int pointerUpdateKind,
                                    const ::Microsoft::Terminal::Core::ControlKeyStates modifiers,
                                    const SHORT wheelDelta,
-                                   TerminalInput::MouseButtonState buttonState);
+                                   ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState buttonState);
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
