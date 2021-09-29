@@ -36,7 +36,7 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> FilePicker(HWND pare
     THROW_IF_FAILED(fileDialog->SetOptions(flags | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR | FOS_DONTADDTORECENT)); // filesystem objects only; no recent places
     customize(fileDialog.get());
 
-    auto hr{ fileDialog->Show(parentHwnd) };
+    const auto hr{ fileDialog->Show(parentHwnd) };
     if (!SUCCEEDED(hr))
     {
         if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))

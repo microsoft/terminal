@@ -6,7 +6,6 @@
 #include "pch.h"
 #include "Utils.h"
 
-
 // Function Description:
 // - Helper that opens a file picker pre-seeded with image file types.
 winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND parentHwnd)

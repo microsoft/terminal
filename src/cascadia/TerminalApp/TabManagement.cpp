@@ -429,7 +429,7 @@ namespace winrt::TerminalApp::implementation
             if (const auto control{ tab.GetActiveTerminalControl() })
             {
                 // GH#11356 - we can't use the UWP apis for writing the file,
-                // beccause they don't work elevated (shocker) So just use the
+                // because they don't work elevated (shocker) So just use the
                 // shell32 file picker manually.
                 auto path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
                     THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
