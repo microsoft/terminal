@@ -1,5 +1,6 @@
 ACLs
 ADMINS
+advapi
 altform
 altforms
 appendwttlogging
@@ -15,8 +16,10 @@ CPLs
 cpptools
 cppvsdbg
 CPRs
+cryptbase
 DACL
 DACLs
+defaultlib
 diffs
 disposables
 dotnetfeed
@@ -24,6 +27,9 @@ DTDs
 DWINRT
 enablewttlogging
 Intelli
+IVisual
+libucrt
+libucrtd
 LKG
 LOCKFILE
 Lxss
@@ -33,8 +39,10 @@ microsoftonline
 MSAA
 msixbundle
 MSVC
+MSVCP
 muxc
 netcore
+Onefuzz
 osgvsowi
 PFILETIME
 pgc
@@ -45,6 +53,7 @@ powershell
 propkey
 pscustomobject
 QWORD
+regedit
 robocopy
 SACLs
 sdkddkver
@@ -58,6 +67,8 @@ systemroot
 taskkill
 tasklist
 tdbuildteamid
+ucrt
+ucrtd
 unvirtualized
 VCRT
 vcruntime
