@@ -1,21 +1,27 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+// A lot of code was taken from
+// https://github.com/Maximus5/ConEmu/blob/master/src/ConEmu/ColorFix.cpp
+// and then adjusted to fit our style guidelines
+
 #include "pch.h"
 
 #include <Windows.h>
-#include <math.h>
 #include "ColorFix.hpp"
 
-const double gMinThreshold = 12.0;
-const double gExpThreshold = 20.0;
-const double gLStep = 5.0;
+static constexpr double gMinThreshold = 12.0;
+static constexpr double gExpThreshold = 20.0;
+static constexpr double gLStep = 5.0;
 
-constexpr double rad006 = 0.104719755119659774;
-constexpr double rad025 = 0.436332312998582394;
-constexpr double rad030 = 0.523598775598298873;
-constexpr double rad060 = 1.047197551196597746;
-constexpr double rad063 = 1.099557428756427633;
-constexpr double rad180 = 3.141592653589793238;
-constexpr double rad275 = 4.799655442984406336;
-constexpr double rad360 = 6.283185307179586476;
+static constexpr double rad006 = 0.104719755119659774;
+static constexpr double rad025 = 0.436332312998582394;
+static constexpr double rad030 = 0.523598775598298873;
+static constexpr double rad060 = 1.047197551196597746;
+static constexpr double rad063 = 1.099557428756427633;
+static constexpr double rad180 = 3.141592653589793238;
+static constexpr double rad275 = 4.799655442984406336;
+static constexpr double rad360 = 6.283185307179586476;
 
 ColorFix::ColorFix(COLORREF color)
 {
@@ -43,7 +49,7 @@ double ColorFix::_GetHPrimeFn(double x, double y)
 // - x2: the second color
 // Return Value:
 // - The DeltaE value between x1 and x2
-double ColorFix::GetDeltaE(ColorFix x1, ColorFix x2)
+double ColorFix::_GetDeltaE(ColorFix x1, ColorFix x2)
 {
     constexpr double kSubL = 1;
     constexpr double kSubC = 1;
@@ -125,44 +131,26 @@ void ColorFix::_ToLab()
     double var_G = g / 255.0;
     double var_B = b / 255.0;
 
-    if (var_R > 0.04045)
-        var_R = pow(((var_R + 0.055) / 1.055), 2.4);
-    else
-        var_R = var_R / 12.92;
-    if (var_G > 0.04045)
-        var_G = pow(((var_G + 0.055) / 1.055), 2.4);
-    else
-        var_G = var_G / 12.92;
-    if (var_B > 0.04045)
-        var_B = pow(((var_B + 0.055) / 1.055), 2.4);
-    else
-        var_B = var_B / 12.92;
+    var_R = var_R > 0.04045 ? pow(((var_R + 0.055) / 1.055), 2.4) : var_R / 12.92;
+    var_G = var_G > 0.04045 ? pow(((var_G + 0.055) / 1.055), 2.4) : var_G / 12.92;
+    var_B = var_B > 0.04045 ? pow(((var_B + 0.055) / 1.055), 2.4) : var_B / 12.92;
 
     var_R = var_R * 100.;
     var_G = var_G * 100.;
     var_B = var_B * 100.;
 
     //Observer. = 2 degrees, Illuminant = D65
-    double X = var_R * 0.4124 + var_G * 0.3576 + var_B * 0.1805;
-    double Y = var_R * 0.2126 + var_G * 0.7152 + var_B * 0.0722;
-    double Z = var_R * 0.0193 + var_G * 0.1192 + var_B * 0.9505;
+    const double X = var_R * 0.4124 + var_G * 0.3576 + var_B * 0.1805;
+    const double Y = var_R * 0.2126 + var_G * 0.7152 + var_B * 0.0722;
+    const double Z = var_R * 0.0193 + var_G * 0.1192 + var_B * 0.9505;
 
     double var_X = X / 95.047; //ref_X =  95.047   (Observer= 2 degrees, Illuminant= D65)
     double var_Y = Y / 100.000; //ref_Y = 100.000
     double var_Z = Z / 108.883; //ref_Z = 108.883
 
-    if (var_X > 0.008856)
-        var_X = pow(var_X, (1. / 3.));
-    else
-        var_X = (7.787 * var_X) + (16. / 116.);
-    if (var_Y > 0.008856)
-        var_Y = pow(var_Y, (1. / 3.));
-    else
-        var_Y = (7.787 * var_Y) + (16. / 116.);
-    if (var_Z > 0.008856)
-        var_Z = pow(var_Z, (1. / 3.));
-    else
-        var_Z = (7.787 * var_Z) + (16. / 116.);
+    var_X = var_X > 0.008856 ? pow(var_X, (1. / 3.)) : (7.787 * var_X) + (16. / 116.);
+    var_Y = var_Y > 0.008856 ? pow(var_Y, (1. / 3.)) : (7.787 * var_Y) + (16. / 116.);
+    var_Z = var_Z > 0.008856 ? pow(var_Z, (1. / 3.)) : (7.787 * var_Z) + (16. / 116.);
 
     L = (116. * var_Y) - 16.;
     A = 500. * (var_X - var_Y);
@@ -179,18 +167,9 @@ void ColorFix::_ToRGB()
     double var_X = A / 500. + var_Y;
     double var_Z = var_Y - B / 200.;
 
-    if (pow(var_Y, 3) > 0.008856)
-        var_Y = pow(var_Y, 3);
-    else
-        var_Y = (var_Y - 16. / 116.) / 7.787;
-    if (pow(var_X, 3) > 0.008856)
-        var_X = pow(var_X, 3);
-    else
-        var_X = (var_X - 16. / 116.) / 7.787;
-    if (pow(var_Z, 3) > 0.008856)
-        var_Z = pow(var_Z, 3);
-    else
-        var_Z = (var_Z - 16. / 116.) / 7.787;
+    var_Y = (pow(var_Y, 3) > 0.008856) ? pow(var_Y, 3) : (var_Y - 16. / 116.) / 7.787;
+    var_X = (pow(var_X, 3) > 0.008856) ? pow(var_X, 3) : (var_X - 16. / 116.) / 7.787;
+    var_Z = (pow(var_Z, 3) > 0.008856) ? pow(var_Z, 3) : (var_Z - 16. / 116.) / 7.787;
 
     double X = 95.047 * var_X; //ref_X =  95.047     (Observer= 2 degrees, Illuminant= D65)
     double Y = 100.000 * var_Y; //ref_Y = 100.000
@@ -204,22 +183,13 @@ void ColorFix::_ToRGB()
     double var_G = var_X * -0.9689 + var_Y * 1.8758 + var_Z * 0.0415;
     double var_B = var_X * 0.0557 + var_Y * -0.2040 + var_Z * 1.0570;
 
-    if (var_R > 0.0031308)
-        var_R = 1.055 * pow(var_R, (1 / 2.4)) - 0.055;
-    else
-        var_R = 12.92 * var_R;
-    if (var_G > 0.0031308)
-        var_G = 1.055 * pow(var_G, (1 / 2.4)) - 0.055;
-    else
-        var_G = 12.92 * var_G;
-    if (var_B > 0.0031308)
-        var_B = 1.055 * pow(var_B, (1 / 2.4)) - 0.055;
-    else
-        var_B = 12.92 * var_B;
+    var_R = var_R > 0.0031308 ? 1.055 * pow(var_R, (1 / 2.4)) - 0.055 : var_R = 12.92 * var_R;
+    var_G = var_G > 0.0031308 ? 1.055 * pow(var_G, (1 / 2.4)) - 0.055 : var_G = 12.92 * var_G;
+    var_B = var_B > 0.0031308 ? 1.055 * pow(var_B, (1 / 2.4)) - 0.055 : var_B = 12.92 * var_B;
 
-    r = _Clamp(var_R * 255.);
-    g = _Clamp(var_G * 255.);
-    b = _Clamp(var_B * 255.);
+    r = (BYTE)std::clamp(var_R * 255., 0., 255.);
+    g = (BYTE)std::clamp(var_G * 255., 0., 255.);
+    b = (BYTE)std::clamp(var_B * 255., 0., 255.);
 }
 
 // Method Description:
@@ -239,17 +209,17 @@ COLORREF ColorFix::GetPerceivableColor(COLORREF fg, COLORREF bg)
     }
     ColorFix backLab(bg);
     ColorFix frontLab(fg);
-    double de1 = GetDeltaE(frontLab, backLab);
+    const double de1 = _GetDeltaE(frontLab, backLab);
     if (de1 < gMinThreshold)
     {
         for (int i = 0; i <= 1; i++)
         {
-            double step = (i == 0) ? gLStep : -gLStep;
+            const double step = (i == 0) ? gLStep : -gLStep;
             frontLab.L += step;
 
             while (((i == 0) && (frontLab.L <= 100)) || ((i == 1) && (frontLab.L >= 0)))
             {
-                double de2 = GetDeltaE(frontLab, backLab);
+                const double de2 = _GetDeltaE(frontLab, backLab);
                 if (de2 >= gExpThreshold)
                 {
                     frontLab._ToRGB();
@@ -260,21 +230,4 @@ COLORREF ColorFix::GetPerceivableColor(COLORREF fg, COLORREF bg)
         }
     }
     return frontLab.rgb;
-}
-
-// Method Description:
-// - Clamps the given value to be between 0-255 inclusive
-// - Converts the result to BYTE
-// Arguments:
-// - v: the value to clamp
-// Return Value:
-// - The clamped value
-BYTE ColorFix::_Clamp(double v)
-{
-    if (v <= 0)
-        return 0;
-    else if (v >= 255)
-        return 255;
-    else
-        return (BYTE)v;
 }
