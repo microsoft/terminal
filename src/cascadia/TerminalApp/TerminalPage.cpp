@@ -1771,7 +1771,7 @@ namespace winrt::TerminalApp::implementation
     {
         // Try to handle auto-elevation
         const bool requestedElevation = controlSettings.DefaultSettings().Elevate();
-        const bool currentlyElevated = _isElevated();
+        const bool currentlyElevated = IsElevated();
 
         // We aren't elevated, but we want to be.
         if (requestedElevation && !currentlyElevated)
