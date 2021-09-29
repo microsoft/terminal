@@ -496,7 +496,7 @@
     <comment>A description for what the "acrylic opacity" setting does. Presented near "Profile_AcrylicOpacity.Header".</comment>
   </data>
   <data name="Profile_Opacity.Header" xml:space="preserve">
-    <value>Background Opacity</value>
+    <value>Background opacity</value>
     <comment>Header for a control to determine the level of opacity for the background of the control. The user can choose to make the background of the app more or less opaque.</comment>
   </data>
   <data name="Profile_Opacity.HelpText" xml:space="preserve">
@@ -1227,7 +1227,7 @@
     <comment>Header for a control to how text is formatted</comment>
   </data>
   <data name="Appearance_IntenseTextStyle.Header" xml:space="preserve">
-    <value>Intense Text Style</value>
+    <value>Intense text style</value>
     <comment>Header for a control to select how "intense" text is formatted (bold, bright, both or none)</comment>
   </data>
   <data name="Appearance_IntenseTextStyleNone.Content" xml:space="preserve">
