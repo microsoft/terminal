@@ -21,6 +21,8 @@
 #include "SettingsTab.h"
 #include "..\TerminalSettingsModel\FileUtils.h"
 
+#include <shlobj.h>
+
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace winrt::Windows::UI::Xaml;
@@ -411,6 +413,11 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to export
     winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab)
     {
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Text Files (*.txt)", L"*.txt" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+
         try
         {
             if (const auto control{ tab.GetActiveTerminalControl() })
@@ -423,8 +430,26 @@ namespace winrt::TerminalApp::implementation
                 // savePicker.SuggestedFileName(control.Title());
 
                 // const StorageFile file = co_await savePicker.PickSaveFileAsync();
-                auto path = co_await SaveFilePicker(*_hostingHwnd, [](auto&& /*dialog*/) {});
 
+                // An arbitrary GUID to associate with all instances of this
+                // dialog, so they all re-open in the same path as they were
+                // open before:
+                static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
+
+                auto path = co_await SaveFilePicker(*_hostingHwnd, [](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                    try
+                    {
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+                });
                 // if (file != nullptr)
                 // {
                 //     const auto buffer = control.ReadEntireBuffer();
