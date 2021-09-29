@@ -274,10 +274,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _updateAntiAliasingMode(_renderEngine.get());
 
             // GH#5098: Inform the engine of the opacity of the default text background.
-            if (_settings.UseAcrylic())
-            {
-                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.Opacity()));
-            }
+            // GH#11315: Always do this, even if they don't have acrylic on.
+            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.Opacity()));
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
