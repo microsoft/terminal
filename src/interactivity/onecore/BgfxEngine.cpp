@@ -166,7 +166,7 @@ BgfxEngine::BgfxEngine(PVOID SharedViewBase, LONG DisplayHeight, LONG DisplayWid
     CATCH_RETURN();
 }
 
-[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLines const /*lines*/,
+[[nodiscard]] HRESULT BgfxEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                        COLORREF const /*color*/,
                                                        size_t const /*cchLine*/,
                                                        COORD const /*coordTarget*/) noexcept
