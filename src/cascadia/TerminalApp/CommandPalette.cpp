@@ -802,6 +802,10 @@ namespace winrt::TerminalApp::implementation
     void CommandPalette::_filterTextChanged(IInspectable const& /*sender*/,
                                             Windows::UI::Xaml::RoutedEventArgs const& /*args*/)
     {
+        if (Visibility() == Visibility::Collapsed)
+        {
+            return;
+        }
         if (_currentMode == CommandPaletteMode::CommandlineMode)
         {
             _evaluatePrefix();
