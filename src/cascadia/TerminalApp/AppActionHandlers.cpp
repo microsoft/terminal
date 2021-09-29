@@ -173,6 +173,15 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
+            if (const auto index = newTerminalArgs.ProfileIndex())
+            {
+                if (index >= _settings->ActiveProfiles().Size())
+                {
+                    args.Handled(false);
+                    return;
+                }
+            }
+
             _SplitPane(realArgs.SplitDirection(),
                        realArgs.SplitMode(),
                        // This is safe, we're already filtering so the value is (0, 1)
@@ -290,6 +299,15 @@ namespace winrt::TerminalApp::implementation
         }
         else if (const auto& realArgs = args.ActionArgs().try_as<NewTabArgs>())
         {
+            if (const auto index = newTerminalArgs.ProfileIndex())
+            {
+                if (index >= _settings->ActiveProfiles().Size())
+                {
+                    args.Handled(false);
+                    return;
+                }
+            }
+
             LOG_IF_FAILED(_OpenNewTab(realArgs.TerminalArgs()));
             args.Handled(true);
         }

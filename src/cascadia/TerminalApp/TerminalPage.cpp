@@ -1560,6 +1560,12 @@ namespace winrt::TerminalApp::implementation
             if (!profile)
             {
                 profile = _settings.GetProfileForArgs(newTerminalArgs);
+                // GH#11114: GetProfileForArgs can return null if the index is
+                // higher than the number of available profiles.
+                if (!profile)
+                {
+                    return;
+                }
                 controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
             }
 
