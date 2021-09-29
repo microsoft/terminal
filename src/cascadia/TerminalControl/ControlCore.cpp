@@ -35,6 +35,22 @@ constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
+    // Helper to check if we're on Windows 11 or not. This is used to check if
+    // we need to use acrylic to achieve transparency, because vintage opacity
+    // doesn't work in islands on win10.
+    // Remove when we can remove the rest of GH#11285
+    static bool _isVintageOpacityAvailable() noexcept
+    {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000; // TODO! switch me to 22000
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+    }
+
     // Helper static function to ensure that all ambiguous-width glyphs are reported as narrow.
     // See microsoft/terminal#2066 for more info.
     static bool _IsGlyphWideForceNarrowFallback(const std::wstring_view /* glyph */)
@@ -444,6 +460,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _settings.Opacity(newOpacity);
 
+        // GH#11285 - If the user is on Windows 10, and they changed the
+        // transparency of the control s.t. it should be partially opaque, then
+        // opt them in to acrylic. It's the only way to have transparency on
+        // Windows 10.
+        // We'll also turn the acrylic back off when they're fully opaque, which
+        // is what the Terminal did prior to 1.12.
+        if (!_isVintageOpacityAvailable())
+        {
+            if (newOpacity < 1.0)
+            {
+                _settings.UseAcrylic(true);
+            }
+            else
+            {
+                _settings.UseAcrylic(false);
+            }
+        }
+
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);
     }
@@ -571,6 +605,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         _settings = settings;
+
+        // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
+        // didn't explicitly request acrylic, then opt them in to acrylic.
+        // On Windows 11+, this isn't needed, because we can have vintage opacity.
+        if (!_isVintageOpacityAvailable() && _settings.Opacity() < 1.0 && !_settings.UseAcrylic())
+        {
+            _settings.UseAcrylic(true);
+        }
 
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
