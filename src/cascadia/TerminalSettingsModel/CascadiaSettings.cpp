@@ -553,9 +553,11 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
                    FindProfile(GlobalSettings().DefaultProfile()) :
                    ProfileDefaults();
     }
-
-    // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
-    return FindProfile(GlobalSettings().DefaultProfile());
+    else
+    {
+        // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
+        return FindProfile(GlobalSettings().DefaultProfile());
+    }
 }
 
 // Method Description:

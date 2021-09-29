@@ -21,6 +21,7 @@
 #include "til/replace.h"
 #include "til/string.h"
 #include "til/pmr.h"
+#include "til/enumset.h"
 
 // Use keywords on TraceLogging providers to specify the category
 // of event that we are emitting for filtering purposes.

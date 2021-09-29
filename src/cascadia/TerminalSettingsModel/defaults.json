@@ -20,6 +20,7 @@
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
     "tabSwitcherMode": "inOrder",
+    "showAdminShield": true,
 
     // Miscellaneous
     "confirmCloseAllTabs": true,

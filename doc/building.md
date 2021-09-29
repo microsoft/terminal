@@ -15,7 +15,7 @@ Import-Module .\tools\OpenConsole.psm1
 Set-MsBuildDevEnvironment
 Get-Format
 ```
-After, go to Tools > Options > Text Editor > C++ > Formatting and checking "Use custom clang-format.exe file" in Visual Studio and choose the clang-format.exe in the repository at /packages/clang-format.win-x86.10.0.0/tools/clang-format.exe by clicking "browse" right under the check box.
+After, go to Tools > Options > Text Editor > C++ > Formatting and check "Use custom clang-format.exe file" in Visual Studio and choose the clang-format.exe in the repository at /packages/clang-format.win-x86.10.0.0/tools/clang-format.exe by clicking "browse" right under the check box.
 
 ### Building in PowerShell
 
