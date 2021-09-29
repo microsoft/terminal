@@ -9,7 +9,7 @@ Abstract:
 - Implementation of perceptual color nudging, which allows the Terminal
   to slightly shift the foreground color to make it more perceivable on
   the current background (for cases where the foreground is very close
-  to being inperceivable on the background).
+  to being imperceivable on the background).
 
 Author(s):
 - Pankaj Bhojwani - Sep 2021
