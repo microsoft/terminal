@@ -19,6 +19,7 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "..\TerminalSettingsModel\FileUtils.h"
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -414,29 +415,36 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control{ tab.GetActiveTerminalControl() })
             {
-                const FileSavePicker savePicker;
-                savePicker.as<IInitializeWithWindow>()->Initialize(*_hostingHwnd);
-                savePicker.SuggestedStartLocation(PickerLocationId::Downloads);
-                const auto fileChoices = single_threaded_vector<hstring>({ L".txt" });
-                savePicker.FileTypeChoices().Insert(RS_(L"PlainText"), fileChoices);
-                savePicker.SuggestedFileName(control.Title());
+                // const FileSavePicker savePicker;
+                // savePicker.as<IInitializeWithWindow>()->Initialize(*_hostingHwnd);
+                // savePicker.SuggestedStartLocation(PickerLocationId::Downloads);
+                // const auto fileChoices = single_threaded_vector<hstring>({ L".txt" });
+                // savePicker.FileTypeChoices().Insert(RS_(L"PlainText"), fileChoices);
+                // savePicker.SuggestedFileName(control.Title());
 
-                const StorageFile file = co_await savePicker.PickSaveFileAsync();
-                if (file != nullptr)
+                // const StorageFile file = co_await savePicker.PickSaveFileAsync();
+                auto path = co_await SaveFilePicker(*_hostingHwnd, [](auto&& /*dialog*/) {});
+
+                // if (file != nullptr)
+                // {
+                //     const auto buffer = control.ReadEntireBuffer();
+                //     CachedFileManager::DeferUpdates(file);
+                //     co_await FileIO::WriteTextAsync(file, buffer);
+                //     const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
+                //     switch (status)
+                //     {
+                //     case FileUpdateStatus::Complete:
+                //     case FileUpdateStatus::CompleteAndRenamed:
+                //         _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"ExportSuccess"));
+                //         break;
+                //     default:
+                //         _ShowControlNoticeDialog(RS_(L"NoticeError"), RS_(L"ExportFailure"));
+                //     }
+                // }
+                if (!path.empty())
                 {
                     const auto buffer = control.ReadEntireBuffer();
-                    CachedFileManager::DeferUpdates(file);
-                    co_await FileIO::WriteTextAsync(file, buffer);
-                    const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
-                    switch (status)
-                    {
-                    case FileUpdateStatus::Complete:
-                    case FileUpdateStatus::CompleteAndRenamed:
-                        _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"ExportSuccess"));
-                        break;
-                    default:
-                        _ShowControlNoticeDialog(RS_(L"NoticeError"), RS_(L"ExportFailure"));
-                    }
+                    CascadiaSettings::ExportFile(path, buffer);
                 }
             }
         }
