@@ -21,6 +21,8 @@
 #
 # $ New-TerminalStackedChangelog origin/release-1.8..origin/release-1.9
 
+#Requires -Version 7.0
+
 [CmdletBinding()]
 Param(
     [string[]]$RevisionRanges
@@ -48,12 +50,6 @@ Function Get-PossibleUserName($email) {
         return $match.Groups["name"].Value
     }
     return $null
-}
-
-if ($host.version.major -lt 6)
-{
-   Write-Host "Go get Powershell Core to run this script!"
-   return
 }
 
 $Entries = @()
