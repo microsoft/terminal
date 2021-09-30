@@ -839,7 +839,7 @@ winrt::Windows::Foundation::IAsyncAction AppHost::_SaveWindowLayouts()
             LOG_CAUGHT_EXCEPTION();
             TraceLoggingWrite(g_hWindowsTerminalProvider,
                               "AppHost_SaveWindowLayouts_Failed",
-                              TraceLoggingDescription("An error occured when collecting or writing window state"),
+                              TraceLoggingDescription("An error occurred when collecting or writing window state"),
                               TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                               TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         }
