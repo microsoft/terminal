@@ -1917,8 +1917,7 @@ namespace winrt::TerminalApp::implementation
             WUX::Controls::UserControl controlToAdd{ newControl };
 
             const auto& cmdline{ controlSettings.DefaultSettings().Commandline() };
-            const bool doAdminWarning = _shouldPromptForCommandline(cmdline);
-            if (doAdminWarning)
+            if (_shouldPromptForCommandline(cmdline))
             {
                 auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(newControl, cmdline) };
                 warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
