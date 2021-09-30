@@ -42,8 +42,7 @@ Pane::Pane(const Profile& profile, const Controls::UserControl& control, const b
     _root.Children().Append(_border);
     _border.Child(_control);
 
-    const auto& termControl{ _control.try_as<TermControl>() };
-    if (termControl)
+    if (const auto& termControl{ _control.try_as<TermControl>() })
     {
         _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
@@ -726,8 +725,7 @@ winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt
     }
 
     const auto& oldControl = _control;
-    const auto& oldTermControl{ _control.try_as<TermControl>() };
-    if (oldTermControl)
+    if (const auto& oldTermControl{ _control.try_as<TermControl>() })
     {
         oldTermControl.ConnectionStateChanged(_connectionStateChangedToken);
         oldTermControl.WarningBell(_warningBellToken);
@@ -735,8 +733,7 @@ winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt
 
     _control = control;
     _border.Child(_control);
-    const auto& termControl{ _control.try_as<TermControl>() };
-    if (termControl)
+    if (const auto& termControl{ _control.try_as<TermControl>() })
     {
         _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
         _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
@@ -1493,8 +1490,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // handlers since it is just getting moved.
         if (!isDetaching)
         {
-            const auto& closedControl{ closedChild->_control.try_as<TermControl>() };
-            if (closedControl)
+            if (const auto& closedControl{ closedChild->_control.try_as<TermControl>() })
             {
                 closedControl.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
                 closedControl.WarningBell(closedChild->_warningBellToken);
@@ -1504,8 +1500,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
 
-        const auto& remainingControl{ remainingChild->_control.try_as<TermControl>() };
-        if (remainingControl)
+        if (const auto& remainingControl{ remainingChild->_control.try_as<TermControl>() })
         {
             remainingControl.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
             remainingControl.WarningBell(remainingChild->_warningBellToken);
@@ -1585,8 +1580,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         closedChild->Closed(closedChildClosedToken);
         if (!isDetaching)
         {
-            const auto& closedControl{ closedChild->_control.try_as<TermControl>() };
-            if (closedControl)
+            if (const auto& closedControl{ closedChild->_control.try_as<TermControl>() })
             {
                 closedControl.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
                 closedControl.WarningBell(closedChild->_warningBellToken);
@@ -2287,8 +2281,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
 
-    const auto& termControl{ _control.try_as<TermControl>() };
-    if (termControl)
+    if (const auto& termControl{ _control.try_as<TermControl>() })
     {
         // revoke our handler - the child will take care of the control now.
         termControl.ConnectionStateChanged(_connectionStateChangedToken);
