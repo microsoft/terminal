@@ -80,7 +80,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     assert(_IsLeaf());
 
     NewTerminalArgs args{};
-    auto controlSettings = _control.Settings().as<TerminalSettings>();
+    auto controlSettings = _control.Settings();//.as<TerminalSettings>();
 
     args.Profile(controlSettings.ProfileName());
     args.StartingDirectory(controlSettings.StartingDirectory());
