@@ -24,6 +24,8 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND
             dialog->SetDefaultFolder(pictureFolderShellItem.get());
         }
         CATCH_LOG(); // non-fatal
+
+#pragma warning(suppress : 26485) // so we can pass in the supportedImageFileTypes without the analyzer complaining
         THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedImageFileTypes), supportedImageFileTypes));
         THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
         THROW_IF_FAILED(dialog->SetDefaultExtension(L"jpg;jpeg;png;bmp;gif;tiff;ico"));
