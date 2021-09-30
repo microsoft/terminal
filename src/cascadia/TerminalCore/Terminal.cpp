@@ -849,7 +849,13 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 //      will release this lock when it's destructed.
 [[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
 {
+#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 // Method Description:
@@ -859,7 +865,13 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 //      will release this lock when it's destructed.
 [[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
 {
+#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept
