@@ -269,6 +269,9 @@ private:
     // But we can abuse the fact that the surrounding members rarely change and are huge
     // (std::function is like 64 bytes) to create some natural padding without wasting space.
     til::ticket_lock _readWriteLock;
+#ifndef NDEBUG
+    DWORD _lastLocker;
+#endif
 
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const til::color)> _pfnBackgroundColorChanged;
