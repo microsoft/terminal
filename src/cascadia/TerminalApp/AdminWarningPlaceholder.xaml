@@ -9,6 +9,8 @@
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             IsTabStop="True"
              mc:Ignorable="d">
 
     <!--
@@ -33,6 +35,7 @@
                     CornerRadius="{ThemeResource OverlayCornerRadius}">
                 <StackPanel Orientation="Vertical">
                     <TextBlock x:Uid="ApproveCommandlineWarningTitle"
+                               x:Name="ApproveCommandlineWarningTitle"
                                Padding="0,0,0,16"
                                HorizontalAlignment="Left"
                                FontSize="20"
@@ -40,6 +43,7 @@
                                TextWrapping="WrapWholeWords" />
 
                     <TextBlock x:Uid="ApproveCommandlineWarningPrefixTextBlock"
+                        x:Name="ApproveCommandlineWarningPrefixTextBlock"
                                HorizontalAlignment="Left"
                                TextWrapping="WrapWholeWords" />
 
@@ -57,11 +61,13 @@
                         <Button x:Name="PrimaryButton"
                                 x:Uid="ApproveCommandlineWarning_PrimaryButton"
                                 Margin="8"
+             IsTabStop="True"
                                 HorizontalAlignment="Right"
                                 Click="_primaryButtonClick"
                                 Style="{StaticResource AccentButtonStyle}" />
                         <Button x:Name="CancelButton"
                                 x:Uid="ApproveCommandlineWarning_CancelButton"
+             IsTabStop="True"
                                 HorizontalAlignment="Right"
                                 Click="_cancelButtonClick" />
                     </StackPanel>

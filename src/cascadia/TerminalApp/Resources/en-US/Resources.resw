@@ -564,6 +564,9 @@
     <value>Enter a wt commandline to run</value>
     <comment>{Locked="wt"} </comment>
   </data>
+  <data name="AdminWarningPlaceholderControlName" xml:space="preserve">
+    <value>Admin Warning Dialog</value>
+  </data>
   <data name="CrimsonColorButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Crimson</value>
   </data>

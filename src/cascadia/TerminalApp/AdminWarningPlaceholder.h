@@ -11,7 +11,7 @@ namespace winrt::TerminalApp::implementation
     struct AdminWarningPlaceholder : AdminWarningPlaceholderT<AdminWarningPlaceholder>
     {
         AdminWarningPlaceholder(const winrt::Microsoft::Terminal::Control::TermControl& control, const winrt::hstring& cmdline);
-
+        winrt::hstring ControlName() const;
         winrt::Windows::UI::Xaml::Controls::UserControl Control();
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Commandline, _PropertyChangedHandlers);
@@ -27,5 +27,7 @@ namespace winrt::TerminalApp::implementation
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _cancelButtonClick(winrt::Windows::Foundation::IInspectable const& sender,
                                 winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+
+        winrt::Windows::UI::Xaml::Controls::Grid::LayoutUpdated_revoker _layoutUpdatedRevoker;
     };
 }
