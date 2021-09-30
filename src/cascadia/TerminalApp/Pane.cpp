@@ -39,8 +39,8 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     _lastActive{ lastFocused },
     _profile{ profile }
 {
-    _root.Children().Append(_border);
-    _border.Child(_control);
+    _root.Children().Append(_borderFirst);
+    _borderFirst.Child(_control);
 
     _connectionStateChangedToken = _control.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
     _warningBellToken = _control.WarningBell({ this, &Pane::_ControlWarningBellHandler });
@@ -61,7 +61,52 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
     // Colors::Transparent! The border won't get Tapped events, and they'll fall
     // through to something else.
-    _border.Tapped([this](auto&, auto& e) {
+    _borderFirst.Tapped([this](auto&, auto& e) {
+        _FocusFirstChild();
+        e.Handled(true);
+    });
+    _borderSecond.Tapped([this](auto&, auto& e) {
+        _FocusFirstChild();
+        e.Handled(true);
+    });
+}
+
+Pane::Pane(std::shared_ptr<Pane> first,
+           std::shared_ptr<Pane> second,
+           const SplitState splitState,
+           const float splitPosition,
+           const bool lastFocused) :
+    _firstChild{ first },
+    _secondChild{ second },
+    _splitState{ splitState },
+    _desiredSplitPosition{ splitPosition },
+    _lastActive{ lastFocused }
+{
+    _CreateRowColDefinitions();
+    _borderFirst.Child(_firstChild->GetRootElement());
+    _borderSecond.Child(_secondChild->GetRootElement());
+
+    // Use the unfocused border color as the pane background, so an actual color
+    // appears behind panes as we animate them sliding in.
+    _root.Background(s_unfocusedBorderBrush);
+
+    _root.Children().Append(_borderFirst);
+    _root.Children().Append(_borderSecond);
+
+    _ApplySplitDefinitions();
+
+    // Register event handlers on our children to handle their Close events
+    _SetupChildCloseHandlers();
+
+    // When our border is tapped, make sure to transfer focus to our control.
+    // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
+    // Colors::Transparent! The border won't get Tapped events, and they'll fall
+    // through to something else.
+    _borderFirst.Tapped([this](auto&, auto& e) {
+        _FocusFirstChild();
+        e.Handled(true);
+    });
+    _borderSecond.Tapped([this](auto&, auto& e) {
         _FocusFirstChild();
         e.Handled(true);
     });
@@ -330,18 +375,18 @@ bool Pane::ResizePane(const ResizeDirection& direction)
         return false;
     }
 
-    // Check if either our first or second child is the currently focused leaf.
+    // Check if either our first or second child is the currently focused pane.
     // If it is, and the requested resize direction matches our separator, then
     // we're the pane that needs to adjust its separator.
     // If our separator is the wrong direction, then we can't handle it.
-    const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
-    const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
+    const bool firstIsFocused = _firstChild->_lastActive;
+    const bool secondIsFocused = _secondChild->_lastActive;
     if (firstIsFocused || secondIsFocused)
     {
         return _Resize(direction);
     }
 
-    // If neither of our children were the focused leaf, then recurse into
+    // If neither of our children were the focused pane, then recurse into
     // our children and see if they can handle the resize.
     // For each child, if it has a focused descendant, try having that child
     // handle the resize.
@@ -390,6 +435,36 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return nullptr;
     }
 
+    // Check if moving up or down the tree
+    if (direction == FocusDirection::Parent)
+    {
+        if (const auto parent = _FindParentOfPane(sourcePane))
+        {
+            // Keep a reference to which child we came from
+            parent->_parentChildPath = sourcePane->weak_from_this();
+
+            return parent;
+        }
+        return nullptr;
+    }
+
+    if (direction == FocusDirection::Child)
+    {
+        if (!sourcePane->_IsLeaf())
+        {
+            auto child = sourcePane->_firstChild;
+            // If we've recorded path try to go back down it
+            if (const auto prevFocus = sourcePane->_parentChildPath.lock())
+            {
+                child = prevFocus;
+            }
+            // clean up references
+            sourcePane->_parentChildPath.reset();
+            return child;
+        }
+        return nullptr;
+    }
+
     // Previous movement relies on the last used panes
     if (direction == FocusDirection::Previous)
     {
@@ -413,6 +488,7 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
         return PreviousPane(sourcePane);
     }
 
+    // Fixed movement
     if (direction == FocusDirection::First)
     {
         std::shared_ptr<Pane> firstPane = nullptr;
@@ -482,6 +558,11 @@ std::shared_ptr<Pane> Pane::NextPane(const std::shared_ptr<Pane> targetPane)
     bool foundTarget = false;
 
     auto foundNext = WalkTree([&](auto pane) {
+        // If we are a parent pane we don't want to move to one of our children
+        if (foundTarget && targetPane->_HasChild(pane))
+        {
+            return false;
+        }
         // In case the target pane is the last pane in the tree, keep a reference
         // to the first leaf so we can wrap around.
         if (firstLeaf == nullptr && pane->_IsLeaf())
@@ -612,6 +693,12 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         return false;
     }
 
+    // Similarly don't swap if we have a circular reference
+    if (first->_HasChild(second) || second->_HasChild(first))
+    {
+        return false;
+    }
+
     std::unique_lock lock{ _createCloseLock };
 
     // Recurse through the tree to find the parent panes of each pane that is
@@ -625,8 +712,10 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
     // after the pointers were found but before we reached this function.
     if (firstParent && secondParent)
     {
-        // Swap size/display information of the two panes.
-        std::swap(first->_borders, second->_borders);
+        // Before we swap anything get the borders for the parents so that
+        // it can be propagated to the swapped child.
+        firstParent->_borders = firstParent->_GetCommonBorders();
+        secondParent->_borders = secondParent->_GetCommonBorders();
 
         // Replace the old child with new one, and revoke appropriate event
         // handlers.
@@ -644,32 +733,30 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             }
             // Clear now to ensure that we can add the child's grid to us later
             parent->_root.Children().Clear();
+            parent->_borderFirst.Child(nullptr);
+            parent->_borderSecond.Child(nullptr);
         };
 
         // Make sure that the right event handlers are set, and the children
         // are placed in the appropriate locations in the grid.
         auto updateParent = [](auto& parent) {
+            // just always revoke the old helpers since we are making new ones.
+            parent->_firstChild->Closed(parent->_firstClosedToken);
+            parent->_secondChild->Closed(parent->_secondClosedToken);
             parent->_SetupChildCloseHandlers();
             parent->_root.Children().Clear();
-            parent->_root.Children().Append(parent->_firstChild->GetRootElement());
-            parent->_root.Children().Append(parent->_secondChild->GetRootElement());
-            // Make sure they have the correct borders, and also that they are
-            // placed in the right location in the grid.
-            // This mildly reproduces ApplySplitDefinitions, but is different in
-            // that it does not want to utilize the parent's border to set child
-            // borders.
-            if (parent->_splitState == SplitState::Vertical)
-            {
-                Controls::Grid::SetColumn(parent->_firstChild->GetRootElement(), 0);
-                Controls::Grid::SetColumn(parent->_secondChild->GetRootElement(), 1);
-            }
-            else if (parent->_splitState == SplitState::Horizontal)
-            {
-                Controls::Grid::SetRow(parent->_firstChild->GetRootElement(), 0);
-                Controls::Grid::SetRow(parent->_secondChild->GetRootElement(), 1);
-            }
-            parent->_firstChild->_UpdateBorders();
-            parent->_secondChild->_UpdateBorders();
+            parent->_borderFirst.Child(nullptr);
+            parent->_borderSecond.Child(nullptr);
+            parent->_borderFirst.Child(parent->_firstChild->GetRootElement());
+            parent->_borderSecond.Child(parent->_secondChild->GetRootElement());
+
+            parent->_root.Children().Append(parent->_borderFirst);
+            parent->_root.Children().Append(parent->_borderSecond);
+
+            // reset split definitions to clear any set row/column
+            parent->_root.ColumnDefinitions().Clear();
+            parent->_root.RowDefinitions().Clear();
+            parent->_CreateRowColDefinitions();
         };
 
         // If the firstParent and secondParent are the same, then we are just
@@ -681,6 +768,7 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             std::swap(firstParent->_firstChild, firstParent->_secondChild);
 
             updateParent(firstParent);
+            firstParent->_ApplySplitDefinitions();
         }
         else
         {
@@ -690,11 +778,45 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
             replaceChild(secondParent, second, first);
             updateParent(firstParent);
             updateParent(secondParent);
+
+            // If one of the two parents is a child of the other we only want
+            // to apply the split definitions to the greatest parent to make
+            // sure that all panes get the correct borders. if this is not done
+            // and the ordering happens to be bad one parent's children will lose
+            // a border.
+            if (firstParent->_HasChild(secondParent))
+            {
+                firstParent->_ApplySplitDefinitions();
+            }
+            else if (secondParent->_HasChild(firstParent))
+            {
+                secondParent->_ApplySplitDefinitions();
+            }
+            else
+            {
+                firstParent->_ApplySplitDefinitions();
+                secondParent->_ApplySplitDefinitions();
+            }
         }
 
-        // For now the first pane is always the focused pane, so re-focus to
-        // make sure the cursor is still in the terminal since the root was moved.
-        first->_FocusFirstChild();
+        // Refocus the last pane if there was a pane focused
+        first->WalkTree([](auto p) {
+            if (p->_lastActive)
+            {
+                p->_Focus();
+                return true;
+            }
+            return false;
+        });
+
+        second->WalkTree([](auto p) {
+            if (p->_lastActive)
+            {
+                p->_Focus();
+                return true;
+            }
+            return false;
+        });
 
         return true;
     }
@@ -796,13 +918,13 @@ std::pair<Pane::PanePoint, Pane::PanePoint> Pane::_GetOffsetsForPane(const PaneP
 
     if (_splitState == SplitState::Horizontal)
     {
-        secondOffset.y += (1 - _desiredSplitPosition) * parentOffset.scaleY;
+        secondOffset.y += _desiredSplitPosition * parentOffset.scaleY;
         firstOffset.scaleY *= _desiredSplitPosition;
         secondOffset.scaleY *= (1 - _desiredSplitPosition);
     }
     else
     {
-        secondOffset.x += (1 - _desiredSplitPosition) * parentOffset.scaleX;
+        secondOffset.x += _desiredSplitPosition * parentOffset.scaleX;
         firstOffset.scaleX *= _desiredSplitPosition;
         secondOffset.scaleX *= (1 - _desiredSplitPosition);
     }
@@ -1024,10 +1146,15 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
 // - <unused>
 // Return Value:
 // - <none>
-void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& /* sender */,
+void Pane::_ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                    RoutedEventArgs const& /* args */)
 {
-    _GotFocusHandlers(shared_from_this());
+    FocusState f = FocusState::Programmatic;
+    if (const auto o = sender.try_as<winrt::Windows::UI::Xaml::Controls::Control>())
+    {
+        f = o.FocusState();
+    }
+    _GotFocusHandlers(shared_from_this(), f);
 }
 
 // Event Description:
@@ -1085,8 +1212,8 @@ Controls::Grid Pane::GetRootElement()
 
 // Method Description:
 // - If this is the last focused pane, returns itself. Returns nullptr if this
-//   is a leaf and it's not focused. If it's a parent, it returns nullptr if no
-//   children of this pane were the last pane to be focused, or the Pane that
+//   is a leaf and it's not focused. If it's a parent, it returns nullptr if it nor
+//   any children of this pane were the last pane to be focused, or the Pane that
 //   _was_ the last pane to be focused (if there was one).
 // - This Pane's control might not currently be focused, if the tab itself is
 //   not currently focused.
@@ -1095,9 +1222,13 @@ Controls::Grid Pane::GetRootElement()
 //   `_lastActive`, else returns this
 std::shared_ptr<Pane> Pane::GetActivePane()
 {
+    if (_lastActive)
+    {
+        return shared_from_this();
+    }
     if (_IsLeaf())
     {
-        return _lastActive ? shared_from_this() : nullptr;
+        return nullptr;
     }
 
     auto firstFocused = _firstChild->GetActivePane();
@@ -1109,7 +1240,38 @@ std::shared_ptr<Pane> Pane::GetActivePane()
 }
 
 // Method Description:
-// - Gets the TermControl of this pane. If this Pane is not a leaf, this will return nullptr.
+// - Gets the TermControl of this pane. If this Pane is not a leaf but is
+//   focused, this will return the control of the last leaf pane that had focus.
+//   Otherwise, this will return the control of the first child of this pane.
+// Arguments:
+// - <none>
+// Return Value:
+// - nullptr if this Pane is an unfocused parent, otherwise the TermControl of this Pane.
+TermControl Pane::GetLastFocusedTerminalControl()
+{
+    if (!_IsLeaf())
+    {
+        if (_lastActive)
+        {
+            std::shared_ptr<Pane> pane = shared_from_this();
+            while (const auto p = pane->_parentChildPath.lock())
+            {
+                if (p->_IsLeaf())
+                {
+                    return p->_control;
+                }
+                pane = p;
+            }
+            // We didn't find our child somehow, they might have closed under us.
+        }
+        return _firstChild->GetLastFocusedTerminalControl();
+    }
+    return _control;
+}
+
+// Method Description:
+// - Gets the TermControl of this pane. If this Pane is not a leaf this will
+//   return the nullptr;
 // Arguments:
 // - <none>
 // Return Value:
@@ -1139,7 +1301,7 @@ void Pane::ClearActive()
 
 // Method Description:
 // - Sets the "Active" state on this Pane. Only one Pane in a tree of Panes
-//   should be "active", and that pane should be a leaf.
+//   should be "active".
 // - Updates our visuals to match our new state, including highlighting our borders.
 // Arguments:
 // - <none>
@@ -1201,7 +1363,7 @@ bool Pane::_HasFocusedChild() const noexcept
     // We're intentionally making this one giant expression, so the compiler
     // will skip the following lookups if one of the lookups before it returns
     // true
-    return (_control && _lastActive) ||
+    return (_lastActive) ||
            (_firstChild && _firstChild->_HasFocusedChild()) ||
            (_secondChild && _secondChild->_HasFocusedChild());
 }
@@ -1215,7 +1377,30 @@ bool Pane::_HasFocusedChild() const noexcept
 // - <none>
 void Pane::UpdateVisuals()
 {
-    _border.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+    // If we are the focused pane, but not a leaf we should add borders
+    if (!_IsLeaf())
+    {
+        _UpdateBorders();
+    }
+    _borderFirst.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+    _borderSecond.BorderBrush(_lastActive ? s_focusedBorderBrush : s_unfocusedBorderBrush);
+}
+
+// Method Description:
+// - Focus the current pane. Also trigger focus on the control, or if not a leaf
+//   the control belonging to the last focused leaf.
+//   This makes sure that focus exists within the tab (since panes aren't proper controls)
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void Pane::_Focus()
+{
+    _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
+    if (const auto& control = GetLastFocusedTerminalControl())
+    {
+        control.Focus(FocusState::Programmatic);
+    }
 }
 
 // Method Description:
@@ -1246,10 +1431,7 @@ void Pane::_FocusFirstChild()
         //
         // `wtd -w 0 mf down ; sp`
         // `wtd -w 0 fp -t 1 ; sp`
-
-        _GotFocusHandlers(shared_from_this());
-
-        _control.Focus(FocusState::Programmatic);
+        _Focus();
     }
     else
     {
@@ -1305,7 +1487,7 @@ std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitDirectio
         pane->WalkTree([](auto p) {
             if (p->_lastActive)
             {
-                p->_FocusFirstChild();
+                p->_Focus();
                 return true;
             }
             return false;
@@ -1345,8 +1527,10 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         // other child.
         _CloseChild(isFirstChild, true);
 
+        // Update the borders on this pane and any children to match if we have
+        // no parent.
         detached->_borders = Borders::None;
-        detached->_UpdateBorders();
+        detached->_ApplySplitDefinitions();
 
         // Trigger the detached event on each child
         detached->WalkTree([](auto pane) {
@@ -1397,15 +1581,23 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
     auto closedChildClosedToken = closeFirst ? _firstClosedToken : _secondClosedToken;
     auto remainingChildClosedToken = closeFirst ? _secondClosedToken : _firstClosedToken;
 
+    // If we were a parent pane, and we pointed into the now closed child
+    // clear it. We will set it to something else later if
+    bool usedToFocusClosedChildsTerminal = false;
+    if (const auto prev = _parentChildPath.lock())
+    {
+        if (closedChild == prev)
+        {
+            _parentChildPath.reset();
+            usedToFocusClosedChildsTerminal = true;
+        }
+    }
+
     // If the only child left is a leaf, that means we're a leaf now.
     if (remainingChild->_IsLeaf())
     {
-        // When the remaining child is a leaf, that means both our children were
-        // previously leaves, and the only difference in their borders is the
-        // border that we gave them. Take a bitwise AND of those two children to
-        // remove that border. Other borders the children might have, they
-        // inherited from us, so the flag will be set for both children.
-        _borders = _firstChild->_borders & _secondChild->_borders;
+        // Find what borders need to persist after we close the child
+        _borders = _GetCommonBorders();
 
         // take the control, profile and id of the pane that _wasn't_ closed.
         _control = remainingChild->_control;
@@ -1426,8 +1618,14 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // handlers since it is just getting moved.
         if (!isDetaching)
         {
-            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+            closedChild->WalkTree([](auto p) {
+                if (p->_IsLeaf())
+                {
+                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
+                    p->_control.WarningBell(p->_warningBellToken);
+                }
+                return false;
+            });
         }
 
         closedChild->Closed(closedChildClosedToken);
@@ -1435,24 +1633,25 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         remainingChild->_control.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
         remainingChild->_control.WarningBell(remainingChild->_warningBellToken);
 
-        // If either of our children was focused, we want to take that focus from
-        // them.
-        _lastActive = _firstChild->_lastActive || _secondChild->_lastActive;
+        // If we or either of our children was focused, we want to take that
+        // focus from them.
+        _lastActive = _lastActive || _firstChild->_lastActive || _secondChild->_lastActive;
 
         // Remove all the ui elements of the remaining child. This'll make sure
         // we can re-attach the TermControl to our Grid.
         remainingChild->_root.Children().Clear();
-        remainingChild->_border.Child(nullptr);
+        remainingChild->_borderFirst.Child(nullptr);
 
         // Reset our UI:
         _root.Children().Clear();
-        _border.Child(nullptr);
+        _borderFirst.Child(nullptr);
+        _borderSecond.Child(nullptr);
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
         // Reattach the TermControl to our grid.
-        _root.Children().Append(_border);
-        _border.Child(_control);
+        _root.Children().Append(_borderFirst);
+        _borderFirst.Child(_control);
 
         // Make sure to set our _splitState before focusing the control. If you
         // fail to do this, when the tab handles the GotFocus event and asks us
@@ -1466,7 +1665,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 
         // If we're inheriting the "last active" state from one of our children,
         // focus our control now. This should trigger our own GotFocus event.
-        if (_lastActive)
+        if (usedToFocusClosedChildsTerminal || _lastActive)
         {
             _control.Focus(FocusState::Programmatic);
 
@@ -1478,7 +1677,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
             // the control. Because Tab is relying on GotFocus to know who the
             // active pane in the tree is, without this call, _no one_ will be
             // the active pane any longer.
-            _GotFocusHandlers(shared_from_this());
+            _GotFocusHandlers(shared_from_this(), FocusState::Programmatic);
         }
 
         _UpdateBorders();
@@ -1509,13 +1708,20 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         closedChild->Closed(closedChildClosedToken);
         if (!isDetaching)
         {
-            closedChild->_control.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-            closedChild->_control.WarningBell(closedChild->_warningBellToken);
+            closedChild->WalkTree([](auto p) {
+                if (p->_IsLeaf())
+                {
+                    p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
+                    p->_control.WarningBell(p->_warningBellToken);
+                }
+                return false;
+            });
         }
 
         // Reset our UI:
         _root.Children().Clear();
-        _border.Child(nullptr);
+        _borderFirst.Child(nullptr);
+        _borderSecond.Child(nullptr);
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
@@ -1539,18 +1745,42 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // Remove the child's UI elements from the child's grid, so we can
         // attach them to us instead.
         remainingChild->_root.Children().Clear();
-        remainingChild->_border.Child(nullptr);
+        remainingChild->_borderFirst.Child(nullptr);
+        remainingChild->_borderSecond.Child(nullptr);
 
-        _root.Children().Append(_firstChild->GetRootElement());
-        _root.Children().Append(_secondChild->GetRootElement());
+        _borderFirst.Child(_firstChild->GetRootElement());
+        _borderSecond.Child(_secondChild->GetRootElement());
+
+        _root.Children().Append(_borderFirst);
+        _root.Children().Append(_borderSecond);
 
         // Propagate the new borders down to the children.
         _borders = remainingBorders;
         _ApplySplitDefinitions();
 
-        // If the closed child was focused, transfer the focus to it's first sibling.
-        if (closedChild->_lastActive)
+        // If our child had focus and closed, just transfer to the first remaining
+        // child
+        if (closedChild->_HasFocusedChild())
         {
+            _FocusFirstChild();
+        }
+        // We might not have focus currently, but if our parent does then we
+        // want to make sure we have a valid path to one of our children.
+        // We should only update the path if our other child doesn't have focus itself.
+        else if (usedToFocusClosedChildsTerminal && !_secondChild->_HasFocusedChild())
+        {
+            // update our path to our first remaining leaf
+            _parentChildPath = _firstChild;
+            _firstChild->WalkTree([](auto p) {
+                if (p->_IsLeaf())
+                {
+                    return true;
+                }
+                p->_parentChildPath = p->_firstChild;
+                return false;
+            });
+            // This will focus the first terminal, and will set that leaf pane
+            // to the active pane if we nor one of our parents is not itself focused.
             _FocusFirstChild();
         }
 
@@ -1602,16 +1832,18 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         };
 
         // Remove both children from the grid
-        _root.Children().Clear();
-        // Add the remaining child back to the grid, in the right place.
-        _root.Children().Append(remainingChild->GetRootElement());
+        _borderFirst.Child(nullptr);
+        _borderSecond.Child(nullptr);
+
         if (_splitState == SplitState::Vertical)
         {
-            Controls::Grid::SetColumn(remainingChild->GetRootElement(), closeFirst ? 1 : 0);
+            Controls::Grid::SetColumn(_borderFirst, 0);
+            Controls::Grid::SetColumn(_borderSecond, 1);
         }
         else if (_splitState == SplitState::Horizontal)
         {
-            Controls::Grid::SetRow(remainingChild->GetRootElement(), closeFirst ? 1 : 0);
+            Controls::Grid::SetRow(_borderFirst, 0);
+            Controls::Grid::SetRow(_borderSecond, 1);
         }
 
         // Create the dummy grid. This grid will be the one we actually animate,
@@ -1623,17 +1855,9 @@ winrt::fire_and_forget Pane::_CloseChildRoutine(const bool closeFirst)
         // It should be the size of the closed pane.
         dummyGrid.Width(removedOriginalSize.Width);
         dummyGrid.Height(removedOriginalSize.Height);
-        // Put it where the removed child is
-        if (_splitState == SplitState::Vertical)
-        {
-            Controls::Grid::SetColumn(dummyGrid, closeFirst ? 0 : 1);
-        }
-        else if (_splitState == SplitState::Horizontal)
-        {
-            Controls::Grid::SetRow(dummyGrid, closeFirst ? 0 : 1);
-        }
-        // Add it to the tree
-        _root.Children().Append(dummyGrid);
+
+        _borderFirst.Child(closeFirst ? dummyGrid : remainingChild->GetRootElement());
+        _borderSecond.Child(closeFirst ? remainingChild->GetRootElement() : dummyGrid);
 
         // Set up the rows/cols as auto/auto, so they'll only use the size of
         // the elements in the grid.
@@ -1772,9 +1996,9 @@ void Pane::_UpdateBorders()
     double top = 0, bottom = 0, left = 0, right = 0;
 
     Thickness newBorders{ 0 };
-    if (_zoomed)
+    // Zoomed panes, and focused parents should have full borders
+    if (_zoomed || (!_IsLeaf() && _lastActive))
     {
-        // When the pane is zoomed, manually show all the borders around the window.
         top = bottom = right = left = PaneBorderSize;
     }
     else
@@ -1796,11 +2020,31 @@ void Pane::_UpdateBorders()
             right = PaneBorderSize;
         }
     }
-    _border.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
+
+    if (_IsLeaf())
+    {
+        _borderFirst.BorderThickness(ThicknessHelper::FromLengths(left, top, right, bottom));
+    }
+    else
+    {
+        // If we are not a leaf we don't want to duplicate the shared border
+        // between our children.
+        if (_splitState == SplitState::Vertical)
+        {
+            _borderFirst.BorderThickness(ThicknessHelper::FromLengths(left, top, 0, bottom));
+            _borderSecond.BorderThickness(ThicknessHelper::FromLengths(0, top, right, bottom));
+        }
+        else
+        {
+            _borderFirst.BorderThickness(ThicknessHelper::FromLengths(left, top, right, 0));
+            _borderSecond.BorderThickness(ThicknessHelper::FromLengths(left, 0, right, bottom));
+        }
+    }
 }
 
 // Method Description:
 // - Find the borders for the leaf pane, or the shared borders for child panes.
+// - This deliberately ignores if a focused parent has borders.
 // Arguments:
 // - <none>
 // Return Value:
@@ -1827,8 +2071,8 @@ void Pane::_ApplySplitDefinitions()
 {
     if (_splitState == SplitState::Vertical)
     {
-        Controls::Grid::SetColumn(_firstChild->GetRootElement(), 0);
-        Controls::Grid::SetColumn(_secondChild->GetRootElement(), 1);
+        Controls::Grid::SetColumn(_borderFirst, 0);
+        Controls::Grid::SetColumn(_borderSecond, 1);
 
         _firstChild->_borders = _borders | Borders::Right;
         _secondChild->_borders = _borders | Borders::Left;
@@ -1839,8 +2083,8 @@ void Pane::_ApplySplitDefinitions()
     }
     else if (_splitState == SplitState::Horizontal)
     {
-        Controls::Grid::SetRow(_firstChild->GetRootElement(), 0);
-        Controls::Grid::SetRow(_secondChild->GetRootElement(), 1);
+        Controls::Grid::SetRow(_borderFirst, 0);
+        Controls::Grid::SetRow(_borderSecond, 1);
 
         _firstChild->_borders = _borders | Borders::Bottom;
         _secondChild->_borders = _borders | Borders::Top;
@@ -1894,6 +2138,7 @@ void Pane::_SetupEntranceAnimation()
     auto setupAnimation = [&](const auto& size, const bool isFirstChild) {
         auto child = isFirstChild ? _firstChild : _secondChild;
         auto childGrid = child->_root;
+        // If we are splitting a parent pane this may be null
         auto control = child->_control;
         // Build up our animation:
         // * it'll take as long as our duration (200ms)
@@ -1949,16 +2194,22 @@ void Pane::_SetupEntranceAnimation()
             // the parent pane, otherwise use the bottom/right. This is always
             // the "outside" of the parent pane.
             childGrid.HorizontalAlignment(isFirstChild ? HorizontalAlignment::Left : HorizontalAlignment::Right);
-            control.HorizontalAlignment(HorizontalAlignment::Left);
-            control.Width(isFirstChild ? totalSize : size);
+            if (control)
+            {
+                control.HorizontalAlignment(HorizontalAlignment::Left);
+                control.Width(isFirstChild ? totalSize : size);
+            }
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
             animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-                control.Width(NAN);
                 childGrid.Width(NAN);
                 childGrid.HorizontalAlignment(HorizontalAlignment::Stretch);
-                control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                if (control)
+                {
+                    control.Width(NAN);
+                    control.HorizontalAlignment(HorizontalAlignment::Stretch);
+                }
                 root.Background(nullptr);
             });
         }
@@ -1968,16 +2219,22 @@ void Pane::_SetupEntranceAnimation()
             // the parent pane, otherwise use the bottom/right. This is always
             // the "outside" of the parent pane.
             childGrid.VerticalAlignment(isFirstChild ? VerticalAlignment::Top : VerticalAlignment::Bottom);
-            control.VerticalAlignment(VerticalAlignment::Top);
-            control.Height(isFirstChild ? totalSize : size);
+            if (control)
+            {
+                control.VerticalAlignment(VerticalAlignment::Top);
+                control.Height(isFirstChild ? totalSize : size);
+            }
 
             // When the animation is completed, undo the trickiness from before, to
             // restore the controls to the behavior they'd usually have.
             animation.Completed([childGrid, control, root = _secondChild->_root](auto&&, auto&&) {
-                control.Height(NAN);
                 childGrid.Height(NAN);
                 childGrid.VerticalAlignment(VerticalAlignment::Stretch);
-                control.VerticalAlignment(VerticalAlignment::Stretch);
+                if (control)
+                {
+                    control.Height(NAN);
+                    control.VerticalAlignment(VerticalAlignment::Stretch);
+                }
                 root.Background(nullptr);
             });
         }
@@ -2025,40 +2282,37 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
                                                const float splitSize,
                                                const winrt::Windows::Foundation::Size availableSpace) const
 {
-    if (_IsLeaf())
+    if (target.get() == this)
     {
-        if (target.get() == this)
+        const auto firstPercent = 1.0f - splitSize;
+        const auto secondPercent = splitSize;
+        // If this pane is a leaf, and it's the pane we're looking for, use
+        // the available space to calculate which direction to split in.
+        const Size minSize = _GetMinSize();
+
+        if (splitType == SplitDirection::Left || splitType == SplitDirection::Right)
         {
-            const auto firstPrecent = 1.0f - splitSize;
-            const auto secondPercent = splitSize;
-            // If this pane is a leaf, and it's the pane we're looking for, use
-            // the available space to calculate which direction to split in.
-            const Size minSize = _GetMinSize();
+            const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
+            const auto newFirstWidth = widthMinusSeparator * firstPercent;
+            const auto newSecondWidth = widthMinusSeparator * secondPercent;
 
-            if (splitType == SplitDirection::Left || splitType == SplitDirection::Right)
-            {
-                const auto widthMinusSeparator = availableSpace.Width - CombinedPaneBorderSize;
-                const auto newFirstWidth = widthMinusSeparator * firstPrecent;
-                const auto newSecondWidth = widthMinusSeparator * secondPercent;
-
-                return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
-            }
-
-            else if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
-            {
-                const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
-                const auto newFirstHeight = heightMinusSeparator * firstPrecent;
-                const auto newSecondHeight = heightMinusSeparator * secondPercent;
-
-                return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
-            }
+            return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
         }
-        else
+
+        else if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
         {
-            // If this pane is _any other leaf_, then just return nullopt, to
-            // indicate that the `target` Pane is not down this branch.
-            return std::nullopt;
+            const auto heightMinusSeparator = availableSpace.Height - CombinedPaneBorderSize;
+            const auto newFirstHeight = heightMinusSeparator * firstPercent;
+            const auto newSecondHeight = heightMinusSeparator * secondPercent;
+
+            return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
         }
+    }
+    else if (_IsLeaf())
+    {
+        // If this pane is _any other leaf_, then just return nullopt, to
+        // indicate that the `target` Pane is not down this branch.
+        return std::nullopt;
     }
     else
     {
@@ -2103,13 +2357,13 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirecti
                                                                     const Profile& profile,
                                                                     const TermControl& control)
 {
-    if (!_IsLeaf())
+    if (!_lastActive)
     {
-        if (_firstChild->_HasFocusedChild())
+        if (_firstChild && _firstChild->_HasFocusedChild())
         {
             return _firstChild->Split(splitType, splitSize, profile, control);
         }
-        else if (_secondChild->_HasFocusedChild())
+        else if (_secondChild && _secondChild->_HasFocusedChild())
         {
             return _secondChild->Split(splitType, splitSize, profile, control);
         }
@@ -2135,11 +2389,11 @@ bool Pane::ToggleSplitOrientation()
         return false;
     }
 
-    // Check if either our first or second child is the currently focused leaf.
-    // If they are then switch the split orientation on the current pane.
+    // If a parent pane is focused, or if one of its children are a leaf and is
+    // focused then switch the split orientation on the current pane.
     const bool firstIsFocused = _firstChild->_IsLeaf() && _firstChild->_lastActive;
     const bool secondIsFocused = _secondChild->_IsLeaf() && _secondChild->_lastActive;
-    if (firstIsFocused || secondIsFocused)
+    if (_lastActive || firstIsFocused || secondIsFocused)
     {
         // Switch the split orientation
         _splitState = _splitState == SplitState::Horizontal ? SplitState::Vertical : SplitState::Horizontal;
@@ -2207,46 +2461,66 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     // modify our tree
     std::unique_lock lock{ _createCloseLock };
 
-    // revoke our handler - the child will take care of the control now.
-    _control.ConnectionStateChanged(_connectionStateChangedToken);
-    _connectionStateChangedToken.value = 0;
-    _control.WarningBell(_warningBellToken);
-    _warningBellToken.value = 0;
+    if (_IsLeaf())
+    {
+        // revoke our handler - the child will take care of the control now.
+        _control.ConnectionStateChanged(_connectionStateChangedToken);
+        _connectionStateChangedToken.value = 0;
+        _control.WarningBell(_warningBellToken);
+        _warningBellToken.value = 0;
 
-    // Remove our old GotFocus handler from the control. We don't what the
-    // control telling us that it's now focused, we want it telling its new
-    // parent.
-    _gotFocusRevoker.revoke();
-    _lostFocusRevoker.revoke();
-
-    _splitState = actualSplitType;
-    _desiredSplitPosition = 1.0f - splitSize;
+        // Remove our old GotFocus handler from the control. We don't want the
+        // control telling us that it's now focused, we want it telling its new
+        // parent.
+        _gotFocusRevoker.revoke();
+        _lostFocusRevoker.revoke();
+    }
 
     // Remove any children we currently have. We can't add the existing
     // TermControl to a new grid until we do this.
     _root.Children().Clear();
-    _border.Child(nullptr);
+    _borderFirst.Child(nullptr);
+    _borderSecond.Child(nullptr);
 
-    // Create two new Panes
-    //   Move our control, guid into the first one.
-    //   Move the new guid, control into the second.
-    _firstChild = std::make_shared<Pane>(_profile, _control);
-    _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
+    // Create a new pane from ourself
+    if (!_IsLeaf())
+    {
+        // Since we are a parent we don't have borders normally,
+        // so set them temporarily for when we update our split definition.
+        _borders = _GetCommonBorders();
+        _firstChild->Closed(_firstClosedToken);
+        _secondChild->Closed(_secondClosedToken);
+        // If we are not a leaf we should create a new pane that contains our children
+        auto first = std::make_shared<Pane>(_firstChild, _secondChild, _splitState, _desiredSplitPosition);
+        _firstChild = first;
+    }
+    else
+    {
+        //   Move our control, guid into the first one.
+        _firstChild = std::make_shared<Pane>(_profile, _control);
+        _firstChild->_connectionState = std::exchange(_connectionState, ConnectionState::NotConnected);
+        _profile = nullptr;
+        _control = { nullptr };
+    }
+
+    _splitState = actualSplitType;
+    _desiredSplitPosition = 1.0f - splitSize;
     _secondChild = newPane;
-
     // If we want the new pane to be the first child, swap the children
     if (splitType == SplitDirection::Up || splitType == SplitDirection::Left)
     {
         std::swap(_firstChild, _secondChild);
     }
 
-    _profile = nullptr;
-    _control = { nullptr };
-
+    _root.ColumnDefinitions().Clear();
+    _root.RowDefinitions().Clear();
     _CreateRowColDefinitions();
 
-    _root.Children().Append(_firstChild->GetRootElement());
-    _root.Children().Append(_secondChild->GetRootElement());
+    _borderFirst.Child(_firstChild->GetRootElement());
+    _borderSecond.Child(_secondChild->GetRootElement());
+
+    _root.Children().Append(_borderFirst);
+    _root.Children().Append(_borderSecond);
 
     _ApplySplitDefinitions();
 
@@ -2281,12 +2555,9 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
 // - <none>
 void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
 {
-    if (_IsLeaf())
-    {
-        _zoomed = (zoomedPane == shared_from_this());
-        _UpdateBorders();
-    }
-    else
+    _zoomed = (zoomedPane == shared_from_this());
+    _UpdateBorders();
+    if (!_IsLeaf())
     {
         if (zoomedPane == _firstChild || zoomedPane == _secondChild)
         {
@@ -2294,6 +2565,8 @@ void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
             // tree. Easy way: just remove both children. We'll re-attach both
             // when we un-zoom.
             _root.Children().Clear();
+            _borderFirst.Child(nullptr);
+            _borderSecond.Child(nullptr);
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
@@ -2316,20 +2589,21 @@ void Pane::Maximize(std::shared_ptr<Pane> zoomedPane)
 // - <none>
 void Pane::Restore(std::shared_ptr<Pane> zoomedPane)
 {
-    if (_IsLeaf())
-    {
-        _zoomed = false;
-        _UpdateBorders();
-    }
-    else
+    _zoomed = false;
+    _UpdateBorders();
+    if (!_IsLeaf())
     {
         if (zoomedPane == _firstChild || zoomedPane == _secondChild)
         {
             // When we're un-zooming the pane, we'll need to re-add it to our UI
             // tree where it originally belonged. easy way: just re-add both.
             _root.Children().Clear();
-            _root.Children().Append(_firstChild->GetRootElement());
-            _root.Children().Append(_secondChild->GetRootElement());
+
+            _borderFirst.Child(_firstChild->GetRootElement());
+            _borderSecond.Child(_secondChild->GetRootElement());
+
+            _root.Children().Append(_borderFirst);
+            _root.Children().Append(_borderSecond);
         }
 
         // Always recurse into both children. If the (un)zoomed pane was one of
@@ -2366,6 +2640,8 @@ void Pane::Id(uint32_t id) noexcept
 // - The ID of the pane we want to focus
 bool Pane::FocusPane(const uint32_t id)
 {
+    // Always clear the parent child path if we are focusing a leaf
+    _parentChildPath.reset();
     if (_IsLeaf() && id == _id)
     {
         // Make sure to use _FocusFirstChild here - that'll properly update the
@@ -2385,23 +2661,23 @@ bool Pane::FocusPane(const uint32_t id)
 }
 // Method Description:
 // - Focuses the given pane if it is in the tree.
-//   This deliberately mirrors FocusPane(id) instead of just calling
-//   _FocusFirstChild directly.
+// - This is different than FocusPane(id) in that it allows focusing
+//   panes that are not leaves.
 // Arguments:
 // - the pane to focus
 // Return Value:
 // - true if focus was set
 bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 {
-    if (_IsLeaf() && this == pane.get())
+    if (this == pane.get())
     {
-        // Make sure to use _FocusFirstChild here - that'll properly update the
-        // focus if we're in startup.
-        _FocusFirstChild();
+        _Focus();
         return true;
     }
     else
     {
+        // clear the parent child path if we are not the pane being focused.
+        _parentChildPath.reset();
         if (_firstChild && _secondChild)
         {
             return _firstChild->FocusPane(pane) ||
@@ -2409,6 +2685,27 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
         }
     }
     return false;
+}
+
+// Method Description:
+// - Check if this pane contains the the argument as a child anywhere along the tree.
+// Arguments:
+// - child: the child to search for.
+// Return Value:
+// - true if the child was found.
+bool Pane::_HasChild(const std::shared_ptr<Pane> child)
+{
+    if (_IsLeaf())
+    {
+        return false;
+    }
+
+    if (_firstChild == child || _secondChild == child)
+    {
+        return true;
+    }
+
+    return _firstChild->_HasChild(child) || _secondChild->_HasChild(child);
 }
 
 // Method Description:
@@ -2906,20 +3203,17 @@ int Pane::GetLeafPaneCount() const noexcept
 std::optional<SplitDirection> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
                                                           const winrt::Windows::Foundation::Size availableSpace) const
 {
-    if (_IsLeaf())
+    if (target.get() == this)
     {
-        if (target.get() == this)
-        {
-            //If this pane is a leaf, and it's the pane we're looking for, use
-            //the available space to calculate which direction to split in.
-            return availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
-        }
-        else
-        {
-            // If this pane is _any other leaf_, then just return nullopt, to
-            // indicate that the `target` Pane is not down this branch.
-            return std::nullopt;
-        }
+        // If this pane is the pane we are looking for, use the available space
+        // to calculate which direction to split in.
+        return availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
+    }
+    else if (_IsLeaf())
+    {
+        // If this pane is _any other leaf_, then just return nullopt, to
+        // indicate that the `target` Pane is not down this branch.
+        return std::nullopt;
     }
     else
     {
@@ -2971,7 +3265,7 @@ void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& s
     }
 }
 
-DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, Pane::gotFocusArgs);
 DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
 DEFINE_EVENT(Pane, Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);

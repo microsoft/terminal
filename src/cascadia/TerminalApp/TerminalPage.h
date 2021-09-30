@@ -262,6 +262,26 @@ namespace winrt::TerminalApp::implementation
         bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _MovePane(const uint32_t tabIdx);
 
+        template<typename F>
+        bool _ApplyToActiveControls(F f)
+        {
+            if (const auto tab{ _GetFocusedTabImpl() })
+            {
+                if (const auto activePane = tab->GetActivePane())
+                {
+                    activePane->WalkTree([&](auto p) {
+                        if (const auto& control{ p->GetTerminalControl() })
+                        {
+                            f(control);
+                        }
+                    });
+
+                    return true;
+                }
+            }
+            return false;
+        }
+
         winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
         TerminalApp::TabBase _GetFocusedTab() const noexcept;
@@ -365,7 +385,7 @@ namespace winrt::TerminalApp::implementation
         void _EndPreviewColorScheme();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
         winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
-        winrt::Microsoft::Terminal::Settings::Model::TerminalSettings _originalSettings{ nullptr };
+        std::vector<std::function<void()>> _restorePreviewFuncs{};
 
         HRESULT _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);

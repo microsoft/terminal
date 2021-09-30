@@ -139,6 +139,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _receivedKeyDown{ false };
         bool _iconHidden{ false };
+        bool _changingActivePane{ false };
 
         winrt::hstring _runtimeTabText{};
         bool _inRename{ false };
