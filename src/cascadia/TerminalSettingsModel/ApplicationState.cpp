@@ -13,7 +13,6 @@
 
 static constexpr std::wstring_view stateFileName{ L"state.json" };
 static constexpr std::wstring_view elevatedStateFileName{ L"elevated-state.json" };
-// static constexpr std::wstring_view unelevatedStateFileName{ L"user-state.json" };
 
 static constexpr std::string_view TabLayoutKey{ "tabLayout" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
@@ -91,7 +90,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ApplicationState::ApplicationState(const std::filesystem::path& stateRoot) noexcept :
         _sharedPath{ stateRoot / stateFileName },
-        // _userPath{ stateRoot / unelevatedStateFileName },
         _elevatedPath{ stateRoot / elevatedStateFileName },
         _throttler{ std::chrono::seconds(1), [this]() { _write(); } }
     {
@@ -116,8 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         static const auto sharedPath{ _sharedPath.filename() };
         static const auto elevatedPath{ _elevatedPath.filename() };
-        // static const auto userPath{ _userPath.filename() };
-        return filename == sharedPath || filename == elevatedPath /* || filename == userPath*/;
+        return filename == sharedPath || filename == elevatedPath;
     }
 
     // Deserializes the state.json and user-state (or elevated-state if
@@ -130,7 +127,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         std::string errs;
         std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
 
-        // First get shared state out of `state.json` into us
+        // First get shared state out of `state.json`.
         const auto sharedData = _readSharedContents().value_or(std::string{});
         if (!sharedData.empty())
         {
@@ -140,11 +137,16 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
             }
 
+            // - If we're elevated, we want to only load the Shared properties
+            //   from state.json. We'll then load the Local props from
+            //   `elevated-state.json`
+            // - If we're unelevated, then load _everything_ from state.json.
             if (::Microsoft::Console::Utils::IsElevated())
             {
                 // Only load shared properties if we're elevated
                 FromJson(root, FileSource::Shared);
-                // Then, try and get anything in user-state/elevated-state
+
+                // Then, try and get anything in elevated-state
                 if (const auto localData{ _readLocalContents().value_or(std::string{}) }; !localData.empty())
                 {
                     Json::Value root;
@@ -172,11 +174,30 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     try
     {
         Json::StreamWriterBuilder wbuilder;
+
+        // When we're elevated, we've got to be tricky. We don't want to write
+        // our window state, allowed commandlines, and other Local properties
+        // into the shared `state.json`. But, if we only serialize the Shared
+        // properties to a json blob, then we'll omit windowState entirely,
+        // _removing_ the window state of the unelevated instance. Oh no!
+        //
+        // So, to be tricky, we'll first _load_ the shared state to a json blob.
+        // We'll then serialize our view of the shared properties on top of that
+        // blob. Then we'll write that blob back to the file. This will
+        // round-trip the Local properties for the unelevated instances
+        // untouched in state.json
+        //
+        // After that's done, we'll write our Local properties into
+        // elevated-state.json.
         if (::Microsoft::Console::Utils::IsElevated())
         {
             std::string errs;
             std::unique_ptr<Json::CharReader> reader{ Json::CharReaderBuilder::CharReaderBuilder().newCharReader() };
             Json::Value root;
+
+            // First load the contents of state.json into a json blob. This will
+            // contain the Shared properties and teh unelevated instance's Local
+            // properties.
             const auto sharedData = _readSharedContents().value_or(std::string{});
             if (!sharedData.empty())
             {
@@ -185,15 +206,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                     throw winrt::hresult_error(WEB_E_INVALID_JSON_STRING, winrt::to_hstring(errs));
                 }
             }
+            // Layer our shared properties on top of the blob from state.json,
+            // and write it back out.
             _writeSharedContents(Json::writeString(wbuilder, _toJsonWithBlob(root, FileSource::Shared)));
+
+            // Finally, write our Local properties back to elevated-state.json
             _writeLocalContents(Json::writeString(wbuilder, ToJson(FileSource::Local)));
         }
         else
         {
+            // We're unelevated, this is easy. Just write everything back out.
             _writeLocalContents(Json::writeString(wbuilder, ToJson(FileSource::Local | FileSource::Shared)));
         }
-        // _writeSharedContents(Json::writeString(wbuilder, ToJson(FileSource::Shared)));
-        // _writeLocalContents(Json::writeString(wbuilder, ToJson(FileSource::Local)));
     }
     CATCH_LOG()
 
@@ -218,8 +242,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // * return std::optional<T> by value
         // At the time of writing the former version skips missing fields in the json,
         // but we want to explicitly clear state fields that were removed from state.json.
+        //
+        // GH#11222: We only load properties that are of the same type (Local or
+        // Shared) which we requested. If we didn't want to load this type of
+        // property, just skip it.
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
-    if (WI_IsFlagSet(parseSource, source))                                   \
+    if (WI_IsFlagSet(parseSource, source))                       \
         state->name = JsonUtils::GetValueForKey<std::optional<type>>(root, key);
 
         MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
@@ -236,6 +264,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         {
             auto state = _state.lock_shared();
+
+            // GH#11222: We only write properties that are of the same type (Local
+            // or Shared) which we requested. If we didn't want to serialize this
+            // type of property, just skip it.
 #define MTSM_APPLICATION_STATE_GEN(source, type, name, key, ...) \
     if (WI_IsFlagSet(parseSource, source))                       \
         JsonUtils::SetValueForKey(root, key, state->name);
