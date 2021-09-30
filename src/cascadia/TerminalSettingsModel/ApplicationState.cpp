@@ -102,9 +102,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // The destructor ensures that the last write is flushed to disk before returning.
     ApplicationState::~ApplicationState()
     {
+        TraceLoggingWrite(g_hSettingsModelProvider,
+                          "ApplicationState_Dtor_Start",
+                          TraceLoggingDescription("Event at the start of the ApplicationState destructor"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
         // This will ensure that we not just cancel the last outstanding timer,
         // but instead force it to run as soon as possible and wait for it to complete.
         _throttler.flush();
+
+        TraceLoggingWrite(g_hSettingsModelProvider,
+                          "ApplicationState_Dtor_End",
+                          TraceLoggingDescription("Event at the end of the ApplicationState destructor"),
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     }
 
     // Re-read the state.json from disk.
