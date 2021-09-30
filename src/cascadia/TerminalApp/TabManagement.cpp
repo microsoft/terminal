@@ -333,7 +333,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(tab);
-            _SplitPane(tab, _MakePane(nullptr, true), SplitDirection::Automatic);
+            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, true));
         }
         CATCH_LOG();
     }

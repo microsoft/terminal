@@ -867,9 +867,9 @@ namespace winrt::TerminalApp::implementation
             const auto newPane = _MakePane(newTerminalArgs);
             if (altPressed && !debugTap)
             {
-                this->_SplitPane(newPane,
-                                 SplitDirection::Automatic,
-                                 0.5f);
+                this->_SplitPane(SplitDirection::Automatic,
+                                 0.5f,
+                                 newPane);
             }
             else
             {
@@ -1492,9 +1492,9 @@ namespace winrt::TerminalApp::implementation
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
-    void TerminalPage::_SplitPane(std::shared_ptr<Pane> newPane,
-                                  const SplitDirection splitDirection,
-                                  const float splitSize)
+    void TerminalPage::_SplitPane(const SplitDirection splitDirection,
+                                  const float splitSize,
+                                  std::shared_ptr<Pane> newPane)
     {
         const auto focusedTab{ _GetFocusedTabImpl() };
 
@@ -1504,7 +1504,7 @@ namespace winrt::TerminalApp::implementation
             return;
         }
 
-        _SplitPane(*focusedTab, newPane, splitDirection, splitSize);
+        _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
     }
 
     // Method Description:
@@ -1517,9 +1517,9 @@ namespace winrt::TerminalApp::implementation
     //   new pane should be split from its parent.
     // - splitSize: the size of the split
     void TerminalPage::_SplitPane(TerminalTab& tab,
-                                  std::shared_ptr<Pane> newPane,
                                   const SplitDirection splitDirection,
-                                  const float splitSize)
+                                  const float splitSize,
+                                  std::shared_ptr<Pane> newPane)
     {
         const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
         const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
