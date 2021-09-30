@@ -208,7 +208,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             Json::Value root;
 
             // First load the contents of state.json into a json blob. This will
-            // contain the Shared properties and teh unelevated instance's Local
+            // contain the Shared properties and the unelevated instance's Local
             // properties.
             const auto sharedData = _readSharedContents().value_or(std::string{});
             if (!sharedData.empty())
