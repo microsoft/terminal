@@ -886,14 +886,19 @@ namespace winrt::TerminalApp::implementation
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
             [this, settingsBasename = settingsPath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
-                static const auto appState{ ApplicationState::SharedInstance() };
+                // DO NOT create a static reference to
+                // ApplicationState::SharedInstance here. See
+                // https://github.com/microsoft/terminal/pull/11222/files/9ff2775122a496fb8b1bcc7a0b83a64ce5b26c5f#r719627541
+                // for why. ApplicationState::SharedInstance already caches it's
+                // own static ref.
+
                 const winrt::hstring modifiedBasename{ std::filesystem::path{ fileModified }.filename().c_str() };
 
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
                 }
-                else if (appState.IsStatePath(modifiedBasename))
+                else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename))
                 {
                     _reloadState();
                 }
