@@ -83,6 +83,8 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_SETTING(Boolean, DetectURLs);
         INHERITABLE_SETTING(Boolean, MinimizeToNotificationArea);
         INHERITABLE_SETTING(Boolean, AlwaysShowNotificationIcon);
+        INHERITABLE_SETTING(IVector<String>, DisabledProfileSources);
+        INHERITABLE_SETTING(Boolean, ShowAdminShield);
 
         Windows.Foundation.Collections.IMapView<String, ColorScheme> ColorSchemes();
         void AddColorScheme(ColorScheme scheme);

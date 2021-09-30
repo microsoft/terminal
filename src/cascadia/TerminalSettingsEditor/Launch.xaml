@@ -74,7 +74,7 @@
                                         x:Uid="Globals_DefaultTerminal"
                                         x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
-                              ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
+                              ItemsSource="{x:Bind State.Settings.DefaultTerminals}"
                               SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
@@ -166,12 +166,14 @@
                 <!--  Columns  -->
                 <local:SettingContainer x:Uid="Globals_InitialCols"
                                         Margin="0">
-                    <muxc:NumberBox Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                    <muxc:NumberBox x:Uid="Globals_InitialColsBox"
+                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
                 </local:SettingContainer>
                 <!--  Rows  -->
                 <local:SettingContainer x:Uid="Globals_InitialRows">
-                    <muxc:NumberBox Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                    <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
+                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
                 </local:SettingContainer>
             </StackPanel>

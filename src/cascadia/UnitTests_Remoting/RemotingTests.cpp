@@ -47,7 +47,8 @@ namespace RemotingUnitTests
     };
 
     // This is a silly helper struct.
-    // It will always throw an hresult_error on any of its methods.
+    // It will always throw an hresult_error of "RPC server is unavailable" on any of its methods.
+    // The monarch uses this particular error code to check for a dead peasant vs another exception.
     //
     // In the tests, it's hard to emulate a peasant process being totally dead
     // once the Monarch has captured a reference to it. Since everything's
@@ -59,24 +60,25 @@ namespace RemotingUnitTests
     struct DeadPeasant : implements<DeadPeasant, winrt::Microsoft::Terminal::Remoting::IPeasant>
     {
         DeadPeasant() = default;
-        void AssignID(uint64_t /*id*/) { throw winrt::hresult_error{}; };
-        uint64_t GetID() { throw winrt::hresult_error{}; };
-        winrt::hstring WindowName() { throw winrt::hresult_error{}; };
-        winrt::hstring ActiveTabTitle() { throw winrt::hresult_error{}; };
-        void ActiveTabTitle(const winrt::hstring& /*value*/) { throw winrt::hresult_error{}; };
-        uint64_t GetPID() { throw winrt::hresult_error{}; };
-        bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
-        void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }
-        void RequestIdentifyWindows() { throw winrt::hresult_error{}; };
-        void DisplayWindowId() { throw winrt::hresult_error{}; };
-        Remoting::CommandlineArgs InitialArgs() { throw winrt::hresult_error{}; }
-        Remoting::WindowActivatedArgs GetLastActivatedArgs() { throw winrt::hresult_error{}; }
-        void RequestRename(const Remoting::RenameRequestArgs& /*args*/) { throw winrt::hresult_error{}; }
-        void Summon(const Remoting::SummonWindowBehavior& /*args*/) { throw winrt::hresult_error{}; };
-        void RequestShowNotificationIcon() { throw winrt::hresult_error{}; };
-        void RequestHideNotificationIcon() { throw winrt::hresult_error{}; };
-        void RequestQuitAll() { throw winrt::hresult_error{}; };
-        void Quit() { throw winrt::hresult_error{}; };
+        void AssignID(uint64_t /*id*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        uint64_t GetID() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        winrt::hstring WindowName() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        winrt::hstring ActiveTabTitle() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        void ActiveTabTitle(const winrt::hstring& /*value*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        uint64_t GetPID() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
+        void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
+        void RequestIdentifyWindows() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        void DisplayWindowId() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        Remoting::CommandlineArgs InitialArgs() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
+        Remoting::WindowActivatedArgs GetLastActivatedArgs() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
+        void RequestRename(const Remoting::RenameRequestArgs& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); }
+        void Summon(const Remoting::SummonWindowBehavior& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        void RequestShowNotificationIcon() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        void RequestHideNotificationIcon() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        winrt::hstring GetWindowLayout() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        void RequestQuitAll() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        void Quit() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
         TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
@@ -87,6 +89,7 @@ namespace RemotingUnitTests
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs);
     };
 
     class RemotingTests

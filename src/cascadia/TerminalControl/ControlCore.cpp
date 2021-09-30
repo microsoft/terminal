@@ -274,10 +274,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _updateAntiAliasingMode(_renderEngine.get());
 
             // GH#5098: Inform the engine of the opacity of the default text background.
-            if (_settings.UseAcrylic())
-            {
-                _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-            }
+            // GH#11315: Always do this, even if they don't have acrylic on.
+            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.Opacity()));
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -359,21 +357,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
     {
-        // When there is a selection active, escape should clear it and NOT flow through
-        // to the terminal. With any other keypress, it should clear the selection AND
-        // flow through to the terminal.
+        // Update the selection, if it's present
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
-        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
+        // modify on key up, then there's chance that we'll immediately dismiss
         // a selection created by an action bound to a keydown.
         if (HasSelection() &&
             !KeyEvent::IsModifierKey(vkey) &&
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
+            // try to update the selection
+            if (const auto updateSlnParams{ ::Terminal::ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second);
+                _renderer->TriggerSelection();
+                return true;
+            }
+
             // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
             if (!modifiers.IsWinPressed())
             {
@@ -381,6 +386,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderer->TriggerSelection();
             }
 
+            // When there is a selection active, escape should clear it and NOT flow through
+            // to the terminal. With any other keypress, it should clear the selection AND
+            // flow through to the terminal.
             if (vkey == VK_ESCAPE)
             {
                 return true;
@@ -425,41 +433,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto newOpacity = std::clamp(_settings.TintOpacity() + adjustment,
+        auto newOpacity = std::clamp(_settings.Opacity() + adjustment,
                                      0.0,
                                      1.0);
-        if (_settings.UseAcrylic())
-        {
-            try
-            {
-                _settings.TintOpacity(newOpacity);
 
-                if (newOpacity >= 1.0)
-                {
-                    _settings.UseAcrylic(false);
-                }
-                else
-                {
-                    // GH#5098: Inform the engine of the new opacity of the default text background.
-                    SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
-                }
+        // GH#5098: Inform the engine of the new opacity of the default text background.
+        SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
 
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-                _TransparencyChangedHandlers(*this, *eventArgs);
-            }
-            CATCH_LOG();
-        }
-        else if (adjustment < 0)
-        {
-            _settings.UseAcrylic(true);
+        _settings.Opacity(newOpacity);
 
-            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            newOpacity = std::clamp(1.0 + adjustment, 0.0, 1.0);
-            _settings.TintOpacity(newOpacity);
-
-            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-            _TransparencyChangedHandlers(*this, *eventArgs);
-        }
+        auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
+        _TransparencyChangedHandlers(*this, *eventArgs);
     }
 
     void ControlCore::ToggleShaderEffects()
@@ -483,6 +467,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderEngine->ToggleShaderEffects();
         }
+        // Always redraw after toggling effects. This way even if the control
+        // does not have focus it will update immediately.
+        _renderer->TriggerRedrawAll();
     }
 
     // Method Description:
@@ -1003,6 +990,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
+        _renderer->TriggerSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -1422,18 +1410,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+        ::Terminal::SelectionExpansion mode = ::Terminal::SelectionExpansion::Char;
         if (numberOfClicks == 1)
         {
-            mode = ::Terminal::SelectionExpansionMode::Cell;
+            mode = ::Terminal::SelectionExpansion::Char;
         }
         else if (numberOfClicks == 2)
         {
-            mode = ::Terminal::SelectionExpansionMode::Word;
+            mode = ::Terminal::SelectionExpansion::Word;
         }
         else if (numberOfClicks == 3)
         {
-            mode = ::Terminal::SelectionExpansionMode::Line;
+            mode = ::Terminal::SelectionExpansion::Line;
         }
 
         // Update the selection appropriately
@@ -1458,7 +1446,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (mode != ::Terminal::SelectionExpansionMode::Cell || shiftEnabled)
+        else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
         {
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
@@ -1557,5 +1545,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         return hstring(ss.str());
     }
-
 }

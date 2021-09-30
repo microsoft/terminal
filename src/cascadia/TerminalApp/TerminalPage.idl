@@ -33,7 +33,6 @@ namespace TerminalApp
         UInt64 WindowId;
         String WindowNameForDisplay { get; };
         String WindowIdForDisplay { get; };
-        void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         Boolean IsQuakeWindow();
 
@@ -58,6 +57,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, RenameWindowRequestedArgs> RenameWindowRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
     }
 }

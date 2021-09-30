@@ -1,8 +1,8 @@
 {
   "$id": "https://github.com/microsoft/terminal/blob/main/doc/cascadia/profiles.schema.json",
-  "$schema": "https://json-schema.org/draft/2020-12/schema#",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Microsoft's Windows Terminal Settings Profile Schema",
-  "definitions": {
+  "$defs": {
     "KeyChordSegment": {
       "pattern": "^(?:(?:ctrl|alt|shift|win)\\+)*(?:app|backspace|browser_(?:back|forward|refresh|stop|search|favorites|home)|comma|delete|down|end|enter|esc|escape|home|insert|left|menu|minus|pagedown|pageup|period|pgdn|pgup|plus|right|space|tab|up|f(?:1\\d?|2[0-4]?|[3-9])|numpad\\d|numpad_(?:\\d|add|decimal|divide|minus|multiply|period|plus|subtract)|(?:vk|sc)\\((?:[1-9]|1?\\d{2}|2[0-4]\\d|25[0-5])\\)|[^\\s+])(?:\\+(?:ctrl|alt|shift|win))*$",
       "type": "string",
@@ -61,28 +61,42 @@
           "type": "string"
         },
         "foreground": {
-          "$ref": "#/definitions/Color",
+          "$ref": "#/$defs/Color",
           "default": "#cccccc",
           "description": "Sets the text color when unfocused. Overrides \"foreground\" from the color scheme. Uses hex color format: \"#rrggbb\".",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "background": {
-          "$ref": "#/definitions/Color",
+          "$ref": "#/$defs/Color",
           "default": "#0c0c0c",
           "description": "Sets the background color of the text when unfocused. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "selectionBackground": {
           "oneOf": [
-            {"$ref": "#/definitions/Color"},
-            { "type": "null" }
+            {
+              "$ref": "#/$defs/Color"
+            },
+            {
+              "type": "null"
+            }
           ],
           "description": "Sets the background color of selected text when unfocused. Overrides selectionBackground set in the color scheme. Uses hex color format: \"#rrggbb\"."
         },
         "cursorColor": {
           "oneOf": [
-            { "$ref": "#/definitions/Color" },
-            {"type": "null"}
+            {
+              "$ref": "#/$defs/Color"
+            },
+            {
+              "type": "null"
+            }
           ],
           "description": "Sets the color of the cursor when unfocused. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
@@ -103,14 +117,20 @@
           "description": "Sets the percentage height of the cursor (when unfocused) starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
           "maximum": 100,
           "minimum": 1,
-          "type": ["integer","null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "default": 25
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background when unfocused.",
           "oneOf": [
             {
-              "type": ["string", null]
+              "type": [
+                "string",
+                "null"
+              ]
             },
             {
               "enum": [
@@ -118,7 +138,10 @@
               ]
             }
           ],
-          "type": [ "string", "null" ]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "backgroundImageOpacity": {
           "default": 1.0,
@@ -220,7 +243,9 @@
           "description": "Sets the DWrite font features for the given font. For example, { \"ss01\": 1, \"liga\":0 } will enable ss01 and disable ligatures.",
           "type": "object",
           "patternProperties": {
-            "^(([A-Za-z0-9]){4})$": { "type": "integer" }
+            "^(([A-Za-z0-9]){4})$": {
+              "type": "integer"
+            }
           },
           "additionalProperties": false
         },
@@ -228,7 +253,9 @@
           "description": "Sets the DWrite font axes for the given font. For example, { \"wght\": 200 } will set the font weight to 200.",
           "type": "object",
           "patternProperties": {
-            "^([A-Za-z]{4})$": { "type": "number" }
+            "^([A-Za-z]{4})$": {
+              "type": "number"
+            }
           },
           "additionalProperties": false
         }
@@ -319,7 +346,9 @@
         "previous",
         "nextInOrder",
         "previousInOrder",
-        "first"
+        "first",
+        "parent",
+        "child"
       ],
       "type": "string"
     },
@@ -420,7 +449,7 @@
           "description": "The index of the profile in the new tab dropdown (starting at 0)"
         },
         "tabColor": {
-          "$ref": "#/definitions/Color",
+          "$ref": "#/$defs/Color",
           "default": null,
           "description": "If provided, will set the tab's color to the given value"
         },
@@ -436,9 +465,11 @@
       },
       "type": "object"
     },
-    "SwitchToAdjacentTabArgs" : {
+    "SwitchToAdjacentTabArgs": {
       "oneOf": [
-        { "type": "null" },
+        {
+          "type": "null"
+        },
         {
           "enum": [
             "mru",
@@ -453,7 +484,7 @@
       "properties": {
         "action": {
           "description": "The action to execute",
-          "$ref": "#/definitions/ShortcutActionName"
+          "$ref": "#/$defs/ShortcutActionName"
         }
       },
       "required": [
@@ -464,10 +495,15 @@
     "AdjustFontSizeAction": {
       "description": "Arguments corresponding to an Adjust Font Size Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "adjustFontSize" },
+            "action": {
+              "type": "string",
+              "pattern": "adjustFontSize"
+            },
             "delta": {
               "type": "integer",
               "default": 0,
@@ -476,15 +512,22 @@
           }
         }
       ],
-      "required": [ "delta" ]
+      "required": [
+        "delta"
+      ]
     },
     "CopyAction": {
       "description": "Arguments corresponding to a Copy Text Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "copy" },
+            "action": {
+              "type": "string",
+              "pattern": "copy"
+            },
             "singleLine": {
               "type": "boolean",
               "default": false,
@@ -495,7 +538,7 @@
               "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied. Not setting this value inherits the behavior of the `copyFormatting` global setting.",
               "oneOf": [
                 {
-                  "$ref": "#/definitions/CopyFormat"
+                  "$ref": "#/$defs/CopyFormat"
                 },
                 {
                   "type": "null"
@@ -509,11 +552,18 @@
     "NewTabAction": {
       "description": "Arguments corresponding to a New Tab Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
-        { "$ref": "#/definitions/NewTerminalArgs" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "$ref": "#/$defs/NewTerminalArgs"
+        },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "newTab" }
+            "action": {
+              "type": "string",
+              "pattern": "newTab"
+            }
           }
         }
       ]
@@ -521,27 +571,39 @@
     "SwitchToTabAction": {
       "description": "Arguments corresponding to a Switch To Tab Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "switchToTab" },
+            "action": {
+              "type": "string",
+              "pattern": "switchToTab"
+            },
             "index": {
               "type": "integer",
               "default": 0,
               "description": "Which tab to switch to, with the first being 0"
+            }
           }
         }
-      }
-    ],
-    "required": [ "index" ]
-  },
-  "MovePaneAction": {
+      ],
+      "required": [
+        "index"
+      ]
+    },
+    "MovePaneAction": {
       "description": "Arguments corresponding to a Move Pane Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "movePane" },
+            "action": {
+              "type": "string",
+              "pattern": "movePane"
+            },
             "index": {
               "type": "integer",
               "default": 0,
@@ -550,68 +612,94 @@
           }
         }
       ],
-      "required": [ "index" ]
+      "required": [
+        "index"
+      ]
     },
     "MoveFocusAction": {
       "description": "Arguments corresponding to a Move Focus Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "moveFocus" },
+            "action": {
+              "type": "string",
+              "pattern": "moveFocus"
+            },
             "direction": {
-              "$ref": "#/definitions/FocusDirection",
+              "$ref": "#/$defs/FocusDirection",
               "default": "left",
-              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
+              "description": "The direction to move focus in, between panes. Direction can be 'previous' to move to the most recently used pane, 'nextInOrder' or 'previousInOrder' to move to the next or previous pane, 'first' to focus the first pane, or 'parent' or 'child' to move up and down the tree."
             }
           }
         }
       ],
-      "required": [ "direction" ]
+      "required": [
+        "direction"
+      ]
     },
     "SwapPaneAction": {
       "description": "Arguments corresponding to a Swap Pane Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "swapPane" },
+            "action": {
+              "type": "string",
+              "pattern": "swapPane"
+            },
             "direction": {
-              "$ref": "#/definitions/FocusDirection",
+              "$ref": "#/$defs/FocusDirection",
               "default": "left",
-              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, or 'nextInOrder' or 'previousInOrder' to move to the next or previous pane."
+              "description": "The direction to move the focus pane in, swapping panes. Direction can be 'previous' to swap with the most recently used pane, 'nextInOrder' or 'previousInOrder' to move to the next or previous pane, or 'first' to swap with the first pane."
             }
           }
         }
       ],
-      "required": [ "direction" ]
+      "required": [
+        "direction"
+      ]
     },
     "ResizePaneAction": {
       "description": "Arguments corresponding to a Resize Pane Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "resizePane" },
+            "action": {
+              "type": "string",
+              "pattern": "resizePane"
+            },
             "direction": {
-              "$ref": "#/definitions/ResizeDirection",
+              "$ref": "#/$defs/ResizeDirection",
               "default": "left",
               "description": "The direction to move the pane separator in."
             }
           }
         }
       ],
-      "required": [ "direction" ]
+      "required": [
+        "direction"
+      ]
     },
     "SendInputAction": {
       "description": "Arguments corresponding to a Send Input Action",
       "allOf": [
         {
-          "$ref": "#/definitions/ShortcutAction"
+          "$ref": "#/$defs/ShortcutAction"
         },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "sendInput" },
+            "action": {
+              "type": "string",
+              "pattern": "sendInput"
+            },
             "input": {
               "type": "string",
               "default": "",
@@ -620,18 +708,27 @@
           }
         }
       ],
-      "required": [ "input" ]
+      "required": [
+        "input"
+      ]
     },
     "SplitPaneAction": {
       "description": "Arguments corresponding to a Split Pane Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
-        { "$ref": "#/definitions/NewTerminalArgs" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "$ref": "#/$defs/NewTerminalArgs"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "splitPane" },
+            "action": {
+              "type": "string",
+              "pattern": "splitPane"
+            },
             "split": {
-              "$ref": "#/definitions/SplitDirection",
+              "$ref": "#/$defs/SplitDirection",
               "default": "auto",
               "description": "The orientation to split the pane in. Possible values:\n -\"auto\" (splits pane based on remaining space)\n -\"up\" (think [-] and above)\n -\"down\" (think [-] and below)\n -\"left\" (think [|] and to the left)\n -\"right\"(think [|] and to the right)"
             },
@@ -654,11 +751,14 @@
       "description": "Arguments corresponding to a Open Settings Action",
       "allOf": [
         {
-          "$ref": "#/definitions/ShortcutAction"
+          "$ref": "#/$defs/ShortcutAction"
         },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "openSettings" },
+            "action": {
+              "type": "string",
+              "pattern": "openSettings"
+            },
             "target": {
               "type": "string",
               "default": "settingsUI",
@@ -668,7 +768,6 @@
                 "defaultsFile",
                 "allFiles",
                 "settingsUI"
-
               ]
             }
           }
@@ -678,12 +777,17 @@
     "SetTabColorAction": {
       "description": "Arguments corresponding to a Set Tab Color Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "setTabColor" },
+            "action": {
+              "type": "string",
+              "pattern": "setTabColor"
+            },
             "color": {
-              "$ref": "#/definitions/Color",
+              "$ref": "#/$defs/Color",
               "default": null,
               "description": "If provided, will set the tab's color to the given value. If omitted, will reset the tab's color."
             }
@@ -694,10 +798,15 @@
     "SetColorSchemeAction": {
       "description": "Arguments corresponding to a Set Color Scheme Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "setColorScheme" },
+            "action": {
+              "type": "string",
+              "pattern": "setColorScheme"
+            },
             "colorScheme": {
               "type": "string",
               "default": "",
@@ -706,15 +815,22 @@
           }
         }
       ],
-      "required": [ "colorScheme" ]
+      "required": [
+        "colorScheme"
+      ]
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "wt" },
+            "action": {
+              "type": "string",
+              "pattern": "wt"
+            },
             "commandline": {
               "type": "string",
               "default": "",
@@ -723,19 +839,30 @@
           }
         }
       ],
-      "required": [ "commandline" ]
+      "required": [
+        "commandline"
+      ]
     },
     "CloseOtherTabsAction": {
       "description": "Arguments for a closeOtherTabs action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "closeOtherTabs" },
+            "action": {
+              "type": "string",
+              "pattern": "closeOtherTabs"
+            },
             "index": {
               "oneOf": [
-                { "type": "integer" },
-                { "type": "null" }
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "default": null,
               "description": "Close the tabs other than the one at this index. If no index is provided, use the focused tab's index."
@@ -747,14 +874,23 @@
     "CloseTabsAfterAction": {
       "description": "Arguments for a closeTabsAfter action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "closeTabsAfter" },
+            "action": {
+              "type": "string",
+              "pattern": "closeTabsAfter"
+            },
             "index": {
               "oneOf": [
-                { "type": "integer" },
-                { "type": "null" }
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "default": null,
               "description": "Close the tabs following the tab at this index. If no index is provided, use the focused tab's index."
@@ -766,14 +902,23 @@
     "CloseTabAction": {
       "description": "Arguments for a closeTab action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "closeTab" },
+            "action": {
+              "type": "string",
+              "pattern": "closeTab"
+            },
             "index": {
               "oneOf": [
-                { "type": "integer" },
-                { "type": "null" }
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
               ],
               "default": null,
               "description": "Close the tab at this index. If no index is provided, use the focused tab's index."
@@ -785,12 +930,20 @@
     "ScrollUpAction": {
       "description": "Arguments for a scrollUp action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "scrollUp" },
+            "action": {
+              "type": "string",
+              "pattern": "scrollUp"
+            },
             "rowsToScroll": {
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "default": null,
               "description": "Scroll up rowsToScroll lines. If no value is provided, use the system-level defaults."
             }
@@ -801,12 +954,20 @@
     "ScrollDownAction": {
       "description": "Arguments for a scrollDown action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "scrollDown" },
+            "action": {
+              "type": "string",
+              "pattern": "scrollDown"
+            },
             "rowsToScroll": {
-              "type": ["integer", "null"],
+              "type": [
+                "integer",
+                "null"
+              ],
               "default": null,
               "description": "Scroll down rowsToScroll lines. If no value is provided, use the system-level defaults."
             }
@@ -817,28 +978,40 @@
     "MoveTabAction": {
       "description": "Arguments for moving a tab",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "moveTab" },
+            "action": {
+              "type": "string",
+              "pattern": "moveTab"
+            },
             "direction": {
-              "$ref": "#/definitions/MoveTabDirection",
+              "$ref": "#/$defs/MoveTabDirection",
               "description": "The direction to move the tab"
             }
           }
         }
       ],
-      "required": [ "direction" ]
+      "required": [
+        "direction"
+      ]
     },
     "MultipleActionsAction": {
       "description": "Arguments for the multiple actions command",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "multipleActions" },
-            "actions" : {
-              "$ref": "#/definitions/ShortcutAction",
+            "action": {
+              "type": "string",
+              "pattern": "multipleActions"
+            },
+            "actions": {
+              "$ref": "#/$defs/ShortcutAction",
               "type": "array",
               "minItems": 1,
               "description": "A list of other actions."
@@ -846,17 +1019,24 @@
           }
         }
       ],
-      "required": [ "actions" ]
-    }, 
+      "required": [
+        "actions"
+      ]
+    },
     "CommandPaletteAction": {
       "description": "Arguments for a commandPalette action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "commandPalette" },
+            "action": {
+              "type": "string",
+              "pattern": "commandPalette"
+            },
             "launchMode": {
-              "$ref": "#/definitions/CommandPaletteLaunchMode",
+              "$ref": "#/$defs/CommandPaletteLaunchMode",
               "default": "action",
               "description": "Toggle command palette in either action or command line mode. If no value is provided, the palette will launch in action mode."
             }
@@ -867,28 +1047,42 @@
     "FindMatchAction": {
       "description": "Arguments corresponding to a Find Match Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "findMatch" },
+            "action": {
+              "type": "string",
+              "pattern": "findMatch"
+            },
             "direction": {
-              "$ref": "#/definitions/FindMatchDirection",
+              "$ref": "#/$defs/FindMatchDirection",
               "default": "prev",
               "description": "The direction to search in. \"prev\" will search upwards in the buffer, and \"next\" will search downwards."
             }
           }
         }
       ],
-      "required": [ "direction" ]
+      "required": [
+        "direction"
+      ]
     },
     "NewWindowAction": {
       "description": "Arguments corresponding to a New Window Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
-        { "$ref": "#/definitions/NewTerminalArgs" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "$ref": "#/$defs/NewTerminalArgs"
+        },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "newWindow" }
+            "action": {
+              "type": "string",
+              "pattern": "newWindow"
+            }
           }
         }
       ]
@@ -896,12 +1090,17 @@
     "PrevTabAction": {
       "description": "Arguments corresponding to a Previous Tab Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "prevTab" },
+            "action": {
+              "type": "string",
+              "pattern": "prevTab"
+            },
             "tabSwitcherMode": {
-              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "$ref": "#/$defs/SwitchToAdjacentTabArgs",
               "default": null,
               "description": "Move to the previous tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
             }
@@ -912,12 +1111,17 @@
     "NextTabAction": {
       "description": "Arguments corresponding to a Next Tab Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type":"string", "pattern": "nextTab" },
+            "action": {
+              "type": "string",
+              "pattern": "nextTab"
+            },
             "tabSwitcherMode": {
-              "$ref": "#/definitions/SwitchToAdjacentTabArgs",
+              "$ref": "#/$defs/SwitchToAdjacentTabArgs",
               "default": null,
               "description": "Move to the next tab using \"tabSwitcherMode\". If no mode is provided, use the one globally defined one."
             }
@@ -928,10 +1132,15 @@
     "RenameTabAction": {
       "description": "Arguments corresponding to a renameTab Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "renameTab" },
+            "action": {
+              "type": "string",
+              "pattern": "renameTab"
+            },
             "title": {
               "type": "string",
               "default": "",
@@ -944,10 +1153,15 @@
     "RenameWindowAction": {
       "description": "Arguments corresponding to a renameWindow Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "renameWindow" },
+            "action": {
+              "type": "string",
+              "pattern": "renameWindow"
+            },
             "name": {
               "type": "string",
               "default": "",
@@ -960,10 +1174,15 @@
     "FocusPaneAction": {
       "description": "Arguments corresponding to a focusPane Action",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "focusPane" },
+            "action": {
+              "type": "string",
+              "pattern": "focusPane"
+            },
             "id": {
               "type": "string",
               "default": "",
@@ -976,10 +1195,15 @@
     "GlobalSummonAction": {
       "description": "This is a special action that works globally in the OS, rather than only in the context of the terminal window. When pressed, this action will summon the terminal window.",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "globalSummon" },
+            "action": {
+              "type": "string",
+              "pattern": "globalSummon"
+            },
             "desktop": {
               "type": "string",
               "default": "toCurrent",
@@ -1022,10 +1246,15 @@
     "QuakeModeAction": {
       "description": "This action is a special variation of the globalSummon action. It specifically summons a window called \"_quake\". If you would like to change the behavior of the quakeMode action, we recommended creating a new globalSummon entry.",
       "allOf": [
-        { "$ref": "#/definitions/ShortcutAction" },
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
         {
           "properties": {
-            "action": { "type": "string", "pattern": "quakeMode" }
+            "action": {
+              "type": "string",
+              "pattern": "quakeMode"
+            }
           }
         }
       ]
@@ -1035,56 +1264,120 @@
       "properties": {
         "command": {
           "description": "The action executed when the associated key bindings are pressed.",
-            "oneOf": [
-              { "$ref": "#/definitions/AdjustFontSizeAction" },
-              { "$ref": "#/definitions/CopyAction" },
-              { "$ref": "#/definitions/ShortcutActionName" },
-              { "$ref": "#/definitions/NewTabAction" },
-              { "$ref": "#/definitions/SwitchToTabAction" },
-              { "$ref": "#/definitions/MoveFocusAction" },
-              { "$ref": "#/definitions/MovePaneAction" },
-              { "$ref": "#/definitions/SwapPaneAction" },
-              { "$ref": "#/definitions/ResizePaneAction" },
-              { "$ref": "#/definitions/SendInputAction" },
-              { "$ref": "#/definitions/SplitPaneAction" },
-              { "$ref": "#/definitions/OpenSettingsAction" },
-              { "$ref": "#/definitions/SetTabColorAction" },
-              { "$ref": "#/definitions/SetColorSchemeAction" },
-              { "$ref": "#/definitions/WtAction" },
-              { "$ref": "#/definitions/CloseOtherTabsAction" },
-              { "$ref": "#/definitions/CloseTabsAfterAction" },
-              { "$ref": "#/definitions/CloseTabAction" },
-              { "$ref": "#/definitions/ScrollUpAction" },
-              { "$ref": "#/definitions/ScrollDownAction" },
-              { "$ref": "#/definitions/MoveTabAction" },
-              { "$ref": "#/definitions/FindMatchAction" },
-              { "$ref": "#/definitions/NewWindowAction" },
-              { "$ref": "#/definitions/NextTabAction" },
-              { "$ref": "#/definitions/PrevTabAction" },
-              { "$ref": "#/definitions/RenameTabAction" },
-              { "$ref": "#/definitions/RenameWindowAction" },
-              { "$ref": "#/definitions/FocusPaneAction" },
-              { "$ref": "#/definitions/GlobalSummonAction" },
-              { "$ref": "#/definitions/QuakeModeAction" },
-              { "type": "null" }
-            ]
+          "oneOf": [
+            {
+              "$ref": "#/$defs/AdjustFontSizeAction"
+            },
+            {
+              "$ref": "#/$defs/CopyAction"
+            },
+            {
+              "$ref": "#/$defs/ShortcutActionName"
+            },
+            {
+              "$ref": "#/$defs/NewTabAction"
+            },
+            {
+              "$ref": "#/$defs/SwitchToTabAction"
+            },
+            {
+              "$ref": "#/$defs/MoveFocusAction"
+            },
+            {
+              "$ref": "#/$defs/MovePaneAction"
+            },
+            {
+              "$ref": "#/$defs/SwapPaneAction"
+            },
+            {
+              "$ref": "#/$defs/ResizePaneAction"
+            },
+            {
+              "$ref": "#/$defs/SendInputAction"
+            },
+            {
+              "$ref": "#/$defs/SplitPaneAction"
+            },
+            {
+              "$ref": "#/$defs/OpenSettingsAction"
+            },
+            {
+              "$ref": "#/$defs/SetTabColorAction"
+            },
+            {
+              "$ref": "#/$defs/SetColorSchemeAction"
+            },
+            {
+              "$ref": "#/$defs/WtAction"
+            },
+            {
+              "$ref": "#/$defs/CloseOtherTabsAction"
+            },
+            {
+              "$ref": "#/$defs/CloseTabsAfterAction"
+            },
+            {
+              "$ref": "#/$defs/CloseTabAction"
+            },
+            {
+              "$ref": "#/$defs/ScrollUpAction"
+            },
+            {
+              "$ref": "#/$defs/ScrollDownAction"
+            },
+            {
+              "$ref": "#/$defs/MoveTabAction"
+            },
+            {
+              "$ref": "#/$defs/FindMatchAction"
+            },
+            {
+              "$ref": "#/$defs/NewWindowAction"
+            },
+            {
+              "$ref": "#/$defs/NextTabAction"
+            },
+            {
+              "$ref": "#/$defs/PrevTabAction"
+            },
+            {
+              "$ref": "#/$defs/RenameTabAction"
+            },
+            {
+              "$ref": "#/$defs/RenameWindowAction"
+            },
+            {
+              "$ref": "#/$defs/FocusPaneAction"
+            },
+            {
+              "$ref": "#/$defs/GlobalSummonAction"
+            },
+            {
+              "$ref": "#/$defs/QuakeModeAction"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "keys": {
           "description": "Defines the key combinations used to call the command. It must be composed of...\n -any number of modifiers (ctrl/alt/shift)\n -a non-modifier key",
           "oneOf": [
             {
-              "$ref": "#/definitions/KeyChordSegment"
+              "$ref": "#/$defs/KeyChordSegment"
             },
             {
               "items": {
-                "$ref": "#/definitions/KeyChordSegment"
+                "$ref": "#/$defs/KeyChordSegment"
               },
               "minItems": 1,
               "type": "array"
             }
           ]
         },
-        "icon": { "$ref": "#/definitions/Icon" },
+        "icon": {
+          "$ref": "#/$defs/Icon"
+        },
         "name": {
           "description": "The name that will appear in the command palette. If one isn't provided, the terminal will attempt to automatically generate a name.\nIf name is a string, it will be the name of the command.\nIf name is a object, the key property of the object will be used to lookup a localized string resource for the command",
           "properties": {
@@ -1109,15 +1402,24 @@
         "commands": {
           "description": "List of commands to execute",
           "items": {
-            "$ref": "#/definitions/Keybinding/properties/command"
+            "$ref": "#/$defs/Keybinding/properties/command"
           },
           "minItems": 1,
           "type": "array"
         }
       },
       "anyOf": [
-        {"required": ["name","commands"]},
-        {"required": ["command"]}
+        {
+          "required": [
+            "name",
+            "commands"
+          ]
+        },
+        {
+          "required": [
+            "command"
+          ]
+        }
       ],
       "type": "object"
     },
@@ -1158,7 +1460,7 @@
         "copyFormatting": {
           "default": true,
           "description": "When set to `true`, the color and font formatting of selected text is also copied to your clipboard. When set to `false`, only plain text is copied to your clipboard. An array of specific formats can also be used. Supported array values include `html` and `rtf`. Plain text is always copied.",
-          "$ref": "#/definitions/CopyFormat"
+          "$ref": "#/$defs/CopyFormat"
         },
         "trimBlockSelection": {
           "default": false,
@@ -1196,7 +1498,7 @@
         "disabledProfileSources": {
           "description": "Disables all the dynamic profile generators in this list, preventing them from adding their profiles to the list of profiles on startup.",
           "items": {
-            "$ref": "#/definitions/DynamicProfileSource"
+            "$ref": "#/$defs/DynamicProfileSource"
           },
           "type": "array"
         },
@@ -1220,7 +1522,7 @@
           "type": "integer"
         },
         "initialPosition": {
-          "$ref": "#/definitions/Coordinates",
+          "$ref": "#/$defs/Coordinates",
           "description": "The position of the top left corner of the window upon first load. On a system with multiple displays, these coordinates are relative to the top left of the primary display. If \"launchMode\" is set to \"maximized\" (or \"maximizedFocus\"), the window will be maximized on the monitor specified by those coordinates."
         },
         "initialRows": {
@@ -1261,7 +1563,10 @@
           "description": "This parameter once allowed you to override the systemwide \"choose how many lines to scroll at one time\" setting. It no longer does so. However, you can customize the number of lines to scroll in \"scrollUp\" and \"scrollDown\" bindings.",
           "maximum": 999,
           "minimum": 0,
-          "type": [ "integer", "string" ],
+          "type": [
+            "integer",
+            "string"
+          ],
           "deprecated": true
         },
         "minimizeToNotificationArea": {
@@ -1274,23 +1579,28 @@
           "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
+        "showAdminShield": {
+          "default": "true",
+          "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
+          "type": "boolean"
+        },
         "useAcrylicInTabRow": {
           "default": "false",
           "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
           "type": "boolean"
         },
-		"actions": {
-			"description": "Properties are specific to each custom action.",
-			"items": {
-			  "$ref": "#/definitions/Keybinding"
-			},
-			"type": "array"
-		  },
+        "actions": {
+          "description": "Properties are specific to each custom action.",
+          "items": {
+            "$ref": "#/$defs/Keybinding"
+          },
+          "type": "array"
+        },
         "keybindings": {
           "description": "[deprecated] Use actions instead.",
           "deprecated": true,
           "items": {
-            "$ref": "#/definitions/Keybinding"
+            "$ref": "#/$defs/Keybinding"
           },
           "type": "array"
         },
@@ -1401,7 +1711,8 @@
       "properties": {
         "acrylicOpacity": {
           "default": 0.5,
-          "description": "When useAcrylic is set to true, it sets the transparency of the window for the profile. Accepts floating point values from 0-1 (default 0.5).",
+          "description": "[deprecated] Please use `opacity` instead.",
+          "deprecated": true,
           "maximum": 1,
           "minimum": 0,
           "type": "number"
@@ -1417,26 +1728,38 @@
           "type": "string"
         },
         "background": {
-          "$ref": "#/definitions/Color",
+          "$ref": "#/$defs/Color",
           "default": "#0c0c0c",
           "description": "Sets the background color of the text. Overrides \"background\" from the color scheme. Uses hex color format: \"#rrggbb\".",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "unfocusedAppearance": {
-          "$ref": "#/definitions/AppearanceConfig",
+          "$ref": "#/$defs/AppearanceConfig",
           "description": "Sets the appearance of the terminal when it is unfocused.",
-          "type": ["object", "null"]
+          "type": [
+            "object",
+            "null"
+          ]
         },
         "font": {
-          "$ref": "#/definitions/FontConfig",
+          "$ref": "#/$defs/FontConfig",
           "description": "Sets the font options of the terminal.",
-          "type": ["object", "null"]
+          "type": [
+            "object",
+            "null"
+          ]
         },
         "backgroundImage": {
           "description": "Sets the file location of the image to draw over the window background.",
           "oneOf": [
             {
-              "type": ["string", null]
+              "type": [
+                "string",
+                "null"
+              ]
             },
             {
               "enum": [
@@ -1444,7 +1767,10 @@
               ]
             }
           ],
-          "type": [ "string", "null" ]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "backgroundImageAlignment": {
           "default": "center",
@@ -1483,7 +1809,7 @@
         "bellStyle": {
           "default": "audible",
           "description": "Controls what happens when the application emits a BEL character. When set to \"all\", the Terminal will play a sound, flash the taskbar icon (if the terminal window is not in focus) and flash the window. An array of specific behaviors can also be used. Supported array values include `audible`, `window` and `taskbar`. When set to \"none\", nothing will happen.",
-          "$ref": "#/definitions/BellStyle"
+          "$ref": "#/$defs/BellStyle"
         },
         "closeOnExit": {
           "default": "graceful",
@@ -1513,8 +1839,12 @@
         },
         "cursorColor": {
           "oneOf": [
-            { "$ref": "#/definitions/Color" },
-            {"type": "null"}
+            {
+              "$ref": "#/$defs/Color"
+            },
+            {
+              "type": "null"
+            }
           ],
           "description": "Sets the color of the cursor. Overrides the cursor color from the color scheme. Uses hex color format: \"#rrggbb\"."
         },
@@ -1522,7 +1852,10 @@
           "description": "Sets the percentage height of the cursor starting from the bottom. Only works when cursorShape is set to \"vintage\". Accepts values from 1-100.",
           "maximum": 100,
           "minimum": 1,
-          "type": ["integer","null"],
+          "type": [
+            "integer",
+            "null"
+          ],
           "default": 25
         },
         "cursorShape": {
@@ -1588,13 +1921,16 @@
           "deprecated": true
         },
         "foreground": {
-          "$ref": "#/definitions/Color",
+          "$ref": "#/$defs/Color",
           "default": "#cccccc",
           "description": "Sets the text color. Overrides \"foreground\" from the color scheme. Uses hex color format: \"#rrggbb\".",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "guid": {
-          "$ref": "#/definitions/ProfileGuid",
+          "$ref": "#/$defs/ProfileGuid",
           "description": "Unique identifier of the profile. Written in registry format: \"{00000000-0000-0000-0000-000000000000}\"."
         },
         "hidden": {
@@ -1608,11 +1944,20 @@
           "minimum": -1,
           "type": "integer"
         },
-        "icon":{ "$ref": "#/definitions/Icon" },
+        "icon": {
+          "$ref": "#/$defs/Icon"
+        },
         "name": {
           "description": "Name of the profile. Displays in the dropdown menu.",
           "minLength": 1,
           "type": "string"
+        },
+        "opacity": {
+          "default": 100,
+          "description": "Sets the opacity of the window for the profile. Accepts values from 0-100. Defaults to 50 when useAcrylic is set to true.",
+          "maximum": 100,
+          "minimum": 0,
+          "type": "number"
         },
         "padding": {
           "default": "8, 8, 8, 8",
@@ -1638,8 +1983,12 @@
         },
         "selectionBackground": {
           "oneOf": [
-            {"$ref": "#/definitions/Color"},
-            { "type": "null" }
+            {
+              "$ref": "#/$defs/Color"
+            },
+            {
+              "type": "null"
+            }
           ],
           "description": "Sets the background color of selected text. Overrides selectionBackground set in the color scheme. Uses hex color format: \"#rrggbb\"."
         },
@@ -1655,7 +2004,10 @@
         },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "startingDirectory": {
           "description": "The directory the shell starts in when it is loaded.",
@@ -1667,13 +2019,19 @@
           "default": false
         },
         "tabColor": {
-          "$ref": "#/definitions/Color",
+          "$ref": "#/$defs/Color",
           "description": "Sets the color of the profile's tab. Using the tab color picker will override this color.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "tabTitle": {
           "description": "If set, will replace the name as the title to pass to the shell on startup. Some shells (like bash) may choose to ignore this initial value, while others (cmd, powershell) may use this value over the lifetime of the application.",
-          "type": ["string", "null"]
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "useAcrylic": {
           "default": false,
@@ -1686,7 +2044,7 @@
     "ProfileList": {
       "description": "A list of profiles and the properties specific to each.",
       "items": {
-        "$ref": "#/definitions/Profile",
+        "$ref": "#/$defs/Profile",
         "required": [
           "guid",
           "name"
@@ -1698,11 +2056,11 @@
       "description": "A list of profiles and default settings that apply to all of them",
       "properties": {
         "list": {
-          "$ref": "#/definitions/ProfileList"
+          "$ref": "#/$defs/ProfileList"
         },
         "defaults": {
           "description": "The default settings that apply to every profile.",
-          "$ref": "#/definitions/Profile"
+          "$ref": "#/$defs/Profile"
         }
       },
       "type": "object"
@@ -1718,84 +2076,84 @@
             "type": "string"
           },
           "background": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the background color of the color scheme."
           },
           "black": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI black."
           },
           "blue": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI blue."
           },
           "brightBlack": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright black."
           },
           "brightBlue": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright blue."
           },
           "brightCyan": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright cyan."
           },
           "brightGreen": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright green."
           },
           "brightPurple": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright purple."
           },
           "brightRed": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright red."
           },
           "brightWhite": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright white."
           },
           "brightYellow": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI bright yellow."
           },
           "cursorColor": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "default": "#FFFFFF",
             "description": "Sets the cursor color of the color scheme."
           },
           "cyan": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI cyan."
           },
           "foreground": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the foreground color of the color scheme."
           },
           "green": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI green."
           },
           "purple": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI purple."
           },
           "red": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI red."
           },
           "selectionBackground": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the selection background color of the color scheme."
           },
           "white": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI white."
           },
           "yellow": {
-            "$ref": "#/definitions/Color",
+            "$ref": "#/$defs/Color",
             "description": "Sets the color used as ANSI yellow."
           }
         },
@@ -1805,17 +2163,25 @@
     }
   },
   "allOf": [
-    { "$ref": "#/definitions/Globals" },
+    {
+      "$ref": "#/$defs/Globals"
+    },
     {
       "additionalItems": true,
       "properties": {
         "profiles": {
           "oneOf": [
-            { "$ref": "#/definitions/ProfileList" },
-            { "$ref": "#/definitions/ProfilesObject" }
+            {
+              "$ref": "#/$defs/ProfileList"
+            },
+            {
+              "$ref": "#/$defs/ProfilesObject"
+            }
           ]
         },
-        "schemes": { "$ref": "#/definitions/SchemeList" }
+        "schemes": {
+          "$ref": "#/$defs/SchemeList"
+        }
       },
       "required": [
         "profiles",

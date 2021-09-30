@@ -133,6 +133,11 @@ public:
         return _window.get();
     }
 
+    UINT GetCurrentDpi() const noexcept
+    {
+        return ::GetDpiForWindow(_window.get());
+    }
+
     float GetCurrentDpiScale() const noexcept
     {
         const auto dpi = ::GetDpiForWindow(_window.get());

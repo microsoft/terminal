@@ -271,7 +271,7 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         _monarch.FindTargetWindowRequested({ this, &WindowManager::_raiseFindTargetWindowRequested });
         _monarch.ShowNotificationIconRequested([this](auto&&, auto&&) { _ShowNotificationIconRequestedHandlers(*this, nullptr); });
         _monarch.HideNotificationIconRequested([this](auto&&, auto&&) { _HideNotificationIconRequestedHandlers(*this, nullptr); });
-        _monarch.QuitAllRequested([this](auto&&, auto&&) { _QuitAllRequestedHandlers(*this, nullptr); });
+        _monarch.QuitAllRequested({ get_weak(), &WindowManager::_QuitAllRequestedHandlers });
 
         _BecameMonarchHandlers(*this, nullptr);
     }
@@ -318,11 +318,21 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             }
         }
 
+        _peasant.GetWindowLayoutRequested({ get_weak(), &WindowManager::_GetWindowLayoutRequestedHandlers });
+
         TraceLoggingWrite(g_hRemotingProvider,
                           "WindowManager_CreateOurPeasant",
                           TraceLoggingUInt64(_peasant.GetID(), "peasantID", "The ID of our new peasant"),
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+        // If the peasant asks us to quit we should not try to act in future elections.
+        _peasant.QuitRequested([weakThis{ get_weak() }](auto&&, auto&&) {
+            if (auto wm = weakThis.get())
+            {
+                wm->_monarchWaitInterrupt.SetEvent();
+            }
+        });
 
         return _peasant;
     }
@@ -601,5 +611,18 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
     void WindowManager::UpdateActiveTabTitle(winrt::hstring title)
     {
         winrt::get_self<implementation::Peasant>(_peasant)->ActiveTabTitle(title);
+    }
+
+    Windows::Foundation::Collections::IVector<winrt::hstring> WindowManager::GetAllWindowLayouts()
+    {
+        if (_monarch)
+        {
+            try
+            {
+                return _monarch.GetAllWindowLayouts();
+            }
+            CATCH_LOG()
+        }
+        return nullptr;
     }
 }

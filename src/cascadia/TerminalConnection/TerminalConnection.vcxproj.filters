@@ -32,6 +32,7 @@
     <Midl Include="EchoConnection.idl" />
     <Midl Include="AzureConnection.idl" />
     <Midl Include="ConptyConnection.idl" />
+    <Midl Include="ConnectionInformation.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

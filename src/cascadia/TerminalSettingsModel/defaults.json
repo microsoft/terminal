@@ -20,6 +20,7 @@
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
     "tabSwitcherMode": "inOrder",
+    "showAdminShield": true,
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
@@ -353,6 +354,8 @@
         { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
         { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
         { "command": { "action": "moveFocus", "direction": "first" } },
+        { "command": { "action": "moveFocus", "direction": "parent" } },
+        { "command": { "action": "moveFocus", "direction": "child" } },
         { "command": { "action": "swapPane", "direction": "down" } },
         { "command": { "action": "swapPane", "direction": "left" } },
         { "command": { "action": "swapPane", "direction": "right" } },

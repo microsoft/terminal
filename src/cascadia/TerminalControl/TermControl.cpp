@@ -428,6 +428,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_InitializeBackgroundBrush()
     {
+        auto appearance = _settings.try_as<IControlAppearance>();
         if (_settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
@@ -449,7 +450,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             acrylic.TintColor(bgColor);
 
             // Apply brush settings
-            acrylic.TintOpacity(_settings.TintOpacity());
+            acrylic.TintOpacity(appearance.Opacity());
 
             // Apply brush to control if it's not already there
             if (RootGrid().Background() != acrylic)
@@ -458,15 +459,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
+            _core.SetBackgroundOpacity(appearance.Opacity());
         }
         else
         {
             Media::SolidColorBrush solidColor{};
+            solidColor.Opacity(_settings.Opacity());
             RootGrid().Background(solidColor);
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(1.0f);
+            _core.SetBackgroundOpacity(appearance.Opacity());
         }
     }
 
@@ -497,7 +499,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
             else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
             {
+                const auto originalOpacity = solidColor.Opacity();
                 solidColor.Color(bg);
+                solidColor.Opacity(originalOpacity);
             }
         }
     }
@@ -844,6 +848,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        const auto keyStatus = e.KeyStatus();
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        auto modifiers = _GetPressedModifierKeys();
+
+        // GH#11076:
+        // For some weird reason we sometimes receive a WM_KEYDOWN
+        // message without vkey or scanCode if a user drags a tab.
+        // The KeyChord constructor has a debug assertion ensuring that all KeyChord
+        // either have a valid vkey/scanCode. This is important, because this prevents
+        // accidential insertion of invalid KeyChords into classes like ActionMap.
+        if (!vkey && !scanCode)
+        {
+            e.Handled(true);
+            return;
+        }
+
         // Mark the event as handled and do nothing if we're closing, or the key
         // was the Windows key.
         //
@@ -852,18 +873,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // win32-input-mode, then we'll send all these keystrokes to the
         // terminal - it's smart enough to ignore the keys it doesn't care
         // about.
-        if (_IsClosing() ||
-            e.OriginalKey() == VirtualKey::LeftWindows ||
-            e.OriginalKey() == VirtualKey::RightWindows)
-
+        if (_IsClosing() || vkey == VK_LWIN || vkey == VK_RWIN)
         {
             e.Handled(true);
             return;
         }
-
-        auto modifiers = _GetPressedModifierKeys();
-        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
-        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
 
         // Short-circuit isReadOnly check to avoid warning dialog
         if (_core.IsInReadOnlyMode())
@@ -872,7 +886,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        if (e.KeyStatus().IsExtendedKey)
+        if (keyStatus.IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
         }
@@ -882,8 +896,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // will be sent through the TSFInputControl. See GH#1401 for more
         // details
         if (modifiers.IsAltPressed() &&
-            (e.OriginalKey() >= VirtualKey::NumberPad0 && e.OriginalKey() <= VirtualKey::NumberPad9))
-
+            (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9))
         {
             e.Handled(true);
             return;
@@ -913,7 +926,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Manually prevent keyboard navigation with tab. We want to send tab to
         // the terminal, and we don't want to be able to escape focus of the
         // control with tab.
-        e.Handled(e.OriginalKey() == VirtualKey::Tab);
+        e.Handled(vkey == VK_TAB);
     }
 
     // Method Description:

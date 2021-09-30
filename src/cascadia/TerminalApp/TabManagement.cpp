@@ -87,7 +87,7 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(usedManualProfile, "ProfileSpecified", "Whether the new tab specified a profile explicitly"),
             TraceLoggingGuid(profile.Guid(), "ProfileGuid", "The GUID of the profile spawned in the new tab"),
             TraceLoggingBool(settings.DefaultSettings().UseAcrylic(), "UseAcrylic", "The acrylic preference from the settings"),
-            TraceLoggingFloat64(settings.DefaultSettings().TintOpacity(), "TintOpacity", "Opacity preference from the settings"),
+            TraceLoggingFloat64(settings.DefaultSettings().Opacity(), "TintOpacity", "Opacity preference from the settings"),
             TraceLoggingWideString(settings.DefaultSettings().FontFace().c_str(), "FontFace", "Font face chosen in the settings"),
             TraceLoggingWideString(schemeName.data(), "SchemeName", "Color scheme set in the settings"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
@@ -435,7 +435,9 @@ namespace winrt::TerminalApp::implementation
         {
             // If we are supposed to save state, make sure we clear it out
             // if the user manually closed all tabs.
-            if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings))
+            // Do this only if we are the last window; the monarch will notice
+            // we are missing and remove us that way otherwise.
+            if (!_maintainStateOnTabClose && ShouldUsePersistedLayout(_settings) && _numOpenWindows == 1)
             {
                 auto state = ApplicationState::SharedInstance();
                 state.PersistedWindowLayouts(nullptr);
@@ -668,31 +670,32 @@ namespace winrt::TerminalApp::implementation
         {
             _UnZoomIfNeeded();
 
-            auto pane = terminalTab->GetActivePane();
-
             if (const auto pane{ terminalTab->GetActivePane() })
             {
-                if (const auto control{ pane->GetTerminalControl() })
+                if (pane->ContainsReadOnly())
                 {
-                    if (control.ReadOnly())
+                    ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
+
+                    // If the user didn't explicitly click on close tab - leave
+                    if (warningResult != ContentDialogResult::Primary)
                     {
-                        ContentDialogResult warningResult = co_await _ShowCloseReadOnlyDialog();
-
-                        // If the user didn't explicitly click on close tab - leave
-                        if (warningResult != ContentDialogResult::Primary)
-                        {
-                            co_return;
-                        }
-
-                        // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
-                        if (control.ReadOnly())
-                        {
-                            control.ToggleReadOnly();
-                        }
+                        co_return;
                     }
 
-                    pane->Close();
+                    // Clean read-only mode to prevent additional prompt if closing the pane triggers closing of a hosting tab
+                    pane->WalkTree([](auto p) {
+                        if (const auto control{ p->GetTerminalControl() })
+                        {
+                            if (control.ReadOnly())
+                            {
+                                control.ToggleReadOnly();
+                            }
+                        }
+                        return false;
+                    });
                 }
+
+                pane->Close();
             }
         }
         else if (auto index{ _GetFocusedTabIndex() })

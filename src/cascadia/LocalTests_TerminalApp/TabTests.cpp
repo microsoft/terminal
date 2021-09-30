@@ -311,7 +311,7 @@ namespace TerminalAppLocalTests
         // TerminalPage and not only create them successfully, but also create a
         // tab using those settings successfully.
 
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -328,7 +328,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
         // This is super wacky, but we can't just initialize the
@@ -357,7 +357,7 @@ namespace TerminalAppLocalTests
         //
         // Created to test GH#2455
 
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -374,7 +374,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        const std::string settingsJson1{ R"(
+        static constexpr std::wstring_view settingsJson1{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -386,10 +386,10 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
-        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
+        CascadiaSettings settings1{ settingsJson1, {} };
         VERIFY_IS_NOT_NULL(settings1);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
@@ -444,7 +444,7 @@ namespace TerminalAppLocalTests
         //
         // Created to test GH#2455
 
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -461,7 +461,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        const std::string settingsJson1{ R"(
+        static constexpr std::wstring_view settingsJson1{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "profiles": [
@@ -473,10 +473,10 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
-        CascadiaSettings settings1{ til::u8u16(settingsJson1) };
+        CascadiaSettings settings1{ settingsJson1, {} };
         VERIFY_IS_NOT_NULL(settings1);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
@@ -558,7 +558,7 @@ namespace TerminalAppLocalTests
     // - The initialized TerminalPage, ready to use.
     winrt::com_ptr<winrt::TerminalApp::implementation::TerminalPage> TabTests::_commonSetup()
     {
-        const std::string settingsJson0{ R"(
+        static constexpr std::wstring_view settingsJson0{ LR"(
         {
             "defaultProfile": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
             "showTabsInTitlebar": false,
@@ -659,7 +659,7 @@ namespace TerminalAppLocalTests
             ]
         })" };
 
-        CascadiaSettings settings0{ til::u8u16(settingsJson0) };
+        CascadiaSettings settings0{ settingsJson0, {} };
         VERIFY_IS_NOT_NULL(settings0);
 
         const auto guid1 = Microsoft::Console::Utils::GuidFromString(L"{6239a42c-1111-49a3-80bd-e8fdd045185c}");
@@ -751,7 +751,7 @@ namespace TerminalAppLocalTests
         });
         VERIFY_SUCCEEDED(result);
 
-        Log::Comment(L"Move focus. This will cause us to un-zoom.");
+        Log::Comment(L"Move focus. We should still be zoomed.");
         result = RunOnUIThread([&page]() {
             // Set up action
             MoveFocusArgs args{ FocusDirection::Left };
@@ -761,7 +761,7 @@ namespace TerminalAppLocalTests
 
             auto firstTab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             VERIFY_ARE_EQUAL(2, firstTab->GetLeafPaneCount());
-            VERIFY_IS_FALSE(firstTab->IsZoomed());
+            VERIFY_IS_TRUE(firstTab->IsZoomed());
         });
         VERIFY_SUCCEEDED(result);
     }
@@ -1357,7 +1357,8 @@ namespace TerminalAppLocalTests
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
-            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
+            // And we should have stored a function to revert the change.
+            VERIFY_ARE_EQUAL(1u, page->_restorePreviewFuncs.size());
         });
 
         TestOnUIThread([&page]() {
@@ -1383,7 +1384,8 @@ namespace TerminalAppLocalTests
 
             Log::Comment(L"Color should be changed");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
-            VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
+            // After preview there should be no more restore functions to execute.
+            VERIFY_ARE_EQUAL(0u, page->_restorePreviewFuncs.size());
         });
     }
 
@@ -1428,7 +1430,6 @@ namespace TerminalAppLocalTests
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
-            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
         });
 
         TestOnUIThread([&page]() {
@@ -1451,7 +1452,6 @@ namespace TerminalAppLocalTests
 
             Log::Comment(L"Color should be the same as it originally was");
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
-            VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
         });
     }
 
@@ -1498,7 +1498,6 @@ namespace TerminalAppLocalTests
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
-            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
         });
 
         TestOnUIThread([&page]() {
@@ -1522,7 +1521,6 @@ namespace TerminalAppLocalTests
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
-            VERIFY_ARE_EQUAL(originalSettings, page->_originalSettings);
         });
 
         TestOnUIThread([&page]() {
@@ -1548,7 +1546,6 @@ namespace TerminalAppLocalTests
 
             Log::Comment(L"Color should be changed");
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
-            VERIFY_ARE_EQUAL(nullptr, page->_originalSettings);
         });
     }
 

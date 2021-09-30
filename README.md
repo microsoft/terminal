@@ -289,6 +289,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * You must [enable Developer Mode in the Windows Settings
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
+* You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
 * You must have the [Windows 10 1903
   SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
   installed

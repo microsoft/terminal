@@ -258,6 +258,12 @@
   <data name="MoveFocusFirstPane" xml:space="preserve">
     <value>Move focus to the first pane</value>
   </data>
+  <data name="MoveFocusParentPane" xml:space="preserve">
+    <value>Move focus to the parent pane</value>
+  </data>
+  <data name="MoveFocusChildPane" xml:space="preserve">
+    <value>Move focus to the child pane</value>
+  </data>
   <data name="SwapPaneCommandKey" xml:space="preserve">
     <value>Swap pane</value>
   </data>
@@ -427,7 +433,7 @@
     <value>Break into the debugger</value>
   </data>
   <data name="OpenSettingsUICommandKey" xml:space="preserve">
-    <value>Open Settings...</value>
+    <value>Open settings...</value>
   </data>
   <data name="RenameWindowCommandKey" xml:space="preserve">
     <value>Rename window to "{0}"</value>
@@ -450,15 +456,15 @@
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
   <data name="ClearAllCommandKey" xml:space="preserve">
-    <value>Clear Buffer</value>
+    <value>Clear buffer</value>
     <comment>A command to clear the entirety of the Terminal output buffer</comment>
   </data>
   <data name="ClearViewportCommandKey" xml:space="preserve">
-    <value>Clear Viewport</value>
+    <value>Clear viewport</value>
     <comment>A command to clear the active viewport of the Terminal</comment>
   </data>
   <data name="ClearScrollbackCommandKey" xml:space="preserve">
-    <value>Clear Scrollback</value>
+    <value>Clear scrollback</value>
     <comment>A command to clear the part of the buffer above the viewport</comment>
   </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">

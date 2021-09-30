@@ -38,7 +38,9 @@ namespace Microsoft.Terminal.Settings.Model
         Previous,
         PreviousInOrder,
         NextInOrder,
-        First
+        First,
+        Parent,
+        Child
     };
 
     enum SplitDirection
@@ -213,6 +215,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
     {
+        SetTabColorArgs(Windows.UI.Color tabColor);
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
     };
 
@@ -294,6 +297,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass RenameWindowArgs : IActionArgs
     {
+        RenameWindowArgs(String name);
         String Name { get; };
     };
 

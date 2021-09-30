@@ -194,6 +194,8 @@ cascadia
 cassert
 castsi
 catid
+carlos
+zamora
 cazamor
 CBash
 cbegin
@@ -557,6 +559,7 @@ DECSTR
 DECSWL
 DECTCEM
 Dedupe
+deduplicate
 deduplicated
 DEFAPP
 DEFAULTBACKGROUND
@@ -784,6 +787,7 @@ FINDSTRINGEXACT
 FINDUP
 FIter
 FIXEDCONVERTED
+FIXEDFILEINFO
 Flg
 flyout
 fmodern
@@ -1992,6 +1996,7 @@ resx
 retval
 rfa
 rfc
+rfid
 rftp
 rgb
 rgba
@@ -2687,6 +2692,7 @@ WINDOWPOSCHANGING
 windowproc
 windowrect
 windowsapp
+windowsdeveloper
 windowsinternalstring
 WINDOWSIZE
 windowsx

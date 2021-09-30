@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "VsSetupConfiguration.h"
 
-using namespace Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryInstances()
 {
@@ -31,6 +31,19 @@ std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryIn
     }
 
     THROW_IF_FAILED(result);
+
+    // Sort instances based on version and install date from latest to oldest.
+    std::sort(instances.begin(), instances.end(), [](const VsSetupInstance& a, const VsSetupInstance& b) {
+        auto const aVersion = a.GetComparableVersion();
+        auto const bVersion = b.GetComparableVersion();
+
+        if (aVersion == bVersion)
+        {
+            return a.GetComparableInstallDate() > b.GetComparableInstallDate();
+        }
+
+        return aVersion > bVersion;
+    });
 
     return instances;
 }
@@ -93,6 +106,13 @@ std::wstring VsSetupConfiguration::GetInstanceId(ISetupInstance* pInst)
     wil::unique_bstr bstrInstanceId;
     THROW_IF_FAILED(pInst->GetInstanceId(&bstrInstanceId));
     return bstrInstanceId.get();
+}
+
+unsigned long long VsSetupConfiguration::GetInstallDate(ISetupInstance* pInst)
+{
+    FILETIME ftInstallDate{ 0 };
+    THROW_IF_FAILED(pInst->GetInstallDate(&ftInstallDate));
+    return wil::filetime::to_int64(ftInstallDate);
 }
 
 std::wstring VsSetupConfiguration::GetStringProperty(ISetupPropertyStore* pProps, std::wstring_view name)

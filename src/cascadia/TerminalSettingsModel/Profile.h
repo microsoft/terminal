@@ -76,8 +76,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct Profile : ProfileT<Profile>, IInheritable<Profile>
     {
     public:
-        Profile();
-        Profile(guid guid);
+        Profile() noexcept = default;
+        Profile(guid guid) noexcept;
 
         void CreateUnfocusedAppearance();
         void DeleteUnfocusedAppearance();
@@ -87,19 +87,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return Name();
         }
 
-        static com_ptr<Profile> CloneInheritanceGraph(com_ptr<Profile> oldProfile, com_ptr<Profile> newProfile, std::unordered_map<void*, com_ptr<Profile>>& visited);
-        static com_ptr<Profile> CopySettings(com_ptr<Profile> source);
-        static void InsertParentHelper(com_ptr<Profile> child, com_ptr<Profile> parent, std::optional<size_t> index = std::nullopt);
+        static void CopyInheritanceGraphs(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited, const std::vector<winrt::com_ptr<Profile>>& source, std::vector<winrt::com_ptr<Profile>>& target);
+        winrt::com_ptr<Profile>& CopyInheritanceGraph(std::unordered_map<const Profile*, winrt::com_ptr<Profile>>& visited) const;
+        winrt::com_ptr<Profile> CopySettings() const;
 
-        Json::Value GenerateStub() const;
         static com_ptr<Profile> FromJson(const Json::Value& json);
-        bool ShouldBeLayered(const Json::Value& json) const;
         void LayerJson(const Json::Value& json);
-        static bool IsDynamicProfileObject(const Json::Value& json);
         Json::Value ToJson() const;
 
         hstring EvaluatedStartingDirectory() const;
-        static guid GetGuidOrGenerateForJson(const Json::Value& json) noexcept;
 
         Model::IAppearanceConfig DefaultAppearance();
         Model::FontConfig FontInfo();
@@ -109,6 +105,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
 
+        WINRT_PROPERTY(guid, Updates);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
         INHERITABLE_SETTING(Model::Profile, hstring, Source);
@@ -124,7 +121,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
 
         INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
-        INHERITABLE_SETTING(Model::Profile, double, AcrylicOpacity, 0.5);
         INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
 
         INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
@@ -149,7 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };
         static std::wstring EvaluateStartingDirectory(const std::wstring& directory);
 
-        static guid _GenerateGuidForProfile(const hstring& name, const hstring& source) noexcept;
+        static guid _GenerateGuidForProfile(const std::wstring_view& name, const std::wstring_view& source) noexcept;
 
         friend class SettingsModelLocalTests::DeserializationTests;
         friend class SettingsModelLocalTests::ProfileTests;

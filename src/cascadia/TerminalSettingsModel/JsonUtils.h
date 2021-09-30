@@ -101,7 +101,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
     public:
         DeserializationError(const Json::Value& value) :
-            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asCString())),
+            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asString())),
             jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)
@@ -678,7 +678,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         GUID FromJson(const Json::Value& json)
         {
-            return ::Microsoft::Console::Utils::GuidFromString(til::u8u16(Detail::GetStringView(json)));
+            return ::Microsoft::Console::Utils::GuidFromString(til::u8u16(Detail::GetStringView(json)).c_str());
         }
 
         bool CanConvert(const Json::Value& json)

@@ -7,6 +7,7 @@
 #include "Peasant.h"
 #include "../cascadia/inc/cppwinrt_utils.h"
 #include "WindowActivatedArgs.h"
+#include <atomic>
 
 // We sure different GUIDs here depending on whether we're running a Release,
 // Preview, or Dev build. This ensures that different installs don't
@@ -58,34 +59,41 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void SummonAllWindows();
         bool DoesQuakeWindowExist();
         Windows::Foundation::Collections::IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo> GetPeasantInfos();
+        Windows::Foundation::Collections::IVector<winrt::hstring> GetAllWindowLayouts();
 
         TYPED_EVENT(FindTargetWindowRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::FindTargetWindowArgs);
         TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowCreated, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(WindowClosed, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Microsoft::Terminal::Remoting::QuitAllRequestedArgs);
 
     private:
         uint64_t _ourPID;
 
-        uint64_t _nextPeasantID{ 1 };
-        uint64_t _thisPeasantID{ 0 };
+        std::atomic<uint64_t> _nextPeasantID{ 1 };
+        uint64_t _ourPeasantId{ 0 };
+
+        // When we're quitting we do not care as much about handling some events that we know will be triggered
+        std::atomic<bool> _quitting{ false };
 
         winrt::com_ptr<IVirtualDesktopManager> _desktopManager{ nullptr };
 
         std::unordered_map<uint64_t, winrt::Microsoft::Terminal::Remoting::IPeasant> _peasants;
-
         std::vector<Remoting::WindowActivatedArgs> _mruPeasants;
+        // These should not be locked at the same time to prevent deadlocks
+        // unless they are both shared_locks.
+        std::shared_mutex _peasantsMutex{};
+        std::shared_mutex _mruPeasantsMutex{};
 
-        winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID);
+        winrt::Microsoft::Terminal::Remoting::IPeasant _getPeasant(uint64_t peasantID, bool clearMruPeasantOnFailure = true);
         uint64_t _getMostRecentPeasantID(bool limitToCurrentDesktop, const bool ignoreQuakeWindow);
         uint64_t _lookupPeasantIdForName(std::wstring_view name);
 
         void _peasantWindowActivated(const winrt::Windows::Foundation::IInspectable& sender,
                                      const winrt::Microsoft::Terminal::Remoting::WindowActivatedArgs& args);
         void _doHandleActivatePeasant(const winrt::com_ptr<winrt::Microsoft::Terminal::Remoting::implementation::WindowActivatedArgs>& args);
-        void _clearOldMruEntries(const uint64_t peasantID);
+        void _clearOldMruEntries(const std::unordered_set<uint64_t>& peasantIds);
 
         void _forAllPeasantsIgnoringTheDead(std::function<void(const winrt::Microsoft::Terminal::Remoting::IPeasant&, const uint64_t)> callback,
                                             std::function<void(const uint64_t)> errorCallback);
@@ -96,8 +104,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         void _renameRequested(const winrt::Windows::Foundation::IInspectable& sender,
                               const winrt::Microsoft::Terminal::Remoting::RenameRequestArgs& args);
 
-        void _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
-                            const winrt::Windows::Foundation::IInspectable& args);
+        winrt::fire_and_forget _handleQuitAll(const winrt::Windows::Foundation::IInspectable& sender,
+                                              const winrt::Windows::Foundation::IInspectable& args);
 
         // Method Description:
         // - Helper for doing something on each and every peasant.
@@ -107,6 +115,8 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
         //   returns false.
         // - If any single peasant is dead, then we'll call onError and then add it to a
         //   list of peasants to clean up once the loop ends.
+        // - NB: this (separately) takes unique locks on _peasantsMutex and
+        //   _mruPeasantsMutex.
         // Arguments:
         // - func: The function to call on each peasant
         // - onError: The function to call if a peasant is dead.
@@ -119,44 +129,59 @@ namespace winrt::Microsoft::Terminal::Remoting::implementation
             using R = std::invoke_result_t<F, Map::key_type, Map::mapped_type>;
             static constexpr auto IsVoid = std::is_void_v<R>;
 
-            std::vector<uint64_t> peasantsToErase;
-
-            for (const auto& [id, p] : _peasants)
+            std::unordered_set<uint64_t> peasantsToErase;
             {
-                try
+                std::shared_lock lock{ _peasantsMutex };
+
+                for (const auto& [id, p] : _peasants)
                 {
-                    if constexpr (IsVoid)
+                    try
                     {
-                        func(id, p);
-                    }
-                    else
-                    {
-                        if (!func(id, p))
+                        if constexpr (IsVoid)
                         {
-                            break;
+                            func(id, p);
+                        }
+                        else
+                        {
+                            if (!func(id, p))
+                            {
+                                break;
+                            }
                         }
                     }
-                }
-                catch (const winrt::hresult_error& exception)
-                {
-                    onError(id);
+                    catch (const winrt::hresult_error& exception)
+                    {
+                        onError(id);
 
-                    if (exception.code() == 0x800706ba) // The RPC server is unavailable.
-                    {
-                        peasantsToErase.emplace_back(id);
-                    }
-                    else
-                    {
-                        LOG_CAUGHT_EXCEPTION();
-                        throw;
+                        if (exception.code() == 0x800706ba) // The RPC server is unavailable.
+                        {
+                            peasantsToErase.emplace(id);
+                        }
+                        else
+                        {
+                            LOG_CAUGHT_EXCEPTION();
+                            throw;
+                        }
                     }
                 }
             }
 
-            for (const auto& id : peasantsToErase)
+            if (peasantsToErase.size() > 0)
             {
-                _peasants.erase(id);
-                _clearOldMruEntries(id);
+                // Don't hold a lock on _peasants and _mruPeasants at the same
+                // time to avoid deadlocks.
+                {
+                    std::unique_lock lock{ _peasantsMutex };
+                    for (const auto& id : peasantsToErase)
+                    {
+                        _peasants.erase(id);
+                    }
+                }
+                _clearOldMruEntries(peasantsToErase);
+
+                // A peasant died, let the app host know that the number of
+                // windows has changed.
+                _WindowClosedHandlers(nullptr, nullptr);
             }
         }
 
