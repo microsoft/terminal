@@ -72,13 +72,15 @@
                         two font lists causes a crash within the ComboBox code.
                         As a workaround, introduce two ComboBox controls and only display one at a time.
                     -->
-                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                    <ComboBox x:Uid="Profile_FontFaceBox"
+                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                               ItemsSource="{x:Bind SourceProfile.MonospaceFontList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                               SelectionChanged="FontFace_SelectionChanged"
                               Style="{StaticResource ComboBoxSettingStyle}"
                               Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(ShowAllFonts), Mode=OneWay}" />
-                    <ComboBox ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
+                    <ComboBox x:Uid="Profile_FontFaceBox"
+                              ItemTemplate="{StaticResource FontFaceComboBoxItemTemplate}"
                               ItemsSource="{x:Bind SourceProfile.CompleteFontList, Mode=OneWay}"
                               SelectedItem="{x:Bind CurrentFontFace, Mode=OneWay}"
                               SelectionChanged="FontFace_SelectionChanged"
@@ -97,7 +99,8 @@
                                     HasSettingValue="{x:Bind Appearance.HasFontSize, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.FontSizeOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.IsDefault, Mode=OneWay}">
-                <muxc:NumberBox AcceptsExpression="False"
+                <muxc:NumberBox x:Uid="Profile_FontSizeBox"
+                                AcceptsExpression="False"
                                 LargeChange="10"
                                 Maximum="128"
                                 Minimum="1"

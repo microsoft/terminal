@@ -30,18 +30,19 @@ namespace Microsoft::Console::Render
     class IRenderEngine
     {
     public:
-        enum GridLines
+        enum class GridLines
         {
-            None = 0x0,
-            Top = 0x1,
-            Bottom = 0x2,
-            Left = 0x4,
-            Right = 0x8,
-            Underline = 0x10,
-            DoubleUnderline = 0x20,
-            Strikethrough = 0x40,
-            HyperlinkUnderline = 0x80
+            None,
+            Top,
+            Bottom,
+            Left,
+            Right,
+            Underline,
+            DoubleUnderline,
+            Strikethrough,
+            HyperlinkUnderline
         };
+        using GridLineSet = til::enumset<GridLines>;
 
         virtual ~IRenderEngine() = 0;
 
@@ -86,7 +87,7 @@ namespace Microsoft::Console::Render
                                                       const COORD coord,
                                                       const bool fTrimLeft,
                                                       const bool lineWrapped) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLines lines,
+        [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLineSet lines,
                                                            const COLORREF color,
                                                            const size_t cchLine,
                                                            const COORD coordTarget) noexcept = 0;
@@ -118,5 +119,3 @@ namespace Microsoft::Console::Render
 
     inline Microsoft::Console::Render::IRenderEngine::~IRenderEngine() {}
 }
-
-DEFINE_ENUM_FLAG_OPERATORS(Microsoft::Console::Render::IRenderEngine::GridLines)

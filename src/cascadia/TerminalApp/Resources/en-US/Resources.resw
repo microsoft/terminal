@@ -190,6 +190,9 @@
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>Multiple panes</value>
+  </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Close...</value>
   </data>
