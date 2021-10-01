@@ -189,13 +189,12 @@ cacafire
 callee
 capslock
 CARETBLINKINGENABLED
+carlos
 CARRIAGERETURN
 cascadia
 cassert
 castsi
 catid
-carlos
-zamora
 cazamor
 CBash
 cbegin
@@ -1232,6 +1231,7 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KPRIORITY
 KVM
 langid
 LANGUAGELIST
@@ -1803,6 +1803,7 @@ POSX
 POSXSCROLL
 POSYSCROLL
 ppci
+PPEB
 ppf
 ppguid
 ppidl
@@ -2850,6 +2851,7 @@ YSize
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+zamora
 ZCmd
 ZCtrl
 zsh
