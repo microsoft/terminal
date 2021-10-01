@@ -475,6 +475,7 @@ void SettingsLoader::_parse(const OriginTag origin, const winrt::hstring& source
         for (const auto& profileJson : json.profilesList)
         {
             auto profile = _parseProfile(origin, source, profileJson);
+            // GH#9962: Discard Guid-less, Name-less profiles.
             if (profile->HasGuid())
             {
                 _appendProfile(std::move(profile), settings);
@@ -517,6 +518,8 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
             try
             {
                 auto profile = _parseProfile(OriginTag::Fragment, source, profileJson);
+                // GH#9962: Discard Guid-less, Name-less profiles, but...
+                // allow ones with an Updates field, as those are special for fragments.
                 if (profile->HasGuid() || profile->Updates() != winrt::guid{})
                 {
                     _appendProfile(std::move(profile), settings);
@@ -537,7 +540,8 @@ SettingsLoader::JsonSettings SettingsLoader::_parseJson(const std::string_view& 
     return JsonSettings{ std::move(root), colorSchemes, profileDefaults, profilesList };
 }
 
-// Just a common helper function between _parse and _parseFragment. Parses a profile.
+// Just a common helper function between _parse and _parseFragment.
+// Parses a profile and ensures it has a Guid if possible.
 winrt::com_ptr<Profile> SettingsLoader::_parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson)
 {
     auto profile = Profile::FromJson(profileJson);
@@ -550,6 +554,9 @@ winrt::com_ptr<Profile> SettingsLoader::_parseProfile(const OriginTag origin, co
         profile->Source(source);
     }
 
+    // If none exists. the Guid() getter generates one from Name() and optionally Source().
+    // We want to ensure that every profile has a GUID no matter what, not just to
+    // cache the value, but also to make them consistently identifiable later on.
     if (!profile->HasGuid() && profile->HasName())
     {
         profile->Guid(profile->Guid());
