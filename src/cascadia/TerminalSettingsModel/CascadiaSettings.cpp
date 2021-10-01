@@ -691,10 +691,22 @@ std::wstring CascadiaSettings::_normalizeCommandLine(LPCWSTR commandLine)
 
         if (status == S_OK)
         {
+            std::filesystem::path path{ std::move(normalized) };
+
             // ExpandEnvironmentStringsW() might have returned a string that's not in the canonical capitalization.
             // For instance %SystemRoot% is set to C:\WINDOWS on my system (ugh), even though the path is actually C:\Windows.
             // We need to fix this as case-sensitive path comparisons will fail otherwise (Windows supports case-sensitive file systems).
-            auto path = std::filesystem::canonical(std::move(normalized));
+            // If we fail to resolve the path for whatever reason (pretty unlikely given that SearchPathW found it)
+            // we fall back to leaving the path as is. Better than throwing a random exception and making this unusable.
+            {
+                std::error_code ec;
+                auto canonicalPath = canonical(path, ec);
+                if (!ec)
+                {
+                    path = std::move(canonicalPath);
+                }
+            }
+
             // std::filesystem::path has no way to extract the internal path.
             // So about that.... I own you, computer. Give me that path.
             normalized = std::move(const_cast<std::wstring&>(path.native()));
