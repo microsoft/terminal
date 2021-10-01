@@ -129,9 +129,9 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
 
     args.Profile(controlSettings.ProfileName());
     // If we know the user's working directory use it instead of the profile.
-    if (!_control.WorkingDirectory().empty())
+    if (const auto dir = _control.WorkingDirectory(); !dir.empty())
     {
-        args.StartingDirectory(_control.WorkingDirectory());
+        args.StartingDirectory(dir);
     }
     else
     {
