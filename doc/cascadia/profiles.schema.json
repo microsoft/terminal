@@ -1184,8 +1184,9 @@
               "pattern": "focusPane"
             },
             "id": {
-              "type": "string",
-              "default": "",
+              "type": "number",
+              "minimum": 0,
+              "default": 0,
               "description": "The ID of the pane to focus"
             }
           }
