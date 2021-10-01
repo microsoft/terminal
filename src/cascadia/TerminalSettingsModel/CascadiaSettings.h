@@ -44,6 +44,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> baseLayerProfile;
         std::vector<winrt::com_ptr<implementation::Profile>> profiles;
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
+
+        void clear();
     };
 
     struct SettingsLoader
@@ -63,12 +65,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool duplicateProfile = false;
 
     private:
+        struct JsonSettings
+        {
+            Json::Value root;
+            const Json::Value& colorSchemes;
+            const Json::Value& profileDefaults;
+            const Json::Value& profilesList;
+        };
+
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
-        void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, bool updatesKeyAllowed = false);
+        void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
+        void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
+        static JsonSettings _parseJson(const std::string_view& content);
+        static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
         static void _addParentProfile(const winrt::com_ptr<implementation::Profile>& profile, ParsedSettings& settings);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
