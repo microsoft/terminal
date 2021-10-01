@@ -249,6 +249,7 @@
                             <!--  Opacity  -->
                             <local:SettingContainer x:Name="OpacityContainer"
                                                     x:Uid="Profile_Opacity"
+                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearOpacity}"
                                                     HasSettingValue="{x:Bind State.Profile.HasOpacity, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.OpacityOverrideSource, Mode=OneWay}">
