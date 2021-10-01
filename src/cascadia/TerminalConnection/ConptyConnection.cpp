@@ -348,7 +348,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         return _guid;
     }
 
-    winrt::hstring ConptyConnection::Commandline() const noexcept
+    winrt::hstring ConptyConnection::Commandline() const
     {
         return _commandline;
     }
