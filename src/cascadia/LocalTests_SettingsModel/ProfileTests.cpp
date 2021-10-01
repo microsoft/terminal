@@ -300,6 +300,17 @@ namespace SettingsModelLocalTests
         // the GUID generated for a dynamic profile (with a source) is different
         // than that of a profile without a source.
 
+        static constexpr std::string_view inboxSettings{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "source": "Terminal.App.UnitTest.0"
+                },
+                {
+                    "name" : "profile1"
+                }
+            ]
+        })" };
         static constexpr std::string_view userSettings{ R"({
             "profiles": [
                 {
@@ -312,9 +323,9 @@ namespace SettingsModelLocalTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, inboxSettings);
 
-        VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings->AllProfiles().GetAt(0).Name());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(0).HasGuid());
