@@ -81,8 +81,8 @@ public:
         return S_OK;
     }
 
-    // This returns rectagle of current command line edit area.
-    // When a user types in East Asian language, canddidate window is shown at this position.
+    // This returns rectangle of current command line edit area.
+    // When a user types in East Asian language, candidate window is shown at this position.
     // Emoji and more panel (Win+.) is shown at the position, too.
     STDMETHODIMP GetTextExt(LONG, LONG, RECT* pRect, BOOL* pbClipped)
     {
