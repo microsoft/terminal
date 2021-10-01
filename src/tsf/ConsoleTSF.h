@@ -68,8 +68,8 @@ public:
         return S_OK;
     }
 
-    // This returns Rectagle of the text box of whole console.
-    // When a user taps inside the rectagle while hardware keyboard is not available,
+    // This returns Rectangle of the text box of whole console.
+    // When a user taps inside the rectangle while hardware keyboard is not available,
     // touch keyboard is invoked.
     STDMETHODIMP GetScreenExt(RECT* pRect)
     {
