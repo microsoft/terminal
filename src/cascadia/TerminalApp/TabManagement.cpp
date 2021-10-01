@@ -19,6 +19,9 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "..\TerminalSettingsModel\FileUtils.h"
+
+#include <shlobj.h>
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -410,33 +413,45 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to export
     winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab)
     {
+        // This will be used to set up the file picker "filter", to select .txt
+        // files by default.
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Text Files (*.txt)", L"*.txt" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+        // An arbitrary GUID to associate with all instances of this
+        // dialog, so they all re-open in the same path as they were
+        // open before:
+        static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
+
         try
         {
             if (const auto control{ tab.GetActiveTerminalControl() })
             {
-                const FileSavePicker savePicker;
-                savePicker.as<IInitializeWithWindow>()->Initialize(*_hostingHwnd);
-                savePicker.SuggestedStartLocation(PickerLocationId::Downloads);
-                const auto fileChoices = single_threaded_vector<hstring>({ L".txt" });
-                savePicker.FileTypeChoices().Insert(RS_(L"PlainText"), fileChoices);
-                savePicker.SuggestedFileName(control.Title());
+                // GH#11356 - we can't use the UWP apis for writing the file,
+                // because they don't work elevated (shocker) So just use the
+                // shell32 file picker manually.
+                auto path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                    try
+                    {
+                        // Default to the Downloads folder
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
 
-                const StorageFile file = co_await savePicker.PickSaveFileAsync();
-                if (file != nullptr)
+                    // Default to using the tab title as the file name
+                    THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
+                });
+
+                if (!path.empty())
                 {
                     const auto buffer = control.ReadEntireBuffer();
-                    CachedFileManager::DeferUpdates(file);
-                    co_await FileIO::WriteTextAsync(file, buffer);
-                    const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
-                    switch (status)
-                    {
-                    case FileUpdateStatus::Complete:
-                    case FileUpdateStatus::CompleteAndRenamed:
-                        _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"ExportSuccess"));
-                        break;
-                    default:
-                        _ShowControlNoticeDialog(RS_(L"NoticeError"), RS_(L"ExportFailure"));
-                    }
+                    CascadiaSettings::ExportFile(path, buffer);
                 }
             }
         }
