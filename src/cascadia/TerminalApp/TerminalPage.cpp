@@ -2899,8 +2899,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Displays a dialog stating the "Touch Keyboard and Handwriting Panel
-    //   Service" is disabled.
+    // - Displays a info popup guiding the user into setting their default terminal.
     void TerminalPage::ShowSetAsDefaultInfoBar() const
     {
         if (!_IsMessageDismissed(InfoBarMessage::SetAsDefault))
