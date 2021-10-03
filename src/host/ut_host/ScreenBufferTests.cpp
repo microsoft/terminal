@@ -1912,8 +1912,8 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"The viewport should be full of dark_red on bright_blue"));
 
     auto expectedAttr = TextAttribute{};
-    expectedAttr.SetIndexedForeground((BYTE)XtermToWindowsIndex(1));
-    expectedAttr.SetIndexedBackground((BYTE)XtermToWindowsIndex(12));
+    expectedAttr.SetIndexedForeground(TextColor::DARK_RED);
+    expectedAttr.SetIndexedBackground(TextColor::BRIGHT_BLUE);
     stateMachine.ProcessString(L"\x1b[31;104m");
 
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
@@ -2292,8 +2292,8 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     // See the log comment above for description of these values.
     TextAttribute expectedDefaults{};
     TextAttribute expectedTwo;
-    expectedTwo.SetIndexedForeground((BYTE)XtermToWindowsIndex(10));
-    expectedTwo.SetIndexedBackground((BYTE)XtermToWindowsIndex(4));
+    expectedTwo.SetIndexedForeground(TextColor::BRIGHT_GREEN);
+    expectedTwo.SetIndexedBackground(TextColor::DARK_BLUE);
     TextAttribute expectedThree = expectedTwo;
     expectedThree.SetDefaultForeground();
     // Four is the same as Defaults

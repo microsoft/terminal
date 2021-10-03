@@ -48,6 +48,23 @@ enum class ColorType : BYTE
 struct TextColor
 {
 public:
+    static constexpr BYTE DARK_BLACK = 0;
+    static constexpr BYTE DARK_RED = 1;
+    static constexpr BYTE DARK_GREEN = 2;
+    static constexpr BYTE DARK_YELLOW = 3;
+    static constexpr BYTE DARK_BLUE = 4;
+    static constexpr BYTE DARK_MAGENTA = 5;
+    static constexpr BYTE DARK_CYAN = 6;
+    static constexpr BYTE DARK_WHITE = 7;
+    static constexpr BYTE BRIGHT_BLACK = 8;
+    static constexpr BYTE BRIGHT_RED = 9;
+    static constexpr BYTE BRIGHT_GREEN = 10;
+    static constexpr BYTE BRIGHT_YELLOW = 11;
+    static constexpr BYTE BRIGHT_BLUE = 12;
+    static constexpr BYTE BRIGHT_MAGENTA = 13;
+    static constexpr BYTE BRIGHT_CYAN = 14;
+    static constexpr BYTE BRIGHT_WHITE = 15;
+
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },
         _red{ 0 },
