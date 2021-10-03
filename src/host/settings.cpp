@@ -83,7 +83,7 @@ Settings::Settings() :
 
     gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
-    ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
+    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
 }
 
 // Routine Description:
@@ -123,7 +123,7 @@ void Settings::ApplyDesktopSpecificDefaults()
     _bHistoryNoDup = FALSE;
 
     gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
-    ::Microsoft::Console::Utils::InitializeCampbellColorTableForConhost(tableView);
+    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
 
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;

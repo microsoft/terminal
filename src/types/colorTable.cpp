@@ -481,35 +481,6 @@ gsl::span<const til::color> Utils::CampbellColorTable()
 }
 
 // Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the Windows BGR order.
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    InitializeCampbellColorTable(table);
-    SwapANSIColorOrderForConhost(table);
-}
-
-// Function Description:
-// - modifies in-place the given color table from ANSI (RGB) order to Console order (BRG).
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    std::swap(til::at(table, 1), til::at(table, 4));
-    std::swap(til::at(table, 3), til::at(table, 6));
-    std::swap(til::at(table, 9), til::at(table, 12));
-    std::swap(til::at(table, 11), til::at(table, 14));
-}
-
-// Function Description:
 // - Fill the first 255 entries of a given color table with the default values
 //      of a full 256-color table
 // Arguments:
