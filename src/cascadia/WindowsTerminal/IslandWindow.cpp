@@ -1717,5 +1717,13 @@ void IslandWindow::OpenSystemMenu(const std::optional<int> mouseX, const std::op
     }
 }
 
+void IslandWindow::AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback)
+{
+}
+
+void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
+{
+}
+
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
 DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);

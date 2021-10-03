@@ -54,6 +54,8 @@ public:
     void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;
 
     void OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept;
+    void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
+    void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
@@ -130,6 +132,8 @@ protected:
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool _minimizeToNotificationArea{ false };
+
+    std::unordered_map<UINT, winrt::delegate<void()>> _systemMenuItems;
 
 private:
     // This minimum width allows for width the tabs fit
