@@ -169,7 +169,7 @@ public:
 private:
     static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
     {
-        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
+        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ TextColor::TransposeLegacyIndex(requestedIndex), true };
     }
 
     static BYTE s_legacyDefaultForeground;
