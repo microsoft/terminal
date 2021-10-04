@@ -25,15 +25,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    WUX::Media::Brush _defaultTabBackground(const MUX::Controls::TabViewItem& tab)
-    {
-        static WUX::Media::Brush brush = [tab]() {
-            auto bg = tab.Background();
-            return bg;
-        }();
-        return brush;
-    }
-
     TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
     {
         _rootPane = std::make_shared<Pane>(profile, control, true);
@@ -152,8 +143,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::_MakeTabViewItem()
     {
         TabBase::_MakeTabViewItem();
-        // auto bg{ _defaultTabBackground(TabViewItem()) };
-        // TabViewItem().Background(bg);
+
         TabViewItem().DoubleTapped([weakThis = get_weak()](auto&& /*s*/, auto&& /*e*/) {
             if (auto tab{ weakThis.get() })
             {
@@ -1479,9 +1469,6 @@ namespace winrt::TerminalApp::implementation
         // We actually can't, because it will make the part of the tab that
         // doesn't contain the text totally transparent to hit tests. So we
         // actually _do_ still need to set TabViewItemHeaderBackground manually.
-        auto originalBg = TabViewItem().Background();
-        originalBg;
-        // TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
         TabViewItem().Background(deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
@@ -1550,8 +1537,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TabViewItem().Background(nullptr);
-        // TabViewItem().Background(_defaultTabBackground(TabViewItem()));
+        // GH#11382 DON'T set the background to null. If you do that, then the
+        // tab won't be hit testable at all. Transparent, however, is a totally
+        // valid hit test target. That makes sense.
         TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
 
         _RefreshVisualState();
