@@ -1683,7 +1683,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, NameKey, args->_Name);
             JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
             JsonUtils::SetValueForKey(json, MonitorKey, args->_Monitor);
-            JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
+            JsonUtils::SetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
             JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return json;
         }
