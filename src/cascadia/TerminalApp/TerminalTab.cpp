@@ -1461,16 +1461,10 @@ namespace winrt::TerminalApp::implementation
         // when the TabViewItem is unselected. So we still need to set the other
         // properties ourselves.
         //
-        // GH#11294: DESPITE the fact that there's a Background() API that we
-        // could just call like:
-        //
-        //     TabViewItem().Background(deselectedTabBrush);
-        //
-        // We actually can't, because it will make the part of the tab that
-        // doesn't contain the text totally transparent to hit tests. So we
-        // actually _do_ still need to set TabViewItemHeaderBackground manually.
+        // In GH#11294 we thought we'd still need to set
+        // TabViewItemHeaderBackground manually, but GH#11382 discovered that
+        // Background() was actually okay after all.
         TabViewItem().Background(deselectedTabBrush);
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
