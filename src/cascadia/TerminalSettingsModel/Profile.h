@@ -46,6 +46,7 @@ Author(s):
 
 #include "Profile.g.h"
 #include "IInheritable.h"
+#include "SettingsUtils.h"
 
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -120,25 +121,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
         INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
 
-        INHERITABLE_SETTING(Model::Profile, bool, UseAcrylic, false);
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, Commandline, L"cmd.exe");
         INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
 
-        INHERITABLE_SETTING(Model::Profile, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
         INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
         INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
-
-        INHERITABLE_SETTING(Model::Profile, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        INHERITABLE_SETTING(Model::Profile, bool, SnapOnInput, true);
-        INHERITABLE_SETTING(Model::Profile, bool, AltGrAliasing, true);
 
         INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
 
         INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
+
+    #define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
+        INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+            PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+    #undef PROFILE_SETTINGS_INITIALIZE
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };

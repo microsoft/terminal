@@ -162,8 +162,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     void TerminalSettings::_ApplyAppearanceSettings(const IAppearanceConfig& appearance, const Windows::Foundation::Collections::IMapView<winrt::hstring, ColorScheme>& schemes)
     {
-        _CursorShape = appearance.CursorShape();
-        _CursorHeight = appearance.CursorHeight();
         if (!appearance.ColorSchemeName().empty())
         {
             if (const auto scheme = schemes.TryLookup(appearance.ColorSchemeName()))
@@ -192,15 +190,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _BackgroundImage = appearance.ExpandedBackgroundImagePath();
         }
 
-        _BackgroundImageOpacity = appearance.BackgroundImageOpacity();
-        _BackgroundImageStretchMode = appearance.BackgroundImageStretchMode();
-        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
-
-        _RetroTerminalEffect = appearance.RetroTerminalEffect();
-        _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
+    #define PROFILE_APPEARANCE_SETTINGS_APPLY(type, name, ...) \
+        _##name = appearance.name();
+            APPEARANCE_SETTINGS(PROFILE_APPEARANCE_SETTINGS_APPLY)
+    #undef PROFILE_APPEARANCE_SETTINGS_APPLY
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
+        std::tie(_BackgroundImageHorizontalAlignment, _BackgroundImageVerticalAlignment) = ConvertConvergedAlignment(appearance.BackgroundImageAlignment());
 
         _Opacity = appearance.Opacity();
     }
@@ -267,24 +264,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::_ApplyProfileSettings(const Profile& profile)
     {
-        // Fill in the Terminal Setting's CoreSettings from the profile
-        _HistorySize = profile.HistorySize();
-        _SnapOnInput = profile.SnapOnInput();
-        _AltGrAliasing = profile.AltGrAliasing();
+    #define PROFILE_SETTINGS_APPLY(type, name, ...) \
+        _##name = profile.name();
+            PROFILE_SETTINGS(PROFILE_SETTINGS_APPLY)
+    #undef PROFILE_SETTINGS_APPLY
+
+    #define PROFILE_FONT_SETTINGS_APPLY(type, name, ...) \
+        _##name = profile.FontInfo().name();
+                FONT_SETTINGS(PROFILE_FONT_SETTINGS_APPLY)
+    #undef PROFILE_FONT_SETTINGS_APPLY
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
-        _UseAcrylic = profile.UseAcrylic();
-
-        _FontFace = profile.FontInfo().FontFace();
-        _FontSize = profile.FontInfo().FontSize();
-        _FontWeight = profile.FontInfo().FontWeight();
-        _FontFeatures = profile.FontInfo().FontFeatures();
-        _FontAxes = profile.FontInfo().FontAxes();
-        _Padding = profile.Padding();
-
-        _Commandline = profile.Commandline();
-
         _StartingDirectory = profile.EvaluatedStartingDirectory();
 
         // GH#2373: Use the tabTitle as the starting title if it exists, otherwise
@@ -295,10 +286,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         {
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
-
-        _ScrollState = profile.ScrollState();
-
-        _AntialiasingMode = profile.AntialiasingMode();
 
         if (profile.TabColor())
         {
@@ -315,17 +302,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
     {
-        _InitialRows = globalSettings.InitialRows();
-        _InitialCols = globalSettings.InitialCols();
-
-        _WordDelimiters = globalSettings.WordDelimiters();
-        _CopyOnSelect = globalSettings.CopyOnSelect();
-        _FocusFollowMouse = globalSettings.FocusFollowMouse();
-        _ForceFullRepaintRendering = globalSettings.ForceFullRepaintRendering();
-        _SoftwareRendering = globalSettings.SoftwareRendering();
-        _ForceVTInput = globalSettings.ForceVTInput();
-        _TrimBlockSelection = globalSettings.TrimBlockSelection();
-        _DetectURLs = globalSettings.DetectURLs();
+    #define GLOBAL_SETTINGS_APPLY(type, name, ...)    \
+        _##name = globalSettings.name();
+            GLOBAL_SETTINGS(GLOBAL_SETTINGS_APPLY)
+    #undef GLOBAL_SETTINGS_APPLY
     }
 
     // Method Description:

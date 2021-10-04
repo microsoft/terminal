@@ -17,6 +17,7 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "TerminalSettingsCreateResult.g.h"
 #include "IInheritable.h"
+#include "SettingsUtils.h"
 #include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
@@ -84,21 +85,29 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultForeground, DEFAULT_FOREGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, SelectionBackground, DEFAULT_FOREGROUND);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, HistorySize, DEFAULT_HISTORY_SIZE);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialRows, 30);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, InitialCols, 80);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, SnapOnInput, true);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, AltGrAliasing, true);
+    #define GLOBAL_SETTINGS_INITIALIZE(type, name, ...) \
+        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+            GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+    #undef GLOBAL_SETTINGS_INITIALIZE
+
+    #define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
+        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+            PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+    #undef PROFILE_SETTINGS_INITIALIZE
+
+    #define PROFILE_FONT_SETTINGS_INITIALIZE(type, name, ...) \
+        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+            FONT_SETTINGS(PROFILE_FONT_SETTINGS_INITIALIZE)
+    #undef PROFILE_FONT_SETTINGS_INITIALIZE
+
+    #define PROFILE_APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
+        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+                APPEARANCE_SETTINGS(PROFILE_APPEARANCE_SETTINGS_INITIALIZE)
+    #undef PROFILE_APPEARANCE_SETTINGS_INITIALIZE
+
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Core::CursorStyle, CursorShape, Core::CursorStyle::Vintage);
-        INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, TabColor, nullptr);
 
@@ -117,42 +126,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
         INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
-        INHERITABLE_SETTING(Model::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
-
-        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
-        INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
-        INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Model::ColorScheme, AppliedColorScheme);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
-        INHERITABLE_SETTING(Model::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill);
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::HorizontalAlignment, BackgroundImageHorizontalAlignment, winrt::Windows::UI::Xaml::HorizontalAlignment::Center);
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Xaml::VerticalAlignment, BackgroundImageVerticalAlignment, winrt::Windows::UI::Xaml::VerticalAlignment::Center);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::IKeyBindings, KeyBindings, nullptr);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, Commandline);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingDirectory);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, StartingTitle);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, SuppressApplicationTitle);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
 
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
-
-        INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
-
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, RetroTerminalEffect, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, SoftwareRendering, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
-
-        INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
 
     private:

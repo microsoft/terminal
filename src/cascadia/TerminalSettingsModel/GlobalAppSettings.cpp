@@ -85,8 +85,6 @@ void GlobalAppSettings::_FinalizeInheritance()
 winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 {
     auto globals{ winrt::make_self<GlobalAppSettings>() };
-    globals->_InitialRows = _InitialRows;
-    globals->_InitialCols = _InitialCols;
     globals->_AlwaysShowTabs = _AlwaysShowTabs;
     globals->_ShowTitleInTitlebar = _ShowTitleInTitlebar;
     globals->_ConfirmCloseAllTabs = _ConfirmCloseAllTabs;
@@ -95,9 +93,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_TabWidthMode = _TabWidthMode;
     globals->_UseAcrylicInTabRow = _UseAcrylicInTabRow;
     globals->_ShowTabsInTitlebar = _ShowTabsInTitlebar;
-    globals->_WordDelimiters = _WordDelimiters;
     globals->_InputServiceWarning = _InputServiceWarning;
-    globals->_CopyOnSelect = _CopyOnSelect;
     globals->_CopyFormatting = _CopyFormatting;
     globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
     globals->_WarnAboutMultiLinePaste = _WarnAboutMultiLinePaste;
@@ -105,9 +101,6 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_CenterOnLaunch = _CenterOnLaunch;
     globals->_LaunchMode = _LaunchMode;
     globals->_SnapToGridOnResize = _SnapToGridOnResize;
-    globals->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
-    globals->_SoftwareRendering = _SoftwareRendering;
-    globals->_ForceVTInput = _ForceVTInput;
     globals->_DebugFeaturesEnabled = _DebugFeaturesEnabled;
     globals->_StartOnUserLogin = _StartOnUserLogin;
     globals->_FirstWindowPreference = _FirstWindowPreference;
@@ -115,10 +108,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_TabSwitcherMode = _TabSwitcherMode;
     globals->_DisableAnimations = _DisableAnimations;
     globals->_StartupActions = _StartupActions;
-    globals->_FocusFollowMouse = _FocusFollowMouse;
     globals->_WindowingBehavior = _WindowingBehavior;
-    globals->_TrimBlockSelection = _TrimBlockSelection;
-    globals->_DetectURLs = _DetectURLs;
     globals->_MinimizeToNotificationArea = _MinimizeToNotificationArea;
     globals->_AlwaysShowNotificationIcon = _AlwaysShowNotificationIcon;
     globals->_DisabledProfileSources = _DisabledProfileSources;
@@ -129,6 +119,11 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_defaultProfile = _defaultProfile;
     globals->_actionMap = _actionMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
+
+#define GLOBAL_SETTINGS_COPY(type, name, ...) \
+    globals->_##name = _##name;
+        GLOBAL_SETTINGS(GLOBAL_SETTINGS_COPY)
+#undef GLOBAL_SETTINGS_COPY
 
     if (_colorSchemes)
     {
@@ -189,14 +184,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, DefaultProfileKey, _UnparsedDefaultProfile);
     JsonUtils::GetValueForKey(json, AlwaysShowTabsKey, _AlwaysShowTabs);
     JsonUtils::GetValueForKey(json, ConfirmCloseAllKey, _ConfirmCloseAllTabs);
-    JsonUtils::GetValueForKey(json, InitialRowsKey, _InitialRows);
-    JsonUtils::GetValueForKey(json, InitialColsKey, _InitialCols);
     JsonUtils::GetValueForKey(json, InitialPositionKey, _InitialPosition);
     JsonUtils::GetValueForKey(json, CenterOnLaunchKey, _CenterOnLaunch);
     JsonUtils::GetValueForKey(json, ShowTitleInTitlebarKey, _ShowTitleInTitlebar);
     JsonUtils::GetValueForKey(json, ShowTabsInTitlebarKey, _ShowTabsInTitlebar);
-    JsonUtils::GetValueForKey(json, WordDelimitersKey, _WordDelimiters);
-    JsonUtils::GetValueForKey(json, CopyOnSelectKey, _CopyOnSelect);
     JsonUtils::GetValueForKey(json, InputServiceWarningKey, _InputServiceWarning);
     JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
     JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
@@ -210,9 +201,6 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, SnapToGridOnResizeKey, _SnapToGridOnResize);
     // GetValueForKey will only override the current value if the key exists
     JsonUtils::GetValueForKey(json, DebugFeaturesKey, _DebugFeaturesEnabled);
-    JsonUtils::GetValueForKey(json, ForceFullRepaintRenderingKey, _ForceFullRepaintRendering);
-    JsonUtils::GetValueForKey(json, SoftwareRenderingKey, _SoftwareRendering);
-    JsonUtils::GetValueForKey(json, ForceVTInputKey, _ForceVTInput);
     JsonUtils::GetValueForKey(json, EnableStartupTaskKey, _StartOnUserLogin);
     JsonUtils::GetValueForKey(json, AlwaysOnTopKey, _AlwaysOnTop);
     // GH#8076 - when adding enum values to this key, we also changed it from
@@ -222,15 +210,17 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, TabSwitcherModeKey, _TabSwitcherMode);
     JsonUtils::GetValueForKey(json, DisableAnimationsKey, _DisableAnimations);
     JsonUtils::GetValueForKey(json, StartupActionsKey, _StartupActions);
-    JsonUtils::GetValueForKey(json, FocusFollowMouseKey, _FocusFollowMouse);
     JsonUtils::GetValueForKey(json, WindowingBehaviorKey, _WindowingBehavior);
-    JsonUtils::GetValueForKey(json, TrimBlockSelectionKey, _TrimBlockSelection);
-    JsonUtils::GetValueForKey(json, DetectURLsKey, _DetectURLs);
     JsonUtils::GetValueForKey(json, MinimizeToNotificationAreaKey, _MinimizeToNotificationArea);
     JsonUtils::GetValueForKey(json, AlwaysShowNotificationIconKey, _AlwaysShowNotificationIcon);
     JsonUtils::GetValueForKey(json, DisabledProfileSourcesKey, _DisabledProfileSources);
 
     JsonUtils::GetValueForKey(json, ShowAdminShieldKey, _ShowAdminShield);
+
+#define GLOBAL_SETTINGS_LAYER_JSON(type, name, ...) \
+    JsonUtils::GetValueForKey(json, name##Key, _##name);
+        GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
+#undef GLOBAL_SETTINGS_LAYER_JSON
 
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
     for (const auto& jsonKey : bindingsKeys)
@@ -294,15 +284,11 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, DefaultProfileKey,              _UnparsedDefaultProfile);
     JsonUtils::SetValueForKey(json, AlwaysShowTabsKey,              _AlwaysShowTabs);
     JsonUtils::SetValueForKey(json, ConfirmCloseAllKey,             _ConfirmCloseAllTabs);
-    JsonUtils::SetValueForKey(json, InitialRowsKey,                 _InitialRows);
-    JsonUtils::SetValueForKey(json, InitialColsKey,                 _InitialCols);
     JsonUtils::SetValueForKey(json, InitialPositionKey,             _InitialPosition);
     JsonUtils::SetValueForKey(json, CenterOnLaunchKey,              _CenterOnLaunch);
     JsonUtils::SetValueForKey(json, ShowTitleInTitlebarKey,         _ShowTitleInTitlebar);
     JsonUtils::SetValueForKey(json, ShowTabsInTitlebarKey,          _ShowTabsInTitlebar);
-    JsonUtils::SetValueForKey(json, WordDelimitersKey,              _WordDelimiters);
     JsonUtils::SetValueForKey(json, InputServiceWarningKey,         _InputServiceWarning);
-    JsonUtils::SetValueForKey(json, CopyOnSelectKey,                _CopyOnSelect);
     JsonUtils::SetValueForKey(json, CopyFormattingKey,              _CopyFormatting);
     JsonUtils::SetValueForKey(json, WarnAboutLargePasteKey,         _WarnAboutLargePaste);
     JsonUtils::SetValueForKey(json, WarnAboutMultiLinePasteKey,     _WarnAboutMultiLinePaste);
@@ -314,22 +300,21 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, UseAcrylicInTabRowKey,          _UseAcrylicInTabRow);
     JsonUtils::SetValueForKey(json, SnapToGridOnResizeKey,          _SnapToGridOnResize);
     JsonUtils::SetValueForKey(json, DebugFeaturesKey,               _DebugFeaturesEnabled);
-    JsonUtils::SetValueForKey(json, ForceFullRepaintRenderingKey,   _ForceFullRepaintRendering);
-    JsonUtils::SetValueForKey(json, SoftwareRenderingKey,           _SoftwareRendering);
-    JsonUtils::SetValueForKey(json, ForceVTInputKey,                _ForceVTInput);
     JsonUtils::SetValueForKey(json, EnableStartupTaskKey,           _StartOnUserLogin);
     JsonUtils::SetValueForKey(json, AlwaysOnTopKey,                 _AlwaysOnTop);
     JsonUtils::SetValueForKey(json, TabSwitcherModeKey,             _TabSwitcherMode);
     JsonUtils::SetValueForKey(json, DisableAnimationsKey,           _DisableAnimations);
     JsonUtils::SetValueForKey(json, StartupActionsKey,              _StartupActions);
-    JsonUtils::SetValueForKey(json, FocusFollowMouseKey,            _FocusFollowMouse);
     JsonUtils::SetValueForKey(json, WindowingBehaviorKey,           _WindowingBehavior);
-    JsonUtils::SetValueForKey(json, TrimBlockSelectionKey,          _TrimBlockSelection);
-    JsonUtils::SetValueForKey(json, DetectURLsKey,                  _DetectURLs);
     JsonUtils::SetValueForKey(json, MinimizeToNotificationAreaKey,  _MinimizeToNotificationArea);
     JsonUtils::SetValueForKey(json, AlwaysShowNotificationIconKey,  _AlwaysShowNotificationIcon);
     JsonUtils::SetValueForKey(json, DisabledProfileSourcesKey,      _DisabledProfileSources);
     JsonUtils::SetValueForKey(json, ShowAdminShieldKey,             _ShowAdminShield);
+
+#define GLOBAL_SETTINGS_TO_JSON(type, name, ...) \
+    JsonUtils::SetValueForKey(json, name##Key, _##name);
+        GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
+#undef GLOBAL_SETTINGS_TO_JSON
     // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();

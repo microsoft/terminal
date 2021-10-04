@@ -36,7 +36,7 @@ static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
 static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontInfoKey{ "font" };
 static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
-static constexpr std::string_view ScrollbarStateKey{ "scrollbarState" };
+static constexpr std::string_view ScrollStateKey{ "scrollbarState" };
 static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
 static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
@@ -122,22 +122,19 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_TabTitle = _TabTitle;
     profile->_TabColor = _TabColor;
     profile->_SuppressApplicationTitle = _SuppressApplicationTitle;
-    profile->_UseAcrylic = _UseAcrylic;
-    profile->_ScrollState = _ScrollState;
-    profile->_Padding = _Padding;
-    profile->_Commandline = _Commandline;
     profile->_StartingDirectory = _StartingDirectory;
-    profile->_AntialiasingMode = _AntialiasingMode;
     profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
     profile->_SoftwareRendering = _SoftwareRendering;
-    profile->_HistorySize = _HistorySize;
-    profile->_SnapOnInput = _SnapOnInput;
-    profile->_AltGrAliasing = _AltGrAliasing;
     profile->_BellStyle = _BellStyle;
     profile->_ConnectionType = _ConnectionType;
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
     profile->_DefaultAppearance = *defaultAppearance;
+
+#define PROFILE_SETTINGS_COPY(type, name, ...) \
+    profile->_##name = _##name;
+        PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
+#undef PROFILE_SETTINGS_COPY
 
     if (_UnfocusedAppearance)
     {
@@ -197,30 +194,25 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::GetValueForKey(json, HistorySizeKey, _HistorySize);
-    JsonUtils::GetValueForKey(json, SnapOnInputKey, _SnapOnInput);
-    JsonUtils::GetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
     JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
     JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
-    JsonUtils::GetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::GetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
     JsonUtils::GetValueForKey(json, CloseOnExitKey, _CloseOnExit);
 
     // Padding was never specified as an integer, but it was a common working mistake.
     // Allow it to be permissive.
-    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
-
-    JsonUtils::GetValueForKey(json, ScrollbarStateKey, _ScrollState);
-
     JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
 
     JsonUtils::GetValueForKey(json, IconKey, _Icon);
-    JsonUtils::GetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
+
+#define PROFILE_SETTINGS_LAYER_JSON(type, name, ...) \
+    JsonUtils::GetValueForKey(json, name##Key, _##name);
+        PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
+#undef PROFILE_SETTINGS_LAYER_JSON
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
@@ -353,27 +345,24 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
     // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::SetValueForKey(json, HistorySizeKey, _HistorySize);
-    JsonUtils::SetValueForKey(json, SnapOnInputKey, _SnapOnInput);
-    JsonUtils::SetValueForKey(json, AltGrAliasingKey, _AltGrAliasing);
     JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
 
     // Control Settings
     JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
-    JsonUtils::SetValueForKey(json, CommandlineKey, _Commandline);
-    JsonUtils::SetValueForKey(json, UseAcrylicKey, _UseAcrylic);
     JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
     JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
 
     // PermissiveStringConverter is unnecessary for serialization
-    JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
 
-    JsonUtils::SetValueForKey(json, ScrollbarStateKey, _ScrollState);
     JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
     JsonUtils::SetValueForKey(json, IconKey, _Icon);
-    JsonUtils::SetValueForKey(json, AntialiasingModeKey, _AntialiasingMode);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
     JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
+
+#define PROFILE_SETTINGS_TO_JSON(type, name, ...) \
+    JsonUtils::SetValueForKey(json, name##Key, _##name);
+        PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
+#undef PROFILE_SETTINGS_TO_JSON
 
     // Font settings
     const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
