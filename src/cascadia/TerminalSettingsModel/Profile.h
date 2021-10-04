@@ -130,10 +130,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
-    #define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
-            PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
-    #undef PROFILE_SETTINGS_INITIALIZE
+#define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+        PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+#undef PROFILE_SETTINGS_INITIALIZE
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };

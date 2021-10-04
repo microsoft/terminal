@@ -133,7 +133,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
 
 #define PROFILE_SETTINGS_COPY(type, name, ...) \
     profile->_##name = _##name;
-        PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
+    PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
 
     if (_UnfocusedAppearance)
@@ -211,7 +211,7 @@ void Profile::LayerJson(const Json::Value& json)
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);
-        PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
+    PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
@@ -361,7 +361,7 @@ Json::Value Profile::ToJson() const
 
 #define PROFILE_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-        PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
+    PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
 
     // Font settings

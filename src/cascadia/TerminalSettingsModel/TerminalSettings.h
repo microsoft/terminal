@@ -86,25 +86,25 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, DefaultBackground, DEFAULT_BACKGROUND);
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, SelectionBackground, DEFAULT_FOREGROUND);
 
-    #define GLOBAL_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
-            GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
-    #undef GLOBAL_SETTINGS_INITIALIZE
+#define GLOBAL_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+        GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+#undef GLOBAL_SETTINGS_INITIALIZE
 
-    #define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
-            PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
-    #undef PROFILE_SETTINGS_INITIALIZE
+#define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+        PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+#undef PROFILE_SETTINGS_INITIALIZE
 
-    #define PROFILE_FONT_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
-            FONT_SETTINGS(PROFILE_FONT_SETTINGS_INITIALIZE)
-    #undef PROFILE_FONT_SETTINGS_INITIALIZE
+#define PROFILE_FONT_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+        FONT_SETTINGS(PROFILE_FONT_SETTINGS_INITIALIZE)
+#undef PROFILE_FONT_SETTINGS_INITIALIZE
 
-    #define PROFILE_APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
-                APPEARANCE_SETTINGS(PROFILE_APPEARANCE_SETTINGS_INITIALIZE)
-    #undef PROFILE_APPEARANCE_SETTINGS_INITIALIZE
+#define PROFILE_APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::TerminalSettings, type, name, ##__VA_ARGS__)
+        APPEARANCE_SETTINGS(PROFILE_APPEARANCE_SETTINGS_INITIALIZE)
+#undef PROFILE_APPEARANCE_SETTINGS_INITIALIZE
 
         INHERITABLE_SETTING(Model::TerminalSettings, til::color, CursorColor, DEFAULT_CURSOR_COLOR);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);

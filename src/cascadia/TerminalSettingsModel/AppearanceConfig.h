@@ -48,10 +48,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::IAppearanceConfig, Model::IntenseStyle, IntenseTextStyle, Model::IntenseStyle::Bright);
         INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
 
-    #define APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
-            APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
-    #undef APPEARANCE_SETTINGS_INITIALIZE
+#define APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
+        APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
+#undef APPEARANCE_SETTINGS_INITIALIZE
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
