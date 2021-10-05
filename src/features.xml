@@ -5,9 +5,6 @@
         <name>Feature_ReceiveIncomingHandoff</name>
         <description>OpenConsole should be able to receive incoming connections</description>
         <stage>AlwaysEnabled</stage>
-        <alwaysDisabledBrandingTokens>
-            <brandingToken>WindowsInbox</brandingToken>
-        </alwaysDisabledBrandingTokens>
     </feature>
 
     <feature>
@@ -28,9 +25,6 @@
         <name>Feature_AttemptHandoff</name>
         <description>conhost should try to hand connections over to OpenConsole</description>
         <stage>AlwaysDisabled</stage>
-        <alwaysEnabledBrandingTokens>
-            <brandingToken>WindowsInbox</brandingToken>
-        </alwaysEnabledBrandingTokens>
     </feature>
 
     <feature>
