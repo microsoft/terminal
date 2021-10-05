@@ -222,7 +222,7 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _uNumberOfHistoryBuffers = pStateInfo->NumberOfHistoryBuffers;
     for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
     {
-        SetColorTableEntry(i, pStateInfo->ColorTable[i]);
+        SetLegacyColorTableEntry(i, pStateInfo->ColorTable[i]);
     }
     _uCodePage = pStateInfo->CodePage;
     _bWrapText = !!pStateInfo->fWrapText;
@@ -267,7 +267,7 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.NumberOfHistoryBuffers = _uNumberOfHistoryBuffers;
     for (size_t i = 0; i < std::size(csi.ColorTable); i++)
     {
-        csi.ColorTable[i] = GetColorTableEntry(i);
+        csi.ColorTable[i] = GetLegacyColorTableEntry(i);
     }
     csi.CodePage = _uCodePage;
     csi.fWrapText = !!_bWrapText;
@@ -726,11 +726,6 @@ void Settings::SetHistoryNoDup(const bool bHistoryNoDup)
     _bHistoryNoDup = bHistoryNoDup;
 }
 
-void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
-{
-    _colorTable.at(index) = ColorValue;
-}
-
 bool Settings::IsStartupTitleIsLinkNameSet() const
 {
     return WI_IsFlagSet(_dwStartupFlags, STARTF_TITLEISLINKNAME);
@@ -746,9 +741,24 @@ void Settings::UnsetStartupFlag(const DWORD dwFlagToUnset)
     _dwStartupFlags &= ~dwFlagToUnset;
 }
 
+void Settings::SetColorTableEntry(const size_t index, const COLORREF ColorValue)
+{
+    _colorTable.at(index) = ColorValue;
+}
+
 COLORREF Settings::GetColorTableEntry(const size_t index) const
 {
     return _colorTable.at(index);
+}
+
+void Settings::SetLegacyColorTableEntry(const size_t index, const COLORREF ColorValue)
+{
+    _colorTable.at(TextColor::TransposeLegacyIndex(index)) = ColorValue;
+}
+
+COLORREF Settings::GetLegacyColorTableEntry(const size_t index) const
+{
+    return _colorTable.at(TextColor::TransposeLegacyIndex(index));
 }
 
 COLORREF Settings::GetCursorColor() const noexcept

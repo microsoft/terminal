@@ -231,7 +231,7 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
+    return fg != INVALID_COLOR ? fg : GetLegacyColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
 }
 
 // Method Description:
@@ -246,7 +246,7 @@ COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
+    return bg != INVALID_COLOR ? bg : GetLegacyColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
 }
 
 // Method Description:

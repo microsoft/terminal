@@ -606,7 +606,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         for (size_t i = 0; i < std::size(data.ColorTable); i++)
         {
-            gci.SetColorTableEntry(i, data.ColorTable[i]);
+            gci.SetLegacyColorTableEntry(i, data.ColorTable[i]);
         }
 
         context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
@@ -1979,7 +1979,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        value = gci.GetColorTableEntry(::Xterm256ToWindowsIndex(index));
+        value = gci.GetColorTableEntry(index);
 
         return S_OK;
     }
@@ -2005,7 +2005,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetColorTableEntry(::Xterm256ToWindowsIndex(index), value);
+        gci.SetColorTableEntry(index, value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.

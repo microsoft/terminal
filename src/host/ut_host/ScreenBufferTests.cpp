@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -1634,74 +1634,74 @@ void ScreenBufferTests::VtSetColorTable()
         L"Process some valid sequences for setting the table"));
 
     stateMachine.ProcessString(L"\x1b]4;0;rgb:1/1/1\x7");
-    VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), gci.GetColorTableEntry(0));
 
     stateMachine.ProcessString(L"\x1b]4;1;rgb:1/23/1\x7");
-    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x11), gci.GetColorTableEntry(1));
 
     stateMachine.ProcessString(L"\x1b]4;2;rgb:1/23/12\x7");
-    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x12), gci.GetColorTableEntry(2));
 
     stateMachine.ProcessString(L"\x1b]4;3;rgb:12/23/12\x7");
-    VERIFY_ARE_EQUAL(RGB(0x12, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(3)));
+    VERIFY_ARE_EQUAL(RGB(0x12, 0x23, 0x12), gci.GetColorTableEntry(3));
 
     stateMachine.ProcessString(L"\x1b]4;4;rgb:ff/a1/1b\x7");
-    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(4)));
+    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(4));
 
     stateMachine.ProcessString(L"\x1b]4;5;rgb:ff/a1/1b\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"Try a bunch of invalid sequences."));
     Log::Comment(NoThrowString().Format(
         L"First start by setting an entry to a known value to compare to."));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:09/09/09\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: Missing the first component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: too many components"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:1/1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no second component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:1//1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no components"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb://\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no third component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:1/11/\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: rgbi is not a supported color space"));
     stateMachine.ProcessString(L"\x1b]4;5;rgbi:1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: cmyk is not a supported color space"));
     stateMachine.ProcessString(L"\x1b]4;5;cmyk:1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no table index should do nothing"));
     stateMachine.ProcessString(L"\x1b]4;;rgb:1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: need to specify a color space"));
     stateMachine.ProcessString(L"\x1b]4;5;1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 }
 
 void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
@@ -2256,8 +2256,8 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
 
     COLORREF magenta = RGB(255, 0, 255);
     COLORREF yellow = RGB(255, 255, 0);
-    COLORREF brightGreen = gci.GetColorTableEntry(::XtermToWindowsIndex(10));
-    COLORREF darkBlue = gci.GetColorTableEntry(::XtermToWindowsIndex(4));
+    COLORREF brightGreen = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
+    COLORREF darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
 
     gci.SetDefaultForegroundColor(yellow);
     gci.SetDefaultBackgroundColor(magenta);
@@ -2705,7 +2705,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     mainCursor.SetPosition({ 0, 0 });
 
-    const COLORREF originalRed = gci.GetColorTableEntry(4);
+    const COLORREF originalRed = gci.GetColorTableEntry(TextColor::DARK_RED);
     const COLORREF testColor = RGB(0x11, 0x22, 0x33);
     VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
 
@@ -3209,10 +3209,10 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
     Log::Comment(NoThrowString().Format(
         L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
-    const auto darkRed = gci.GetColorTableEntry(::XtermToWindowsIndex(1));
-    const auto darkBlue = gci.GetColorTableEntry(::XtermToWindowsIndex(4));
-    const auto darkBlack = gci.GetColorTableEntry(::XtermToWindowsIndex(0));
-    const auto darkWhite = gci.GetColorTableEntry(::XtermToWindowsIndex(7));
+    const auto darkRed = gci.GetColorTableEntry(TextColor::DARK_RED);
+    const auto darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
+    const auto darkBlack = gci.GetColorTableEntry(TextColor::DARK_BLACK);
+    const auto darkWhite = gci.GetColorTableEntry(TextColor::DARK_WHITE);
     stateMachine.ProcessString(L"\x1b[31;44m");
     stateMachine.ProcessString(L"X");
     stateMachine.ProcessString(L"\x1b[m");
