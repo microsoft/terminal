@@ -592,10 +592,18 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
 
         for (const auto& profile : _allProfiles)
         {
-            if (const auto cmd = profile.Commandline(); !cmd.empty())
+            if (profile.ConnectionType() == winrt::guid{})
             {
-                _commandLinesCache.emplace_back(_normalizeCommandLine(cmd.c_str()), profile);
+                continue;
             }
+
+            const auto cmd = profile.Commandline();
+            if (cmd.empty())
+            {
+                continue;
+            }
+
+            _commandLinesCache.emplace_back(_normalizeCommandLine(cmd.c_str()), profile);
         }
 
         // We're trying to find the command line with the longest common prefix below.
