@@ -25,6 +25,9 @@
         <name>Feature_AttemptHandoff</name>
         <description>conhost should try to hand connections over to OpenConsole</description>
         <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysEnabledBrandingTokens>
     </feature>
 
     <feature>
