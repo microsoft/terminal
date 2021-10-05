@@ -188,8 +188,8 @@
           ],
           "type": "string"
         },
-        "perceptualColorNudging": {
-          "description": "When set to true, we will (when necessary) 'nudge' the foreground color to make it more visible, based on the background color.",
+        "adjustIndistinguishableColors": {
+          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
           "type": "boolean"
         },
         "experimental.retroTerminalEffect": {
@@ -1976,8 +1976,8 @@
             }
           ]
         },
-        "perceptualColorNudging": {
-          "description": "When set to true, we will (when necessary) 'nudge' the foreground color to make it more visible, based on the background color.",
+        "adjustIndistinguishableColors": {
+          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
           "type": "boolean"
         },
         "scrollbarState": {

@@ -300,7 +300,7 @@ private:
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
     bool _intenseIsBright;
-    bool _perceptualColorNudging;
+    bool _adjustIndistinguishableColors;
 
     size_t _taskbarState;
     size_t _taskbarProgress;

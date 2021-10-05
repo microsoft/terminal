@@ -55,7 +55,7 @@ Terminal::Terminal() :
     _taskbarProgress{ 0 },
     _trimBlockSelection{ false },
     _intenseIsBright{ true },
-    _perceptualColorNudging{ true }
+    _adjustIndistinguishableColors{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -177,13 +177,13 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
     _intenseIsBright = appearance.IntenseIsBright();
-    _perceptualColorNudging = appearance.PerceptualColorNudging();
+    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
 
     for (int i = 0; i < 16; i++)
     {
         _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
     }
-    if (_perceptualColorNudging)
+    if (_adjustIndistinguishableColors)
     {
         _MakeAdjustedColorArray();
     }
@@ -1297,12 +1297,18 @@ void Terminal::_MakeAdjustedColorArray()
     colorTableWithDefaults[DefaultFgIndex] = _defaultFg;
     for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
     {
-        //auto fg = colorTableWithDefaults.at(fgIndex);
         const auto fg = til::at(colorTableWithDefaults, fgIndex);
         for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
         {
-            const auto bg = til::at(colorTableWithDefaults, bgIndex);
-            _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
+            if (fgIndex == bgIndex)
+            {
+                _adjustedForegroundColors[bgIndex][fgIndex] = fg;
+            }
+            else
+            {
+                const auto bg = til::at(colorTableWithDefaults, bgIndex);
+                _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
+            }
         }
     }
 }

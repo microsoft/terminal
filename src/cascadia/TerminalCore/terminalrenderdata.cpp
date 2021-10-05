@@ -52,7 +52,7 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
 
     // We want to nudge the foreground color to make it more perceivable only for the
     // default color pairs within the color table
-    if (_perceptualColorNudging &&
+    if (_adjustIndistinguishableColors &&
         !(attr.IsFaint() || (attr.IsBlinking() && _blinkingState.IsBlinkingFaint())) &&
         (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
         (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))

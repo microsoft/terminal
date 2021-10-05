@@ -151,12 +151,12 @@
                 <ToggleSwitch IsOn="{x:Bind Appearance.RetroTerminalEffect, Mode=TwoWay}" />
             </local:SettingContainer>
 
-            <!--  Perceptual Color Nudging  -->
-            <local:SettingContainer x:Uid="Profile_PerceptualColorNudging"
-                                    ClearSettingValue="{x:Bind Appearance.ClearPerceptualColorNudging}"
-                                    HasSettingValue="{x:Bind Appearance.HasPerceptualColorNudging, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.PerceptualColorNudgingOverrideSource, Mode=OneWay}">
-                <ToggleSwitch IsOn="{x:Bind Appearance.PerceptualColorNudging, Mode=TwoWay}" />
+            <!--  Adjust Indistinguishable Colors  -->
+            <local:SettingContainer x:Uid="Profile_AdjustIndistinguishableColors"
+                                    ClearSettingValue="{x:Bind Appearance.ClearAdjustIndistinguishableColors}"
+                                    HasSettingValue="{x:Bind Appearance.HasAdjustIndistinguishableColors, Mode=OneWay}"
+                                    SettingOverrideSource="{x:Bind Appearance.AdjustIndistinguishableColorsOverrideSource, Mode=OneWay}">
+                <ToggleSwitch IsOn="{x:Bind Appearance.AdjustIndistinguishableColors, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>
 

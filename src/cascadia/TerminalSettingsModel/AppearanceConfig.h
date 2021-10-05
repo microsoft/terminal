@@ -54,7 +54,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::IAppearanceConfig, Model::IntenseStyle, IntenseTextStyle, Model::IntenseStyle::Bright);
         INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, bool, PerceptualColorNudging, true);
+        INHERITABLE_SETTING(Model::IAppearanceConfig, bool, AdjustIndistinguishableColors, true);
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
