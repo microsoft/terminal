@@ -134,6 +134,7 @@ protected:
     bool _minimizeToNotificationArea{ false };
 
     std::unordered_map<UINT, winrt::delegate<void()>> _systemMenuItems;
+    UINT _systemMenuNextItemId;
 
 private:
     // This minimum width allows for width the tabs fit
