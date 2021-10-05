@@ -6168,8 +6168,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write red on blue, verify that it comes through */
     {
         TextAttribute vtRedOnBlueAttribute{};
-        vtRedOnBlueAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(1)), false });
-        vtRedOnBlueAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(4)), false });
+        vtRedOnBlueAttribute.SetForeground(TextColor{ TextColor::DARK_RED, false });
+        vtRedOnBlueAttribute.SetBackground(TextColor{ TextColor::DARK_BLUE, false });
 
         seq = L"\x1b[31;44m";
         seqCb = 2 * seq.size();
@@ -6187,8 +6187,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write white on black, verify that it acts as expected for the quirk mode */
     {
         TextAttribute vtWhiteOnBlackAttribute{};
-        vtWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
-        vtWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
+        vtWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
+        vtWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
 
         const TextAttribute quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
 
@@ -6208,8 +6208,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write bright white on black, verify that it acts as expected for the quirk mode */
     {
         TextAttribute vtBrightWhiteOnBlackAttribute{};
-        vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
-        vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
+        vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
+        vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
         vtBrightWhiteOnBlackAttribute.SetBold(true);
 
         TextAttribute vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
@@ -6233,8 +6233,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write a 256-color white on a 256-color black, make sure the quirk does not suppress it */
     {
         TextAttribute vtWhiteOnBlack256Attribute{};
-        vtWhiteOnBlack256Attribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), true });
-        vtWhiteOnBlack256Attribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), true });
+        vtWhiteOnBlack256Attribute.SetForeground(TextColor{ TextColor::DARK_WHITE, true });
+        vtWhiteOnBlack256Attribute.SetBackground(TextColor{ TextColor::DARK_BLACK, true });
 
         // reset (disable bold from the last test) before setting both colors
         seq = L"\x1b[m\x1b[38;5;7;48;5;0m"; // the quirk should *not* suppress this (!)
