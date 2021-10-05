@@ -5,6 +5,9 @@
         <name>Feature_ReceiveIncomingHandoff</name>
         <description>OpenConsole should be able to receive incoming connections</description>
         <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
     </feature>
 
     <feature>
