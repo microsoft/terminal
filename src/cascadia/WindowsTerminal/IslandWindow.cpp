@@ -1191,7 +1191,7 @@ void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
 {
     uint32_t actualDropdownDuration = args.DropdownDuration();
     // If the user requested an animation, let's check if animations are enabled in the OS.
-    if (args.DropdownDuration() > 0)
+    if (actualDropdownDuration > 0)
     {
         BOOL animationsEnabled = TRUE;
         SystemParametersInfoW(SPI_GETCLIENTAREAANIMATION, 0, &animationsEnabled, 0);

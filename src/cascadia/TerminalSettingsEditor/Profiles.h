@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -22,7 +22,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetAcrylicOpacityPercentageValue(double value)
         {
-            _profile.DefaultAppearance().Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+            Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
         };
 
         void SetPadding(double value)

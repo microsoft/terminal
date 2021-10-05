@@ -5,6 +5,8 @@
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
 
+#include "FileUtils.h"
+
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
 
@@ -879,4 +881,13 @@ Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noex
 void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& terminal)
 {
     _currentDefaultTerminal = terminal;
+}
+
+void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
+{
+    try
+    {
+        winrt::Microsoft::Terminal::Settings::Model::WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
+    }
+    CATCH_LOG();
 }
