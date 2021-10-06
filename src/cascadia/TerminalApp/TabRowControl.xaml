@@ -23,7 +23,7 @@
         <mux:TabView.TabStripHeader>
             <!--  EA18 is the "Shield" glyph  -->
             <FontIcon x:Uid="ElevationShield"
-                      Margin="9,4,0,0"
+                      Margin="9,4,0,4"
                       FontFamily="Segoe MDL2 Assets"
                       FontSize="16"
                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"

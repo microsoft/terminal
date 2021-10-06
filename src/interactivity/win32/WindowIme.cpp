@@ -54,3 +54,15 @@ RECT GetImeSuggestionWindowPos()
 
     return rcSuggestion;
 }
+
+// Routine Description:
+// - This method gives a rectangle to where text box is currently rendered
+//   such that the touch keyboard can pop up when the rectangle is tapped.
+// Arguments:
+// - <none>
+// Return Value:
+// - Rectangle specifying current text box area.
+RECT GetTextBoxArea()
+{
+    return Microsoft::Console::Interactivity::ServiceLocator::LocateConsoleWindow()->GetWindowRect();
+}
