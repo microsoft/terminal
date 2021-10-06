@@ -134,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // defterm
         static bool IsDefaultTerminalAvailable() noexcept;
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const noexcept;
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
@@ -142,6 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static const std::filesystem::path& _settingsPath();
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
+        void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
 
@@ -164,6 +165,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::hstring _deserializationErrorMessage;
 
         // defterm
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
         Model::DefaultTerminal _currentDefaultTerminal{ nullptr };
     };
 }
