@@ -34,6 +34,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         hstring Icon() const;
 
         static std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> Available();
+        static bool HasCurrent();
         static void Current(const Model::DefaultTerminal& term);
 
     private:

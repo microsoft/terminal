@@ -288,10 +288,7 @@ namespace winrt::TerminalApp::implementation
         }
         CATCH_LOG();
 
-        if (CascadiaSettings::IsDefaultTerminalAvailable())
-        {
-            ShowSetAsDefaultInfoBar();
-        }
+        ShowSetAsDefaultInfoBar();
     }
 
     // Method Description;
@@ -2902,12 +2899,22 @@ namespace winrt::TerminalApp::implementation
     // - Displays a info popup guiding the user into setting their default terminal.
     void TerminalPage::ShowSetAsDefaultInfoBar() const
     {
-        if (!_IsMessageDismissed(InfoBarMessage::SetAsDefault))
+        if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
         {
-            if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
-            {
-                infoBar.IsOpen(true);
-            }
+            return;
+        }
+
+        // If the user has already configured any terminal for hand-off we
+        // shouldn't inform them again about the possibility to do so.
+        if (CascadiaSettings::IsDefaultTerminalSet())
+        {
+            _DismissMessage(InfoBarMessage::SetAsDefault);
+            return;
+        }
+
+        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(true);
         }
     }
 
