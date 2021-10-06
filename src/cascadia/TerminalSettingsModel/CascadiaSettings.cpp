@@ -18,6 +18,13 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
+// Creating a child of a profile requires us to copy certain
+// required attributes. This method handles those attributes.
+//
+// NOTE however that it doesn't call _FinalizeInheritance() for you! Don't forget that!
+//
+// At the time of writing only one caller needs to call _FinalizeInheritance(),
+// which is why this unsafety wasn't further abstracted away.
 winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
     auto profile = winrt::make_self<Profile>();
@@ -371,6 +378,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
     LOG_IF_FAILED(CoCreateGuid(&guid));
 
     auto profile = CreateChild(_baseLayerProfile);
+    profile->_FinalizeInheritance();
     profile->Guid(guid);
     profile->Name(winrt::hstring{ name });
     return profile;
