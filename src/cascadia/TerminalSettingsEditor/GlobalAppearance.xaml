@@ -42,7 +42,8 @@
 
             <!--  Theme  -->
             <local:SettingContainer x:Uid="Globals_Theme">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}" />
             </local:SettingContainer>
@@ -74,7 +75,8 @@
 
             <!--  Tab Width Mode  -->
             <local:SettingContainer x:Uid="Globals_TabWidthMode">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}" />
             </local:SettingContainer>
