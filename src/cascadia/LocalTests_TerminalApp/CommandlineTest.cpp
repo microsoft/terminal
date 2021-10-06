@@ -1031,9 +1031,11 @@ namespace TerminalAppLocalTests
             // The first action is going to always be a new-tab action
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, appArgs._startupActions.at(0).Action());
 
-            auto actionAndArgs = appArgs._startupActions.at(1);
+            const auto actionAndArgs = appArgs._startupActions.at(1);
             VERIFY_ARE_EQUAL(ShortcutAction::NextTab, actionAndArgs.Action());
-            VERIFY_IS_NULL(actionAndArgs.Args());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            const auto myArgs = actionAndArgs.Args().as<NextTabArgs>();
+            VERIFY_ARE_EQUAL(TabSwitcherMode::Disabled, myArgs.SwitcherMode().Value());
         }
         {
             AppCommandlineArgs appArgs{};
@@ -1047,7 +1049,9 @@ namespace TerminalAppLocalTests
 
             auto actionAndArgs = appArgs._startupActions.at(1);
             VERIFY_ARE_EQUAL(ShortcutAction::PrevTab, actionAndArgs.Action());
-            VERIFY_IS_NULL(actionAndArgs.Args());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            const auto myArgs = actionAndArgs.Args().as<PrevTabArgs>();
+            VERIFY_ARE_EQUAL(TabSwitcherMode::Disabled, myArgs.SwitcherMode().Value());
         }
         {
             AppCommandlineArgs appArgs{};

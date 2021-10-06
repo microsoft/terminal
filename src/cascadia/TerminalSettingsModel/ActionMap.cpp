@@ -94,15 +94,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     static void RegisterShortcutAction(ShortcutAction shortcutAction, std::unordered_map<hstring, Model::ActionAndArgs>& list, std::unordered_set<InternalActionID>& visited)
     {
         const auto actionAndArgs{ make_self<ActionAndArgs>(shortcutAction) };
-        if (actionAndArgs->Action() != ShortcutAction::Invalid)
+        /*We have a valid action.*/
+        /*Check if the action was already added.*/
+        if (visited.find(Hash(*actionAndArgs)) == visited.end())
         {
-            /*We have a valid action.*/
-            /*Check if the action was already added.*/
-            if (visited.find(Hash(*actionAndArgs)) == visited.end())
+            /*This is an action that wasn't added!*/
+            /*Let's add it if it has a name.*/
+            if (const auto name{ actionAndArgs->GenerateName() }; !name.empty())
             {
-                /*This is an action that wasn't added!*/
-                /*Let's add it.*/
-                const auto name{ actionAndArgs->GenerateName() };
                 list.insert({ name, *actionAndArgs });
             }
         }
