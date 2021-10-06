@@ -1092,7 +1092,7 @@ namespace SettingsModelLocalTests
                 },
                 {
                     "name": "profile1",
-                    "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                    "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
                     "source": "Terminal.App.UnitTest.1",
                     "historySize": 2222
                 },

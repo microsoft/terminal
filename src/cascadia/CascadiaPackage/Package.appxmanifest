@@ -74,7 +74,7 @@
             Enabled="false"
             DisplayName="ms-resource:AppName" />
         </uap5:Extension>
-        <!-- <uap3:Extension Category="windows.appExtension">
+        <uap3:Extension Category="windows.appExtension">
             <uap3:AppExtension Name="com.microsoft.windows.console.host"
                 Id="OpenConsole"
                 DisplayName="OpenConsole"
@@ -102,15 +102,15 @@
                 <com:Interface Id="E686C757-9A35-4A1C-B3CE-0BCC8B5C69F4" ProxyStubClsid="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F"/>
                 <com:Interface Id="59D55CCE-FC8A-48B4-ACE8-0A9286C6557F" ProxyStubClsid="3171DE52-6EFA-4AEF-8A9F-D02BD67E7A4F"/>
             </com:ComInterface>
-        </com:Extension> -->
+        </com:Extension>
         <com:Extension Category="windows.comServer">
             <com:ComServer>
-                <!-- <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
+                <com:ExeServer DisplayName="OpenConsole" Executable="OpenConsole.exe">
                     <com:Class Id="2EACA947-7F5F-4CFA-BA87-8F7FBEEFBE69"/>
                 </com:ExeServer>
                 <com:ExeServer DisplayName="WindowsTerminal" Executable="WindowsTerminal.exe">
                     <com:Class Id="E12CFF52-A866-4C77-9A90-F570A7AA2C6B"/>
-                </com:ExeServer> -->
+                </com:ExeServer>
                 <com:SurrogateServer DisplayName="WindowsTerminalShellExt">
                     <com:Class Id="9f156763-7844-4dc4-b2b1-901f640f5155" Path="WindowsTerminalShellExt.dll" ThreadingModel="STA"/>
                 </com:SurrogateServer>

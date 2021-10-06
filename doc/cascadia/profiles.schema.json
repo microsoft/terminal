@@ -1184,8 +1184,9 @@
               "pattern": "focusPane"
             },
             "id": {
-              "type": "string",
-              "default": "",
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
               "description": "The ID of the pane to focus"
             }
           }
@@ -1229,7 +1230,7 @@
               "description": "When provided, summon the window whose name or ID matches the given name value. If no such window exists, then create a new window with that name."
             },
             "dropdownDuration": {
-              "type": "number",
+              "type": "integer",
               "minimum": 0,
               "default": 0,
               "description": "When provided with a positive number, \"slide\" the window in from the top of the screen using an animation that lasts dropdownDuration milliseconds."
