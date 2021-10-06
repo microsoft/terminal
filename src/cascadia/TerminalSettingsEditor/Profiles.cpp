@@ -49,7 +49,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             }
             else if (viewModelProperty == L"UseAcrylic")
             {
-                if (!UseAcrylic())
+                // GH#11372: If we're on Windows 10, and someone turns off
+                // acrylic, we're going to disable opacity for them. Opacity
+                // doesn't work without acrylic on Windows 10.
+                //
+                // BODGY: CascadiaSettings's function IsDefaultTerminalAvailable
+                // is basically a "are we on Windows 11" check, because defterm
+                // only works on Win11. So we'll use that.
+                //
+                // Remove when we can remove the rest of GH#11285
+                if (!UseAcrylic() && !CascadiaSettings::IsDefaultTerminalAvailable())
                 {
                     Opacity(1.0);
                 }
