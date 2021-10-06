@@ -1025,7 +1025,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const
     {
-        return _connection.State();
+        return _connection ? _connection.State() : TerminalConnection::ConnectionState::Closed;
     }
 
     hstring ControlCore::Title()
