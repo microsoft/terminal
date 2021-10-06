@@ -29,11 +29,12 @@ winrt::Microsoft::Terminal::Settings::Model::implementation::FontConfig::FontCon
 winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, winrt::weak_ref<Profile> sourceProfile)
 {
     auto fontInfo{ winrt::make_self<FontConfig>(std::move(sourceProfile)) };
-    fontInfo->_FontFace = source->_FontFace;
-    fontInfo->_FontSize = source->_FontSize;
-    fontInfo->_FontWeight = source->_FontWeight;
-    fontInfo->_FontAxes = source->_FontAxes;
-    fontInfo->_FontFeatures = source->_FontFeatures;
+
+#define FONT_SETTINGS_COPY(type, name, ...) \
+    fontInfo->_##name = source->_##name;
+    FONT_SETTINGS(FONT_SETTINGS_COPY)
+#undef FONT_SETTINGS_COPY
+
     return fontInfo;
 }
 
@@ -41,11 +42,10 @@ Json::Value FontConfig::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 
-    JsonUtils::SetValueForKey(json, FontFaceKey, _FontFace);
-    JsonUtils::SetValueForKey(json, FontSizeKey, _FontSize);
-    JsonUtils::SetValueForKey(json, FontWeightKey, _FontWeight);
-    JsonUtils::SetValueForKey(json, FontAxesKey, _FontAxes);
-    JsonUtils::SetValueForKey(json, FontFeaturesKey, _FontFeatures);
+#define FONT_SETTINGS_TO_JSON(type, name, ...) \
+    JsonUtils::SetValueForKey(json, name##Key, _##name);
+    FONT_SETTINGS(FONT_SETTINGS_TO_JSON)
+#undef FONT_SETTINGS_TO_JSON
 
     return json;
 }
@@ -69,11 +69,10 @@ void FontConfig::LayerJson(const Json::Value& json)
     {
         // A font object is defined, use that
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
-        JsonUtils::GetValueForKey(fontInfoJson, FontFaceKey, _FontFace);
-        JsonUtils::GetValueForKey(fontInfoJson, FontSizeKey, _FontSize);
-        JsonUtils::GetValueForKey(fontInfoJson, FontWeightKey, _FontWeight);
-        JsonUtils::GetValueForKey(fontInfoJson, FontFeaturesKey, _FontFeatures);
-        JsonUtils::GetValueForKey(fontInfoJson, FontAxesKey, _FontAxes);
+#define FONT_SETTINGS_LAYER_JSON(type, name, ...) \
+        JsonUtils::GetValueForKey(fontInfoJson, name##Key, _##name);
+            FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
+#undef FONT_SETTINGS_LAYER_JSON
     }
     else
     {

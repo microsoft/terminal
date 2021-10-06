@@ -78,7 +78,7 @@ Author(s):
 #define FONT_SETTINGS(X)                                \
     X(hstring, FontFace, DEFAULT_FONT_FACE)             \
     X(int32_t, FontSize, DEFAULT_FONT_SIZE)             \
-    X(winrt::Windows::UI::Text::FontWeight, FontWeight) \
+    X(winrt::Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT) \
     X(IFontAxesMap, FontAxes)                           \
     X(IFontFeatureMap, FontFeatures)
 
