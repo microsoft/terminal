@@ -21,9 +21,13 @@ namespace winrt::Microsoft::TerminalApp::implementation
         }
         void Initialize(const Windows::Foundation::Collections::ValueSet& /*settings*/) {}
         ~DebugInputTapConnection() = default;
-        void Start()
+        winrt::fire_and_forget Start()
         {
+            // auto context = winrt::apartment_context();
+            co_await winrt::resume_background();
+            _pairedTap->_start.wait();
             _wrappedConnection.Start();
+
         }
         void WriteInput(hstring const& data)
         {
@@ -59,6 +63,7 @@ namespace winrt::Microsoft::TerminalApp::implementation
     void DebugTapConnection::Start()
     {
         // presume the wrapped connection is started.
+        _start.count_down();
     }
 
     void DebugTapConnection::WriteInput(hstring const& data)
