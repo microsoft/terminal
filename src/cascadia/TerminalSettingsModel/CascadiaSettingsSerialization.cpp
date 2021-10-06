@@ -24,6 +24,7 @@
 #include "userDefaults.h"
 
 #include "ApplicationState.h"
+#include "DefaultTerminal.h"
 #include "FileUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -36,8 +37,6 @@ static constexpr std::string_view ProfilesKey{ "profiles" };
 static constexpr std::string_view DefaultSettingsKey{ "defaults" };
 static constexpr std::string_view ProfilesListKey{ "list" };
 static constexpr std::string_view SchemesKey{ "schemes" };
-static constexpr std::string_view NameKey{ "name" };
-static constexpr std::string_view GuidKey{ "guid" };
 
 static constexpr std::wstring_view jsonExtension{ L".json" };
 static constexpr std::wstring_view FragmentsSubDirectory{ L"\\Fragments" };
