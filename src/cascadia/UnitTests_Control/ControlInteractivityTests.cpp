@@ -19,6 +19,22 @@ using namespace ::Microsoft::Console::VirtualTerminal;
 
 namespace ControlUnitTests
 {
+    // Helper to check if we're on Windows 11 or not. This is used to check if
+    // we need to use acrylic to achieve transparency, because vintage opacity
+    // doesn't work in islands on win10.
+    // Remove when we can remove the rest of GH#11285
+    static bool _isVintageOpacityAvailable() noexcept
+    {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 24000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+    }
+
     class ControlInteractivityTests
     {
         BEGIN_TEST_CLASS(ControlInteractivityTests)
@@ -119,8 +135,10 @@ namespace ControlUnitTests
             VERIFY_ARE_EQUAL(expectedOpacity, settings->Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, core->_settings.Opacity());
 
-            VERIFY_ARE_EQUAL(useAcrylic, settings->UseAcrylic());
-            VERIFY_ARE_EQUAL(useAcrylic, core->_settings.UseAcrylic());
+            auto expectedUseAcrylic = _isVintageOpacityAvailable() ? useAcrylic :
+                                                                     (expectedOpacity < 1.0 ? true : false);
+            VERIFY_ARE_EQUAL(expectedUseAcrylic, settings->UseAcrylic());
+            VERIFY_ARE_EQUAL(expectedUseAcrylic, core->_settings.UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
 

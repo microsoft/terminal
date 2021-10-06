@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         OSVERSIONINFOEXW osver{};
         osver.dwOSVersionInfoSize = sizeof(osver);
-        osver.dwBuildNumber = 22000;
+        osver.dwBuildNumber = 24000;
 
         DWORDLONG dwlConditionMask = 0;
         VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
