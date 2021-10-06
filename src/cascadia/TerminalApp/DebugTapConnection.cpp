@@ -23,11 +23,21 @@ namespace winrt::Microsoft::TerminalApp::implementation
         ~DebugInputTapConnection() = default;
         winrt::fire_and_forget Start()
         {
-            // auto context = winrt::apartment_context();
+            // GH#11282: It's possible that we're about to be started, _before_
+            // our paired connection is started. Both will get Start()'ed when
+            // their owning TermControl is finally laid out. However, if we're
+            // started first, then we'll immediately start printing to the other
+            // control as well, which might not have initialized yet. If we do
+            // that, we'll explode.
+            //
+            // Instead, wait here until the other connection is started too,
+            // before actually starting the connection to the client app. This
+            // will ensure both controls are initialized before the client app
+            // is.
             co_await winrt::resume_background();
             _pairedTap->_start.wait();
-            _wrappedConnection.Start();
 
+            _wrappedConnection.Start();
         }
         void WriteInput(hstring const& data)
         {
@@ -63,6 +73,8 @@ namespace winrt::Microsoft::TerminalApp::implementation
     void DebugTapConnection::Start()
     {
         // presume the wrapped connection is started.
+
+        // This is explained in the comment for GH#11282 above.
         _start.count_down();
     }
 
