@@ -742,7 +742,14 @@ CascadiaSettings::CascadiaSettings(const std::string_view& userJSON, const std::
 {
 }
 
-CascadiaSettings::CascadiaSettings(SettingsLoader&& loader)
+CascadiaSettings::CascadiaSettings(SettingsLoader&& loader) :
+    // The CascadiaSettings class declaration initializes these fields by default,
+    // but we're going to set these fields in our constructor later on anyways.
+    _globals{},
+    _baseLayerProfile{},
+    _allProfiles{},
+    _activeProfiles{},
+    _warnings{}
 {
     std::vector<Model::Profile> allProfiles;
     std::vector<Model::Profile> activeProfiles;
