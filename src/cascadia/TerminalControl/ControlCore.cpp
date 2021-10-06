@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         OSVERSIONINFOEXW osver{};
         osver.dwOSVersionInfoSize = sizeof(osver);
-        osver.dwBuildNumber = 22000; // TODO! switch me to 22000
+        osver.dwBuildNumber = 22000;
 
         DWORDLONG dwlConditionMask = 0;
         VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
@@ -466,14 +466,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // is what the Terminal did prior to 1.12.
         if (!_isVintageOpacityAvailable())
         {
-            if (newOpacity < 1.0)
-            {
-                _settings.UseAcrylic(true);
-            }
-            else
-            {
-                _settings.UseAcrylic(false);
-            }
+            _settings.UseAcrylic(newOpacity < 1.0);
         }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
