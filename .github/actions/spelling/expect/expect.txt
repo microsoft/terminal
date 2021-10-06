@@ -189,6 +189,7 @@ cacafire
 callee
 capslock
 CARETBLINKINGENABLED
+carlos
 CARRIAGERETURN
 cascadia
 cassert
@@ -2716,6 +2717,7 @@ wixproj
 wline
 wlinestream
 wmain
+wmemory
 WMSZ
 wnd
 WNDALLOC
@@ -2842,6 +2844,7 @@ YSize
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+zamora
 ZCmd
 ZCtrl
 zsh

@@ -16,6 +16,7 @@
 // "Generated Files" directory.
 
 #include "ApplicationState.h"
+#include "DefaultTerminal.h"
 #include "FileUtils.h"
 
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;

@@ -102,9 +102,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void RefreshDefaultTerminals();
 
         static bool IsDefaultTerminalAvailable() noexcept;
-        Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const noexcept;
-        Model::DefaultTerminal CurrentDefaultTerminal() const noexcept;
-        void CurrentDefaultTerminal(Model::DefaultTerminal terminal);
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
+        Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
+        void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
     private:
         com_ptr<GlobalAppSettings> _globals;
@@ -114,8 +114,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Windows::Foundation::IReference<SettingsLoadErrors> _loadError;
         hstring _deserializationErrorMessage;
 
-        Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals;
-        Model::DefaultTerminal _currentDefaultTerminal;
+        void _refreshDefaultTerminals();
 
         std::vector<std::unique_ptr<::Microsoft::Terminal::Settings::Model::IDynamicProfileGenerator>> _profileGenerators;
 
@@ -177,6 +176,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         friend class SettingsModelLocalTests::KeyBindingsTests;
         friend class TerminalAppUnitTests::DynamicProfileTests;
         friend class TerminalAppUnitTests::JsonTests;
+
+        // defterm
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
+        Model::DefaultTerminal _currentDefaultTerminal{ nullptr };
     };
 }
 
