@@ -103,37 +103,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         void _FinalizeInheritance() override;
 
+        // Special fields
         WINRT_PROPERTY(bool, Deleted, false);
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
-
         WINRT_PROPERTY(guid, Updates);
-        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
+
+        // Nullable settings
+        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
+
+        // Settings that cannot be put in the macro
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
         INHERITABLE_SETTING(Model::Profile, hstring, Source);
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
-        INHERITABLE_SETTING(Model::Profile, guid, ConnectionType);
-
-        // Default Icon: Segoe MDL2 CommandPrompt icon
-        INHERITABLE_SETTING(Model::Profile, hstring, Icon, L"\uE756");
-
-        INHERITABLE_SETTING(Model::Profile, CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful);
-        INHERITABLE_SETTING(Model::Profile, hstring, TabTitle);
-        INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
-        INHERITABLE_SETTING(Model::Profile, bool, SuppressApplicationTitle, false);
-
-        INHERITABLE_SETTING(Model::Profile, hstring, StartingDirectory);
-
+        INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
+        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
         INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
         INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
 
-        INHERITABLE_SETTING(Model::Profile, Model::BellStyle, BellStyle, BellStyle::Audible);
-
-        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
-
-#define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
+#define PROFILE_APP_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
-        PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
-#undef PROFILE_SETTINGS_INITIALIZE
+        PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_INITIALIZE)
+#undef PROFILE_APP_SETTINGS_INITIALIZE
+
+#define PROFILE_CONTROL_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+        PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_INITIALIZE)
+#undef PROFILE_CONTROL_SETTINGS_INITIALIZE
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };

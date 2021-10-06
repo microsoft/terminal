@@ -36,22 +36,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         winrt::hstring ExpandedBackgroundImagePath();
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center);
-
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, ColorSchemeName, L"Campbell");
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Foreground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, Background, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, hstring, BackgroundImagePath);
 
-        INHERITABLE_SETTING(Model::IAppearanceConfig, Model::IntenseStyle, IntenseTextStyle, Model::IntenseStyle::Bright);
-        INHERITABLE_SETTING(Model::IAppearanceConfig, double, Opacity, 1.0);
-
-#define APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
+#define APPEARANCE_APP_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
-        APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
-#undef APPEARANCE_SETTINGS_INITIALIZE
+        APPEARANCE_APP_SETTINGS(APPEARANCE_APP_SETTINGS_INITIALIZE)
+#undef APPEARANCE_APP_SETTINGS_INITIALIZE
+
+#define APPEARANCE_CONTROL_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
+        APPEARANCE_CONTROL_SETTINGS(APPEARANCE_CONTROL_SETTINGS_INITIALIZE)
+#undef APPEARANCE_CONTROL_SETTINGS_INITIALIZE
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;

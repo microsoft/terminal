@@ -190,10 +190,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _BackgroundImage = appearance.ExpandedBackgroundImagePath();
         }
 
-#define PROFILE_APPEARANCE_SETTINGS_APPLY(type, name, ...) \
+#define APPEARANCE_CONTROL_SETTINGS_APPLY(type, name, ...) \
     _##name = appearance.name();
-        APPEARANCE_SETTINGS(PROFILE_APPEARANCE_SETTINGS_APPLY)
-#undef PROFILE_APPEARANCE_SETTINGS_APPLY
+        APPEARANCE_CONTROL_SETTINGS(APPEARANCE_CONTROL_SETTINGS_APPLY)
+#undef APPEARANCE_CONTROL_SETTINGS_APPLY
 
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
@@ -264,10 +264,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::_ApplyProfileSettings(const Profile& profile)
     {
-#define PROFILE_SETTINGS_APPLY(type, name, ...) \
+#define PROFILE_CONTROL_SETTINGS_APPLY(type, name, ...) \
     _##name = profile.name();
-        PROFILE_SETTINGS(PROFILE_SETTINGS_APPLY)
-#undef PROFILE_SETTINGS_APPLY
+        PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_APPLY)
+#undef PROFILE_CONTROL_SETTINGS_APPLY
 
 #define PROFILE_FONT_SETTINGS_APPLY(type, name, ...) \
     _##name = profile.FontInfo().name();
@@ -302,10 +302,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // - <none>
     void TerminalSettings::_ApplyGlobalSettings(const Model::GlobalAppSettings& globalSettings) noexcept
     {
-#define GLOBAL_SETTINGS_APPLY(type, name, ...) \
+#define GLOBAL_CONTROL_SETTINGS_APPLY(type, name, ...) \
     _##name = globalSettings.name();
-        GLOBAL_SETTINGS(GLOBAL_SETTINGS_APPLY)
-#undef GLOBAL_SETTINGS_APPLY
+        GLOBAL_CONTROL_SETTINGS(GLOBAL_CONTROL_SETTINGS_APPLY)
+#undef GLOBAL_CONTROL_SETTINGS_APPLY
     }
 
     // Method Description:

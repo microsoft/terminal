@@ -111,30 +111,28 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     const auto fontInfo = FontConfig::CopyFontInfo(winrt::get_self<FontConfig>(_FontInfo), weakProfile);
     const auto defaultAppearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(_DefaultAppearance), weakProfile);
 
-    profile->_Deleted = _Deleted;
-    profile->_Updates = _Updates;
-    profile->_Guid = _Guid;
     profile->_Name = _Name;
     profile->_Source = _Source;
     profile->_Hidden = _Hidden;
-    profile->_Icon = _Icon;
-    profile->_CloseOnExit = _CloseOnExit;
-    profile->_TabTitle = _TabTitle;
+    profile->_DefaultAppearance = *defaultAppearance;
+    profile->_Deleted = _Deleted;
+    profile->_Updates = _Updates;
+    profile->_Origin = _Origin;
+    profile->_Guid = _Guid;
     profile->_TabColor = _TabColor;
-    profile->_SuppressApplicationTitle = _SuppressApplicationTitle;
-    profile->_StartingDirectory = _StartingDirectory;
+    profile->_FontInfo = *fontInfo;
     profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
     profile->_SoftwareRendering = _SoftwareRendering;
-    profile->_BellStyle = _BellStyle;
-    profile->_ConnectionType = _ConnectionType;
-    profile->_Origin = _Origin;
-    profile->_FontInfo = *fontInfo;
-    profile->_DefaultAppearance = *defaultAppearance;
 
-#define PROFILE_SETTINGS_COPY(type, name, ...) \
+#define PROFILE_APP_SETTINGS_COPY(type, name, ...) \
     profile->_##name = _##name;
-    PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
-#undef PROFILE_SETTINGS_COPY
+    PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_COPY)
+#undef PROFILE_APP_SETTINGS_COPY
+
+#define PROFILE_CONTROL_SETTINGS_COPY(type, name, ...) \
+    profile->_##name = _##name;
+    PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_COPY)
+#undef PROFILE_CONTROL_SETTINGS_COPY
 
     if (_UnfocusedAppearance)
     {
@@ -188,31 +186,21 @@ void Profile::LayerJson(const Json::Value& json)
 
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
+    JsonUtils::GetValueForKey(json, SourceKey, _Source);
+    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
-    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
-    JsonUtils::GetValueForKey(json, SourceKey, _Source);
-
-    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::GetValueForKey(json, TabTitleKey, _TabTitle);
-
-    // Control Settings
-    JsonUtils::GetValueForKey(json, ConnectionTypeKey, _ConnectionType);
-    JsonUtils::GetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
-    JsonUtils::GetValueForKey(json, CloseOnExitKey, _CloseOnExit);
-
-    // Padding was never specified as an integer, but it was a common working mistake.
-    // Allow it to be permissive.
-    JsonUtils::GetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
-
-    JsonUtils::GetValueForKey(json, IconKey, _Icon);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
-    JsonUtils::GetValueForKey(json, BellStyleKey, _BellStyle);
 
-#define PROFILE_SETTINGS_LAYER_JSON(type, name, ...) \
+#define PROFILE_APP_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);
-    PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
-#undef PROFILE_SETTINGS_LAYER_JSON
+    PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_LAYER_JSON)
+#undef PROFILE_APP_SETTINGS_LAYER_JSON
+
+#define PROFILE_CONTROL_SETTINGS_LAYER_JSON(type, name, ...) \
+    JsonUtils::GetValueForKey(json, name##Key, _##name);
+    PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_LAYER_JSON)
+#undef PROFILE_CONTROL_SETTINGS_LAYER_JSON
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
@@ -344,25 +332,18 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, HiddenKey, writeBasicSettings ? Hidden() : _Hidden);
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
-    // TODO:MSFT:20642297 - Use a sentinel value (-1) for "Infinite scrollback"
-    JsonUtils::SetValueForKey(json, TabTitleKey, _TabTitle);
-
-    // Control Settings
-    JsonUtils::SetValueForKey(json, ConnectionTypeKey, _ConnectionType);
-    JsonUtils::SetValueForKey(json, SuppressApplicationTitleKey, _SuppressApplicationTitle);
-    JsonUtils::SetValueForKey(json, CloseOnExitKey, _CloseOnExit);
-
     // PermissiveStringConverter is unnecessary for serialization
-
-    JsonUtils::SetValueForKey(json, StartingDirectoryKey, _StartingDirectory);
-    JsonUtils::SetValueForKey(json, IconKey, _Icon);
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
-    JsonUtils::SetValueForKey(json, BellStyleKey, _BellStyle);
 
-#define PROFILE_SETTINGS_TO_JSON(type, name, ...) \
+#define PROFILE_APP_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-    PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
-#undef PROFILE_SETTINGS_TO_JSON
+    PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_TO_JSON)
+#undef PROFILE_APP_SETTINGS_TO_JSON
+
+#define PROFILE_CONTROL_SETTINGS_TO_JSON(type, name, ...) \
+    JsonUtils::SetValueForKey(json, name##Key, _##name);
+    PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_TO_JSON)
+#undef PROFILE_CONTROL_SETTINGS_TO_JSON
 
     // Font settings
     const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);
