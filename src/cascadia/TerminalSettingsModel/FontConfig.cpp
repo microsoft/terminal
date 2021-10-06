@@ -70,8 +70,8 @@ void FontConfig::LayerJson(const Json::Value& json)
         // A font object is defined, use that
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
 #define FONT_SETTINGS_LAYER_JSON(type, name, ...) \
-        JsonUtils::GetValueForKey(fontInfoJson, name##Key, _##name);
-            FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
+    JsonUtils::GetValueForKey(fontInfoJson, name##Key, _##name);
+        FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
 #undef FONT_SETTINGS_LAYER_JSON
     }
     else

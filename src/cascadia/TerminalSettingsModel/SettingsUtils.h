@@ -75,11 +75,11 @@ Author(s):
     X(hstring, StartingDirectory)                              \
     X(Model::BellStyle, BellStyle, BellStyle::Audible)
 
-#define FONT_SETTINGS(X)                                \
-    X(hstring, FontFace, DEFAULT_FONT_FACE)             \
-    X(int32_t, FontSize, DEFAULT_FONT_SIZE)             \
+#define FONT_SETTINGS(X)                                                     \
+    X(hstring, FontFace, DEFAULT_FONT_FACE)                                  \
+    X(int32_t, FontSize, DEFAULT_FONT_SIZE)                                  \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT) \
-    X(IFontAxesMap, FontAxes)                           \
+    X(IFontAxesMap, FontAxes)                                                \
     X(IFontFeatureMap, FontFeatures)
 
 #define APPEARANCE_CONTROL_SETTINGS(X)                                                                                               \

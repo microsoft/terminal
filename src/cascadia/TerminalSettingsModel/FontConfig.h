@@ -40,10 +40,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::Profile SourceProfile();
 
-    #define FONT_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::FontConfig, type, name, ##__VA_ARGS__)
-            FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)
-    #undef FONT_SETTINGS_INITIALIZE
+#define FONT_SETTINGS_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::FontConfig, type, name, ##__VA_ARGS__)
+        FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)
+#undef FONT_SETTINGS_INITIALIZE
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
