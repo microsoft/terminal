@@ -44,6 +44,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         winrt::com_ptr<implementation::Profile> baseLayerProfile;
         std::vector<winrt::com_ptr<implementation::Profile>> profiles;
         std::unordered_map<winrt::guid, winrt::com_ptr<implementation::Profile>> profilesByGuid;
+
+        void clear();
     };
 
     struct SettingsLoader
@@ -63,12 +65,23 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool duplicateProfile = false;
 
     private:
+        struct JsonSettings
+        {
+            Json::Value root;
+            const Json::Value& colorSchemes;
+            const Json::Value& profileDefaults;
+            const Json::Value& profilesList;
+        };
+
         static std::pair<size_t, size_t> _lineAndColumnFromPosition(const std::string_view& string, const size_t position);
         static void _rethrowSerializationExceptionWithLocationInfo(const JsonUtils::DeserializationError& e, const std::string_view& settingsString);
         static Json::Value _parseJSON(const std::string_view& content);
         static const Json::Value& _getJSONValue(const Json::Value& json, const std::string_view& key) noexcept;
         gsl::span<const winrt::com_ptr<implementation::Profile>> _getNonUserOriginProfiles() const;
-        void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings, bool updatesKeyAllowed = false);
+        void _parse(const OriginTag origin, const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
+        void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
+        static JsonSettings _parseJson(const std::string_view& content);
+        static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
         void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
         static void _addParentProfile(const winrt::com_ptr<implementation::Profile>& profile, ParsedSettings& settings);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
@@ -89,6 +102,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static winrt::hstring DefaultSettingsPath();
         static winrt::hstring ApplicationDisplayName();
         static winrt::hstring ApplicationVersion();
+        static void ExportFile(winrt::hstring path, winrt::hstring content);
 
         CascadiaSettings() noexcept = default;
         CascadiaSettings(const winrt::hstring& userJSON, const winrt::hstring& inboxJSON);
@@ -120,7 +134,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // defterm
         static bool IsDefaultTerminalAvailable() noexcept;
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() const noexcept;
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
@@ -128,6 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static const std::filesystem::path& _settingsPath();
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
+        void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
 
@@ -139,17 +154,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         bool _hasInvalidColorScheme(const Model::Command& command) const;
 
         // user settings
-        winrt::com_ptr<implementation::GlobalAppSettings> _globals;
-        winrt::com_ptr<implementation::Profile> _baseLayerProfile;
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles;
-        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles;
+        winrt::com_ptr<implementation::GlobalAppSettings> _globals = winrt::make_self<implementation::GlobalAppSettings>();
+        winrt::com_ptr<implementation::Profile> _baseLayerProfile = winrt::make_self<implementation::Profile>();
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _allProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::Profile> _activeProfiles = winrt::single_threaded_observable_vector<Model::Profile>();
 
         // load errors
-        winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings;
+        winrt::Windows::Foundation::Collections::IVector<Model::SettingsLoadWarnings> _warnings = winrt::single_threaded_vector<Model::SettingsLoadWarnings>();
         winrt::Windows::Foundation::IReference<Model::SettingsLoadErrors> _loadError;
         winrt::hstring _deserializationErrorMessage;
 
         // defterm
+        winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
         Model::DefaultTerminal _currentDefaultTerminal{ nullptr };
     };
 }

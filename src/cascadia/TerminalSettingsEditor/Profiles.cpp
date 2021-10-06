@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -8,6 +8,7 @@
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
+#include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;

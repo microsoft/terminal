@@ -310,6 +310,12 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     {
         _UpdateIslandPosition(width, height);
     }
+
+    // GH#11367: We need to do this,
+    // otherwise the titlebar may still be partially visible
+    // when we move between different DPI monitors.
+    RefreshCurrentDPI();
+    _UpdateFrameMargins();
 }
 
 // Method Description:

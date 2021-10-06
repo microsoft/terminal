@@ -1461,15 +1461,10 @@ namespace winrt::TerminalApp::implementation
         // when the TabViewItem is unselected. So we still need to set the other
         // properties ourselves.
         //
-        // GH#11294: DESPITE the fact that there's a Background() API that we
-        // could just call like:
-        //
-        //     TabViewItem().Background(deselectedTabBrush);
-        //
-        // We actually can't, because it will make the part of the tab that
-        // doesn't contain the text totally transparent to hit tests. So we
-        // actually _do_ still need to set TabViewItemHeaderBackground manually.
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        // In GH#11294 we thought we'd still need to set
+        // TabViewItemHeaderBackground manually, but GH#11382 discovered that
+        // Background() was actually okay after all.
+        TabViewItem().Background(deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
@@ -1535,6 +1530,11 @@ namespace winrt::TerminalApp::implementation
                 TabViewItem().Resources().Remove(key);
             }
         }
+
+        // GH#11382 DON'T set the background to null. If you do that, then the
+        // tab won't be hit testable at all. Transparent, however, is a totally
+        // valid hit test target. That makes sense.
+        TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
 
         _RefreshVisualState();
         _colorCleared();
