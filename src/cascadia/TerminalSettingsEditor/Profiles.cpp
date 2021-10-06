@@ -47,6 +47,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
             }
+            else if (viewModelProperty == L"UseAcrylic")
+            {
+                if (!UseAcrylic())
+                {
+                    Opacity(1.0);
+                }
+            }
         });
 
         // Do the same for the starting directory
