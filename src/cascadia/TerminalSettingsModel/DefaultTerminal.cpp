@@ -70,7 +70,7 @@ std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> DefaultTe
         defaultTerminals.emplace_back(std::move(p));
     }
 
-    return { defaultTerminals, defaultTerminal };
+    return { std::move(defaultTerminals), std::move(defaultTerminal) };
 }
 
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)
