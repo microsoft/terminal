@@ -53,7 +53,7 @@ namespace SettingsModelLocalTests
         // Return Value:
         // - the JsonObject representing this instance
         template<typename T>
-        void RoundtripTest(const std::string& jsonString)
+        void RoundtripTest(const std::string_view& jsonString)
         {
             const auto json{ VerifyParseSucceeded(jsonString) };
             const auto settings{ T::FromJson(json) };
@@ -69,7 +69,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::GlobalSettings()
     {
-        const std::string globalsString{ R"(
+        static constexpr std::string_view globalsString{ R"(
             {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
 
@@ -105,7 +105,7 @@ namespace SettingsModelLocalTests
                 "actions": []
             })" };
 
-        const std::string smallGlobalsString{ R"(
+        static constexpr std::string_view smallGlobalsString{ R"(
             {
                 "defaultProfile": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
                 "actions": []
@@ -117,7 +117,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::Profile()
     {
-        const std::string profileString{ R"(
+        static constexpr std::string_view profileString{ R"(
             {
                 "name": "Windows PowerShell",
                 "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
@@ -152,7 +152,7 @@ namespace SettingsModelLocalTests
                 "selectionBackground": "#CCAABB",
 
                 "useAcrylic": false,
-                "acrylicOpacity": 0.5,
+                "opacity": 50,
 
                 "backgroundImage": "made_you_look.jpeg",
                 "backgroundImageStretchMode": "uniformToFill",
@@ -167,7 +167,7 @@ namespace SettingsModelLocalTests
                 "experimental.retroTerminalEffect": false
             })" };
 
-        const std::string smallProfileString{ R"(
+        static constexpr std::string_view smallProfileString{ R"(
             {
                 "name": "Custom Profile"
             })" };
@@ -175,7 +175,7 @@ namespace SettingsModelLocalTests
         // Setting "tabColor" to null tests two things:
         // - null should count as an explicit user-set value, not falling back to the parent's value
         // - null should be acceptable even though we're working with colors
-        const std::string weirdProfileString{ R"(
+        static constexpr std::string_view weirdProfileString{ R"(
             {
                 "guid" : "{8b039d4d-77ca-5a83-88e1-dfc8e895a127}",
                 "name": "Weird Profile",
@@ -192,7 +192,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::ColorScheme()
     {
-        const std::string schemeString{ R"({
+        static constexpr std::string_view schemeString{ R"({
                                             "name": "Campbell",
 
                                             "cursorColor": "#FFFFFF",
@@ -225,56 +225,56 @@ namespace SettingsModelLocalTests
     void SerializationTests::Actions()
     {
         // simple command
-        const std::string actionsString1{ R"([
+        static constexpr std::string_view actionsString1{ R"([
                                                 { "command": "paste" }
                                             ])" };
 
         // complex command
-        const std::string actionsString2A{ R"([
+        static constexpr std::string_view actionsString2A{ R"([
                                                 { "command": { "action": "setTabColor" } }
                                             ])" };
-        const std::string actionsString2B{ R"([
+        static constexpr std::string_view actionsString2B{ R"([
                                                 { "command": { "action": "setTabColor", "color": "#112233" } }
                                             ])" };
-        const std::string actionsString2C{ R"([
+        static constexpr std::string_view actionsString2C{ R"([
                                                 { "command": { "action": "copy" } },
                                                 { "command": { "action": "copy", "singleLine": true, "copyFormatting": "html" } }
                                             ])" };
 
         // simple command with key chords
-        const std::string actionsString3{ R"([
+        static constexpr std::string_view actionsString3{ R"([
                                                 { "command": "toggleAlwaysOnTop", "keys": "ctrl+a" },
                                                 { "command": "toggleAlwaysOnTop", "keys": "ctrl+b" }
                                             ])" };
 
         // complex command with key chords
-        const std::string actionsString4A{ R"([
+        static constexpr std::string_view actionsString4A{ R"([
                                                 { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+c" },
                                                 { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+d" }
                                             ])" };
-        const std::string actionsString4B{ R"([
+        static constexpr std::string_view actionsString4B{ R"([
                                                 { "command": { "action": "findMatch", "direction": "next" }, "keys": "ctrl+shift+s" },
                                                 { "command": { "action": "findMatch", "direction": "prev" }, "keys": "ctrl+shift+r" }
                                             ])" };
 
         // command with name and icon and multiple key chords
-        const std::string actionsString5{ R"([
+        static constexpr std::string_view actionsString5{ R"([
                                                 { "icon": "image.png", "name": "Scroll To Top Name", "command": "scrollToTop", "keys": "ctrl+e" },
                                                 { "command": "scrollToTop", "keys": "ctrl+f" }
                                             ])" };
 
         // complex command with new terminal args
-        const std::string actionsString6{ R"([
+        static constexpr std::string_view actionsString6{ R"([
                                                 { "command": { "action": "newTab", "index": 0 }, "keys": "ctrl+g" },
                                             ])" };
 
         // complex command with meaningful null arg
-        const std::string actionsString7{ R"([
+        static constexpr std::string_view actionsString7{ R"([
                                                 { "command": { "action": "renameWindow", "name": null }, "keys": "ctrl+h" }
                                             ])" };
 
         // nested command
-        const std::string actionsString8{ R"([
+        static constexpr std::string_view actionsString8{ R"([
                                                 {
                                                     "name": "Change font size...",
                                                     "commands": [
@@ -286,7 +286,7 @@ namespace SettingsModelLocalTests
                                             ])" };
 
         // iterable command
-        const std::string actionsString9A{ R"([
+        static constexpr std::string_view actionsString9A{ R"([
                                                 {
                                                     "name": "New tab",
                                                     "commands": [
@@ -299,7 +299,7 @@ namespace SettingsModelLocalTests
                                                     ]
                                                 }
                                             ])" };
-        const std::string actionsString9B{ R"([
+        static constexpr std::string_view actionsString9B{ R"([
                                                 {
                                                     "commands":
                                                     [
@@ -315,7 +315,7 @@ namespace SettingsModelLocalTests
                                                     "name": "Send Input ..."
                                                 }
                                         ])" };
-        const std::string actionsString9C{ R""([
+        static constexpr std::string_view actionsString9C{ R""([
                                                 {
                                                     "commands":
                                                     [
@@ -338,7 +338,7 @@ namespace SettingsModelLocalTests
                                                     "name": "Send Input (Evil) ..."
                                                 }
                                             ])"" };
-        const std::string actionsString9D{ R""([
+        static constexpr std::string_view actionsString9D{ R""([
                                                 {
                                                     "command":
                                                     {
@@ -352,7 +352,7 @@ namespace SettingsModelLocalTests
                                             ])"" };
 
         // unbound command
-        const std::string actionsString10{ R"([
+        static constexpr std::string_view actionsString10{ R"([
                                                 { "command": "unbound", "keys": "ctrl+c" }
                                             ])" };
 
@@ -395,7 +395,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::CascadiaSettings()
     {
-        const std::string settingsString{ R"({
+        static constexpr std::string_view settingsString{ R"({
             "$help" : "https://aka.ms/terminal-documentation",
             "$schema" : "https://aka.ms/terminal-profiles-schema",
             "defaultProfile": "{61c54bbd-1111-5271-96e7-009a87ff44bf}",
@@ -465,7 +465,7 @@ namespace SettingsModelLocalTests
 
     void SerializationTests::LegacyFontSettings()
     {
-        const std::string profileString{ R"(
+        static constexpr std::string_view profileString{ R"(
             {
                 "name": "Profile with legacy font settings",
 
@@ -474,7 +474,7 @@ namespace SettingsModelLocalTests
                 "fontWeight": "normal"
             })" };
 
-        const std::string expectedOutput{ R"(
+        static constexpr std::string_view expectedOutput{ R"(
             {
                 "name": "Profile with legacy font settings",
 

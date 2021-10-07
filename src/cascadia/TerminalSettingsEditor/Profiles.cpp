@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -8,6 +8,7 @@
 #include "EnumEntry.h"
 
 #include <LibraryResources.h>
+#include "..\WinRTUtils\inc\Utils.h"
 
 using namespace winrt::Windows::UI::Text;
 using namespace winrt::Windows::UI::Xaml;
@@ -45,6 +46,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 // notify listener that all starting directory related values might have changed
                 // NOTE: this is similar to what is done with BackgroundImagePath above
                 _NotifyChanges(L"UseParentProcessDirectory", L"UseCustomStartingDirectory");
+            }
+            else if (viewModelProperty == L"UseAcrylic")
+            {
+                // GH#11372: If we're on Windows 10, and someone turns off
+                // acrylic, we're going to disable opacity for them. Opacity
+                // doesn't work without acrylic on Windows 10.
+                //
+                // BODGY: CascadiaSettings's function IsDefaultTerminalAvailable
+                // is basically a "are we on Windows 11" check, because defterm
+                // only works on Win11. So we'll use that.
+                //
+                // Remove when we can remove the rest of GH#11285
+                if (!UseAcrylic() && !CascadiaSettings::IsDefaultTerminalAvailable())
+                {
+                    Opacity(1.0);
+                }
             }
         });
 

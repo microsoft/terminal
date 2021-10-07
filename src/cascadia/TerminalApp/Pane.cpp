@@ -128,7 +128,15 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     auto controlSettings = _control.Settings().as<TerminalSettings>();
 
     args.Profile(controlSettings.ProfileName());
-    args.StartingDirectory(controlSettings.StartingDirectory());
+    // If we know the user's working directory use it instead of the profile.
+    if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+    {
+        args.StartingDirectory(dir);
+    }
+    else
+    {
+        args.StartingDirectory(controlSettings.StartingDirectory());
+    }
     args.TabTitle(controlSettings.StartingTitle());
     args.Commandline(controlSettings.Commandline());
     args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());

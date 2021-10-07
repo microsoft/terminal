@@ -5,6 +5,9 @@
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
 
+#include "DefaultTerminal.h"
+#include "FileUtils.h"
+
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
 
@@ -15,6 +18,13 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Windows::Foundation::Collections;
 using namespace Microsoft::Console;
 
+// Creating a child of a profile requires us to copy certain
+// required attributes. This method handles those attributes.
+//
+// NOTE however that it doesn't call _FinalizeInheritance() for you! Don't forget that!
+//
+// At the time of writing only one caller needs to call _FinalizeInheritance(),
+// which is why this unsafety wasn't further abstracted away.
 winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<Profile>& parent)
 {
     auto profile = winrt::make_self<Profile>();
@@ -368,6 +378,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
     LOG_IF_FAILED(CoCreateGuid(&guid));
 
     auto profile = CreateChild(_baseLayerProfile);
+    profile->_FinalizeInheritance();
     profile->Guid(guid);
     profile->Name(winrt::hstring{ name });
     return profile;
@@ -842,31 +853,21 @@ bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all available terminals that could be the default.
-IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() const noexcept
+IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() noexcept
 {
-    const auto available = DefaultTerminal::Available();
-    std::vector<Model::DefaultTerminal> terminals{ available.Size(), nullptr };
-    available.GetMany(0, terminals);
-    return winrt::single_threaded_observable_vector(std::move(terminals));
+    _refreshDefaultTerminals();
+    return _defaultTerminals;
 }
 
 // Method Description:
 // - Returns the currently selected default terminal application.
-// - DANGER! This will be null unless you've called
-//   CascadiaSettings::RefreshDefaultTerminals. At the time of this comment (May
-
-//   2021), only the Launch page in the settings UI calls that method, so this
-//   value is unset unless you've navigated to that page.
 // Arguments:
 // - <none>
 // Return Value:
 // - the selected default terminal application
 Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noexcept
 {
-    if (!_currentDefaultTerminal)
-    {
-        _currentDefaultTerminal = DefaultTerminal::Current();
-    }
+    _refreshDefaultTerminals();
     return _currentDefaultTerminal;
 }
 
@@ -879,4 +880,29 @@ Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noex
 void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& terminal)
 {
     _currentDefaultTerminal = terminal;
+}
+
+// This function is implicitly called by DefaultTerminals/CurrentDefaultTerminal().
+// It reloads the selection of available, installed terminals and caches them.
+// WinUI requires us that the `SelectedItem` of a collection is member of the list given to `ItemsSource`.
+// It's thus important that _currentDefaultTerminal is a member of _defaultTerminals.
+// Right now this is implicitly the case thanks to DefaultTerminal::Available(),
+// but in the future it might be worthwhile to change the code to use list indices instead.
+void CascadiaSettings::_refreshDefaultTerminals()
+{
+    if (!_defaultTerminals)
+    {
+        auto [defaultTerminals, defaultTerminal] = DefaultTerminal::Available();
+        _defaultTerminals = winrt::single_threaded_observable_vector(std::move(defaultTerminals));
+        _currentDefaultTerminal = std::move(defaultTerminal);
+    }
+}
+
+void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
+{
+    try
+    {
+        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
+    }
+    CATCH_LOG();
 }
