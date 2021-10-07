@@ -2707,7 +2707,6 @@ namespace winrt::TerminalApp::implementation
             HRESULT finalVal = S_OK;
 
             Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-                // Re-running ourselves under the dispatcher will cause us to take the first branch above.
                 finalVal = _OnNewConnection(connection);
                 latch.count_down();
             });

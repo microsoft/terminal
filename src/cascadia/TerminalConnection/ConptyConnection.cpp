@@ -276,6 +276,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hClientProcess) :
         _initialRows{ 25 },
         _initialCols{ 80 },
+        _guid{ Utils::CreateGuid() },
         _inPipe{ hIn },
         _outPipe{ hOut }
     {

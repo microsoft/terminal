@@ -5,7 +5,7 @@
 
 namespace til
 {
-    void gen_random(void* data, ULONG length)
+    void gen_random(void* data, uint32_t length)
     {
         static const auto RtlGenRandom = []() {
             // The documentation states to use advapi32.dll, but technically
