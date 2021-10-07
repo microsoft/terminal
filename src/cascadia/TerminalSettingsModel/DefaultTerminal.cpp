@@ -10,85 +10,70 @@
 using namespace winrt::Microsoft::Terminal::Settings;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
-winrt::Windows::Foundation::Collections::IVector<Model::DefaultTerminal> DefaultTerminal::_available = winrt::single_threaded_vector<Model::DefaultTerminal>();
-Model::DefaultTerminal DefaultTerminal::_current = nullptr;
-
-DefaultTerminal::DefaultTerminal(DelegationConfig::DelegationPackage pkg) :
-    _pkg(pkg)
+DefaultTerminal::DefaultTerminal(DelegationConfig::DelegationPackage&& pkg) :
+    _pkg{ pkg }
 {
 }
 
 winrt::hstring DefaultTerminal::Name() const
 {
-    static const std::wstring def{ RS_(L"InboxWindowsConsoleName") };
-    return _pkg.terminal.name.empty() ? winrt::hstring{ def } : winrt::hstring{ _pkg.terminal.name };
+    return _pkg.terminal.name.empty() ? winrt::hstring{ RS_(L"InboxWindowsConsoleName") } : winrt::hstring{ _pkg.terminal.name };
 }
 
 winrt::hstring DefaultTerminal::Version() const
 {
     // If there's no version information... return empty string instead.
-    if (DelegationConfig::PkgVersion{} == _pkg.terminal.version)
+    const auto& version = _pkg.terminal.version;
+    if (DelegationConfig::PkgVersion{} == version)
     {
         return winrt::hstring{};
     }
 
-    const auto name = fmt::format(L"{}.{}.{}.{}", _pkg.terminal.version.major, _pkg.terminal.version.minor, _pkg.terminal.version.build, _pkg.terminal.version.revision);
-    return winrt::hstring{ name };
+    fmt::wmemory_buffer buffer;
+    fmt::format_to(buffer, L"{}.{}.{}.{}", version.major, version.minor, version.build, version.revision);
+    return winrt::hstring{ buffer.data(), gsl::narrow_cast<winrt::hstring::size_type>(buffer.size()) };
 }
 
 winrt::hstring DefaultTerminal::Author() const
 {
-    static const std::wstring def{ RS_(L"InboxWindowsConsoleAuthor") };
-    return _pkg.terminal.author.empty() ? winrt::hstring{ def } : winrt::hstring{ _pkg.terminal.author };
+    return _pkg.terminal.author.empty() ? winrt::hstring{ RS_(L"InboxWindowsConsoleAuthor") } : winrt::hstring{ _pkg.terminal.author };
 }
 
 winrt::hstring DefaultTerminal::Icon() const
 {
-    static const std::wstring_view def{ L"\uE756" };
-    return _pkg.terminal.logo.empty() ? winrt::hstring{ def } : winrt::hstring{ _pkg.terminal.logo };
+    return _pkg.terminal.logo.empty() ? winrt::hstring{ L"\uE756" } : winrt::hstring{ _pkg.terminal.logo };
 }
 
-void DefaultTerminal::Refresh()
+std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> DefaultTerminal::Available()
 {
+    // The potential of returning nullptr for defaultTerminal feels weird, but XAML can
+    // handle that appropriately and will select nothing as current in the dropdown.
+    std::vector<Model::DefaultTerminal> defaultTerminals;
+    Model::DefaultTerminal defaultTerminal{ nullptr };
+
     std::vector<DelegationConfig::DelegationPackage> allPackages;
     DelegationConfig::DelegationPackage currentPackage;
-
     LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(allPackages, currentPackage));
 
-    _available.Clear();
-    for (const auto& pkg : allPackages)
+    for (auto& pkg : allPackages)
     {
-        auto p = winrt::make<DefaultTerminal>(pkg);
+        // Be a bit careful here: We're moving pkg into the constructor.
+        // Afterwards it'll be invalid, so we need to cache isCurrent.
+        const auto isCurrent = pkg == currentPackage;
+        auto p = winrt::make<DefaultTerminal>(std::move(pkg));
 
-        _available.Append(p);
-
-        if (pkg == currentPackage)
+        if (isCurrent)
         {
-            _current = p;
+            defaultTerminal = p;
         }
-    }
-}
 
-winrt::Windows::Foundation::Collections::IVectorView<Model::DefaultTerminal> DefaultTerminal::Available()
-{
-    Refresh();
-    return _available.GetView();
-}
-
-Model::DefaultTerminal DefaultTerminal::Current()
-{
-    if (!_current)
-    {
-        Refresh();
+        defaultTerminals.emplace_back(std::move(p));
     }
 
-    // The potential of returning nullptr feels weird, but XAML can handle that appropriately
-    // and will select nothing as current in the dropdown.
-    return _current;
+    return { std::move(defaultTerminals), std::move(defaultTerminal) };
 }
 
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)
 {
     THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
-    _current = term;
 }

@@ -5,6 +5,7 @@
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
 
+#include "DefaultTerminal.h"
 #include "FileUtils.h"
 
 #include <LibraryResources.h>
@@ -844,31 +845,21 @@ bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
 // - <none>
 // Return Value:
 // - an iterable collection of all available terminals that could be the default.
-IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() const noexcept
+IObservableVector<Model::DefaultTerminal> CascadiaSettings::DefaultTerminals() noexcept
 {
-    const auto available = DefaultTerminal::Available();
-    std::vector<Model::DefaultTerminal> terminals{ available.Size(), nullptr };
-    available.GetMany(0, terminals);
-    return winrt::single_threaded_observable_vector(std::move(terminals));
+    _refreshDefaultTerminals();
+    return _defaultTerminals;
 }
 
 // Method Description:
 // - Returns the currently selected default terminal application.
-// - DANGER! This will be null unless you've called
-//   CascadiaSettings::RefreshDefaultTerminals. At the time of this comment (May
-
-//   2021), only the Launch page in the settings UI calls that method, so this
-//   value is unset unless you've navigated to that page.
 // Arguments:
 // - <none>
 // Return Value:
 // - the selected default terminal application
 Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noexcept
 {
-    if (!_currentDefaultTerminal)
-    {
-        _currentDefaultTerminal = DefaultTerminal::Current();
-    }
+    _refreshDefaultTerminals();
     return _currentDefaultTerminal;
 }
 
@@ -883,11 +874,27 @@ void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& term
     _currentDefaultTerminal = terminal;
 }
 
+// This function is implicitly called by DefaultTerminals/CurrentDefaultTerminal().
+// It reloads the selection of available, installed terminals and caches them.
+// WinUI requires us that the `SelectedItem` of a collection is member of the list given to `ItemsSource`.
+// It's thus important that _currentDefaultTerminal is a member of _defaultTerminals.
+// Right now this is implicitly the case thanks to DefaultTerminal::Available(),
+// but in the future it might be worthwhile to change the code to use list indices instead.
+void CascadiaSettings::_refreshDefaultTerminals()
+{
+    if (!_defaultTerminals)
+    {
+        auto [defaultTerminals, defaultTerminal] = DefaultTerminal::Available();
+        _defaultTerminals = winrt::single_threaded_observable_vector(std::move(defaultTerminals));
+        _currentDefaultTerminal = std::move(defaultTerminal);
+    }
+}
+
 void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
 {
     try
     {
-        winrt::Microsoft::Terminal::Settings::Model::WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
+        WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
     }
     CATCH_LOG();
 }
