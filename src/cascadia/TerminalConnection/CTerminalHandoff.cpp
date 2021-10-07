@@ -124,16 +124,18 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
         THROW_IF_FAILED(_duplicateHandle(server, server));
         THROW_IF_FAILED(_duplicateHandle(client, client));
 
+        // Call registered handler from when we started listening.
+        THROW_IF_FAILED(localPfnHandoff(in, out, signal, ref, server, client));
+
 #pragma warning(suppress : 26477)
         TraceLoggingWrite(
             g_hTerminalConnectionProvider,
             "ReceiveTerminalHandoff_Success",
             TraceLoggingDescription("successfully received a terminal handoff"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        // Call registered handler from when we started listening.
-        return localPfnHandoff(in, out, signal, ref, server, client);
+        return S_OK;
     }
     catch (...)
     {
@@ -146,7 +148,7 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
             TraceLoggingDescription("failed while receiving a terminal handoff"),
             TraceLoggingHResult(hr),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
-            TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
         return hr;
     }
