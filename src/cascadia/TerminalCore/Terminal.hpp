@@ -22,8 +22,6 @@
 
 static constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
 static constexpr size_t TaskbarMinProgress{ 10 };
-static constexpr size_t DefaultBgIndex{ 16 };
-static constexpr size_t DefaultFgIndex{ 17 };
 
 // You have to forward decl the ICoreSettings here, instead of including the header.
 // If you include the header, there will be compilation errors with other

@@ -9,7 +9,6 @@
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
-#include "ColorFix.hpp"
 
 #include <winrt/Microsoft.Terminal.Core.h>
 
@@ -1280,35 +1279,4 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexce
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;
-}
-
-// Method Description:
-// - Creates the adjusted color array, which contains the possible foreground colors,
-//   adjusted for perceivability
-// - The adjusted color array is 2-d, and effectively maps a background and foreground
-//   color pair to the adjusted foreground for that color pair
-void Terminal::_MakeAdjustedColorArray()
-{
-    // The color table has 16 colors, but the adjusted color table needs to be 18
-    // to include the default background and default foreground colors
-    std::array<COLORREF, 18> colorTableWithDefaults;
-    std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
-    colorTableWithDefaults[DefaultBgIndex] = _defaultBg;
-    colorTableWithDefaults[DefaultFgIndex] = _defaultFg;
-    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
-    {
-        const auto fg = til::at(colorTableWithDefaults, fgIndex);
-        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
-        {
-            if (fgIndex == bgIndex)
-            {
-                _adjustedForegroundColors[bgIndex][fgIndex] = fg;
-            }
-            else
-            {
-                const auto bg = til::at(colorTableWithDefaults, bgIndex);
-                _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
-            }
-        }
-    }
 }
