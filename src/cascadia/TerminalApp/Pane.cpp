@@ -129,11 +129,16 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     assert(_IsLeaf());
 
     NewTerminalArgs args{};
-    auto controlSettings = _control.Settings().as<TerminalSettings>();
+    auto termControl{ _control.try_as<TermControl>() };
+    if (!termControl)
+    {
+        return nullptr;
+    }
+    auto controlSettings = termControl.Settings().as<TerminalSettings>();
 
     args.Profile(controlSettings.ProfileName());
     // If we know the user's working directory use it instead of the profile.
-    if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+    if (const auto dir = termControl.WorkingDirectory(); !dir.empty())
     {
         args.StartingDirectory(dir);
     }
@@ -1280,7 +1285,7 @@ TermControl Pane::GetLastFocusedTerminalControl()
             {
                 if (p->_IsLeaf())
                 {
-                    return p->_control;
+                    return p->GetTerminalControl();
                 }
                 pane = p;
             }
@@ -1288,7 +1293,7 @@ TermControl Pane::GetLastFocusedTerminalControl()
         }
         return _firstChild->GetLastFocusedTerminalControl();
     }
-    return _control;
+    return GetTerminalControl();
 }
 
 // Method Description:
@@ -1660,8 +1665,8 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                     const auto& closedControl{ p->_control.try_as<TermControl>() };
                     if (closedControl)
                     {
-                        closedControl.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-                        closedControl.WarningBell(closedChild->_warningBellToken);
+                        closedControl.ConnectionStateChanged(p->_connectionStateChangedToken);
+                        closedControl.WarningBell(p->_warningBellToken);
                     }
                 }
                 return false;
@@ -1759,8 +1764,8 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                     const auto& closedControl{ p->_control.try_as<TermControl>() };
                     if (closedControl)
                     {
-                        closedControl.ConnectionStateChanged(closedChild->_connectionStateChangedToken);
-                        closedControl.WarningBell(closedChild->_warningBellToken);
+                        closedControl.ConnectionStateChanged(p->_connectionStateChangedToken);
+                        closedControl.WarningBell(p->_warningBellToken);
                     }
                 }
                 return false;
