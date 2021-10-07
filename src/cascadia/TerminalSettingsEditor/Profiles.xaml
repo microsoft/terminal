@@ -304,7 +304,8 @@
                                                     ClearSettingValue="{x:Bind State.Profile.ClearScrollState}"
                                                     HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}">
-                                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                    ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
@@ -409,7 +410,8 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
                                                 HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                            <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}" />
                         </local:SettingContainer>
@@ -447,7 +449,8 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
                                                 HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                            <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}" />
                         </local:SettingContainer>
