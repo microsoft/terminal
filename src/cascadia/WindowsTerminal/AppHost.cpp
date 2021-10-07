@@ -404,6 +404,10 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
     // We don't want to try to save layouts if we are about to close
     _getWindowLayoutThrottler.reset();
     _windowManager.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+    // Remove ourself from the list of peasants so that we aren't included in
+    // any future requests. This will also mean we block until any existing
+    // event handler finishes.
+    _windowManager.SignalClose();
 
     _window->Close();
 }
