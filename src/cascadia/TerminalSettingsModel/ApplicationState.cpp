@@ -157,17 +157,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     try
     {
         LOG_LAST_ERROR_IF(!DeleteFile(_path.c_str()));
-
-#define MTSM_APPLICATION_STATE_GEN(type, name, key, ...) \
-    {                                                    \
-        auto state = _state.lock();                      \
-        state->name = std::nullopt;                      \
-        state->name##Changed = true;                     \
-    }                                                    \
-    _throttler();
-
-        MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
-#undef MTSM_APPLICATION_STATE_GEN
+        *_state.lock() = {};
     }
     CATCH_LOG()
 
