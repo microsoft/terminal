@@ -86,4 +86,13 @@ bool DefaultTerminal::HasCurrent()
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)
 {
     THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
+
+    TraceLoggingWrite(g_hSettingsModelProvider,
+                      "DefaultTerminalChanged",
+                      TraceLoggingWideString(term.Name().c_str(), "default terminal name", "the name of the default terminal"),
+                      TraceLoggingWideString(term.Version().c_str(), "default terminal version", "the version of the default terminal"),
+                      TraceLoggingWideString(term.Author().c_str(), "default terminal author", "the author of the default terminal"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                      TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 }
