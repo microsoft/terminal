@@ -166,7 +166,8 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentCursorShape, Mode=TwoWay}" />
             </local:SettingContainer>
@@ -229,7 +230,8 @@
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageStretchMode, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind BackgroundImageStretchModeList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentBackgroundImageStretchMode, Mode=TwoWay}" />
             </local:SettingContainer>
@@ -444,7 +446,8 @@
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentIntenseTextStyle, Mode=TwoWay}" />
             </local:SettingContainer>

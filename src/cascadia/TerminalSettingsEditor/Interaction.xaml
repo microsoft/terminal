@@ -34,7 +34,8 @@
 
             <!--  Copy Format  -->
             <local:SettingContainer x:Uid="Globals_CopyFormat">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}" />
             </local:SettingContainer>
@@ -58,7 +59,8 @@
 
             <!--  Tab Switcher Mode  -->
             <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
                                    SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}" />
             </local:SettingContainer>
