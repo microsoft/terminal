@@ -385,9 +385,6 @@ private:
 
     void _NotifyTerminalCursorPositionChanged() noexcept;
 
-    std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
-    void _MakeAdjustedColorArray();
-
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
     std::vector<SMALL_RECT> _GetSelectionRects() const noexcept;
@@ -401,6 +398,9 @@ private:
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
+
+    void _MakeAdjustedColorArray();
+    std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;
