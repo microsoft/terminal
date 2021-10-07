@@ -39,9 +39,8 @@ static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& d
     const auto WSLDistro{ CreateDynamicProfile(distName) };
     // GH#11096 - make sure the WSL path starts explicitly with
     // C:\Windows\System32. Don't want someone path hijacking wsl.exe.
-    wil::unique_cotaskmem_string systemPath;
-    THROW_IF_FAILED(wil::GetSystemDirectoryW(systemPath));
-    std::wstring command(systemPath.get());
+    std::wstring command{};
+    THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(command));
     WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
     WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
     WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
