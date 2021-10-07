@@ -141,6 +141,19 @@
                             Click="_CloseOnExitInfoDismissHandler" />
                 </mux:InfoBar.ActionButton>
             </mux:InfoBar>
+
+            <mux:InfoBar x:Name="SetAsDefaultInfoBar"
+                         x:Uid="SetAsDefaultInfoBar"
+                         x:Load="False"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Severity="Informational">
+                <mux:InfoBar.ActionButton>
+                    <Button x:Uid="InfoBarDismissButton"
+                            Click="_SetAsDefaultDismissHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
         </StackPanel>
 
         <!--

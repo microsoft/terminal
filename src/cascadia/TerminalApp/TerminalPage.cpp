@@ -287,6 +287,8 @@ namespace winrt::TerminalApp::implementation
             _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
         }
         CATCH_LOG();
+
+        ShowSetAsDefaultInfoBar();
     }
 
     // Method Description;
@@ -2893,6 +2895,29 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Displays a info popup guiding the user into setting their default terminal.
+    void TerminalPage::ShowSetAsDefaultInfoBar() const
+    {
+        if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
+        {
+            return;
+        }
+
+        // If the user has already configured any terminal for hand-off we
+        // shouldn't inform them again about the possibility to do so.
+        if (CascadiaSettings::IsDefaultTerminalSet())
+        {
+            _DismissMessage(InfoBarMessage::SetAsDefault);
+            return;
+        }
+
+        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(true);
+        }
+    }
+
     // Function Description:
     // - Helper function to get the OS-localized name for the "Touch Keyboard
     //   and Handwriting Panel Service". If we can't open up the service for any
@@ -3314,6 +3339,22 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Persists the user's choice not to show the information bar warning about "Windows Terminal can be set as your default terminal application"
+    // Then hides this information buffer.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetAsDefaultDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
+    {
+        _DismissMessage(InfoBarMessage::SetAsDefault);
+        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+    }
+
+    // Method Description:
     // - Checks whether information bar message was dismissed earlier (in the application state)
     // Arguments:
     // - message: message to look for in the state
@@ -3342,13 +3383,20 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_DismissMessage(const InfoBarMessage& message)
     {
-        auto dismissedMessages = ApplicationState::SharedInstance().DismissedMessages();
-        if (!dismissedMessages)
+        const auto applicationState = ApplicationState::SharedInstance();
+        std::vector<InfoBarMessage> messages;
+
+        if (const auto values = applicationState.DismissedMessages())
         {
-            dismissedMessages = winrt::single_threaded_vector<InfoBarMessage>();
+            messages.resize(values.Size());
+            values.GetMany(0, messages);
         }
 
-        dismissedMessages.Append(message);
-        ApplicationState::SharedInstance().DismissedMessages(dismissedMessages);
+        if (std::none_of(messages.begin(), messages.end(), [&](const auto& m) { return m == message; }))
+        {
+            messages.emplace_back(message);
+        }
+
+        applicationState.DismissedMessages(std::move(messages));
     }
 }

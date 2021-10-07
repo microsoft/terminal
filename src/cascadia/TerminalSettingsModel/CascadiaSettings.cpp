@@ -10,6 +10,7 @@
 
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
+#include <WtExeUtils.h>
 
 using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Settings;
@@ -837,6 +838,11 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
 // - True if OS supports default terminal. False otherwise.
 bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
 {
+    if (!IsPackaged())
+    {
+        return false;
+    }
+
     OSVERSIONINFOEXW osver{};
     osver.dwOSVersionInfoSize = sizeof(osver);
     osver.dwBuildNumber = 22000;
@@ -845,6 +851,11 @@ bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
     VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
 
     return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+}
+
+bool CascadiaSettings::IsDefaultTerminalSet() noexcept
+{
+    return DefaultTerminal::HasCurrent();
 }
 
 // Method Description:

@@ -718,6 +718,9 @@
   <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
     <value>Termination behavior can be configured in advanced profile settings.</value>
   </data>
+  <data name="SetAsDefaultInfoBar.Message" xml:space="preserve">
+    <value>Windows Terminal can be set as the default terminal application in your settings.</value>
+  </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Don't show again</value>
   </data>

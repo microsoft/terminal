@@ -49,6 +49,7 @@ namespace Microsoft.Terminal.Settings.Model
         Profile GetProfileForArgs(NewTerminalArgs newTerminalArgs);
 
         static Boolean IsDefaultTerminalAvailable { get; };
+        static Boolean IsDefaultTerminalSet { get; };
         IObservableVector<DefaultTerminal> DefaultTerminals { get; };
         DefaultTerminal CurrentDefaultTerminal;
     }
