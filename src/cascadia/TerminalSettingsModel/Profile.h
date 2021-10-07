@@ -130,6 +130,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_INITIALIZE)
 #undef PROFILE_CONTROL_SETTINGS_INITIALIZE
 
+#define PROFILE_CONTROL_SETTINGS_2_INITIALIZE(type, name, ...) \
+    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+        PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_INITIALIZE)
+#undef PROFILE_CONTROL_SETTINGS_2_INITIALIZE
+
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };
         Model::FontConfig _FontInfo{ winrt::make<FontConfig>(weak_ref<Model::Profile>(*this)) };

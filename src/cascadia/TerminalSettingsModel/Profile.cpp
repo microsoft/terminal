@@ -134,6 +134,11 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_COPY)
 #undef PROFILE_CONTROL_SETTINGS_COPY
 
+#define PROFILE_CONTROL_SETTINGS_2_COPY(type, name, ...) \
+    profile->_##name = _##name;
+    PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_COPY)
+#undef PROFILE_CONTROL_SETTINGS_2_COPY
+
     if (_UnfocusedAppearance)
     {
         Model::AppearanceConfig unfocused{ nullptr };
@@ -201,6 +206,11 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, name##Key, _##name);
     PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_LAYER_JSON)
 #undef PROFILE_CONTROL_SETTINGS_LAYER_JSON
+
+#define PROFILE_CONTROL_SETTINGS_2_LAYER_JSON(type, name, ...) \
+    JsonUtils::GetValueForKey(json, name##Key, _##name);
+    PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_LAYER_JSON)
+#undef PROFILE_CONTROL_SETTINGS_2_LAYER_JSON
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
@@ -344,6 +354,11 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, name##Key, _##name);
     PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_TO_JSON)
 #undef PROFILE_CONTROL_SETTINGS_TO_JSON
+
+#define PROFILE_CONTROL_SETTINGS_2_TO_JSON(type, name, ...) \
+    JsonUtils::SetValueForKey(json, name##Key, _##name);
+    PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_TO_JSON)
+#undef PROFILE_CONTROL_SETTINGS_2_TO_JSON
 
     // Font settings
     const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);

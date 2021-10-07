@@ -42,10 +42,10 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const Appearan
     appearance->_SelectionBackground = source->_SelectionBackground;
     appearance->_CursorColor = source->_CursorColor;
 
-#define APPEARANCE_APP_SETTINGS_COPY(type, name, ...) \
+#define APPEARANCE_CONTROL_SETTINGS_2_COPY(type, name, ...) \
     appearance->_##name = source->_##name;
-    APPEARANCE_APP_SETTINGS(APPEARANCE_APP_SETTINGS_COPY)
-#undef APPEARANCE_APP_SETTINGS_COPY
+    APPEARANCE_CONTROL_SETTINGS_2(APPEARANCE_CONTROL_SETTINGS_2_COPY)
+#undef APPEARANCE_CONTROL_SETTINGS_2_COPY
 
 #define APPEARANCE_CONTROL_SETTINGS_COPY(type, name, ...) \
     appearance->_##name = source->_##name;
@@ -64,10 +64,10 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
 
-#define APPEARANCE_APP_SETTINGS_TO_JSON(type, name, ...) \
+#define APPEARANCE_CONTROL_SETTINGS_2_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-    APPEARANCE_APP_SETTINGS(APPEARANCE_APP_SETTINGS_TO_JSON)
-#undef APPEARANCE_APP_SETTINGS_TO_JSON
+    APPEARANCE_CONTROL_SETTINGS_2(APPEARANCE_CONTROL_SETTINGS_2_TO_JSON)
+#undef APPEARANCE_CONTROL_SETTINGS_2_TO_JSON
 
 #define APPEARANCE_CONTROL_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
@@ -96,10 +96,10 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
 
-#define APPEARANCE_APP_SETTINGS_LAYER_JSON(type, name, ...) \
+#define APPEARANCE_CONTROL_SETTINGS_2_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);
-    APPEARANCE_APP_SETTINGS(APPEARANCE_APP_SETTINGS_LAYER_JSON)
-#undef APPEARANCE_APP_SETTINGS_LAYER_JSON
+    APPEARANCE_CONTROL_SETTINGS_2(APPEARANCE_CONTROL_SETTINGS_2_LAYER_JSON)
+#undef APPEARANCE_CONTROL_SETTINGS_2_LAYER_JSON
 
 #define APPEARANCE_CONTROL_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);

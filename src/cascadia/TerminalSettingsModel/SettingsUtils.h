@@ -66,13 +66,18 @@ Author(s):
     X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible) \
     X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale)
 
+// Placeholder for settings that are defined in the control but TerminalSettings
+// needs to define manually for now
+#define PROFILE_CONTROL_SETTINGS_2(X)                          \
+    X(hstring, StartingDirectory)                              \
+    X(bool, SuppressApplicationTitle, false)
+
+
 #define PROFILE_APP_SETTINGS(X)                                \
     X(guid, ConnectionType)                                    \
     X(hstring, Icon, L"\uE756")                                \
     X(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful) \
     X(hstring, TabTitle)                                       \
-    X(bool, SuppressApplicationTitle, false)                   \
-    X(hstring, StartingDirectory)                              \
     X(Model::BellStyle, BellStyle, BellStyle::Audible)
 
 #define FONT_SETTINGS(X)                                                     \
@@ -90,7 +95,9 @@ Author(s):
     X(bool, RetroTerminalEffect, false)                                                                                              \
     X(hstring, PixelShaderPath)
 
-#define APPEARANCE_APP_SETTINGS(X)                                                                                               \
+// Placeholder for settings that are defined in the control but TerminalSettings
+// needs to define manually for now
+#define APPEARANCE_CONTROL_SETTINGS_2(X)                                                                                               \
     X(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center) \
     X(hstring, ColorSchemeName, L"Campbell")                                                                                     \
     X(hstring, BackgroundImagePath)                                                                                              \
