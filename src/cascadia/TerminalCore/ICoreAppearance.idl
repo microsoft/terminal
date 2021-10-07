@@ -67,5 +67,6 @@ namespace Microsoft.Terminal.Core
         CursorStyle CursorShape;
         UInt32 CursorHeight;
         Boolean IntenseIsBright;
+        Boolean AdjustIndistinguishableColors;
     };
 }

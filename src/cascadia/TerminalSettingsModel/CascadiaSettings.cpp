@@ -318,6 +318,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, RetroTerminalEffect);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorShape);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, CursorHeight);
+        DUPLICATE_SETTING_MACRO_SUB(appearance, target, AdjustIndistinguishableColors);
         DUPLICATE_SETTING_MACRO_SUB(appearance, target, Opacity);
     }
 
