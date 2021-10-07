@@ -668,6 +668,7 @@ dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxsm
 dxttbmp
 eachother
 eae
@@ -1642,6 +1643,7 @@ onecoreuapuuid
 onecoreuuid
 ONECOREWINDOWS
 onehalf
+oneseq
 ONLCR
 openbash
 opencode
@@ -1708,6 +1710,7 @@ pcch
 PCCHAR
 PCCONSOLE
 PCD
+pcg
 pch
 PCHAR
 PCIDLIST
@@ -2023,6 +2026,7 @@ Rike
 RIPMSG
 RIS
 RMENU
+rng
 roadmap
 robomac
 roundtrip
