@@ -5,7 +5,8 @@ namespace Microsoft.Terminal.Settings.Model
 {
     enum InfoBarMessage
     {
-        KeyboardServiceWarning = 0
+        KeyboardServiceWarning = 0,
+        SetAsDefault,
     };
 
     [default_interface] runtimeclass ApplicationState {

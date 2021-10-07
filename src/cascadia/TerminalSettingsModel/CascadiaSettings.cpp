@@ -8,6 +8,7 @@
 #include "DefaultTerminal.h"
 
 #include <LibraryResources.h>
+#include <WtExeUtils.h>
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
@@ -1230,9 +1231,19 @@ static bool _isOnBuildWithDefTerm() noexcept
 // - True if OS supports default terminal. False otherwise.
 bool CascadiaSettings::IsDefaultTerminalAvailable() noexcept
 {
+    if (!IsPackaged())
+    {
+        return false;
+    }
+
     // Cached on first use since the OS version shouldn't change while we're running.
     static bool isAvailable = _isOnBuildWithDefTerm();
     return isAvailable;
+}
+
+bool CascadiaSettings::IsDefaultTerminalSet() noexcept
+{
+    return DefaultTerminal::HasCurrent();
 }
 
 // Method Description:
