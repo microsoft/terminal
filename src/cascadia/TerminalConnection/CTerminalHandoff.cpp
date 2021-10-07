@@ -131,7 +131,6 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
 
-
         // Call registered handler from when we started listening.
         return localPfnHandoff(in, out, signal, ref, server, client);
     }
