@@ -595,7 +595,7 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
 
         for (const auto& profile : _allProfiles)
         {
-            if (profile.ConnectionType() == winrt::guid{})
+            if (profile.ConnectionType() != winrt::guid{})
             {
                 continue;
             }
@@ -606,7 +606,11 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
                 continue;
             }
 
-            _commandLinesCache.emplace_back(_normalizeCommandLine(cmd.c_str()), profile);
+            try
+            {
+                _commandLinesCache.emplace_back(_normalizeCommandLine(cmd.c_str()), profile);
+            }
+            CATCH_LOG()
         }
 
         // We're trying to find the command line with the longest common prefix below.
@@ -621,23 +625,32 @@ Model::Profile CascadiaSettings::_getProfileForCommandLine(const winrt::hstring&
         });
     });
 
-    const auto needle = _normalizeCommandLine(commandLine.c_str());
-
-    // til::starts_with(string, prefix) will always return false if prefix.size() > string.size().
-    // --> Using binary search we can safely skip all items in _commandLinesCache where .first.size() > needle.size().
-    const auto end = _commandLinesCache.end();
-    auto it = std::lower_bound(_commandLinesCache.begin(), end, needle, [&](const auto& lhs, const auto& rhs) {
-        return lhs.first.size() > rhs.size();
-    });
-
-    // `it` is now at a position where it->first.size() <= needle.size().
-    // Hopefully we'll now find a command line with matching prefix.
-    for (; it != end; ++it)
+    try
     {
-        if (til::starts_with(needle, it->first))
+        const auto needle = _normalizeCommandLine(commandLine.c_str());
+
+        // til::starts_with(string, prefix) will always return false if prefix.size() > string.size().
+        // --> Using binary search we can safely skip all items in _commandLinesCache where .first.size() > needle.size().
+        const auto end = _commandLinesCache.end();
+        auto it = std::lower_bound(_commandLinesCache.begin(), end, needle, [&](const auto& lhs, const auto& rhs) {
+            return lhs.first.size() > rhs.size();
+        });
+
+        // `it` is now at a position where it->first.size() <= needle.size().
+        // Hopefully we'll now find a command line with matching prefix.
+        for (; it != end; ++it)
         {
-            return it->second;
+            const auto& prefix = it->first;
+            const auto length = gsl::narrow<int>(prefix.size());
+            if (CompareStringOrdinal(needle.data(), length, prefix.data(), length, TRUE) == CSTR_EQUAL)
+            {
+                return it->second;
+            }
         }
+    }
+    catch (...)
+    {
+        LOG_CAUGHT_EXCEPTION();
     }
 
     return nullptr;
@@ -672,9 +685,8 @@ std::wstring CascadiaSettings::_normalizeCommandLine(LPCWSTR commandLine)
     // That way the commandLine "foo.exe -bar" and "\"foo.exe\" \"-bar\"" appear identical.
     // We'll abuse CommandLineToArgvW for that as it's close to what CreateProcessW uses.
     int argc = 0;
-    const auto argv = CommandLineToArgvW(normalized.c_str(), &argc);
+    wil::unique_hlocal_ptr<PWSTR[]> argv{ CommandLineToArgvW(normalized.c_str(), &argc) };
     THROW_LAST_ERROR_IF(!argc);
-    const auto argvRelease = wil::scope_exit([=]() { LocalFree(argv); });
 
     // The given commandLine should start with an executable name or path.
     // For instance given the following argv arrays:
@@ -711,7 +723,7 @@ std::wstring CascadiaSettings::_normalizeCommandLine(LPCWSTR commandLine)
             // we fall back to leaving the path as is. Better than throwing a random exception and making this unusable.
             {
                 std::error_code ec;
-                auto canonicalPath = canonical(path, ec);
+                auto canonicalPath = std::filesystem::canonical(path, ec);
                 if (!ec)
                 {
                     path = std::move(canonicalPath);

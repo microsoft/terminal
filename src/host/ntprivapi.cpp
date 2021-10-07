@@ -31,9 +31,7 @@
         return Status;
     }
 
-    // This is the actual field name, but in the public SDK, it's named Reserved3. We need to pursue publishing the real name.
-    //*ProcessId = (ULONG)BasicInfo.InheritedFromUniqueProcessId;
-    *ProcessId = (ULONG)BasicInfo.Reserved3;
+    *ProcessId = (ULONG)BasicInfo.InheritedFromUniqueProcessId;
     return STATUS_SUCCESS;
 }
 

@@ -562,9 +562,6 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     // Requires PROCESS_BASIC_INFORMATION | PROCESS_VM_READ privileges.
     winrt::hstring ConptyConnection::_commandlineFromProcess(HANDLE process)
     {
-        // I know MSDN documents NtQueryInformationProcess with Reserved1/2/3
-        // fields, but... uh... that feels like security by obfuscation.
-        // .NET kindly published this struct before us.
         struct PROCESS_BASIC_INFORMATION
         {
             NTSTATUS ExitStatus;
