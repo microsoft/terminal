@@ -124,6 +124,7 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
         THROW_IF_FAILED(_duplicateHandle(server, server));
         THROW_IF_FAILED(_duplicateHandle(client, client));
 
+#pragma warning(suppress : 26477)
         TraceLoggingWrite(
             g_hTerminalConnectionProvider,
             "ReceiveTerminalHandoff_Success",
@@ -138,6 +139,7 @@ HRESULT CTerminalHandoff::EstablishPtyHandoff(HANDLE in, HANDLE out, HANDLE sign
     {
         const auto hr = wil::ResultFromCaughtException();
 
+#pragma warning(suppress : 26477)
         TraceLoggingWrite(
             g_hTerminalConnectionProvider,
             "ReceiveTerminalHandoff_Failed",
