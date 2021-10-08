@@ -60,7 +60,7 @@ Author(s):
     X(bool, AltGrAliasing, true)                                                                                                           \
     X(bool, UseAcrylic, false)                                                                                                             \
     X(hstring, Padding, DEFAULT_PADDING)                                                                                                   \
-    X(hstring, Commandline, L"cmd.exe")                                                                                                    \
+    X(hstring, Commandline, L"%SystemRoot%\\System32\\cmd.exe")                                                                                                    \
     X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
     X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(hstring, StartingDirectory)                                                                                                          \
@@ -89,4 +89,5 @@ Author(s):
     X(hstring, ColorSchemeName, L"Campbell")                                                                                         \
     X(hstring, BackgroundImagePath)                                                                                                  \
     X(Model::IntenseStyle, IntenseTextStyle, Model::IntenseStyle::Bright)                                                            \
-    X(double, Opacity, 1.0)
+    X(double, Opacity, 1.0)                                                                                                          \
+    X(bool, AdjustIndistinguishableColors, true)

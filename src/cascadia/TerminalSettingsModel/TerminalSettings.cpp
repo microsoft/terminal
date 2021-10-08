@@ -202,6 +202,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
+        _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
         _Opacity = appearance.Opacity();
     }
 

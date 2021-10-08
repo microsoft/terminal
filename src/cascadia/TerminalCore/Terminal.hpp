@@ -301,6 +301,7 @@ private:
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
     bool _intenseIsBright;
+    bool _adjustIndistinguishableColors;
 
     size_t _taskbarState;
     size_t _taskbarProgress;
@@ -400,6 +401,9 @@ private:
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
+
+    void _MakeAdjustedColorArray();
+    std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

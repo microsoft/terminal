@@ -26,6 +26,7 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 static constexpr std::string_view IntenseTextStyleKey{ "intenseTextStyle" };
+static constexpr std::string_view AdjustIndistinguishableColorsKey{ "adjustIndistinguishableColors" };
 static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view OpacityKey{ "opacity" };
 
@@ -84,6 +85,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::GetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
+
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, ...) \

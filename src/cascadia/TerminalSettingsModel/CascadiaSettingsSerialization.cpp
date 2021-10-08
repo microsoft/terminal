@@ -596,6 +596,7 @@ void SettingsLoader::_addParentProfile(const winrt::com_ptr<implementation::Prof
         //
         // When a user modifies a profile they shouldn't modify the (static/constant)
         // inbox profile of course. That's why we need to call CreateChild here.
+        // But we don't need to call _FinalizeInheritance() yet as this is handled by SettingsLoader::FinalizeLayering().
         settings.profiles.emplace_back(CreateChild(profile));
     }
 }

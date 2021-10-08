@@ -134,14 +134,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // defterm
         static bool IsDefaultTerminalAvailable() noexcept;
+        static bool IsDefaultTerminalSet() noexcept;
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> DefaultTerminals() noexcept;
         Model::DefaultTerminal CurrentDefaultTerminal() noexcept;
         void CurrentDefaultTerminal(const Model::DefaultTerminal& terminal);
 
     private:
         static const std::filesystem::path& _settingsPath();
+        static std::wstring _normalizeCommandLine(LPCWSTR commandLine);
 
         winrt::com_ptr<implementation::Profile> _createNewProfile(const std::wstring_view& name) const;
+        Model::Profile _getProfileForCommandLine(const winrt::hstring& commandLine) const;
         void _refreshDefaultTerminals();
 
         void _resolveDefaultProfile() const;
@@ -167,6 +170,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // defterm
         winrt::Windows::Foundation::Collections::IObservableVector<Model::DefaultTerminal> _defaultTerminals{ nullptr };
         Model::DefaultTerminal _currentDefaultTerminal{ nullptr };
+
+        // GetProfileForArgs cache
+        mutable std::once_flag _commandLinesCacheOnce;
+        mutable std::vector<std::pair<std::wstring, Model::Profile>> _commandLinesCache;
     };
 }
 
