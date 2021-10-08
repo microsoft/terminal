@@ -218,7 +218,7 @@ namespace winrt::TerminalApp::implementation
         _RegisterActionCallbacks();
 
         // Hook up inbound connection event handler
-        TerminalConnection::ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
+        ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
@@ -2697,52 +2697,40 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
-    HRESULT TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
         // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
         // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
         // and wait on it hence the locking mechanism.
-        if (Dispatcher().HasThreadAccess())
-        {
-            try
-            {
-                NewTerminalArgs newTerminalArgs{};
-                // TODO GH#10952: When we pass the actual commandline (or originating application), the
-                // settings model can choose the right settings based on command matching, or synthesize
-                // a profile from the registry/link settings (TODO GH#9458).
-                // TODO GH#9458: Get and pass the LNK/EXE filenames.
-                // Passing in a commandline forces GetProfileForArgs to use Base Layer instead of Default Profile;
-                // in the future, it can make a better decision based on the value we pull out of the process handle.
-                // TODO GH#5047: When we hang on to the N.T.A., try not to spawn "default... .exe" :)
-                newTerminalArgs.Commandline(L"default-terminal-invocation-placeholder");
-                const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-                const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
-
-                _CreateNewTabWithProfileAndSettings(profile, settings, connection);
-
-                // Request a summon of this window to the foreground
-                _SummonWindowRequestedHandlers(*this, nullptr);
-            }
-            CATCH_RETURN();
-
-            return S_OK;
-        }
-        else
+        if (!Dispatcher().HasThreadAccess())
         {
             til::latch latch{ 1 };
             HRESULT finalVal = S_OK;
 
             Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-                // Re-running ourselves under the dispatcher will cause us to take the first branch above.
                 finalVal = _OnNewConnection(connection);
-
                 latch.count_down();
             });
 
             latch.wait();
             return finalVal;
         }
+
+        try
+        {
+            NewTerminalArgs newTerminalArgs;
+            newTerminalArgs.Commandline(connection.Commandline());
+            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
+
+            _CreateNewTabWithProfileAndSettings(profile, settings, connection);
+
+            // Request a summon of this window to the foreground
+            _SummonWindowRequestedHandlers(*this, nullptr);
+            return S_OK;
+        }
+        CATCH_RETURN()
     }
 
     // Method Description:
