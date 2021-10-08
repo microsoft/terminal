@@ -1316,6 +1316,11 @@ void AppHost::_WindowMoved()
 {
     if (_logic)
     {
+        // Ensure any open ContentDialog is dismissed.
+        // Closing the popup in the UI tree as done below is not sufficient because
+        // it does not terminate the dialog's async operation.
+        _logic.DismissDialog();
+
         const auto root{ _logic.GetRoot() };
 
         // This is basically DismissAllPopups which is also in
