@@ -14,7 +14,7 @@ Author(s):
 --*/
 #pragma once
 
-#define MTSM_GLOBAL_SETTINGS(X)                                                                                                                 \
+#define MTSM_GLOBAL_SETTINGS(X)                                                                                                            \
     X(int32_t, InitialRows, 30)                                                                                                            \
     X(int32_t, InitialCols, 80)                                                                                                            \
     X(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS)                                                                                    \
@@ -54,13 +54,13 @@ Author(s):
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, nullptr)                                   \
     X(bool, ShowAdminShield, true)
 
-#define MTSM_PROFILE_SETTINGS(X)                                                                                                                \
+#define MTSM_PROFILE_SETTINGS(X)                                                                                                           \
     X(int32_t, HistorySize, DEFAULT_HISTORY_SIZE)                                                                                          \
     X(bool, SnapOnInput, true)                                                                                                             \
     X(bool, AltGrAliasing, true)                                                                                                           \
     X(bool, UseAcrylic, false)                                                                                                             \
     X(hstring, Padding, DEFAULT_PADDING)                                                                                                   \
-    X(hstring, Commandline, L"%SystemRoot%\\System32\\cmd.exe")                                                                                                    \
+    X(hstring, Commandline, L"%SystemRoot%\\System32\\cmd.exe")                                                                            \
     X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible)                    \
     X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(hstring, StartingDirectory)                                                                                                          \
@@ -71,14 +71,14 @@ Author(s):
     X(hstring, TabTitle)                                                                                                                   \
     X(Model::BellStyle, BellStyle, BellStyle::Audible)
 
-#define MTSM_FONT_SETTINGS(X)                                                     \
+#define MTSM_FONT_SETTINGS(X)                                                \
     X(hstring, FontFace, DEFAULT_FONT_FACE)                                  \
     X(int32_t, FontSize, DEFAULT_FONT_SIZE)                                  \
     X(winrt::Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT) \
     X(IFontAxesMap, FontAxes)                                                \
     X(IFontFeatureMap, FontFeatures)
 
-#define MTSM_APPEARANCE_SETTINGS(X)                                                                                                       \
+#define MTSM_APPEARANCE_SETTINGS(X)                                                                                                  \
     X(Core::CursorStyle, CursorShape, Core::CursorStyle::Bar)                                                                        \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                                 \
     X(double, BackgroundImageOpacity, 1.0)                                                                                           \
