@@ -43,28 +43,25 @@ Revision History:
 
 namespace WEX::TestExecution
 {
-    namespace details
+    // Compare two floats using a ULP (unit last place) tolerance of up to 4.
+    // Allows you to compare two floats that are almost equal.
+    // Think of: 0.200000000000000 vs. 0.200000000000001.
+    template<typename T, typename U>
+    bool CompareFloats(T a, T b) noexcept
     {
-        // Compare two floats using a ULP (unit last place) tolerance of up to 4.
-        // Allows you to compare two floats that are almost equal.
-        // Think of: 0.200000000000000 vs. 0.200000000000001.
-        template<typename T, typename U>
-        bool CompareFloats(T a, T b) noexcept
+        if (std::isnan(a))
         {
-            if (std::isnan(a))
-            {
-                return std::isnan(b);
-            }
-
-            if (a == b)
-            {
-                return true;
-            }
-
-            const auto nDiff = static_cast<std::make_signed_t<U>>(*reinterpret_cast<U*>(&a) - *reinterpret_cast<U*>(&b));
-            const auto uDiff = static_cast<U>(nDiff < 0 ? -nDiff : nDiff);
-            return uDiff <= 4;
+            return std::isnan(b);
         }
+
+        if (a == b)
+        {
+            return true;
+        }
+
+        const auto nDiff = static_cast<std::make_signed_t<U>>(*reinterpret_cast<U*>(&a) - *reinterpret_cast<U*>(&b));
+        const auto uDiff = static_cast<U>(nDiff < 0 ? -nDiff : nDiff);
+        return uDiff <= 4;
     }
 
     template<>
@@ -72,7 +69,7 @@ namespace WEX::TestExecution
     {
         static bool AreEqual(float a, float b) noexcept
         {
-            return details::CompareFloats<float, uint32_t>(a, b);
+            return CompareFloats<float, uint32_t>(a, b);
         }
     };
 
@@ -81,7 +78,7 @@ namespace WEX::TestExecution
     {
         static bool AreEqual(double a, double b) noexcept
         {
-            return details::CompareFloats<double, uint64_t>(a, b);
+            return CompareFloats<double, uint64_t>(a, b);
         }
     };
 
