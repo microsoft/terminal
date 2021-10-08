@@ -6,6 +6,9 @@
 #include "../TerminalSettingsModel/Profile.h"
 #include "../TerminalApp/ColorHelper.h"
 
+// Import some templates to compare floats using approximate matching.
+#include <consoletaeftemplates.hpp>
+
 using namespace Microsoft::Console;
 using namespace winrt::TerminalApp;
 using namespace WEX::Logging;
@@ -27,6 +30,8 @@ namespace TerminalAppUnitTests
 
     void ColorHelperTests::ConvertHslToRgb()
     {
+        //DebugBreak();
+
         auto red = winrt::Windows::UI::Colors::Red();
         auto redHsl = ColorHelper::RgbToHsl(red);
         VERIFY_ARE_EQUAL(0.f, redHsl.H);
