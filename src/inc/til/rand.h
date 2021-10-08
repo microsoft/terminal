@@ -14,7 +14,7 @@ namespace til
             RtlGenRandomLoader() noexcept :
                 // The documentation states:
                 //   This function has no associated import library. This function is available
-                //   as a resource named SystemFunction036in Advapi32.dll. You must use the
+                //   as a resource named SystemFunction036 in Advapi32.dll. You must use the
                 //   LoadLibrary and GetProcAddress functions to dynamically link to Advapi32.dll.
                 //
                 // There's two downsides to using advapi32.dll however:
