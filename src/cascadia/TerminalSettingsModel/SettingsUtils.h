@@ -14,7 +14,7 @@ Author(s):
 --*/
 #pragma once
 
-#define GLOBAL_CONTROL_SETTINGS(X)                      \
+#define GLOBAL_SETTINGS(X)                      \
     X(int32_t, InitialRows, 30)                         \
     X(int32_t, InitialCols, 80)                         \
     X(hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS) \
@@ -24,9 +24,7 @@ Author(s):
     X(bool, SoftwareRendering, false)                   \
     X(bool, ForceVTInput, false)                        \
     X(bool, TrimBlockSelection, false)                  \
-    X(bool, DetectURLs, true)
-
-#define GLOBAL_APP_SETTINGS(X)                                                                                                             \
+    X(bool, DetectURLs, true)                           \
     X(bool, AlwaysShowTabs, true)                                                                                                          \
     X(bool, ShowTitleInTitlebar, true)                                                                                                     \
     X(bool, ConfirmCloseAllTabs, true)                                                                                                     \
@@ -56,7 +54,7 @@ Author(s):
     X(winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, nullptr)                                   \
     X(bool, ShowAdminShield, true)
 
-#define PROFILE_CONTROL_SETTINGS(X)                                                                                     \
+#define PROFILE_SETTINGS(X)                                                                                     \
     X(int32_t, HistorySize, DEFAULT_HISTORY_SIZE)                                                                       \
     X(bool, SnapOnInput, true)                                                                                          \
     X(bool, AltGrAliasing, true)                                                                                        \
@@ -64,16 +62,9 @@ Author(s):
     X(hstring, Padding, DEFAULT_PADDING)                                                                                \
     X(hstring, Commandline, L"cmd.exe")                                                                                 \
     X(Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible) \
-    X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale)
-
-// Placeholder for settings that are defined in the control but TerminalSettings
-// needs to define manually for now
-#define PROFILE_CONTROL_SETTINGS_2(X)                          \
+    X(Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(hstring, StartingDirectory)                              \
-    X(bool, SuppressApplicationTitle, false)
-
-
-#define PROFILE_APP_SETTINGS(X)                                \
+    X(bool, SuppressApplicationTitle, false)                   \
     X(guid, ConnectionType)                                    \
     X(hstring, Icon, L"\uE756")                                \
     X(CloseOnExitMode, CloseOnExit, CloseOnExitMode::Graceful) \
@@ -87,17 +78,13 @@ Author(s):
     X(IFontAxesMap, FontAxes)                                                \
     X(IFontFeatureMap, FontFeatures)
 
-#define APPEARANCE_CONTROL_SETTINGS(X)                                                                                               \
+#define APPEARANCE_SETTINGS(X)                                                                                               \
     X(Core::CursorStyle, CursorShape, Core::CursorStyle::Bar)                                                                        \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                                 \
     X(double, BackgroundImageOpacity, 1.0)                                                                                           \
     X(winrt::Windows::UI::Xaml::Media::Stretch, BackgroundImageStretchMode, winrt::Windows::UI::Xaml::Media::Stretch::UniformToFill) \
     X(bool, RetroTerminalEffect, false)                                                                                              \
-    X(hstring, PixelShaderPath)
-
-// Placeholder for settings that are defined in the control but TerminalSettings
-// needs to define manually for now
-#define APPEARANCE_CONTROL_SETTINGS_2(X)                                                                                               \
+    X(hstring, PixelShaderPath)                                                                                                      \
     X(ConvergedAlignment, BackgroundImageAlignment, ConvergedAlignment::Horizontal_Center | ConvergedAlignment::Vertical_Center) \
     X(hstring, ColorSchemeName, L"Campbell")                                                                                     \
     X(hstring, BackgroundImagePath)                                                                                              \

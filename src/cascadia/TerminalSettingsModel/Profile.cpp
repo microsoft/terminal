@@ -124,20 +124,10 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
     profile->_SoftwareRendering = _SoftwareRendering;
 
-#define PROFILE_APP_SETTINGS_COPY(type, name, ...) \
+#define PROFILE_SETTINGS_COPY(type, name, ...) \
     profile->_##name = _##name;
-    PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_COPY)
-#undef PROFILE_APP_SETTINGS_COPY
-
-#define PROFILE_CONTROL_SETTINGS_COPY(type, name, ...) \
-    profile->_##name = _##name;
-    PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_COPY)
-#undef PROFILE_CONTROL_SETTINGS_COPY
-
-#define PROFILE_CONTROL_SETTINGS_2_COPY(type, name, ...) \
-    profile->_##name = _##name;
-    PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_COPY)
-#undef PROFILE_CONTROL_SETTINGS_2_COPY
+    PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
+#undef PROFILE_SETTINGS_COPY
 
     if (_UnfocusedAppearance)
     {
@@ -197,20 +187,10 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
-#define PROFILE_APP_SETTINGS_LAYER_JSON(type, name, ...) \
+#define PROFILE_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);
-    PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_LAYER_JSON)
-#undef PROFILE_APP_SETTINGS_LAYER_JSON
-
-#define PROFILE_CONTROL_SETTINGS_LAYER_JSON(type, name, ...) \
-    JsonUtils::GetValueForKey(json, name##Key, _##name);
-    PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_LAYER_JSON)
-#undef PROFILE_CONTROL_SETTINGS_LAYER_JSON
-
-#define PROFILE_CONTROL_SETTINGS_2_LAYER_JSON(type, name, ...) \
-    JsonUtils::GetValueForKey(json, name##Key, _##name);
-    PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_LAYER_JSON)
-#undef PROFILE_CONTROL_SETTINGS_2_LAYER_JSON
+    PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
+#undef PROFILE_SETTINGS_LAYER_JSON
 
     if (json.isMember(JsonKey(UnfocusedAppearanceKey)))
     {
@@ -345,20 +325,10 @@ Json::Value Profile::ToJson() const
     // PermissiveStringConverter is unnecessary for serialization
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
 
-#define PROFILE_APP_SETTINGS_TO_JSON(type, name, ...) \
+#define PROFILE_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-    PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_TO_JSON)
-#undef PROFILE_APP_SETTINGS_TO_JSON
-
-#define PROFILE_CONTROL_SETTINGS_TO_JSON(type, name, ...) \
-    JsonUtils::SetValueForKey(json, name##Key, _##name);
-    PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_TO_JSON)
-#undef PROFILE_CONTROL_SETTINGS_TO_JSON
-
-#define PROFILE_CONTROL_SETTINGS_2_TO_JSON(type, name, ...) \
-    JsonUtils::SetValueForKey(json, name##Key, _##name);
-    PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_TO_JSON)
-#undef PROFILE_CONTROL_SETTINGS_2_TO_JSON
+    PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
+#undef PROFILE_SETTINGS_TO_JSON
 
     // Font settings
     const auto fontInfoImpl = winrt::get_self<FontConfig>(_FontInfo);

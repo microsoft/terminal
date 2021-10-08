@@ -108,32 +108,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(OriginTag, Origin, OriginTag::None);
         WINRT_PROPERTY(guid, Updates);
 
-        // Nullable settings
+        // Nullable/optional settings
         INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
-        // Settings that cannot be put in the macro
+        // Global settings
+        INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
+        INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
+
+        // Settings that cannot be put in the macro because of how they are handled in ToJson
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
         INHERITABLE_SETTING(Model::Profile, hstring, Source);
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
-        INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
-        INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
 
-#define PROFILE_APP_SETTINGS_INITIALIZE(type, name, ...) \
-    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
-        PROFILE_APP_SETTINGS(PROFILE_APP_SETTINGS_INITIALIZE)
-#undef PROFILE_APP_SETTINGS_INITIALIZE
-
-#define PROFILE_CONTROL_SETTINGS_INITIALIZE(type, name, ...) \
-    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
-        PROFILE_CONTROL_SETTINGS(PROFILE_CONTROL_SETTINGS_INITIALIZE)
-#undef PROFILE_CONTROL_SETTINGS_INITIALIZE
-
-#define PROFILE_CONTROL_SETTINGS_2_INITIALIZE(type, name, ...) \
-    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
-        PROFILE_CONTROL_SETTINGS_2(PROFILE_CONTROL_SETTINGS_2_INITIALIZE)
-#undef PROFILE_CONTROL_SETTINGS_2_INITIALIZE
+#define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
+        INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+            PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+#undef PROFILE_SETTINGS_INITIALIZE
 
     private:
         Model::IAppearanceConfig _DefaultAppearance{ winrt::make<AppearanceConfig>(weak_ref<Model::Profile>(*this)) };

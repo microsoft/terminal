@@ -91,15 +91,10 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_actionMap = _actionMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
-#define GLOBAL_APP_SETTINGS_COPY(type, name, ...) \
+#define GLOBAL_SETTINGS_COPY(type, name, ...) \
     globals->_##name = _##name;
-    GLOBAL_APP_SETTINGS(GLOBAL_APP_SETTINGS_COPY)
-#undef GLOBAL_APP_SETTINGS_COPY
-
-#define GLOBAL_CONTROL_SETTINGS_COPY(type, name, ...) \
-    globals->_##name = _##name;
-    GLOBAL_CONTROL_SETTINGS(GLOBAL_CONTROL_SETTINGS_COPY)
-#undef GLOBAL_CONTROL_SETTINGS_COPY
+    GLOBAL_SETTINGS(GLOBAL_SETTINGS_COPY)
+#undef GLOBAL_SETTINGS_COPY
 
     if (_colorSchemes)
     {
@@ -163,15 +158,10 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
 
-#define GLOBAL_APP_SETTINGS_LAYER_JSON(type, name, ...) \
+#define GLOBAL_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);
-    GLOBAL_APP_SETTINGS(GLOBAL_APP_SETTINGS_LAYER_JSON)
-#undef GLOBAL_APP_SETTINGS_LAYER_JSON
-
-#define GLOBAL_CONTROL_SETTINGS_LAYER_JSON(type, name, ...) \
-    JsonUtils::GetValueForKey(json, name##Key, _##name);
-    GLOBAL_CONTROL_SETTINGS(GLOBAL_CONTROL_SETTINGS_LAYER_JSON)
-#undef GLOBAL_CONTROL_SETTINGS_LAYER_JSON
+    GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
+#undef GLOBAL_SETTINGS_LAYER_JSON
 
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
     for (const auto& jsonKey : bindingsKeys)
@@ -234,15 +224,11 @@ Json::Value GlobalAppSettings::ToJson() const
     // clang-format off
     JsonUtils::SetValueForKey(json, DefaultProfileKey,              _UnparsedDefaultProfile);
 
-#define GLOBAL_APP_SETTINGS_TO_JSON(type, name, ...) \
+#define GLOBAL_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-        GLOBAL_APP_SETTINGS(GLOBAL_APP_SETTINGS_TO_JSON)
-#undef GLOBAL_APP_SETTINGS_TO_JSON
+        GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
+#undef GLOBAL_SETTINGS_TO_JSON
 
-#define GLOBAL_CONTROL_SETTINGS_TO_JSON(type, name, ...) \
-    JsonUtils::SetValueForKey(json, name##Key, _##name);
-        GLOBAL_CONTROL_SETTINGS(GLOBAL_CONTROL_SETTINGS_TO_JSON)
-#undef GLOBAL_CONTROL_SETTINGS_TO_JSON
     // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();

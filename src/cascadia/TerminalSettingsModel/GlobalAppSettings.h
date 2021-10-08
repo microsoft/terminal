@@ -64,15 +64,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
-#define GLOBAL_APP_SETTINGS_INITIALIZE(type, name, ...) \
+#define GLOBAL_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
-        GLOBAL_APP_SETTINGS(GLOBAL_APP_SETTINGS_INITIALIZE)
-#undef GLOBAL_APP_SETTINGS_INITIALIZE
-
-#define GLOBAL_CONTROL_SETTINGS_INITIALIZE(type, name, ...) \
-    INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
-        GLOBAL_CONTROL_SETTINGS(GLOBAL_CONTROL_SETTINGS_INITIALIZE)
-#undef GLOBAL_CONTROL_SETTINGS_INITIALIZE
+        GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+#undef GLOBAL_SETTINGS_INITIALIZE
 
     private:
 #ifdef NDEBUG

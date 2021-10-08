@@ -41,15 +41,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
 
-#define APPEARANCE_CONTROL_SETTINGS_2_INITIALIZE(type, name, ...) \
+#define APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
-        APPEARANCE_CONTROL_SETTINGS_2(APPEARANCE_CONTROL_SETTINGS_2_INITIALIZE)
-#undef APPEARANCE_CONTROL_SETTINGS_2_INITIALIZE
-
-#define APPEARANCE_CONTROL_SETTINGS_INITIALIZE(type, name, ...) \
-    INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
-        APPEARANCE_CONTROL_SETTINGS(APPEARANCE_CONTROL_SETTINGS_INITIALIZE)
-#undef APPEARANCE_CONTROL_SETTINGS_INITIALIZE
+        APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
+#undef APPEARANCE_SETTINGS_INITIALIZE
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;
