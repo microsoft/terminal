@@ -93,7 +93,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 
 #define GLOBAL_SETTINGS_COPY(type, name, ...) \
     globals->_##name = _##name;
-    GLOBAL_SETTINGS(GLOBAL_SETTINGS_COPY)
+    MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_COPY)
 #undef GLOBAL_SETTINGS_COPY
 
     if (_colorSchemes)
@@ -160,7 +160,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
 
 #define GLOBAL_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);
-    GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
+    MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
     static constexpr std::array bindingsKeys{ LegacyKeybindingsKey, ActionsKey };
@@ -226,7 +226,7 @@ Json::Value GlobalAppSettings::ToJson() const
 
 #define GLOBAL_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-        GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
+        MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
 #undef GLOBAL_SETTINGS_TO_JSON
 
     // clang-format on

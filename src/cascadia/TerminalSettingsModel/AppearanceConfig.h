@@ -19,7 +19,7 @@ Author(s):
 #include "AppearanceConfig.g.h"
 #include "JsonUtils.h"
 #include "IInheritable.h"
-#include "SettingsUtils.h"
+#include "MTSMSettings.h"
 #include <DefaultSettings.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
-        APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
+        MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
 #undef APPEARANCE_SETTINGS_INITIALIZE
 
     private:

@@ -44,7 +44,7 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const Appearan
 
 #define APPEARANCE_SETTINGS_COPY(type, name, ...) \
     appearance->_##name = source->_##name;
-    APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_COPY)
+    MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_COPY)
 #undef APPEARANCE_SETTINGS_COPY
 
     return appearance;
@@ -61,7 +61,7 @@ Json::Value AppearanceConfig::ToJson() const
 
 #define APPEARANCE_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-    APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_TO_JSON)
+    MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_TO_JSON)
 #undef APPEARANCE_SETTINGS_TO_JSON
 
     return json;
@@ -88,7 +88,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(json, name##Key, _##name);
-    APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_LAYER_JSON)
+    MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_LAYER_JSON)
 #undef APPEARANCE_SETTINGS_LAYER_JSON
 }
 

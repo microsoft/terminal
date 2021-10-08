@@ -46,7 +46,7 @@ Author(s):
 
 #include "Profile.g.h"
 #include "IInheritable.h"
-#include "SettingsUtils.h"
+#include "MTSMSettings.h"
 
 #include "../inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -124,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
-        PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+        MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
 
     private:

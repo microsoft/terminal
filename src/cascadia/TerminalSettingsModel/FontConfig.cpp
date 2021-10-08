@@ -32,7 +32,7 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
 
 #define FONT_SETTINGS_COPY(type, name, ...) \
     fontInfo->_##name = source->_##name;
-    FONT_SETTINGS(FONT_SETTINGS_COPY)
+    MTSM_FONT_SETTINGS(FONT_SETTINGS_COPY)
 #undef FONT_SETTINGS_COPY
 
     return fontInfo;
@@ -44,7 +44,7 @@ Json::Value FontConfig::ToJson() const
 
 #define FONT_SETTINGS_TO_JSON(type, name, ...) \
     JsonUtils::SetValueForKey(json, name##Key, _##name);
-    FONT_SETTINGS(FONT_SETTINGS_TO_JSON)
+    MTSM_FONT_SETTINGS(FONT_SETTINGS_TO_JSON)
 #undef FONT_SETTINGS_TO_JSON
 
     return json;
@@ -71,7 +71,7 @@ void FontConfig::LayerJson(const Json::Value& json)
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
 #define FONT_SETTINGS_LAYER_JSON(type, name, ...) \
     JsonUtils::GetValueForKey(fontInfoJson, name##Key, _##name);
-        FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
+        MTSM_FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
 #undef FONT_SETTINGS_LAYER_JSON
     }
     else

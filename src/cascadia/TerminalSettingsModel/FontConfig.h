@@ -19,7 +19,7 @@ Author(s):
 #include "pch.h"
 #include "FontConfig.g.h"
 #include "JsonUtils.h"
-#include "SettingsUtils.h"
+#include "MTSMSettings.h"
 #include "../inc/cppwinrt_utils.h"
 #include "IInheritable.h"
 #include <DefaultSettings.h>
@@ -42,7 +42,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define FONT_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::FontConfig, type, name, ##__VA_ARGS__)
-        FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)
+        MTSM_FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)
 #undef FONT_SETTINGS_INITIALIZE
 
     private:

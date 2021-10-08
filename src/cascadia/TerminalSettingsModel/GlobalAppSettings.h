@@ -17,7 +17,7 @@ Author(s):
 
 #include "GlobalAppSettings.g.h"
 #include "IInheritable.h"
-#include "SettingsUtils.h"
+#include "MTSMSettings.h"
 
 #include "ActionMap.h"
 #include "Command.h"
@@ -66,7 +66,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, ...) \
     INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
-        GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+        MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
 #undef GLOBAL_SETTINGS_INITIALIZE
 
     private:

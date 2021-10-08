@@ -79,7 +79,7 @@
       <Filter>json</Filter>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
-    <ClInclude Include="SettingsUtils.h" />
+    <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IconPathConverter.h" />
     <ClInclude Include="DefaultTerminal.h" />
     <ClInclude Include="FileUtils.h" />
