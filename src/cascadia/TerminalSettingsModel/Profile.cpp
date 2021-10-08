@@ -111,18 +111,18 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     const auto fontInfo = FontConfig::CopyFontInfo(winrt::get_self<FontConfig>(_FontInfo), weakProfile);
     const auto defaultAppearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(_DefaultAppearance), weakProfile);
 
+    profile->_Deleted = _Deleted;
+    profile->_Updates = _Updates;
+    profile->_Guid = _Guid;
     profile->_Name = _Name;
     profile->_Source = _Source;
     profile->_Hidden = _Hidden;
-    profile->_DefaultAppearance = *defaultAppearance;
-    profile->_Deleted = _Deleted;
-    profile->_Updates = _Updates;
-    profile->_Origin = _Origin;
-    profile->_Guid = _Guid;
     profile->_TabColor = _TabColor;
-    profile->_FontInfo = *fontInfo;
     profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
     profile->_SoftwareRendering = _SoftwareRendering;
+    profile->_Origin = _Origin;
+    profile->_FontInfo = *fontInfo;
+    profile->_DefaultAppearance = *defaultAppearance;
 
 #define PROFILE_SETTINGS_COPY(type, name, ...) \
     profile->_##name = _##name;
@@ -181,10 +181,10 @@ void Profile::LayerJson(const Json::Value& json)
 
     // Profile-specific Settings
     JsonUtils::GetValueForKey(json, NameKey, _Name);
-    JsonUtils::GetValueForKey(json, SourceKey, _Source);
-    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, UpdatesKey, _Updates);
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
+    JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
+    JsonUtils::GetValueForKey(json, SourceKey, _Source);
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
 #define PROFILE_SETTINGS_LAYER_JSON(type, name, ...) \

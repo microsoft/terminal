@@ -123,8 +123,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
 
 #define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
-        INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
-            PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
+    INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
+        PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
 
     private:
