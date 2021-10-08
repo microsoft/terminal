@@ -75,7 +75,7 @@ namespace WEX::TestExecution
             return details::CompareFloats<float, uint32_t>(a, b);
         }
     };
-    
+
     template<>
     struct VerifyCompareTraits<double, double>
     {
