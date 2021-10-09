@@ -30,8 +30,6 @@ namespace TerminalAppUnitTests
 
     void ColorHelperTests::ConvertHslToRgb()
     {
-        //DebugBreak();
-
         auto red = winrt::Windows::UI::Colors::Red();
         auto redHsl = ColorHelper::RgbToHsl(red);
         VERIFY_ARE_EQUAL(0.f, redHsl.H);
