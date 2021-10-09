@@ -180,6 +180,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
 
+        std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
+
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
         // use a weak reference to prevent circular dependency with AppLogic

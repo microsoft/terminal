@@ -474,6 +474,23 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
         }
+
+        if (const auto terminalTab = _GetTerminalTabImpl(tab))
+        {
+            const auto actions = terminalTab->BuildStartupActions();
+
+            _previouslyClosedPanesAndTabs.emplace_back(std::move(actions));
+        }
+        else if (tab.try_as<SettingsTab>())
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::OpenSettings);
+            OpenSettingsArgs args{ SettingsTarget::SettingsUI };
+            action.Args(args);
+
+            _previouslyClosedPanesAndTabs.emplace_back(std::vector{ std::move(action) });
+        }
+
         _RemoveTab(tab);
     }
 
@@ -775,6 +792,31 @@ namespace winrt::TerminalApp::implementation
                         return false;
                     });
                 }
+
+                // Just make sure we don't get infinitely large, but still
+                // maintain a large replay buffer.
+                if (const auto size = _previouslyClosedPanesAndTabs.size(); size > 100)
+                {
+                    const auto it = _previouslyClosedPanesAndTabs.begin();
+                    _previouslyClosedPanesAndTabs.erase(it, it + (size - 100));
+                }
+
+                // Build the list of actions to recreate the closed pane,
+                // BuildStartupActions returns the "first" pane and the rest of
+                // its actions are assuming that first pane has been created first.
+                // This doesn't handle refocusing anything in particular, the
+                // result will be that the last pane created is focused. In the
+                // case of a single pane that is the desired behavior anyways.
+                auto state = pane->BuildStartupActions(0, 1);
+                {
+                    ActionAndArgs splitPaneAction{};
+                    splitPaneAction.Action(ShortcutAction::SplitPane);
+                    SplitPaneArgs splitPaneArgs{ SplitDirection::Automatic, state.firstPane->GetTerminalArgsForPane() };
+                    splitPaneAction.Args(splitPaneArgs);
+
+                    state.args.emplace(state.args.begin(), std::move(splitPaneAction));
+                }
+                _previouslyClosedPanesAndTabs.emplace_back(std::move(state.args));
 
                 pane->Close();
             }
