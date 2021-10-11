@@ -17,6 +17,8 @@ Revision History:
 
 #pragma once
 
+#include <til/bit.h>
+
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
 #define INIT_TEST_PROPERTY(type, identifer, description) \
     type identifer;                                      \
@@ -59,7 +61,7 @@ namespace WEX::TestExecution
             return true;
         }
 
-        const auto nDiff = static_cast<std::make_signed_t<U>>(*reinterpret_cast<U*>(&a) - *reinterpret_cast<U*>(&b));
+        const auto nDiff = static_cast<std::make_signed_t<U>>(til::bit_cast<U>(&a) - til::bit_cast<U>(&b));
         const auto uDiff = static_cast<U>(nDiff < 0 ? -nDiff : nDiff);
         return uDiff <= 4;
     }
