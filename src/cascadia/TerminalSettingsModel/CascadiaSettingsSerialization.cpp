@@ -845,6 +845,20 @@ static bool _IsValidProfileObject(const Json::Value& profileJson)
 // - a new CascadiaSettings instance created from the values in `json`
 winrt::com_ptr<CascadiaSettings> CascadiaSettings::FromJson(const Json::Value& json)
 {
+    const auto settingsString = ReadUTF8FileIfExists(_SettingsPath()).value_or(std::string{});
+    const auto firstTimeSetup = settingsString.empty();
+
+    // GH#11119: If we find that the settings file doesn't exist, or is empty,
+    // then let's quick delete the state file as well. If the user does have a
+    // state file, and not a settings, then they probably tried to reset their
+    // settings. It might have data in it that was only relevant for a previous
+    // iteration of the settings file. If we don't, we'll load the old state and
+    // ignore all dynamic profiles (for example)!
+    if (firstTimeSetup)
+    {
+        ApplicationState::SharedInstance().Reset();
+    }
+
     auto resultPtr = winrt::make_self<CascadiaSettings>();
     resultPtr->LayerJson(json);
     return resultPtr;

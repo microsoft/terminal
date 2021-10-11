@@ -13,6 +13,7 @@ namespace Microsoft.Terminal.Settings.Model
         static ApplicationState SharedInstance();
 
         void Reload();
+        void Reset();
 
         String FilePath { get; };
 

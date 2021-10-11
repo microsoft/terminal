@@ -36,6 +36,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Methods
         void Reload() const noexcept;
+        void Reset() noexcept;
 
         // General getters/setters
         winrt::hstring FilePath() const noexcept;
