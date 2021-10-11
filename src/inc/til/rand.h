@@ -12,8 +12,16 @@ namespace til
         struct RtlGenRandomLoader
         {
             RtlGenRandomLoader() noexcept :
-                // The documentation states to use advapi32.dll, but technically
-                // SystemFunction036 lives in cryptbase.dll since Windows 7.
+                // The documentation states:
+                //   This function has no associated import library. This function is available
+                //   as a resource named SystemFunction036 in Advapi32.dll. You must use the
+                //   LoadLibrary and GetProcAddress functions to dynamically link to Advapi32.dll.
+                //
+                // There's two downsides to using advapi32.dll however:
+                // * The actual implementation resides in cryptbase.dll and...
+                // * In older versions of Windows (7 and older) advapi32.dll didn't use forwarding to
+                //   cryptbase, instead it was using LoadLibrary()/GetProcAddress() on every call.
+                // * advapi32.dll doesn't exist on MinWin, cryptbase.dll however does.
                 module{ LoadLibraryExW(L"cryptbase.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) },
                 proc{ reinterpret_cast<decltype(proc)>(GetProcAddress(module.get(), "SystemFunction036")) }
             {
