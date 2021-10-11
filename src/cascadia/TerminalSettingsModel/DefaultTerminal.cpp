@@ -89,10 +89,9 @@ void DefaultTerminal::Current(const Model::DefaultTerminal& term)
 
     TraceLoggingWrite(g_hSettingsModelProvider,
                       "DefaultTerminalChanged",
-                      TraceLoggingWideString(term.Name().c_str(), "default terminal name", "the name of the default terminal"),
-                      TraceLoggingWideString(term.Version().c_str(), "default terminal version", "the version of the default terminal"),
-                      TraceLoggingWideString(term.Author().c_str(), "default terminal author", "the author of the default terminal"),
-                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
-                      TraceLoggingKeyword(TIL_KEYWORD_TRACE),
+                      TraceLoggingWideString(term.Name().c_str(), "TerminalName", "the name of the default terminal"),
+                      TraceLoggingWideString(term.Version().c_str(), "TerminalVersion", "the version of the default terminal"),
+                      TraceLoggingWideString(term.Author().c_str(), "TerminalAuthor", "the author of the default terminal"),
+                      TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
                       TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 }
