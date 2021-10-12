@@ -228,8 +228,6 @@ cfae
 Cfg
 cfie
 cfiex
-Cfj
-Cfk
 cfte
 CFuzz
 cgscrn
@@ -1537,7 +1535,6 @@ NOCOLOR
 NOCOMM
 NOCONTEXTHELP
 NOCOPYBITS
-NOCRLF
 nodiscard
 NODUP
 noexcept
@@ -1900,7 +1897,6 @@ PUNICODE
 pushd
 putchar
 putwchar
-Pvf
 PVOID
 pwch
 PWCHAR
@@ -2029,7 +2025,6 @@ riid
 Rike
 RIPMSG
 RIS
-Rjf
 RMENU
 rng
 roadmap
@@ -2865,6 +2860,4 @@ zamora
 ZCmd
 ZCtrl
 zsh
-ZWc
-zwn
 zxcvbnm
