@@ -96,6 +96,7 @@ namespace winrt::TerminalApp::implementation
         bool GetAlwaysShowNotificationIcon();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
+        void DismissDialog();
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
@@ -120,6 +121,7 @@ namespace winrt::TerminalApp::implementation
         bool _loadedInitialSettings = false;
 
         std::shared_mutex _dialogLock;
+        winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog;
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;
