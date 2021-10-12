@@ -8,6 +8,12 @@
 
 void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
 
+struct SystemMenuItemInfo
+{
+    winrt::hstring label;
+    winrt::delegate<void()> callback;
+};
+
 class IslandWindow :
     public BaseWindow<IslandWindow>
 {
@@ -133,7 +139,7 @@ protected:
 
     bool _minimizeToNotificationArea{ false };
 
-    std::unordered_map<UINT, winrt::delegate<void()>> _systemMenuItems;
+    std::unordered_map<UINT, SystemMenuItemInfo> _systemMenuItems;
     UINT _systemMenuNextItemId;
 
 private:

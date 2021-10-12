@@ -616,7 +616,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         auto search = _systemMenuItems.find(LOWORD(wparam));
         if (search != _systemMenuItems.end())
         {
-            search->second();
+            search->second.callback();
         }
         break;
     }
@@ -1746,7 +1746,7 @@ void IslandWindow::AddToSystemMenu(const winrt::hstring& itemLabel, winrt::deleg
     {
         return;
     }
-    _systemMenuItems.insert({ wID, callback });
+    _systemMenuItems.insert({ wID, { itemLabel, callback } });
     _systemMenuNextItemId++;
 }
 
@@ -1759,41 +1759,19 @@ void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
         return;
     }
 
-    bool found = false;
-    MENUITEMINFOW item;
-    item.cbSize = sizeof(MENUITEMINFOW);
-    item.fMask = MIIM_ID | MIIM_STRING;
-    std::vector<WCHAR> buffer;
-    for (int i = 0; i < itemCount; i++)
-    {
-        item.dwTypeData = nullptr;
-        if (LOG_LAST_ERROR_IF(!GetMenuItemInfoW(systemMenu, i, TRUE, &item)))
-        {
-            return;
-        }
-        item.cch++;
-        buffer.reserve(item.cch);
-        item.dwTypeData = buffer.data();
-        if (LOG_LAST_ERROR_IF(!GetMenuItemInfoW(systemMenu, i, TRUE, &item)))
-        {
-            return;
-        }
-        if (!wcscmp(itemLabel.c_str(), item.dwTypeData))
-        {
-            found = true;
-            break;
-        }
-    }
-    if (!found)
+    auto it = std::find_if(_systemMenuItems.begin(), _systemMenuItems.end(), [&itemLabel](const std::pair<UINT, SystemMenuItemInfo>& elem) {
+        return elem.second.label == itemLabel;
+    });
+    if (it == _systemMenuItems.end())
     {
         return;
     }
 
-    if (LOG_LAST_ERROR_IF(!DeleteMenu(systemMenu, item.wID, MF_BYCOMMAND)))
+    if (LOG_LAST_ERROR_IF(!DeleteMenu(systemMenu, it->first, MF_BYCOMMAND)))
     {
         return;
     }
-    _systemMenuItems.erase(item.wID);
+    _systemMenuItems.erase(it->first);
 }
 
 DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
