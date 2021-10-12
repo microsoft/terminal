@@ -56,12 +56,12 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
     auto copy{ attribute };
     if (fg.IsIndex16() &&
         attribute.IsBold() == WI_IsFlagSet(s_legacyDefaultForeground, FOREGROUND_INTENSITY) &&
-        fg.GetIndex() == (s_legacyDefaultForeground & ~FOREGROUND_INTENSITY))
+        fg.GetIndex() == TextColor::TransposeLegacyIndex(s_legacyDefaultForeground & ~FOREGROUND_INTENSITY))
     {
         // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
         copy.SetDefaultForeground();
     }
-    if (bg.IsIndex16() && bg.GetIndex() == s_legacyDefaultBackground)
+    if (bg.IsIndex16() && bg.GetIndex() == TextColor::TransposeLegacyIndex(s_legacyDefaultBackground))
     {
         copy.SetDefaultBackground();
     }
