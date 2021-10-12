@@ -418,9 +418,8 @@ namespace winrt::TerminalApp::implementation
     // - Dismiss the (only) visible ContentDialog
     void AppLogic::DismissDialog()
     {
-        if (_dialog)
+        if (auto localDialog = std::exchange(_dialog, nullptr))
         {
-            auto localDialog = std::exchange(_dialog, nullptr);
             localDialog.Hide();
         }
     }
