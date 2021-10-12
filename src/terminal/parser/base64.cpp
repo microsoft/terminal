@@ -66,29 +66,46 @@ void Base64::Decode(const std::wstring_view& src, std::wstring& dst)
 #pragma warning(suppress : 26429) // Symbol 'out' is never tested for nullness, it can be marked as not_null (f.23).
     auto out = outBeg;
 
+    // r is just a generic "remainder" we use to accumulate 4 base64 chars into 3 output bytes.
     uint_fast32_t r = 0;
+    // error is treated as a boolean. If it's not 0 we had an invalid input character.
     uint_fast16_t error = 0;
 
-#define accumulate(ch)                         \
-    do                                         \
-    {                                          \
-        const auto n = decodeTable[ch & 0x7f]; \
-        error |= (ch | n) & 0xff80;            \
-        r = r << 6 | n;                        \
-    } while (0)
+    // Capturing r/error by reference produces less optimal assembly.
+    static constexpr auto accumulate = [](auto& r, auto& error, auto ch) {
+        // n will be in the range [0, 0x3f] for valid ch
+        // and exactly 0xff for invalid ch.
+        const auto n = decodeTable[ch & 0x7f];
+        // Both ch > 0x7f, as well as n > 0x7f are invalid values and count as an error.
+        // We can add the error state by checking if any bits ~0x7f are set (which is 0xff80).
+        error |= (ch | n) & 0xff80;
+        r = r << 6 | n;
+    };
 
     // If src.empty() then `in == inEndBatched == nullptr` and this is skipped.
     while (in < inEndBatched)
     {
-        const auto a = *in++;
-        const auto b = *in++;
-        const auto c = *in++;
-        const auto d = *in++;
+        const auto ch0 = *in++;
+        const auto ch1 = *in++;
+        const auto ch2 = *in++;
+        const auto ch3 = *in++;
 
-        accumulate(a);
-        accumulate(b);
-        accumulate(c);
-        accumulate(d);
+        // Most other base64 libraries do something like this:
+        //   const auto n0 = decodeTable[a];
+        //   const auto n1 = decodeTable[b];
+        //   const auto n2 = decodeTable[c];
+        //   const auto n3 = decodeTable[d];
+        //   *out++ = n0 << 2 | n1 >> 4;
+        //   *out++ = (n1 & 0xf) << 4 | n2 >> 2;
+        //   *out++ = (n2 & 0x3) << 6 | n3;
+        //
+        // But on all modern CPUs I tested (well even those 10 years old at this point) shifting base64
+        // characters into a single register (here: r) is faster than the traditional approach.
+        // I believe this is due to reducing the dependency of instructions on prior calculations.
+        accumulate(r, error, ch0);
+        accumulate(r, error, ch1);
+        accumulate(r, error, ch2);
+        accumulate(r, error, ch3);
 
         *out++ = gsl::narrow_cast<char>(r >> 16);
         *out++ = gsl::narrow_cast<char>(r >> 8);
@@ -103,7 +120,7 @@ void Base64::Decode(const std::wstring_view& src, std::wstring& dst)
         {
             if (const auto ch = *in; ch != '=')
             {
-                accumulate(ch);
+                accumulate(r, error, ch);
                 ri++;
             }
         }
@@ -127,9 +144,7 @@ void Base64::Decode(const std::wstring_view& src, std::wstring& dst)
             break;
         }
     }
-
-#undef accumulate
-
+    
     if (error)
     {
         throw std::runtime_error("invalid base64");
