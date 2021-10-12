@@ -14,7 +14,6 @@
         <name>Feature_EditableActionsPage</name>
         <description>The Actions page in the settings UI should allow users to edit actions.</description>
         <stage>AlwaysEnabled</stage>
-        <alwaysDisabledReleaseTokens/>
     </feature>
 
     <feature>
