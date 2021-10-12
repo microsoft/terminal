@@ -3347,7 +3347,7 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Dismisses the infobar and opens the settings.
+    // - Dismisses the Default Terminal tip and opens the settings.
     void TerminalPage::_SetAsDefaultOpenSettingsHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
