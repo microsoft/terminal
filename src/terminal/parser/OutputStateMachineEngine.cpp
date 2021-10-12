@@ -1112,12 +1112,7 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
         }
         else
         {
-            try
-            {
-                Base64::Decode(substr, content);
-                return true;
-            }
-            CATCH_LOG()
+            LOG_IF_FAILED(Base64::Decode(substr, content));
         }
     }
 

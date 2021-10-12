@@ -4,6 +4,9 @@
 #include "precomp.h"
 #include "base64.hpp"
 
+// Regarding C4297: I didn't want to handle OOM errors. There's no reasonable mode
+// of operation for this application without the ability to allocate memory anyways.
+#pragma warning(disable : 4297) // '...': function assumed not to throw an exception but does
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
@@ -30,7 +33,7 @@ static constexpr uint8_t decodeTable[128] = {
 // * Doesn't support whitespace and will throw an exception for such strings.
 // * Doesn't validate the number of trailing "=". Those are basically ignored.
 //   Strings like "YQ===" will be accepted as valid input and simply result in "a".
-void Base64::Decode(const std::wstring_view& src, std::wstring& dst)
+HRESULT Base64::Decode(const std::wstring_view& src, std::wstring& dst) noexcept
 {
     std::string result;
     result.resize(((src.size() + 3) / 4) * 3);
@@ -39,7 +42,7 @@ void Base64::Decode(const std::wstring_view& src, std::wstring& dst)
     // The remaining code in this function ensures not to read from in if src.empty().
 #pragma warning(suppress : 26429) // Symbol 'in' is never tested for nullness, it can be marked as not_null (f.23).
     auto in = src.data();
-    auto inEnd = in + src.size();
+    const auto inEnd = in + src.size();
     // Sometimes in programming you have to ask yourself what the right offset for a pointer is.
     // Is 4 enough? Certainly not. 6 on the other hand is just way too much. Clearly 5 is just right.
     //
@@ -144,12 +147,12 @@ void Base64::Decode(const std::wstring_view& src, std::wstring& dst)
             break;
         }
     }
-    
+
     if (error)
     {
-        throw std::runtime_error("invalid base64");
+        return HRESULT_FROM_WIN32(ERROR_INVALID_DATA);
     }
 
     result.resize(out - outBeg);
-    THROW_IF_FAILED(til::u8u16(result, dst));
+    return til::u8u16(result, dst);
 }

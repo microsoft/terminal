@@ -16,6 +16,6 @@ namespace Microsoft::Console::VirtualTerminal
     class Base64
     {
     public:
-        static void Decode(const std::wstring_view& src, std::wstring& dst);
+        static HRESULT Decode(const std::wstring_view& src, std::wstring& dst) noexcept;
     };
 }
