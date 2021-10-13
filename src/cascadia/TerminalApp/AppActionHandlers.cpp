@@ -21,7 +21,7 @@ using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
 using namespace winrt::AdaptiveCards::Rendering::Uwp;
-using namespace winrt::AdaptiveCards::ObjectModel::Uwp;
+// using namespace winrt::AdaptiveCards::ObjectModel::Uwp;
 
 namespace winrt
 {
@@ -1159,7 +1159,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::hstring jsonString{ advancedCard };
 
-        auto card{ AdaptiveCard::FromJsonString(jsonString) };
+        auto card{ winrt::AdaptiveCards::Rendering::Uwp::AdaptiveCard::FromJsonString(jsonString) };
         // Alternatively:
         // var card = AdaptiveCard.FromJson(jsonObject);
 
@@ -1194,12 +1194,14 @@ namespace winrt::TerminalApp::implementation
                 a;
             }
         });
+
+        _cards.Append(renderedAdaptiveCard);
         const auto fwe{ renderedAdaptiveCard.FrameworkElement() };
 
-         Windows::UI::Xaml::Controls::Grid g{};
-         g.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Stretch);
-         g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
-         g.Children().Append(renderedAdaptiveCard.FrameworkElement());
+        Windows::UI::Xaml::Controls::Grid g{};
+        g.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Stretch);
+        g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
+        g.Children().Append(renderedAdaptiveCard.FrameworkElement());
         g.RequestedTheme(_settings.GlobalSettings().Theme());
         focusedTab->SplitPane(realSplitType, splitSize, nullptr, g);
 
