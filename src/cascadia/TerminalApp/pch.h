@@ -62,6 +62,7 @@
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
+#include <winrt/Windows.Data.Json.h>
 #include <winrt/AdaptiveCards.ObjectModel.Uwp.h>
 #include <winrt/AdaptiveCards.Rendering.Uwp.h>
 

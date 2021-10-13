@@ -20,6 +20,8 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
+using namespace winrt::AdaptiveCards::Rendering::Uwp;
+using namespace winrt::AdaptiveCards::ObjectModel::Uwp;
 
 namespace winrt
 {
@@ -914,6 +916,223 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    winrt::hstring simpleCard{
+        LR"({
+    "type": "AdaptiveCard",
+    "version": "1.0",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Here is a ninja cat"
+        },
+        {
+            "type": "Image",
+            "url": "http://adaptivecards.io/content/cats/1.png"
+        }
+    ]
+})"
+    };
+
+    winrt::hstring advancedCard{
+        LR"({
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.0",
+  "body": [
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Publish Adaptive Card schema",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "Image",
+                  "url": "https://pbs.twimg.com/profile_images/3647943215/d7f12830b3c17a5a9e4afcc370e3a37e_400x400.jpeg",
+                  "size": "small",
+                  "style": "person"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Matt Hidinger",
+                  "weight": "bolder",
+                  "wrap": true
+                },
+                {
+                  "type": "TextBlock",
+                  "spacing": "none",
+                  "text": "Created {{DATE(2017-02-14T06:08:39Z, SHORT)}}",
+                  "isSubtle": true,
+                  "wrap": true
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Now that we have defined the main rules and features of the format, we need to produce a schema and publish it to GitHub. The schema will be the starting point of our reference documentation.",
+          "wrap": true
+        },
+        {
+          "type": "FactSet",
+          "facts": [
+            {
+              "title": "Board:",
+              "value": "Adaptive Card"
+            },
+            {
+              "title": "List:",
+              "value": "Backlog"
+            },
+            {
+              "title": "Assigned to:",
+              "value": "Matt Hidinger"
+            },
+            {
+              "title": "Due date:",
+              "value": "Not set"
+            }
+          ]
+        }
+      ]
+    },
+    {
+        "type": "Input.Text",
+        "id": "debugText",
+        "isMultiline": true,
+        "placeholder": "This is a text box"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.ShowCard",
+      "title": "Comment",
+      "card": {
+        "type": "AdaptiveCard",
+        "body": [
+          {
+            "type": "Input.Text",
+            "id": "comment",
+            "isMultiline": true,
+            "placeholder": "Enter your comment"
+          }
+        ],
+        "actions": [
+          {
+            "type": "Action.Submit",
+            "title": "OK"
+          }
+        ]
+      }
+    },
+    {
+      "type": "Action.OpenUrl",
+      "title": "View",
+      "url": "https://adaptivecards.io"
+    }
+  ]
+})"
+    };
+    winrt::hstring semiAdvancedCard{
+        LR"({
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.0",
+  "body": [
+    {
+      "type": "Container",
+      "items": [
+        {
+          "type": "TextBlock",
+          "text": "Publish Adaptive Card schema",
+          "weight": "bolder",
+          "size": "medium"
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "auto",
+              "items": [
+                {
+                  "type": "Image",
+                  "url": "https://pbs.twimg.com/profile_images/3647943215/d7f12830b3c17a5a9e4afcc370e3a37e_400x400.jpeg",
+                  "size": "small",
+                  "style": "person"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "Matt Hidinger",
+                  "weight": "bolder",
+                  "wrap": true
+                },
+                {
+                  "type": "TextBlock",
+                  "spacing": "none",
+                  "text": "Created {{DATE(2017-02-14T06:08:39Z, SHORT)}}",
+                  "isSubtle": true,
+                  "wrap": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "Now that we have defined the main rules and features of the format, we need to produce a schema and publish it to GitHub. The schema will be the starting point of our reference documentation.",
+          "wrap": true
+        },
+        {
+            "type": "Input.Text",
+            "id": "comment",
+            "isMultiline": true,
+            "placeholder": "Enter your comment"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+    "type": "Action.Submit",
+    "title": "OK"
+    },
+    {
+      "type": "Action.OpenUrl",
+      "title": "View",
+      "url": "https://adaptivecards.io"
+    }
+  ]
+})"
+    };
+
     void TerminalPage::_HandleHacktion(const IInspectable& /*sender*/,
                                        const ActionEventArgs& args)
     {
@@ -935,33 +1154,53 @@ namespace winrt::TerminalApp::implementation
         box.AcceptsReturn(true);
         box.IsSpellCheckEnabled(true);
         Windows::UI::Xaml::Controls::Control c{ box };
-        winrt::AdaptiveCards::Rendering::Uwp::AdaptiveCardRenderer renderer{};
-        winrt::hstring jsonString{ LR"({
-    "type": "AdaptiveCard",
-    "version": "1.0",
-    "body": [
-        {
-            "type": "TextBlock",
-            "text": "Here is a ninja cat"
-        },
-        {
-            "type": "Image",
-            "url": "http://adaptivecards.io/content/cats/1.png"
-        }
-    ]
-})" };
 
-        auto card{ winrt::AdaptiveCards::ObjectModel::Uwp::AdaptiveCard::FromJsonString(jsonString) };
+        AdaptiveCardRenderer renderer{};
+
+        winrt::hstring jsonString{ advancedCard };
+
+        auto card{ AdaptiveCard::FromJsonString(jsonString) };
         // Alternatively:
         // var card = AdaptiveCard.FromJson(jsonObject);
-        
-        winrt::AdaptiveCards::Rendering::Uwp::RenderedAdaptiveCard renderedAdaptiveCard{ renderer.RenderAdaptiveCard(card.AdaptiveCard()) };
 
-        Windows::UI::Xaml::Controls::Grid g{};
-        g.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Stretch);
-        g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
-        g.Children().Append(renderedAdaptiveCard.FrameworkElement());
+        RenderedAdaptiveCard renderedAdaptiveCard{ renderer.RenderAdaptiveCard(card.AdaptiveCard()) };
 
+        renderedAdaptiveCard.Action([](const auto& /*s*/, const AdaptiveActionEventArgs& args) {
+            auto a = 0;
+            a++;
+            a;
+
+            if (const auto& openUrlAction{ args.Action().try_as<AdaptiveOpenUrlAction>() })
+            {
+                // await Launcher.LaunchUriAsync(openUrlAction.Url);
+            }
+            else if (const auto& showCardAction{ args.Action().try_as<AdaptiveShowCardAction>() })
+            {
+                // This is only fired if, in HostConfig, you set the ShowCard ActionMode to Popup.
+                // Otherwise, the renderer will automatically display the card inline without firing this event.
+            }
+            else if (const auto& submitAction{ args.Action().try_as<AdaptiveSubmitAction>() })
+            {
+                //// Get the data and inputs
+                //string data = submitAction.DataJson.Stringify();
+                //string inputs = args.Inputs.AsJson().Stringify();
+                const auto data{ submitAction.DataJson().Stringify() };
+                const auto inputs{ args.Inputs().AsJson().Stringify() };
+                //// Process them as desired
+                data;
+                inputs;
+                auto a = 0;
+                a++;
+                a;
+            }
+        });
+        const auto fwe{ renderedAdaptiveCard.FrameworkElement() };
+
+         Windows::UI::Xaml::Controls::Grid g{};
+         g.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Stretch);
+         g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
+         g.Children().Append(renderedAdaptiveCard.FrameworkElement());
+        g.RequestedTheme(_settings.GlobalSettings().Theme());
         focusedTab->SplitPane(realSplitType, splitSize, nullptr, g);
 
         args.Handled(true);
