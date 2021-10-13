@@ -913,4 +913,30 @@ namespace winrt::TerminalApp::implementation
             }
         }
     }
+
+    void TerminalPage::_HandleHacktion(const IInspectable& /*sender*/,
+                                       const ActionEventArgs& args)
+    {
+        const auto focusedTab{ _GetFocusedTabImpl() };
+        // Do nothing if no TerminalTab is focused
+        if (!focusedTab)
+        {
+            return;
+        }
+
+        const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+        const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
+        const auto realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
+        const float splitSize{ .5f };
+
+        Windows::UI::Xaml::Controls::TextBox box{};
+        // box.TextWrapping("Wrap" )
+        box.AcceptsReturn(true);
+        box.IsSpellCheckEnabled(true);
+
+        focusedTab->SplitPane(realSplitType, splitSize, nullptr, box);
+
+        args.Handled(true);
+    }
 }
