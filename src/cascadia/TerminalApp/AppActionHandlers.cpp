@@ -1176,17 +1176,17 @@ namespace winrt::TerminalApp::implementation
             }
             else if (const auto& showCardAction{ args.Action().try_as<AdaptiveShowCardAction>() })
             {
-                // This is only fired if, in HostConfig, you set the ShowCard ActionMode to Popup.
-                // Otherwise, the renderer will automatically display the card inline without firing this event.
+                // This is only fired if, in HostConfig, you set the ShowCard
+                // ActionMode to Popup. Otherwise, the renderer will
+                // automatically display the card inline without firing this
+                // event.
             }
             else if (const auto& submitAction{ args.Action().try_as<AdaptiveSubmitAction>() })
             {
-                //// Get the data and inputs
-                //string data = submitAction.DataJson.Stringify();
-                //string inputs = args.Inputs.AsJson().Stringify();
+                // Get the data and inputs
                 const auto data{ submitAction.DataJson().Stringify() };
                 const auto inputs{ args.Inputs().AsJson().Stringify() };
-                //// Process them as desired
+                // Process them as desired
                 data;
                 inputs;
                 auto a = 0;
