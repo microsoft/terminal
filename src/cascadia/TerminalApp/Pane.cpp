@@ -34,7 +34,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
 
-Pane::Pane(const Profile& profile, const Controls::Control& control, const bool lastFocused) :
+Pane::Pane(const Profile& profile, const FrameworkElement& control, const bool lastFocused) :
     _control{ control },
     _lastActive{ lastFocused },
     _profile{ profile }
@@ -58,8 +58,11 @@ Pane::Pane(const Profile& profile, const Controls::Control& control, const bool 
     }
 
     // Register an event with the control to have it inform us when it gains focus.
-    _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
-    _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+    if (const auto c{ _control.try_as<Controls::Control>() })
+    {
+        _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+        _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+    }
 
     // When our border is tapped, make sure to transfer focus to our control.
     // LOAD-BEARING: This will NOT work if the border's BorderBrush is set to
@@ -1226,7 +1229,7 @@ void Pane::Shutdown()
 }
 
 // Method Description:
-// - Get the root UIElement of this pane. There may be a single Control as a
+// - Get the root UIElement of this pane. There may be a single FrameworkElement as a
 //   child, or an entire tree of grids and panes as children of this element.
 // Arguments:
 // - <none>
@@ -1309,7 +1312,7 @@ TermControl Pane::GetTerminalControl() const
     return _IsLeaf() ? _control.try_as<TermControl>() : nullptr;
 }
 
-Controls::Control Pane::GetControl() const
+FrameworkElement Pane::GetControl() const
 {
     return _IsLeaf() ? _control : nullptr;
 }
@@ -1688,7 +1691,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _lastActive = _lastActive || _firstChild->_lastActive || _secondChild->_lastActive;
 
         // Remove all the ui elements of the remaining child. This'll make sure
-        // we can re-attach the Control to our Grid.
+        // we can re-attach the FrameworkElement to our Grid.
         remainingChild->_root.Children().Clear();
         remainingChild->_borderFirst.Child(nullptr);
 
@@ -1699,7 +1702,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
-        // Reattach the Control to our grid.
+        // Reattach the FrameworkElement to our grid.
         _root.Children().Append(_borderFirst);
         _borderFirst.Child(_control);
 
@@ -1717,7 +1720,11 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         // focus our control now. This should trigger our own GotFocus event.
         if (usedToFocusClosedChildsTerminal || _lastActive)
         {
-            _control.Focus(FocusState::Programmatic);
+            if (const auto c{ _control.try_as<Controls::Control>() })
+            {
+                c.Focus(FocusState::Programmatic);
+            }
+            
 
             // See GH#7252
             // Manually fire off the GotFocus event. Typically, this is done
@@ -2398,18 +2405,18 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 
 // Method Description:
 // - Split the focused pane in our tree of panes, and place the given
-//   Control into the newly created pane. If we're the focused pane, then
+//   FrameworkElement into the newly created pane. If we're the focused pane, then
 //   we'll create two new children, and place them side-by-side in our Grid.
 // Arguments:
 // - splitType: what type of split we want to create.
 // - profile: The profile to associate with the newly created pane.
-// - control: A Control to use in the new pane.
+// - control: A FrameworkElement to use in the new pane.
 // Return Value:
 // - The two newly created Panes, with the original pane first
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
                                                                     const Profile& profile,
-                                                                    const Controls::Control& control)
+                                                                    const FrameworkElement& control)
 {
     if (!_lastActive)
     {
@@ -2534,7 +2541,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     }
 
     // Remove any children we currently have. We can't add the existing
-    // Control to a new grid until we do this.
+    // FrameworkElement to a new grid until we do this.
     _root.Children().Clear();
     _borderFirst.Child(nullptr);
     _borderSecond.Child(nullptr);

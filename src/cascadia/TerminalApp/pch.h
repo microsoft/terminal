@@ -62,6 +62,9 @@
 
 #include <windows.ui.xaml.media.dxinterop.h>
 
+#include <winrt/AdaptiveCards.ObjectModel.Uwp.h>
+#include <winrt/AdaptiveCards.Rendering.Uwp.h>
+
 // Including TraceLogging essentials for the binary
 #include <TraceLoggingProvider.h>
 #include <winmeta.h>

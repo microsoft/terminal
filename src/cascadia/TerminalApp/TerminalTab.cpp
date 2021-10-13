@@ -516,7 +516,7 @@ namespace winrt::TerminalApp::implementation
     void TerminalTab::SplitPane(SplitDirection splitType,
                                 const float splitSize,
                                 const Profile& profile,
-                                const Controls::Control& control)
+                                const FrameworkElement& control)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();

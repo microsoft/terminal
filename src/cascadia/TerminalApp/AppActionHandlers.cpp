@@ -935,8 +935,34 @@ namespace winrt::TerminalApp::implementation
         box.AcceptsReturn(true);
         box.IsSpellCheckEnabled(true);
         Windows::UI::Xaml::Controls::Control c{ box };
+        winrt::AdaptiveCards::Rendering::Uwp::AdaptiveCardRenderer renderer{};
+        winrt::hstring jsonString{ LR"({
+    "type": "AdaptiveCard",
+    "version": "1.0",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Here is a ninja cat"
+        },
+        {
+            "type": "Image",
+            "url": "http://adaptivecards.io/content/cats/1.png"
+        }
+    ]
+})" };
 
-        focusedTab->SplitPane(realSplitType, splitSize, nullptr, c);
+        auto card{ winrt::AdaptiveCards::ObjectModel::Uwp::AdaptiveCard::FromJsonString(jsonString) };
+        // Alternatively:
+        // var card = AdaptiveCard.FromJson(jsonObject);
+        
+        winrt::AdaptiveCards::Rendering::Uwp::RenderedAdaptiveCard renderedAdaptiveCard{ renderer.RenderAdaptiveCard(card.AdaptiveCard()) };
+
+        Windows::UI::Xaml::Controls::Grid g{};
+        g.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Stretch);
+        g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
+        g.Children().Append(renderedAdaptiveCard.FrameworkElement());
+
+        focusedTab->SplitPane(realSplitType, splitSize, nullptr, g);
 
         args.Handled(true);
     }
