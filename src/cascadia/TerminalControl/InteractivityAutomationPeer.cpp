@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _controlPadding = padding;
     }
-    void InteractivityAutomationPeer::RegisterParentProvider(Control::TermControlAutomationPeer parentProvider)
+    void InteractivityAutomationPeer::ParentProvider(AutomationPeer parentProvider)
     {
         _parentProvider = parentProvider;
     }
@@ -179,7 +179,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         // LOAD-BEARING: use _parentProvider->ProviderFromPeer(_parentProvider) instead of this->ProviderFromPeer(*this).
         // Since we split the automation peer into TermControlAutomationPeer and InteractivityAutomationPeer,
-        // the using "this" returns null. This can cause issues with some UIA Client scenarios like word navigation in Narrator.
+        // using "this" returns null. This can cause issues with some UIA Client scenarios like word navigation in Narrator.
         const auto parent{ _parentProvider.get() };
         if (!parent)
         {

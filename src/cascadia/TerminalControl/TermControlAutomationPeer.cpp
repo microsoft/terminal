@@ -45,7 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contentAutomationPeer.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
         _contentAutomationPeer.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
         _contentAutomationPeer.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
-        _contentAutomationPeer.RegisterParentProvider(*this);
+        _contentAutomationPeer.ParentProvider(*this);
     };
 
     // Method Description:
