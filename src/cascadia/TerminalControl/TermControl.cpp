@@ -522,15 +522,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // MSFT 33353327: We're purposefully not using _initializedTerminal to ensure we're fully initialized.
         // Doing so makes us return nullptr when XAML requests an automation peer.
         // Instead, we need to give XAML an automation peer, then fix it later.
-        if (_IsClosing())
+        if (!_IsClosing())
         {
-            return nullptr;
-        }
-
-        // create a custom automation peer with this code pattern:
-        // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
-        if (!_automationPeer)
-        {
+            // create a custom automation peer with this code pattern:
+            // (https://docs.microsoft.com/en-us/windows/uwp/design/accessibility/custom-automation-peers)
             if (const auto& interactivityAutoPeer{ _interactivity.OnCreateAutomationPeer() })
             {
                 const auto margins{ SwapChainPanel().Margin() };
@@ -539,9 +534,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                              margins.Right,
                                              margins.Bottom };
                 _automationPeer = winrt::make<implementation::TermControlAutomationPeer>(this, padding, interactivityAutoPeer);
+                return _automationPeer;
             }
         }
-        return _automationPeer;
+        return nullptr;
     }
 
     // This is needed for TermControlAutomationPeer. We probably could find a
