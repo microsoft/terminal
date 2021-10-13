@@ -4,10 +4,10 @@
 #include "precomp.h"
 #include "base64.hpp"
 
-// Regarding C4297: I didn't want to handle out of memory errors. There's no reasonable
-// mode of operation for this application without the ability to allocate memory anyways.
-#pragma warning(disable : 4297) // '...': function assumed not to throw an exception but does
 #pragma warning(disable : 26446) // Prefer to use gsl::at() instead of unchecked subscript operator (bounds.4).
+// I didn't want to handle out of memory errors. There's no reasonable mode of
+// operation for this application without the ability to allocate memory anyways.
+#pragma warning(disable : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
 #pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
 #pragma warning(disable : 26482) // Only index into arrays using constant expressions (bounds.2).
 

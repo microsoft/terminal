@@ -1114,7 +1114,9 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
         return true;
     }
 
-    return SUCCEEDED(LOG_IF_FAILED(Base64::Decode(substr, content)));
+// Log_IfFailed has the following description: "Should be decorated WI_NOEXCEPT, but conflicts with forceinline."
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
+    return SUCCEEDED_LOG(Base64::Decode(substr, content));
 }
 
 // Method Description:
