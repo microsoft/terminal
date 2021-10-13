@@ -34,7 +34,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
 
-Pane::Pane(const Profile& profile, const Controls::UserControl& control, const bool lastFocused) :
+Pane::Pane(const Profile& profile, const Controls::Control& control, const bool lastFocused) :
     _control{ control },
     _lastActive{ lastFocused },
     _profile{ profile }
@@ -1226,7 +1226,7 @@ void Pane::Shutdown()
 }
 
 // Method Description:
-// - Get the root UIElement of this pane. There may be a single UserControl as a
+// - Get the root UIElement of this pane. There may be a single Control as a
 //   child, or an entire tree of grids and panes as children of this element.
 // Arguments:
 // - <none>
@@ -1309,7 +1309,7 @@ TermControl Pane::GetTerminalControl() const
     return _IsLeaf() ? _control.try_as<TermControl>() : nullptr;
 }
 
-Controls::UserControl Pane::GetUserControl() const
+Controls::Control Pane::GetControl() const
 {
     return _IsLeaf() ? _control : nullptr;
 }
@@ -1688,7 +1688,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _lastActive = _lastActive || _firstChild->_lastActive || _secondChild->_lastActive;
 
         // Remove all the ui elements of the remaining child. This'll make sure
-        // we can re-attach the UserControl to our Grid.
+        // we can re-attach the Control to our Grid.
         remainingChild->_root.Children().Clear();
         remainingChild->_borderFirst.Child(nullptr);
 
@@ -1699,7 +1699,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
         _root.ColumnDefinitions().Clear();
         _root.RowDefinitions().Clear();
 
-        // Reattach the UserControl to our grid.
+        // Reattach the Control to our grid.
         _root.Children().Append(_borderFirst);
         _borderFirst.Child(_control);
 
@@ -2398,18 +2398,18 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 
 // Method Description:
 // - Split the focused pane in our tree of panes, and place the given
-//   UserControl into the newly created pane. If we're the focused pane, then
+//   Control into the newly created pane. If we're the focused pane, then
 //   we'll create two new children, and place them side-by-side in our Grid.
 // Arguments:
 // - splitType: what type of split we want to create.
 // - profile: The profile to associate with the newly created pane.
-// - control: A UserControl to use in the new pane.
+// - control: A Control to use in the new pane.
 // Return Value:
 // - The two newly created Panes, with the original pane first
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
                                                                     const Profile& profile,
-                                                                    const Controls::UserControl& control)
+                                                                    const Controls::Control& control)
 {
     if (!_lastActive)
     {
@@ -2534,7 +2534,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
     }
 
     // Remove any children we currently have. We can't add the existing
-    // UserControl to a new grid until we do this.
+    // Control to a new grid until we do this.
     _root.Children().Clear();
     _borderFirst.Child(nullptr);
     _borderSecond.Child(nullptr);

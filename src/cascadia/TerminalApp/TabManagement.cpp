@@ -51,7 +51,7 @@ namespace winrt
 namespace winrt::TerminalApp::implementation
 {
     // Method Description:
-    // - Open a new tab. This will create the TerminalControl hosting the
+    // - Open a new tab. This will create the TerminalControl Control hosting the
     //   terminal, and add a new Tab to our list of tabs. The method can
     //   optionally be provided a NewTerminalArgs, which will be used to create
     //   a tab using the values in that object.
@@ -292,6 +292,7 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(settings, debugConnection);
             _RegisterTerminalEvents(newControl);
             // Split (auto) with the debug tap.
+
             newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, profile, newControl);
         }
     }

@@ -934,8 +934,9 @@ namespace winrt::TerminalApp::implementation
         // box.TextWrapping("Wrap" )
         box.AcceptsReturn(true);
         box.IsSpellCheckEnabled(true);
+        Windows::UI::Xaml::Controls::Control c{ box };
 
-        focusedTab->SplitPane(realSplitType, splitSize, nullptr, box);
+        focusedTab->SplitPane(realSplitType, splitSize, nullptr, c);
 
         args.Handled(true);
     }
