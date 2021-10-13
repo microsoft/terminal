@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "TermControlAutomationPeer.idl";
+
 namespace Microsoft.Terminal.Control
 {
     [default_interface] runtimeclass InteractivityAutomationPeer :
@@ -10,6 +12,7 @@ namespace Microsoft.Terminal.Control
 
         void SetControlBounds(Windows.Foundation.Rect bounds);
         void SetControlPadding(Microsoft.Terminal.Core.Padding padding);
+        void RegisterParentProvider(TermControlAutomationPeer parentProvider);
 
         event Windows.Foundation.TypedEventHandler<Object, Object> SelectionChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> TextChanged;
