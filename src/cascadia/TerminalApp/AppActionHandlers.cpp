@@ -1157,7 +1157,7 @@ namespace winrt::TerminalApp::implementation
             };
 
             winrt::guid g{ __uuidof(hack) };
-            auto iCard = winrt::create_instance<TerminalApp::ICardExtension>(g);
+            auto iCard = winrt::create_instance<winrt::CardExtension::ICardExtension>(g);
             if (iCard)
             {
                 json = iCard.GetJson();
