@@ -307,9 +307,16 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             val.reserve(json.size());
 
             ConversionTrait<T> trait;
-            for (const auto& element : json)
+            if (json.isArray())
             {
-                val.push_back(trait.FromJson(element));
+                for (const auto& element : json)
+                {
+                    val.push_back(trait.FromJson(element));
+                }
+            }
+            else
+            {
+                val.push_back(trait.FromJson(json));
             }
 
             return val;
@@ -318,7 +325,9 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         bool CanConvert(const Json::Value& json) const
         {
             ConversionTrait<T> trait;
-            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); });
+            // If there's only one element provided, then see if we can convert
+            // that single element into a length-1 array
+            return (json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); })) || trait.CanConvert(json);
         }
 
         Json::Value ToJson(const std::vector<T>& val)
