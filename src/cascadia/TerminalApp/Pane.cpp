@@ -1502,27 +1502,6 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
     {
         terminal.UpdateSettings(settings, profile);
     }
-    // const auto& termControl{ _control.try_as<TermControl>() };
-    // if (!termControl)
-    // {
-    //     return;
-    // }
-    // _profile = profile;
-    // auto controlSettings = termControl.Settings().as<TerminalSettings>();
-    // // Update the parent of the control's settings object (and not the object itself) so
-    // // that any overrides made by the control don't get affected by the reload
-    // controlSettings.SetParent(settings.DefaultSettings());
-    // auto unfocusedSettings{ settings.UnfocusedSettings() };
-    // if (unfocusedSettings)
-    // {
-    //     // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
-    //     // set its parent to the settings object that lives in the control. This is because
-    //     // the overrides made by the control live in that settings object, so we want to make
-    //     // sure the unfocused settings inherit from that.
-    //     unfocusedSettings.SetParent(controlSettings);
-    // }
-    // termControl.UnfocusedAppearance(unfocusedSettings);
-    // termControl.UpdateSettings();
 }
 
 // Method Description:
@@ -1658,17 +1637,7 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 
         // take the control, profile and id of the pane that _wasn't_ closed.
         _content = remainingChild->_content;
-        // _connectionState = remainingChild->_connectionState;
-        // _profile = remainingChild->_profile;
         _id = remainingChild->Id();
-
-        // // Add our new event handler before revoking the old one.
-        // const auto& termControl{ _control.try_as<TermControl>() };
-        // if (termControl)
-        // {
-        //     _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-        //     _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-        // }
 
         // Revoke the old event handlers. Remove both the handlers for the panes
         // themselves closing, and remove their handlers for their controls
@@ -1683,12 +1652,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 if (p->_IsLeaf())
                 {
                     p->_content.Close();
-                    // const auto& closedControl{ p->_control.try_as<TermControl>() };
-                    // if (closedControl)
-                    // {
-                    //     closedControl.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    //     closedControl.WarningBell(p->_warningBellToken);
-                    // }
                 }
                 return false;
             });
@@ -1696,13 +1659,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
 
         closedChild->Closed(closedChildClosedToken);
         remainingChild->Closed(remainingChildClosedToken);
-
-        // const auto& remainingControl{ remainingChild->_control.try_as<TermControl>() };
-        // if (remainingControl)
-        // {
-        //     remainingControl.ConnectionStateChanged(remainingChild->_connectionStateChangedToken);
-        //     remainingControl.WarningBell(remainingChild->_warningBellToken);
-        // }
 
         // If we or either of our children was focused, we want to take that
         // focus from them.
@@ -1792,12 +1748,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                 if (p->_IsLeaf())
                 {
                     p->_content.Close();
-                    // const auto& closedControl{ p->_control.try_as<TermControl>() };
-                    // if (closedControl)
-                    // {
-                    //     closedControl.ConnectionStateChanged(p->_connectionStateChangedToken);
-                    //     closedControl.WarningBell(p->_warningBellToken);
-                    // }
                 }
                 return false;
             });
@@ -3047,7 +2997,6 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
                 const auto cellSize = termControl.CharacterDimensions();
                 sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
             }
-
         }
         else
         {
@@ -3057,7 +3006,6 @@ void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& si
             // a non-terminal control doesn't really care what size it's snapped to,
             // we can just say "one pixel larger is the next snap point"
             sizeNode.size += 1;
-
         }
     }
     else if (!_IsLeaf())
