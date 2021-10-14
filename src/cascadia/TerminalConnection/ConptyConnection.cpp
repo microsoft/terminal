@@ -1,12 +1,12 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
 
 #include "ConptyConnection.h"
 
-#include <windows.h>
-#include <userenv.h>
+#include <UserEnv.h>
+#include <winternl.h>
 
 #include "ConptyConnection.g.cpp"
 #include "CTerminalHandoff.h"
@@ -276,24 +276,18 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
                                        const HANDLE hClientProcess) :
         _initialRows{ 25 },
         _initialCols{ 80 },
-        _commandline{ L"" },
-        _startingDirectory{ L"" },
-        _startingTitle{ L"" },
-        _environment{ nullptr },
-        _guid{},
-        _u8State{},
-        _u16Str{},
-        _buffer{},
+        _guid{ Utils::CreateGuid() },
         _inPipe{ hIn },
         _outPipe{ hOut }
     {
         THROW_IF_FAILED(ConptyPackPseudoConsole(hServerProcess, hRef, hSig, &_hPC));
-        if (_guid == guid{})
-        {
-            _guid = Utils::CreateGuid();
-        }
-
         _piClient.hProcess = hClientProcess;
+
+        try
+        {
+            _commandline = _commandlineFromProcess(hClientProcess);
+        }
+        CATCH_LOG()
     }
 
     // Function Description:
@@ -353,6 +347,11 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     winrt::guid ConptyConnection::Guid() const noexcept
     {
         return _guid;
+    }
+
+    winrt::hstring ConptyConnection::Commandline() const
+    {
+        return _commandline;
     }
 
     void ConptyConnection::Start()
@@ -560,6 +559,38 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     }
     CATCH_LOG()
 
+    // Returns the command line of the given process.
+    // Requires PROCESS_BASIC_INFORMATION | PROCESS_VM_READ privileges.
+    winrt::hstring ConptyConnection::_commandlineFromProcess(HANDLE process)
+    {
+        struct PROCESS_BASIC_INFORMATION
+        {
+            NTSTATUS ExitStatus;
+            PPEB PebBaseAddress;
+            ULONG_PTR AffinityMask;
+            KPRIORITY BasePriority;
+            ULONG_PTR UniqueProcessId;
+            ULONG_PTR InheritedFromUniqueProcessId;
+        } info;
+        THROW_IF_NTSTATUS_FAILED(NtQueryInformationProcess(process, ProcessBasicInformation, &info, sizeof(info), nullptr));
+
+        // PEB: Process Environment Block
+        // This is a funny structure allocated by the kernel which contains all sorts of useful
+        // information, only a tiny fraction of which are documented publicly unfortunately.
+        // Fortunately however it contains a copy of the command line the process launched with.
+        PEB peb;
+        THROW_IF_WIN32_BOOL_FALSE(ReadProcessMemory(process, info.PebBaseAddress, &peb, sizeof(peb), nullptr));
+
+        RTL_USER_PROCESS_PARAMETERS params;
+        THROW_IF_WIN32_BOOL_FALSE(ReadProcessMemory(process, peb.ProcessParameters, &params, sizeof(params), nullptr));
+
+        // Yeah I know... Don't use "impl" stuff... But why do you make something _that_ useful private? :(
+        // The hstring_builder allows us to create a hstring without intermediate copies. Neat!
+        winrt::impl::hstring_builder commandline{ params.CommandLine.Length / 2u };
+        THROW_IF_WIN32_BOOL_FALSE(ReadProcessMemory(process, params.CommandLine.Buffer, commandline.data(), params.CommandLine.Length, nullptr));
+        return commandline.to_hstring();
+    }
+
     DWORD ConptyConnection::_OutputThread()
     {
         // Keep us alive until the output thread terminates; the destructor
@@ -636,8 +667,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     HRESULT ConptyConnection::NewHandoff(HANDLE in, HANDLE out, HANDLE signal, HANDLE ref, HANDLE server, HANDLE client) noexcept
     try
     {
-        auto conn = winrt::make<implementation::ConptyConnection>(signal, in, out, ref, server, client);
-        _newConnectionHandlers(conn);
+        _newConnectionHandlers(winrt::make<ConptyConnection>(signal, in, out, ref, server, client));
 
         return S_OK;
     }

@@ -40,7 +40,8 @@ enum class Borders : int
     Top = 0x1,
     Bottom = 0x2,
     Left = 0x4,
-    Right = 0x8
+    Right = 0x8,
+    All = 0xF
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
 
@@ -58,7 +59,14 @@ public:
          const winrt::Microsoft::Terminal::Control::TermControl& control,
          const bool lastFocused = false);
 
+    Pane(std::shared_ptr<Pane> first,
+         std::shared_ptr<Pane> second,
+         const SplitState splitType,
+         const float splitPosition,
+         const bool lastFocused = false);
+
     std::shared_ptr<Pane> GetActivePane();
+    winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
 
@@ -142,25 +150,43 @@ public:
     // - true if the predicate returned true on any pane.
     template<typename F>
     //requires std::predicate<F, std::shared_ptr<Pane>>
-    bool WalkTree(F f)
+    auto WalkTree(F f) -> decltype(f(shared_from_this()))
     {
-        if (f(shared_from_this()))
-        {
-            return true;
-        }
+        using R = std::invoke_result_t<F, std::shared_ptr<Pane>>;
+        static constexpr auto IsVoid = std::is_void_v<R>;
 
-        if (!_IsLeaf())
+        if constexpr (IsVoid)
         {
-            return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+            f(shared_from_this());
+            if (!_IsLeaf())
+            {
+                _firstChild->WalkTree(f);
+                _secondChild->WalkTree(f);
+            }
         }
+        else
+        {
+            if (f(shared_from_this()))
+            {
+                return true;
+            }
 
-        return false;
+            if (!_IsLeaf())
+            {
+                return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+            }
+
+            return false;
+        }
     }
 
     void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
 
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
-    DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+
+    using gotFocusArgs = winrt::delegate<std::shared_ptr<Pane>, winrt::Windows::UI::Xaml::FocusState>;
+
+    DECLARE_EVENT(GotFocus, _GotFocusHandlers, gotFocusArgs);
     DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
     DECLARE_EVENT(Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
@@ -173,7 +199,8 @@ private:
     struct LayoutSizeNode;
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
-    winrt::Windows::UI::Xaml::Controls::Border _border{};
+    winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
+    winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
     winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
     winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
@@ -185,6 +212,7 @@ private:
     float _desiredSplitPosition;
 
     std::optional<uint32_t> _id;
+    std::weak_ptr<Pane> _parentChildPath{};
 
     bool _lastActive{ false };
     winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
@@ -205,6 +233,7 @@ private:
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
+    bool _HasChild(const std::shared_ptr<Pane> child);
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                    const float splitSize,
@@ -232,6 +261,7 @@ private:
     void _CloseChild(const bool closeFirst, const bool isDetaching);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
 
+    void _Focus();
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,

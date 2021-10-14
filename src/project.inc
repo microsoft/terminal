@@ -29,7 +29,7 @@ USE_NATIVE_EH           = 1
 # -------------------------------------
 
 MSC_WARNING_LEVEL       = /W4 /WX
-USER_C_FLAGS            = $(USER_C_FLAGS) /utf-8
+USER_C_FLAGS            = $(USER_C_FLAGS) /fp:fast /utf-8
 
 # -------------------------------------
 # Common Console Includes and Libraries

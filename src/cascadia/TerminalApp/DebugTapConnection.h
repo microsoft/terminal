@@ -5,6 +5,7 @@
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
 #include "../../inc/cppwinrt_utils.h"
+#include <til/latch.h>
 
 namespace winrt::Microsoft::TerminalApp::implementation
 {
@@ -35,6 +36,8 @@ namespace winrt::Microsoft::TerminalApp::implementation
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection::StateChanged_revoker _stateChangedRevoker;
         winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _wrappedConnection;
         winrt::weak_ref<Microsoft::Terminal::TerminalConnection::ITerminalConnection> _inputSide;
+
+        til::latch _start{ 1 };
 
         friend class DebugInputTapConnection;
     };

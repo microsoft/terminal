@@ -76,6 +76,7 @@ namespace RemotingUnitTests
         void Summon(const Remoting::SummonWindowBehavior& /*args*/) { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
         void RequestShowNotificationIcon() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
         void RequestHideNotificationIcon() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
+        winrt::hstring GetWindowLayout() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
         void RequestQuitAll() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
         void Quit() { throw winrt::hresult_error(winrt::hresult{ (int32_t)0x800706ba }); };
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
@@ -88,6 +89,7 @@ namespace RemotingUnitTests
         TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(GetWindowLayoutRequested, winrt::Windows::Foundation::IInspectable, Remoting::GetWindowLayoutArgs);
     };
 
     class RemotingTests

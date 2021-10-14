@@ -218,7 +218,7 @@ namespace winrt::TerminalApp::implementation
         _RegisterActionCallbacks();
 
         // Hook up inbound connection event handler
-        TerminalConnection::ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
+        ConptyConnection::NewConnection({ this, &TerminalPage::_OnNewConnection });
 
         //Event Bindings (Early)
         _newTabButton.Click([weakThis{ get_weak() }](auto&&, auto&&) {
@@ -287,6 +287,8 @@ namespace winrt::TerminalApp::implementation
             _defaultPointerCursor = CoreWindow::GetForCurrentThread().PointerCursor();
         }
         CATCH_LOG();
+
+        ShowSetAsDefaultInfoBar();
     }
 
     // Method Description;
@@ -298,10 +300,37 @@ namespace winrt::TerminalApp::implementation
     // - true if the ApplicationState should be used.
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
-        // If the setting is enabled, and we are the only window.
+        // GH#5000 Until there is a separate state file for elevated sessions we should just not
+        // save at all while in an elevated window.
         return Feature_PersistedWindowLayout::IsEnabled() &&
-               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout &&
-               _numOpenWindows == 1;
+               !IsElevated() &&
+               settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
+    }
+
+    // Method Description;
+    // - Checks if the current window is configured to load a particular layout
+    // Arguments:
+    // - settings: The settings to use as this may be called before the page is
+    //   fully initialized.
+    // Return Value:
+    // - non-null if there is a particular saved layout to use
+    std::optional<uint32_t> TerminalPage::LoadPersistedLayoutIdx(CascadiaSettings& settings) const
+    {
+        return ShouldUsePersistedLayout(settings) ? _loadFromPersistedLayoutIdx : std::nullopt;
+    }
+
+    WindowLayout TerminalPage::LoadPersistedLayout(CascadiaSettings& settings) const
+    {
+        if (const auto idx = LoadPersistedLayoutIdx(settings))
+        {
+            const auto i = idx.value();
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+            if (layouts && layouts.Size() > i)
+            {
+                return layouts.GetAt(i);
+            }
+        }
+        return nullptr;
     }
 
     winrt::fire_and_forget TerminalPage::NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e)
@@ -387,30 +416,13 @@ namespace winrt::TerminalApp::implementation
         {
             _startupState = StartupState::InStartup;
 
-            // If the user selected to save their tab layout, we are the first
-            // window opened, and wt was not run with any other arguments, then
-            // we should use the saved settings.
-            auto firstActionIsDefault = [](ActionAndArgs action) {
-                if (action.Action() != ShortcutAction::NewTab)
-                {
-                    return false;
-                }
-
-                // If no commands were given, we will have default args
-                if (const auto args = action.Args().try_as<NewTabArgs>())
-                {
-                    NewTerminalArgs defaultArgs{};
-                    return args.TerminalArgs() == nullptr || args.TerminalArgs().Equals(defaultArgs);
-                }
-
-                return false;
-            };
-            if (ShouldUsePersistedLayout(_settings) && _startupActions.Size() == 1 && firstActionIsDefault(_startupActions.GetAt(0)))
+            // If we are provided with an index, the cases where we have
+            // commandline args and startup actions are already handled.
+            if (const auto layout = LoadPersistedLayout(_settings))
             {
-                auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
-                if (layouts && layouts.Size() > 0 && layouts.GetAt(0).TabLayout() && layouts.GetAt(0).TabLayout().Size() > 0)
+                if (layout.TabLayout().Size() > 0)
                 {
-                    _startupActions = layouts.GetAt(0).TabLayout();
+                    _startupActions = layout.TabLayout();
                 }
             }
 
@@ -1289,12 +1301,19 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Saves the window position and tab layout to the application state
+    // - This does not create the InitialPosition field, that needs to be
+    //   added externally.
     // Arguments:
     // - <none>
     // Return Value:
-    // - <none>
-    void TerminalPage::PersistWindowLayout()
+    // - the window layout
+    WindowLayout TerminalPage::GetWindowLayout()
     {
+        if (_startupState != StartupState::Initialized)
+        {
+            return nullptr;
+        }
+
         std::vector<ActionAndArgs> actions;
 
         for (auto tab : _tabs)
@@ -1302,7 +1321,7 @@ namespace winrt::TerminalApp::implementation
             if (auto terminalTab = _GetTerminalTabImpl(tab))
             {
                 auto tabActions = terminalTab->BuildStartupActions();
-                actions.insert(actions.end(), tabActions.begin(), tabActions.end());
+                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
             }
             else if (tab.try_as<SettingsTab>())
             {
@@ -1311,7 +1330,7 @@ namespace winrt::TerminalApp::implementation
                 OpenSettingsArgs args{ SettingsTarget::SettingsUI };
                 action.Args(args);
 
-                actions.push_back(action);
+                actions.emplace_back(std::move(action));
             }
         }
 
@@ -1324,7 +1343,18 @@ namespace winrt::TerminalApp::implementation
             SwitchToTabArgs switchToTabArgs{ idx.value() };
             action.Args(switchToTabArgs);
 
-            actions.push_back(action);
+            actions.emplace_back(std::move(action));
+        }
+
+        // If the user set a custom name, save it
+        if (_WindowName != L"")
+        {
+            ActionAndArgs action;
+            action.Action(ShortcutAction::RenameWindow);
+            RenameWindowArgs args{ _WindowName };
+            action.Args(args);
+
+            actions.emplace_back(std::move(action));
         }
 
         WindowLayout layout{};
@@ -1337,33 +1367,7 @@ namespace winrt::TerminalApp::implementation
 
         layout.InitialSize(windowSize);
 
-        if (_hostingHwnd)
-        {
-            // Get the position of the current window. This includes the
-            // non-client already.
-            RECT window{};
-            GetWindowRect(_hostingHwnd.value(), &window);
-
-            // We want to remove the non-client area so calculate that.
-            // We don't have access to the (NonClient)IslandWindow directly so
-            // just replicate the logic.
-            const auto windowStyle = static_cast<DWORD>(GetWindowLong(_hostingHwnd.value(), GWL_STYLE));
-
-            auto dpi = GetDpiForWindow(_hostingHwnd.value());
-            RECT nonClientArea{};
-            LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&nonClientArea, windowStyle, false, 0, dpi));
-
-            // The nonClientArea adjustment is negative, so subtract that out.
-            // This way we save the user-visible location of the terminal.
-            LaunchPosition pos{};
-            pos.X = window.left - nonClientArea.left;
-            pos.Y = window.top;
-
-            layout.InitialPosition(pos);
-        }
-
-        auto state = ApplicationState::SharedInstance();
-        state.PersistedWindowLayouts(winrt::single_threaded_vector<WindowLayout>({ layout }));
+        return layout;
     }
 
     // Method Description:
@@ -1392,8 +1396,9 @@ namespace winrt::TerminalApp::implementation
 
         if (ShouldUsePersistedLayout(_settings))
         {
-            PersistWindowLayout();
-            // don't delete the ApplicationState when all of the tabs are removed.
+            // Don't delete the ApplicationState when all of the tabs are removed.
+            // If there is still a monarch living they will get the event that
+            // a window closed and trigger a new save without this window.
             _maintainStateOnTabClose = true;
         }
 
@@ -2692,52 +2697,40 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
-    HRESULT TerminalPage::_OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection)
+    HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
         // HasThreadAccess will return true if we're currently on a UI thread and false otherwise.
         // When we're on a COM thread, we'll need to dispatch the calls to the UI thread
         // and wait on it hence the locking mechanism.
-        if (Dispatcher().HasThreadAccess())
-        {
-            try
-            {
-                NewTerminalArgs newTerminalArgs{};
-                // TODO GH#10952: When we pass the actual commandline (or originating application), the
-                // settings model can choose the right settings based on command matching, or synthesize
-                // a profile from the registry/link settings (TODO GH#9458).
-                // TODO GH#9458: Get and pass the LNK/EXE filenames.
-                // Passing in a commandline forces GetProfileForArgs to use Base Layer instead of Default Profile;
-                // in the future, it can make a better decision based on the value we pull out of the process handle.
-                // TODO GH#5047: When we hang on to the N.T.A., try not to spawn "default... .exe" :)
-                newTerminalArgs.Commandline(L"default-terminal-invocation-placeholder");
-                const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-                const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
-
-                _CreateNewTabWithProfileAndSettings(profile, settings, connection);
-
-                // Request a summon of this window to the foreground
-                _SummonWindowRequestedHandlers(*this, nullptr);
-            }
-            CATCH_RETURN();
-
-            return S_OK;
-        }
-        else
+        if (!Dispatcher().HasThreadAccess())
         {
             til::latch latch{ 1 };
             HRESULT finalVal = S_OK;
 
             Dispatcher().RunAsync(CoreDispatcherPriority::Normal, [&]() {
-                // Re-running ourselves under the dispatcher will cause us to take the first branch above.
                 finalVal = _OnNewConnection(connection);
-
                 latch.count_down();
             });
 
             latch.wait();
             return finalVal;
         }
+
+        try
+        {
+            NewTerminalArgs newTerminalArgs;
+            newTerminalArgs.Commandline(connection.Commandline());
+            const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
+            const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
+
+            _CreateNewTabWithProfileAndSettings(profile, settings, connection);
+
+            // Request a summon of this window to the foreground
+            _SummonWindowRequestedHandlers(*this, nullptr);
+            return S_OK;
+        }
+        CATCH_RETURN()
     }
 
     // Method Description:
@@ -2887,6 +2880,30 @@ namespace winrt::TerminalApp::implementation
             {
                 keyboardServiceWarningInfoBar.IsOpen(true);
             }
+        }
+    }
+
+    // Method Description:
+    // - Displays a info popup guiding the user into setting their default terminal.
+    void TerminalPage::ShowSetAsDefaultInfoBar() const
+    {
+        if (!CascadiaSettings::IsDefaultTerminalAvailable() || _IsMessageDismissed(InfoBarMessage::SetAsDefault))
+        {
+            return;
+        }
+
+        // If the user has already configured any terminal for hand-off we
+        // shouldn't inform them again about the possibility to do so.
+        if (CascadiaSettings::IsDefaultTerminalSet())
+        {
+            _DismissMessage(InfoBarMessage::SetAsDefault);
+            return;
+        }
+
+        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipPresented", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+            infoBar.IsOpen(true);
         }
     }
 
@@ -3106,6 +3123,11 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::SetPersistedLayoutIdx(const uint32_t idx)
+    {
+        _loadFromPersistedLayoutIdx = idx;
+    }
+
     void TerminalPage::SetNumberOfOpenWindows(const uint64_t num)
     {
         _numOpenWindows = num;
@@ -3306,6 +3328,40 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Persists the user's choice not to show the information bar warning about "Windows Terminal can be set as your default terminal application"
+    // Then hides this information buffer.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void TerminalPage::_SetAsDefaultDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        _DismissMessage(InfoBarMessage::SetAsDefault);
+        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+
+        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipDismissed", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        _FocusCurrentTab(true);
+    }
+
+    // Method Description:
+    // - Dismisses the Default Terminal tip and opens the settings.
+    void TerminalPage::_SetAsDefaultOpenSettingsHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+
+        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipInteracted", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        _OpenSettingsUI();
+    }
+
+    // Method Description:
     // - Checks whether information bar message was dismissed earlier (in the application state)
     // Arguments:
     // - message: message to look for in the state
@@ -3334,13 +3390,20 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_DismissMessage(const InfoBarMessage& message)
     {
-        auto dismissedMessages = ApplicationState::SharedInstance().DismissedMessages();
-        if (!dismissedMessages)
+        const auto applicationState = ApplicationState::SharedInstance();
+        std::vector<InfoBarMessage> messages;
+
+        if (const auto values = applicationState.DismissedMessages())
         {
-            dismissedMessages = winrt::single_threaded_vector<InfoBarMessage>();
+            messages.resize(values.Size());
+            values.GetMany(0, messages);
         }
 
-        dismissedMessages.Append(message);
-        ApplicationState::SharedInstance().DismissedMessages(dismissedMessages);
+        if (std::none_of(messages.begin(), messages.end(), [&](const auto& m) { return m == message; }))
+        {
+            messages.emplace_back(message);
+        }
+
+        applicationState.DismissedMessages(std::move(messages));
     }
 }

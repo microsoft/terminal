@@ -158,7 +158,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         hstring ReadEntireBuffer() const;
 
+        static bool IsVintageOpacityAvailable() noexcept;
+
         RUNTIME_SETTING(double, Opacity, _settings.Opacity());
+        RUNTIME_SETTING(bool, UseAcrylic, _settings.UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off

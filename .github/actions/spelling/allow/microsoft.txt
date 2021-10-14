@@ -1,5 +1,6 @@
 ACLs
 ADMINS
+advapi
 altform
 altforms
 appendwttlogging
@@ -15,6 +16,7 @@ CPLs
 cpptools
 cppvsdbg
 CPRs
+cryptbase
 DACL
 DACLs
 diffs
@@ -24,7 +26,9 @@ DTDs
 DWINRT
 enablewttlogging
 Intelli
+IVisual
 LKG
+LOCKFILE
 Lxss
 mfcribbon
 microsoft
@@ -44,6 +48,7 @@ powershell
 propkey
 pscustomobject
 QWORD
+regedit
 robocopy
 SACLs
 sdkddkver

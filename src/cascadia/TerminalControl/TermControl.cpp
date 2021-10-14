@@ -454,7 +454,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(::base::saturated_cast<float>(_core.Opacity()));
+            //
+            // TODO! This sure seems contrived, shouldn't the core... already
+            // know this?
+            _core.SetBackgroundOpacity(_core.Opacity());
         }
         else
         {

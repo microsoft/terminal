@@ -6,3 +6,4 @@
 #pragma hdrstop
 
 RECT GetImeSuggestionWindowPos();
+RECT GetTextBoxArea();

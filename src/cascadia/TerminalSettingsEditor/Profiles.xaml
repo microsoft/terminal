@@ -81,7 +81,8 @@
                                                 SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox IsSpellCheckEnabled="False"
+                                <TextBox x:Uid="Profile_CommandlineBox"
+                                         IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
                                          Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" />
                                 <Button x:Uid="Profile_CommandlineBrowse"
@@ -99,7 +100,8 @@
                                                 SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
-                                    <TextBox IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                    <TextBox x:Uid="Profile_StartingDirectoryBox"
+                                             IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                              IsSpellCheckEnabled="False"
                                              Style="{StaticResource TextBoxSettingStyle}"
                                              Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" />
@@ -121,7 +123,8 @@
                                                 HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
-                                <TextBox FontFamily="Segoe UI, Segoe MDL2 Assets"
+                                <TextBox x:Uid="Profile_IconBox"
+                                         FontFamily="Segoe UI, Segoe MDL2 Assets"
                                          IsSpellCheckEnabled="False"
                                          Style="{StaticResource TextBoxSettingStyle}"
                                          Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" />
@@ -246,6 +249,7 @@
                             <!--  Opacity  -->
                             <local:SettingContainer x:Name="OpacityContainer"
                                                     x:Uid="Profile_Opacity"
+                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearOpacity}"
                                                     HasSettingValue="{x:Bind State.Profile.HasOpacity, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.OpacityOverrideSource, Mode=OneWay}">
@@ -307,7 +311,8 @@
                                                     ClearSettingValue="{x:Bind State.Profile.ClearScrollState}"
                                                     HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}">
-                                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                    ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
                                                    SelectedItem="{x:Bind CurrentScrollState, Mode=TwoWay}" />
                             </local:SettingContainer>
@@ -412,7 +417,8 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
                                                 HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                            <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentAntiAliasingMode, Mode=TwoWay}" />
                         </local:SettingContainer>
@@ -438,7 +444,8 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearHistorySize}"
                                                 HasSettingValue="{x:Bind State.Profile.HasHistorySize, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.HistorySizeOverrideSource, Mode=OneWay}">
-                            <muxc:NumberBox LargeChange="100"
+                            <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
+                                            LargeChange="100"
                                             Minimum="0"
                                             SmallChange="10"
                                             Style="{StaticResource NumberBoxSettingStyle}"
@@ -450,7 +457,8 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
                                                 HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}">
-                            <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                            <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                               ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
                                                SelectedItem="{x:Bind CurrentCloseOnExitMode, Mode=TwoWay}" />
                         </local:SettingContainer>

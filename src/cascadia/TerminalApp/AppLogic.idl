@@ -34,6 +34,8 @@ namespace TerminalApp
         void RunAsUwp();
         Boolean IsElevated();
 
+        Boolean HasCommandlineArguments();
+        Boolean HasSettingsStartupActions();
         Int32 SetStartupCommandline(String[] commands);
         Int32 ExecuteCommandline(String[] commands, String cwd);
         String ParseCommandlineMessage { get; };
@@ -55,6 +57,7 @@ namespace TerminalApp
         void IdentifyWindow();
         String WindowName;
         UInt64 WindowId;
+        void SetPersistedLayoutIdx(UInt32 idx);
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
         Boolean IsQuakeWindow();
@@ -69,9 +72,13 @@ namespace TerminalApp
         Boolean GetInitialAlwaysOnTop();
         Single CalcSnappedDimension(Boolean widthOrHeight, Single dimension);
         void TitlebarClicked();
-        void WindowCloseButtonClicked();
+        void CloseWindow(Microsoft.Terminal.Settings.Model.LaunchPosition position);
 
         TaskbarState TaskbarState{ get; };
+
+        Boolean ShouldUsePersistedLayout();
+        String GetWindowLayoutJson(Microsoft.Terminal.Settings.Model.LaunchPosition position);
+        void SaveWindowLayoutJsons(Windows.Foundation.Collections.IVector<String> layouts);
 
         Boolean GetMinimizeToNotificationArea();
         Boolean GetAlwaysShowNotificationIcon();
@@ -84,6 +91,7 @@ namespace TerminalApp
         // See IDialogPresenter and TerminalPage's DialogPresenter for more
         // information.
         Windows.Foundation.IAsyncOperation<Windows.UI.Xaml.Controls.ContentDialogResult> ShowDialog(Windows.UI.Xaml.Controls.ContentDialog dialog);
+        void DismissDialog();
 
         event Windows.Foundation.TypedEventHandler<Object, Windows.UI.Xaml.UIElement> SetTitleBarContent;
         event Windows.Foundation.TypedEventHandler<Object, String> TitleChanged;
@@ -99,6 +107,7 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> SettingsChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> IsQuakeWindowChanged;
         event Windows.Foundation.TypedEventHandler<Object, Object> SummonWindowRequested;
+        event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
     }
