@@ -1131,15 +1131,25 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
             {
                 // Audible is set, play the sound
-                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+                // const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                // PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
 
-                    auto uri{ winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk1.mp3") };
-                    auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+                winrt::Windows::Foundation::Uri honks[]{
+                    winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk1.mp3"),
+                    winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk2.mp3"),
+                    winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk3.mp3"),
+                    winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk4.mp3"),
+                    winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk-muffled1.mp3"),
+                    winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk-muffled2.mp3"),
+                    winrt::Windows::Foundation::Uri(L"C:\\Users\\migrie\\Downloads\\memes\\honks\\Honk-muffled3.mp3"),
+                };
+
+                auto uri{ honks[rand() % ARRAYSIZE(honks)] };
+                auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
                     
-                    auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-                    p.Source(item);
-                    p.Play();
+                auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+                p.Source(item);
+                p.Play();
             }
 
             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))
