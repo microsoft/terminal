@@ -230,6 +230,8 @@ private:
 
     bool _zoomed{ false };
 
+    winrt::Windows::Media::Playback::MediaPlayer p{};
+
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
