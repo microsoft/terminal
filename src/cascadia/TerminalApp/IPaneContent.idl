@@ -11,8 +11,10 @@ namespace TerminalApp
         void Focus();
 
         void Close();
-        // event CloseRequested(...);
 
+        Microsoft.Terminal.Settings.Model.NewTerminalArgs GetTerminalArgsForPane();
+
+        // event CloseRequested(...);
     };
 }
 

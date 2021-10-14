@@ -26,6 +26,8 @@ namespace winrt::TerminalApp::implementation
             return _profile;
         };
 
+        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
+
     private:
         winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
         winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };

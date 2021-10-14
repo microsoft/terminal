@@ -77,4 +77,10 @@ namespace winrt::TerminalApp::implementation
     void AdaptiveCardContent::Close()
     {
     }
+
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs AdaptiveCardContent::GetTerminalArgsForPane() const
+    {
+        return nullptr;
+    }
+
 }

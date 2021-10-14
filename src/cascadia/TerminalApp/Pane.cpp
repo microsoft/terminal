@@ -123,63 +123,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
 {
     // Leaves are the only things that have controls
     assert(_IsLeaf());
-
-    NewTerminalArgs args{};
-    // TODO! this is dumb, IPaneContent should define this
-    if (const auto& terminalPane{ _content.try_as<TerminalPaneContent>() }; !terminalPane)
-    {
-        return nullptr;
-    }
-
-    auto termControl{ _content.GetRoot().try_as<TermControl>() };
-    if (!termControl)
-    {
-        return nullptr;
-    }
-    auto controlSettings = termControl.Settings().as<TerminalSettings>();
-
-    args.Profile(controlSettings.ProfileName());
-    // If we know the user's working directory use it instead of the profile.
-    if (const auto dir = termControl.WorkingDirectory(); !dir.empty())
-    {
-        args.StartingDirectory(dir);
-    }
-    else
-    {
-        args.StartingDirectory(controlSettings.StartingDirectory());
-    }
-    args.TabTitle(controlSettings.StartingTitle());
-    args.Commandline(controlSettings.Commandline());
-    args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
-    if (controlSettings.TabColor() || controlSettings.StartingTabColor())
-    {
-        til::color c;
-        // StartingTabColor is prioritized over other colors
-        if (const auto color = controlSettings.StartingTabColor())
-        {
-            c = til::color(color.Value());
-        }
-        else
-        {
-            c = til::color(controlSettings.TabColor().Value());
-        }
-
-        args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
-    }
-
-    if (controlSettings.AppliedColorScheme())
-    {
-        auto name = controlSettings.AppliedColorScheme().Name();
-        // Only save the color scheme if it is different than the profile color
-        // scheme to not override any other profile appearance choices.
-        // TODO!: definitely dirty
-        // if (_profile.DefaultAppearance().ColorSchemeName() != name)
-        // {
-        //     args.ColorScheme(name);
-        // }
-    }
-
-    return args;
+    return _content.GetTerminalArgsForPane();
 }
 
 // Method Description:
@@ -1313,11 +1257,6 @@ TermControl Pane::GetTerminalControl() const
     // TODO! this feels like a hack, the Pane shouldn't know this
     return _IsLeaf() ? _content.GetRoot().try_as<TermControl>() : nullptr;
 }
-
-// FrameworkElement Pane::GetControl() const
-// {
-//     return _IsLeaf() ? _control : nullptr;
-// }
 
 // Method Description:
 // - Recursively remove the "Active" state from this Pane and all it's children.

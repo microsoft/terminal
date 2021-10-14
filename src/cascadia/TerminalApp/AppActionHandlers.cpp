@@ -1149,7 +1149,23 @@ namespace winrt::TerminalApp::implementation
         const float splitSize{ .5f };
 
         auto content{ winrt::make_self<implementation::AdaptiveCardContent>() };
-        content->InitFromString(advancedCard);
+        winrt::hstring json{ advancedCard };
+        try
+        {
+            struct __declspec(uuid("76b3f18c-89ed-4a29-98ac-2096395e7c32")) hack
+            {
+            };
+
+            winrt::guid g{ __uuidof(hack) };
+            auto iCard = winrt::create_instance<TerminalApp::ICardExtension>(g);
+            if (iCard)
+            {
+                json = iCard.GetJson();
+            }
+        }
+        CATCH_LOG();
+
+        content->InitFromString(json);
 
         // Windows::UI::Xaml::Controls::TextBox box{};
         // // box.TextWrapping("Wrap" )

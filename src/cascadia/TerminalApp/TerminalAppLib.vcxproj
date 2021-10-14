@@ -267,6 +267,7 @@
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
+    <Midl Include="ICardExtension.idl" />
     <Midl Include="AdaptiveCardContent.idl" />
     <Midl Include="TerminalPaneContent.idl" />
     <Midl Include="IPaneContent.idl" />

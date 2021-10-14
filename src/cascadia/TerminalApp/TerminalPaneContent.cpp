@@ -143,4 +143,61 @@ namespace winrt::TerminalApp::implementation
         _control.UnfocusedAppearance(unfocusedSettings);
         _control.UpdateSettings();
     }
+
+    // Method Description:
+    // - Extract the terminal settings from the current (leaf) pane's control
+    //   to be used to create an equivalent control
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - Arguments appropriate for a SplitPane or NewTab action
+    NewTerminalArgs TerminalPaneContent::GetTerminalArgsForPane() const
+    {
+        NewTerminalArgs args{};
+
+        auto controlSettings = _control.Settings().as<TerminalSettings>();
+
+        args.Profile(controlSettings.ProfileName());
+        // If we know the user's working directory use it instead of the profile.
+        if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+        {
+            args.StartingDirectory(dir);
+        }
+        else
+        {
+            args.StartingDirectory(controlSettings.StartingDirectory());
+        }
+        args.TabTitle(controlSettings.StartingTitle());
+        args.Commandline(controlSettings.Commandline());
+        args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
+        if (controlSettings.TabColor() || controlSettings.StartingTabColor())
+        {
+            til::color c;
+            // StartingTabColor is prioritized over other colors
+            if (const auto color = controlSettings.StartingTabColor())
+            {
+                c = til::color(color.Value());
+            }
+            else
+            {
+                c = til::color(controlSettings.TabColor().Value());
+            }
+
+            args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
+        }
+
+        if (controlSettings.AppliedColorScheme())
+        {
+            auto name = controlSettings.AppliedColorScheme().Name();
+            // Only save the color scheme if it is different than the profile color
+            // scheme to not override any other profile appearance choices.
+            if (_profile.DefaultAppearance().ColorSchemeName() != name)
+            {
+                args.ColorScheme(name);
+            }
+        }
+
+        return args;
+    }
+
 }

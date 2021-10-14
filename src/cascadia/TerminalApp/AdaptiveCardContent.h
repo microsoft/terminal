@@ -16,6 +16,7 @@ namespace winrt::TerminalApp::implementation
         winrt::Windows::Foundation::Size MinSize();
         void Focus();
         void Close();
+        winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
 
     private:
         winrt::Windows::UI::Xaml::FrameworkElement _root{ nullptr };
