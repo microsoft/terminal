@@ -9,7 +9,8 @@ namespace winrt::TerminalApp::implementation
 {
     struct AdaptiveCardContent : AdaptiveCardContentT<AdaptiveCardContent>
     {
-        AdaptiveCardContent() = default;
+        AdaptiveCardContent();
+        bool InitFromString(const winrt::hstring& jsonString);
 
         winrt::Windows::UI::Xaml::FrameworkElement GetRoot();
         winrt::Windows::Foundation::Size MinSize();
@@ -18,6 +19,6 @@ namespace winrt::TerminalApp::implementation
 
     private:
         winrt::Windows::UI::Xaml::FrameworkElement _root{ nullptr };
-        winrt::AdaptiveCards::Rendering::Uwp::RenderedAdaptiveCard _card{ nullptr };
+        winrt::AdaptiveCards::Rendering::Uwp::RenderedAdaptiveCard _renderedCard{ nullptr };
     };
 }

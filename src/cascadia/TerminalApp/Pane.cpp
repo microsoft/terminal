@@ -41,13 +41,6 @@ Pane::Pane(const IPaneContent& content, const bool lastFocused) :
     _root.Children().Append(_borderFirst);
     _borderFirst.Child(content.GetRoot());
 
-    // const auto& termControl{ _control.try_as<TermControl>() };
-    // if (termControl)
-    // {
-    //     _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
-    //     _warningBellToken = termControl.WarningBell({ this, &Pane::_ControlWarningBellHandler });
-    // }
-
     // On the first Pane's creation, lookup resources we'll use to theme the
     // Pane, including the brushed to use for the focused/unfocused border
     // color.
@@ -2949,10 +2942,10 @@ float Pane::CalcSnappedDimension(const bool widthOrHeight, const float dimension
 //   If requested size is already snapped, then both returned values equal this value.
 Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
 {
-    // TODO!: Again, bad. We're special-casing that the content just so happens to have a TermControl
-    const auto& termControl{ _content.GetRoot().try_as<TermControl>() };
     if (_IsLeaf())
     {
+        // TODO!: Again, bad. We're special-casing that the content just so happens to have a TermControl
+        const auto& termControl{ _content.GetRoot().try_as<TermControl>() };
         if (!termControl)
         {
             return { dimension, dimension };
@@ -3032,35 +3025,40 @@ Pane::SnapSizeResult Pane::_CalcSnappedDimension(const bool widthOrHeight, const
 // - <none>
 void Pane::_AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const
 {
-    // TODO!: Again, bad. We're special-casing that the content just so happens to have a TermControl
-    const auto& termControl{ _content.GetRoot().try_as<TermControl>() };
-    if (_IsLeaf() && termControl)
+    if (_IsLeaf())
     {
-        // We're a leaf pane, so just add one more row or column (unless isMinimumSize
-        // is true, see below).
-
-        if (sizeNode.isMinimumSize)
+        // TODO!: Again, bad. We're special-casing that the content just so happens to have a TermControl
+        const auto& termControl{ _content.GetRoot().try_as<TermControl>() };
+        if (termControl)
         {
-            // If the node is of its minimum size, this size might not be snapped (it might
-            // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
-            // however be already snapped, so add 1 to make sure it really increases
-            // (not strictly necessary but to avoid surprises).
-            sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
+            // We're a leaf pane, so just add one more row or column (unless isMinimumSize
+            // is true, see below).
+
+            if (sizeNode.isMinimumSize)
+            {
+                // If the node is of its minimum size, this size might not be snapped (it might
+                // be, say, half a character, or fixed 10 pixels), so snap it upward. It might
+                // however be already snapped, so add 1 to make sure it really increases
+                // (not strictly necessary but to avoid surprises).
+                sizeNode.size = _CalcSnappedDimension(widthOrHeight, sizeNode.size + 1).higher;
+            }
+            else
+            {
+                const auto cellSize = termControl.CharacterDimensions();
+                sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
+            }
+
         }
         else
         {
-            const auto cellSize = termControl.CharacterDimensions();
-            sizeNode.size += widthOrHeight ? cellSize.Width : cellSize.Height;
+            // If we're a leaf that didn't have a TermControl, then just increment
+            // by one. We have to increment by _some_ value, because this is used in
+            // a while() loop to find the next bigger size we can snap to. But since
+            // a non-terminal control doesn't really care what size it's snapped to,
+            // we can just say "one pixel larger is the next snap point"
+            sizeNode.size += 1;
+
         }
-    }
-    else if (_IsLeaf())
-    {
-        // If we're a leaf that didn't have a TermControl, then just increment
-        // by one. We have to increment by _some_ value, because this is used in
-        // a while() loop to find the next bigger size we can snap to. But since
-        // a non-terminal control doesn't really care what size it's snapped to,
-        // we can just say "one pixel larger is the next snap point"
-        sizeNode.size += 1;
     }
     else if (!_IsLeaf())
     {

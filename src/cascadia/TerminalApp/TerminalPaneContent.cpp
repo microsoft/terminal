@@ -58,23 +58,6 @@ namespace winrt::TerminalApp::implementation
     void TerminalPaneContent::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& /*sender*/,
                                                                     const winrt::Windows::Foundation::IInspectable& /*args*/)
     {
-        // std::unique_lock lock{ _createCloseLock };
-        // // It's possible that this event handler started being executed, then before
-        // // we got the lock, another thread created another child. So our control is
-        // // actually no longer _our_ control, and instead could be a descendant.
-        // //
-        // // When the control's new Pane takes ownership of the control, the new
-        // // parent will register it's own event handler. That event handler will get
-        // // fired after this handler returns, and will properly cleanup state.
-        // if (!_IsLeaf())
-        // {
-        //     return;
-        // }
-        // const auto& termControl{ _control.try_as<TermControl>() };
-        // if (!termControl)
-        // {
-        //     return;
-        // }
         const auto newConnectionState = _control.ConnectionState();
         const auto previousConnectionState = std::exchange(_connectionState, newConnectionState);
 

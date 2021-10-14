@@ -5,6 +5,7 @@
 #include "App.h"
 
 #include "TerminalPage.h"
+#include "AdaptiveCardContent.h"
 #include "../WinRTUtils/inc/WtExeUtils.h"
 #include "../../types/inc/utils.hpp"
 #include "Utils.h"
@@ -20,8 +21,6 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Control;
 using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace ::TerminalApp;
-using namespace winrt::AdaptiveCards::Rendering::Uwp;
-// using namespace winrt::AdaptiveCards::ObjectModel::Uwp;
 
 namespace winrt
 {
@@ -1149,61 +1148,34 @@ namespace winrt::TerminalApp::implementation
         const auto realSplitType = focusedTab->PreCalculateAutoSplit(availableSpace);
         const float splitSize{ .5f };
 
-        Windows::UI::Xaml::Controls::TextBox box{};
-        // box.TextWrapping("Wrap" )
-        box.AcceptsReturn(true);
-        box.IsSpellCheckEnabled(true);
-        Windows::UI::Xaml::Controls::Control c{ box };
+        auto content{ winrt::make_self<implementation::AdaptiveCardContent>() };
+        content->InitFromString(advancedCard);
 
-        AdaptiveCardRenderer renderer{};
+        // Windows::UI::Xaml::Controls::TextBox box{};
+        // // box.TextWrapping("Wrap" )
+        // box.AcceptsReturn(true);
+        // box.IsSpellCheckEnabled(true);
+        // Windows::UI::Xaml::Controls::Control c{ box };
 
-        winrt::hstring jsonString{ advancedCard };
+        // AdaptiveCardRenderer renderer{};
 
-        auto card{ winrt::AdaptiveCards::Rendering::Uwp::AdaptiveCard::FromJsonString(jsonString) };
-        // Alternatively:
-        // var card = AdaptiveCard.FromJson(jsonObject);
+        // winrt::hstring jsonString{ advancedCard };
 
-        RenderedAdaptiveCard renderedAdaptiveCard{ renderer.RenderAdaptiveCard(card.AdaptiveCard()) };
+        // auto card{ winrt::AdaptiveCards::Rendering::Uwp::AdaptiveCard::FromJsonString(jsonString) };
+        // // Alternatively:
+        // // var card = AdaptiveCard.FromJson(jsonObject);
 
-        renderedAdaptiveCard.Action([](const auto& /*s*/, const AdaptiveActionEventArgs& args) {
-            auto a = 0;
-            a++;
-            a;
+        // RenderedAdaptiveCard renderedAdaptiveCard{ renderer.RenderAdaptiveCard(card.AdaptiveCard()) };
 
-            if (const auto& openUrlAction{ args.Action().try_as<AdaptiveOpenUrlAction>() })
-            {
-                // await Launcher.LaunchUriAsync(openUrlAction.Url);
-            }
-            else if (const auto& showCardAction{ args.Action().try_as<AdaptiveShowCardAction>() })
-            {
-                // This is only fired if, in HostConfig, you set the ShowCard
-                // ActionMode to Popup. Otherwise, the renderer will
-                // automatically display the card inline without firing this
-                // event.
-            }
-            else if (const auto& submitAction{ args.Action().try_as<AdaptiveSubmitAction>() })
-            {
-                // Get the data and inputs
-                const auto data{ submitAction.DataJson().Stringify() };
-                const auto inputs{ args.Inputs().AsJson().Stringify() };
-                // Process them as desired
-                data;
-                inputs;
-                auto a = 0;
-                a++;
-                a;
-            }
-        });
+        // _cards.Append(renderedAdaptiveCard);
+        // const auto fwe{ renderedAdaptiveCard.FrameworkElement() };
 
-        _cards.Append(renderedAdaptiveCard);
-        const auto fwe{ renderedAdaptiveCard.FrameworkElement() };
-
-        Windows::UI::Xaml::Controls::Grid g{};
-        g.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Stretch);
-        g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
-        g.Children().Append(renderedAdaptiveCard.FrameworkElement());
-        g.RequestedTheme(_settings.GlobalSettings().Theme());
-        focusedTab->SplitPane(realSplitType, splitSize, nullptr);
+        // Windows::UI::Xaml::Controls::Grid g{};
+        // g.HorizontalAlignment(Windows::UI::Xaml::HorizontalAlignment::Stretch);
+        // g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
+        // g.Children().Append(renderedAdaptiveCard.FrameworkElement());
+        // g.RequestedTheme(_settings.GlobalSettings().Theme());
+        focusedTab->SplitPane(realSplitType, splitSize, *content);
 
         args.Handled(true);
     }

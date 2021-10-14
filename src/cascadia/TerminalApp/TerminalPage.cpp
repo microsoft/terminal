@@ -52,7 +52,6 @@ namespace winrt::TerminalApp::implementation
     TerminalPage::TerminalPage() :
         _tabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
         _mruTabs{ winrt::single_threaded_observable_vector<TerminalApp::TabBase>() },
-        _cards{ winrt::single_threaded_observable_vector<winrt::AdaptiveCards::Rendering::Uwp::RenderedAdaptiveCard>() },
         _startupActions{ winrt::single_threaded_vector<ActionAndArgs>() },
         _hostingHwnd{}
     {

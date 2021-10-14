@@ -161,8 +161,6 @@ namespace winrt::TerminalApp::implementation
         Windows::Foundation::Collections::IObservableVector<TerminalApp::TabBase> _mruTabs;
         static winrt::com_ptr<TerminalTab> _GetTerminalTabImpl(const TerminalApp::TabBase& tab);
 
-        Windows::Foundation::Collections::IObservableVector<winrt::AdaptiveCards::Rendering::Uwp::RenderedAdaptiveCard> _cards;
-
         void _UpdateTabIndices();
 
         TerminalApp::SettingsTab _settingsTab{ nullptr };
