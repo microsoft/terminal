@@ -1203,7 +1203,7 @@ namespace winrt::TerminalApp::implementation
         g.VerticalAlignment(Windows::UI::Xaml::VerticalAlignment::Stretch);
         g.Children().Append(renderedAdaptiveCard.FrameworkElement());
         g.RequestedTheme(_settings.GlobalSettings().Theme());
-        focusedTab->SplitPane(realSplitType, splitSize, nullptr, g);
+        focusedTab->SplitPane(realSplitType, splitSize, nullptr);
 
         args.Handled(true);
     }

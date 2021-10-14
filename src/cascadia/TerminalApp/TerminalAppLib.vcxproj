@@ -141,6 +141,12 @@
     <ClInclude Include="AppLogic.h">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="AdaptiveCardContent.h">
+      <DependentUpon>AdaptiveCardContent.idl</DependentUpon>
+    </ClInclude>
+    <ClInclude Include="TerminalPaneContent.h">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="Toast.h" />
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
@@ -234,6 +240,12 @@
     <ClCompile Include="AppLogic.cpp">
       <DependentUpon>AppLogic.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="AdaptiveCardContent.cpp">
+      <DependentUpon>AdaptiveCardContent.idl</DependentUpon>
+    </ClCompile>
+    <ClCompile Include="TerminalPaneContent.cpp">
+      <DependentUpon>TerminalPaneContent.idl</DependentUpon>
+    </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Toast.cpp" />
   </ItemGroup>
@@ -255,6 +267,9 @@
     <Midl Include="ShortcutActionDispatch.idl" />
     <Midl Include="AppKeyBindings.idl" />
     <Midl Include="AppLogic.idl" />
+    <Midl Include="AdaptiveCardContent.idl" />
+    <Midl Include="TerminalPaneContent.idl" />
+    <Midl Include="IPaneContent.idl" />
     <Midl Include="MinMaxCloseControl.idl">
       <DependentUpon>MinMaxCloseControl.xaml</DependentUpon>
       <SubType>Code</SubType>

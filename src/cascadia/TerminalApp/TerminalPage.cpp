@@ -1589,7 +1589,8 @@ namespace winrt::TerminalApp::implementation
 
             _UnZoomIfNeeded();
 
-            tab.SplitPane(realSplitType, splitSize, profile, newControl);
+            auto content{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            tab.SplitPane(realSplitType, splitSize, content);
 
             // After GH#6586, the control will no longer focus itself
             // automatically when it's finished being laid out. Manually focus

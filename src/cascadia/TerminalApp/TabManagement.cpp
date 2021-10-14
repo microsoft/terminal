@@ -282,8 +282,8 @@ namespace winrt::TerminalApp::implementation
         // Give term control a child of the settings so that any overrides go in the child
         // This way, when we do a settings reload we just update the parent and the overrides remain
         auto term = _InitControl(settings, connection);
-
-        auto newTabImpl = winrt::make_self<TerminalTab>(profile, term);
+        auto content{ winrt::make<TerminalPaneContent>(profile, term) };
+        auto newTabImpl = winrt::make_self<TerminalTab>(content);
         _RegisterTerminalEvents(term);
         _InitializeTab(newTabImpl);
 
@@ -292,8 +292,8 @@ namespace winrt::TerminalApp::implementation
             auto newControl = _InitControl(settings, debugConnection);
             _RegisterTerminalEvents(newControl);
             // Split (auto) with the debug tap.
-
-            newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, profile, newControl);
+            auto content{ winrt::make<TerminalPaneContent>(profile, newControl) };
+            newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, content);
         }
     }
 

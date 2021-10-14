@@ -25,9 +25,9 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
+    TerminalTab::TerminalTab(const IPaneContent& content)
     {
-        _rootPane = std::make_shared<Pane>(profile, control, true);
+        _rootPane = std::make_shared<Pane>(content, true);
 
         _rootPane->Id(_nextPaneId);
         _activePane = _rootPane;
@@ -515,15 +515,14 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalTab::SplitPane(SplitDirection splitType,
                                 const float splitSize,
-                                const Profile& profile,
-                                const FrameworkElement& control)
+                                const IPaneContent& content)
     {
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         // Depending on which direction will be split, the new pane can be
         // either the first or second child, but this will always return the
         // original pane first.
-        auto [original, newPane] = _activePane->Split(splitType, splitSize, profile, control);
+        auto [original, newPane] = _activePane->Split(splitType, splitSize, content);
         // The active pane has an id if it is a leaf
         if (activePaneId)
         {
@@ -536,7 +535,8 @@ namespace winrt::TerminalApp::implementation
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        if (const auto& termControl{ control.try_as<TermControl>() })
+        // TODO!: feels dirty
+        if (const auto& termControl{ content.GetRoot().try_as<TermControl>() })
         {
             _AttachEventHandlersToControl(newPane->Id().value(), termControl);
         }

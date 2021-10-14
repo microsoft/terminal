@@ -1,0 +1,12 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "IPaneContent.idl";
+
+namespace TerminalApp
+{
+    [default_interface] runtimeclass AdaptiveCardContent : IPaneContent
+    {
+    }
+}
+

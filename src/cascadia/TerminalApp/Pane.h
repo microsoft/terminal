@@ -22,6 +22,7 @@
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "TaskbarState.h"
+#include "TerminalPaneContent.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests
@@ -55,8 +56,7 @@ enum class SplitState : int
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    Pane(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-         const winrt::Windows::UI::Xaml::FrameworkElement& control,
+    Pane(const winrt::TerminalApp::IPaneContent& content,
          const bool lastFocused = false);
 
     Pane(std::shared_ptr<Pane> first,
@@ -66,7 +66,7 @@ public:
          const bool lastFocused = false);
 
     std::shared_ptr<Pane> GetActivePane();
-    winrt::Windows::UI::Xaml::FrameworkElement GetControl() const;
+    // winrt::Windows::UI::Xaml::FrameworkElement GetControl() const;
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl() const;
     winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
     winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
@@ -76,7 +76,11 @@ public:
     // - If this is a branch/root pane, return nullptr.
     winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
     {
-        return _profile;
+        if (const auto& c{ _content.try_as<winrt::TerminalApp::TerminalPaneContent>() })
+        {
+            return c.GetProfile();
+        }
+        return nullptr;
     }
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
@@ -111,8 +115,7 @@ public:
 
     std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                   const float splitSize,
-                                                                  const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                                                                  const winrt::Windows::UI::Xaml::FrameworkElement& control);
+                                                                  const winrt::TerminalApp::IPaneContent& content);
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
@@ -202,8 +205,9 @@ private:
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
     winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
     winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
-    winrt::Windows::UI::Xaml::FrameworkElement _control{ nullptr };
-    winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
+    winrt::TerminalApp::IPaneContent _content{ nullptr };
+    // winrt::Windows::UI::Xaml::FrameworkElement _control{ nullptr };
+    // winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_unfocusedBorderBrush;
 
@@ -216,11 +220,11 @@ private:
     std::weak_ptr<Pane> _parentChildPath{};
 
     bool _lastActive{ false };
-    winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
-    winrt::event_token _connectionStateChangedToken{ 0 };
+    // winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
+    // winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
-    winrt::event_token _warningBellToken{ 0 };
+    // winrt::event_token _warningBellToken{ 0 };
 
     winrt::Windows::UI::Xaml::UIElement::GotFocus_revoker _gotFocusRevoker;
     winrt::Windows::UI::Xaml::UIElement::LostFocus_revoker _lostFocusRevoker;
@@ -264,7 +268,8 @@ private:
 
     void _Focus();
     void _FocusFirstChild();
-    void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
+    void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender,
+                                               const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
                                     winrt::Windows::Foundation::IInspectable const& e);
     void _ControlGotFocusHandler(winrt::Windows::Foundation::IInspectable const& sender,
