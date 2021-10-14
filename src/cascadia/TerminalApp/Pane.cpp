@@ -80,7 +80,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     assert(_IsLeaf());
 
     NewTerminalArgs args{};
-    auto controlSettings = _control.Settings();//.as<TerminalSettings>();
+    auto controlSettings = _control.Settings(); //.as<TerminalSettings>();
 
     args.Profile(controlSettings.ProfileName());
     args.StartingDirectory(controlSettings.StartingDirectory());
@@ -103,11 +103,15 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
         args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
     }
 
-    if (controlSettings.AppliedColorScheme())
-    {
-        auto name = controlSettings.AppliedColorScheme().Name();
-        args.ColorScheme(name);
-    }
+    // TODO!: Will we be able to persist this? Or will runtime-changed settings
+    // always be lost? Think like, changing the font size with an action. That's
+    // lost.
+    //
+    // if (controlSettings.AppliedColorScheme())
+    // {
+    //     auto name = controlSettings.AppliedColorScheme().Name();
+    //     args.ColorScheme(name);
+    // }
 
     return args;
 }
