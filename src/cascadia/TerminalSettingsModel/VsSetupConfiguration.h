@@ -41,8 +41,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             VsSetupInstance(VsSetupInstance&& other) = default;
             VsSetupInstance& operator=(VsSetupInstance&&) = default;
 
-            VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance);
-
             std::wstring ResolvePath(std::wstring_view relativePath) const
             {
                 return VsSetupConfiguration::ResolvePath(inst.get(), relativePath);
@@ -66,11 +64,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             unsigned long long GetComparableVersion() const noexcept
             {
                 return version;
-            }
-
-            bool IsRelease() const noexcept
-            {
-                return isRelease;
             }
 
             std::wstring GetInstallationPath() const
@@ -122,15 +115,61 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             }
 
         private:
+            friend class VsSetupConfiguration;
+
+            VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
+                query(pQuery), // Copy and AddRef the query object.
+                inst(std::move(pInstance)), // Take ownership of the instance object.
+                profileNameSuffix(BuildProfileNameSuffix()),
+                installDate(GetInstallDate()),
+                version(GetInstallationVersion())
+            {
+            }
+
             ComPtrSetupQuery query;
             ComPtrSetupInstance inst;
 
             std::wstring profileNameSuffix;
 
             // Cache oft-accessed properties used in sorting.
-            unsigned long long installDate = 0;
-            unsigned long long version = 0;
-            bool isRelease = false;
+            unsigned long long installDate;
+            unsigned long long version;
+
+            std::wstring BuildProfileNameSuffix() const
+            {
+                ComPtrCatalogPropertyStore catalogProperties = GetCatalogPropertyStore();
+                if (catalogProperties != nullptr)
+                {
+                    std::wstring suffix;
+
+                    std::wstring productLine{ GetProductLineVersion(catalogProperties.get()) };
+                    suffix.append(productLine);
+
+                    ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
+                    if (customProperties != nullptr)
+                    {
+                        std::wstring nickname{ GetNickname(customProperties.get()) };
+                        if (!nickname.empty())
+                        {
+                            suffix.append(L" (" + nickname + L")");
+                        }
+                        else
+                        {
+                            ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
+                            suffix.append(GetChannelNameSuffixTag(instanceProperties.get()));
+                        }
+                    }
+                    else
+                    {
+                        ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
+                        suffix.append(GetChannelNameSuffixTag(instanceProperties.get()));
+                    }
+
+                    return suffix;
+                }
+
+                return GetVersion();
+            }
 
             unsigned long long GetInstallDate() const
             {
@@ -146,6 +185,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
                 THROW_IF_FAILED(helper->ParseVersion(versionString.data(), &version));
                 return version;
+            }
+
+            static std::wstring GetChannelNameSuffixTag(ISetupPropertyStore* instanceProperties)
+            {
+                std::wstring tag;
+                std::wstring channelName{ GetChannelName(instanceProperties) };
+
+                if (channelName.empty())
+                {
+                    return channelName;
+                }
+
+                if (channelName != L"Release")
+                {
+                    tag.append(L" [" + channelName + L"]");
+                }
+
+                return tag;
             }
 
             static std::wstring GetChannelId(ISetupPropertyStore* instanceProperties)

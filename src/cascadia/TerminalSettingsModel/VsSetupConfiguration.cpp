@@ -6,50 +6,6 @@
 
 using namespace winrt::Microsoft::Terminal::Settings::Model;
 
-VsSetupConfiguration::VsSetupInstance::VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
-    query(pQuery), // Copy and AddRef the query object.
-    inst(std::move(pInstance)), // Take ownership of the instance object.
-    installDate(GetInstallDate()),
-    version(GetInstallationVersion())
-{
-    ComPtrCatalogPropertyStore catalogProperties = GetCatalogPropertyStore();
-    ComPtrCustomPropertyStore customProperties = GetCustomPropertyStore();
-    ComPtrPropertyStore instanceProperties = GetInstancePropertyStore();
-
-    const auto nickname = customProperties ? GetNickname(customProperties.get()) : std::wstring{};
-    auto channelName = instanceProperties ? GetChannelName(instanceProperties.get()) : std::wstring{};
-
-    if (channelName == L"Release")
-    {
-        channelName.clear();
-    }
-
-    isRelease = channelName.empty();
-
-    if (catalogProperties)
-    {
-        profileNameSuffix.append(GetProductLineVersion(catalogProperties.get()));
-
-        if (!nickname.empty())
-        {
-            profileNameSuffix.append(L" (");
-            profileNameSuffix.append(nickname);
-            profileNameSuffix.append(L")");
-        }
-
-        if (!channelName.empty())
-        {
-            profileNameSuffix.append(L" [");
-            profileNameSuffix.append(channelName);
-            profileNameSuffix.append(L"]");
-        }
-    }
-    else
-    {
-        profileNameSuffix = GetVersion();
-    }
-}
-
 std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryInstances()
 {
     std::vector<VsSetupInstance> instances;
@@ -70,15 +26,8 @@ std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryIn
         instances.emplace_back(pQuery, std::move(rgpInstance));
     }
 
-    if (instances.empty())
-    {
-        return instances;
-    }
-
     // Sort instances based on version and install date from latest to oldest.
-    const auto beg = instances.begin();
-    const auto end = instances.end();
-    std::sort(beg, end, [](const VsSetupInstance& a, const VsSetupInstance& b) {
+    std::sort(instances.begin(), instances.end(), [](const VsSetupInstance& a, const VsSetupInstance& b) {
         auto const aVersion = a.GetComparableVersion();
         auto const bVersion = b.GetComparableVersion();
 
@@ -89,17 +38,6 @@ std::vector<VsSetupConfiguration::VsSetupInstance> VsSetupConfiguration::QueryIn
 
         return aVersion > bVersion;
     });
-
-    // The first instance is the most preferred one and the only one that isn't hidden by default.
-    // This code tries to prefer any installed Release version of VS over Preview ones.
-    if (!instances[0].IsRelease())
-    {
-        const auto it = std::find_if(beg + 1, end, [](const VsSetupInstance& a) { return a.IsRelease(); });
-        if (it != end)
-        {
-            std::rotate(beg, it, end);
-        }
-    }
 
     return instances;
 }

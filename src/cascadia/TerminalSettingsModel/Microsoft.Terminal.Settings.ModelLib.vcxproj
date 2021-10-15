@@ -77,6 +77,7 @@
     <ClInclude Include="TerminalWarnings.h">
       <DependentUpon>TerminalWarnings.idl</DependentUpon>
     </ClInclude>
+    <ClInclude Include="VsDevCmdGenerator.h" />
     <ClInclude Include="VsDevShellGenerator.h" />
     <ClInclude Include="VsSetupConfiguration.h" />
     <ClInclude Include="WslDistroGenerator.h" />
@@ -146,6 +147,7 @@
     <ClCompile Include="EnumMappings.cpp">
       <DependentUpon>EnumMappings.idl</DependentUpon>
     </ClCompile>
+    <ClCompile Include="VsDevCmdGenerator.cpp" />
     <ClCompile Include="VsDevShellGenerator.cpp" />
     <ClCompile Include="VsSetupConfiguration.cpp" />
     <ClCompile Include="WslDistroGenerator.cpp" />
