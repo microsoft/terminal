@@ -1334,6 +1334,12 @@
               "$ref": "#/$defs/MoveTabAction"
             },
             {
+              "$ref": "#/$defs/MultipleActionsAction"
+            },
+            {
+              "$ref": "#/$defs/CommandPaletteAction"
+            },
+            {
               "$ref": "#/$defs/FindMatchAction"
             },
             {
