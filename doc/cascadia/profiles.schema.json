@@ -506,7 +506,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "adjustFontSize"
+              "const": "adjustFontSize"
             },
             "delta": {
               "type": "integer",
@@ -530,7 +530,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "copy"
+              "const": "copy"
             },
             "singleLine": {
               "type": "boolean",
@@ -566,7 +566,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "newTab"
+              "const": "newTab"
             }
           }
         }
@@ -582,7 +582,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "switchToTab"
+              "const": "switchToTab"
             },
             "index": {
               "type": "integer",
@@ -606,7 +606,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "movePane"
+              "const": "movePane"
             },
             "index": {
               "type": "integer",
@@ -630,7 +630,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "moveFocus"
+              "const": "moveFocus"
             },
             "direction": {
               "$ref": "#/$defs/FocusDirection",
@@ -654,7 +654,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "swapPane"
+              "const": "swapPane"
             },
             "direction": {
               "$ref": "#/$defs/FocusDirection",
@@ -678,7 +678,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "resizePane"
+              "const": "resizePane"
             },
             "direction": {
               "$ref": "#/$defs/ResizeDirection",
@@ -702,7 +702,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "sendInput"
+              "const": "sendInput"
             },
             "input": {
               "type": "string",
@@ -729,7 +729,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "splitPane"
+              "const": "splitPane"
             },
             "split": {
               "$ref": "#/$defs/SplitDirection",
@@ -761,7 +761,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "openSettings"
+              "const": "openSettings"
             },
             "target": {
               "type": "string",
@@ -788,7 +788,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "setTabColor"
+              "const": "setTabColor"
             },
             "color": {
               "$ref": "#/$defs/Color",
@@ -809,7 +809,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "setColorScheme"
+              "const": "setColorScheme"
             },
             "colorScheme": {
               "type": "string",
@@ -833,7 +833,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "wt"
+              "const": "wt"
             },
             "commandline": {
               "type": "string",
@@ -857,7 +857,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeOtherTabs"
+              "const": "closeOtherTabs"
             },
             "index": {
               "oneOf": [
@@ -885,7 +885,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeTabsAfter"
+              "const": "closeTabsAfter"
             },
             "index": {
               "oneOf": [
@@ -913,7 +913,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeTab"
+              "const": "closeTab"
             },
             "index": {
               "oneOf": [
@@ -941,7 +941,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "scrollUp"
+              "const": "scrollUp"
             },
             "rowsToScroll": {
               "type": [
@@ -965,7 +965,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "scrollDown"
+              "const": "scrollDown"
             },
             "rowsToScroll": {
               "type": [
@@ -989,7 +989,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "moveTab"
+              "const": "moveTab"
             },
             "direction": {
               "$ref": "#/$defs/MoveTabDirection",
@@ -1012,7 +1012,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "multipleActions"
+              "const": "multipleActions"
             },
             "actions": {
               "$ref": "#/$defs/ShortcutAction",
@@ -1037,7 +1037,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "commandPalette"
+              "const": "commandPalette"
             },
             "launchMode": {
               "$ref": "#/$defs/CommandPaletteLaunchMode",
@@ -1058,7 +1058,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "findMatch"
+              "const": "findMatch"
             },
             "direction": {
               "$ref": "#/$defs/FindMatchDirection",
@@ -1085,7 +1085,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "newWindow"
+              "const": "newWindow"
             }
           }
         }
@@ -1101,7 +1101,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "prevTab"
+              "const": "prevTab"
             },
             "tabSwitcherMode": {
               "$ref": "#/$defs/SwitchToAdjacentTabArgs",
@@ -1122,7 +1122,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "nextTab"
+              "const": "nextTab"
             },
             "tabSwitcherMode": {
               "$ref": "#/$defs/SwitchToAdjacentTabArgs",
@@ -1143,7 +1143,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "renameTab"
+              "const": "renameTab"
             },
             "title": {
               "type": "string",
@@ -1164,7 +1164,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "renameWindow"
+              "const": "renameWindow"
             },
             "name": {
               "type": "string",
@@ -1185,7 +1185,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "focusPane"
+              "const": "focusPane"
             },
             "id": {
               "type": "integer",
@@ -1207,7 +1207,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "globalSummon"
+              "const": "globalSummon"
             },
             "desktop": {
               "type": "string",
@@ -1258,7 +1258,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "quakeMode"
+              "const": "quakeMode"
             }
           }
         }
