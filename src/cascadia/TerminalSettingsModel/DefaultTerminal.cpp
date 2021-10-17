@@ -83,7 +83,7 @@ bool DefaultTerminal::HasCurrent()
     return currentPackage.terminal.clsid != CLSID{};
 }
 
-void DefaultTerminal::Current(const Model::DefaultTerminal& term)
+void DefaultTerminal::SetCurrent(const Model::DefaultTerminal& term)
 {
     THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
 

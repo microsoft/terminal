@@ -99,7 +99,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         Model::Profile GetProfileForArgs(const Model::NewTerminalArgs& newTerminalArgs) const;
 
         Model::Profile DuplicateProfile(const Model::Profile& source);
-        void RefreshDefaultTerminals();
 
         static bool IsDefaultTerminalAvailable() noexcept;
         static bool IsDefaultTerminalSet() noexcept;

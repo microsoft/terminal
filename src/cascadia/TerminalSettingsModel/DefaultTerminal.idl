@@ -9,5 +9,7 @@ namespace Microsoft.Terminal.Settings.Model
         String Author { get; };
         String Version { get; };
         String Icon { get; };
+
+        static void SetCurrent(DefaultTerminal term);
     }
 }

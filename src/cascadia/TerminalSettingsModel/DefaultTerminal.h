@@ -19,6 +19,7 @@ Author(s):
 #pragma once
 
 #include "DefaultTerminal.g.h"
+#include "../inc/cppwinrt_utils.h"
 
 #include "../../propslib/DelegationConfig.hpp"
 
@@ -35,9 +36,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> Available();
         static bool HasCurrent();
-        static void Current(const Model::DefaultTerminal& term);
+        static void SetCurrent(const Model::DefaultTerminal& term);
 
     private:
         DelegationConfig::DelegationPackage _pkg;
     };
+}
+
+namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
+{
+    BASIC_FACTORY(DefaultTerminal);
 }

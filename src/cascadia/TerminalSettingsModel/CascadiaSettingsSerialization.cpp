@@ -1240,7 +1240,7 @@ void CascadiaSettings::WriteSettingsToDisk() const
     // otherwise.
     if (_currentDefaultTerminal)
     {
-        Model::DefaultTerminal::Current(_currentDefaultTerminal);
+        Model::DefaultTerminal::SetCurrent(_currentDefaultTerminal);
     }
 }
 

@@ -1190,25 +1190,6 @@ winrt::hstring CascadiaSettings::ApplicationVersion()
     return RS_(L"ApplicationVersionUnknown");
 }
 
-// Method Description:
-// - Forces a refresh of all default terminal state. This hits the registry to
-//   read off the disk, so best to not do it on the UI thread.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none> - Updates internal state
-void CascadiaSettings::RefreshDefaultTerminals()
-{
-    _defaultTerminals.Clear();
-
-    for (const auto& term : Model::DefaultTerminal::Available())
-    {
-        _defaultTerminals.Append(term);
-    }
-
-    _currentDefaultTerminal = Model::DefaultTerminal::Current();
-}
-
 // Helper to do the version check
 static bool _isOnBuildWithDefTerm() noexcept
 {
@@ -1264,7 +1245,7 @@ IObservableVector<Settings::Model::DefaultTerminal> CascadiaSettings::DefaultTer
 // - <none>
 // Return Value:
 // - the selected default terminal application
-Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() const noexcept
+Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noexcept
 {
     _refreshDefaultTerminals();
     return _currentDefaultTerminal;
@@ -1276,7 +1257,7 @@ Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() cons
 // - terminal - Terminal from `DefaultTerminals` list to set as default
 // Return Value:
 // - <none>
-void CascadiaSettings::CurrentDefaultTerminal(Settings::Model::DefaultTerminal terminal)
+void CascadiaSettings::CurrentDefaultTerminal(const Settings::Model::DefaultTerminal& terminal)
 {
     _currentDefaultTerminal = terminal;
 }

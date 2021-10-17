@@ -33,7 +33,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::LaunchPageNavigationState>();
-        _State.Settings().RefreshDefaultTerminals();
     }
 
     IInspectable Launch::CurrentDefaultProfile()
