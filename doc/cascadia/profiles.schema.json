@@ -459,7 +459,7 @@
         },
         "suppressApplicationTitle": {
           "type": "boolean",
-          "default": "false",
+          "default": false,
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
         },
         "colorScheme": {
@@ -1575,22 +1575,22 @@
           "deprecated": true
         },
         "minimizeToNotificationArea": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the notification area through which the user can access their windows.",
           "type": "boolean"
         },
         "alwaysShowNotificationIcon": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
         "showAdminShield": {
-          "default": "true",
+          "default": true,
           "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
           "type": "boolean"
         },
         "useAcrylicInTabRow": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
           "type": "boolean"
         },
