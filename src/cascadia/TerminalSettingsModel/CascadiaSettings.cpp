@@ -46,7 +46,6 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
     _activeProfiles{ winrt::single_threaded_observable_vector<Model::Profile>() },
     _warnings{ winrt::single_threaded_vector<SettingsLoadWarnings>() },
     _deserializationErrorMessage{ L"" },
-    _defaultTerminals{ winrt::single_threaded_observable_vector<Model::DefaultTerminal>() },
     _currentDefaultTerminal{ nullptr }
 {
     if (addDynamicProfiles)
