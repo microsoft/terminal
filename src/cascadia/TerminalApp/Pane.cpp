@@ -1476,8 +1476,8 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
         // sure the unfocused settings inherit from that.
         unfocusedSettings.SetParent(controlSettings);
     }
-    _control.UnfocusedAppearance(unfocusedSettings);
-    _control.UpdateSettings();
+    // _control.UnfocusedAppearance(unfocusedSettings);
+    _control.UpdateControlSettings(controlSettings, unfocusedSettings);
 }
 
 // Method Description:

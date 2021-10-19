@@ -49,6 +49,7 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
+                             Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
         _settings{ winrt::make_self<ControlSettings>(settings, nullptr) },
         _isInternalScrollBarUpdate{ false },
@@ -62,7 +63,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, connection);
         _core = _interactivity.Core();
 
         // These events might all be triggered by the connection, but that
@@ -145,7 +146,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        _ApplyUISettings(_settings);
+        _ApplyUISettings();
     }
 
     // Method Description:
@@ -230,28 +231,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         this->Focus(FocusState::Programmatic);
     }
 
+    
+    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings)
+    {
+        return UpdateControlSettings(settings, _core.UnfocusedAppearance());
+    }
     // Method Description:
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings()
+    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance)
     {
         auto weakThis{ get_weak() };
+
+        co_await winrt::resume_background();
+        _core.UpdateSettings(settings, unfocusedAppearance);
 
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
 
-        _UpdateSettingsFromUIThread(_settings);
+        _UpdateSettingsFromUIThread();
 
-        _UpdateAppearanceFromUIThread(_focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance());
+        _UpdateAppearanceFromUIThread(_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance());
     }
 
     // Method Description:
     // - Dispatches a call to the UI thread and updates the appearance
     // Arguments:
     // - newAppearance: the new appearance to set
-    winrt::fire_and_forget TermControl::UpdateAppearance(winrt::com_ptr<ControlAppearance> newAppearance)
+    winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
@@ -267,17 +276,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - newSettings: the new settings to set
-    void TermControl::_UpdateSettingsFromUIThread(winrt::com_ptr<ControlSettings> newSettings)
+    void TermControl::_UpdateSettingsFromUIThread()
     {
         if (_IsClosing())
         {
             return;
         }
 
-        _core.UpdateSettings(newSettings.try_as<IControlSettings>()); // TODO!
+        // _core.UpdateSettings(settings); // TODO!
 
         // Update our control settings
-        _ApplyUISettings(newSettings);
+        _ApplyUISettings();
     }
 
     // Method Description:
@@ -285,16 +294,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - newAppearance: the new appearance to set
-    void TermControl::_UpdateAppearanceFromUIThread(winrt::com_ptr<ControlAppearance> newAppearance)
+    void TermControl::_UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance)
     {
         if (_IsClosing())
         {
             return;
         }
 
-        if (!newAppearance->BackgroundImage().empty())
+        if (!newAppearance.BackgroundImage().empty())
         {
-            Windows::Foundation::Uri imageUri{ newAppearance->BackgroundImage() };
+            Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
 
             // Check if the image brush is already pointing to the image
             // in the modified settings; if it isn't (or isn't there),
@@ -314,10 +323,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(newAppearance->BackgroundImageStretchMode());
-            BackgroundImage().Opacity(newAppearance->BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(newAppearance->BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(newAppearance->BackgroundImageVerticalAlignment());
+            BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
+            BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
+            BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
+            BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
         }
         else
         {
@@ -325,15 +334,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Update our control settings
-        const auto bg = newAppearance->DefaultBackground();
+        const auto bg = newAppearance.DefaultBackground();
         _changeBackgroundColor(bg);
 
         // Set TSF Foreground
         Media::SolidColorBrush foregroundBrush{};
-        foregroundBrush.Color(static_cast<til::color>(newAppearance->DefaultForeground()));
+        foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
 
-        _core.UpdateAppearance(newAppearance.try_as<IControlAppearance>());
+        // TODO!
+        // _core.UpdateAppearance(newAppearance.try_as<IControlAppearance>());
     }
 
     // Method Description:
@@ -368,21 +378,23 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermControl::_ApplyUISettings(const winrt::com_ptr<ControlSettings>& newSettings)
+    void TermControl::_ApplyUISettings()
     {
         _InitializeBackgroundBrush();
 
-        const auto bg = newSettings->FocusedAppearance()->DefaultBackground();
+        // settings might be out-of-proc in the future
+        auto settings{ _core.Settings() };
+        const auto bg = _core.FocusedAppearance().DefaultBackground();
         _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
-        const auto newMargin = ParseThicknessFromPadding(newSettings->Padding());
+        const auto newMargin = ParseThicknessFromPadding(settings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
-        if (newSettings->ScrollState() == ScrollbarState::Hidden)
+        if (settings.ScrollState() == ScrollbarState::Hidden)
         {
             // In the scenario where the user has turned off the OS setting to automatically hide scrollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
@@ -410,7 +422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
-    //   _settings->
+    //   _settings.
     //   * If acrylic is not enabled, setup a solid color background, otherwise
     //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
@@ -718,7 +730,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Now that the renderer is set up, update the appearance for initialization
-        _UpdateAppearanceFromUIThread(_settings->FocusedAppearance());
+        _UpdateAppearanceFromUIThread(_core.FocusedAppearance());
 
         _initializedTerminal = true;
 
@@ -1507,7 +1519,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // appearances anyway so there's no need to switch back upon gaining focus
         if (_settings->UnfocusedAppearance())
         {
-            UpdateAppearance(_settings->FocusedAppearance());
+            UpdateAppearance(_core.FocusedAppearance());
         }
     }
 
@@ -1549,10 +1561,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Check if there is an unfocused config we should set the appearance to
         // upon losing focus
-        if (_settings->UnfocusedAppearance())
-        {
-            UpdateAppearance(_settings->UnfocusedAppearance());
-        }
+        // if (_settings->UnfocusedAppearance())
+        // {
+        UpdateAppearance(_core.UnfocusedAppearance());
+        // }
     }
 
     // Method Description:
@@ -2363,21 +2375,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings.try_as<IControlSettings>();
     }
 
-    void TermControl::Settings(IControlSettings newSettings)
-    {
-        DebugBreak();
-        _settings = winrt::make_self<ControlSettings>(newSettings, nullptr);
-    }
+    // void TermControl::Settings(IControlSettings newSettings)
+    // {
+    //     DebugBreak();
+    //     _settings = winrt::make_self<ControlSettings>(newSettings, nullptr);
+    // }
 
     IControlAppearance TermControl::UnfocusedAppearance() const
     {
         return *_settings->UnfocusedAppearance();
     }
 
-    void TermControl::UnfocusedAppearance(IControlAppearance newAppearance)
-    {
-        _settings = winrt::make_self<ControlSettings>(_settings.try_as<IControlSettings>(), newAppearance);
-    }
+    // void TermControl::UnfocusedAppearance(IControlAppearance newAppearance)
+    // {
+    //     _settings = winrt::make_self<ControlSettings>(_settings.try_as<IControlSettings>(), newAppearance);
+    // }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {

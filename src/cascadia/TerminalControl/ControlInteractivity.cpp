@@ -39,13 +39,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
+                                               Control::IControlAppearance unfocusedAppearance,
                                                TerminalConnection::ITerminalConnection connection) :
         _touchAnchor{ std::nullopt },
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
-        _core = winrt::make_self<ControlCore>(settings, connection);
+        _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
     }
 
     // Method Description:

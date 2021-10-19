@@ -26,9 +26,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
+        TermControl(IControlSettings settings,
+                    Control::IControlAppearance unfocusedAppearance,
+                    TerminalConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateSettings();
+        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
+        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
 
         hstring GetProfileName() const;
 
@@ -89,9 +92,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         IControlSettings Settings() const;
-        void Settings(IControlSettings newSettings);
+        // void Settings(IControlSettings newSettings);
         IControlAppearance UnfocusedAppearance() const;
-        void UnfocusedAppearance(IControlAppearance newSettings);
+        // void UnfocusedAppearance(IControlAppearance newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
@@ -199,10 +202,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return _closing;
         }
 
-        void _UpdateSettingsFromUIThread(winrt::com_ptr<ControlSettings> newSettings);
-        void _UpdateAppearanceFromUIThread(winrt::com_ptr<ControlAppearance> newAppearance);
-        void _ApplyUISettings(const winrt::com_ptr<ControlSettings>& newSettings);
-        winrt::fire_and_forget UpdateAppearance(winrt::com_ptr<ControlAppearance> newAppearance);
+        void _UpdateSettingsFromUIThread();
+        void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
+        void _ApplyUISettings();
+        winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
 
         void _InitializeBackgroundBrush();
         void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);

@@ -27,7 +27,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlAppearance> _focusedAppearance{ nullptr };
 
     public:
-        ControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance)
+        ControlSettings(const Control::IControlSettings& settings,
+                        const Control::IControlAppearance& unfocusedAppearance)
         {
             _focusedAppearance = winrt::make_self<implementation::ControlAppearance>(settings);
             _unfocusedAppearance = unfocusedAppearance ?

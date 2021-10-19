@@ -11,7 +11,8 @@
     X(til::color, CursorColor, DEFAULT_CURSOR_COLOR)                                                                      \
     X(winrt::Microsoft::Terminal::Core::CursorStyle, CursorShape, winrt::Microsoft::Terminal::Core::CursorStyle::Vintage) \
     X(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT)                                                                      \
-    X(bool, IntenseIsBright, true)
+    X(bool, IntenseIsBright, true)                                                                                        \
+    X(bool, AdjustIndistinguishableColors, true)
 
 // --------------------------- Control Appearance ---------------------------
 //  All of these settings are defined in IControlSettings.

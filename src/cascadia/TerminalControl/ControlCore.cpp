@@ -54,14 +54,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return initialized;
     }
 
-    ControlCore::ControlCore(IControlSettings settings,
+    ControlCore::ControlCore(Control::IControlSettings settings,
+                             Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
         _connection{ connection },
-        _settings{ settings },
         _desiredFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8 },
         _actualFont{ DEFAULT_FONT_FACE, 0, DEFAULT_FONT_WEIGHT, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false }
     {
         _EnsureStaticInitialization();
+
+        _settings = winrt::make_self<implementation::ControlSettings>(settings, unfocusedAppearance);
 
         _terminal = std::make_unique<::Microsoft::Terminal::Core::Terminal>();
 
@@ -78,7 +80,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         });
 
         // GH#8969: pre-seed working directory to prevent potential races
-        _terminal->SetWorkingDirectory(_settings.StartingDirectory());
+        _terminal->SetWorkingDirectory(_settings->StartingDirectory());
 
         auto pfnCopyToClipboard = std::bind(&ControlCore::_terminalCopyToClipboard, this, std::placeholders::_1);
         _terminal->SetCopyToClipboardCallback(pfnCopyToClipboard);
@@ -185,7 +187,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        UpdateSettings(settings);
+        // TODO! uh, this feels wrong aren't we just setting this above??
+        UpdateSettings(settings, unfocusedAppearance);
     }
 
     ControlCore::~ControlCore()
@@ -242,7 +245,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
+            _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
@@ -250,10 +253,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _connection.Resize(height, width);
 
             // Override the default width and height to match the size of the swapChainPanel
-            _settings.InitialCols(width);
-            _settings.InitialRows(height);
+            _settings->InitialCols(width);
+            _settings->InitialRows(height);
 
-            _terminal->CreateFromSettings(_settings, *_renderer);
+            _terminal->CreateFromSettings(*_settings, *_renderer);
 
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
@@ -265,17 +268,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
             _renderEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
 
-            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
+            _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
+            _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+            _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
+            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
 
             _updateAntiAliasingMode(_renderEngine.get());
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.Opacity()));
+            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings->Opacity()));
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -450,7 +453,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // is what the Terminal did prior to 1.12.
         if (!IsVintageOpacityAvailable())
         {
-            _settings.UseAcrylic(newOpacity < 1.0);
+            _runtimeUseAcrylic = newOpacity < 1.0;
         }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
@@ -465,7 +468,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // specify a custom pixel shader, manually enable the legacy retro
         // effect first. This will ensure that a toggle off->on will still work,
         // even if they currently have retro effect off.
-        if (_settings.PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        if (_settings->PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
         {
             // SetRetroTerminalEffect to true will enable the effect. In this
             // case, the shader effect will already be disabled (because neither
@@ -575,11 +578,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Updates the settings of the current terminal.
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
-    void ControlCore::UpdateSettings(const IControlSettings& settings)
+    void ControlCore::UpdateSettings(const IControlSettings& settings, const IControlAppearance& newAppearance)
     {
-        auto lock = _terminal->LockForWriting();
+        _settings = winrt::make_self<implementation::ControlSettings>(settings, newAppearance);
 
-        _settings = settings;
+        auto lock = _terminal->LockForWriting();
 
         _runtimeOpacity = std::nullopt;
         _runtimeUseAcrylic = std::nullopt;
@@ -587,15 +590,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
         // didn't explicitly request acrylic, then opt them in to acrylic.
         // On Windows 11+, this isn't needed, because we can have vintage opacity.
-        if (!IsVintageOpacityAvailable() && _settings.Opacity() < 1.0 && !_settings.UseAcrylic())
+        if (!IsVintageOpacityAvailable() && _settings->Opacity() < 1.0 && !_settings->UseAcrylic())
         {
             _runtimeUseAcrylic = true;
         }
 
         // Initialize our font information.
-        const auto fontFace = _settings.FontFace();
-        const short fontHeight = ::base::saturated_cast<short>(_settings.FontSize());
-        const auto fontWeight = _settings.FontWeight();
+        const auto fontFace = _settings->FontFace();
+        const short fontHeight = ::base::saturated_cast<short>(_settings->FontSize());
+        const auto fontWeight = _settings->FontWeight();
         // The font width doesn't terribly matter, we'll only be using the
         //      height to look it up
         // The other params here also largely don't matter.
@@ -606,7 +609,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _desiredFont = { _actualFont };
 
         // Update the terminal core with its new Core settings
-        _terminal->UpdateSettings(_settings);
+        _terminal->UpdateSettings(*_settings);
 
         if (!_initializedTerminal)
         {
@@ -615,8 +618,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-        _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+        _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
+        _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
 
         _updateAntiAliasingMode(_renderEngine.get());
 
@@ -633,29 +636,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Updates the appearance of the current terminal.
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
-    void ControlCore::UpdateAppearance(const IControlAppearance& newAppearance)
-    {
-        auto lock = _terminal->LockForWriting();
+    // void ControlCore::UpdateAppearance(const IControlAppearance& newAppearance)
+    // {
+    //     auto lock = _terminal->LockForWriting();
 
-        // Update the terminal core with its new Core settings
-        _terminal->UpdateAppearance(newAppearance);
+    //     // Update the terminal core with its new Core settings
+    //     _terminal->UpdateAppearance(newAppearance);
 
-        // Update DxEngine settings under the lock
-        if (_renderEngine)
-        {
-            // Update DxEngine settings under the lock
-            _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
-            _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
-            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
-            _renderer->TriggerRedrawAll();
-        }
-    }
+    //     // Update DxEngine settings under the lock
+    //     if (_renderEngine)
+    //     {
+    //         // Update DxEngine settings under the lock
+    //         _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
+    //         _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
+    //         _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+    //         _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
+    //         _renderer->TriggerRedrawAll();
+    //     }
+    // }
 
     void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)
     {
         // Update DxEngine's AntialiasingMode
-        switch (_settings.AntialiasingMode())
+        switch (_settings->AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
             dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
@@ -690,7 +693,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             std::unordered_map<std::wstring_view, uint32_t> featureMap;
-            if (const auto fontFeatures = _settings.FontFeatures())
+            if (const auto fontFeatures = _settings->FontFeatures())
             {
                 featureMap.reserve(fontFeatures.Size());
 
@@ -700,7 +703,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             }
             std::unordered_map<std::wstring_view, float> axesMap;
-            if (const auto fontAxes = _settings.FontAxes())
+            if (const auto fontAxes = _settings->FontAxes())
             {
                 axesMap.reserve(fontAxes.Size());
 
@@ -742,8 +745,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // Make sure we have a non-zero font size
             const auto newSize = std::max<short>(gsl::narrow_cast<short>(fontSize), 1);
-            const auto fontFace = _settings.FontFace();
-            const auto fontWeight = _settings.FontWeight();
+            const auto fontFace = _settings->FontFace();
+            const auto fontWeight = _settings->FontWeight();
             _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
             _desiredFont = { _actualFont };
 
@@ -767,7 +770,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - none
     void ControlCore::ResetFontSize()
     {
-        _setFontSize(_settings.FontSize());
+        _setFontSize(_settings->FontSize());
     }
 
     // Method Description:
@@ -979,7 +982,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      til::color{ _settings.DefaultBackground() }) :
+                                                      til::color{ _settings->DefaultBackground() }) :
                                   "";
 
         // convert to RTF format
@@ -987,10 +990,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    til::color{ _settings.DefaultBackground() }) :
+                                                    til::color{ _settings->DefaultBackground() }) :
                                  "";
 
-        if (!_settings.CopyOnSelect())
+        if (!_settings->CopyOnSelect())
         {
             _terminal->ClearSelection();
             _renderer->TriggerSelection();
@@ -1231,7 +1234,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool ControlCore::CopyOnSelect() const
     {
-        return _settings.CopyOnSelect();
+        return _settings->CopyOnSelect();
     }
 
     Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const

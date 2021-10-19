@@ -115,34 +115,34 @@ namespace winrt::TerminalApp::implementation
 
                 // Insert that new child as the parent of the control's settings
                 controlSettings.SetParent(childStruct.DefaultSettings());
-                control.UpdateSettings();
+                control.UpdateControlSettings(controlSettings);
 
                 // Take a copy of the inputs, since they are pointers anyways.
                 _restorePreviewFuncs.emplace_back([=]() {
-                    // Get the runtime settings of the focused control
-                    const auto& controlSettings{ control.Settings().as<TerminalSettings>() };
+                    //// Get the runtime settings of the focused control
+                    //const auto& controlSettings{ control.Settings().as<TerminalSettings>() };
 
-                    // Get the control's root settings, the ones that we actually
-                    // assigned to it.
-                    auto parentSettings{ controlSettings.GetParent() };
-                    while (parentSettings.GetParent() != nullptr)
-                    {
-                        parentSettings = parentSettings.GetParent();
-                    }
+                    //// Get the control's root settings, the ones that we actually
+                    //// assigned to it.
+                    //auto parentSettings{ controlSettings.GetParent() };
+                    //while (parentSettings.GetParent() != nullptr)
+                    //{
+                    //    parentSettings = parentSettings.GetParent();
+                    //}
 
-                    // If the root settings are the same as the ones we stashed,
-                    // then reset the parent of the runtime settings to the stashed
-                    // settings. This condition might be false if the settings
-                    // hot-reloaded while the palette was open. In that case, we
-                    // don't want to reset the settings to what they were _before_
-                    // the hot-reload.
-                    if (originalSettings == parentSettings)
-                    {
-                        // Set the original settings as the parent of the control's settings
-                        control.Settings().as<TerminalSettings>().SetParent(originalSettings);
-                    }
+                    //// If the root settings are the same as the ones we stashed,
+                    //// then reset the parent of the runtime settings to the stashed
+                    //// settings. This condition might be false if the settings
+                    //// hot-reloaded while the palette was open. In that case, we
+                    //// don't want to reset the settings to what they were _before_
+                    //// the hot-reload.
+                    //if (originalSettings == parentSettings)
+                    //{
+                    //    // Set the original settings as the parent of the control's settings
+                    //    control.Settings().as<TerminalSettings>().SetParent(originalSettings);
+                    //}
 
-                    control.UpdateSettings();
+                    control.UpdateControlSettings(control.Settings());
                 });
             });
         }

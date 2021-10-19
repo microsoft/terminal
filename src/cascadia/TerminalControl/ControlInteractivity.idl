@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.Control
     [default_interface] runtimeclass ControlInteractivity
     {
         ControlInteractivity(IControlSettings settings,
+                             IControlAppearance unfocusedAppearance,
                              Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         ControlCore Core { get; };

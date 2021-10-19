@@ -44,7 +44,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     struct ControlCore : ControlCoreT<ControlCore>
     {
     public:
-        ControlCore(IControlSettings settings,
+        ControlCore(Control::IControlSettings settings,
+                    Control::IControlAppearance unfocusedAppearance,
                     TerminalConnection::ITerminalConnection connection);
         ~ControlCore();
 
@@ -53,8 +54,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                         const double compositionScale);
         void EnablePainting();
 
-        void UpdateSettings(const IControlSettings& settings);
-        void UpdateAppearance(const IControlAppearance& newAppearance);
+        void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
+        // void UpdateAppearance(const Control::IControlAppearance& newAppearance);
+        Control::IControlSettings Settings() const { return *_settings; };
+        Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
+        Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
+
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
         uint64_t SwapChainHandle() const;
@@ -160,8 +165,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static bool IsVintageOpacityAvailable() noexcept;
 
-        RUNTIME_SETTING(double, Opacity, _settings.Opacity());
-        RUNTIME_SETTING(bool, UseAcrylic, _settings.UseAcrylic());
+        RUNTIME_SETTING(double, Opacity, _settings->Opacity());
+        RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -203,7 +208,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
-        IControlSettings _settings{ nullptr };
+        // IControlSettings _settings{ nullptr };
+        winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;

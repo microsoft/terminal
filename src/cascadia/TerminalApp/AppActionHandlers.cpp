@@ -451,29 +451,35 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
-                const auto res = _ApplyToActiveControls([&](auto& control) {
-                    // Start by getting the current settings of the control
-                    auto controlSettings = control.Settings().as<TerminalSettings>();
-                    auto parentSettings = controlSettings;
-                    // Those are the _runtime_ settings however. What we
-                    // need to do is:
-                    //
-                    //   1. Blow away any colors set in the runtime settings.
-                    //   2. Apply the color scheme to the parent settings.
-                    //
-                    // 1 is important to make sure that the effects of
-                    // something like `colortool` are cleared when setting
-                    // the scheme.
-                    if (controlSettings.GetParent() != nullptr)
-                    {
-                        parentSettings = controlSettings.GetParent();
-                    }
+                const auto res = _ApplyToActiveControls([&](auto& /*control*/) {
+                    //// Start by getting the current settings of the control
+                    //auto controlSettings = control.Settings().as<TerminalSettings>();
+                    //auto parentSettings = controlSettings;
+                    //// Those are the _runtime_ settings however. What we
+                    //// need to do is:
+                    ////
+                    ////   1. Blow away any colors set in the runtime settings.
+                    ////   2. Apply the color scheme to the parent settings.
+                    ////
+                    //// 1 is important to make sure that the effects of
+                    //// something like `colortool` are cleared when setting
+                    //// the scheme.
+                    //if (controlSettings.GetParent() != nullptr)
+                    //{
+                    //    parentSettings = controlSettings.GetParent();
+                    //}
 
-                    // ApplyColorScheme(nullptr) will clear the old color scheme.
-                    controlSettings.ApplyColorScheme(nullptr);
-                    parentSettings.ApplyColorScheme(scheme);
+                    //// ApplyColorScheme(nullptr) will clear the old color scheme.
+                    //controlSettings.ApplyColorScheme(nullptr);
+                    //parentSettings.ApplyColorScheme(scheme);
 
-                    control.UpdateSettings();
+                    //control.UpdateControlSettings();
+
+                    // TODO!
+                    // We'll need a dedicated method for this. The Control's
+                    // settings are hosted in the Core, which could be OOP.
+                    // We'll need to manually tell the control to update its
+                    // core's scheme. 
                 });
                 args.Handled(res);
             }
