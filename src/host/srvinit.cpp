@@ -419,7 +419,7 @@ try
 
 #if !TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_RecieveHandoff_Disabled",
+                      "SrvInit_ReceiveHandoff_Disabled",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
@@ -440,14 +440,14 @@ try
     if (!g.handoffTerminalClsid)
     {
         TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                          "SrvInit_RecieveHandoff_NoTerminal",
+                          "SrvInit_ReceiveHandoff_NoTerminal",
                           TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                           TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         return E_NOT_SET;
     }
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_RecieveHandoff",
+                      "SrvInit_ReceiveHandoff",
                       TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
@@ -485,7 +485,7 @@ try
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_RecieveHandoff_OpenedPipes",
+                      "SrvInit_ReceiveHandoff_OpenedPipes",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
@@ -493,7 +493,7 @@ try
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
 
     TraceLoggingWrite(g_hConhostV2EventTraceProvider,
-                      "SrvInit_RecieveHandoff_OpenedClient",
+                      "SrvInit_ReceiveHandoff_OpenedClient",
                       TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
                       TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
