@@ -37,6 +37,7 @@ HRESULT CConsoleHandoff::EstablishHandoff(HANDLE server,
                                           HANDLE* process)
 try
 {
+
     RETURN_HR_IF(E_INVALIDARG, !process);
 
     // Fill the descriptor portion of a fresh api message with the received data.
