@@ -85,4 +85,14 @@
         <!-- This feature will not ship to Stable until it is complete. -->
         <alwaysDisabledReleaseTokens />
     </feature>
+
+    <feature>
+        <name>Feature_VisualStudioGenerator</name>
+        <description>Controls whether Terminal will generate Visual Studio DevPS/DevCMD profiles</description>
+        <stage>AlwaysDisabled</stage>
+        <alwaysEnabledBrandingTokens>
+            <!-- This one is only enabled in Dev (not Preview or Release) right now. -->
+            <brandingToken>Dev</brandingToken>
+        </alwaysEnabledBrandingTokens>
+    </feature>
 </featureStaging>

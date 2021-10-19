@@ -137,7 +137,10 @@ void SettingsLoader::GenerateProfiles()
     _executeGenerator(PowershellCoreProfileGenerator{});
     _executeGenerator(WslDistroGenerator{});
     _executeGenerator(AzureCloudShellGenerator{});
-    _executeGenerator(VisualStudioGenerator{});
+    if constexpr (Feature_VisualStudioGenerator::IsEnabled())
+    {
+        _executeGenerator(VisualStudioGenerator{});
+    }
 }
 
 // A new settings.json gets a special treatment:
