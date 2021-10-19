@@ -155,7 +155,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
-        winrt::com_ptr<ControlSettings> _settings{ nullptr };
+        // winrt::com_ptr<ControlSettings> _settings{ nullptr };
         bool _closing{ false };
         bool _focused{ false };
         bool _initializedTerminal{ false };

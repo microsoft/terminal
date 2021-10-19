@@ -51,7 +51,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     TermControl::TermControl(IControlSettings settings,
                              Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
-        _settings{ winrt::make_self<ControlSettings>(settings, nullptr) },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -231,7 +230,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         this->Focus(FocusState::Programmatic);
     }
 
-    
     winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings)
     {
         return UpdateControlSettings(settings, _core.UnfocusedAppearance());
@@ -367,7 +365,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Style our UI elements based on the values in our _settings, and set up
+    // - Style our UI elements based on the values in our settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
     //   * Calls _InitializeBackgroundBrush to set up the Xaml brush responsible
@@ -435,8 +433,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     void TermControl::_InitializeBackgroundBrush()
     {
-        auto appearance = _settings.try_as<IControlAppearance>();
-        if (_settings->UseAcrylic())
+        auto settings{ _core.Settings() };
+        if (settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
@@ -451,7 +449,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            auto bgColor = til::color{ _settings->FocusedAppearance()->DefaultBackground() }.with_alpha(0xff);
+            auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
 
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
@@ -608,7 +606,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
             {
                 message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
-                                        (_focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance())->PixelShaderPath()) };
+                                        (_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance()).PixelShaderPath()) };
             }
             else if (D2DERR_SHADER_COMPILE_FAILED == hr)
             {
@@ -802,7 +800,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //   This is required as part of GH#638.
             // Or do so for alt+space; only send to terminal when explicitly unbound
             //  That is part of #GH7125
-            auto bindings{ _settings->KeyBindings() };
+            auto bindings{ _core.Settings().KeyBindings() };
             bool isUnbound = false;
             const KeyChord kc = {
                 modifiers.IsCtrlPressed(),
@@ -947,7 +945,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The ControlKeyStates representing the modifier key states.
     bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
-        auto bindings = _settings->KeyBindings();
+        // TODO! Now this is interesting. The Core owning the keybindings is weird. That's for sure.
+        auto bindings = _core.Settings().KeyBindings();
         if (!bindings)
         {
             return false;
@@ -1126,7 +1125,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto pixelPosition = _toTerminalOrigin(cursorPosition);
         const auto type = ptr.PointerDeviceType();
 
-        if (!_focused && _settings->FocusFollowMouse())
+        if (!_focused && _core.Settings().FocusFollowMouse())
         {
             _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
@@ -1306,7 +1305,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         try
         {
             _InitializeBackgroundBrush();
-            const auto bg = _settings->FocusedAppearance()->DefaultBackground();
+            const auto bg = _core.FocusedAppearance().DefaultBackground();
             _changeBackgroundColor(bg);
         }
         CATCH_LOG();
@@ -1517,7 +1516,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Only update the appearance here if an unfocused config exists -
         // if an unfocused config does not exist then we never would have switched
         // appearances anyway so there's no need to switch back upon gaining focus
-        if (_settings->UnfocusedAppearance())
+        if (_core.UnfocusedAppearance())
         {
             UpdateAppearance(_core.FocusedAppearance());
         }
@@ -1712,7 +1711,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControl::GetProfileName() const
     {
-        return _settings->ProfileName();
+        return _core.Settings().ProfileName();
     }
 
     hstring TermControl::WorkingDirectory() const
@@ -1930,7 +1929,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double width = fontSize.Width;
             double height = fontSize.Height;
             // Reserve additional space if scrollbar is intended to be visible
-            if (_settings->ScrollState() == ScrollbarState::Visible)
+            if (_core.Settings().ScrollState() == ScrollbarState::Visible)
             {
                 width += ScrollBar().ActualWidth();
             }
@@ -1951,12 +1950,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
+            auto settings{ _core.Settings() };
             return GetProposedDimensions(minSize,
-                                         _settings->FontSize(),
-                                         _settings->FontWeight(),
-                                         _settings->FontFace(),
-                                         _settings->ScrollState(),
-                                         _settings->Padding(),
+                                         settings.FontSize(),
+                                         settings.FontWeight(),
+                                         settings.FontFace(),
+                                         settings.ScrollState(),
+                                         settings.Padding(),
                                          dpi);
         }
     }
@@ -1979,7 +1979,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
-        if (widthOrHeight && _settings->ScrollState() == ScrollbarState::Visible)
+        if (widthOrHeight && _core.Settings().ScrollState() == ScrollbarState::Visible)
         {
             nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
         }
@@ -2372,7 +2372,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     IControlSettings TermControl::Settings() const
     {
-        return _settings.try_as<IControlSettings>();
+        // TODO! maybe get rid of
+        return _core.Settings();
     }
 
     // void TermControl::Settings(IControlSettings newSettings)
@@ -2383,7 +2384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     IControlAppearance TermControl::UnfocusedAppearance() const
     {
-        return *_settings->UnfocusedAppearance();
+        return _core.UnfocusedAppearance();
     }
 
     // void TermControl::UnfocusedAppearance(IControlAppearance newAppearance)

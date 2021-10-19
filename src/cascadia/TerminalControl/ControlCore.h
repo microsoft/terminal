@@ -198,6 +198,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         event_token _connectionOutputEventToken;
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
+        winrt::com_ptr<ControlSettings> _settings{ nullptr };
+
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 
         // NOTE: _renderEngine must be ordered before _renderer.
@@ -209,7 +211,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         // IControlSettings _settings{ nullptr };
-        winrt::com_ptr<ControlSettings> _settings{ nullptr };
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
