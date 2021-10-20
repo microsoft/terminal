@@ -341,6 +341,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TSFInputControl().Foreground(foregroundBrush);
 
         // TODO!
+        _core.ApplyAppearance(_focused);
         // _core.UpdateAppearance(newAppearance.try_as<IControlAppearance>());
     }
 

@@ -636,23 +636,30 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Method Description:
     // - Updates the appearance of the current terminal.
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
+    void ControlCore::ApplyAppearance(const bool& focused)
+    {
+        auto lock = _terminal->LockForWriting();
+        const auto& newAppearance{ focused ? _settings->FocusedAppearance() : _settings->UnfocusedAppearance() };
+        // Update the terminal core with its new Core settings
+        _terminal->UpdateAppearance(*newAppearance);
+
+        // Update DxEngine settings under the lock
+        if (_renderEngine)
+        {
+            // Update DxEngine settings under the lock
+            _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
+            _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
+            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
+            _renderer->TriggerRedrawAll();
+        }
+    }
+
+    // Method Description:
+    // - Updates the appearance of the current terminal.
+    // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     // void ControlCore::UpdateAppearance(const IControlAppearance& newAppearance)
     // {
-    //     auto lock = _terminal->LockForWriting();
-
-    //     // Update the terminal core with its new Core settings
-    //     _terminal->UpdateAppearance(newAppearance);
-
-    //     // Update DxEngine settings under the lock
-    //     if (_renderEngine)
-    //     {
-    //         // Update DxEngine settings under the lock
-    //         _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
-    //         _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
-    //         _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
-    //         _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
-    //         _renderer->TriggerRedrawAll();
-    //     }
     // }
 
     void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)

@@ -55,6 +55,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void EnablePainting();
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
+        void ApplyAppearance(const bool& focused);
         // void UpdateAppearance(const Control::IControlAppearance& newAppearance);
         Control::IControlSettings Settings() const { return *_settings; };
         Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
