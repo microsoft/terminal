@@ -32,6 +32,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
         winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
+        IControlSettings Settings() const;
 
         hstring GetProfileName() const;
 
@@ -90,11 +91,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
         const Windows::UI::Xaml::Thickness GetPadding();
-
-        IControlSettings Settings() const;
-        // void Settings(IControlSettings newSettings);
-        IControlAppearance UnfocusedAppearance() const;
-        // void UnfocusedAppearance(IControlAppearance newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,

@@ -26,7 +26,6 @@ namespace Microsoft.Terminal.Control
         void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
 
         Microsoft.Terminal.Control.IControlSettings Settings { get; };
-        Microsoft.Terminal.Control.IControlAppearance UnfocusedAppearance { get; };
 
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;

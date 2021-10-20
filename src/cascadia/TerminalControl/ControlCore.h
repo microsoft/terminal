@@ -58,7 +58,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
-        // void UpdateAppearance(const Control::IControlAppearance& newAppearance);
         Control::IControlSettings Settings()
         {
             auto l = std::unique_lock<til::ticket_lock>{ _settingsLock };
@@ -81,7 +80,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         uint16_t FontWeight() const noexcept;
 
         til::color BackgroundColor() const;
-        // void SetBackgroundOpacity(const double opacity);
 
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);

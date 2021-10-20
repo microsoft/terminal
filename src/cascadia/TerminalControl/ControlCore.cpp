@@ -1310,15 +1310,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // void ControlCore::SetBackgroundOpacity(const double opacity)
-    // {
-    //     if (_renderEngine)
-    //     {
-    //         auto lock = _terminal->LockForWriting();
-    //         _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
-    //     }
-    // }
-
     // Method Description:
     // - Asynchronously close our connection. The Connection will likely wait
     //   until the attached process terminates before Close returns. If that's
