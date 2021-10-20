@@ -464,11 +464,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 RootGrid().Background(acrylic);
             }
 
-            // GH#5098: Inform the engine of the new opacity of the default text background.
-            //
-            // TODO! This sure seems contrived, shouldn't the core... already
-            // know this?
-            _core.SetBackgroundOpacity(_core.Opacity());
+            // // GH#5098: Inform the engine of the new opacity of the default text background.
+            // //
+            // // TODO! This sure seems contrived, shouldn't the core... already
+            // // know this?
+            // _core.SetBackgroundOpacity(_core.Opacity());
         }
         else
         {
@@ -476,8 +476,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             solidColor.Opacity(_core.Opacity());
             RootGrid().Background(solidColor);
 
-            // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(_core.Opacity());
+            // // GH#5098: Inform the engine of the new opacity of the default text background.
+            // // TODO! here too
+            // _core.SetBackgroundOpacity(_core.Opacity());
         }
     }
 

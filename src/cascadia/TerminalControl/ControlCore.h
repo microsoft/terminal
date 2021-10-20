@@ -25,6 +25,8 @@
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
 
+#include <til/ticket_lock.h>
+
 namespace ControlUnitTests
 {
     class ControlCoreTests;
@@ -57,7 +59,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
         // void UpdateAppearance(const Control::IControlAppearance& newAppearance);
-        Control::IControlSettings Settings() const { return *_settings; };
+        Control::IControlSettings Settings() 
+        {
+            auto l = std::unique_lock<til::ticket_lock>{ _settingsLock };
+            return *_settings;
+        };
         Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
         Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
 
@@ -200,6 +206,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
+        til::ticket_lock _settingsLock;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 

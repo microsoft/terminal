@@ -441,8 +441,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      1.0);
 
         // GH#5098: Inform the engine of the new opacity of the default text background.
-        SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
 
+        // TODO! This doesn't work when (aa:cleartype && useAcrylic:true &&
+        // opacity<1.0 -> 1.0) We end up forcing the solid BG, but the padding
+        // around the terminal is still acrylic. I think we only need to tell
+        // the engine to do the solid BG trick for useAcrylic:true, not for
+        // vintage opacity. Lets find out.
+        //
+        // SetBackgroundOpacity(newOpacity);
+
+        // Update our runtime opacity value
         Opacity(newOpacity);
 
         // GH#11285 - If the user is on Windows 10, and they changed the
@@ -580,6 +588,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::UpdateSettings(const IControlSettings& settings, const IControlAppearance& newAppearance)
     {
+        std::unique_lock l{ _settingsLock };
         _settings = winrt::make_self<implementation::ControlSettings>(settings, newAppearance);
 
         auto lock = _terminal->LockForWriting();
@@ -620,6 +629,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
+        // Inform the renderer of our opacity
+        _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(Opacity()));
 
         _updateAntiAliasingMode(_renderEngine.get());
 
