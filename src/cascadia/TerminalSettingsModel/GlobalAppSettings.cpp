@@ -18,47 +18,7 @@ using namespace winrt::Microsoft::UI::Xaml::Controls;
 static constexpr std::string_view LegacyKeybindingsKey{ "keybindings" };
 static constexpr std::string_view ActionsKey{ "actions" };
 static constexpr std::string_view DefaultProfileKey{ "defaultProfile" };
-static constexpr std::string_view AlwaysShowTabsKey{ "alwaysShowTabs" };
-static constexpr std::string_view InitialRowsKey{ "initialRows" };
-static constexpr std::string_view InitialColsKey{ "initialCols" };
-static constexpr std::string_view InitialPositionKey{ "initialPosition" };
-static constexpr std::string_view CenterOnLaunchKey{ "centerOnLaunch" };
-static constexpr std::string_view ShowTitleInTitlebarKey{ "showTerminalTitleInTitlebar" };
-static constexpr std::string_view LanguageKey{ "language" };
-static constexpr std::string_view ThemeKey{ "theme" };
-static constexpr std::string_view TabWidthModeKey{ "tabWidthMode" };
-static constexpr std::string_view UseAcrylicInTabRowKey{ "useAcrylicInTabRow" };
-static constexpr std::string_view ShowTabsInTitlebarKey{ "showTabsInTitlebar" };
-static constexpr std::string_view WordDelimitersKey{ "wordDelimiters" };
-static constexpr std::string_view InputServiceWarningKey{ "inputServiceWarning" };
-static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
-static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
-static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
-static constexpr std::string_view WarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
-static constexpr std::string_view LaunchModeKey{ "launchMode" };
-static constexpr std::string_view ConfirmCloseAllTabsKey{ "confirmCloseAllTabs" };
-static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
-static constexpr std::string_view StartOnUserLoginKey{ "startOnUserLogin" };
-static constexpr std::string_view FirstWindowPreferenceKey{ "firstWindowPreference" };
-static constexpr std::string_view AlwaysOnTopKey{ "alwaysOnTop" };
 static constexpr std::string_view LegacyUseTabSwitcherModeKey{ "useTabSwitcher" };
-static constexpr std::string_view TabSwitcherModeKey{ "tabSwitcherMode" };
-static constexpr std::string_view DisableAnimationsKey{ "disableAnimations" };
-static constexpr std::string_view StartupActionsKey{ "startupActions" };
-static constexpr std::string_view FocusFollowMouseKey{ "focusFollowMouse" };
-static constexpr std::string_view WindowingBehaviorKey{ "windowingBehavior" };
-static constexpr std::string_view TrimBlockSelectionKey{ "trimBlockSelection" };
-static constexpr std::string_view AlwaysShowNotificationIconKey{ "alwaysShowNotificationIcon" };
-static constexpr std::string_view MinimizeToNotificationAreaKey{ "minimizeToNotificationArea" };
-static constexpr std::string_view DisabledProfileSourcesKey{ "disabledProfileSources" };
-static constexpr std::string_view ShowAdminShieldKey{ "showAdminShield" };
-
-static constexpr std::string_view DebugFeaturesEnabledKey{ "debugFeatures" };
-
-static constexpr std::string_view ForceFullRepaintRenderingKey{ "experimental.rendering.forceFullRepaint" };
-static constexpr std::string_view SoftwareRenderingKey{ "experimental.rendering.software" };
-static constexpr std::string_view ForceVTInputKey{ "experimental.input.forceVT" };
-static constexpr std::string_view DetectURLsKey{ "experimental.detectURLs" };
 
 // Method Description:
 // - Copies any extraneous data from the parent before completing a CreateChild call
@@ -91,7 +51,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_actionMap = _actionMap->Copy();
     globals->_keybindingsWarnings = _keybindingsWarnings;
 
-#define GLOBAL_SETTINGS_COPY(type, name, ...) \
+#define GLOBAL_SETTINGS_COPY(type, name, jsonKey, ...) \
     globals->_##name = _##name;
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_COPY)
 #undef GLOBAL_SETTINGS_COPY
@@ -158,8 +118,8 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     // "useTabSwitcher", but prefer "tabSwitcherMode"
     JsonUtils::GetValueForKey(json, LegacyUseTabSwitcherModeKey, _TabSwitcherMode);
 
-#define GLOBAL_SETTINGS_LAYER_JSON(type, name, ...) \
-    JsonUtils::GetValueForKey(json, name##Key, _##name);
+#define GLOBAL_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);
     MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_LAYER_JSON)
 #undef GLOBAL_SETTINGS_LAYER_JSON
 
@@ -224,8 +184,8 @@ Json::Value GlobalAppSettings::ToJson() const
     // clang-format off
     JsonUtils::SetValueForKey(json, DefaultProfileKey,              _UnparsedDefaultProfile);
 
-#define GLOBAL_SETTINGS_TO_JSON(type, name, ...) \
-    JsonUtils::SetValueForKey(json, name##Key, _##name);
+#define GLOBAL_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, _##name);
         MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
 #undef GLOBAL_SETTINGS_TO_JSON
 

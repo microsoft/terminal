@@ -64,7 +64,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
 
-#define GLOBAL_SETTINGS_INITIALIZE(type, name, ...) \
+#define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
         MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
 #undef GLOBAL_SETTINGS_INITIALIZE

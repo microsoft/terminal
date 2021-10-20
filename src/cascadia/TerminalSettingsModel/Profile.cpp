@@ -26,24 +26,9 @@ static constexpr std::string_view GuidKey{ "guid" };
 static constexpr std::string_view SourceKey{ "source" };
 static constexpr std::string_view HiddenKey{ "hidden" };
 
-static constexpr std::string_view TabTitleKey{ "tabTitle" };
-static constexpr std::string_view SuppressApplicationTitleKey{ "suppressApplicationTitle" };
-static constexpr std::string_view HistorySizeKey{ "historySize" };
-static constexpr std::string_view SnapOnInputKey{ "snapOnInput" };
-static constexpr std::string_view AltGrAliasingKey{ "altGrAliasing" };
-
-static constexpr std::string_view ConnectionTypeKey{ "connectionType" };
-static constexpr std::string_view CommandlineKey{ "commandline" };
 static constexpr std::string_view FontInfoKey{ "font" };
-static constexpr std::string_view UseAcrylicKey{ "useAcrylic" };
-static constexpr std::string_view ScrollStateKey{ "scrollbarState" };
-static constexpr std::string_view CloseOnExitKey{ "closeOnExit" };
 static constexpr std::string_view PaddingKey{ "padding" };
-static constexpr std::string_view StartingDirectoryKey{ "startingDirectory" };
-static constexpr std::string_view IconKey{ "icon" };
-static constexpr std::string_view AntialiasingModeKey{ "antialiasingMode" };
 static constexpr std::string_view TabColorKey{ "tabColor" };
-static constexpr std::string_view BellStyleKey{ "bellStyle" };
 static constexpr std::string_view UnfocusedAppearanceKey{ "unfocusedAppearance" };
 
 Profile::Profile(guid guid) noexcept :
@@ -118,13 +103,14 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Source = _Source;
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
+    profile->_Padding = _Padding;
     profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
     profile->_SoftwareRendering = _SoftwareRendering;
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
     profile->_DefaultAppearance = *defaultAppearance;
 
-#define PROFILE_SETTINGS_COPY(type, name, ...) \
+#define PROFILE_SETTINGS_COPY(type, name, jsonKey, ...) \
     profile->_##name = _##name;
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_COPY)
 #undef PROFILE_SETTINGS_COPY
@@ -185,10 +171,15 @@ void Profile::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, GuidKey, _Guid);
     JsonUtils::GetValueForKey(json, HiddenKey, _Hidden);
     JsonUtils::GetValueForKey(json, SourceKey, _Source);
+
+    // Padding was never specified as an integer, but it was a common working mistake.
+    // Allow it to be permissive.
+    JsonUtils::GetValueForKey(json, PaddingKey, _Padding, JsonUtils::OptionalConverter<hstring, JsonUtils::PermissiveStringConverter<std::wstring>>{});
+
     JsonUtils::GetValueForKey(json, TabColorKey, _TabColor);
 
-#define PROFILE_SETTINGS_LAYER_JSON(type, name, ...) \
-    JsonUtils::GetValueForKey(json, name##Key, _##name);
+#define PROFILE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+    JsonUtils::GetValueForKey(json, jsonKey, _##name);
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_LAYER_JSON)
 #undef PROFILE_SETTINGS_LAYER_JSON
 
@@ -323,10 +314,12 @@ Json::Value Profile::ToJson() const
     JsonUtils::SetValueForKey(json, SourceKey, writeBasicSettings ? Source() : _Source);
 
     // PermissiveStringConverter is unnecessary for serialization
+    JsonUtils::SetValueForKey(json, PaddingKey, _Padding);
+
     JsonUtils::SetValueForKey(json, TabColorKey, _TabColor);
 
-#define PROFILE_SETTINGS_TO_JSON(type, name, ...) \
-    JsonUtils::SetValueForKey(json, name##Key, _##name);
+#define PROFILE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, _##name);
     MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_TO_JSON)
 #undef PROFILE_SETTINGS_TO_JSON
 

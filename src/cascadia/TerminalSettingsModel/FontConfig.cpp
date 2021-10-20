@@ -12,11 +12,6 @@ using namespace Microsoft::Terminal::Settings::Model;
 using namespace winrt::Microsoft::Terminal::Settings::Model::implementation;
 
 static constexpr std::string_view FontInfoKey{ "font" };
-static constexpr std::string_view FontFaceKey{ "face" };
-static constexpr std::string_view FontSizeKey{ "size" };
-static constexpr std::string_view FontWeightKey{ "weight" };
-static constexpr std::string_view FontFeaturesKey{ "features" };
-static constexpr std::string_view FontAxesKey{ "axes" };
 static constexpr std::string_view LegacyFontFaceKey{ "fontFace" };
 static constexpr std::string_view LegacyFontSizeKey{ "fontSize" };
 static constexpr std::string_view LegacyFontWeightKey{ "fontWeight" };
@@ -30,7 +25,7 @@ winrt::com_ptr<FontConfig> FontConfig::CopyFontInfo(const FontConfig* source, wi
 {
     auto fontInfo{ winrt::make_self<FontConfig>(std::move(sourceProfile)) };
 
-#define FONT_SETTINGS_COPY(type, name, ...) \
+#define FONT_SETTINGS_COPY(type, name, jsonKey, ...) \
     fontInfo->_##name = source->_##name;
     MTSM_FONT_SETTINGS(FONT_SETTINGS_COPY)
 #undef FONT_SETTINGS_COPY
@@ -42,8 +37,8 @@ Json::Value FontConfig::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 
-#define FONT_SETTINGS_TO_JSON(type, name, ...) \
-    JsonUtils::SetValueForKey(json, name##Key, _##name);
+#define FONT_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, _##name);
     MTSM_FONT_SETTINGS(FONT_SETTINGS_TO_JSON)
 #undef FONT_SETTINGS_TO_JSON
 
@@ -69,8 +64,8 @@ void FontConfig::LayerJson(const Json::Value& json)
     {
         // A font object is defined, use that
         const auto fontInfoJson = json[JsonKey(FontInfoKey)];
-#define FONT_SETTINGS_LAYER_JSON(type, name, ...) \
-    JsonUtils::GetValueForKey(fontInfoJson, name##Key, _##name);
+#define FONT_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
+    JsonUtils::GetValueForKey(fontInfoJson, jsonKey, _##name);
         MTSM_FONT_SETTINGS(FONT_SETTINGS_LAYER_JSON)
 #undef FONT_SETTINGS_LAYER_JSON
     }

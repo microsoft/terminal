@@ -41,7 +41,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, SelectionBackground, nullptr);
         INHERITABLE_NULLABLE_SETTING(Model::IAppearanceConfig, Microsoft::Terminal::Core::Color, CursorColor, nullptr);
 
-#define APPEARANCE_SETTINGS_INITIALIZE(type, name, ...) \
+#define APPEARANCE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::IAppearanceConfig, type, name, ##__VA_ARGS__)
         MTSM_APPEARANCE_SETTINGS(APPEARANCE_SETTINGS_INITIALIZE)
 #undef APPEARANCE_SETTINGS_INITIALIZE

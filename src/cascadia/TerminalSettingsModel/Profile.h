@@ -110,6 +110,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Nullable/optional settings
         INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
+        INHERITABLE_SETTING(Model::Profile, hstring, Padding, DEFAULT_PADDING);
         INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
         // Global settings
@@ -122,7 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::Profile, bool, Hidden, false);
         INHERITABLE_SETTING(Model::Profile, guid, Guid, _GenerateGuidForProfile(Name(), Source()));
 
-#define PROFILE_SETTINGS_INITIALIZE(type, name, ...) \
+#define PROFILE_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
     INHERITABLE_SETTING(Model::Profile, type, name, ##__VA_ARGS__)
         MTSM_PROFILE_SETTINGS(PROFILE_SETTINGS_INITIALIZE)
 #undef PROFILE_SETTINGS_INITIALIZE
