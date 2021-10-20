@@ -340,9 +340,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
 
-        // TODO!
         _core.ApplyAppearance(_focused);
-        // _core.UpdateAppearance(newAppearance.try_as<IControlAppearance>());
     }
 
     // Method Description:
@@ -463,22 +461,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             {
                 RootGrid().Background(acrylic);
             }
-
-            // // GH#5098: Inform the engine of the new opacity of the default text background.
-            // //
-            // // TODO! This sure seems contrived, shouldn't the core... already
-            // // know this?
-            // _core.SetBackgroundOpacity(_core.Opacity());
         }
         else
         {
             Media::SolidColorBrush solidColor{};
             solidColor.Opacity(_core.Opacity());
             RootGrid().Background(solidColor);
-
-            // // GH#5098: Inform the engine of the new opacity of the default text background.
-            // // TODO! here too
-            // _core.SetBackgroundOpacity(_core.Opacity());
         }
     }
 
@@ -2378,21 +2366,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.Settings();
     }
 
-    // void TermControl::Settings(IControlSettings newSettings)
-    // {
-    //     DebugBreak();
-    //     _settings = winrt::make_self<ControlSettings>(newSettings, nullptr);
-    // }
-
     IControlAppearance TermControl::UnfocusedAppearance() const
     {
         return _core.UnfocusedAppearance();
     }
-
-    // void TermControl::UnfocusedAppearance(IControlAppearance newAppearance)
-    // {
-    //     _settings = winrt::make_self<ControlSettings>(_settings.try_as<IControlSettings>(), newAppearance);
-    // }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
     {

@@ -909,6 +909,15 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     // DANGER: Layers slow us down. Only do this in the specific case where
     // someone has chosen the slower ClearType antialiasing (versus the faster
     // grayscale antialiasing)
+    //
+    // October 2021: We're no longer forcing the BG of the run to be opaque when
+    // cleartype is enabled and the background isn't fully opaque. In the case
+    // of (!useAcrylic && opacity<1.0), we actually can still render cleartype
+    // text just fine. It's only acrylic that messes us up. So we're making a
+    // small change. Now, when the user requests acrylic, text that's rendered
+    // on the default text BG will always use grayscale, rather than cleartype.
+    // This helps support the scenario where the user has (useAcrylic &&
+    // opacity==1.0)
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
     const bool usingTransparency = _defaultBackgroundIsTransparent;
     // Another way of naming "bgIsDefault" is "bgHasTransparency"
@@ -1930,23 +1939,13 @@ CATCH_RETURN()
                                                      const bool /*usingSoftFont*/,
                                                      const bool isSettingDefaultBrushes) noexcept
 {
-    // GH#5098: If we're rendering with cleartype text, we need to always render
-    // onto an opaque background. If our background's opacity is 1.0f, that's
-    // great, we can actually use cleartype in that case. In that scenario
-    // (cleartype && opacity == 1.0), we'll force the opacity bits of the
-    // COLORREF to 0xff so we draw as cleartype. In any other case, leave the
-    // opacity bits unchanged. PaintBufferLine will later do some logic to
-    // determine if we should paint the text as grayscale or not.
-    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultBackgroundIsTransparent;
-    const bool forceOpaqueBG = false; // usingCleartype && usingTransparency;
-    usingCleartype;
-    usingTransparency;
-
     const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
-    _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
+    // October 2021: small changes were made to the way BG color interacts with
+    // grayscale AA, esp. with regards to acrylic and GH#5098. See comment in
+    // _ShouldForceGrayscaleAA for more details.
+    _backgroundColor = _ColorFFromColorRef(colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);

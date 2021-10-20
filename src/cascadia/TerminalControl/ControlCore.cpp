@@ -278,8 +278,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            const auto ua = UseAcrylic();
-            _renderEngine->SetDefaultTextBackgroundOpacity(ua);
+            _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -441,16 +440,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      0.0,
                                      1.0);
 
-        // GH#5098: Inform the engine of the new opacity of the default text background.
-
-        // TODO! This doesn't work when (aa:cleartype && useAcrylic:true &&
-        // opacity<1.0 -> 1.0) We end up forcing the solid BG, but the padding
-        // around the terminal is still acrylic. I think we only need to tell
-        // the engine to do the solid BG trick for useAcrylic:true, not for
-        // vintage opacity. Lets find out.
-        //
-        // SetBackgroundOpacity(newOpacity);
-
         // Update our runtime opacity value
         Opacity(newOpacity);
 
@@ -462,15 +451,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // is what the Terminal did prior to 1.12.
         if (!IsVintageOpacityAvailable())
         {
+            const auto oldUseAcrylic{ UseAcrylic() };
             _runtimeUseAcrylic = newOpacity < 1.0;
+            // If they've changed the value of UseAcrylic, then update the
+            // renderer as well.
+            if (oldUseAcrylic != UseAcrylic() && _renderEngine)
+            {
+                // GH#5098: Inform the engine of the new opacity of the default
+                // text background.
+                auto lock = _terminal->LockForWriting();
+                _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
+            }
         }
-
-        // if (_renderEngine)
-        // {
-        //     auto lock = _terminal->LockForWriting();
-        //     const auto ua = UseAcrylic();
-        //     _renderEngine->SetDefaultTextBackgroundOpacity(ua);
-        // }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);
@@ -638,8 +630,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
-        const auto ua = UseAcrylic();
-        _renderEngine->SetDefaultTextBackgroundOpacity(ua);
+        _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
 
         _updateAntiAliasingMode(_renderEngine.get());
 
