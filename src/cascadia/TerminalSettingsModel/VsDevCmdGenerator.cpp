@@ -40,7 +40,7 @@ std::wstring VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration
 {
     std::wstring commandLine;
     commandLine.reserve(256);
-    commandLine.append(LR"("cmd.exe /k ")");
+    commandLine.append(LR"(cmd.exe /k ")");
     commandLine.append(GetDevCmdScriptPath(instance));
 #if defined(_M_ARM64)
     commandLine.append(LR"(" -arch=arm64 -host_arch=x64)");
