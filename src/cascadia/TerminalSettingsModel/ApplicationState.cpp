@@ -141,6 +141,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     MTSM_APPLICATION_STATE_FIELDS(MTSM_APPLICATION_STATE_GEN)
 #undef MTSM_APPLICATION_STATE_GEN
 
+    // Method Description:
+    // - See GH#11119. Removes all of the data in this ApplicationState object
+    //   and resets it to the defaults. This will delete the state file! That's
+    //   the sure-fire way to make sure the data doesn't come back. If we leave
+    //   it untouched, then when we go to write the file back out, we'll first
+    //   re-read it's contents and try to overlay our new state. However,
+    //   nullopts won't remove keys from the JSON, so we'll end up with the
+    //   original state in the file.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ApplicationState::Reset() noexcept
+    try
+    {
+        LOG_LAST_ERROR_IF(!DeleteFile(_path.c_str()));
+        *_state.lock() = {};
+    }
+    CATCH_LOG()
+
     Json::Value ApplicationState::_getRoot(const locked_hfile& file) const noexcept
     {
         Json::Value root;

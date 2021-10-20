@@ -727,4 +727,8 @@
   <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>This Terminal window is running as Admin</value>
   </data>
+  <data name="SetAsDefaultTip_OpenSettingsLink.Content" xml:space="preserve">
+    <value>Open Settings</value>
+    <comment>This is a call-to-action hyperlink; it will open the settings.</comment>
+  </data>
 </root>

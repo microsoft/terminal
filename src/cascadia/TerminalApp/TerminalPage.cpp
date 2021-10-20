@@ -2902,6 +2902,7 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
         {
+            TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipPresented", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
             infoBar.IsOpen(true);
         }
     }
@@ -3333,13 +3334,31 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_SetAsDefaultDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/) const
+    void TerminalPage::_SetAsDefaultDismissHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
     {
         _DismissMessage(InfoBarMessage::SetAsDefault);
         if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
         {
             infoBar.IsOpen(false);
         }
+
+        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipDismissed", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        _FocusCurrentTab(true);
+    }
+
+    // Method Description:
+    // - Dismisses the Default Terminal tip and opens the settings.
+    void TerminalPage::_SetAsDefaultOpenSettingsHandler(const IInspectable& /*sender*/, const IInspectable& /*args*/)
+    {
+        if (const auto infoBar = FindName(L"SetAsDefaultInfoBar").try_as<MUX::Controls::InfoBar>())
+        {
+            infoBar.IsOpen(false);
+        }
+
+        TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipInteracted", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
+
+        _OpenSettingsUI();
     }
 
     // Method Description:

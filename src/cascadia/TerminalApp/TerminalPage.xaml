@@ -145,13 +145,14 @@
             <mux:InfoBar x:Name="SetAsDefaultInfoBar"
                          x:Uid="SetAsDefaultInfoBar"
                          x:Load="False"
+                         CloseButtonClick="_SetAsDefaultDismissHandler"
                          IsClosable="True"
                          IsIconVisible="True"
                          IsOpen="False"
                          Severity="Informational">
                 <mux:InfoBar.ActionButton>
-                    <Button x:Uid="InfoBarDismissButton"
-                            Click="_SetAsDefaultDismissHandler" />
+                    <HyperlinkButton x:Uid="SetAsDefaultTip_OpenSettingsLink"
+                                     Click="_SetAsDefaultOpenSettingsHandler" />
                 </mux:InfoBar.ActionButton>
             </mux:InfoBar>
         </StackPanel>
