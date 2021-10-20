@@ -81,7 +81,7 @@ namespace Microsoft.Terminal.Control
         void BlinkAttributeTick();
         void UpdatePatternLocations();
         void Search(String text, Boolean goForward, Boolean caseSensitive);
-        void SetBackgroundOpacity(Double opacity);
+        // void SetBackgroundOpacity(Double opacity);
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
         Boolean HasSelection { get; };

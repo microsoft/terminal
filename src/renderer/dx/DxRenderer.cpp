@@ -88,7 +88,7 @@ DxEngine::DxEngine() :
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
-    _defaultTextBackgroundOpacity{ 1.0f },
+    _defaultBackgroundIsTransparent{ false },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -910,7 +910,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     // someone has chosen the slower ClearType antialiasing (versus the faster
     // grayscale antialiasing)
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+    const bool usingTransparency = _defaultBackgroundIsTransparent;
     // Another way of naming "bgIsDefault" is "bgHasTransparency"
     const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
                              (_backgroundColor.r == _defaultBackgroundColor.r) &&
@@ -1938,8 +1938,10 @@ CATCH_RETURN()
     // opacity bits unchanged. PaintBufferLine will later do some logic to
     // determine if we should paint the text as grayscale or not.
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
-    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+    const bool usingTransparency = _defaultBackgroundIsTransparent;
+    const bool forceOpaqueBG = false; // usingCleartype && usingTransparency;
+    usingCleartype;
+    usingTransparency;
 
     const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
@@ -2244,10 +2246,11 @@ CATCH_LOG()
 // - opacity: the new opacity of our background, on [0.0f, 1.0f]
 // Return Value:
 // - <none>
-void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
+void DxEngine::SetDefaultTextBackgroundOpacity(const bool useAcrylic) noexcept
 try
 {
-    _defaultTextBackgroundOpacity = opacity;
+    _defaultBackgroundIsTransparent = useAcrylic;
+    // _defaultTextBackgroundOpacity = opacity;
 
     // Make sure we redraw all the cells, to update whether they're actually
     // drawn with cleartype or not.

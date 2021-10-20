@@ -278,7 +278,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings->Opacity()));
+            const auto ua = UseAcrylic();
+            _renderEngine->SetDefaultTextBackgroundOpacity(ua);
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -464,6 +465,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _runtimeUseAcrylic = newOpacity < 1.0;
         }
 
+        // if (_renderEngine)
+        // {
+        //     auto lock = _terminal->LockForWriting();
+        //     const auto ua = UseAcrylic();
+        //     _renderEngine->SetDefaultTextBackgroundOpacity(ua);
+        // }
+
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);
     }
@@ -630,7 +638,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
-        _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(Opacity()));
+        const auto ua = UseAcrylic();
+        _renderEngine->SetDefaultTextBackgroundOpacity(ua);
 
         _updateAntiAliasingMode(_renderEngine.get());
 
@@ -1310,14 +1319,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SetBackgroundOpacity(const double opacity)
-    {
-        if (_renderEngine)
-        {
-            auto lock = _terminal->LockForWriting();
-            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
-        }
-    }
+    // void ControlCore::SetBackgroundOpacity(const double opacity)
+    // {
+    //     if (_renderEngine)
+    //     {
+    //         auto lock = _terminal->LockForWriting();
+    //         _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
+    //     }
+    // }
 
     // Method Description:
     // - Asynchronously close our connection. The Connection will likely wait
