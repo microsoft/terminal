@@ -1610,10 +1610,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->ApplyScheme(scheme);
 
-        // _settings->FocusedAppearance()->DefaultForeground(colorScheme.Foreground);
-        // _settings->FocusedAppearance()->DefaultBackground(colorScheme.Background);
-        // _settings->FocusedAppearance()->CursorColor(colorScheme.CursorColor);
-        // _settings->FocusedAppearance()->SelectionBackground(colorScheme.SelectionBackground);
+        _settings->FocusedAppearance()->DefaultForeground(scheme.Foreground);
+        _settings->FocusedAppearance()->DefaultBackground(scheme.Background);
+        _settings->FocusedAppearance()->CursorColor(scheme.CursorColor);
+        _settings->FocusedAppearance()->SelectionBackground(scheme.SelectionBackground);
 
         // // _defaultFg = colorScheme.Foreground;
         // // // Set the default background as transparent to prevent the
@@ -1621,22 +1621,22 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // // til::color newBackgroundColor{ colorScheme.Background };
         // // _defaultBg = newBackgroundColor.with_alpha(0);
 
-        // _settings->FocusedAppearance()->Table()[0] = scheme.Black;
-        // _settings->FocusedAppearance()->Table()[1] = scheme.Red;
-        // _settings->FocusedAppearance()->Table()[2] = scheme.Green;
-        // _settings->FocusedAppearance()->Table()[3] = scheme.Yellow;
-        // _settings->FocusedAppearance()->Table()[4] = scheme.Blue;
-        // _settings->FocusedAppearance()->Table()[5] = scheme.Purple;
-        // _settings->FocusedAppearance()->Table()[6] = scheme.Cyan;
-        // _settings->FocusedAppearance()->Table()[7] = scheme.White;
-        // _settings->FocusedAppearance()->Table()[8] = scheme.BrightBlack;
-        // _settings->FocusedAppearance()->Table()[9] = scheme.BrightRed;
-        // _settings->FocusedAppearance()->Table()[10] = scheme.BrightGreen;
-        // _settings->FocusedAppearance()->Table()[11] = scheme.BrightYellow;
-        // _settings->FocusedAppearance()->Table()[12] = scheme.BrightBlue;
-        // _settings->FocusedAppearance()->Table()[13] = scheme.BrightPurple;
-        // _settings->FocusedAppearance()->Table()[14] = scheme.BrightCyan;
-        // _settings->FocusedAppearance()->Table()[15] = scheme.BrightWhite;
+        _settings->FocusedAppearance()->SetColorTableEntry(0, scheme.Black);
+        _settings->FocusedAppearance()->SetColorTableEntry(1, scheme.Red);
+        _settings->FocusedAppearance()->SetColorTableEntry(2, scheme.Green);
+        _settings->FocusedAppearance()->SetColorTableEntry(3, scheme.Yellow);
+        _settings->FocusedAppearance()->SetColorTableEntry(4, scheme.Blue);
+        _settings->FocusedAppearance()->SetColorTableEntry(5, scheme.Purple);
+        _settings->FocusedAppearance()->SetColorTableEntry(6, scheme.Cyan);
+        _settings->FocusedAppearance()->SetColorTableEntry(7, scheme.White);
+        _settings->FocusedAppearance()->SetColorTableEntry(8, scheme.BrightBlack);
+        _settings->FocusedAppearance()->SetColorTableEntry(9, scheme.BrightRed);
+        _settings->FocusedAppearance()->SetColorTableEntry(10, scheme.BrightGreen);
+        _settings->FocusedAppearance()->SetColorTableEntry(11, scheme.BrightYellow);
+        _settings->FocusedAppearance()->SetColorTableEntry(12, scheme.BrightBlue);
+        _settings->FocusedAppearance()->SetColorTableEntry(13, scheme.BrightPurple);
+        _settings->FocusedAppearance()->SetColorTableEntry(14, scheme.BrightCyan);
+        _settings->FocusedAppearance()->SetColorTableEntry(15, scheme.BrightWhite);
 
         // _buffer->GetCursor().SetColor(til::color{ colorScheme.CursorColor });
 
