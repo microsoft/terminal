@@ -159,6 +159,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     // TODO!: Will we be able to persist this? Or will runtime-changed settings
     // always be lost? Think like, changing the font size with an action. That's
     // lost.
+    // Come back to this after previewing. May end up with some data we can use there.
     //
     // if (controlSettings.AppliedColorScheme())
     // {

@@ -1501,13 +1501,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer->Start();
         }
 
-        // Only update the appearance here if an unfocused config exists -
-        // if an unfocused config does not exist then we never would have switched
-        // appearances anyway so there's no need to switch back upon gaining focus
-        if (_core.UnfocusedAppearance())
-        {
-            UpdateAppearance(_core.FocusedAppearance());
-        }
+        // // Only update the appearance here if an unfocused config exists -
+        // // if an unfocused config does not exist then we never would have switched
+        // // appearances anyway so there's no need to switch back upon gaining focus
+        // if (_core.UnfocusedAppearance())
+        // {
+        //     UpdateAppearance(_core.FocusedAppearance());
+        // }
     }
 
     // Method Description:
@@ -2593,5 +2593,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     hstring TermControl::ReadEntireBuffer() const
     {
         return _core.ReadEntireBuffer();
+    }
+
+    Core::Scheme TermControl::ColorScheme() const noexcept
+    {
+        return _core.ColorScheme();
+    }
+
+    void TermControl::ColorScheme(Core::Scheme scheme) const noexcept
+    {
+        _core.ColorScheme(scheme);
     }
 }

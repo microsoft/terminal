@@ -451,7 +451,31 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto scheme = _settings.GlobalSettings().ColorSchemes().TryLookup(realArgs.SchemeName()))
             {
-                const auto res = _ApplyToActiveControls([&](auto& /*control*/) {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    Core::Scheme coreScheme{};
+
+                    coreScheme.Foreground = scheme.Foreground();
+                    coreScheme.Background = scheme.Background();
+                    coreScheme.CursorColor = scheme.CursorColor();
+                    coreScheme.SelectionBackground = scheme.SelectionBackground();
+                    coreScheme.Black = scheme.Table()[0];
+                    coreScheme.Red = scheme.Table()[1];
+                    coreScheme.Green = scheme.Table()[2];
+                    coreScheme.Yellow = scheme.Table()[3];
+                    coreScheme.Blue = scheme.Table()[4];
+                    coreScheme.Purple = scheme.Table()[5];
+                    coreScheme.Cyan = scheme.Table()[6];
+                    coreScheme.White = scheme.Table()[7];
+                    coreScheme.BrightBlack = scheme.Table()[8];
+                    coreScheme.BrightRed = scheme.Table()[9];
+                    coreScheme.BrightGreen = scheme.Table()[10];
+                    coreScheme.BrightYellow = scheme.Table()[11];
+                    coreScheme.BrightBlue = scheme.Table()[12];
+                    coreScheme.BrightPurple = scheme.Table()[13];
+                    coreScheme.BrightCyan = scheme.Table()[14];
+                    coreScheme.BrightWhite = scheme.Table()[15];
+
+                    control.ColorScheme(coreScheme);
                     //// Start by getting the current settings of the control
                     //auto controlSettings = control.Settings().as<TerminalSettings>();
                     //auto parentSettings = controlSettings;
@@ -479,7 +503,7 @@ namespace winrt::TerminalApp::implementation
                     // We'll need a dedicated method for this. The Control's
                     // settings are hosted in the Core, which could be OOP.
                     // We'll need to manually tell the control to update its
-                    // core's scheme. 
+                    // core's scheme.
                 });
                 args.Handled(res);
             }

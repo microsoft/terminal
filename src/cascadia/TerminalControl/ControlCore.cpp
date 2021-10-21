@@ -1595,4 +1595,51 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
     }
+
+    Core::Scheme ControlCore::ColorScheme() const noexcept
+    {
+        auto s = _terminal->GetColorScheme();
+        // This might be a tad bit of a hack. This only evet gets called by set
+        // color scheme / preview color scheme, and in that case, we know the
+        // control _is_ focused.
+        s.SelectionBackground = _settings->FocusedAppearance()->SelectionBackground();
+        return s;
+    }
+
+    void ControlCore::ColorScheme(Core::Scheme scheme) const noexcept
+    {
+        _terminal->ApplyScheme(scheme);
+
+        // _settings->FocusedAppearance()->DefaultForeground(colorScheme.Foreground);
+        // _settings->FocusedAppearance()->DefaultBackground(colorScheme.Background);
+        // _settings->FocusedAppearance()->CursorColor(colorScheme.CursorColor);
+        // _settings->FocusedAppearance()->SelectionBackground(colorScheme.SelectionBackground);
+
+        // // _defaultFg = colorScheme.Foreground;
+        // // // Set the default background as transparent to prevent the
+        // // // DX layer from overwriting the background image or acrylic effect
+        // // til::color newBackgroundColor{ colorScheme.Background };
+        // // _defaultBg = newBackgroundColor.with_alpha(0);
+
+        // _settings->FocusedAppearance()->Table()[0] = scheme.Black;
+        // _settings->FocusedAppearance()->Table()[1] = scheme.Red;
+        // _settings->FocusedAppearance()->Table()[2] = scheme.Green;
+        // _settings->FocusedAppearance()->Table()[3] = scheme.Yellow;
+        // _settings->FocusedAppearance()->Table()[4] = scheme.Blue;
+        // _settings->FocusedAppearance()->Table()[5] = scheme.Purple;
+        // _settings->FocusedAppearance()->Table()[6] = scheme.Cyan;
+        // _settings->FocusedAppearance()->Table()[7] = scheme.White;
+        // _settings->FocusedAppearance()->Table()[8] = scheme.BrightBlack;
+        // _settings->FocusedAppearance()->Table()[9] = scheme.BrightRed;
+        // _settings->FocusedAppearance()->Table()[10] = scheme.BrightGreen;
+        // _settings->FocusedAppearance()->Table()[11] = scheme.BrightYellow;
+        // _settings->FocusedAppearance()->Table()[12] = scheme.BrightBlue;
+        // _settings->FocusedAppearance()->Table()[13] = scheme.BrightPurple;
+        // _settings->FocusedAppearance()->Table()[14] = scheme.BrightCyan;
+        // _settings->FocusedAppearance()->Table()[15] = scheme.BrightWhite;
+
+        // _buffer->GetCursor().SetColor(til::color{ colorScheme.CursorColor });
+
+        _renderer->TriggerRedrawAll();
+    }
 }
