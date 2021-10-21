@@ -297,41 +297,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        if (!newAppearance.BackgroundImage().empty())
-        {
-            try
-            {
-                Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
-
-                // Check if the image brush is already pointing to the image
-                // in the modified settings; if it isn't (or isn't there),
-                // set a new image source for the brush
-                auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
-                if (imageSource == nullptr ||
-                    imageSource.UriSource() == nullptr ||
-                    imageSource.UriSource().RawUri() != imageUri.RawUri())
-                {
-                    // Note that BitmapImage handles the image load asynchronously,
-                    // which is especially important since the image
-                    // may well be both large and somewhere out on the
-                    // internet.
-                    Media::Imaging::BitmapImage image(imageUri);
-                    BackgroundImage().Source(image);
-                }
-
-                // Apply stretch, opacity and alignment settings
-                BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
-                BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
-                BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
-                BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
-            }
-            CATCH_LOG()
-        }
-        else
-        {
-            BackgroundImage().Source(nullptr);
-        }
+        _SetBackgroundImage(newAppearance);
 
         // Update our control settings
         const auto bg = newAppearance.DefaultBackground();
@@ -414,6 +380,45 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                              newMargin.Right,
                                                              newMargin.Bottom });
         }
+    }
+
+    void TermControl::_SetBackgroundImage(const IControlAppearance& newAppearance)
+    {
+        if (newAppearance.BackgroundImage().empty())
+        {
+            BackgroundImage().Source(nullptr);
+            return;
+        }
+
+        Windows::Foundation::Uri imageUri{ nullptr };
+        try
+        {
+            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImage() };
+        }
+        CATCH_LOG_RETURN()
+
+        // Check if the image brush is already pointing to the image
+        // in the modified settings; if it isn't (or isn't there),
+        // set a new image source for the brush
+        auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
+
+        if (imageSource == nullptr ||
+            imageSource.UriSource() == nullptr ||
+            imageSource.UriSource().RawUri() != imageUri.RawUri())
+        {
+            // Note that BitmapImage handles the image load asynchronously,
+            // which is especially important since the image
+            // may well be both large and somewhere out on the
+            // internet.
+            Media::Imaging::BitmapImage image(imageUri);
+            BackgroundImage().Source(image);
+        }
+
+        // Apply stretch, opacity and alignment settings
+        BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
+        BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
+        BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
+        BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
     }
 
     // Method Description:
