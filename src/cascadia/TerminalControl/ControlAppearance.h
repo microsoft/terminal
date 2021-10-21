@@ -9,21 +9,11 @@ Licensed under the MIT license.
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
-#define RUNTIME_PROPERTY(type, name, setting, ...)                \
-private:                                                          \
-    type _##name{ __VA_ARGS__ };                                  \
-    std::optional<type> _runtime##name{ std::nullopt };           \
-                                                                  \
-public:                                                           \
-    void name(const type newValue) { _runtime##name = newValue; } \
-                                                                  \
-    type name() const { return _runtime##name ? *_runtime##name : _##name; }
-
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct ControlAppearance : public winrt::implements<ControlAppearance, Microsoft::Terminal::Core::ICoreAppearance, Microsoft::Terminal::Control::IControlAppearance>
     {
-#define SETTINGS_GEN(type, name, ...) RUNTIME_PROPERTY(type, name, __VA_ARGS__);
+#define SETTINGS_GEN(type, name, ...) WINRT_PROPERTY(type, name, __VA_ARGS__);
         CORE_APPEARANCE_SETTINGS(SETTINGS_GEN)
         CONTROL_APPEARANCE_SETTINGS(SETTINGS_GEN)
 #undef SETTINGS_GEN
