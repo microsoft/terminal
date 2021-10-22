@@ -395,7 +395,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImage() };
         }
-        CATCH_LOG_RETURN()
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            BackgroundImage().Source(nullptr);
+            return;
+        }
 
         // Check if the image brush is already pointing to the image
         // in the modified settings; if it isn't (or isn't there),
