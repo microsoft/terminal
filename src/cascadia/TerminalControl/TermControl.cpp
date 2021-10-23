@@ -382,6 +382,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
+    // Method Description:
+    // - Sets background image and applies its settings (stretch, opacity and alignment)
+    // - Checks path validity 
+    // Arguments:
+    // - newAppearance
+    // Return Value:
+    // - <none>
     void TermControl::_SetBackgroundImage(const IControlAppearance& newAppearance)
     {
         if (newAppearance.BackgroundImage().empty())
