@@ -384,7 +384,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     // Method Description:
     // - Sets background image and applies its settings (stretch, opacity and alignment)
-    // - Checks path validity 
+    // - Checks path validity
     // Arguments:
     // - newAppearance
     // Return Value:
