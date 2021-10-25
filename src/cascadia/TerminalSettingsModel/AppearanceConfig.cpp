@@ -26,6 +26,7 @@ static constexpr std::string_view BackgroundImageAlignmentKey{ "backgroundImageA
 static constexpr std::string_view RetroTerminalEffectKey{ "experimental.retroTerminalEffect" };
 static constexpr std::string_view PixelShaderPathKey{ "experimental.pixelShaderPath" };
 static constexpr std::string_view IntenseTextStyleKey{ "intenseTextStyle" };
+static constexpr std::string_view AdjustIndistinguishableColorsKey{ "adjustIndistinguishableColors" };
 static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
 static constexpr std::string_view OpacityKey{ "opacity" };
 
@@ -52,6 +53,7 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const Appearan
     appearance->_PixelShaderPath = source->_PixelShaderPath;
     appearance->_IntenseTextStyle = source->_IntenseTextStyle;
     appearance->_Opacity = source->_Opacity;
+    appearance->_AdjustIndistinguishableColors = source->_AdjustIndistinguishableColors;
     return appearance;
 }
 
@@ -73,6 +75,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::SetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::SetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::SetValueForKey(json, AdjustIndistinguishableColorsKey, _AdjustIndistinguishableColors);
     JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 
     return json;
@@ -105,6 +108,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, RetroTerminalEffectKey, _RetroTerminalEffect);
     JsonUtils::GetValueForKey(json, PixelShaderPathKey, _PixelShaderPath);
     JsonUtils::GetValueForKey(json, IntenseTextStyleKey, _IntenseTextStyle);
+    JsonUtils::GetValueForKey(json, AdjustIndistinguishableColorsKey, _AdjustIndistinguishableColors);
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
     JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 }

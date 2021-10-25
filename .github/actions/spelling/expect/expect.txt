@@ -189,13 +189,12 @@ cacafire
 callee
 capslock
 CARETBLINKINGENABLED
+carlos
 CARRIAGERETURN
 cascadia
 cassert
 castsi
 catid
-carlos
-zamora
 cazamor
 CBash
 cbegin
@@ -669,6 +668,7 @@ dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxsm
 dxttbmp
 eachother
 eae
@@ -1232,6 +1232,7 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KPRIORITY
 KVM
 langid
 LANGUAGELIST
@@ -1642,6 +1643,7 @@ onecoreuapuuid
 onecoreuuid
 ONECOREWINDOWS
 onehalf
+oneseq
 ONLCR
 openbash
 opencode
@@ -1708,6 +1710,7 @@ pcch
 PCCHAR
 PCCONSOLE
 PCD
+pcg
 pch
 PCHAR
 PCIDLIST
@@ -1803,6 +1806,7 @@ POSX
 POSXSCROLL
 POSYSCROLL
 ppci
+PPEB
 ppf
 ppguid
 ppidl
@@ -2022,6 +2026,7 @@ Rike
 RIPMSG
 RIS
 RMENU
+rng
 roadmap
 robomac
 roundtrip
@@ -2724,6 +2729,7 @@ wixproj
 wline
 wlinestream
 wmain
+wmemory
 WMSZ
 wnd
 WNDALLOC
@@ -2850,6 +2856,7 @@ YSize
 YSubstantial
 YVIRTUALSCREEN
 YWalk
+zamora
 ZCmd
 ZCtrl
 zsh

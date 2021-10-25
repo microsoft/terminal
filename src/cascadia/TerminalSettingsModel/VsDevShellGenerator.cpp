@@ -42,10 +42,19 @@ std::wstring VsDevShellGenerator::GetProfileCommandLine(const VsSetupConfigurati
     // The triple-quotes are a PowerShell path escape sequence that can safely be stored in a JSON object.
     // The "SkipAutomaticLocation" parameter will prevent "Enter-VsDevShell" from automatically setting the shell path
     // so the path in the profile will be used instead.
-    std::wstring commandLine{ L"powershell.exe -NoExit -Command \"& {" };
-    commandLine.append(L"Import-Module \"\"\"" + GetDevShellModulePath(instance) + L"\"\"\";");
-    commandLine.append(L"Enter-VsDevShell " + instance.GetInstanceId() + L" -SkipAutomaticLocation");
-    commandLine.append(L"}\"");
+    std::wstring commandLine;
+    commandLine.reserve(256);
+    commandLine.append(LR"(powershell.exe -NoExit -Command "&{Import-Module """)");
+    commandLine.append(GetDevShellModulePath(instance));
+    commandLine.append(LR"("""; Enter-VsDevShell )");
+    commandLine.append(instance.GetInstanceId());
+#if defined(_M_ARM64)
+    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=arm64 -host_arch=x64"""}")");
+#elif defined(_M_AMD64)
+    commandLine.append(LR"( -SkipAutomaticLocation -DevCmdArguments """-arch=x64 -host_arch=x64"""}")");
+#else
+    commandLine.append(LR"( -SkipAutomaticLocation}")");
+#endif
 
     return commandLine;
 }

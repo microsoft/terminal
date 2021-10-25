@@ -1,5 +1,6 @@
 ACLs
 ADMINS
+advapi
 altform
 altforms
 appendwttlogging
@@ -15,6 +16,7 @@ CPLs
 cpptools
 cppvsdbg
 CPRs
+cryptbase
 DACL
 DACLs
 diffs
@@ -46,6 +48,7 @@ powershell
 propkey
 pscustomobject
 QWORD
+regedit
 robocopy
 SACLs
 sdkddkver

@@ -375,6 +375,8 @@ namespace winrt::TerminalApp::implementation
             co_return ContentDialogResult::None;
         }
 
+        _dialog = dialog;
+
         // IMPORTANT: This is necessary as documented in the ContentDialog MSDN docs.
         // Since we're hosting the dialog in a Xaml island, we need to connect it to the
         // xaml tree somehow.
@@ -410,6 +412,16 @@ namespace winrt::TerminalApp::implementation
 
         // After the dialog is dismissed, the dialog lock (held by `lock`) will
         // be released so another can be shown
+    }
+
+    // Method Description:
+    // - Dismiss the (only) visible ContentDialog
+    void AppLogic::DismissDialog()
+    {
+        if (auto localDialog = std::exchange(_dialog, nullptr))
+        {
+            localDialog.Hide();
+        }
     }
 
     // Method Description:

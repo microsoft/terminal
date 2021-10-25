@@ -4,6 +4,8 @@
 #include "precomp.h"
 #include "TextColor.h"
 
+#include <til/bit.h>
+
 // clang-format off
 
 // A table mapping 8-bit RGB colors, in the form RRRGGGBB,
@@ -186,7 +188,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const 
             //    the result will be something like 0b00100000.
             // 5. Use BitScanForward (bsf) to find the index of the most significant 1 bit.
             const auto haystack = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(colorTable.data())); // 1.
-            const auto needle = _mm256_set1_epi32(__builtin_bit_cast(int, defaultColor)); // 2.
+            const auto needle = _mm256_set1_epi32(til::bit_cast<int>(defaultColor)); // 2.
             const auto result = _mm256_cmpeq_epi32(haystack, needle); // 3.
             const auto mask = _mm256_movemask_ps(_mm256_castsi256_ps(result)); // 4.
             unsigned long index;
@@ -203,7 +205,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const 
             //   --> the index returned by _BitScanForward must be divided by 2.
             const auto haystack1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 0));
             const auto haystack2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 4));
-            const auto needle = _mm_set1_epi32(__builtin_bit_cast(int, defaultColor));
+            const auto needle = _mm_set1_epi32(til::bit_cast<int>(defaultColor));
             const auto result1 = _mm_cmpeq_epi32(haystack1, needle);
             const auto result2 = _mm_cmpeq_epi32(haystack2, needle);
             const auto result = _mm_packs_epi32(result1, result2); // 3.5

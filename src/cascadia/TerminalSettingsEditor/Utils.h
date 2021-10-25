@@ -97,42 +97,6 @@ public:                                                                  \
 private:                                                                 \
     static winrt::Windows::UI::Xaml::DependencyProperty _##name##Property;
 
-// Function Description:
-// - This function presents a File Open "common dialog" and returns its selected file asynchronously.
-// Parameters:
-// - customize: A lambda that receives an IFileDialog* to customize.
-// Return value:
-// (async) path to the selected item.
-template<typename TLambda>
-winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenFilePicker(HWND parentHwnd, TLambda&& customize)
-{
-    auto fileDialog{ winrt::create_instance<IFileDialog>(CLSID_FileOpenDialog) };
-    DWORD flags{};
-    THROW_IF_FAILED(fileDialog->GetOptions(&flags));
-    THROW_IF_FAILED(fileDialog->SetOptions(flags | FOS_FORCEFILESYSTEM | FOS_NOCHANGEDIR | FOS_DONTADDTORECENT)); // filesystem objects only; no recent places
-    customize(fileDialog.get());
-
-    auto hr{ fileDialog->Show(parentHwnd) };
-    if (!SUCCEEDED(hr))
-    {
-        if (hr == HRESULT_FROM_WIN32(ERROR_CANCELLED))
-        {
-            co_return winrt::hstring{};
-        }
-        THROW_HR(hr);
-    }
-
-    winrt::com_ptr<IShellItem> result;
-    THROW_IF_FAILED(fileDialog->GetResult(result.put()));
-
-    wil::unique_cotaskmem_string filePath;
-    THROW_IF_FAILED(result->GetDisplayName(SIGDN_FILESYSPATH, &filePath));
-
-    co_return winrt::hstring{ filePath.get() };
-}
-
-winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> OpenImagePicker(HWND parentHwnd);
-
 namespace winrt::Microsoft::Terminal::Settings
 {
     winrt::hstring GetSelectedItemTag(winrt::Windows::Foundation::IInspectable const& comboBoxAsInspectable);

@@ -33,9 +33,11 @@ class CConsoleTSF final :
 {
 public:
     CConsoleTSF(HWND hwndConsole,
-                GetSuggestionWindowPos pfnPosition) :
+                GetSuggestionWindowPos pfnPosition,
+                GetTextBoxAreaPos pfnTextArea) :
         _hwndConsole(hwndConsole),
         _pfnPosition(pfnPosition),
+        _pfnTextArea(pfnTextArea),
         _cRef(1),
         _tid()
     {
@@ -66,21 +68,27 @@ public:
         return S_OK;
     }
 
+    // This returns Rectangle of the text box of whole console.
+    // When a user taps inside the rectangle while hardware keyboard is not available,
+    // touch keyboard is invoked.
     STDMETHODIMP GetScreenExt(RECT* pRect)
     {
         if (pRect)
         {
-            *pRect = _pfnPosition();
+            *pRect = _pfnTextArea();
         }
 
         return S_OK;
     }
 
+    // This returns rectangle of current command line edit area.
+    // When a user types in East Asian language, candidate window is shown at this position.
+    // Emoji and more panel (Win+.) is shown at the position, too.
     STDMETHODIMP GetTextExt(LONG, LONG, RECT* pRect, BOOL* pbClipped)
     {
         if (pRect)
         {
-            GetScreenExt(pRect);
+            *pRect = _pfnPosition();
         }
 
         if (pbClipped)
@@ -198,6 +206,7 @@ private:
     // Console info.
     HWND _hwndConsole;
     GetSuggestionWindowPos _pfnPosition;
+    GetTextBoxAreaPos _pfnTextArea;
 
     // Miscellaneous flags
     BOOL _fModifyingDoc = FALSE; // Set TRUE, when calls ITfRange::SetText

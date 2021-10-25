@@ -86,7 +86,7 @@ AppHost::AppHost() noexcept :
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
     _window->MakeWindow();
 
-    _windowManager.GetWindowLayoutRequested([this](auto&&, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& args) {
+    _GetWindowLayoutRequestedToken = _windowManager.GetWindowLayoutRequested([this](auto&&, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& args) {
         // The peasants are running on separate threads, so they'll need to
         // swap what context they are in to the ui thread to get the actual layout.
         args.WindowLayoutJsonAsync(_GetWindowLayoutAsync());
@@ -401,23 +401,42 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
         _HideNotificationIconRequested();
     }
 
+    // We don't want to try to save layouts if we are about to close
+    _getWindowLayoutThrottler.reset();
+    _windowManager.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+    // Remove ourself from the list of peasants so that we aren't included in
+    // any future requests. This will also mean we block until any existing
+    // event handler finishes.
+    _windowManager.SignalClose();
+
     _window->Close();
 }
 
 LaunchPosition AppHost::_GetWindowLaunchPosition()
 {
-    // Get the position of the current window. This includes the
-    // non-client already.
-    const auto window = _window->GetWindowRect();
-
-    const auto dpi = _window->GetCurrentDpi();
-    const auto nonClientArea = _window->GetNonClientFrame(dpi);
-
-    // The nonClientArea adjustment is negative, so subtract that out.
-    // This way we save the user-visible location of the terminal.
     LaunchPosition pos{};
-    pos.X = window.left - nonClientArea.left;
-    pos.Y = window.top;
+    // If we started saving before closing, but didn't resume the event handler
+    // until after _window might be a nullptr.
+    if (!_window)
+    {
+        return pos;
+    }
+
+    try
+    {
+        // Get the position of the current window. This includes the
+        // non-client already.
+        const auto window = _window->GetWindowRect();
+
+        const auto dpi = _window->GetCurrentDpi();
+        const auto nonClientArea = _window->GetNonClientFrame(dpi);
+
+        // The nonClientArea adjustment is negative, so subtract that out.
+        // This way we save the user-visible location of the terminal.
+        pos.X = window.left - nonClientArea.left;
+        pos.Y = window.top;
+    }
+    CATCH_LOG();
 
     return pos;
 }
@@ -723,10 +742,15 @@ winrt::Windows::Foundation::IAsyncOperation<winrt::hstring> AppHost::_GetWindowL
 {
     winrt::apartment_context peasant_thread;
 
+    winrt::hstring layoutJson = L"";
     // Use the main thread since we are accessing controls.
     co_await winrt::resume_foreground(_logic.GetRoot().Dispatcher());
-    const auto pos = _GetWindowLaunchPosition();
-    const auto layoutJson = _logic.GetWindowLayoutJson(pos);
+    try
+    {
+        const auto pos = _GetWindowLaunchPosition();
+        layoutJson = _logic.GetWindowLayoutJson(pos);
+    }
+    CATCH_LOG()
 
     // go back to give the result to the peasant.
     co_await peasant_thread;
@@ -1316,16 +1340,30 @@ void AppHost::_WindowMoved()
 {
     if (_logic)
     {
+        // Ensure any open ContentDialog is dismissed.
+        // Closing the popup in the UI tree as done below is not sufficient because
+        // it does not terminate the dialog's async operation.
+        _logic.DismissDialog();
+
         const auto root{ _logic.GetRoot() };
 
-        // This is basically DismissAllPopups which is also in
-        // TerminalSettingsEditor/Utils.h
-        // There isn't a good place that's shared between these two files, but
-        // it's only 5 LOC so whatever.
-        const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
-        for (const auto& p : popups)
+        try
         {
-            p.IsOpen(false);
+            // This is basically DismissAllPopups which is also in
+            // TerminalSettingsEditor/Utils.h
+            // There isn't a good place that's shared between these two files, but
+            // it's only 5 LOC so whatever.
+            const auto popups{ Media::VisualTreeHelper::GetOpenPopupsForXamlRoot(root.XamlRoot()) };
+            for (const auto& p : popups)
+            {
+                p.IsOpen(false);
+            }
+        }
+        catch (...)
+        {
+            // We purposely don't log here, because this is exceptionally noisy,
+            // especially on startup, when we're moving the window into place
+            // but might not have a real xamlRoot yet.
         }
     }
 }
