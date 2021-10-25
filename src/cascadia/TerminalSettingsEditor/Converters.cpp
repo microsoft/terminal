@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "Converters.h"
 #if __has_include("Converters.g.cpp")
 #include "Converters.g.cpp"
@@ -99,8 +99,16 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         return value.empty() ? winrt::Windows::UI::Xaml::Visibility::Collapsed : winrt::Windows::UI::Xaml::Visibility::Visible;
     }
-    winrt::hstring Converters::StringFallBackToEmptyString(winrt::hstring expected, winrt::hstring actual)
+
+    // Method Description:
+    // - Returns the value string, unless it matches the placeholder in which case the empty string.
+    // Arguments:
+    // - placeholder - the placeholder string.
+    // - value - the value string.
+    // Return Value:
+    // - The value string, unless it matches the placeholder in which case the empty string.
+    winrt::hstring Converters::StringOrEmptyIfPlaceholder(winrt::hstring placeholder, winrt::hstring value)
     {
-        return expected == actual ? expected : L"";
+        return placeholder == value ? L"" : value;
     }
 }
