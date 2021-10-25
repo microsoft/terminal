@@ -11,12 +11,6 @@
     </feature>
 
     <feature>
-        <name>Feature_EditableActionsPage</name>
-        <description>The Actions page in the settings UI should allow users to edit actions.</description>
-        <stage>AlwaysEnabled</stage>
-    </feature>
-
-    <feature>
         <name>Feature_EditableUnfocusedAppearance</name>
         <description>The unfocused appearance section in profiles in the SUI that allows users to create and edit unfocused appearances.</description>
         <stage>AlwaysEnabled</stage>
