@@ -40,7 +40,6 @@
     <Page Include="Actions.xaml" />
     <Page Include="SettingContainerStyle.xaml" />
     <Page Include="AddProfile.xaml" />
-    <Page Include="ReadOnlyActions.xaml" />
     <Page Include="KeyChordListener.xaml" />
   </ItemGroup>
 </Project>
