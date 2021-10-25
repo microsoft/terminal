@@ -31,6 +31,7 @@
   <ItemGroup>
     <ClInclude Include="$(IntDir)\IConsoleHandoff.h" />
     <ClInclude Include="$(IntDir)\ITerminalHandoff.h" />
+    <ClInclude Include="nodefaultlib_shim.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(IntDir)\dlldata.c" />
@@ -56,13 +57,14 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <CallingConvention>StdCall</CallingConvention>
+      <AdditionalIncludeDirectories>.;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CallingConvention Condition="'$(Platform)'!='ARM64'">StdCall</CallingConvention>
       <!-- Must be Stdcall on all platforms to resolve _ObjectStublessClient3 -->
       <PreprocessorDefinitions>REGISTER_PROXY_DLL;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <SDLCheck>false</SDLCheck>
+      <ForcedIncludeFiles>nodefaultlib_shim.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>OpenConsoleProxy.def</ModuleDefinitionFile>
