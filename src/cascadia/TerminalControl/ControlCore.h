@@ -60,6 +60,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ApplyAppearance(const bool& focused);
         Control::IControlSettings Settings()
         {
+            // TODO! This prevents a crash when sliding the opacity slider
+            // quickly, but it feels stupid.
             auto l = std::unique_lock<til::ticket_lock>{ _settingsLock };
             return *_settings;
         };
