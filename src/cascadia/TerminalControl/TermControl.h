@@ -207,8 +207,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
 
         void _InitializeBackgroundBrush();
-        void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);
-        winrt::fire_and_forget _changeBackgroundColor(const til::color bg);
+        winrt::fire_and_forget _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
+        void _changeBackgroundColor(const til::color bg);
+        void _changeBackgroundOpacity();
 
         bool _InitializeTerminal();
         void _SetFontSize(int fontSize);

@@ -78,7 +78,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
-        _core.BackgroundColorChanged({ this, &TermControl::_BackgroundColorChangedHandler });
+        _core.BackgroundColorChanged({ this, &TermControl::_coreBackgroundColorChanged });
         _core.FontSizeChanged({ this, &TermControl::_coreFontSizeChanged });
         _core.TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
         _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
@@ -331,6 +331,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update our control settings
         const auto bg = newAppearance.DefaultBackground();
+
+        // In the future, this might need to be changed to a
+        // _InitializeBackgroundBrush call instead, because we may need to
+        // switch from a solid color brush to an acrylic one.
         _changeBackgroundColor(bg);
 
         // Set TSF Foreground
@@ -379,8 +383,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // settings might be out-of-proc in the future
         auto settings{ _core.Settings() };
-        const auto bg = _core.FocusedAppearance().DefaultBackground();
-        _changeBackgroundColor(bg);
 
         // Apply padding as swapChainPanel's margin
         const auto newMargin = ParseThicknessFromPadding(settings.Padding());
@@ -468,35 +470,60 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Style the background of the control with the provided background color
+    // - Handler for the core's BackgroundColorChanged event. Updates the color
+    //   of our background brush to match.
+    // - Hops over to the UI thread to do this work.
     // Arguments:
-    // - color: The background color to use as a uint32 (aka DWORD COLORREF)
+    // <unused>
     // Return Value:
     // - <none>
-    void TermControl::_BackgroundColorChangedHandler(const IInspectable& /*sender*/,
-                                                     const IInspectable& /*args*/)
-    {
-        til::color newBgColor{ _core.BackgroundColor() };
-        _changeBackgroundColor(newBgColor);
-    }
-
-    winrt::fire_and_forget TermControl::_changeBackgroundColor(const til::color bg)
+    winrt::fire_and_forget TermControl::_coreBackgroundColorChanged(const IInspectable& /*sender*/,
+                                                                    const IInspectable& /*args*/)
     {
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
         if (auto control{ weakThis.get() })
         {
-            if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
-            {
-                acrylic.FallbackColor(bg);
-                acrylic.TintColor(bg);
-            }
-            else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
-            {
-                const auto originalOpacity = solidColor.Opacity();
-                solidColor.Color(bg);
-                solidColor.Opacity(originalOpacity);
-            }
+            til::color newBgColor{ _core.BackgroundColor() };
+            _changeBackgroundColor(newBgColor);
+        }
+    }
+
+    // Method Description:
+    // - Update the color of the background brush we're using. This does _not_
+    //   update the opacity, or what type of brush it is.
+    // - INVARIANT: This needs to be called on the UI thread.
+    // Arguments:
+    // - bg: the new color to use as the background color.
+    void TermControl::_changeBackgroundColor(const til::color bg)
+    {
+        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            acrylic.FallbackColor(bg);
+            acrylic.TintColor(bg);
+        }
+        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+        {
+            const auto originalOpacity = solidColor.Opacity();
+            solidColor.Color(bg);
+            solidColor.Opacity(originalOpacity);
+        }
+    }
+
+    // Method Description:
+    // - Update the opacity of the background brush we're using. This does _not_
+    //   update the color, or what type of brush it is.
+    // - INVARIANT: This needs to be called on the UI thread.
+    void TermControl::_changeBackgroundOpacity()
+    {
+        const auto opacity{ _core.Opacity() };
+        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            acrylic.TintOpacity(opacity);
+        }
+        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+        {
+            solidColor.Opacity(opacity);
         }
     }
 
@@ -1290,9 +1317,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         co_await resume_foreground(Dispatcher());
         try
         {
-            _InitializeBackgroundBrush();
-            const auto bg = _core.FocusedAppearance().DefaultBackground();
-            _changeBackgroundColor(bg);
+            _changeBackgroundOpacity();
         }
         CATCH_LOG();
     }
