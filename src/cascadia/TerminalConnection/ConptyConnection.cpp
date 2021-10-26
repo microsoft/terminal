@@ -372,6 +372,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // window is expecting it to be on the first layout.
         else
         {
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+            TraceLoggingWrite(
+                g_hTerminalConnectionProvider,
+                "ConPtyConnectedToDefterm",
+                TraceLoggingDescription("Event emitted when ConPTY connection is started, for a defterm session"),
+                TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+                TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
         }
 

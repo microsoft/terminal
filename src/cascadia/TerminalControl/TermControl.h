@@ -205,6 +205,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
         void _ApplyUISettings();
         winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
+        void _SetBackgroundImage(const IControlAppearance& newAppearance);
 
         void _InitializeBackgroundBrush();
         winrt::fire_and_forget _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
