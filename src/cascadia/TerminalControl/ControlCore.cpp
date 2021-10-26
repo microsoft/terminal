@@ -187,7 +187,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 }
             });
 
-        // TODO! uh, this feels wrong aren't we just setting this above??
         UpdateSettings(settings, unfocusedAppearance);
     }
 
@@ -588,7 +587,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
     void ControlCore::UpdateSettings(const IControlSettings& settings, const IControlAppearance& newAppearance)
     {
-        std::unique_lock l{ _settingsLock };
         _settings = winrt::make_self<implementation::ControlSettings>(settings, newAppearance);
 
         auto lock = _terminal->LockForWriting();

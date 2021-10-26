@@ -58,13 +58,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         void UpdateSettings(const Control::IControlSettings& settings, const IControlAppearance& newAppearance);
         void ApplyAppearance(const bool& focused);
-        Control::IControlSettings Settings()
-        {
-            // TODO! This prevents a crash when sliding the opacity slider
-            // quickly, but it feels stupid.
-            auto l = std::unique_lock<til::ticket_lock>{ _settingsLock };
-            return *_settings;
-        };
+        Control::IControlSettings Settings() { return *_settings; };
         Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
         Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
         bool HasUnfocusedAppearance() const;
@@ -210,7 +204,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TerminalConnection::ITerminalConnection::StateChanged_revoker _connectionStateChangedRevoker;
 
         winrt::com_ptr<ControlSettings> _settings{ nullptr };
-        til::ticket_lock _settingsLock;
 
         std::unique_ptr<::Microsoft::Terminal::Core::Terminal> _terminal{ nullptr };
 

@@ -242,12 +242,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         auto weakThis{ get_weak() };
 
-        co_await winrt::resume_background();
-        _core.UpdateSettings(settings, unfocusedAppearance);
-
         // Dispatch a call to the UI thread to apply the new settings to the
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
+
+        _core.UpdateSettings(settings, unfocusedAppearance);
 
         _UpdateSettingsFromUIThread();
 
