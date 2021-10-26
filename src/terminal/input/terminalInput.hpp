@@ -34,11 +34,26 @@ namespace Microsoft::Console::VirtualTerminal
         ~TerminalInput() = default;
 
         bool HandleKey(const IInputEvent* const pInEvent);
-        void ChangeAnsiMode(const bool ansiMode) noexcept;
-        void ChangeKeypadMode(const bool applicationMode) noexcept;
-        void ChangeCursorKeysMode(const bool applicationMode) noexcept;
 
-        void ChangeWin32InputMode(const bool win32InputMode) noexcept;
+        enum class Mode : size_t
+        {
+            Ansi,
+            Keypad,
+            CursorKey,
+            Win32,
+
+            Utf8MouseEncoding,
+            SgrMouseEncoding,
+
+            DefaultMouseTracking,
+            ButtonEventMouseTracking,
+            AnyEventMouseTracking,
+
+            AlternateScroll
+        };
+
+        void SetInputMode(const Mode mode, const bool enabled);
+        bool GetInputMode(const Mode mode) const;
         void ForceDisableWin32InputMode(const bool win32InputMode) noexcept;
 
 #pragma region MouseInput
@@ -62,14 +77,6 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
-        void SetUtf8ExtendedMode(const bool enable) noexcept;
-        void SetSGRExtendedMode(const bool enable) noexcept;
-
-        void EnableDefaultTracking(const bool enable) noexcept;
-        void EnableButtonEventTracking(const bool enable) noexcept;
-        void EnableAnyEventTracking(const bool enable) noexcept;
-
-        void EnableAlternateScroll(const bool enable) noexcept;
         void UseAlternateScreenBuffer() noexcept;
         void UseMainScreenBuffer() noexcept;
 #pragma endregion
@@ -80,10 +87,7 @@ namespace Microsoft::Console::VirtualTerminal
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate;
 
-        bool _ansiMode{ true };
-        bool _keypadApplicationMode{ false };
-        bool _cursorApplicationMode{ false };
-        bool _win32InputMode{ false };
+        til::enumset<Mode> _inputMode{ Mode::Ansi };
         bool _forceDisableWin32InputMode{ false };
 
         void _SendChar(const wchar_t ch);
@@ -94,27 +98,8 @@ namespace Microsoft::Console::VirtualTerminal
 
 #pragma region MouseInputState Management
         // These methods are defined in mouseInputState.cpp
-        enum class ExtendedMode : unsigned int
-        {
-            None,
-            Utf8,
-            Sgr,
-            Urxvt
-        };
-
-        enum class TrackingMode : unsigned int
-        {
-            None,
-            Default,
-            ButtonEvent,
-            AnyEvent
-        };
-
         struct MouseInputState
         {
-            ExtendedMode extendedMode{ ExtendedMode::None };
-            TrackingMode trackingMode{ TrackingMode::None };
-            bool alternateScroll{ false };
             bool inAlternateBuffer{ false };
             COORD lastPos{ -1, -1 };
             unsigned int lastButton{ 0 };
@@ -142,8 +127,8 @@ namespace Microsoft::Console::VirtualTerminal
                                                  const short modifierKeyState,
                                                  const short delta);
 
-        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept;
-        bool _SendAlternateScroll(const short delta) const noexcept;
+        bool _ShouldSendAlternateScroll(const unsigned int button, const short delta) const;
+        bool _SendAlternateScroll(const short delta) const;
 
         static constexpr unsigned int s_GetPressedButton(const MouseButtonState state) noexcept;
 #pragma endregion

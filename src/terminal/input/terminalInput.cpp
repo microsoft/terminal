@@ -250,25 +250,32 @@ const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
 const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
 const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
-void TerminalInput::ChangeAnsiMode(const bool ansiMode) noexcept
+void TerminalInput::SetInputMode(const Mode mode, const bool enabled)
 {
-    _ansiMode = ansiMode;
+    // If we're changing a tracking mode, we always clear other tracking modes first.
+    // We also clear out the last saved mouse position & button.
+    if (mode == Mode::DefaultMouseTracking || mode == Mode::ButtonEventMouseTracking || mode == Mode::AnyEventMouseTracking)
+    {
+        _inputMode.reset_all(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);
+        _mouseInputState.lastPos = { -1, -1 };
+        _mouseInputState.lastButton = 0;
+    }
+
+    // But if we're changing the encoding, we only clear out the other encoding modes
+    // when enabling a new encoding - not when disabling.
+    if ((mode == Mode::Utf8MouseEncoding || mode == Mode::SgrMouseEncoding) && enabled)
+    {
+        _inputMode.reset_all(Mode::Utf8MouseEncoding, Mode::SgrMouseEncoding);
+    }
+
+    _inputMode.set(mode, enabled);
 }
 
-void TerminalInput::ChangeKeypadMode(const bool applicationMode) noexcept
+bool TerminalInput::GetInputMode(const Mode mode) const
 {
-    _keypadApplicationMode = applicationMode;
+    return _inputMode.test(mode);
 }
 
-void TerminalInput::ChangeCursorKeysMode(const bool applicationMode) noexcept
-{
-    _cursorApplicationMode = applicationMode;
-}
-
-void TerminalInput::ChangeWin32InputMode(const bool win32InputMode) noexcept
-{
-    _win32InputMode = win32InputMode;
-}
 void TerminalInput::ForceDisableWin32InputMode(const bool win32InputMode) noexcept
 {
     _forceDisableWin32InputMode = win32InputMode;
@@ -530,7 +537,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // GH#4999 - If we're in win32-input mode, skip straight to doing that.
     // Since this mode handles all types of key events, do nothing else.
     // Only do this if win32-input-mode support isn't manually disabled.
-    if (_win32InputMode && !_forceDisableWin32InputMode)
+    if (_inputMode.test(Mode::Win32) && !_forceDisableWin32InputMode)
     {
         const auto seq = _GenerateWin32KeySequence(keyEvent);
         _SendInputSequence(seq);
@@ -655,7 +662,7 @@ bool TerminalInput::HandleKey(const IInputEvent* const pInEvent)
     // Check any other key mappings (like those for the F1-F12 keys).
     // These mappings will kick in no matter which modifiers are pressed and as such
     // must be checked last, or otherwise we'd override more complex key combinations.
-    const auto mapping = _getKeyMapping(keyEvent, _ansiMode, _cursorApplicationMode, _keypadApplicationMode);
+    const auto mapping = _getKeyMapping(keyEvent, _inputMode.test(Mode::Ansi), _inputMode.test(Mode::CursorKey), _inputMode.test(Mode::Keypad));
     if (_translateDefaultMapping(keyEvent, mapping, senderFunc))
     {
         return true;

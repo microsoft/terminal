@@ -321,9 +321,9 @@ CATCH_LOG_RETURN_FALSE()
 // - applicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
 // Return Value:
 // - True if handled successfully. False otherwise.
-bool TerminalDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
+bool TerminalDispatch::SetKeypadMode(const bool applicationMode) noexcept
 {
-    _terminalApi.SetKeypadMode(fApplicationMode);
+    _terminalApi.SetInputMode(TerminalInput::Mode::Keypad, applicationMode);
     return true;
 }
 
@@ -334,7 +334,7 @@ bool TerminalDispatch::SetKeypadMode(const bool fApplicationMode) noexcept
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
 {
-    _terminalApi.SetCursorKeysMode(applicationMode);
+    _terminalApi.SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
     return true;
 }
 
@@ -359,7 +359,7 @@ bool TerminalDispatch::SetScreenMode(const bool reverseMode) noexcept
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableWin32InputMode(const bool win32Mode) noexcept
 {
-    _terminalApi.EnableWin32InputMode(win32Mode);
+    _terminalApi.SetInputMode(TerminalInput::Mode::Win32, win32Mode);
     return true;
 }
 
@@ -371,7 +371,7 @@ bool TerminalDispatch::EnableWin32InputMode(const bool win32Mode) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableVT200MouseMode(const bool enabled) noexcept
 {
-    _terminalApi.EnableVT200MouseMode(enabled);
+    _terminalApi.SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
     return true;
 }
 
@@ -384,7 +384,7 @@ bool TerminalDispatch::EnableVT200MouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
 {
-    _terminalApi.EnableUTF8ExtendedMouseMode(enabled);
+    _terminalApi.SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
     return true;
 }
 
@@ -397,7 +397,7 @@ bool TerminalDispatch::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 {
-    _terminalApi.EnableSGRExtendedMouseMode(enabled);
+    _terminalApi.SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
     return true;
 }
 
@@ -409,7 +409,7 @@ bool TerminalDispatch::EnableSGRExtendedMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled) noexcept
 {
-    _terminalApi.EnableButtonEventMouseMode(enabled);
+    _terminalApi.SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
     return true;
 }
 
@@ -422,7 +422,7 @@ bool TerminalDispatch::EnableButtonEventMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled) noexcept
 {
-    _terminalApi.EnableAnyEventMouseMode(enabled);
+    _terminalApi.SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
     return true;
 }
 
@@ -435,7 +435,7 @@ bool TerminalDispatch::EnableAnyEventMouseMode(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool TerminalDispatch::EnableAlternateScroll(const bool enabled) noexcept
 {
-    _terminalApi.EnableAlternateScrollMode(enabled);
+    _terminalApi.SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
     return true;
 }
 
