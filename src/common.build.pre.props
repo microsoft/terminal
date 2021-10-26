@@ -107,7 +107,7 @@
         C4467: usage of ATL attributes is deprecated
           Conhost code still uses ATL.
       -->
-      <DisableSpecificWarnings>4103;4201;4312;4467;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <DisableSpecificWarnings>4103;4201;4312;4467;5105;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <PreprocessorDefinitions>_WINDOWS;EXTERNAL_BUILD;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
       <PrecompiledHeaderFile>precomp.h</PrecompiledHeaderFile>
@@ -117,6 +117,7 @@
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard_C>stdc17</LanguageStandard_C>
       <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FloatingPointModel>Fast</FloatingPointModel>
