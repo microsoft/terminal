@@ -71,7 +71,7 @@ namespace ControlUnitTests
                                     TerminalConnection::ITerminalConnection conn)
         {
             Log::Comment(L"Create ControlInteractivity object");
-            auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(settings, conn);
+            auto interactivity = winrt::make_self<Control::implementation::ControlInteractivity>(settings, settings, conn);
             VERIFY_IS_NOT_NULL(interactivity);
             auto core = interactivity->_core;
             core->_inUnitTests = true;
@@ -117,12 +117,12 @@ namespace ControlUnitTests
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, settings->Opacity());
-            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings.Opacity());
+            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings->Opacity());
 
             auto expectedUseAcrylic = winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() ? useAcrylic :
                                                                                                                                       (expectedOpacity < 1.0 ? true : false);
             VERIFY_ARE_EQUAL(expectedUseAcrylic, settings->UseAcrylic());
-            VERIFY_ARE_EQUAL(expectedUseAcrylic, core->_settings.UseAcrylic());
+            VERIFY_ARE_EQUAL(expectedUseAcrylic, core->_settings->UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
 

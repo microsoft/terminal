@@ -134,10 +134,6 @@ namespace TerminalAppLocalTests
         // Just creating it is enough to know that everything is working.
         TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
-        auto oldFontSize = settings.FontSize();
-        settings.FontSize(oldFontSize + 5);
-        auto newFontSize = settings.FontSize();
-        VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 
     void TabTests::TryCreateConnectionType()

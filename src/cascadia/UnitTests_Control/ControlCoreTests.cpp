@@ -67,7 +67,7 @@ namespace ControlUnitTests
         {
             Log::Comment(L"Create ControlCore object");
 
-            auto core = winrt::make_self<Control::implementation::ControlCore>(settings, conn);
+            auto core = winrt::make_self<Control::implementation::ControlCore>(settings, settings, conn);
             core->_inUnitTests = true;
             return core;
         }
@@ -129,12 +129,12 @@ namespace ControlUnitTests
         auto opacityCallback = [&](auto&&, Control::TransparencyChangedEventArgs args) mutable {
             VERIFY_ARE_EQUAL(expectedOpacity, args.Opacity());
             VERIFY_ARE_EQUAL(expectedOpacity, settings->Opacity());
-            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings.Opacity());
+            VERIFY_ARE_EQUAL(expectedOpacity, core->_settings->Opacity());
 
             if (expectedOpacity < 1.0)
             {
                 VERIFY_IS_TRUE(settings->UseAcrylic());
-                VERIFY_IS_TRUE(core->_settings.UseAcrylic());
+                VERIFY_IS_TRUE(core->_settings->UseAcrylic());
             }
 
             // GH#603: Adjusting opacity shouldn't change whether or not we
@@ -143,7 +143,7 @@ namespace ControlUnitTests
             auto expectedUseAcrylic = winrt::Microsoft::Terminal::Control::implementation::ControlCore::IsVintageOpacityAvailable() ? true :
                                                                                                                                       (expectedOpacity < 1.0 ? true : false);
             VERIFY_ARE_EQUAL(expectedUseAcrylic, settings->UseAcrylic());
-            VERIFY_ARE_EQUAL(expectedUseAcrylic, core->_settings.UseAcrylic());
+            VERIFY_ARE_EQUAL(expectedUseAcrylic, core->_settings->UseAcrylic());
         };
         core->TransparencyChanged(opacityCallback);
 
