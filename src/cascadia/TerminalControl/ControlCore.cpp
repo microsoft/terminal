@@ -667,13 +667,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    // Method Description:
-    // - Updates the appearance of the current terminal.
-    // - INVARIANT: This method can only be called if the caller DOES NOT HAVE writing lock on the terminal.
-    // void ControlCore::UpdateAppearance(const IControlAppearance& newAppearance)
-    // {
-    // }
-
     void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)
     {
         // Update DxEngine's AntialiasingMode
