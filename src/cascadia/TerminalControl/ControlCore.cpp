@@ -1611,6 +1611,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::ColorScheme(const Core::Scheme& scheme)
     {
+        auto l{ _terminal->LockForWriting() };
+
         _settings->FocusedAppearance()->DefaultForeground(scheme.Foreground);
         _settings->FocusedAppearance()->DefaultBackground(scheme.Background);
         _settings->FocusedAppearance()->CursorColor(scheme.CursorColor);

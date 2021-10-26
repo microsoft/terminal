@@ -422,8 +422,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.
-    // - Does not apply background color outside of acrylic mode;
-    //   _BackgroundColorChanged must be called to do so.
     // Arguments:
     // - <none>
     // Return Value:
@@ -479,7 +477,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const IInspectable& /*args*/)
     {
         til::color newBgColor{ _core.BackgroundColor() };
-        _changeBackgroundColor(newBgColor.with_alpha(255));
+        _changeBackgroundColor(newBgColor);
     }
 
     winrt::fire_and_forget TermControl::_changeBackgroundColor(const til::color bg)
