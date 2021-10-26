@@ -156,21 +156,13 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
         args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
     }
 
-    // TODO!: Will we be able to persist this? Or will runtime-changed settings
-    // always be lost? Think like, changing the font size with an action. That's
-    // lost.
-    // Come back to this after previewing. May end up with some data we can use there.
+    // TODO:GH#9800 - we used to be able to persist the color scheme that a
+    // TermControl was initialized with, by name. With the change to having the
+    // control own its own copy of its settings, this isn't possible anymore.
     //
-    // if (controlSettings.AppliedColorScheme())
-    // {
-    //     auto name = controlSettings.AppliedColorScheme().Name();
-    //     // Only save the color scheme if it is different than the profile color
-    //     // scheme to not override any other profile appearance choices.
-    //     if (_profile.DefaultAppearance().ColorSchemeName() != name)
-    //     {
-    //         args.ColorScheme(name);
-    //     }
-    // }
+    // We may be able to get around this by storing the Name in the Core::Scheme
+    // object. That would work for schemes set by the Termnial, but not ones set
+    // by VT, but that seems good enough.
 
     return args;
 }
