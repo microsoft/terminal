@@ -978,7 +978,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The ControlKeyStates representing the modifier key states.
     bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
-        // TODO! Now this is interesting. The Core owning the keybindings is weird. That's for sure.
+        // The Core owning the keybindings is weird. That's for sure. In the
+        // future, we may want to pass the keybindings into the control
+        // separately, so the control can have a pointer to an in-proc
+        // Keybindings object, rather than routing through the ControlCore.
+        // (see GH#5000)
         auto bindings = _core.Settings().KeyBindings();
         if (!bindings)
         {
