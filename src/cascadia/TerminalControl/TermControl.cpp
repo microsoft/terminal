@@ -462,8 +462,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
+            auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
+
             Media::SolidColorBrush solidColor{};
             solidColor.Opacity(_core.Opacity());
+            solidColor.Color(bgColor);
+
             RootGrid().Background(solidColor);
         }
     }
@@ -478,14 +482,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const IInspectable& /*args*/)
     {
         til::color newBgColor{ _core.BackgroundColor() };
-        _changeBackgroundColor(newBgColor.with_alpha(1));
+        _changeBackgroundColor(newBgColor.with_alpha(255));
     }
 
     winrt::fire_and_forget TermControl::_changeBackgroundColor(const til::color bg)
     {
+        auto bg3{ bg };
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
-
+        auto bg2{ bg };
+        bg;
         if (auto control{ weakThis.get() })
         {
             if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())

@@ -1613,7 +1613,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // DX layer from overwriting the background image or acrylic effect
         til::color newBackgroundColor{ scheme.Background };
         // _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor.with_alpha(0));
-        _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor);
+        // _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor);
+        _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor.with_alpha(255));
         _settings->FocusedAppearance()->CursorColor(scheme.CursorColor);
         _settings->FocusedAppearance()->SelectionBackground(scheme.SelectionBackground);
 
