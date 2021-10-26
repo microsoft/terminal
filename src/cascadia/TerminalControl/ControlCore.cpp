@@ -1638,4 +1638,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderer->TriggerRedrawAll();
         _BackgroundColorChangedHandlers(*this, nullptr);
     }
+
+    bool ControlCore::HasUnfocusedAppearance() const
+    {
+        return _settings->HasUnfocusedAppearance();
+    }
 }

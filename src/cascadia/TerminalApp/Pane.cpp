@@ -1464,20 +1464,7 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
     assert(_IsLeaf());
 
     _profile = profile;
-    // auto controlSettings = _control.Settings().as<TerminalSettings>();
-    // // Update the parent of the control's settings object (and not the object itself) so
-    // // that any overrides made by the control don't get affected by the reload
-    // controlSettings.SetParent(settings.DefaultSettings());
-    // auto unfocusedSettings{ settings.UnfocusedSettings() };
-    // if (unfocusedSettings)
-    // {
-    //     // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
-    //     // set its parent to the settings object that lives in the control. This is because
-    //     // the overrides made by the control live in that settings object, so we want to make
-    //     // sure the unfocused settings inherit from that.
-    //     unfocusedSettings.SetParent(controlSettings);
-    // }
-    // // _control.UnfocusedAppearance(unfocusedSettings);
+
     _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
 }
 

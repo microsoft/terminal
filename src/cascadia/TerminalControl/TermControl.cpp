@@ -1501,10 +1501,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer->Start();
         }
 
-        // Only update the appearance here if an unfocused config exists -
-        // if an unfocused config does not exist then we never would have switched
-        // appearances anyway so there's no need to switch back upon gaining focus
-        if (_core.UnfocusedAppearance())
+        // Only update the appearance here if an unfocused config exists - if an
+        // unfocused config does not exist then we never would have switched
+        // appearances anyway so there's no need to switch back upon gaining
+        // focus
+        if (_core.HasUnfocusedAppearance())
         {
             UpdateAppearance(_core.FocusedAppearance());
         }
@@ -1548,10 +1549,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Check if there is an unfocused config we should set the appearance to
         // upon losing focus
-        // if (_settings->UnfocusedAppearance())
-        // {
-        UpdateAppearance(_core.UnfocusedAppearance());
-        // }
+        if (_core.HasUnfocusedAppearance())
+        {
+            UpdateAppearance(_core.UnfocusedAppearance());
+        }
     }
 
     // Method Description:

@@ -64,8 +64,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                              const Model::NewTerminalArgs& newTerminalArgs,
                                                                              const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsCreateResult CreateWithParent(const Model::TerminalSettingsCreateResult& parent);
-
         Model::TerminalSettings GetParent();
 
         void SetParent(const Model::TerminalSettings& parent);

@@ -41,11 +41,12 @@ namespace Microsoft.Terminal.Control
                            Double compositionScale);
 
         void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
-        // void UpdateAppearance(IControlAppearance appearance);
         void ApplyAppearance(Boolean focused);
+
         IControlSettings Settings { get; };
         IControlAppearance FocusedAppearance { get; };
         IControlAppearance UnfocusedAppearance { get; };
+        Boolean HasUnfocusedAppearance();
 
         UInt64 SwapChainHandle { get; };
 
@@ -81,7 +82,6 @@ namespace Microsoft.Terminal.Control
         void BlinkAttributeTick();
         void UpdatePatternLocations();
         void Search(String text, Boolean goForward, Boolean caseSensitive);
-        // void SetBackgroundOpacity(Double opacity);
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
         Boolean HasSelection { get; };

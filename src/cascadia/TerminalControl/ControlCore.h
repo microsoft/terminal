@@ -67,6 +67,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         };
         Control::IControlAppearance FocusedAppearance() const { return *_settings->FocusedAppearance(); };
         Control::IControlAppearance UnfocusedAppearance() const { return *_settings->UnfocusedAppearance(); };
+        bool HasUnfocusedAppearance() const;
+
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 

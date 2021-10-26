@@ -28,7 +28,6 @@ namespace Microsoft.Terminal.Settings.Model
 
         static TerminalSettingsCreateResult CreateWithProfile(CascadiaSettings appSettings, Profile profile, Microsoft.Terminal.Control.IKeyBindings keybindings);
         static TerminalSettingsCreateResult CreateWithNewTerminalArgs(CascadiaSettings appSettings, NewTerminalArgs newTerminalArgs, Microsoft.Terminal.Control.IKeyBindings keybindings);
-        static TerminalSettingsCreateResult CreateWithParent(TerminalSettingsCreateResult parent);
 
         void SetParent(TerminalSettings parent);
         TerminalSettings GetParent();
