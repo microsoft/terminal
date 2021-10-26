@@ -1095,7 +1095,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return _terminal->GetDefaultBackground();
+        // The Terminal internally stores it's BG with 0 opacity, so as to allow
+        // DX to paint the BG color transparently. We however don't want to leak
+        // that implementation detail.
+        return _terminal->GetDefaultBackground().with_alpha(0xff);
     }
 
     // Method Description:
@@ -1606,15 +1609,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return s;
     }
 
-    void ControlCore::ColorScheme(Core::Scheme scheme)
+    void ControlCore::ColorScheme(const Core::Scheme& scheme)
     {
         _settings->FocusedAppearance()->DefaultForeground(scheme.Foreground);
-        // Set the default background as transparent to prevent the
-        // DX layer from overwriting the background image or acrylic effect
-        til::color newBackgroundColor{ scheme.Background };
-        // _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor.with_alpha(0));
-        // _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor);
-        _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor.with_alpha(255));
+        _settings->FocusedAppearance()->DefaultBackground(scheme.Background);
         _settings->FocusedAppearance()->CursorColor(scheme.CursorColor);
         _settings->FocusedAppearance()->SelectionBackground(scheme.SelectionBackground);
 

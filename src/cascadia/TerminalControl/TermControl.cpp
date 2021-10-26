@@ -431,6 +431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_InitializeBackgroundBrush()
     {
         auto settings{ _core.Settings() };
+        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
         if (settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
@@ -446,8 +447,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
-
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
 
@@ -462,8 +461,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
         else
         {
-            auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
-
             Media::SolidColorBrush solidColor{};
             solidColor.Opacity(_core.Opacity());
             solidColor.Color(bgColor);
@@ -487,11 +484,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::fire_and_forget TermControl::_changeBackgroundColor(const til::color bg)
     {
-        auto bg3{ bg };
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
-        auto bg2{ bg };
-        bg;
         if (auto control{ weakThis.get() })
         {
             if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
@@ -2606,7 +2600,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core.ColorScheme();
     }
 
-    void TermControl::ColorScheme(Core::Scheme scheme) const noexcept
+    void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
     {
         _core.ColorScheme(scheme);
     }

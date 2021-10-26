@@ -1299,10 +1299,13 @@ Scheme Terminal::GetColorScheme() const noexcept
     Scheme s;
 
     s.Foreground = til::color{ _defaultFg };
-    s.Background = til::color{ _defaultBg };
+    // Don't leak the implementation detail that our _defaultBg is stored
+    // internally without alpha.
+    s.Background = til::color{ _defaultBg.with_alpha(0xff) };
+
     // SelectionBackground is stored in the ControlAppearance
-    // s.SelectionBackground;
     s.CursorColor = til::color{ _buffer->GetCursor().GetColor() };
+
     s.Black = til::color{ _colorTable[0] };
     s.Red = til::color{ _colorTable[1] };
     s.Green = til::color{ _colorTable[2] };
@@ -1322,7 +1325,7 @@ Scheme Terminal::GetColorScheme() const noexcept
     return s;
 }
 
-void Terminal::ApplyScheme(Scheme colorScheme)
+void Terminal::ApplyScheme(const Scheme& colorScheme)
 {
     _defaultFg = colorScheme.Foreground;
     // Set the default background as transparent to prevent the
@@ -1353,5 +1356,4 @@ void Terminal::ApplyScheme(Scheme colorScheme)
     {
         _MakeAdjustedColorArray();
     }
-    
 }

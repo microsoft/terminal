@@ -223,7 +223,7 @@ public:
     til::color GetDefaultBackground() const noexcept;
 
     winrt::Microsoft::Terminal::Core::Scheme GetColorScheme() const noexcept;
-    void ApplyScheme(winrt::Microsoft::Terminal::Core::Scheme scheme);
+    void ApplyScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
     Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
 
