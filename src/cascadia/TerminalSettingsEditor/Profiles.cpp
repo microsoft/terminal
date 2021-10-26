@@ -404,21 +404,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             {
                 _PropertyChangedHandlers(*this, PropertyChangedEventArgs{ L"CurrentScrollState" });
             }
-            // _previewControl.Settings(_State.Profile().TermSettings());
             _previewControl.UpdateControlSettings(_State.Profile().TermSettings());
         });
 
         // The Appearances object handles updating the values in the settings UI, but
         // we still need to listen to the changes here just to update the preview control
         _AppearanceViewModelChangedRevoker = _State.Profile().DefaultAppearance().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& /*args*/) {
-            // _previewControl.Settings(_State.Profile().TermSettings());
             _previewControl.UpdateControlSettings(_State.Profile().TermSettings());
         });
 
         // Navigate to the pivot in the provided navigation state
         ProfilesPivot().SelectedIndex(static_cast<int>(_State.LastActivePivot()));
 
-        // _previewControl.Settings(_State.Profile().TermSettings());
         // There is a possibility that the control has not fully initialized yet,
         // so wait for it to initialize before updating the settings (so we know
         // that the renderer is set up)

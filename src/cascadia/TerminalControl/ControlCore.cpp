@@ -1598,7 +1598,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     Core::Scheme ControlCore::ColorScheme() const noexcept
     {
         auto s = _terminal->GetColorScheme();
-        // This might be a tad bit of a hack. This only evet gets called by set
+        // This might be a tad bit of a hack. This event only gets called by set
         // color scheme / preview color scheme, and in that case, we know the
         // control _is_ focused.
         s.SelectionBackground = _settings->FocusedAppearance()->SelectionBackground();

@@ -2249,7 +2249,6 @@ void DxEngine::SetDefaultTextBackgroundOpacity(const bool useAcrylic) noexcept
 try
 {
     _defaultBackgroundIsTransparent = useAcrylic;
-    // _defaultTextBackgroundOpacity = opacity;
 
     // Make sure we redraw all the cells, to update whether they're actually
     // drawn with cleartype or not.

@@ -161,7 +161,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     // control own its own copy of its settings, this isn't possible anymore.
     //
     // We may be able to get around this by storing the Name in the Core::Scheme
-    // object. That would work for schemes set by the Termnial, but not ones set
+    // object. That would work for schemes set by the Terminal, but not ones set
     // by VT, but that seems good enough.
 
     return args;
