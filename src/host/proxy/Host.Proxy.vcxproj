@@ -69,7 +69,7 @@
     <Link>
       <ModuleDefinitionFile>OpenConsoleProxy.def</ModuleDefinitionFile>
       <!--
-        Not depending on the CRT cuts binary size by half and prevents Centennial issues if this DLL
+        Not depending on the CRT cuts binary size by half and prevents issues if this DLL
         is copied elsewhere and executed outside of our app package without our bundled CRT present.
       -->
       <AdditionalDependencies />
