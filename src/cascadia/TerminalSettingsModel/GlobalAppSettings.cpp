@@ -181,15 +181,12 @@ Json::Value GlobalAppSettings::ToJson() const
 {
     Json::Value json{ Json::ValueType::objectValue };
 
-    // clang-format off
     JsonUtils::SetValueForKey(json, DefaultProfileKey,              _UnparsedDefaultProfile);
 
 #define GLOBAL_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
         MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_TO_JSON)
 #undef GLOBAL_SETTINGS_TO_JSON
-
-    // clang-format on
 
     json[JsonKey(ActionsKey)] = _actionMap->ToJson();
     return json;

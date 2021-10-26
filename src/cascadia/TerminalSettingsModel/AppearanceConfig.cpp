@@ -17,6 +17,7 @@ static constexpr std::string_view BackgroundKey{ "background" };
 static constexpr std::string_view SelectionBackgroundKey{ "selectionBackground" };
 static constexpr std::string_view CursorColorKey{ "cursorColor" };
 static constexpr std::string_view LegacyAcrylicTransparencyKey{ "acrylicOpacity" };
+static constexpr std::string_view OpacityKey{ "opacity" };
 
 AppearanceConfig::AppearanceConfig(winrt::weak_ref<Profile> sourceProfile) :
     _sourceProfile(std::move(sourceProfile))
@@ -30,6 +31,7 @@ winrt::com_ptr<AppearanceConfig> AppearanceConfig::CopyAppearance(const Appearan
     appearance->_Background = source->_Background;
     appearance->_SelectionBackground = source->_SelectionBackground;
     appearance->_CursorColor = source->_CursorColor;
+    appearance->_Opacity = source->_Opacity;
 
 #define APPEARANCE_SETTINGS_COPY(type, name, jsonKey, ...) \
     appearance->_##name = source->_##name;
@@ -47,6 +49,7 @@ Json::Value AppearanceConfig::ToJson() const
     JsonUtils::SetValueForKey(json, BackgroundKey, _Background);
     JsonUtils::SetValueForKey(json, SelectionBackgroundKey, _SelectionBackground);
     JsonUtils::SetValueForKey(json, CursorColorKey, _CursorColor);
+    JsonUtils::SetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 
 #define APPEARANCE_SETTINGS_TO_JSON(type, name, jsonKey, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, _##name);
@@ -75,6 +78,7 @@ void AppearanceConfig::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, CursorColorKey, _CursorColor);
 
     JsonUtils::GetValueForKey(json, LegacyAcrylicTransparencyKey, _Opacity);
+    JsonUtils::GetValueForKey(json, OpacityKey, _Opacity, JsonUtils::OptionalConverter<double, IntAsFloatPercentConversionTrait>{});
 
 #define APPEARANCE_SETTINGS_LAYER_JSON(type, name, jsonKey, ...) \
     JsonUtils::GetValueForKey(json, jsonKey, _##name);
