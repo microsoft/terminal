@@ -1210,9 +1210,7 @@ try
 {
     const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     // First set up the basic 256 colors
-    Utils::Initialize256ColorTable(tableView);
-    // Then use fill the first 16 values with the Campbell scheme
-    Utils::InitializeCampbellColorTable(tableView);
+    Utils::InitializeColorTable(tableView);
     // Then make sure all the values have an alpha of 255
     Utils::SetColorTableAlpha(tableView, 0xff);
 }

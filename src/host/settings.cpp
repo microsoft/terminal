@@ -82,8 +82,7 @@ Settings::Settings() :
     _CursorType = CursorType::Legacy;
 
     gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
-    ::Microsoft::Console::Utils::Initialize256ColorTable(tableView);
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    ::Microsoft::Console::Utils::InitializeColorTable(tableView);
 }
 
 // Routine Description:
@@ -122,8 +121,8 @@ void Settings::ApplyDesktopSpecificDefaults()
     _uNumberOfHistoryBuffers = 4;
     _bHistoryNoDup = FALSE;
 
-    gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
-    ::Microsoft::Console::Utils::InitializeCampbellColorTable(tableView);
+    gsl::span<COLORREF> tableView = { _colorTable.data(), 16 };
+    ::Microsoft::Console::Utils::InitializeColorTable(tableView);
 
     _fTrimLeadingZeros = false;
     _fEnableColorSelection = false;
