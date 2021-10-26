@@ -494,9 +494,10 @@ namespace winrt::TerminalApp::implementation
     // - Split the focused pane in our tree of panes, and place the
     //   given pane into the tree of panes according to the split
     // Arguments:
-    // - splitType: The type of split we want to create.
+    // - splitType: The type of split we want to create
     // - splitSize: The size of the split we want to create
-    // - pane: The new pane to add to the tree of panes
+    // - pane: The new pane to add to the tree of panes; note that this pane
+    //         could itself be a parent pane/the root node of a tree of panes
     // Return Value:
     // - <none>
     void TerminalTab::SplitPane(SplitDirection splitType,
