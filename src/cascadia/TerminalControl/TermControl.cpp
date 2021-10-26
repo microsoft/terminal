@@ -478,7 +478,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                      const IInspectable& /*args*/)
     {
         til::color newBgColor{ _core.BackgroundColor() };
-        _changeBackgroundColor(newBgColor);
+        _changeBackgroundColor(newBgColor.with_alpha(1));
     }
 
     winrt::fire_and_forget TermControl::_changeBackgroundColor(const til::color bg)

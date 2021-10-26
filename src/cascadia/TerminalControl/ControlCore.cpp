@@ -1606,20 +1606,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return s;
     }
 
-    void ControlCore::ColorScheme(Core::Scheme scheme) const noexcept
+    void ControlCore::ColorScheme(Core::Scheme scheme)
     {
-        _terminal->ApplyScheme(scheme);
-
         _settings->FocusedAppearance()->DefaultForeground(scheme.Foreground);
-        _settings->FocusedAppearance()->DefaultBackground(scheme.Background);
+        // Set the default background as transparent to prevent the
+        // DX layer from overwriting the background image or acrylic effect
+        til::color newBackgroundColor{ scheme.Background };
+        // _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor.with_alpha(0));
+        _settings->FocusedAppearance()->DefaultBackground(newBackgroundColor);
         _settings->FocusedAppearance()->CursorColor(scheme.CursorColor);
         _settings->FocusedAppearance()->SelectionBackground(scheme.SelectionBackground);
-
-        // // _defaultFg = colorScheme.Foreground;
-        // // // Set the default background as transparent to prevent the
-        // // // DX layer from overwriting the background image or acrylic effect
-        // // til::color newBackgroundColor{ colorScheme.Background };
-        // // _defaultBg = newBackgroundColor.with_alpha(0);
 
         _settings->FocusedAppearance()->SetColorTableEntry(0, scheme.Black);
         _settings->FocusedAppearance()->SetColorTableEntry(1, scheme.Red);
@@ -1638,8 +1634,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _settings->FocusedAppearance()->SetColorTableEntry(14, scheme.BrightCyan);
         _settings->FocusedAppearance()->SetColorTableEntry(15, scheme.BrightWhite);
 
-        // _buffer->GetCursor().SetColor(til::color{ colorScheme.CursorColor });
+        _terminal->ApplyScheme(scheme);
 
         _renderer->TriggerRedrawAll();
+        _BackgroundColorChangedHandlers(*this, nullptr);
     }
 }

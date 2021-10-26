@@ -94,7 +94,10 @@ namespace winrt::TerminalApp::implementation
             // the preview color changes, we only need to be able to restore the last one.
             _restorePreviewFuncs.clear();
 
-            _ApplyToActiveControls([&](const auto& /*control*/) {
+            _ApplyToActiveControls([&](const auto& control) {
+                auto originalScheme{ control.ColorScheme() };
+                control.ColorScheme(scheme.ToCoreScheme());
+
                 // // Get the settings of the focused control and stash them
                 // const auto& controlSettings = control.Settings().as<TerminalSettings>();
                 // // Make sure to recurse up to the root - if you're doing
@@ -118,32 +121,33 @@ namespace winrt::TerminalApp::implementation
                 // control.UpdateControlSettings(controlSettings);
 
                 // // Take a copy of the inputs, since they are pointers anyways.
-                // _restorePreviewFuncs.emplace_back([=]() {
-                //     //// Get the runtime settings of the focused control
-                //     //const auto& controlSettings{ control.Settings().as<TerminalSettings>() };
+                _restorePreviewFuncs.emplace_back([=]() {
+                    control.ColorScheme(originalScheme);
+                    //// Get the runtime settings of the focused control
+                    //const auto& controlSettings{ control.Settings().as<TerminalSettings>() };
 
-                //     //// Get the control's root settings, the ones that we actually
-                //     //// assigned to it.
-                //     //auto parentSettings{ controlSettings.GetParent() };
-                //     //while (parentSettings.GetParent() != nullptr)
-                //     //{
-                //     //    parentSettings = parentSettings.GetParent();
-                //     //}
+                    //// Get the control's root settings, the ones that we actually
+                    //// assigned to it.
+                    //auto parentSettings{ controlSettings.GetParent() };
+                    //while (parentSettings.GetParent() != nullptr)
+                    //{
+                    //    parentSettings = parentSettings.GetParent();
+                    //}
 
-                //     //// If the root settings are the same as the ones we stashed,
-                //     //// then reset the parent of the runtime settings to the stashed
-                //     //// settings. This condition might be false if the settings
-                //     //// hot-reloaded while the palette was open. In that case, we
-                //     //// don't want to reset the settings to what they were _before_
-                //     //// the hot-reload.
-                //     //if (originalSettings == parentSettings)
-                //     //{
-                //     //    // Set the original settings as the parent of the control's settings
-                //     //    control.Settings().as<TerminalSettings>().SetParent(originalSettings);
-                //     //}
+                    //// If the root settings are the same as the ones we stashed,
+                    //// then reset the parent of the runtime settings to the stashed
+                    //// settings. This condition might be false if the settings
+                    //// hot-reloaded while the palette was open. In that case, we
+                    //// don't want to reset the settings to what they were _before_
+                    //// the hot-reload.
+                    //if (originalSettings == parentSettings)
+                    //{
+                    //    // Set the original settings as the parent of the control's settings
+                    //    control.Settings().as<TerminalSettings>().SetParent(originalSettings);
+                    //}
 
-                //     control.UpdateControlSettings(control.Settings());
-                // });
+                    // control.UpdateControlSettings(control.Settings());
+                });
             });
         }
     }
