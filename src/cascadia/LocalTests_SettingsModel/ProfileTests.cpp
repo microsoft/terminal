@@ -272,19 +272,29 @@ namespace SettingsModelLocalTests
     void ProfileTests::DuplicateProfileTest()
     {
         static constexpr std::string_view userProfiles{ R"({
-            "profiles": [
-                {
-                    "name": "profile0",
-                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
-                    "backgroundImage": "file:///some/path",
-                    "hidden": false,
-                }
-            ]
+            "profiles": {
+                "defaults": {
+                    "font": {
+                        "size": 123
+                    }
+                },
+                "list": [
+                    {
+                        "name": "profile0",
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "backgroundImage": "file:///some/path",
+                        "hidden": false,
+                    }
+                ]
+            }
         })" };
 
         const auto settings = winrt::make_self<implementation::CascadiaSettings>(userProfiles);
         const auto profile = settings->AllProfiles().GetAt(0);
         const auto duplicatedProfile = settings->DuplicateProfile(profile);
+
+        // GH#11392: Ensure duplicated profiles properly inherit the base layer, even for nested objects.
+        VERIFY_ARE_EQUAL(123, duplicatedProfile.FontInfo().FontSize());
 
         duplicatedProfile.Guid(profile.Guid());
         duplicatedProfile.Name(profile.Name());
@@ -300,6 +310,17 @@ namespace SettingsModelLocalTests
         // the GUID generated for a dynamic profile (with a source) is different
         // than that of a profile without a source.
 
+        static constexpr std::string_view inboxSettings{ R"({
+            "profiles": [
+                {
+                    "name" : "profile0",
+                    "source": "Terminal.App.UnitTest.0"
+                },
+                {
+                    "name" : "profile1"
+                }
+            ]
+        })" };
         static constexpr std::string_view userSettings{ R"({
             "profiles": [
                 {
@@ -312,9 +333,9 @@ namespace SettingsModelLocalTests
             ]
         })" };
 
-        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, DefaultJson);
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(userSettings, inboxSettings);
 
-        VERIFY_ARE_EQUAL(4u, settings->AllProfiles().Size());
+        VERIFY_ARE_EQUAL(3u, settings->AllProfiles().Size());
 
         VERIFY_ARE_EQUAL(L"profile0", settings->AllProfiles().GetAt(0).Name());
         VERIFY_IS_TRUE(settings->AllProfiles().GetAt(0).HasGuid());

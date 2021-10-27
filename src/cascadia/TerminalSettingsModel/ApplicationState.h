@@ -62,6 +62,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Methods
         void Reload() const noexcept;
+        void Reset() noexcept;
+
         void FromJson(const Json::Value& root, FileSource parseSource) const noexcept;
         Json::Value ToJson(FileSource parseSource) const noexcept;
 

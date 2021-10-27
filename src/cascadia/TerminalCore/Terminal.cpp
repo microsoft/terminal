@@ -53,7 +53,8 @@ Terminal::Terminal() :
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
     _trimBlockSelection{ false },
-    _intenseIsBright{ true }
+    _intenseIsBright{ true },
+    _adjustIndistinguishableColors{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
@@ -175,10 +176,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
     _intenseIsBright = appearance.IntenseIsBright();
+    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
 
     for (int i = 0; i < 16; i++)
     {
         _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
+    }
+    if (_adjustIndistinguishableColors)
+    {
+        _MakeAdjustedColorArray();
     }
 
     CursorType cursorShape = CursorType::VerticalBar;
@@ -849,7 +855,13 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 //      will release this lock when it's destructed.
 [[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
 {
+#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 // Method Description:
@@ -859,7 +871,13 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 //      will release this lock when it's destructed.
 [[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
 {
+#ifdef NDEBUG
     return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept

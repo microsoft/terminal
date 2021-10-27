@@ -67,6 +67,7 @@ SUMS$
 ^src/terminal/parser/ft_fuzzer/run\.bat$
 ^src/terminal/parser/ft_fuzzer/VTCommandFuzzer\.cpp$
 ^src/terminal/parser/ft_fuzzwrapper/run\.bat$
+^src/terminal/parser/ut_parser/Base64Test.cpp$
 ^src/terminal/parser/ut_parser/run\.bat$
 ^src/tools/integrity/packageuwp/ConsoleUWP\.appxSources$
 ^src/tools/lnkd/lnkd\.bat$
