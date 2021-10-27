@@ -275,6 +275,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
+        _ProfileSource = profile.Source();
         _UseAcrylic = profile.UseAcrylic();
 
         _FontFace = profile.FontInfo().FontFace();

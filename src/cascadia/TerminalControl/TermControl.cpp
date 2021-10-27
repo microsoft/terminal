@@ -2271,6 +2271,27 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
 
                     std::wstring fullPath{ item.Path() };
+
+                    // Fix path for WSL
+                    if (_settings.ProfileSource() == L"Windows.Terminal.Wsl")
+                    {
+                        // Use unix path separator
+                        std::replace(fullPath.begin(), fullPath.end(), '\\', '/');
+
+                        // remove colon and lowercase drive letter
+                        if (fullPath.at(1) == ':')
+                        {
+                            fullPath.erase(1, 1);
+                            fullPath.replace(0, 1, 1, std::towlower(fullPath.at(0)));
+                            fullPath.insert(0, L"/mnt/");
+                        }
+                        // Remove \\wsl.localhost from the string (leaving the raw Linux filesystem path)
+                        else if (fullPath.find(L"//wsl.localhost") != std::string::npos)
+                        {
+                            fullPath.erase(0, fullPath.find('/', fullPath.find('/', fullPath.find('/', fullPath.find('/') + 1) + 1) + 1));
+                        }
+                    }
+
                     const auto containsSpaces = std::find(fullPath.begin(),
                                                           fullPath.end(),
                                                           L' ') != fullPath.end();
@@ -2283,6 +2304,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     allPaths += fullPath;
                 }
+
                 _core.PasteText(winrt::hstring{ allPaths });
             }
         }

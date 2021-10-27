@@ -51,6 +51,7 @@ namespace ControlUnitTests
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);
+        WINRT_PROPERTY(winrt::hstring, ProfileSource);
         WINRT_PROPERTY(bool, UseAcrylic, false);
         WINRT_PROPERTY(double, Opacity, .5);
         WINRT_PROPERTY(winrt::hstring, Padding, DEFAULT_PADDING);
