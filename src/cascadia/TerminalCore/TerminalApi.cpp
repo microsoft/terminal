@@ -482,23 +482,13 @@ til::color Terminal::GetDefaultBackground() const noexcept
     return _defaultBg;
 }
 
-bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
+bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept
+try
 {
-    _terminalInput->ChangeWin32InputMode(win32InputMode);
+    _terminalInput->SetInputMode(mode, enabled);
     return true;
 }
-
-bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
-{
-    _terminalInput->ChangeCursorKeysMode(applicationMode);
-    return true;
-}
-
-bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
-{
-    _terminalInput->ChangeKeypadMode(applicationMode);
-    return true;
-}
+CATCH_RETURN_FALSE()
 
 bool Terminal::SetScreenMode(const bool reverseMode) noexcept
 try
@@ -510,42 +500,6 @@ try
     return true;
 }
 CATCH_RETURN_FALSE()
-
-bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableDefaultTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->SetUtf8ExtendedMode(enabled);
-    return true;
-}
-
-bool Terminal::EnableSGRExtendedMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->SetSGRExtendedMode(enabled);
-    return true;
-}
-
-bool Terminal::EnableButtonEventMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableButtonEventTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableAnyEventMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableAnyEventTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableAlternateScroll(enabled);
-    return true;
-}
 
 bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {

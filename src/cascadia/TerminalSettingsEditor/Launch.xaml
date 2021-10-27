@@ -136,22 +136,26 @@
                 <!--  First Window Behavior  -->
                 <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
                                         Visibility="{x:Bind ShowFirstWindowPreference}">
-                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind FirstWindowPreferenceList}"
                                        SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />
                 </local:SettingContainer>
 
 
                 <!--  Launch Mode  -->
-                <local:SettingContainer x:Uid="Globals_LaunchMode">
-                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <local:SettingContainer x:Name="Globals_LaunchMode"
+                                        x:Uid="Globals_LaunchMode">
+                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind LaunchModeList}"
                                        SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_WindowingBehavior">
-                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind WindowingBehaviorList}"
                                        SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}" />
                 </local:SettingContainer>

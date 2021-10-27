@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -22,7 +22,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         void SetAcrylicOpacityPercentageValue(double value)
         {
-            _profile.DefaultAppearance().Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+            Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+
+            // GH#11372: If we're on Windows 10, and someone wants opacity, then
+            // we'll turn acrylic on for them. Opacity doesn't work without
+            // acrylic on Windows 10.
+            //
+            // BODGY: CascadiaSettings's function IsDefaultTerminalAvailable
+            // is basically a "are we on Windows 11" check, because defterm
+            // only works on Win11. So we'll use that.
+            //
+            // Remove when we can remove the rest of GH#11285
+            if (value < 100.0 && winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
+            {
+                UseAcrylic(true);
+            }
         };
 
         void SetPadding(double value)

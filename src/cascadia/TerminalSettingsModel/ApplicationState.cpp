@@ -129,6 +129,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         return filename == sharedPath || filename == elevatedPath;
     }
 
+    // Method Description:
+    // - See GH#11119. Removes all of the data in this ApplicationState object
+    //   and resets it to the defaults. This will delete the state file! That's
+    //   the sure-fire way to make sure the data doesn't come back. If we leave
+    //   it untouched, then when we go to write the file back out, we'll first
+    //   re-read it's contents and try to overlay our new state. However,
+    //   nullopts won't remove keys from the JSON, so we'll end up with the
+    //   original state in the file.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void ApplicationState::Reset() noexcept
+    try
+    {
+        LOG_LAST_ERROR_IF(!DeleteFile(_sharedPath.c_str()));
+        *_state.lock() = {};
+    }
+    CATCH_LOG()
+
     // Deserializes the state.json and user-state (or elevated-state if
     // elevated) into this ApplicationState.
     // * ANY errors during app state will result in the creation of a new empty state.

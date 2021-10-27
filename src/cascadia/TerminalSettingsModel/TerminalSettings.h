@@ -114,6 +114,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AdjustIndistinguishableColors);
+
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);

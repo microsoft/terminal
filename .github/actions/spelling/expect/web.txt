@@ -1,5 +1,7 @@
 http
 www
+easyrgb
+php
 ecma
 rapidtables
 WCAG

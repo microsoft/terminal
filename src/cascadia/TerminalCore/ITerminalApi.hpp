@@ -3,6 +3,7 @@
 #pragma once
 
 #include "../../terminal/adapter/DispatchTypes.hpp"
+#include "../../terminal/input/terminalInput.hpp"
 #include "../../buffer/out/TextAttribute.hpp"
 #include "../../types/inc/Viewport.hpp"
 
@@ -47,16 +48,9 @@ namespace Microsoft::Terminal::Core
         virtual bool SetDefaultForeground(const DWORD color) noexcept = 0;
         virtual bool SetDefaultBackground(const DWORD color) noexcept = 0;
 
-        virtual bool EnableWin32InputMode(const bool win32InputMode) noexcept = 0;
-        virtual bool SetCursorKeysMode(const bool applicationMode) noexcept = 0;
-        virtual bool SetKeypadMode(const bool applicationMode) noexcept = 0;
+        virtual bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept = 0;
+
         virtual bool SetScreenMode(const bool reverseMode) noexcept = 0;
-        virtual bool EnableVT200MouseMode(const bool enabled) noexcept = 0;
-        virtual bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept = 0;
-        virtual bool EnableSGRExtendedMouseMode(const bool enabled) noexcept = 0;
-        virtual bool EnableButtonEventMouseMode(const bool enabled) noexcept = 0;
-        virtual bool EnableAnyEventMouseMode(const bool enabled) noexcept = 0;
-        virtual bool EnableAlternateScrollMode(const bool enabled) noexcept = 0;
         virtual bool EnableXtermBracketedPasteMode(const bool enabled) noexcept = 0;
         virtual bool IsXtermBracketedPasteModeEnabled() const = 0;
 
