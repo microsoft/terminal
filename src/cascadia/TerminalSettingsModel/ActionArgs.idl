@@ -123,7 +123,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
         String ColorScheme;
         // This needs to be an optional so that the default value (null) does
-        // not modifiy whatever the profile's value is (either true or false)
+        // not modify whatever the profile's value is (either true or false)
         Windows.Foundation.IReference<Boolean> Elevate { get; };
 
         Boolean Equals(NewTerminalArgs other);
