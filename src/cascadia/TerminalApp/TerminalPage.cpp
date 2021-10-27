@@ -1840,7 +1840,8 @@ namespace winrt::TerminalApp::implementation
             WUX::Controls::UserControl controlToAdd{ newControl };
 
             const auto& cmdline{ controlSettings.DefaultSettings().Commandline() };
-            if (_shouldPromptForCommandline(cmdline))
+            const auto doAdminWarning{ _shouldPromptForCommandline(cmdline) };
+            if (doAdminWarning)
             {
                 auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(newControl, cmdline) };
                 warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
@@ -1864,6 +1865,17 @@ namespace winrt::TerminalApp::implementation
                 {
                     activeControl.Focus(FocusState::Programmatic);
                 }
+            }
+
+            if (doAdminWarning)
+            {
+                // We know this is safe - we literally just added the
+                // AdminWarningPlaceholder as the controlToAdd like 20 lines up.
+                //
+                // Focus the warning here. The LayoutUpdated within the dialog
+                // itself isn't good enough. That, for some reason, fires _before_
+                // the dialog is in the UI tree, which is useless for us.
+                controlToAdd.try_as<implementation::AdminWarningPlaceholder>()->FocusOnLaunch();
             }
         }
         CATCH_LOG();

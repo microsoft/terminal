@@ -309,26 +309,13 @@ namespace winrt::TerminalApp::implementation
 
         if (doAdminWarning)
         {
+            // We know this is safe - we literally just added the
+            // AdminWarningPlaceholder as the controlToAdd like 20 lines up.
+            //
+            // Focus the warning here. The LayoutUpdated within the dialog
+            // itself isn't good enough. That, for some reason, fires _before_
+            // the dialog is in the UI tree, which is useless for us.
             controlToAdd.try_as<implementation::AdminWarningPlaceholder>()->FocusOnLaunch();
-            //Root().Dispatcher().TryRunAsync(CoreDispatcherPriority::Low, [weakThis = get_weak()]() {
-            //    if (auto self{ weakThis.get() })
-            //    {
-            //        if (auto automationPeer{ WUX::Automation::Peers::FrameworkElementAutomationPeer::FromElement(self->Root()) })
-            //        {
-            //            auto foo{ automationPeer.try_as<WUX::Automation::Peers::FrameworkElementAutomationPeer>() };
-            //            foo.RaiseStructureChangedEvent(Automation::Peers::AutomationStructureChangeType::ChildrenBulkAdded,
-            //                                           automationPeer);
-
-            //            automationPeer.RaiseNotificationEvent(
-            //                WUX::Automation::Peers::AutomationNotificationKind::ActionCompleted,
-            //                WUX::Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
-            //                L"Bar",
-            //                L"ApproveCommandlineWarningTitle2todo" /* unique name for this notification category */
-            //            );
-            //        }
-            //    }
-            //});
-
         }
     }
 

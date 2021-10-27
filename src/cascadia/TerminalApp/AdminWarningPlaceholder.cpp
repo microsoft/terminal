@@ -23,26 +23,6 @@ namespace winrt::TerminalApp::implementation
         {
             RootGrid().Background(termControl.BackgroundBrush());
         }
-
-        CancelButton().LayoutUpdated([this](auto&&, auto&&) { CancelButton().Focus(FocusState::Programmatic); });
-        //LayoutUpdated([this](auto&&, auto&&) {
-        //    if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(ApproveCommandlineWarningTitle()) })
-        //    {
-        //        //auto foo{ automationPeer.try_as<FrameworkElementAutomationPeer>() };
-        //        //foo.RaiseStructureChangedEvent(Automation::Peers::AutomationStructureChangeType::ChildrenBulkAdded,
-        //        //                               automationPeer);
-
-        //        //automationPeer.RaiseNotificationEvent(
-        //        //    AutomationNotificationKind::ActionCompleted,
-        //        //    AutomationNotificationProcessing::CurrentThenMostRecent,
-        //        //    L"Foo",
-        //        //    L"ApproveCommandlineWarningTitle" /* unique name for this notification category */
-        //        //);
-
-        //        automationPeer.RaiseAutomationEvent(AutomationEvents::StructureChanged);
-        //    }
-
-        //});
     }
     void AdminWarningPlaceholder::_primaryButtonClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                                       RoutedEventArgs const& e)
@@ -59,7 +39,19 @@ namespace winrt::TerminalApp::implementation
         return _control;
     }
 
-    void AdminWarningPlaceholder::FocusOnLaunch() {
+    // Method Description:
+    // - Move the focus to the cancel button by default. This has the LOAD
+    //   BEARING side effect of also triggering Narrator to read out the
+    //   contents of the dialog. It's unclear why doing this works, but it does.
+    // - Using a LayoutUpdated event to trigger the focus change when we're
+    //   added to the UI tree did not seem to work.
+    // - Whoever is adding us to the UI tree is responsible for calling this!
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - <none>
+    void AdminWarningPlaceholder::FocusOnLaunch()
+    {
         CancelButton().Focus(FocusState::Programmatic);
     }
 }
