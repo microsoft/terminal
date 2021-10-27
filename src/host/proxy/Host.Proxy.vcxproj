@@ -62,6 +62,7 @@
       <!-- Must be Stdcall on all platforms to resolve _ObjectStublessClient3 -->
       <PreprocessorDefinitions>REGISTER_PROXY_DLL;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <SDLCheck>false</SDLCheck>
       <ForcedIncludeFiles>nodefaultlib_shim.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
