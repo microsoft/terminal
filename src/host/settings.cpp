@@ -58,7 +58,7 @@ Settings::Settings() :
     _fInterceptCopyPaste(0),
     _DefaultForeground(INVALID_COLOR),
     _DefaultBackground(INVALID_COLOR),
-    _fUseDx(false),
+    _fUseDx(0),
     _fCopyColor(false)
 {
     _dwScreenBufferSize.X = 80;
@@ -816,7 +816,7 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
 // - This is based on user preference and velocity hold back state.
 // Return Value:
 // - True means use DirectX renderer. False means use GDI renderer.
-bool Settings::GetUseDx() const noexcept
+DWORD Settings::GetUseDx() const noexcept
 {
     return _fUseDx;
 }

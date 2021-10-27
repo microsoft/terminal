@@ -400,6 +400,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return _runs;
         }
 
+        void clear()
+        {
+            _runs.clear();
+            _total_length = 0;
+        }
+
         // Get the value at the position
         const_reference at(size_type position) const
         {

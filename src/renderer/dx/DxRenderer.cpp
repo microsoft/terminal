@@ -8,7 +8,6 @@
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 #include "../../types/inc/Viewport.hpp"
-#include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
 #include <VersionHelpers.h>
 
@@ -16,11 +15,12 @@
 #include "ScreenVertexShader.h"
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
-#include <DirectXColors.h>
 
 using namespace DirectX;
+using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
-std::atomic<size_t> Microsoft::Console::Render::DxEngine::_tracelogCount{ 0 };
+std::atomic<size_t> DxEngine::_tracelogCount{ 0 };
 #pragma warning(suppress : 26477) // We don't control tracelogging macros
 TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
                              "Microsoft.Windows.Terminal.Renderer.DirectX",
@@ -48,11 +48,6 @@ D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
     { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
-
-#pragma hdrstop
-
-using namespace Microsoft::Console::Render;
-using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Constructs a DirectX-based renderer for console text
@@ -143,40 +138,7 @@ DxEngine::~DxEngine()
 //   Can give invalid state if you enable an enabled class.
 [[nodiscard]] HRESULT DxEngine::Enable() noexcept
 {
-    return _EnableDisplayAccess(true);
-}
-
-// Routine Description:
-// - Sets this engine to disabled to prevent painting and presentation from occurring
-// Arguments:
-// - <none>
-// Return Value:
-// - Should be OK. We might close/free resources, but that shouldn't error.
-//   Can give invalid state if you disable a disabled class.
-[[nodiscard]] HRESULT DxEngine::Disable() noexcept
-{
-    return _EnableDisplayAccess(false);
-}
-
-// Routine Description:
-// - Helper to enable/disable painting/display access/presentation in a unified
-//   manner between enable/disable functions.
-// Arguments:
-// - outputEnabled - true to enable, false to disable
-// Return Value:
-// - Generally OK. Can return invalid state if you set to the state that is already
-//   active (enabling enabled, disabling disabled).
-[[nodiscard]] HRESULT DxEngine::_EnableDisplayAccess(const bool outputEnabled) noexcept
-{
-    // Invalid state if we're setting it to the same as what we already have.
-    RETURN_HR_IF(E_NOT_VALID_STATE, outputEnabled == _isEnabled);
-
-    _isEnabled = outputEnabled;
-    if (!_isEnabled)
-    {
-        _ReleaseDeviceResources();
-    }
-
+    _isEnabled = true;
     return S_OK;
 }
 
@@ -244,7 +206,7 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 // Arguments:
 // Return Value:
 // - Void
-void DxEngine::ToggleShaderEffects()
+void DxEngine::ToggleShaderEffects() noexcept
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
     _recreateDeviceRequested = true;
@@ -969,14 +931,14 @@ try
 }
 CATCH_RETURN();
 
-void DxEngine::SetCallback(std::function<void()> pfn)
+void DxEngine::SetCallback(std::function<void()> pfn) noexcept
 {
-    _pfn = pfn;
+    _pfn = std::move(pfn);
 }
 
-void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn)
+void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept
 {
-    _pfnWarningCallback = pfn;
+    _pfnWarningCallback = std::move(pfn);
 }
 
 bool DxEngine::GetRetroTerminalEffect() const noexcept
@@ -1046,7 +1008,7 @@ try
 }
 CATCH_LOG()
 
-HANDLE DxEngine::GetSwapChainHandle()
+HANDLE DxEngine::GetSwapChainHandle() noexcept
 {
     if (!_swapChainHandle)
     {
@@ -1490,7 +1452,7 @@ CATCH_RETURN()
     // Finally... if we're not using effects at all... let the render thread
     // go to sleep. It deserves it. That thread works hard. Also it sleeping
     // saves battery power and all sorts of related perf things.
-    return _terminalEffectsEnabled && !_pixelShaderPath.empty();
+    return debugGeneralPerformance || (_terminalEffectsEnabled && !_pixelShaderPath.empty());
 }
 
 // Method Description:
@@ -1498,18 +1460,16 @@ CATCH_RETURN()
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
 {
-    if (!_swapChainFrameLatencyWaitableObject)
+    if constexpr (!debugGeneralPerformance)
     {
-        return;
-    }
+        // Throttle the DxEngine a bit down to ~60 FPS.
+        // This improves throughput for rendering complex or colored text.
+        Sleep(8);
 
-    const auto ret = WaitForSingleObjectEx(
-        _swapChainFrameLatencyWaitableObject.get(),
-        1000, // 1 second timeout (shouldn't ever occur)
-        true);
-    if (ret != WAIT_OBJECT_0)
-    {
-        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
+        if (_swapChainFrameLatencyWaitableObject)
+        {
+            WaitForSingleObjectEx(_swapChainFrameLatencyWaitableObject.get(), 1000, true);
+        }
     }
 }
 
@@ -2023,7 +1983,7 @@ try
 }
 CATCH_RETURN();
 
-[[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
+[[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) const noexcept
 {
     const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _fontRenderData->GlyphCell().width());
     const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _fontRenderData->GlyphCell().height());
@@ -2031,7 +1991,7 @@ CATCH_RETURN();
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
-[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) noexcept
+[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) const noexcept
 {
     const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _fontRenderData->GlyphCell().width());
     const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _fontRenderData->GlyphCell().height());

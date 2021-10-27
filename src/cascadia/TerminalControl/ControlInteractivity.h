@@ -23,6 +23,11 @@
 
 #include "ControlCore.h"
 
+namespace Microsoft::Console::Render
+{
+    class UiaEngine;
+}
+
 namespace ControlUnitTests
 {
     class ControlCoreTests;

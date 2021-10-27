@@ -11,7 +11,7 @@ bool operator==(const FontInfoDesired& a, const FontInfoDesired& b)
             a._coordSizeDesired == b._coordSizeDesired);
 }
 
-COORD FontInfoDesired::GetEngineSize() const
+COORD FontInfoDesired::GetEngineSize() const noexcept
 {
     COORD coordSize = _coordSizeDesired;
     if (IsTrueTypeFont())
@@ -41,7 +41,7 @@ FontInfoDesired::FontInfoDesired(const FontInfo& fiFont) :
 // This helper determines if this object represents the default raster font. This can either be because internally we're
 // using the empty facename and zeros for size, weight, and family, or it can be because we were given explicit
 // dimensions from the engine that were the result of loading the default raster font. See GdiEngine::_GetProposedFont().
-bool FontInfoDesired::IsDefaultRasterFont() const
+bool FontInfoDesired::IsDefaultRasterFont() const noexcept
 {
     // Either the raster was set from the engine...
     // OR the face name is empty with a size of 0x0 or 8x12.

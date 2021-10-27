@@ -40,98 +40,61 @@ namespace Microsoft::Console::Render
     {
     public:
         DxEngine();
-        ~DxEngine();
-        DxEngine(const DxEngine&) = default;
-        DxEngine(DxEngine&&) = default;
-        DxEngine& operator=(const DxEngine&) = default;
-        DxEngine& operator=(DxEngine&&) = default;
+        ~DxEngine() override;
 
-        // Used to release device resources so that another instance of
-        // conhost can render to the screen (i.e. only one DirectX
-        // application may control the screen at a time.)
-        [[nodiscard]] HRESULT Enable() noexcept;
-        [[nodiscard]] HRESULT Disable() noexcept;
-
-        [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
-
-        [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept;
-
-        void SetCallback(std::function<void()> pfn);
-        void SetWarningCallback(std::function<void(const HRESULT)> pfn);
-
-        void ToggleShaderEffects();
-
-        bool GetRetroTerminalEffect() const noexcept;
-        void SetRetroTerminalEffect(bool enable) noexcept;
-
-        void SetPixelShaderPath(std::wstring_view value) noexcept;
-
-        void SetForceFullRepaintRendering(bool enable) noexcept;
-
-        void SetSoftwareRendering(bool enable) noexcept;
-
-        HANDLE GetSwapChainHandle();
-
-        // IRenderEngine Members
-        [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept override;
-        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
-        [[nodiscard]] HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept override;
-        [[nodiscard]] HRESULT InvalidateAll() noexcept override;
-        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept override;
-        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept override;
-
+        // IRenderEngine
         [[nodiscard]] HRESULT StartPaint() noexcept override;
         [[nodiscard]] HRESULT EndPaint() noexcept override;
-
         [[nodiscard]] bool RequiresContinuousRedraw() noexcept override;
-
         void WaitUntilCanRender() noexcept override;
         [[nodiscard]] HRESULT Present() noexcept override;
-
+        [[nodiscard]] HRESULT PrepareForTeardown(_Out_ bool* pForcePaint) noexcept override;
         [[nodiscard]] HRESULT ScrollFrame() noexcept override;
-
+        [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* psrRegion) noexcept override;
+        [[nodiscard]] HRESULT InvalidateCursor(const SMALL_RECT* psrRegion) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSystem(const RECT* prcDirtyClient) noexcept override;
+        [[nodiscard]] HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept override;
+        [[nodiscard]] HRESULT InvalidateScroll(const COORD* pcoordDelta) noexcept override;
+        [[nodiscard]] HRESULT InvalidateAll() noexcept override;
+        [[nodiscard]] HRESULT InvalidateCircling(_Out_ bool* pForcePaint) noexcept override;
         [[nodiscard]] HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept override;
-
         [[nodiscard]] HRESULT PaintBackground() noexcept override;
-        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                              COORD const coord,
-                                              bool const fTrimLeft,
-                                              const bool lineWrapped) noexcept override;
-
-        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
-        [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
-
+        [[nodiscard]] HRESULT PaintBufferLine(gsl::span<const Cluster> clusters, COORD coord, bool fTrimLeft, bool lineWrapped) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintSelection(SMALL_RECT rect) noexcept override;
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
-
-        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                   const gsl::not_null<IRenderData*> pData,
-                                                   const bool usingSoftFont,
-                                                   const bool isSettingDefaultBrushes) noexcept override;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
-        [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
-        [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
-
-        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, int const iDpi) noexcept override;
-
+        [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept override;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept override;
+        [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
+        [[nodiscard]] HRESULT UpdateViewport(SMALL_RECT srNewViewport) noexcept override;
+        [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept override;
         [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* pFontSize) noexcept override;
+        [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
 
-        [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
-        [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
-
-        [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
-        [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInPixels(const ::Microsoft::Console::Types::Viewport& viewInCharacters) noexcept;
-
-        float GetScaling() const noexcept;
-
-        void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;
-        void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
-        void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
-        void SetIntenseIsBold(const bool opacity) noexcept;
-
-        void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
+        // DxRenderer - getter
+        HRESULT Enable() noexcept override;
+        [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
+        [[nodiscard]] float GetScaling() const noexcept override;
+        [[nodiscard]] HANDLE GetSwapChainHandle() noexcept override;
+        [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
+        [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept override;
+        // DxRenderer - setter
+        void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
+        void SetCallback(std::function<void()> pfn) noexcept override;
+        void SetDefaultTextBackgroundOpacity(float opacity) noexcept override;
+        void SetForceFullRepaintRendering(bool enable) noexcept override;
+        [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
+        void SetPixelShaderPath(std::wstring_view value) noexcept override;
+        void SetRetroTerminalEffect(bool enable) noexcept override;
+        void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
+        void SetSoftwareRendering(bool enable) noexcept override;
+        void SetIntenseIsBold(bool enable) noexcept override;
+        void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
+        [[nodiscard]] HRESULT SetWindowSize(SIZE pixels) noexcept override;
+        void ToggleShaderEffects() noexcept override;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
+        void UpdateHyperlinkHoveredId(uint16_t hoveredId) noexcept override;
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
@@ -144,6 +107,8 @@ namespace Microsoft::Console::Render
             ForHwnd,
             ForComposition
         };
+
+        static constexpr bool debugGeneralPerformance = false;
 
         SwapChainMode _chainMode;
 
@@ -293,8 +258,6 @@ namespace Microsoft::Console::Render
             _Out_ IDWriteTextLayout** ppTextLayout) noexcept;
 
         [[nodiscard]] HRESULT _CopyFrontToBack() noexcept;
-
-        [[nodiscard]] HRESULT _EnableDisplayAccess(const bool outputEnabled) noexcept;
 
         [[nodiscard]] til::size _GetClientSize() const;
 

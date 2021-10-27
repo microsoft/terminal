@@ -60,12 +60,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::AppearanceViewModel DefaultAppearance();
         Editor::AppearanceViewModel UnfocusedAppearance();
         bool HasUnfocusedAppearance();
-        bool EditableUnfocusedAppearance();
+        bool EditableUnfocusedAppearance() const noexcept;
         bool ShowUnfocusedAppearance();
-
         void CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
                                        const IHostedInWindow& windowRoot);
         void DeleteUnfocusedAppearance();
+        bool AtlasEngineAvailable() const noexcept;
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
@@ -96,6 +96,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
 
     private:
         Model::Profile _profile;

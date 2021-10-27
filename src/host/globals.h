@@ -22,10 +22,7 @@ Revision History:
 #include "ConsoleArguments.hpp"
 #include "ApiRoutines.h"
 
-#include "../renderer/inc/IRenderData.hpp"
-#include "../renderer/inc/IRenderEngine.hpp"
-#include "../renderer/inc/IRenderer.hpp"
-#include "../renderer/inc/IFontDefaultList.hpp"
+#include "../renderer/base/Renderer.hpp"
 
 #include "../server/DeviceComm.h"
 #include "../server/ConDrvDeviceComm.h"
@@ -62,7 +59,7 @@ public:
 
     std::vector<wchar_t> WordDelimiters;
 
-    Microsoft::Console::Render::IRenderer* pRender;
+    Microsoft::Console::Render::Renderer* pRender;
 
     Microsoft::Console::Render::IFontDefaultList* pFontDefaultList;
 

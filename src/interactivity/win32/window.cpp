@@ -9,17 +9,14 @@
 #include "window.hpp"
 #include "windowio.hpp"
 #include "windowdpiapi.hpp"
-#include "windowmetrics.hpp"
+#include "WindowMetrics.hpp"
 
 #include "../../inc/conint.h"
 
 #include "../../host/globals.h"
 #include "../../host/dbcs.h"
-#include "../../host/getset.h"
 #include "../../host/misc.h"
-#include "../../host/_output.h"
 #include "../../host/output.h"
-#include "../../host/renderData.hpp"
 #include "../../host/scrolling.hpp"
 #include "../../host/srvinit.h"
 #include "../../host/stream.h"
@@ -30,6 +27,7 @@
 #include "../../renderer/gdi/gdirenderer.hpp"
 
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+#include "../../renderer/atlas/AtlasEngine.h"
 #include "../../renderer/dx/DxRenderer.hpp"
 #endif
 
@@ -209,16 +207,18 @@ void Window::_UpdateSystemMetrics() const
     // Ensure we have appropriate system metrics before we start constructing the window.
     _UpdateSystemMetrics();
 
-    const bool useDx = pSettings->GetUseDx();
+    const auto useDx = pSettings->GetUseDx();
     GdiEngine* pGdiEngine = nullptr;
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-    [[maybe_unused]] DxEngine* pDxEngine = nullptr;
+    DxEngine* pDxEngine = nullptr;
+    AtlasEngine* pAtlasEngine = nullptr;
 #endif
     try
     {
-#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-        if (useDx)
+        switch (useDx)
         {
+#if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
+        case 1:
             pDxEngine = new DxEngine();
             // TODO: MSFT:21255595 make this less gross
             // Manually set the Dx Engine to Hwnd mode. When we're trying to
@@ -227,12 +227,16 @@ void Window::_UpdateSystemMetrics() const
             // math in the hwnd mode, not the Composition mode.
             THROW_IF_FAILED(pDxEngine->SetHwnd(nullptr));
             g.pRender->AddRenderEngine(pDxEngine);
-        }
-        else
+            break;
+        case 2:
+            pAtlasEngine = new AtlasEngine();
+            g.pRender->AddRenderEngine(pAtlasEngine);
+            break;
 #endif
-        {
+        default:
             pGdiEngine = new GdiEngine();
             g.pRender->AddRenderEngine(pGdiEngine);
+            break;
         }
     }
     catch (...)
@@ -242,10 +246,6 @@ void Window::_UpdateSystemMetrics() const
 
     if (NT_SUCCESS(status))
     {
-        SCREEN_INFORMATION& siAttached = GetScreenInfo();
-
-        siAttached.RefreshFontWithRenderer();
-
         // Save reference to settings
         _pSettings = pSettings;
 
@@ -324,7 +324,7 @@ void Window::_UpdateSystemMetrics() const
             _hWnd = hWnd;
 
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-            if (useDx)
+            if (pDxEngine)
             {
                 status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->SetHwnd(hWnd))));
 
@@ -332,6 +332,10 @@ void Window::_UpdateSystemMetrics() const
                 {
                     status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pDxEngine->Enable())));
                 }
+            }
+            else if (pAtlasEngine)
+            {
+                status = NTSTATUS_FROM_WIN32(HRESULT_CODE((pAtlasEngine->SetHwnd(hWnd))));
             }
             else
 #endif
@@ -362,6 +366,7 @@ void Window::_UpdateSystemMetrics() const
                     // Post a window size update so that the new console window will size itself correctly once it's up and
                     // running. This works around chicken & egg cases involving window size calculations having to do with font
                     // sizes, DPI, and non-primary monitors (see MSFT #2367234).
+                    SCREEN_INFORMATION& siAttached = GetScreenInfo();
                     siAttached.PostUpdateWindowSize();
 
                     // Locate window theming modules and try to set the dark mode.

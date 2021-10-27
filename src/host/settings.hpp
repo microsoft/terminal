@@ -186,7 +186,7 @@ public:
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    bool GetUseDx() const noexcept;
+    DWORD GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
 private:
@@ -230,7 +230,7 @@ private:
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
     bool _fScreenReversed;
-    bool _fUseDx;
+    DWORD _fUseDx;
     bool _fCopyColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;

@@ -37,15 +37,15 @@ public:
 
     FontInfo(const FontInfo& fiFont);
 
-    COORD GetSize() const;
-    COORD GetUnscaledSize() const;
+    COORD GetSize() const noexcept;
+    COORD GetUnscaledSize() const noexcept;
 
     void SetFromEngine(const std::wstring_view faceName,
                        const unsigned char family,
                        const unsigned int weight,
                        const bool fSetDefaultRasterFont,
                        const COORD coordSize,
-                       const COORD coordSizeUnscaled);
+                       const COORD coordSizeUnscaled) noexcept;
 
     bool GetFallback() const noexcept;
     void SetFallback(const bool didFallback) noexcept;
