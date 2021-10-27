@@ -11,7 +11,7 @@
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
              AutomationProperties.AccessibilityView="Content"
              AutomationProperties.IsDialog="True"
-             AutomationProperties.Name="Baz"
+             AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
              mc:Ignorable="d">
 
     <!--
@@ -33,7 +33,6 @@
                     AllowFocusOnInteraction="True"
                     AutomationProperties.AccessibilityView="Raw"
                     AutomationProperties.IsDialog="True"
-                    AutomationProperties.Name="TODO bind me like command palette"
                     Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
                     BorderBrush="{ThemeResource SystemAccentColor}"
                     BorderThickness="2,2,2,2"

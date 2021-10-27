@@ -54,4 +54,9 @@ namespace winrt::TerminalApp::implementation
     {
         CancelButton().Focus(FocusState::Programmatic);
     }
+
+    winrt::hstring AdminWarningPlaceholder::ControlName()
+    {
+        return RS_(L"AdminWarningPlaceholderName");
+    }
 }
