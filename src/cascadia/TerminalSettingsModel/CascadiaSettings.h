@@ -57,6 +57,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void ApplyRuntimeInitialSettings();
         void MergeInboxIntoUserSettings();
         void FindFragmentsAndMergeIntoUserSettings();
+        void MergeFragmentIntoUserSettings(const winrt::hstring& source, const std::string_view& content);
         void FinalizeLayering();
         bool DisableDeletedProfiles();
 
@@ -82,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         void _parseFragment(const winrt::hstring& source, const std::string_view& content, ParsedSettings& settings);
         static JsonSettings _parseJson(const std::string_view& content);
         static winrt::com_ptr<implementation::Profile> _parseProfile(const OriginTag origin, const winrt::hstring& source, const Json::Value& profileJson);
-        void _appendProfile(winrt::com_ptr<implementation::Profile>&& profile, ParsedSettings& settings);
+        void _appendProfile(winrt::com_ptr<Profile>&& profile, const winrt::guid& guid, ParsedSettings& settings);
         static void _addParentProfile(const winrt::com_ptr<implementation::Profile>& profile, ParsedSettings& settings);
         void _executeGenerator(const IDynamicProfileGenerator& generator);
 
