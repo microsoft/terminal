@@ -508,13 +508,13 @@
     <value>Cancel</value>
   </data>
   <data name="ApproveCommandlineWarningPrefixTextBlock.Text" xml:space="preserve">
-    <value>You are about to execute the following commandline:</value>
+    <value>You are about to execute the following command-line:</value>
   </data>
   <data name="ApproveCommandlineWarningSuffixTextBlock.Text" xml:space="preserve">
     <value>Do you wish to continue?</value>
   </data>
   <data name="ApproveCommandlineWarning_PrimaryButton.Content" xml:space="preserve">
-    <value>Allow Commandline</value>
+    <value>Allow command-line</value>
   </data>
   <data name="ApproveCommandlineWarningTitle.Text" xml:space="preserve">
     <value>Warning</value>

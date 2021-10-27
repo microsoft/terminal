@@ -43,28 +43,35 @@
                                HorizontalAlignment="Left"
                                TextWrapping="WrapWholeWords" />
 
-                    <TextBlock Margin="0,8,0,8"
-                               HorizontalAlignment="Center"
-                               FontFamily="Cascadia Code"
+                    <TextBlock Margin="0,16,0,16"
+                               HorizontalAlignment="Left"
+                               FontFamily="Cascadia Mono"
                                Text="{x:Bind Commandline, Mode=OneWay}"
                                TextWrapping="WrapWholeWords" />
 
                     <TextBlock x:Uid="ApproveCommandlineWarningSuffixTextBlock"
                                HorizontalAlignment="Left"
                                TextWrapping="WrapWholeWords" />
-                    <StackPanel HorizontalAlignment="Right"
-                                Orientation="Horizontal">
+                    <Grid Margin="0,8,0,8"
+                          HorizontalAlignment="Stretch"
+                          XYFocusKeyboardNavigation="Enabled">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <Button x:Name="PrimaryButton"
                                 x:Uid="ApproveCommandlineWarning_PrimaryButton"
-                                Margin="8"
-                                HorizontalAlignment="Right"
+                                Grid.Column="0"
+                                Margin="0,0,8,0"
+                                HorizontalAlignment="Stretch"
                                 Click="_primaryButtonClick"
                                 Style="{StaticResource AccentButtonStyle}" />
                         <Button x:Name="CancelButton"
                                 x:Uid="ApproveCommandlineWarning_CancelButton"
-                                HorizontalAlignment="Right"
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
                                 Click="_cancelButtonClick" />
-                    </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Border>
         </Grid>
