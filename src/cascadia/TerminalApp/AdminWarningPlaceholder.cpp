@@ -7,6 +7,7 @@
 #include "AdminWarningPlaceholder.h"
 #include "AdminWarningPlaceholder.g.cpp"
 using namespace winrt::Windows::UI::Xaml;
+using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 
 namespace winrt::TerminalApp::implementation
 {
@@ -22,6 +23,26 @@ namespace winrt::TerminalApp::implementation
         {
             RootGrid().Background(termControl.BackgroundBrush());
         }
+
+        CancelButton().LayoutUpdated([this](auto&&, auto&&) { CancelButton().Focus(FocusState::Programmatic); });
+        //LayoutUpdated([this](auto&&, auto&&) {
+        //    if (auto automationPeer{ FrameworkElementAutomationPeer::FromElement(ApproveCommandlineWarningTitle()) })
+        //    {
+        //        //auto foo{ automationPeer.try_as<FrameworkElementAutomationPeer>() };
+        //        //foo.RaiseStructureChangedEvent(Automation::Peers::AutomationStructureChangeType::ChildrenBulkAdded,
+        //        //                               automationPeer);
+
+        //        //automationPeer.RaiseNotificationEvent(
+        //        //    AutomationNotificationKind::ActionCompleted,
+        //        //    AutomationNotificationProcessing::CurrentThenMostRecent,
+        //        //    L"Foo",
+        //        //    L"ApproveCommandlineWarningTitle" /* unique name for this notification category */
+        //        //);
+
+        //        automationPeer.RaiseAutomationEvent(AutomationEvents::StructureChanged);
+        //    }
+
+        //});
     }
     void AdminWarningPlaceholder::_primaryButtonClick(winrt::Windows::Foundation::IInspectable const& /*sender*/,
                                                       RoutedEventArgs const& e)
@@ -36,5 +57,9 @@ namespace winrt::TerminalApp::implementation
     winrt::Windows::UI::Xaml::Controls::UserControl AdminWarningPlaceholder::Control()
     {
         return _control;
+    }
+
+    void AdminWarningPlaceholder::FocusOnLaunch() {
+        CancelButton().Focus(FocusState::Programmatic);
     }
 }

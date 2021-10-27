@@ -306,6 +306,30 @@ namespace winrt::TerminalApp::implementation
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, profile, newControl);
         }
+
+        if (doAdminWarning)
+        {
+            controlToAdd.try_as<implementation::AdminWarningPlaceholder>()->FocusOnLaunch();
+            //Root().Dispatcher().TryRunAsync(CoreDispatcherPriority::Low, [weakThis = get_weak()]() {
+            //    if (auto self{ weakThis.get() })
+            //    {
+            //        if (auto automationPeer{ WUX::Automation::Peers::FrameworkElementAutomationPeer::FromElement(self->Root()) })
+            //        {
+            //            auto foo{ automationPeer.try_as<WUX::Automation::Peers::FrameworkElementAutomationPeer>() };
+            //            foo.RaiseStructureChangedEvent(Automation::Peers::AutomationStructureChangeType::ChildrenBulkAdded,
+            //                                           automationPeer);
+
+            //            automationPeer.RaiseNotificationEvent(
+            //                WUX::Automation::Peers::AutomationNotificationKind::ActionCompleted,
+            //                WUX::Automation::Peers::AutomationNotificationProcessing::CurrentThenMostRecent,
+            //                L"Bar",
+            //                L"ApproveCommandlineWarningTitle2todo" /* unique name for this notification category */
+            //            );
+            //        }
+            //    }
+            //});
+
+        }
     }
 
     // Method Description:

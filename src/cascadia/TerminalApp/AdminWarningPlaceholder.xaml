@@ -9,6 +9,9 @@
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             AutomationProperties.AccessibilityView="Content"
+             AutomationProperties.IsDialog="True"
+             AutomationProperties.Name="Baz"
              mc:Ignorable="d">
 
     <!--
@@ -27,29 +30,37 @@
               VerticalAlignment="Center">
             <Border Margin="8,8,8,8"
                     Padding="16,8,16,8"
+                    AllowFocusOnInteraction="True"
+                    AutomationProperties.AccessibilityView="Raw"
+                    AutomationProperties.IsDialog="True"
+                    AutomationProperties.Name="TODO bind me like command palette"
                     Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
                     BorderBrush="{ThemeResource SystemAccentColor}"
                     BorderThickness="2,2,2,2"
                     CornerRadius="{ThemeResource OverlayCornerRadius}">
                 <StackPanel Orientation="Vertical">
-                    <TextBlock x:Uid="ApproveCommandlineWarningTitle"
+                    <TextBlock x:Name="ApproveCommandlineWarningTitle"
+                               x:Uid="ApproveCommandlineWarningTitle"
                                Padding="0,0,0,16"
                                HorizontalAlignment="Left"
                                FontSize="20"
                                FontWeight="Normal"
                                TextWrapping="WrapWholeWords" />
 
-                    <TextBlock x:Uid="ApproveCommandlineWarningPrefixTextBlock"
+                    <TextBlock x:Name="PrefixTextBlock"
+                               x:Uid="ApproveCommandlineWarningPrefixTextBlock"
                                HorizontalAlignment="Left"
                                TextWrapping="WrapWholeWords" />
 
-                    <TextBlock Margin="0,16,0,16"
+                    <TextBlock x:Name="CommandlineText"
+                               Margin="0,16,0,16"
                                HorizontalAlignment="Left"
                                FontFamily="Cascadia Mono"
                                Text="{x:Bind Commandline, Mode=OneWay}"
                                TextWrapping="WrapWholeWords" />
 
-                    <TextBlock x:Uid="ApproveCommandlineWarningSuffixTextBlock"
+                    <TextBlock x:Name="SuffixTextBlock"
+                               x:Uid="ApproveCommandlineWarningSuffixTextBlock"
                                HorizontalAlignment="Left"
                                TextWrapping="WrapWholeWords" />
                     <Grid Margin="0,8,0,8"
@@ -65,12 +76,14 @@
                                 Margin="0,0,8,0"
                                 HorizontalAlignment="Stretch"
                                 Click="_primaryButtonClick"
+                                IsTabStop="True"
                                 Style="{StaticResource AccentButtonStyle}" />
                         <Button x:Name="CancelButton"
                                 x:Uid="ApproveCommandlineWarning_CancelButton"
                                 Grid.Column="1"
                                 HorizontalAlignment="Stretch"
-                                Click="_cancelButtonClick" />
+                                Click="_cancelButtonClick"
+                                IsTabStop="True" />
                     </Grid>
                 </StackPanel>
             </Border>

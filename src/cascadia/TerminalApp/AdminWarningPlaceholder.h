@@ -11,7 +11,7 @@ namespace winrt::TerminalApp::implementation
     struct AdminWarningPlaceholder : AdminWarningPlaceholderT<AdminWarningPlaceholder>
     {
         AdminWarningPlaceholder(const winrt::Microsoft::Terminal::Control::TermControl& control, const winrt::hstring& cmdline);
-
+        void FocusOnLaunch();
         winrt::Windows::UI::Xaml::Controls::UserControl Control();
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
         WINRT_OBSERVABLE_PROPERTY(winrt::hstring, Commandline, _PropertyChangedHandlers);
