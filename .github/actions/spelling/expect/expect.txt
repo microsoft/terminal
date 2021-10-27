@@ -668,6 +668,7 @@ dwriteglyphrundescriptionclustermap
 dxgi
 dxgidwm
 dxinterop
+dxsm
 dxttbmp
 eachother
 eae
@@ -937,6 +938,7 @@ GTP
 guc
 gui
 guidatom
+guiddef
 GValue
 GWL
 GWLP
@@ -1231,6 +1233,7 @@ KLF
 KLMNO
 KLMNOPQRST
 KLMNOPQRSTQQQQQ
+KPRIORITY
 KVM
 langid
 LANGUAGELIST
@@ -1533,6 +1536,7 @@ NOCOLOR
 NOCOMM
 NOCONTEXTHELP
 NOCOPYBITS
+nodefaultlib
 nodiscard
 NODUP
 noexcept
@@ -1641,6 +1645,7 @@ onecoreuapuuid
 onecoreuuid
 ONECOREWINDOWS
 onehalf
+oneseq
 ONLCR
 openbash
 opencode
@@ -1707,6 +1712,7 @@ pcch
 PCCHAR
 PCCONSOLE
 PCD
+pcg
 pch
 PCHAR
 PCIDLIST
@@ -1802,6 +1808,7 @@ POSX
 POSXSCROLL
 POSYSCROLL
 ppci
+PPEB
 ppf
 ppguid
 ppidl
@@ -2021,6 +2028,7 @@ Rike
 RIPMSG
 RIS
 RMENU
+rng
 roadmap
 robomac
 roundtrip
@@ -2226,6 +2234,7 @@ STARTWPARMSW
 Statusline
 stdafx
 STDAPI
+stdc
 stdcall
 stdcpp
 stderr

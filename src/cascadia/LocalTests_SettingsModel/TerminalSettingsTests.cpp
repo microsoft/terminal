@@ -3,6 +3,8 @@
 
 #include "pch.h"
 
+#include <til/rand.h>
+
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "../TerminalSettingsModel/TerminalSettings.h"
 #include "TestUtils.h"
@@ -34,14 +36,12 @@ namespace SettingsModelLocalTests
         END_TEST_CLASS()
 
         TEST_METHOD(TryCreateWinRTType);
-
         TEST_METHOD(TestTerminalArgsForBinding);
-
+        TEST_METHOD(CommandLineToArgvW);
+        TEST_METHOD(GetProfileForArgsWithCommandline);
         TEST_METHOD(MakeSettingsForProfile);
         TEST_METHOD(MakeSettingsForDefaultProfileThatDoesntExist);
-
         TEST_METHOD(TestLayerProfileOnColorScheme);
-
         TEST_METHOD(TestCommandlineToTitlePromotion);
 
         TEST_CLASS_SETUP(ClassSetup)
@@ -58,6 +58,139 @@ namespace SettingsModelLocalTests
         settings.FontSize(oldFontSize + 5);
         auto newFontSize = settings.FontSize();
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
+    }
+
+    // CascadiaSettings::_normalizeCommandLine abuses some aspects from CommandLineToArgvW
+    // to simplify the implementation. It assumes that all arguments returned by
+    // CommandLineToArgvW are returned back to back in memory as "arg1\0arg2\0arg3\0...".
+    // This test ensures CommandLineToArgvW doesn't change just to be sure.
+    void TerminalSettingsTests::CommandLineToArgvW()
+    {
+        pcg_engines::oneseq_dxsm_64_32 rng{ til::gen_random<uint64_t>() };
+
+        const auto expectedArgc = static_cast<int>(rng(16) + 1);
+        std::wstring expectedArgv;
+        std::wstring input;
+
+        // We generate up to 16 arguments. Each argument is up to 64 chars long, is quoted
+        // (2 chars, only applies to the input) and separated by a whitespace (1 char).
+        expectedArgv.reserve(expectedArgc * 65);
+        input.reserve(expectedArgc * 67);
+
+        for (int i = 0; i < expectedArgc; ++i)
+        {
+            const bool useQuotes = static_cast<bool>(rng(2));
+            const auto count = static_cast<size_t>(rng(64));
+            const auto ch = static_cast<wchar_t>(rng('z' - 'a' + 1) + 'a');
+
+            if (i != 0)
+            {
+                expectedArgv.push_back(L'\0');
+                input.push_back(L' ');
+            }
+
+            if (useQuotes)
+            {
+                input.push_back(L'"');
+            }
+
+            expectedArgv.append(count, ch);
+            input.append(count, ch);
+
+            if (useQuotes)
+            {
+                input.push_back(L'"');
+            }
+        }
+
+        int argc;
+        wil::unique_hlocal_ptr<PWSTR[]> argv{ ::CommandLineToArgvW(input.c_str(), &argc) };
+        VERIFY_ARE_EQUAL(expectedArgc, argc);
+        VERIFY_IS_NOT_NULL(argv);
+
+        const auto lastArg = argv[argc - 1];
+        const auto beg = argv[0];
+        const auto end = lastArg + wcslen(lastArg);
+        VERIFY_IS_GREATER_THAN(end, beg);
+        VERIFY_ARE_EQUAL(expectedArgv.size(), static_cast<size_t>(end - beg));
+        VERIFY_ARE_EQUAL(0, memcmp(beg, expectedArgv.data(), expectedArgv.size()));
+    }
+
+    void TerminalSettingsTests::GetProfileForArgsWithCommandline()
+    {
+        // I'm exclusively using cmd.exe as I know exactly where it resides at.
+        static constexpr std::string_view settingsJson{ R"({
+            "profiles": {
+                "defaults": {
+                    "historySize": 123
+                },
+                "list": [
+                    {
+                        "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                        "commandline": "%SystemRoot%\\System32\\cmd.exe"
+                    },
+                    {
+                        "guid": "{6239a42c-1111-49a3-80bd-e8fdd045185c}",
+                        "commandline": "cmd.exe /A"
+                    },
+                    {
+                        "guid": "{6239a42c-2222-49a3-80bd-e8fdd045185c}",
+                        "commandline": "cmd.exe /A /B"
+                    },
+                    {
+                        "guid": "{6239a42c-3333-49a3-80bd-e8fdd045185c}",
+                        "commandline": "cmd.exe /A /C",
+                        "connectionType": "{9a9977a7-1fe0-49c0-b6c0-13a0cd1c98a1}"
+                    }
+                ]
+            }
+        })" };
+
+        const auto settings = winrt::make_self<implementation::CascadiaSettings>(settingsJson);
+
+        struct TestCase
+        {
+            std::wstring_view input;
+            int expected;
+        };
+
+        static constexpr std::array testCases{
+            // Base test.
+            TestCase{ L"cmd.exe", 0 },
+            // SearchPathW() normalization + case insensitive matching.
+            TestCase{ L"cmd.exe /a", 1 },
+            TestCase{ L"C:\\Windows\\System32\\cmd.exe /A", 1 },
+            // Test that we don't pick the equally long but different "/A /B" variant.
+            TestCase{ L"C:\\Windows\\System32\\cmd.exe /A /C", 1 },
+            // Test that we don't pick the shorter "/A" variant,
+            // but do pick the shorter "/A /B" variant for longer inputs.
+            TestCase{ L"cmd.exe /A /B", 2 },
+            TestCase{ L"cmd.exe /A /B /C", 2 },
+            // Ignore profiles with a connection type, like the Azure cloud shell.
+            // Instead it should pick any other prefix.
+            TestCase{ L"C:\\Windows\\System32\\cmd.exe /A /C", 1 },
+            // Return base layer profile for missing profiles.
+            TestCase{ L"C:\\Windows\\regedit.exe", -1 },
+        };
+
+        for (const auto& testCase : testCases)
+        {
+            NewTerminalArgs args;
+            args.Commandline(testCase.input);
+
+            const auto profile = settings->GetProfileForArgs(args);
+            VERIFY_IS_NOT_NULL(profile);
+
+            if (testCase.expected < 0)
+            {
+                VERIFY_ARE_EQUAL(123, profile.HistorySize());
+            }
+            else
+            {
+                GUID expectedGUID{ 0x6239a42c, static_cast<uint16_t>(0x1111 * testCase.expected), 0x49a3, { 0x80, 0xbd, 0xe8, 0xfd, 0xd0, 0x45, 0x18, 0x5c } };
+                VERIFY_ARE_EQUAL(expectedGUID, static_cast<const GUID&>(profile.Guid()));
+            }
+        }
     }
 
     void TerminalSettingsTests::TestTerminalArgsForBinding()

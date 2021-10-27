@@ -3255,7 +3255,7 @@ class StateMachineExternalTest final
 
         pDispatch->_copyContent = L"UNCHANGED";
         // Passing a non-base64 `Pd` param is illegal, won't change the content.
-        mach.ProcessString(L"\x1b]52;;foo\x07");
+        mach.ProcessString(L"\x1b]52;;???\x07");
         VERIFY_ARE_EQUAL(L"UNCHANGED", pDispatch->_copyContent);
 
         pDispatch->ClearState();

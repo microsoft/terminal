@@ -56,12 +56,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return VsSetupConfiguration::GetInstallationVersion(inst.get());
             }
 
-            unsigned long long GetComparableInstallDate() const
+            unsigned long long GetComparableInstallDate() const noexcept
             {
                 return installDate;
             }
 
-            unsigned long long GetComparableVersion() const
+            unsigned long long GetComparableVersion() const noexcept
             {
                 return version;
             }
@@ -114,9 +114,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                 return profileNameSuffix;
             }
 
-        private:
-            friend class VsSetupConfiguration;
-
             VsSetupInstance(ComPtrSetupQuery pQuery, ComPtrSetupInstance pInstance) :
                 query(pQuery), // Copy and AddRef the query object.
                 inst(std::move(pInstance)), // Take ownership of the instance object.
@@ -126,6 +123,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             {
             }
 
+        private:
             ComPtrSetupQuery query;
             ComPtrSetupInstance inst;
 

@@ -106,6 +106,7 @@ namespace winrt::TerminalApp::implementation
         bool GetShowTitleInTitlebar();
 
         winrt::Windows::Foundation::IAsyncOperation<winrt::Windows::UI::Xaml::Controls::ContentDialogResult> ShowDialog(winrt::Windows::UI::Xaml::Controls::ContentDialog dialog);
+        void DismissDialog();
 
         Windows::Foundation::Collections::IMapView<Microsoft::Terminal::Control::KeyChord, Microsoft::Terminal::Settings::Model::Command> GlobalHotkeys();
 
@@ -132,6 +133,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t _numOpenWindows{ 0 };
 
         std::shared_mutex _dialogLock;
+        winrt::Windows::UI::Xaml::Controls::ContentDialog _dialog;
 
         ::TerminalApp::AppCommandlineArgs _appArgs;
         ::TerminalApp::AppCommandlineArgs _settingsAppArgs;

@@ -1167,15 +1167,7 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
 }
 
 // Method Description:
@@ -1187,15 +1179,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableWin32InputMode(win32InputMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
 }
 
 // - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
@@ -1205,15 +1189,7 @@ bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
 }
 
 // - att610 - Enables or disables the cursor blinking.
@@ -2096,15 +2072,7 @@ bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableVT200MouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2116,15 +2084,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
 }
 
 //Routine Description:
@@ -2136,15 +2096,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
 }
 
 //Routine Description:
@@ -2155,15 +2107,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2175,15 +2119,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2195,15 +2131,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableAlternateScroll(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
 }
 
 //Routine Description:
@@ -2671,23 +2599,4 @@ void AdaptDispatch::_ReportDECSTBMSetting() const
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
     response += L"r\033\\";
     _WriteResponse(response);
-}
-
-// Routine Description:
-// - Determines whether we should pass any sequence that manipulates
-//   TerminalInput's input generator through the PTY. It encapsulates
-//   a check for whether the PTY is in use.
-// Return value:
-// True if the request should be passed.
-bool AdaptDispatch::_ShouldPassThroughInputModeChange() const
-{
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input.
-    // The original comment said, "Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911". Unfortunately, time has shown
-    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-    // impact on the actual connected terminal. We can't remove this check,
-    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return _pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled();
 }

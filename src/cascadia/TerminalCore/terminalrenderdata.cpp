@@ -3,10 +3,15 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "ColorFix.hpp"
 #include <DefaultSettings.h>
+
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
+
+static constexpr size_t DefaultBgIndex{ 16 };
+static constexpr size_t DefaultFgIndex{ 17 };
 
 Viewport Terminal::GetViewport() noexcept
 {
@@ -44,14 +49,47 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
+    std::pair<COLORREF, COLORREF> colors;
     _blinkingState.RecordBlinkingUsage(attr);
-    auto colors = attr.CalculateRgbColors(
-        _colorTable,
-        _defaultFg,
-        _defaultBg,
-        _screenReversed,
-        _blinkingState.IsBlinkingFaint(),
-        _intenseIsBright);
+    const auto fgTextColor = attr.GetForeground();
+    const auto bgTextColor = attr.GetBackground();
+
+    // We want to nudge the foreground color to make it more perceivable only for the
+    // default color pairs within the color table
+    if (_adjustIndistinguishableColors &&
+        !(attr.IsFaint() || (attr.IsBlinking() && _blinkingState.IsBlinkingFaint())) &&
+        (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
+        (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
+    {
+        const auto bgIndex = bgTextColor.IsDefault() ? DefaultBgIndex : bgTextColor.GetIndex();
+        auto fgIndex = fgTextColor.IsDefault() ? DefaultFgIndex : fgTextColor.GetIndex();
+
+        if (fgTextColor.IsIndex16() && (fgIndex < 8) && attr.IsBold() && _intenseIsBright)
+        {
+            // There is a special case for bold here - we need to get the bright version of the foreground color
+            fgIndex += 8;
+        }
+
+        if (attr.IsReverseVideo() ^ _screenReversed)
+        {
+            colors.first = _adjustedForegroundColors[fgIndex][bgIndex];
+            colors.second = fgTextColor.GetColor(_colorTable, _defaultFg);
+        }
+        else
+        {
+            colors.first = _adjustedForegroundColors[bgIndex][fgIndex];
+            colors.second = bgTextColor.GetColor(_colorTable, _defaultBg);
+        }
+    }
+    else
+    {
+        colors = attr.CalculateRgbColors(_colorTable,
+                                         _defaultFg,
+                                         _defaultBg,
+                                         _screenReversed,
+                                         _blinkingState.IsBlinkingFaint(),
+                                         _intenseIsBright);
+    }
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
@@ -261,4 +299,35 @@ const bool Terminal::IsUiaDataInitialized() const noexcept
     // initialized yet. So we use this to check if any crucial components of
     // UiaData are not yet initialized.
     return !!_buffer;
+}
+
+// Method Description:
+// - Creates the adjusted color array, which contains the possible foreground colors,
+//   adjusted for perceivability
+// - The adjusted color array is 2-d, and effectively maps a background and foreground
+//   color pair to the adjusted foreground for that color pair
+void Terminal::_MakeAdjustedColorArray()
+{
+    // The color table has 16 colors, but the adjusted color table needs to be 18
+    // to include the default background and default foreground colors
+    std::array<COLORREF, 18> colorTableWithDefaults;
+    std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
+    colorTableWithDefaults[DefaultBgIndex] = _defaultBg;
+    colorTableWithDefaults[DefaultFgIndex] = _defaultFg;
+    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
+    {
+        const auto fg = til::at(colorTableWithDefaults, fgIndex);
+        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
+        {
+            if (fgIndex == bgIndex)
+            {
+                _adjustedForegroundColors[bgIndex][fgIndex] = fg;
+            }
+            else
+            {
+                const auto bg = til::at(colorTableWithDefaults, bgIndex);
+                _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
+            }
+        }
+    }
 }

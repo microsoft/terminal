@@ -73,7 +73,25 @@ std::pair<std::vector<Model::DefaultTerminal>, Model::DefaultTerminal> DefaultTe
     return { std::move(defaultTerminals), std::move(defaultTerminal) };
 }
 
+bool DefaultTerminal::HasCurrent()
+{
+    std::vector<DelegationConfig::DelegationPackage> allPackages;
+    DelegationConfig::DelegationPackage currentPackage;
+    LOG_IF_FAILED(DelegationConfig::s_GetAvailablePackages(allPackages, currentPackage));
+
+    // Good old conhost has a hardcoded GUID of {00000000-0000-0000-0000-000000000000}.
+    return currentPackage.terminal.clsid != CLSID{};
+}
+
 void DefaultTerminal::Current(const Model::DefaultTerminal& term)
 {
     THROW_IF_FAILED(DelegationConfig::s_SetDefaultByPackage(winrt::get_self<DefaultTerminal>(term)->_pkg, true));
+
+    TraceLoggingWrite(g_hSettingsModelProvider,
+                      "DefaultTerminalChanged",
+                      TraceLoggingWideString(term.Name().c_str(), "TerminalName", "the name of the default terminal"),
+                      TraceLoggingWideString(term.Version().c_str(), "TerminalVersion", "the version of the default terminal"),
+                      TraceLoggingWideString(term.Author().c_str(), "TerminalAuthor", "the author of the default terminal"),
+                      TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                      TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 }
