@@ -112,35 +112,17 @@ public:
         return _setConsoleWindowInfoResult;
     }
 
-    bool PrivateSetCursorKeysMode(const bool applicationMode) override
+    bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) override
     {
-        Log::Comment(L"PrivateSetCursorKeysMode MOCK called...");
+        Log::Comment(L"SetInputMode MOCK called...");
 
-        if (_privateSetCursorKeysModeResult)
+        if (_setInputModeResult)
         {
-            VERIFY_ARE_EQUAL(_cursorKeysApplicationMode, applicationMode);
+            VERIFY_ARE_EQUAL(_expectedInputMode, mode);
+            VERIFY_ARE_EQUAL(_expectedInputModeEnabled, enabled);
         }
 
-        return _privateSetCursorKeysModeResult;
-    }
-
-    bool PrivateSetKeypadMode(const bool applicationMode) override
-    {
-        Log::Comment(L"PrivateSetKeypadMode MOCK called...");
-
-        if (_privateSetKeypadModeResult)
-        {
-            VERIFY_ARE_EQUAL(_keypadApplicationMode, applicationMode);
-        }
-
-        return _privateSetKeypadModeResult;
-    }
-
-    bool PrivateEnableWin32InputMode(const bool /*win32InputMode*/) override
-    {
-        Log::Comment(L"PrivateEnableWin32InputMode MOCK called...");
-
-        return true;
+        return _setInputModeResult;
     }
 
     bool PrivateSetAnsiMode(const bool ansiMode) override
@@ -350,66 +332,6 @@ public:
     {
         Log::Comment(L"PrivateUseMainScreenBuffer MOCK called...");
         return true;
-    }
-
-    bool PrivateEnableVT200MouseMode(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableVT200MouseMode MOCK called...");
-        if (_privateEnableVT200MouseModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedMouseEnabled, enabled);
-        }
-        return _privateEnableVT200MouseModeResult;
-    }
-
-    bool PrivateEnableUTF8ExtendedMouseMode(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableUTF8ExtendedMouseMode MOCK called...");
-        if (_privateEnableUTF8ExtendedMouseModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedMouseEnabled, enabled);
-        }
-        return _privateEnableUTF8ExtendedMouseModeResult;
-    }
-
-    bool PrivateEnableSGRExtendedMouseMode(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableSGRExtendedMouseMode MOCK called...");
-        if (_privateEnableSGRExtendedMouseModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedMouseEnabled, enabled);
-        }
-        return _privateEnableSGRExtendedMouseModeResult;
-    }
-
-    bool PrivateEnableButtonEventMouseMode(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableButtonEventMouseMode MOCK called...");
-        if (_privateEnableButtonEventMouseModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedMouseEnabled, enabled);
-        }
-        return _privateEnableButtonEventMouseModeResult;
-    }
-
-    bool PrivateEnableAnyEventMouseMode(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableAnyEventMouseMode MOCK called...");
-        if (_privateEnableAnyEventMouseModeResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedMouseEnabled, enabled);
-        }
-        return _privateEnableAnyEventMouseModeResult;
-    }
-
-    bool PrivateEnableAlternateScroll(const bool enabled) override
-    {
-        Log::Comment(L"PrivateEnableAlternateScroll MOCK called...");
-        if (_privateEnableAlternateScrollResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedAlternateScrollEnabled, enabled);
-        }
-        return _privateEnableAlternateScrollResult;
     }
 
     bool PrivateEraseAll() override
@@ -787,10 +709,9 @@ public:
 
     COORD _expectedScreenBufferSize = { 0, 0 };
     SMALL_RECT _expectedScreenBufferViewport{ 0, 0, 0, 0 };
-    bool _privateSetCursorKeysModeResult = false;
-    bool _privateSetKeypadModeResult = false;
-    bool _cursorKeysApplicationMode = false;
-    bool _keypadApplicationMode = false;
+    bool _setInputModeResult = false;
+    TerminalInput::Mode _expectedInputMode;
+    bool _expectedInputModeEnabled = false;
     bool _privateSetAnsiModeResult = false;
     bool _expectedAnsiMode = false;
     bool _privateAllowCursorBlinkingResult = false;
@@ -803,14 +724,6 @@ public:
 
     bool _setConsoleTitleWResult = false;
     std::wstring_view _expectedWindowTitle{};
-    bool _expectedMouseEnabled = false;
-    bool _expectedAlternateScrollEnabled = false;
-    bool _privateEnableVT200MouseModeResult = false;
-    bool _privateEnableUTF8ExtendedMouseModeResult = false;
-    bool _privateEnableSGRExtendedMouseModeResult = false;
-    bool _privateEnableButtonEventMouseModeResult = false;
-    bool _privateEnableAnyEventMouseModeResult = false;
-    bool _privateEnableAlternateScrollResult = false;
     bool _setCursorStyleResult = false;
     CursorType _expectedCursorStyle;
     bool _setCursorColorResult = false;
@@ -2100,15 +2013,17 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _testGetSet->_privateSetCursorKeysModeResult = TRUE;
-        _testGetSet->_cursorKeysApplicationMode = false;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::CursorKey;
+        _testGetSet->_expectedInputModeEnabled = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetCursorKeysMode(false));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _testGetSet->_privateSetCursorKeysModeResult = TRUE;
-        _testGetSet->_cursorKeysApplicationMode = true;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::CursorKey;
+        _testGetSet->_expectedInputModeEnabled = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetCursorKeysMode(true));
     }
@@ -2120,15 +2035,17 @@ public:
         // success cases
         // set numeric mode = true
         Log::Comment(L"Test 1: application mode = false");
-        _testGetSet->_privateSetKeypadModeResult = TRUE;
-        _testGetSet->_keypadApplicationMode = false;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::Keypad;
+        _testGetSet->_expectedInputModeEnabled = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetKeypadMode(false));
 
         // set numeric mode = false
         Log::Comment(L"Test 2: application mode = true");
-        _testGetSet->_privateSetKeypadModeResult = TRUE;
-        _testGetSet->_keypadApplicationMode = true;
+        _testGetSet->_setInputModeResult = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::Keypad;
+        _testGetSet->_expectedInputModeEnabled = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetKeypadMode(true));
     }
@@ -2316,45 +2233,51 @@ public:
         Log::Comment(L"Starting test...");
 
         Log::Comment(L"Test 1: Test Default Mouse Mode");
-        _testGetSet->_expectedMouseEnabled = true;
-        _testGetSet->_privateEnableVT200MouseModeResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::DefaultMouseTracking;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableVT200MouseMode(true));
-        _testGetSet->_expectedMouseEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableVT200MouseMode(false));
 
         Log::Comment(L"Test 2: Test UTF-8 Extended Mouse Mode");
-        _testGetSet->_expectedMouseEnabled = true;
-        _testGetSet->_privateEnableUTF8ExtendedMouseModeResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::Utf8MouseEncoding;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableUTF8ExtendedMouseMode(true));
-        _testGetSet->_expectedMouseEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableUTF8ExtendedMouseMode(false));
 
         Log::Comment(L"Test 3: Test SGR Extended Mouse Mode");
-        _testGetSet->_expectedMouseEnabled = true;
-        _testGetSet->_privateEnableSGRExtendedMouseModeResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::SgrMouseEncoding;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableSGRExtendedMouseMode(true));
-        _testGetSet->_expectedMouseEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableSGRExtendedMouseMode(false));
 
         Log::Comment(L"Test 4: Test Button-Event Mouse Mode");
-        _testGetSet->_expectedMouseEnabled = true;
-        _testGetSet->_privateEnableButtonEventMouseModeResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::ButtonEventMouseTracking;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableButtonEventMouseMode(true));
-        _testGetSet->_expectedMouseEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableButtonEventMouseMode(false));
 
         Log::Comment(L"Test 5: Test Any-Event Mouse Mode");
-        _testGetSet->_expectedMouseEnabled = true;
-        _testGetSet->_privateEnableAnyEventMouseModeResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::AnyEventMouseTracking;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableAnyEventMouseMode(true));
-        _testGetSet->_expectedMouseEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableAnyEventMouseMode(false));
 
         Log::Comment(L"Test 6: Test Alt Scroll Mouse Mode");
-        _testGetSet->_expectedAlternateScrollEnabled = true;
-        _testGetSet->_privateEnableAlternateScrollResult = TRUE;
+        _testGetSet->_expectedInputModeEnabled = true;
+        _testGetSet->_expectedInputMode = TerminalInput::Mode::AlternateScroll;
+        _testGetSet->_setInputModeResult = true;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableAlternateScroll(true));
-        _testGetSet->_expectedAlternateScrollEnabled = false;
+        _testGetSet->_expectedInputModeEnabled = false;
         VERIFY_IS_TRUE(_pDispatch.get()->EnableAlternateScroll(false));
     }
 

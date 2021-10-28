@@ -285,13 +285,13 @@ static constexpr short _encodeDefaultCoordinate(const short sCoordinateValue) no
 // - true, if we are tracking mouse input. False, otherwise
 bool TerminalInput::IsTrackingMouseInput() const noexcept
 {
-    return (_mouseInputState.trackingMode != TrackingMode::None);
+    return _inputMode.any(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);
 }
 
 // Routine Description:
 // - Attempt to handle the given mouse coordinates and windows button as a VT-style mouse event.
 //     If the event should be transmitted in the selected mouse mode, then we'll try and
-//     encode the event according to the rules of the selected ExtendedMode, and insert those characters into the input buffer.
+//     encode the event according to the rules of the encoding mode, and insert those characters into the input buffer.
 // Parameters:
 // - position - The windows coordinates (top,left = 0,0) of the mouse event
 // - button - the message to decode.
@@ -339,7 +339,7 @@ bool TerminalInput::HandleMouse(const COORD position,
     }
     else
     {
-        success = (_mouseInputState.trackingMode != TrackingMode::None);
+        success = IsTrackingMouseInput();
         if (success)
         {
             // isHover is only true for WM_MOUSEMOVE events
@@ -363,30 +363,23 @@ bool TerminalInput::HandleMouse(const COORD position,
             // In AnyEvent, all coord change hovers are sent
             const bool physicalButtonPressed = realButton != WM_LBUTTONUP;
 
-            success = (isButton && _mouseInputState.trackingMode != TrackingMode::None) ||
-                      (isHover && _mouseInputState.trackingMode == TrackingMode::ButtonEvent && ((!sameCoord) && (physicalButtonPressed))) ||
-                      (isHover && _mouseInputState.trackingMode == TrackingMode::AnyEvent && !sameCoord);
+            success = (isButton && IsTrackingMouseInput()) ||
+                      (isHover && _inputMode.test(Mode::ButtonEventMouseTracking) && ((!sameCoord) && (physicalButtonPressed))) ||
+                      (isHover && _inputMode.test(Mode::AnyEventMouseTracking) && !sameCoord);
 
             if (success)
             {
                 std::wstring sequence;
-                switch (_mouseInputState.extendedMode)
+                if (_inputMode.test(Mode::Utf8MouseEncoding))
                 {
-                case ExtendedMode::None:
-                    sequence = _GenerateDefaultSequence(position,
-                                                        realButton,
-                                                        isHover,
-                                                        modifierKeyState,
-                                                        delta);
-                    break;
-                case ExtendedMode::Utf8:
                     sequence = _GenerateUtf8Sequence(position,
                                                      realButton,
                                                      isHover,
                                                      modifierKeyState,
                                                      delta);
-                    break;
-                case ExtendedMode::Sgr:
+                }
+                else if (_inputMode.test(Mode::SgrMouseEncoding))
+                {
                     // For SGR encoding, if no physical buttons were pressed,
                     // then we want to handle hovers with WM_MOUSEMOVE.
                     // However, if we're dragging (WM_MOUSEMOVE with a button pressed),
@@ -397,13 +390,15 @@ bool TerminalInput::HandleMouse(const COORD position,
                                                     isHover,
                                                     modifierKeyState,
                                                     delta);
-                    break;
-                case ExtendedMode::Urxvt:
-                default:
-                    success = false;
-                    break;
                 }
-
+                else
+                {
+                    sequence = _GenerateDefaultSequence(position,
+                                                        realButton,
+                                                        isHover,
+                                                        modifierKeyState,
+                                                        delta);
+                }
                 success = !sequence.empty();
 
                 if (success)
@@ -411,7 +406,7 @@ bool TerminalInput::HandleMouse(const COORD position,
                     _SendInputSequence(sequence);
                     success = true;
                 }
-                if (_mouseInputState.trackingMode == TrackingMode::ButtonEvent || _mouseInputState.trackingMode == TrackingMode::AnyEvent)
+                if (_inputMode.any(Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking))
                 {
                     _mouseInputState.lastPos.X = position.X;
                     _mouseInputState.lastPos.Y = position.Y;
@@ -547,10 +542,10 @@ std::wstring TerminalInput::_GenerateSGRSequence(const COORD position,
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
-bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
+bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const short delta) const
 {
     return _mouseInputState.inAlternateBuffer &&
-           _mouseInputState.alternateScroll &&
+           _inputMode.test(Mode::AlternateScroll) &&
            (button == WM_MOUSEWHEEL || button == WM_MOUSEHWHEEL) && delta != 0;
 }
 
@@ -560,15 +555,15 @@ bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const 
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the input sequence was sent successfully.
-bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
+bool TerminalInput::_SendAlternateScroll(const short delta) const
 {
     if (delta > 0)
     {
-        _SendInputSequence(_cursorApplicationMode ? ApplicationUpSequence : CursorUpSequence);
+        _SendInputSequence(_inputMode.test(Mode::CursorKey) ? ApplicationUpSequence : CursorUpSequence);
     }
     else
     {
-        _SendInputSequence(_cursorApplicationMode ? ApplicationDownSequence : CursorDownSequence);
+        _SendInputSequence(_inputMode.test(Mode::CursorKey) ? ApplicationDownSequence : CursorDownSequence);
     }
     return true;
 }
