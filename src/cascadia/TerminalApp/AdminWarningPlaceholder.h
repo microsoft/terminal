@@ -1,5 +1,22 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- AdminWarningPlaceholder
+
+Abstract:
+- The AdminaWarningPlaceholder is a control used to fill space in a pane and
+  present a warning to the user. It holds on to a real control that it should be
+  replaced with. It looks just like a ContentDialog, except it exists per-pane,
+  whereas a ContentDialog can only be added to take up the whole window.
+- The caller should make sure to bind our PrimaryButtonClicked and
+  CancelButtonClicked events, to be informed as to which was pressed.
+
+Author(s):
+- Mike Griese - September 2021
+
+--*/
 
 #pragma once
 
@@ -28,5 +45,7 @@ namespace winrt::TerminalApp::implementation
                                  winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _cancelButtonClick(winrt::Windows::Foundation::IInspectable const& sender,
                                 winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
+        void _keyUpHandler(Windows::Foundation::IInspectable const& sender,
+                           Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
     };
 }

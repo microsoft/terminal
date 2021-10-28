@@ -6,6 +6,7 @@
 #include "pch.h"
 #include "AdminWarningPlaceholder.h"
 #include "AdminWarningPlaceholder.g.cpp"
+#include <LibraryResources.h>
 using namespace winrt::Windows::UI::Xaml;
 using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 
@@ -58,5 +59,17 @@ namespace winrt::TerminalApp::implementation
     winrt::hstring AdminWarningPlaceholder::ControlName()
     {
         return RS_(L"AdminWarningPlaceholderName");
+    }
+
+    void AdminWarningPlaceholder::_keyUpHandler(IInspectable const& /*sender*/,
+                                                Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        // If the user presses escape, close the dialog (without confirming)
+        const auto key = e.OriginalKey();
+        if (key == winrt::Windows::System::VirtualKey::Escape)
+        {
+            _CancelButtonClickedHandlers(*this, e);
+            e.Handled(true);
+        }
     }
 }

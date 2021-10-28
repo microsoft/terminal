@@ -12,6 +12,7 @@
              AutomationProperties.AccessibilityView="Content"
              AutomationProperties.IsDialog="True"
              AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             PreviewKeyUp="_keyUpHandler"
              mc:Ignorable="d">
 
     <!--
