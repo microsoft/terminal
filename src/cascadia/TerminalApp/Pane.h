@@ -184,7 +184,7 @@ public:
     template<typename F>
     std::shared_ptr<Pane> _FindPane(F f)
     {
-        return WalkTree([f](auto pane) -> std::shared_ptr<Pane> {
+        return WalkTree([f](const auto& pane) -> std::shared_ptr<Pane> {
             if (f(pane))
             {
                 return pane;

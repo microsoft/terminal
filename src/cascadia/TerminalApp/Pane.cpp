@@ -444,7 +444,7 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     if (direction == FocusDirection::First)
     {
         // Just get the first leaf pane.
-        auto firstPane = _FindPane([](auto p) { return p->_IsLeaf(); });
+        auto firstPane = _FindPane([](const auto& p) { return p->_IsLeaf(); });
 
         // Don't need to do any movement if we are the source and target pane.
         if (firstPane == sourcePane)
@@ -601,7 +601,7 @@ std::shared_ptr<Pane> Pane::PreviousPane(const std::shared_ptr<Pane> targetPane)
 // - the parent of `pane` if pane is in this tree.
 std::shared_ptr<Pane> Pane::_FindParentOfPane(const std::shared_ptr<Pane> pane)
 {
-    return _FindPane([&](auto p) {
+    return _FindPane([&](const auto& p) {
         return p->_firstChild == pane || p->_secondChild == pane;
     });
 }
@@ -1145,7 +1145,7 @@ Controls::Grid Pane::GetRootElement()
 //   `_lastActive`, else returns this
 std::shared_ptr<Pane> Pane::GetActivePane()
 {
-    return _FindPane([](auto p) { return p->_lastActive; });
+    return _FindPane([](const auto& p) { return p->_lastActive; });
 }
 
 // Method Description:
@@ -2208,7 +2208,6 @@ std::optional<std::optional<SplitDirection>> Pane::PreCalculateCanSplit(const st
             const auto newSecondHeight = heightMinusSeparator * secondPercent;
 
             return newFirstHeight > minSize.Height && newSecondHeight > minSize.Height ? std::optional{ splitType } : std::nullopt;
-            ;
         }
     }
     else if (_IsLeaf())
@@ -2592,7 +2591,7 @@ bool Pane::_HasChild(const std::shared_ptr<Pane> child)
         return false;
     }
 
-    return WalkTree([&](auto p) {
+    return WalkTree([&](const auto& p) {
         return p->_firstChild == child || p->_secondChild == child;
     });
 }
@@ -2605,7 +2604,7 @@ bool Pane::_HasChild(const std::shared_ptr<Pane> child)
 // - A pointer to the pane with the given ID, if found.
 std::shared_ptr<Pane> Pane::FindPane(const uint32_t id)
 {
-    return _FindPane([=](auto p) { return p->_IsLeaf() && p->_id == id; });
+    return _FindPane([=](const auto& p) { return p->_IsLeaf() && p->_id == id; });
 }
 
 // Method Description:
