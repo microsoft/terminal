@@ -1323,6 +1323,8 @@ namespace TerminalAppLocalTests
         VERIFY_ARE_EQUAL(9u, keymap.Size());
 
         {
+            Log::Comment(L"profile.elevate=omitted, action.elevate=nullopt: don't auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('A') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1343,6 +1345,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
         }
         {
+            Log::Comment(L"profile.elevate=true, action.elevate=nullopt: DO auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('B') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1363,6 +1367,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());
         }
         {
+            Log::Comment(L"profile.elevate=false, action.elevate=nullopt: don't auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('C') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1384,6 +1390,8 @@ namespace TerminalAppLocalTests
         }
 
         {
+            Log::Comment(L"profile.elevate=omitted, action.elevate=false: don't auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('D') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1405,6 +1413,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
         }
         {
+            Log::Comment(L"profile.elevate=true, action.elevate=false: don't auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('E') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1426,6 +1436,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(false, termSettings.Elevate());
         }
         {
+            Log::Comment(L"profile.elevate=false, action.elevate=false: don't auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('F') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1448,6 +1460,8 @@ namespace TerminalAppLocalTests
         }
 
         {
+            Log::Comment(L"profile.elevate=omitted, action.elevate=true: DO auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('G') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1469,6 +1483,7 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());
         }
         {
+            Log::Comment(L"profile.elevate=true, action.elevate=true: DO auto elevate");
             KeyChord kc{ true, false, false, static_cast<int32_t>('H') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
@@ -1490,6 +1505,8 @@ namespace TerminalAppLocalTests
             VERIFY_ARE_EQUAL(true, termSettings.Elevate());
         }
         {
+            Log::Comment(L"profile.elevate=false, action.elevate=true: DO auto elevate");
+
             KeyChord kc{ true, false, false, static_cast<int32_t>('I') };
             auto actionAndArgs = TestUtils::GetActionAndArgs(keymap, kc);
             VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
