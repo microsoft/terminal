@@ -2672,12 +2672,26 @@ namespace winrt::TerminalApp::implementation
     // - args: the ExecuteCommandlineArgs to synthesize a list of startup actions for.
     // Return Value:
     // - an empty list if we failed to parse, otherwise a list of actions to execute.
-    std::vector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
+    IVector<ActionAndArgs> TerminalPage::ConvertExecuteCommandlineToActions(const ExecuteCommandlineArgs& args)
     {
         ::TerminalApp::AppCommandlineArgs appArgs;
         if (appArgs.ParseArgs(args) == 0)
         {
-            return appArgs.GetStartupActions();
+            auto& startupActions{ appArgs.GetStartupActions() };
+
+            // The fastest way to copy all the actions out of the std::vector and
+            // put them into a winrt::IVector is by making a copy, then moving the
+            // copy into the winrt vector ctor.
+            std::vector<ActionAndArgs> listCopy{};
+            listCopy.assign(startupActions.begin(), startupActions.end());
+            // auto result = winrt::single_threaded_vector<ActionAndArgs>(std::move(listCopy));
+            auto result = winrt::single_threaded_vector<ActionAndArgs>();
+            // for (auto& action : startupActions)
+            for (auto& action : listCopy)
+            {
+                result.Append(action);
+            }
+            return result;
         }
 
         return {};
