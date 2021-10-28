@@ -193,7 +193,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Commandline(), StartingDirectory(), TabTitle(), TabColor(), ProfileIndex(), Profile(), SuppressApplicationTitle(), ColorScheme());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Commandline(),
+                                                                                   StartingDirectory(),
+                                                                                   TabTitle(),
+                                                                                   TabColor(),
+                                                                                   ProfileIndex(),
+                                                                                   Profile(),
+                                                                                   SuppressApplicationTitle(),
+                                                                                   ColorScheme(),
+                                                                                   Elevate());
         }
     };
 

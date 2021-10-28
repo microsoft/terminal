@@ -3683,9 +3683,6 @@ namespace winrt::TerminalApp::implementation
         // TODO: GH#8592 - It may be useful to pop a Toast here in the original
         // Terminal window informing the user that the tab was opened in a new
         // window.
-
-        // Hop to the BG thread
-        // co_await winrt::resume_background();
     }
 
     // Method Description:
