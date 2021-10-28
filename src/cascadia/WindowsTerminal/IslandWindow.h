@@ -81,6 +81,7 @@ protected:
     winrt::Windows::UI::Xaml::Hosting::DesktopWindowXamlSource _source;
     winrt::Windows::UI::Xaml::Controls::Grid _rootGrid;
     wil::com_ptr<ITaskbarList3> _taskbar;
+    wil::unique_hwnd _coverWindow;
 
     std::function<void(const HWND, const RECT, winrt::Microsoft::Terminal::Settings::Model::LaunchMode& launchMode)> _pfnCreateCallback;
     std::function<float(bool, float)> _pfnSnapDimensionCallback;

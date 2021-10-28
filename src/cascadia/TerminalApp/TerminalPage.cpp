@@ -550,6 +550,8 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_CompleteInitialization()
     {
+        Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
+
         _startupState = StartupState::Initialized;
         _InitializedHandlers(*this, nullptr);
     }

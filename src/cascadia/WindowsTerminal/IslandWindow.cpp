@@ -24,6 +24,7 @@ using namespace ::Microsoft::Console::Types;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
+static constexpr const wchar_t* coverClassName{ L"COVER_WINDOW_CLASS" };
 
 const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
@@ -55,6 +56,9 @@ void IslandWindow::MakeWindow() noexcept
     wc.style = CS_HREDRAW | CS_VREDRAW;
     wc.lpfnWndProc = WndProc;
     wc.hIcon = LoadIconW(wc.hInstance, MAKEINTRESOURCEW(IDI_APPICON));
+    // wc.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(LTGRAY_BRUSH));
+    // CreateSolidBrush(RGB(255, 0, 0));
+    wc.hbrBackground = CreateSolidBrush(RGB(255, 0, 0));
     RegisterClass(&wc);
     WINRT_ASSERT(!_window);
 
@@ -82,6 +86,40 @@ void IslandWindow::MakeWindow() noexcept
                                 this));
 
     WINRT_ASSERT(_window);
+
+    // static ATOM coverWindowClass{ []() {
+    //     WNDCLASSEX wcEx{};
+    //     wcEx.cbSize = sizeof(wcEx);
+    //     wcEx.style = CS_HREDRAW | CS_VREDRAW | CS_DBLCLKS;
+    //     wcEx.lpszClassName = coverClassName;
+    //     // wcEx.hbrBackground = reinterpret_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+    //     wcEx.hbrBackground = CreateSolidBrush(RGB(255, 0, 0));
+    //     wcEx.hCursor = LoadCursor(nullptr, IDC_ARROW);
+    //     wcEx.lpfnWndProc = DefWindowProcW; // &NonClientIslandWindow::_StaticInputSinkWndProc;
+    //     wcEx.hInstance = wil::GetModuleInstanceHandle();
+    //     // wcEx.cbWndExtra = sizeof(NonClientIslandWindow*);
+    //     return RegisterClassEx(&wcEx);
+    // }() };
+
+    // til::rectangle ourSize{ GetWindowRect() };
+
+    // // The drag bar window is a child window of the top level window that is put
+    // // right on top of the drag bar. The XAML island window "steals" our mouse
+    // // messages which makes it hard to implement a custom drag area. By putting
+    // // a window on top of it, we prevent it from "stealing" the mouse messages.
+    // _coverWindow.reset(CreateWindowExW(0,
+    //                                    coverClassName,
+    //                                    L"",
+    //                                    WS_CHILD,
+    //                                    0,
+    //                                    0,
+    //                                    ourSize.width<int>(),
+    //                                    ourSize.height<int>(),
+    //                                    GetHandle(),
+    //                                    nullptr,
+    //                                    wil::GetModuleInstanceHandle(),
+    //                                    this));
+    // THROW_HR_IF_NULL(E_UNEXPECTED, _coverWindow);
 }
 
 // Method Description:
@@ -324,6 +362,13 @@ void IslandWindow::Initialize()
     // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
     // We don't really care if this failed or not.
     TerminalTrySetTransparentBackground(true);
+
+    // auto wsEx{ GetWindowLong(_window.get(), GWL_EXSTYLE) };
+    // SetWindowLong(_window.get(), GWL_EXSTYLE, wsEx | WS_EX_NOREDIRECTIONBITMAP);
+    // SetWindowPos(_window.get(), nullptr, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+
+    HBRUSH brush = CreateSolidBrush(RGB(0, 0, 255));
+    SetClassLongPtr(_window.get(), GCLP_HBRBACKGROUND, (LONG_PTR)brush);
 }
 
 void IslandWindow::OnSize(const UINT width, const UINT height)
@@ -608,6 +653,28 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         return 0;
     }
+    case WM_ERASEBKGND:
+    {
+        HBRUSH hbrWhite = reinterpret_cast<HBRUSH>(GetStockObject(WHITE_BRUSH));
+        HBRUSH hbrGray = reinterpret_cast<HBRUSH>(GetStockObject(LTGRAY_BRUSH));
+        RECT rc;
+        auto hdc = (HDC)wparam;
+        GetClientRect(_window.get(), &rc);
+        SetMapMode(hdc, MM_ANISOTROPIC);
+        SetWindowExtEx(hdc, 100, 100, NULL);
+        SetViewportExtEx(hdc, rc.right, rc.bottom, NULL);
+        FillRect(hdc, &rc, hbrWhite);
+
+        for (int i = 0; i < 13; i++)
+        {
+            auto x = (i * 40) % 100;
+            auto y = ((i * 40) / 100) * 20;
+            SetRect(&rc, x, y, x + 20, y + 20);
+            FillRect(hdc, &rc, hbrGray);
+        }
+        return 1L;
+    }
+
     default:
         // We'll want to receive this message when explorer.exe restarts
         // so that we can re-add our icon to the notification area.
