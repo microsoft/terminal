@@ -1869,6 +1869,22 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            if (_settings.GlobalSettings().TrimPaste())
+            {
+                std::wstring_view textView{ text };
+                const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
+                if (pos == textView.npos)
+                {
+                    // Text is all white space, nothing to paste
+                    co_return;
+                }
+                else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
+                {
+                    textView.remove_suffix(toRemove);
+                    text = { textView };
+                }
+            }
+
             bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste();
             if (warnMultiLine)
             {
