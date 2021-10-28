@@ -146,7 +146,7 @@ namespace Microsoft::Console::Types
 
         RECT _getTerminalRect() const;
 
-        virtual const COORD _getScreenFontSize() const;
+        virtual const COORD _getScreenFontSize() const noexcept;
 
         const unsigned int _getViewportHeight(const SMALL_RECT viewport) const noexcept;
         const Viewport _getOptimizedBufferSize() const noexcept;
