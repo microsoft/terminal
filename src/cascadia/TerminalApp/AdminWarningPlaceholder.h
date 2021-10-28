@@ -6,7 +6,7 @@ Module Name:
 - AdminWarningPlaceholder
 
 Abstract:
-- The AdminaWarningPlaceholder is a control used to fill space in a pane and
+- The AdminWarningPlaceholder is a control used to fill space in a pane and
   present a warning to the user. It holds on to a real control that it should be
   replaced with. It looks just like a ContentDialog, except it exists per-pane,
   whereas a ContentDialog can only be added to take up the whole window.
