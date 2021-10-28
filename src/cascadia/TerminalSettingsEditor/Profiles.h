@@ -33,7 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // only works on Win11. So we'll use that.
             //
             // Remove when we can remove the rest of GH#11285
-            if (value < 100.0 && winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
+            if (value < 100.0 &&
+                !winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
             {
                 UseAcrylic(true);
             }
