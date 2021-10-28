@@ -255,6 +255,14 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
         srNewSelection.Top = _coordSelectionAnchor.Y;
     }
 
+    // This function is called on WM_MOUSEMOVE.
+    // Prevent triggering an invalidation just because the mouse moved
+    // in the same cell without changing the actual (visible) selection.
+    if (_srSelectionRect == srNewSelection)
+    {
+        return;
+    }
+
     // call special update method to modify the displayed selection in-place
     // NOTE: Using HideSelection, editing the rectangle, then ShowSelection will cause flicker.
     //_PaintUpdateSelection(&srNewSelection);
