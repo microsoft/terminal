@@ -2284,7 +2284,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             // Cc/foo/bar -> /mnt/c/foo/bar
                             fullPath.replace(0, 1, L"/mnt/");
                         }
-                        else 
+                        else
                         {
                             static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
                             for (auto prefix : wslPathPrefixes)
@@ -2302,7 +2302,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         fullPath = L"/";
                                     }
                                     break;
-                                }                                
+                                }
                             }
                         }
                     }
