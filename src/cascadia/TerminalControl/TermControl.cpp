@@ -2275,7 +2275,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     // Fix path for WSL
                     if (_settings.ProfileSource() == L"Windows.Terminal.Wsl")
                     {
-                        static constexpr std::wstring_view wslPathPrefix{L"//wsl.localhost/"};
                         std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
 
                         if (fullPath.size() >= 2 && fullPath.at(1) == L':')
@@ -2285,17 +2284,25 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             // Cc/foo/bar -> /mnt/c/foo/bar
                             fullPath.replace(0, 1, L"/mnt/");
                         }
-                        else if (til::starts_with(fullPath, wslPathPrefix))
+                        else 
                         {
-                            if (const auto idx = fullPath.find(L'/', wslPathPrefix.size()); idx != std::wstring::npos)
+                            static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
+                            for (auto prefix : wslPathPrefixes)
                             {
-                                // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
-                                fullPath.erase(0, idx);
-                            }
-                            else
-                            {
-                                // //wsl.localhost/Ubuntu-18.04 -> /
-                                fullPath = L"/";
+                                if (til::starts_with(fullPath, prefix))
+                                {
+                                    if (const auto idx = fullPath.find(L'/', prefix.size()); idx != std::wstring::npos)
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
+                                        fullPath.erase(0, idx);
+                                    }
+                                    else
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04 -> /
+                                        fullPath = L"/";
+                                    }
+                                    break;
+                                }                                
                             }
                         }
                     }
