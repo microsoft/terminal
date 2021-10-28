@@ -9,6 +9,10 @@
              xmlns:local="using:TerminalApp"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:mux="using:Microsoft.UI.Xaml.Controls"
+             AutomationProperties.AccessibilityView="Content"
+             AutomationProperties.IsDialog="True"
+             AutomationProperties.Name="{x:Bind ControlName, Mode=OneWay}"
+             PreviewKeyUp="_keyUpHandler"
              mc:Ignorable="d">
 
     <!--
@@ -27,44 +31,60 @@
               VerticalAlignment="Center">
             <Border Margin="8,8,8,8"
                     Padding="16,8,16,8"
+                    AllowFocusOnInteraction="True"
+                    AutomationProperties.AccessibilityView="Raw"
+                    AutomationProperties.IsDialog="True"
                     Background="{ThemeResource SystemControlBackgroundAltHighBrush}"
                     BorderBrush="{ThemeResource SystemAccentColor}"
                     BorderThickness="2,2,2,2"
                     CornerRadius="{ThemeResource OverlayCornerRadius}">
                 <StackPanel Orientation="Vertical">
-                    <TextBlock x:Uid="ApproveCommandlineWarningTitle"
+                    <TextBlock x:Name="ApproveCommandlineWarningTitle"
+                               x:Uid="ApproveCommandlineWarningTitle"
                                Padding="0,0,0,16"
                                HorizontalAlignment="Left"
                                FontSize="20"
                                FontWeight="Normal"
                                TextWrapping="WrapWholeWords" />
 
-                    <TextBlock x:Uid="ApproveCommandlineWarningPrefixTextBlock"
+                    <TextBlock x:Name="PrefixTextBlock"
+                               x:Uid="ApproveCommandlineWarningPrefixTextBlock"
                                HorizontalAlignment="Left"
                                TextWrapping="WrapWholeWords" />
 
-                    <TextBlock Margin="0,8,0,8"
-                               HorizontalAlignment="Center"
-                               FontFamily="Cascadia Code"
+                    <TextBlock x:Name="CommandlineText"
+                               Margin="0,16,0,16"
+                               HorizontalAlignment="Left"
+                               FontFamily="Cascadia Mono"
                                Text="{x:Bind Commandline, Mode=OneWay}"
                                TextWrapping="WrapWholeWords" />
 
-                    <TextBlock x:Uid="ApproveCommandlineWarningSuffixTextBlock"
+                    <TextBlock x:Name="SuffixTextBlock"
+                               x:Uid="ApproveCommandlineWarningSuffixTextBlock"
                                HorizontalAlignment="Left"
                                TextWrapping="WrapWholeWords" />
-                    <StackPanel HorizontalAlignment="Right"
-                                Orientation="Horizontal">
+                    <Grid Margin="0,8,0,8"
+                          HorizontalAlignment="Stretch"
+                          XYFocusKeyboardNavigation="Enabled">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <Button x:Name="PrimaryButton"
                                 x:Uid="ApproveCommandlineWarning_PrimaryButton"
-                                Margin="8"
-                                HorizontalAlignment="Right"
+                                Grid.Column="0"
+                                Margin="0,0,8,0"
+                                HorizontalAlignment="Stretch"
                                 Click="_primaryButtonClick"
+                                IsTabStop="True"
                                 Style="{StaticResource AccentButtonStyle}" />
                         <Button x:Name="CancelButton"
                                 x:Uid="ApproveCommandlineWarning_CancelButton"
-                                HorizontalAlignment="Right"
-                                Click="_cancelButtonClick" />
-                    </StackPanel>
+                                Grid.Column="1"
+                                HorizontalAlignment="Stretch"
+                                Click="_cancelButtonClick"
+                                IsTabStop="True" />
+                    </Grid>
                 </StackPanel>
             </Border>
         </Grid>

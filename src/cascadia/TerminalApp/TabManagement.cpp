@@ -315,6 +315,17 @@ namespace winrt::TerminalApp::implementation
             // Split (auto) with the debug tap.
             newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, profile, newControl);
         }
+
+        if (doAdminWarning)
+        {
+            // We know this is safe - we literally just added the
+            // AdminWarningPlaceholder as the controlToAdd like 20 lines up.
+            //
+            // Focus the warning here. The LayoutUpdated within the dialog
+            // itself isn't good enough. That, for some reason, fires _before_
+            // the dialog is in the UI tree, which is useless for us.
+            controlToAdd.try_as<implementation::AdminWarningPlaceholder>()->FocusOnLaunch();
+        }
     }
 
     // Method Description:

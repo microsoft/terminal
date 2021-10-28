@@ -7,5 +7,6 @@ namespace TerminalApp
                                                                Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         String Commandline { get; };
+        String ControlName { get; };
     }
 }

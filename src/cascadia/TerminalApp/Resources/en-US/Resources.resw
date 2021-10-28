@@ -504,20 +504,23 @@
   <data name="MultiLinePasteDialog.Title" xml:space="preserve">
     <value>Warning</value>
   </data>
-  <data name="ApproveCommandlineWarning_CancelButton.Content" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
   <data name="ApproveCommandlineWarningPrefixTextBlock.Text" xml:space="preserve">
-    <value>You are about to execute the following commandline:</value>
+    <value>You are about to execute the following command-line:</value>
   </data>
   <data name="ApproveCommandlineWarningSuffixTextBlock.Text" xml:space="preserve">
     <value>Do you wish to continue?</value>
   </data>
   <data name="ApproveCommandlineWarning_PrimaryButton.Content" xml:space="preserve">
-    <value>Allow Commandline</value>
+    <value>Allow command-line</value>
+  </data>
+  <data name="ApproveCommandlineWarning_CancelButton.Content" xml:space="preserve">
+    <value>Cancel</value>
   </data>
   <data name="ApproveCommandlineWarningTitle.Text" xml:space="preserve">
     <value>Warning</value>
+  </data>
+  <data name="AdminWarningPlaceholderName" xml:space="preserve">
+    <value>Elevated command-line warning</value>
   </data>
   <data name="CommandPalette_SearchBox.PlaceholderText" xml:space="preserve">
     <value>Type a command name...</value>
