@@ -45,6 +45,7 @@ void GlobalAppSettings::_FinalizeInheritance()
 winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
 {
     auto globals{ winrt::make_self<GlobalAppSettings>() };
+
     globals->_UnparsedDefaultProfile = _UnparsedDefaultProfile;
 
     globals->_defaultProfile = _defaultProfile;
