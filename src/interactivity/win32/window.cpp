@@ -252,6 +252,10 @@ void Window::_UpdateSystemMetrics() const
 
     if (NT_SUCCESS(status))
     {
+        SCREEN_INFORMATION& siAttached = GetScreenInfo();
+
+        siAttached.RefreshFontWithRenderer();
+
         // Save reference to settings
         _pSettings = pSettings;
 
@@ -375,7 +379,6 @@ void Window::_UpdateSystemMetrics() const
                     // Post a window size update so that the new console window will size itself correctly once it's up and
                     // running. This works around chicken & egg cases involving window size calculations having to do with font
                     // sizes, DPI, and non-primary monitors (see MSFT #2367234).
-                    SCREEN_INFORMATION& siAttached = GetScreenInfo();
                     siAttached.PostUpdateWindowSize();
 
                     // Locate window theming modules and try to set the dark mode.
