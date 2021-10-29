@@ -61,7 +61,7 @@ namespace Microsoft::Console::Render
         HRESULT Enable() noexcept override;
         [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
         [[nodiscard]] float GetScaling() const noexcept override;
-        [[nodiscard]] HANDLE GetSwapChainHandle() noexcept override;
+        [[nodiscard]] HANDLE GetSwapChainHandle() override;
         [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
         [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept override;
         // DxRenderer - setter

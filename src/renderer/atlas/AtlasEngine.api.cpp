@@ -327,16 +327,12 @@ HRESULT AtlasEngine::Enable() noexcept
     return static_cast<float>(_api.dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
 }
 
-[[nodiscard]] HANDLE AtlasEngine::GetSwapChainHandle() noexcept
+[[nodiscard]] HANDLE AtlasEngine::GetSwapChainHandle()
 {
     if (WI_IsFlagSet(_invalidations, InvalidationFlags::device))
     {
-        try
-        {
-            _createResources();
-            WI_ClearFlag(_invalidations, InvalidationFlags::device);
-        }
-        CATCH_LOG()
+        _createResources();
+        WI_ClearFlag(_invalidations, InvalidationFlags::device);
     }
 
     return _api.swapChainHandle.get();
@@ -435,6 +431,7 @@ void AtlasEngine::ToggleShaderEffects() noexcept
 }
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
+try
 {
     // This must be the first action as it actually modifies fontInfo, which we use later on in this function.
     RETURN_IF_FAILED(GetProposedFont(fontInfoDesired, fontInfo, _api.dpi));
@@ -466,6 +463,7 @@ void AtlasEngine::ToggleShaderEffects() noexcept
 
     return S_OK;
 }
+CATCH_RETURN()
 
 void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 {

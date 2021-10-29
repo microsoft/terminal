@@ -94,7 +94,11 @@ namespace Microsoft::Console::Render
         virtual HRESULT Enable() noexcept { return S_OK; }
         virtual [[nodiscard]] bool GetRetroTerminalEffect() const noexcept { return false; }
         virtual [[nodiscard]] float GetScaling() const noexcept { return 1; }
-        virtual [[nodiscard]] HANDLE GetSwapChainHandle() noexcept { return nullptr; }
+#pragma warning(suppress : 26440) // Function '...' can be declared 'noexcept' (f.6).
+        virtual [[nodiscard]] HANDLE GetSwapChainHandle()
+        {
+            return nullptr;
+        }
         virtual [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept { return Types::Viewport::Empty(); }
         virtual [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept { return Types::Viewport::Empty(); }
         // DxRenderer - setter

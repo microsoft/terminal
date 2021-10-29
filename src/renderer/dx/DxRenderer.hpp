@@ -14,14 +14,9 @@
 #include <d3d11.h>
 #include <d2d1.h>
 #include <d2d1_1.h>
-#include <d2d1helper.h>
 #include <DirectXMath.h>
-#include <dwrite.h>
 #include <dwrite_1.h>
-#include <dwrite_2.h>
-#include <dwrite_3.h>
 
-#include <wrl.h>
 #include <wrl/client.h>
 
 #include "CustomTextLayout.h"
@@ -76,7 +71,7 @@ namespace Microsoft::Console::Render
         HRESULT Enable() noexcept override;
         [[nodiscard]] bool GetRetroTerminalEffect() const noexcept override;
         [[nodiscard]] float GetScaling() const noexcept override;
-        [[nodiscard]] HANDLE GetSwapChainHandle() noexcept override;
+        [[nodiscard]] HANDLE GetSwapChainHandle() override;
         [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept override;
         [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept override;
         // DxRenderer - setter

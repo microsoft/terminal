@@ -122,6 +122,7 @@ DxEngine::DxEngine() :
 
 // Routine Description:
 // - Destroys an instance of the DirectX rendering engine
+#pragma warning(suppress : 26432) // If you define or delete any default operation in the type 'class Microsoft::Console::Render::DxEngine', define or delete them all (c.21).
 DxEngine::~DxEngine()
 {
     _ReleaseDeviceResources();
@@ -215,6 +216,7 @@ void DxEngine::ToggleShaderEffects() noexcept
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
     _recreateDeviceRequested = true;
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
     LOG_IF_FAILED(InvalidateAll());
 }
 
@@ -1013,7 +1015,7 @@ try
 }
 CATCH_LOG()
 
-HANDLE DxEngine::GetSwapChainHandle() noexcept
+HANDLE DxEngine::GetSwapChainHandle()
 {
     if (!_swapChainHandle)
     {

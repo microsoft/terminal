@@ -32,6 +32,7 @@ namespace Microsoft.Terminal.Settings.Editor
         Boolean EditableUnfocusedAppearance { get; };
         Boolean ShowUnfocusedAppearance { get; };
         AppearanceViewModel UnfocusedAppearance { get; };
+        Boolean AtlasEngineAvailable { get; };
 
         void CreateUnfocusedAppearance(Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes, IHostedInWindow WindowRoot);
         void DeleteUnfocusedAppearance();

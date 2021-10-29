@@ -262,7 +262,9 @@ try
             const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
             const auto data = _r.cells.data();
             auto count = _r.cells.size();
+#pragma warning(suppress : 26494) // Variable 'dst' is uninitialized. Always initialize an object (type.5).
             Cell* dst;
+#pragma warning(suppress : 26494) // Variable 'src' is uninitialized. Always initialize an object (type.5).
             Cell* src;
 
             if (_api.scrollOffset < 0)
@@ -1014,9 +1016,9 @@ void AtlasEngine::_setCellFlags(SMALL_RECT coords, CellFlags mask, CellFlags bit
     assert(coords.Bottom <= _r.cellCount.y);
 
     const auto filter = ~mask;
-    const auto width = coords.Right - coords.Left;
-    const auto height = coords.Bottom - coords.Top;
-    const auto stride = _r.cellCount.x;
+    const auto width = static_cast<size_t>(coords.Right) - coords.Left;
+    const auto height = static_cast<size_t>(coords.Bottom) - coords.Top;
+    const auto stride = static_cast<size_t>(_r.cellCount.x);
     auto row = _r.cells.data() + static_cast<size_t>(_r.cellCount.x) * coords.Top + coords.Left;
     const auto end = row + height * stride;
 
@@ -1053,12 +1055,9 @@ AtlasEngine::u16x2 AtlasEngine::_allocateAtlasTile() noexcept
 
 void AtlasEngine::_emplaceGlyph(const wchar_t* key, size_t keyLen, u16 y, u16 x1, u16 x2)
 {
-    assert(key);
-    assert(keyLen != 0);
+    assert(key && keyLen != 0);
     assert(y < _r.cellCount.y);
-    assert(x1 < _r.cellCount.x);
-    assert(x2 <= _r.cellCount.x);
-    assert(x1 < x2);
+    assert(x1 < x2 && x2 <= _r.cellCount.x);
 
     if (keyLen > 15)
     {
