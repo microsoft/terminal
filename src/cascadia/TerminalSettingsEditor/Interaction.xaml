@@ -45,6 +45,11 @@
                 <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Trim Paste  -->
+            <local:SettingContainer x:Uid="Globals_TrimPaste">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimPaste, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Word Delimiters  -->
             <local:SettingContainer x:Uid="Globals_WordDelimiters">
                 <TextBox IsSpellCheckEnabled="False"

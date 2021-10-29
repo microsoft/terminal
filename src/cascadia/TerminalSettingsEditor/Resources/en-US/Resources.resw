@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -246,6 +246,10 @@
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>Remove trailing white-space in rectangular selection</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
+  </data>
+  <data name="Globals_TrimPaste.Header" xml:space="preserve">
+    <value>Remove trailing white-space when pasting</value>
+    <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
     <value>Below are the currently bound keys, which can be modified by editing the JSON settings file.</value>
