@@ -5,7 +5,12 @@
 
 #include "../inc/FontInfo.hpp"
 
-FontInfo::FontInfo(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const COORD coordSize, const unsigned int codePage, const bool fSetDefaultRasterFont) noexcept :
+FontInfo::FontInfo(const std::wstring_view& faceName,
+                   const unsigned char family,
+                   const unsigned int weight,
+                   const COORD coordSize,
+                   const unsigned int codePage,
+                   const bool fSetDefaultRasterFont /* = false */) noexcept :
     FontInfoBase(faceName, family, weight, fSetDefaultRasterFont, codePage),
     _coordSize(coordSize),
     _coordSizeUnscaled(coordSize),
@@ -31,9 +36,17 @@ COORD FontInfo::GetSize() const noexcept
     return _coordSize;
 }
 
-void FontInfo::SetFromEngine(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const bool fSetDefaultRasterFont, const COORD coordSize, const COORD coordSizeUnscaled) noexcept
+void FontInfo::SetFromEngine(const std::wstring_view& faceName,
+                             const unsigned char family,
+                             const unsigned int weight,
+                             const bool fSetDefaultRasterFont,
+                             const COORD coordSize,
+                             const COORD coordSizeUnscaled) noexcept
 {
-    FontInfoBase::SetFromEngine(faceName, family, weight, fSetDefaultRasterFont);
+    FontInfoBase::SetFromEngine(faceName,
+                                family,
+                                weight,
+                                fSetDefaultRasterFont);
     _coordSize = coordSize;
     _coordSizeUnscaled = coordSizeUnscaled;
     _ValidateCoordSize();

@@ -28,13 +28,23 @@ Author(s):
 class FontInfo : public FontInfoBase
 {
 public:
-    FontInfo(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const COORD coordSize, const unsigned int codePage, const bool fSetDefaultRasterFont = false) noexcept;
+    FontInfo(const std::wstring_view& faceName,
+             const unsigned char family,
+             const unsigned int weight,
+             const COORD coordSize,
+             const unsigned int codePage,
+             const bool fSetDefaultRasterFont = false) noexcept;
 
     bool operator==(const FontInfo& other) noexcept;
 
     COORD GetSize() const noexcept;
     COORD GetUnscaledSize() const noexcept;
-    void SetFromEngine(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const bool fSetDefaultRasterFont, const COORD coordSize, const COORD coordSizeUnscaled) noexcept;
+    void SetFromEngine(const std::wstring_view& faceName,
+                       const unsigned char family,
+                       const unsigned int weight,
+                       const bool fSetDefaultRasterFont,
+                       const COORD coordSize,
+                       const COORD coordSizeUnscaled) noexcept;
     bool GetFallback() const noexcept;
     void SetFallback(const bool didFallback) noexcept;
     void ValidateFont() noexcept;

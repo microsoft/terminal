@@ -5,7 +5,11 @@
 
 #include "../inc/FontInfoDesired.hpp"
 
-FontInfoDesired::FontInfoDesired(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const COORD coordSizeDesired, const unsigned int codePage) noexcept :
+FontInfoDesired::FontInfoDesired(const std::wstring_view& faceName,
+                                 const unsigned char family,
+                                 const unsigned int weight,
+                                 const COORD coordSizeDesired,
+                                 const unsigned int codePage) noexcept :
     FontInfoBase(faceName, family, weight, false, codePage),
     _coordSizeDesired(coordSizeDesired)
 {
@@ -41,5 +45,7 @@ bool FontInfoDesired::IsDefaultRasterFont() const noexcept
 {
     // Either the raster was set from the engine...
     // OR the face name is empty with a size of 0x0 or 8x12.
-    return WasDefaultRasterSetFromEngine() || (GetFaceName().empty() && (_coordSizeDesired == COORD{ 0, 0 } || _coordSizeDesired == COORD{ 8, 12 }));
+    return WasDefaultRasterSetFromEngine() || (GetFaceName().empty() &&
+                                               (_coordSizeDesired == COORD{ 0, 0 } ||
+                                                _coordSizeDesired == COORD{ 8, 12 }));
 }

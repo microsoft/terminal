@@ -26,7 +26,11 @@ static constexpr wchar_t DEFAULT_RASTER_FONT_FACENAME[]{ L"Terminal" };
 class FontInfoBase
 {
 public:
-    FontInfoBase(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const bool fSetDefaultRasterFont, const unsigned int uiCodePage) noexcept;
+    FontInfoBase(const std::wstring_view& faceName,
+                 const unsigned char family,
+                 const unsigned int weight,
+                 const bool fSetDefaultRasterFont,
+                 const unsigned int uiCodePage) noexcept;
 
     bool operator==(const FontInfoBase& other) noexcept;
 
@@ -36,7 +40,10 @@ public:
     unsigned int GetCodePage() const noexcept;
     void FillLegacyNameBuffer(wchar_t (&buffer)[LF_FACESIZE]) const noexcept;
     bool IsTrueTypeFont() const noexcept;
-    void SetFromEngine(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const bool fSetDefaultRasterFont) noexcept;
+    void SetFromEngine(const std::wstring_view& faceName,
+                       const unsigned char family,
+                       const unsigned int weight,
+                       const bool fSetDefaultRasterFont) noexcept;
     bool WasDefaultRasterSetFromEngine() const noexcept;
     void ValidateFont() noexcept;
 

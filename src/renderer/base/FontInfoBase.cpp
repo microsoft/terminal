@@ -7,7 +7,11 @@
 
 #include "../inc/FontInfoBase.hpp"
 
-FontInfoBase::FontInfoBase(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const bool fSetDefaultRasterFont, const unsigned int codePage) noexcept :
+FontInfoBase::FontInfoBase(const std::wstring_view& faceName,
+                           const unsigned char family,
+                           const unsigned int weight,
+                           const bool fSetDefaultRasterFont,
+                           const unsigned int codePage) noexcept :
     _faceName(faceName),
     _family(family),
     _weight(weight),
@@ -68,7 +72,10 @@ void FontInfoBase::FillLegacyNameBuffer(wchar_t (&buffer)[LF_FACESIZE]) const no
 }
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
-void FontInfoBase::SetFromEngine(const std::wstring_view& faceName, const unsigned char family, const unsigned int weight, const bool fSetDefaultRasterFont) noexcept
+void FontInfoBase::SetFromEngine(const std::wstring_view& faceName,
+                                 const unsigned char family,
+                                 const unsigned int weight,
+                                 const bool fSetDefaultRasterFont) noexcept
 {
     _faceName = faceName;
     _family = family;
@@ -92,7 +99,8 @@ void FontInfoBase::ValidateFont() noexcept
         if (_faceName == DEFAULT_TT_FONT_FACENAME)
         {
             std::wstring defaultFontFace;
-            if (SUCCEEDED(s_pFontDefaultList->RetrieveDefaultFontNameForCodepage(GetCodePage(), defaultFontFace)))
+            if (SUCCEEDED(s_pFontDefaultList->RetrieveDefaultFontNameForCodepage(GetCodePage(),
+                                                                                 defaultFontFace)))
             {
                 _faceName = defaultFontFace;
 
