@@ -1597,7 +1597,10 @@ namespace winrt::TerminalApp::implementation
             // the control here instead.
             if (_startupState == StartupState::Initialized)
             {
-                _GetActiveControl().Focus(FocusState::Programmatic);
+                if (const auto control = _GetActiveControl())
+                {
+                    control.Focus(FocusState::Programmatic);
+                }
             }
         }
         CATCH_LOG();
