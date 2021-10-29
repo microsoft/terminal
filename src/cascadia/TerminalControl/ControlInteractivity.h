@@ -22,11 +22,7 @@
 #include "cppwinrt_utils.h"
 
 #include "ControlCore.h"
-
-namespace Microsoft::Console::Render
-{
-    class UiaEngine;
-}
+#include "../../renderer/uia/UiaRenderer.hpp"
 
 namespace ControlUnitTests
 {
