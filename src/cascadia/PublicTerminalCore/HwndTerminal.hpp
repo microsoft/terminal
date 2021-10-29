@@ -128,7 +128,7 @@ private:
     void _SendCharEvent(wchar_t ch, WORD scanCode, WORD flags) noexcept;
 
     // Inherited via IControlAccessibilityInfo
-    COORD GetFontSize() const override;
+    COORD GetFontSize() const noexcept override;
     RECT GetBounds() const noexcept override;
     double GetScaleFactor() const noexcept override;
     void ChangeViewport(const SMALL_RECT NewWindow) override;
