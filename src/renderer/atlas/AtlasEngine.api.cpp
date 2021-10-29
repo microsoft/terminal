@@ -40,7 +40,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
-    assert(psrRegion->Top <= psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
+    assert(psrRegion->Top < psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
 
     // BeginPaint() protects against invalid out of bounds numbers.
     _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, gsl::narrow_cast<u16>(psrRegion->Top));
@@ -173,10 +173,24 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::GetProposedFont(const FontInfoDesired& fontInfoDesired, _Out_ FontInfo& fontInfo, const int dpi) noexcept
 try
 {
-    const auto& requestedFaceName = fontInfoDesired.GetFaceName();
+    const wchar_t* requestedFaceName = fontInfoDesired.GetFaceName().data();
     const auto requestedFamily = fontInfoDesired.GetFamily();
-    const auto requestedWeight = fontInfoDesired.GetWeight();
-    const auto requestedSize = fontInfoDesired.GetEngineSize();
+    auto requestedWeight = fontInfoDesired.GetWeight();
+    auto requestedSize = fontInfoDesired.GetEngineSize();
+
+    if (!requestedFaceName)
+    {
+        requestedFaceName = L"Consolas";
+    }
+    if (!requestedWeight)
+    {
+        requestedWeight = DWRITE_FONT_WEIGHT_NORMAL;
+    }
+    if (!requestedSize.Y)
+    {
+        requestedSize = { 0, 16 };
+    }
+
     std::wstring faceNameBuffer;
     std::wstring_view resultingFaceName = requestedFaceName;
     COORD resultingCellSize{};
@@ -237,7 +251,7 @@ try
 #endif
     {
         wil::com_ptr<IDWriteTextFormat> textFormat;
-        THROW_IF_FAILED(_createTextFormat(requestedFaceName.c_str(), static_cast<DWRITE_FONT_WEIGHT>(requestedWeight), DWRITE_FONT_STYLE_NORMAL, requestedSize.Y, textFormat.addressof()));
+        THROW_IF_FAILED(_createTextFormat(requestedFaceName, static_cast<DWRITE_FONT_WEIGHT>(requestedWeight), DWRITE_FONT_STYLE_NORMAL, requestedSize.Y, textFormat.addressof()));
 
         wil::com_ptr<IDWriteTextLayout> textLayout;
         THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(L"M", 1, textFormat.get(), FLT_MAX, FLT_MAX, textLayout.addressof()));

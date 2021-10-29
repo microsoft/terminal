@@ -8,6 +8,7 @@
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
 #include "../../types/inc/Viewport.hpp"
+#include "../../inc/unicode.hpp"
 #include "../../inc/DefaultSettings.h"
 #include <VersionHelpers.h>
 
@@ -15,12 +16,11 @@
 #include "ScreenVertexShader.h"
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#include <DirectXColors.h>
 
 using namespace DirectX;
-using namespace Microsoft::Console::Render;
-using namespace Microsoft::Console::Types;
 
-std::atomic<size_t> DxEngine::_tracelogCount{ 0 };
+std::atomic<size_t> Microsoft::Console::Render::DxEngine::_tracelogCount{ 0 };
 #pragma warning(suppress : 26477) // We don't control tracelogging macros
 TRACELOGGING_DEFINE_PROVIDER(g_hDxRenderProvider,
                              "Microsoft.Windows.Terminal.Renderer.DirectX",
@@ -48,6 +48,11 @@ D3D11_INPUT_ELEMENT_DESC _shaderInputLayout[] = {
     { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0 }
 };
+
+#pragma hdrstop
+
+using namespace Microsoft::Console::Render;
+using namespace Microsoft::Console::Types;
 
 // Routine Description:
 // - Constructs a DirectX-based renderer for console text

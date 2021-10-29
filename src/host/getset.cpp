@@ -274,7 +274,8 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         const FontInfo& fontInfo = activeScreenInfo.GetCurrentFont();
         consoleFontInfoEx.FontFamily = fontInfo.GetFamily();
         consoleFontInfoEx.FontWeight = fontInfo.GetWeight();
-        fontInfo.FillLegacyNameBuffer(consoleFontInfoEx.FaceName);
+
+        RETURN_IF_FAILED(fontInfo.FillLegacyNameBuffer(gsl::make_span(consoleFontInfoEx.FaceName)));
 
         return S_OK;
     }

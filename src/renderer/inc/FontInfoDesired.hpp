@@ -32,8 +32,8 @@ public:
 
     FontInfoDesired(const FontInfo& fiFont);
 
-    COORD GetEngineSize() const noexcept;
-    bool IsDefaultRasterFont() const noexcept;
+    COORD GetEngineSize() const;
+    bool IsDefaultRasterFont() const;
 
     friend bool operator==(const FontInfoDesired& a, const FontInfoDesired& b);
 

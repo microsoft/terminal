@@ -36,22 +36,22 @@ public:
 
     ~FontInfoBase();
 
-    unsigned char GetFamily() const noexcept;
-    unsigned int GetWeight() const noexcept;
-    const std::wstring& GetFaceName() const noexcept;
-    unsigned int GetCodePage() const noexcept;
+    unsigned char GetFamily() const;
+    unsigned int GetWeight() const;
+    const std::wstring_view GetFaceName() const noexcept;
+    unsigned int GetCodePage() const;
 
-    HRESULT FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const noexcept;
+    HRESULT FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const;
 
-    bool IsTrueTypeFont() const noexcept;
+    bool IsTrueTypeFont() const;
 
     void SetFromEngine(const std::wstring_view faceName,
                        const unsigned char family,
                        const unsigned int weight,
-                       const bool fSetDefaultRasterFont) noexcept;
+                       const bool fSetDefaultRasterFont);
 
-    bool WasDefaultRasterSetFromEngine() const noexcept;
-    void ValidateFont() noexcept;
+    bool WasDefaultRasterSetFromEngine() const;
+    void ValidateFont();
 
     static Microsoft::Console::Render::IFontDefaultList* s_pFontDefaultList;
     static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
@@ -59,7 +59,7 @@ public:
     friend bool operator==(const FontInfoBase& a, const FontInfoBase& b);
 
 protected:
-    bool IsDefaultRasterFontNoSize() const noexcept;
+    bool IsDefaultRasterFontNoSize() const;
 
 private:
     std::wstring _faceName;

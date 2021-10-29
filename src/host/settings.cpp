@@ -815,7 +815,9 @@ void Settings::SetTerminalScrolling(const bool terminalScrollingEnabled) noexcep
 // - Determines whether our primary renderer should be DirectX or GDI.
 // - This is based on user preference and velocity hold back state.
 // Return Value:
-// - True means use DirectX renderer. False means use GDI renderer.
+// - case 1: DxEngine
+// - case 2: AtlasEngine
+// - default: GdiEngine
 DWORD Settings::GetUseDx() const noexcept
 {
     return _fUseDx;

@@ -33,12 +33,12 @@ FontInfo::FontInfo(const FontInfo& fiFont) :
 {
 }
 
-COORD FontInfo::GetUnscaledSize() const noexcept
+COORD FontInfo::GetUnscaledSize() const
 {
     return _coordSizeUnscaled;
 }
 
-COORD FontInfo::GetSize() const noexcept
+COORD FontInfo::GetSize() const
 {
     return _coordSize;
 }
@@ -48,7 +48,7 @@ void FontInfo::SetFromEngine(const std::wstring_view faceName,
                              const unsigned int weight,
                              const bool fSetDefaultRasterFont,
                              const COORD coordSize,
-                             const COORD coordSizeUnscaled) noexcept
+                             const COORD coordSizeUnscaled)
 {
     FontInfoBase::SetFromEngine(faceName,
                                 family,

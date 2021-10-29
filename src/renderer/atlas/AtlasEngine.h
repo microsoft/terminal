@@ -105,6 +105,7 @@ namespace Microsoft::Console::Render
 
             constexpr vec2 operator/(const vec2& rhs) noexcept
             {
+                assert(rhs.x != 0 && rhs.y != 0);
                 return { gsl::narrow_cast<T>(x / rhs.x), gsl::narrow_cast<T>(y / rhs.y) };
             }
         };
@@ -409,7 +410,7 @@ namespace Microsoft::Console::Render
 
             wil::unique_process_heap_string fontName; // changes are flagged as InvalidationFlags::font|size
             u16 fontSize = 0; // changes are flagged as InvalidationFlags::font|size
-            u16 fontWeight = DWRITE_FONT_WEIGHT_NORMAL; // changes are flagged as InvalidationFlags::font
+            u16 fontWeight = 0; // changes are flagged as InvalidationFlags::font
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as InvalidationFlags::font|size
             u16 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as InvalidationFlags::font
 

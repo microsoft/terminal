@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <dxgidebug.h>
 #include <til/bit.h>
 
 #include <shader_ps.h>
@@ -48,6 +49,17 @@ struct TextAnalyzer final : IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
         Ensures(_text.size() <= UINT32_MAX);
     }
 
+#ifndef NDEBUG
+private:
+    ULONG _refCount = 1;
+
+public:
+    ~TextAnalyzer()
+    {
+        assert(_refCount == 1);
+    }
+#endif
+
     HRESULT __stdcall QueryInterface(const IID& riid, void** ppvObject) noexcept override
     {
         __assume(ppvObject != nullptr);
@@ -64,14 +76,20 @@ struct TextAnalyzer final : IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
 
     ULONG __stdcall AddRef() noexcept override
     {
-        assert(false);
+#ifdef NDEBUG
         return 1;
+#else
+        return ++_refCount;
+#endif
     }
 
     ULONG __stdcall Release() noexcept override
     {
-        assert(false);
+#ifdef NDEBUG
         return 1;
+#else
+        return --_refCount;
+#endif
     }
 
     HRESULT __stdcall GetTextAtPosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
@@ -209,18 +227,19 @@ try
         }
 
         WI_ClearAllFlags(_invalidations, InvalidationFlags::device | InvalidationFlags::size | InvalidationFlags::font | InvalidationFlags::settings);
-        std::ignore = InvalidateAll();
+        _api.invalidatedRows = invalidatedRowsAll;
     }
 
-    // Clamp invalidation rects into valid value ranges.
     if (_api.invalidatedRows == invalidatedRowsAll)
     {
+        // Skip all the partial updates, since we redraw everything anyways.
         _api.invalidatedCursorArea = invalidatedAreaNone;
         _api.invalidatedRows = { 0, _api.cellCount.y };
         _api.scrollOffset = 0;
     }
     else
     {
+        // Clamp invalidation rects into valid value ranges.
         {
             _api.invalidatedCursorArea.left = std::min(_api.invalidatedCursorArea.left, _api.cellCount.x);
             _api.invalidatedCursorArea.top = std::min(_api.invalidatedCursorArea.top, _api.cellCount.y);
@@ -235,49 +254,49 @@ try
             const auto limit = gsl::narrow_cast<i16>(_api.cellCount.y & 0x7fff);
             _api.scrollOffset = clamp<i16>(_api.scrollOffset, -limit, limit);
         }
-    }
 
-    // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
-    if (_api.scrollOffset != 0)
-    {
-        const auto data = _r.cells.data();
-        auto count = _r.cells.size();
-        const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
-        Cell* dst;
-        Cell* src;
-
-        if (_api.scrollOffset < 0)
+        // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
+        if (_api.scrollOffset != 0)
         {
-            // Scroll up (for instance when new text is being written at the end of the buffer).
-            dst = data;
-            src = data - offset;
-            count += offset;
-            _api.invalidatedRows.x = std::min<u16>(_api.invalidatedRows.x, _api.cellCount.y + _api.scrollOffset);
-            _api.invalidatedRows.y = _api.cellCount.y;
-        }
-        else
-        {
-            // Scroll down.
-            dst = data + offset;
-            src = data;
-            count -= offset;
-            _api.invalidatedRows.x = 0;
-            _api.invalidatedRows.y = std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
-        }
+            const auto nothingInvalid = _api.invalidatedRows.x == _api.invalidatedRows.y;
+            const auto offset = static_cast<ptrdiff_t>(_api.scrollOffset) * _api.cellCount.x;
+            const auto data = _r.cells.data();
+            auto count = _r.cells.size();
+            Cell* dst;
+            Cell* src;
 
-        memmove(dst, src, count * sizeof(Cell));
+            if (_api.scrollOffset < 0)
+            {
+                // Scroll up (for instance when new text is being written at the end of the buffer).
+                dst = data;
+                src = data - offset;
+                count += offset;
+
+                const u16 endRow = _api.cellCount.y + _api.scrollOffset;
+                _api.invalidatedRows.x = nothingInvalid ? endRow : std::min<u16>(_api.invalidatedRows.x, endRow);
+                _api.invalidatedRows.y = _api.cellCount.y;
+            }
+            else
+            {
+                // Scroll down.
+                dst = data + offset;
+                src = data;
+                count -= offset;
+
+                _api.invalidatedRows.x = 0;
+                _api.invalidatedRows.y = nothingInvalid ? _api.scrollOffset : std::max<u16>(_api.invalidatedRows.y, _api.scrollOffset);
+            }
+
+            memmove(dst, src, count * sizeof(Cell));
+        }
     }
 
-    {
-        // _api.dirtyRect is an inclusive rectangle, whereas _api.invalidatedRows is an exclusive range.
-        // --> We need to subtract 1 from the bottom row index.
-        // However .x could be equal to .y (for instance both could be 0), so we
-        // need to ensure top isn't greater than bottom after the subtraction.
-        const auto right = static_cast<ptrdiff_t>(_api.cellCount.x);
-        const auto bottom = static_cast<ptrdiff_t>(_api.invalidatedRows.y);
-        const auto top = static_cast<ptrdiff_t>(_api.invalidatedRows.x);
-        _api.dirtyRect = til::rectangle{ 0u, top, right, bottom };
-    }
+    _api.dirtyRect = til::rectangle{
+        static_cast<ptrdiff_t>(0),
+        static_cast<ptrdiff_t>(_api.invalidatedRows.x),
+        static_cast<ptrdiff_t>(_api.cellCount.x),
+        static_cast<ptrdiff_t>(_api.invalidatedRows.y),
+    };
 
     return S_OK;
 }
@@ -411,7 +430,7 @@ try
     // # What do we want?
     //
     // Segment a line of text (_api.bufferLine) into unicode "clusters".
-    // Each cluster is one "whole" glyph with diacritics, ligatures, zero-width-joiners
+    // Each cluster is one "whole" glyph with diacritics, ligatures, zero width joiners
     // and whatever else, that should be cached as a whole in our texture atlas.
     //
     // # How do we get that?
@@ -425,7 +444,7 @@ try
     //
     // ## The actual approach
     //
-    // DirectWrite has 2 APIs which can segment text properly (including ligatures and zero width joiner for instance):
+    // DirectWrite has 2 APIs which can segment text properly (including ligatures and zero width joiners):
     // * IDWriteTextAnalyzer1::GetTextComplexity
     // * IDWriteTextAnalyzer::GetGlyphs
     //
@@ -619,57 +638,6 @@ CATCH_RETURN()
 
 #pragma endregion
 
-#pragma region Helper classes
-
-// XXH3 for exactly 32 bytes.
-uint64_t AtlasEngine::XXH3_len_32_64b(const void* data) noexcept
-{
-    static constexpr uint64_t dataSize = 32;
-    static constexpr auto XXH3_mul128_fold64 = [](uint64_t lhs, uint64_t rhs) noexcept {
-        uint64_t lo, hi;
-
-#if defined(_M_AMD64)
-        lo = _umul128(lhs, rhs, &hi);
-#elif defined(_M_ARM64)
-        lo = lhs * rhs;
-        hi = __umulh(lhs, rhs);
-#else
-        const uint64_t lo_lo = __emulu(lhs, rhs);
-        const uint64_t hi_lo = __emulu(lhs >> 32, rhs);
-        const uint64_t lo_hi = __emulu(lhs, rhs >> 32);
-        const uint64_t hi_hi = __emulu(lhs >> 32, rhs >> 32);
-        const uint64_t cross = (lo_lo >> 32) + (hi_lo & 0xFFFFFFFF) + lo_hi;
-        hi = (hi_lo >> 32) + (cross >> 32) + hi_hi;
-        lo = (cross << 32) | (lo_lo & 0xFFFFFFFF);
-#endif
-
-        return lo ^ hi;
-    };
-
-    // If executed on little endian CPUs these 4 numbers will
-    // equal the first 32 byte of the original XXH3_kSecret.
-    static constexpr uint64_t XXH3_kSecret[4] = {
-        UINT64_C(0xbe4ba423396cfeb8),
-        UINT64_C(0x1cad21f72c81017c),
-        UINT64_C(0xdb979083e96dd4de),
-        UINT64_C(0x1f67b3b7a4a44072),
-    };
-
-    uint64_t inputs[4];
-    memcpy(&inputs[0], data, 32);
-
-#pragma warning(suppress : 26450) // Arithmetic overflow: '*' operation causes overflow at compile time. Use a wider type to store the operands (io.1).
-    uint64_t acc = dataSize * UINT64_C(0x9E3779B185EBCA87);
-    acc += XXH3_mul128_fold64(inputs[0] ^ XXH3_kSecret[0], inputs[1] ^ XXH3_kSecret[1]);
-    acc += XXH3_mul128_fold64(inputs[2] ^ XXH3_kSecret[2], inputs[3] ^ XXH3_kSecret[3]);
-    acc = acc ^ (acc >> 37);
-    acc *= UINT64_C(0x165667919E3779F9);
-    acc = acc ^ (acc >> 32);
-    return acc;
-}
-
-#pragma endregion
-
 [[nodiscard]] HRESULT AtlasEngine::_handleException(const wil::ResultException& exception) noexcept
 {
     const auto hr = exception.GetErrorCode();
@@ -696,21 +664,25 @@ void AtlasEngine::_createResources()
 
 #ifndef NDEBUG
     // DXGI debug messages + enabling D3D11_CREATE_DEVICE_DEBUG if the Windows SDK was installed.
-    if (const wil::unique_hmodule module{ LoadLibraryExW(L"dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) })
+    if (const wil::unique_hmodule module{ LoadLibraryExW(L"dxgi.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) })
     {
         deviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 
-        const auto DXGIGetDebugInterface = reinterpret_cast<HRESULT(WINAPI*)(REFIID, void**)>(GetProcAddress(module.get(), "DXGIGetDebugInterface"));
-        THROW_LAST_ERROR_IF(!DXGIGetDebugInterface);
-
-        wil::com_ptr<IDXGIInfoQueue> infoQueue;
-        if (SUCCEEDED(DXGIGetDebugInterface(IID_PPV_ARGS(infoQueue.addressof()))))
+        if (const auto DXGIGetDebugInterface1 = GetProcAddressByFunctionDeclaration(module.get(), DXGIGetDebugInterface1))
         {
-            // I didn't want to link with dxguid.lib just for getting DXGI_DEBUG_ALL. This GUID is publicly documented.
-            static constexpr GUID dxgiDebguAll = { 0xe48ae283, 0xda80, 0x490b, { 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 } };
-            for (const auto severity : std::array{ DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING })
+            if (wil::com_ptr<IDXGIInfoQueue> infoQueue; SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(infoQueue.addressof()))))
             {
-                infoQueue->SetBreakOnSeverity(dxgiDebguAll, severity, true);
+                // I didn't want to link with dxguid.lib just for getting DXGI_DEBUG_ALL. This GUID is publicly documented.
+                static constexpr GUID dxgiDebugAll = { 0xe48ae283, 0xda80, 0x490b, { 0x87, 0xe6, 0x43, 0xe9, 0xa9, 0xcf, 0xda, 0x8 } };
+                for (const auto severity : std::array{ DXGI_INFO_QUEUE_MESSAGE_SEVERITY_CORRUPTION, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_ERROR, DXGI_INFO_QUEUE_MESSAGE_SEVERITY_WARNING })
+                {
+                    infoQueue->SetBreakOnSeverity(dxgiDebugAll, severity, true);
+                }
+            }
+
+            if (wil::com_ptr<IDXGIDebug1> debug; SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(debug.addressof()))))
+            {
+                debug->EnableLeakTrackingForThread();
             }
         }
     }

@@ -1253,7 +1253,12 @@ std::vector<SMALL_RECT> Renderer::_GetSelectionRects() const
         const auto lineRendition = buffer.GetLineRendition(rect.Top());
         rect = Viewport::FromInclusive(BufferToScreenLine(rect.ToInclusive(), lineRendition));
 
-        auto sr = view.ConvertToOrigin(rect).ToExclusive();
+        auto sr = view.ConvertToOrigin(rect).ToInclusive();
+
+        // hopefully temporary, we should be receiving the right selection sizes without correction.
+        sr.Right++;
+        sr.Bottom++;
+
         result.emplace_back(sr);
     }
 

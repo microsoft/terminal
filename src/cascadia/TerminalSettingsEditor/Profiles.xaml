@@ -483,7 +483,7 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearUseAtlasEngine}"
                                                 HasSettingValue="{x:Bind State.Profile.HasUseAtlasEngine, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.UseAtlasEngineOverrideSource, Mode=OneWay}"
-                                                Visibility="{x:Bind State.Profile.EditableUnfocusedAppearance}">
+                                                Visibility="{x:Bind State.Profile.AtlasEngineAvailable}">
                             <ToggleSwitch IsOn="{x:Bind State.Profile.UseAtlasEngine, Mode=TwoWay}" />
                         </local:SettingContainer>
                     </StackPanel>
