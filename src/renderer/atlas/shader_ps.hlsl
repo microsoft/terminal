@@ -5,15 +5,16 @@ struct Cell
 {
     uint glyphPos;
     uint flags;
-    uint2 color;
+    uint2 color; // x: foreground, y: background
 };
 
 cbuffer ConstBuffer : register(b0)
 {
-    float4 viewport;
+    float2 viewportSize;
     uint2 cellSize;
     uint cellCountX;
     uint backgroundColor;
+    uint cursorColor;
     uint selectionColor;
 };
 StructuredBuffer<Cell> cells : register(t0);
@@ -39,34 +40,50 @@ float insideRect(float2 pos, float4 boundaries)
     return v.x * v.y;
 }
 
-float4 main(float4 pos: SV_Position): SV_Target
+float4 main(float4 pos : SV_Position) : SV_Target
 {
-    if (!insideRect(pos.xy, viewport))
+    if (any(pos.xy > viewportSize))
     {
         return decodeRGB(backgroundColor);
     }
 
     uint2 cellIndex = pos.xy / cellSize;
     uint2 cellPos = pos.xy % cellSize;
-
     Cell cell = cells[cellIndex.y * cellCountX + cellIndex.x];
-
-    uint2 glyphPos = decodeU16x2(cell.glyphPos);
-    uint2 pixelPos = glyphPos + cellPos;
-    float4 alpha = glyphs[pixelPos];
-
-    float3 color = lerp(
-        decodeRGB(cell.color.y).rgb,
-        decodeRGB(cell.color.x).rgb,
-        alpha.rgb
-    );
+    float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
+    float3 bg = decodeRGB(cell.color.y).rgb;
+    float3 color;
+    
+    if ((cell.flags & 2) && cursorColor != 0xffffffff)
+    {
+        // Colored cursors are drawn "in between" the background color and the text of a cell.
+        float3 cursor = decodeRGB(cursorColor).rgb;
+        bg = lerp(bg, cursor, glyphs[cellPos].rgb);
+    }
 
     if (cell.flags & 1)
     {
+        // Colored glyphs (rgb are color values, a is alpha).
+        // --> Alpha blending with premultiplied colors in glyph.
+        color = glyph.rgb + bg * (1 - glyph.a);
+    }
+    else
+    {
+        // Regular glyphs (rgb are alpha values).
+        // --> Alpha blending with regular colors (aka interpolation/lerp).
+        float3 fg = decodeRGB(cell.color.x).rgb;
+        color = lerp(bg, fg, glyph.a);
+    }
+
+    if ((cell.flags & 2) && cursorColor == 0xffffffff)
+    {
+        // Uncolored cursors invert the color.
         color = abs(glyphs[cellPos].rgb - color);
     }
-    if (cell.flags & 2)
+
+    if (cell.flags & 4)
     {
+        // Selection coloring.
         float4 sc = decodeRGB(selectionColor);
         color = lerp(color, sc.rgb, sc.a);
     }

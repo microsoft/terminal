@@ -137,7 +137,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
-    WI_SetFlag(_invalidations, InvalidationFlags::title);
+    WI_SetFlag(_invalidations, InvalidationFlags::Title);
     return S_OK;
 }
 
@@ -159,7 +159,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     if (_api.dpi != newDPI)
     {
         _api.dpi = newDPI;
-        WI_SetFlag(_invalidations, InvalidationFlags::font);
+        WI_SetFlag(_invalidations, InvalidationFlags::Font);
     }
 
     return S_OK;
@@ -329,10 +329,10 @@ HRESULT AtlasEngine::Enable() noexcept
 
 [[nodiscard]] HANDLE AtlasEngine::GetSwapChainHandle()
 {
-    if (WI_IsFlagSet(_invalidations, InvalidationFlags::device))
+    if (WI_IsFlagSet(_invalidations, InvalidationFlags::Device))
     {
         _createResources();
-        WI_ClearFlag(_invalidations, InvalidationFlags::device);
+        WI_ClearFlag(_invalidations, InvalidationFlags::Device);
     }
 
     return _api.swapChainHandle.get();
@@ -355,7 +355,7 @@ HRESULT AtlasEngine::Enable() noexcept
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
     _api.antialiasingMode = gsl::narrow_cast<u16>(antialiasingMode);
-    WI_SetFlag(_invalidations, InvalidationFlags::font);
+    WI_SetFlag(_invalidations, InvalidationFlags::Font);
 }
 
 void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
@@ -392,7 +392,7 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha
     if (_api.selectionColor != selectionColor)
     {
         _api.selectionColor = selectionColor;
-        WI_SetFlag(_invalidations, InvalidationFlags::settings);
+        WI_SetFlag(_invalidations, InvalidationFlags::Settings);
     }
 }
 
@@ -420,7 +420,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     {
         _api.sizeInPixel = newSize;
         _api.cellCount = _api.sizeInPixel / _api.cellSize;
-        WI_SetFlag(_invalidations, InvalidationFlags::size);
+        WI_SetFlag(_invalidations, InvalidationFlags::Size);
     }
 
     return S_OK;
@@ -452,13 +452,13 @@ try
     _api.fontSize = fontInfo.GetUnscaledSize().Y;
     _api.fontName = std::move(fontName);
     _api.fontWeight = gsl::narrow_cast<u16>(fontInfo.GetWeight());
-    WI_SetFlag(_invalidations, InvalidationFlags::font);
+    WI_SetFlag(_invalidations, InvalidationFlags::Font);
 
     if (newSize != _api.cellSize)
     {
         _api.cellSize = newSize;
         _api.cellCount = _api.sizeInPixel / _api.cellSize;
-        WI_SetFlag(_invalidations, InvalidationFlags::size);
+        WI_SetFlag(_invalidations, InvalidationFlags::Size);
     }
 
     return S_OK;

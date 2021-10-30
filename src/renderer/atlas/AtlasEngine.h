@@ -85,12 +85,12 @@ namespace Microsoft::Console::Render
         // public because I don't want to sprinkle the code with friends.
     public:
 #define ATLAS_POD_OPS(type)                                    \
-    constexpr bool operator==(const type& rhs) noexcept        \
+    constexpr bool operator==(const type& rhs) const noexcept  \
     {                                                          \
         return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0; \
     }                                                          \
                                                                \
-    constexpr bool operator!=(const type& rhs) noexcept        \
+    constexpr bool operator!=(const type& rhs) const noexcept  \
     {                                                          \
         return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0; \
     }
@@ -111,17 +111,6 @@ namespace Microsoft::Console::Render
         };
 
         template<typename T>
-        struct vec4
-        {
-            T x{};
-            T y{};
-            T z{};
-            T w{};
-
-            ATLAS_POD_OPS(vec4)
-        };
-
-        template<typename T>
         struct rect
         {
             T left{};
@@ -137,8 +126,6 @@ namespace Microsoft::Console::Render
             }
         };
 
-#undef ATLAS_POD_OPS
-
         using u8 = uint8_t;
 
         using u16 = uint16_t;
@@ -152,19 +139,18 @@ namespace Microsoft::Console::Render
 
         using f32 = float;
         using f32x2 = vec2<f32>;
-        using f32x4 = vec4<f32>;
 
         struct TextAnalyzerResult
         {
-            u32 textPosition;
-            u32 textLength;
+            u32 textPosition = 0;
+            u32 textLength = 0;
 
             // These 2 fields represent DWRITE_SCRIPT_ANALYSIS.
             // Not using DWRITE_SCRIPT_ANALYSIS drops the struct size from 20 down to 12 bytes.
-            u16 script;
-            u8 shapes;
+            u16 script = 0;
+            u8 shapes = 0;
 
-            u8 bidiLevel;
+            u8 bidiLevel = 0;
         };
 
         template<typename T>
@@ -213,6 +199,29 @@ namespace Microsoft::Console::Render
             size_t _size = 0;
         };
 
+    private:
+        enum class CellFlags : u32
+        {
+            None = 0,
+            ColoredGlyph = 1 << 0,
+            Cursor = 1 << 1,
+            Selected = 1 << 2,
+        };
+        friend constexpr CellFlags operator~(CellFlags v) noexcept { return static_cast<CellFlags>(~static_cast<u32>(v)); }
+        friend constexpr CellFlags operator|(CellFlags lhs, CellFlags rhs) noexcept { return static_cast<CellFlags>(static_cast<u32>(lhs) | static_cast<u32>(rhs)); }
+        friend constexpr CellFlags operator&(CellFlags lhs, CellFlags rhs) noexcept { return static_cast<CellFlags>(static_cast<u32>(lhs) & static_cast<u32>(rhs)); }
+        friend constexpr void operator|=(CellFlags& lhs, CellFlags rhs) noexcept { lhs = lhs | rhs; }
+        friend constexpr void operator&=(CellFlags& lhs, CellFlags rhs) noexcept { lhs = lhs & rhs; }
+
+        // This structure is shared with the GPU shader and needs to follow certain alignment rules.
+        // You can generally assume that only u32 or types of that alignment are allowed.
+        struct Cell
+        {
+            alignas(u32) u16x2 tileIndex;
+            CellFlags flags;
+            u32x2 color;
+        };
+
         struct AtlasKeyAttributes
         {
             wchar_t cells : 4;
@@ -225,10 +234,7 @@ namespace Microsoft::Console::Render
             wchar_t chars[15];
             AtlasKeyAttributes attributes;
 
-            bool operator==(const AtlasKey& other) const noexcept
-            {
-                return memcmp(this, &other, sizeof(AtlasKey)) == 0;
-            }
+            ATLAS_POD_OPS(AtlasKey)
         };
 
         struct AtlasKeyHasher
@@ -240,50 +246,45 @@ namespace Microsoft::Console::Render
             }
         };
 
-        using AtlasValue = std::array<u16x2, 16>;
+        struct AtlasValue
+        {
+            u16x2 coords[15];
+            CellFlags flags = CellFlags::None;
+        };
 
-        static uint64_t XXH3_len_32_64b(const void* data) noexcept;
+        struct CachedCursorOptions
+        {
+            u32 cursorColor = INVALID_COLOR;
+            u16 cursorType = gsl::narrow_cast<u16>(CursorType::Legacy);
+            u8 ulCursorHeightPercent = 25;
 
-    private:
+            ATLAS_POD_OPS(CachedCursorOptions)
+        };
+
         // D3D constant buffers sizes must be a multiple of 16 bytes.
         struct alignas(16) ConstBuffer
         {
-            f32x4 viewport;
+            f32x2 viewport;
             u32x2 cellSize;
             u32 cellCountX = 0;
             u32 backgroundColor = 0;
+            u32 cursorColor = 0;
             u32 selectionColor = 0;
 #pragma warning(suppress : 4324) // structure was padded due to alignment specifier
         };
 
-        enum class CellFlags : u32
-        {
-            None = 0,
-            Cursor = 1,
-            Selected = 2,
-        };
-        friend constexpr CellFlags operator~(CellFlags v) noexcept { return static_cast<CellFlags>(~static_cast<u32>(v)); }
-        friend constexpr CellFlags operator|(CellFlags lhs, CellFlags rhs) noexcept { return static_cast<CellFlags>(static_cast<u32>(lhs) | static_cast<u32>(rhs)); }
-        friend constexpr CellFlags operator&(CellFlags lhs, CellFlags rhs) noexcept { return static_cast<CellFlags>(static_cast<u32>(lhs) & static_cast<u32>(rhs)); }
-
-        // This structure is shared with the GPU shader and needs to follow certain alignment rules.
-        // You can generally assume that only u32 or types of that alignment are allowed.
-        struct Cell
-        {
-            alignas(u32) u16x2 tileIndex;
-            CellFlags flags;
-            u32x2 color;
-        };
-
         enum class InvalidationFlags : u8
         {
-            none = 0,
-            device = 1 << 0,
-            size = 1 << 1,
-            font = 1 << 2,
-            settings = 1 << 3,
-            cbuffer = 1 << 4,
-            title = 1 << 5,
+            None = 0,
+            // Handled in BeginPaint()
+            Title = 1 << 0,
+            Device = 1 << 1,
+            Size = 1 << 2,
+            Font = 1 << 3,
+            Settings = 1 << 4,
+            // Handled in Present()
+            Cursor = 1 << 5,
+            ConstBuffer = 1 << 6,
         };
         friend constexpr InvalidationFlags operator~(InvalidationFlags v) noexcept { return static_cast<InvalidationFlags>(~static_cast<u8>(v)); }
         friend constexpr InvalidationFlags operator|(InvalidationFlags lhs, InvalidationFlags rhs) noexcept { return static_cast<InvalidationFlags>(static_cast<u8>(lhs) | static_cast<u8>(rhs)); }
@@ -300,6 +301,8 @@ namespace Microsoft::Console::Render
             return std::max(min, std::min(max, val));
         }
 
+        static uint64_t XXH3_len_32_64b(const void* data) noexcept;
+
         // AtlasEngine.cpp
         [[nodiscard]] HRESULT _handleException(const wil::ResultException& exception) noexcept;
         __declspec(noinline) void _createResources();
@@ -310,11 +313,12 @@ namespace Microsoft::Console::Render
         Cell* _getCell(u16 x, u16 y) noexcept;
         void _setCellFlags(SMALL_RECT coords, CellFlags mask, CellFlags bits) noexcept;
         u16x2 _allocateAtlasTile() noexcept;
-        void _emplaceGlyph(const wchar_t* key, size_t keyLen, u16 y, u16 x1, u16 x2);
+        void _emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* key, size_t keyLen, u16 y, u16 x1, u16 x2);
 
         // AtlasEngine.r.cpp
         void _setShaderResources() const noexcept;
         void _updateConstantBuffer() const noexcept;
+        void _adjustAtlasSize();
         void _processGlyphQueue();
         void _drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const;
         void _drawCursor() const;
@@ -375,6 +379,8 @@ namespace Microsoft::Console::Render
             u32 backgroundColor = 0xff000000;
             u32 selectionColor = 0x7fffffff;
 
+            CachedCursorOptions cursorOptions;
+
 #ifndef NDEBUG
             // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
             // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
@@ -385,6 +391,9 @@ namespace Microsoft::Console::Render
 
         struct ApiState
         {
+            // This structure is loosely sorted in chunks from "very often accessed together"
+            // to seldom accessed and usually not together. Try to sorta stick with this.
+
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLinePos;
             std::vector<TextAnalyzerResult> analysisResults;
@@ -419,6 +428,8 @@ namespace Microsoft::Console::Render
             HWND hwnd = nullptr;
         } _api;
 
-        InvalidationFlags _invalidations = InvalidationFlags::device;
+        InvalidationFlags _invalidations = InvalidationFlags::Device;
+
+#undef ATLAS_POD_OPS
     };
 }

@@ -29,13 +29,20 @@ using namespace Microsoft::Console::Render;
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
+    _adjustAtlasSize();
     _processGlyphQueue();
 
+    if (WI_IsFlagSet(_invalidations, InvalidationFlags::Cursor))
+    {
+        _drawCursor();
+        WI_ClearFlag(_invalidations, InvalidationFlags::Cursor);
+    }
+
     // The values the constant buffer depends on are potentially updated after BeginPaint().
-    if (WI_IsFlagSet(_invalidations, InvalidationFlags::cbuffer))
+    if (WI_IsFlagSet(_invalidations, InvalidationFlags::ConstBuffer))
     {
         _updateConstantBuffer();
-        WI_ClearFlag(_invalidations, InvalidationFlags::cbuffer);
+        WI_ClearFlag(_invalidations, InvalidationFlags::ConstBuffer);
     }
 
     {
@@ -93,132 +100,140 @@ void AtlasEngine::_setShaderResources() const noexcept
 void AtlasEngine::_updateConstantBuffer() const noexcept
 {
     ConstBuffer data;
-    data.viewport.x = 0;
-    data.viewport.y = 0;
-    data.viewport.z = static_cast<float>(_r.cellCount.x * _r.cellSize.x);
-    data.viewport.w = static_cast<float>(_r.cellCount.y * _r.cellSize.y);
+    data.viewport.x = static_cast<float>(_r.cellCount.x * _r.cellSize.x);
+    data.viewport.y = static_cast<float>(_r.cellCount.y * _r.cellSize.y);
     data.cellSize.x = _r.cellSize.x;
     data.cellSize.y = _r.cellSize.y;
     data.cellCountX = _r.cellCount.x;
     data.backgroundColor = _r.backgroundColor;
+    data.cursorColor = _r.cursorOptions.cursorColor;
     data.selectionColor = _r.selectionColor;
 #pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
     _r.deviceContext->UpdateSubresource(_r.constantBuffer.get(), 0, nullptr, &data, 0, 0);
 }
 
+void AtlasEngine::_adjustAtlasSize()
+{
+    if (_r.atlasPosition.y < _r.atlasSizeInPixel.y && _r.atlasPosition.x < _r.atlasSizeInPixel.x)
+    {
+        return;
+    }
+
+    const u32 limitX = _r.atlasSizeInPixelLimit.x;
+    const u32 limitY = _r.atlasSizeInPixelLimit.y;
+    const u32 posX = _r.atlasPosition.x;
+    const u32 posY = _r.atlasPosition.y;
+    const u32 cellX = _r.cellSize.x;
+    const u32 cellY = _r.cellSize.y;
+    const auto perCellArea = cellX * cellY;
+
+    // The texture atlas is filled like this:
+    //   x →
+    // y +--------------+
+    // ↓ |XXXXXXXXXXXXXX|
+    //   |XXXXXXXXXXXXXX|
+    //   |XXXXX↖        |
+    //   |      |       |
+    //   +------|-------+
+    // This is where _r.atlasPosition points at.
+    //
+    // Each X is a glyph texture tile that's occupied.
+    // We can compute the area of pixels consumed by adding the first
+    // two lines of X (rectangular) together with the last line of X.
+    const auto currentArea = posY * limitX + posX * cellY;
+    // minArea reserves enough room for 64 cells in all cases (mainly during startup).
+    const auto minArea = 64 * perCellArea;
+    auto newArea = std::max(minArea, currentArea);
+
+    // I want the texture to grow exponentially similar to std::vector, as this
+    // ensures we don't need to resize the texture again right after having done.
+    // This rounds newArea up to the next power of 2.
+    unsigned long int index;
+    _BitScanReverse(&index, newArea); // newArea can't be 0
+    newArea = u32{ 1 } << (index + 1);
+
+    const auto pixelPerRow = limitX * cellY;
+    // newArea might be just large enough that it spans N full rows of cells and one additional row
+    // just barely. This algorithm rounds up newArea to the _next_ multiple of cellY.
+    const auto wantedHeight = (newArea + pixelPerRow - 1) / pixelPerRow * cellY;
+    // The atlas might either be a N rows of full width (xLimit) or just one
+    // row (where wantedHeight == cellY) that doesn't quite fill it's maximum width yet.
+    const auto wantedWidth = wantedHeight != cellY ? limitX : newArea / perCellArea * cellX;
+
+    // We know that limitX/limitY were u16 originally, and thus it's safe to narrow_cast it back.
+    const auto height = gsl::narrow_cast<u16>(std::min(limitY, wantedHeight));
+    const auto width = gsl::narrow_cast<u16>(std::min(limitX, wantedWidth));
+
+    assert(width != 0);
+    assert(height != 0);
+
+    wil::com_ptr<ID3D11Texture2D> atlasBuffer;
+    wil::com_ptr<ID3D11ShaderResourceView> atlasView;
+    {
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width = width;
+        desc.Height = height;
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        desc.SampleDesc = { 1, 0 };
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+        THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, atlasBuffer.addressof()));
+        THROW_IF_FAILED(_r.device->CreateShaderResourceView(atlasBuffer.get(), nullptr, atlasView.addressof()));
+    }
+
+    // If a _r.atlasBuffer already existed, we can copy its glyphs
+    // over to the new texture without re-rendering everything.
+    const auto copyFromExisting = _r.atlasSizeInPixel != u16x2{};
+    if (copyFromExisting)
+    {
+        D3D11_BOX box;
+        box.left = 0;
+        box.top = 0;
+        box.front = 0;
+        box.right = _r.atlasSizeInPixel.x;
+        box.bottom = _r.atlasSizeInPixel.y;
+        box.back = 1;
+        _r.deviceContext->CopySubresourceRegion1(atlasBuffer.get(), 0, 0, 0, 0, _r.atlasBuffer.get(), 0, &box, D3D11_COPY_NO_OVERWRITE);
+    }
+
+    _r.atlasSizeInPixel = u16x2{ width, height };
+    _r.atlasBuffer = std::move(atlasBuffer);
+    _r.atlasView = std::move(atlasView);
+    _setShaderResources();
+
+    if (!copyFromExisting)
+    {
+        _drawCursor();
+    }
+}
+
 void AtlasEngine::_processGlyphQueue()
 {
-    if (_r.atlasPosition.y > _r.atlasSizeInPixel.y || _r.atlasPosition.x > _r.atlasSizeInPixel.x)
+    if (_r.glyphQueue.empty())
     {
-        const u32 limitX = _r.atlasSizeInPixelLimit.x;
-        const u32 limitY = _r.atlasSizeInPixelLimit.y;
-        const u32 posX = _r.atlasPosition.x;
-        const u32 posY = _r.atlasPosition.y;
-        const u32 cellX = _r.cellSize.x;
-        const u32 cellY = _r.cellSize.y;
-        const auto perCellArea = cellX * cellY;
-
-        // The texture atlas is filled like this:
-        //   x →
-        // y +--------------+
-        // ↓ |XXXXXXXXXXXXXX|
-        //   |XXXXXXXXXXXXXX|
-        //   |XXXXX↖        |
-        //   |      |       |
-        //   +------|-------+
-        // This is where _r.atlasPosition points at.
-        //
-        // Each X is a glyph texture tile that's occupied.
-        // We can compute the area of pixels consumed by adding the first
-        // two lines of X (rectangular) together with the last line of X.
-        const auto currentArea = posY * limitX + posX * cellY;
-        // minArea reserves enough room for 64 cells in all cases (mainly during startup).
-        const auto minArea = 64 * perCellArea;
-        auto newArea = std::max(minArea, currentArea);
-
-        // I want the texture to grow exponentially similar to std::vector, as this
-        // ensures we don't need to resize the texture again right after having done.
-        // This rounds newArea up to the next power of 2.
-        unsigned long int index;
-        _BitScanReverse(&index, newArea); // newArea can't be 0
-        newArea = u32{ 1 } << (index + 1);
-
-        const auto pixelPerRow = limitX * cellY;
-        // newArea might be just large enough that it spans N full rows of cells and one additional row
-        // just barely. This algorithm rounds up newArea to the _next_ multiple of cellY.
-        const auto wantedHeight = (newArea + pixelPerRow - 1) / pixelPerRow * cellY;
-        // The atlas might either be a N rows of full width (xLimit) or just one
-        // row (where wantedHeight == cellY) that doesn't quite fill it's maximum width yet.
-        const auto wantedWidth = wantedHeight != cellY ? limitX : newArea / perCellArea * cellX;
-
-        // We know that limitX/limitY were u16 originally, and thus it's safe to narrow_cast it back.
-        const auto height = gsl::narrow_cast<u16>(std::min(limitY, wantedHeight));
-        const auto width = gsl::narrow_cast<u16>(std::min(limitX, wantedWidth));
-
-        assert(width != 0);
-        assert(height != 0);
-
-        wil::com_ptr<ID3D11Texture2D> atlasBuffer;
-        wil::com_ptr<ID3D11ShaderResourceView> atlasView;
-        {
-            D3D11_TEXTURE2D_DESC desc{};
-            desc.Width = width;
-            desc.Height = height;
-            desc.MipLevels = 1;
-            desc.ArraySize = 1;
-            desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-            desc.SampleDesc = { 1, 0 };
-            desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-            THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, atlasBuffer.addressof()));
-            THROW_IF_FAILED(_r.device->CreateShaderResourceView(atlasBuffer.get(), nullptr, atlasView.addressof()));
-        }
-
-        // If a _r.atlasBuffer already existed, we can copy its glyphs
-        // over to the new texture without re-rendering everything.
-        const auto copyFromExisting = _r.atlasSizeInPixel != u16x2{};
-        if (copyFromExisting)
-        {
-            D3D11_BOX box;
-            box.left = 0;
-            box.top = 0;
-            box.front = 0;
-            box.right = _r.atlasSizeInPixel.x;
-            box.bottom = _r.atlasSizeInPixel.y;
-            box.back = 1;
-            _r.deviceContext->CopySubresourceRegion1(atlasBuffer.get(), 0, 0, 0, 0, _r.atlasBuffer.get(), 0, &box, D3D11_COPY_NO_OVERWRITE);
-        }
-
-        _r.atlasSizeInPixel = u16x2{ width, height };
-        _r.atlasBuffer = std::move(atlasBuffer);
-        _r.atlasView = std::move(atlasView);
-        _setShaderResources();
-
-        if (!copyFromExisting)
-        {
-            _drawCursor();
-        }
+        return;
     }
 
-    if (!_r.glyphQueue.empty())
+    for (const auto& pair : _r.glyphQueue)
     {
-        for (const auto& pair : _r.glyphQueue)
-        {
-            _drawGlyph(pair);
-        }
-        _r.glyphQueue.clear();
+        _drawGlyph(pair);
     }
+
+    _r.glyphQueue.clear();
 }
 
 void AtlasEngine::_drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const
 {
-    const auto entry = pair.first;
-    const auto charsLength = wcsnlen_s(&entry.chars[0], std::size(entry.chars));
-    const auto cells = entry.attributes.cells + UINT32_C(1);
-    const auto textFormat = _getTextFormat(entry.attributes.bold, entry.attributes.italic);
+    const auto& key = pair.first;
+    const auto& value = pair.second;
+    const auto charsLength = wcsnlen_s(&key.chars[0], std::size(key.chars));
+    const auto cells = key.attributes.cells + UINT32_C(1);
+    const auto textFormat = _getTextFormat(key.attributes.bold, key.attributes.italic);
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
-    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&entry.chars[0], gsl::narrow_cast<UINT32>(charsLength), textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
+    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key.chars[0], gsl::narrow_cast<UINT32>(charsLength), textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
 
     _r.d2dRenderTarget->BeginDraw();
     // We could call
@@ -237,21 +252,63 @@ void AtlasEngine::_drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const
         //
         // Since our shader only draws whatever is in the atlas, and since we don't replace glyph tiles that are in use,
         // we can safely (?) tell the GPU that we don't overwrite parts of our atlas that are in use.
-        _copyScratchpadTile(i, pair.second[i], D3D11_COPY_NO_OVERWRITE);
+        _copyScratchpadTile(i, value.coords[i], D3D11_COPY_NO_OVERWRITE);
     }
 }
 
 void AtlasEngine::_drawCursor() const
 {
+    const auto cursorType = static_cast<CursorType>(_r.cursorOptions.cursorType);
     D2D1_RECT_F rect;
-    rect.left = 0;
-    rect.top = _r.cellSizeDIP.y * 0.81f;
+    rect.left = 0.0f;
+    rect.top = 0.0f;
     rect.right = _r.cellSizeDIP.x;
     rect.bottom = _r.cellSizeDIP.y;
 
+    switch (cursorType)
+    {
+    case CursorType::Legacy:
+        rect.top = _r.cellSizeDIP.y * static_cast<float>(100 - _r.cursorOptions.ulCursorHeightPercent) / 100.0f;
+        break;
+    case CursorType::VerticalBar:
+        rect.right = 1.0f;
+        break;
+    case CursorType::EmptyBox:
+        // EmptyBox is drawn as a line and unlike filled rectangles those are drawn centered on their
+        // coordinates in such a way that the line border extends half the width to each side.
+        // --> Our coordinates have to be 0.5 DIP off in order to draw a 2px line on a 200% scaling.
+        rect.left = 0.5f;
+        rect.top = 0.5f;
+        rect.right -= 0.5f;
+        rect.bottom -= 0.5f;
+        break;
+    case CursorType::Underscore:
+    case CursorType::DoubleUnderscore:
+        rect.top = _r.cellSizeDIP.y - 1.0f;
+        break;
+    default:
+        break;
+    }
+
     _r.d2dRenderTarget->BeginDraw();
     _r.d2dRenderTarget->Clear();
-    _r.d2dRenderTarget->FillRectangle(&rect, _r.brush.get());
+
+    if (cursorType == CursorType::EmptyBox)
+    {
+        _r.d2dRenderTarget->DrawRectangle(&rect, _r.brush.get());
+    }
+    else
+    {
+        _r.d2dRenderTarget->FillRectangle(&rect, _r.brush.get());
+    }
+
+    if (cursorType == CursorType::DoubleUnderscore)
+    {
+        rect.top -= 2.0f;
+        rect.bottom -= 2.0f;
+        _r.d2dRenderTarget->FillRectangle(&rect, _r.brush.get());
+    }
+
     THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
 
     _copyScratchpadTile(0, {});

@@ -194,40 +194,44 @@ try
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_api.hwnd, &rect));
         std::ignore = SetWindowSize({ rect.right - rect.left, rect.bottom - rect.top });
 
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::title))
+        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Title))
         {
             LOG_IF_WIN32_BOOL_FALSE(PostMessageW(_api.hwnd, CM_UPDATE_TITLE, 0, 0));
-            WI_ClearFlag(_invalidations, InvalidationFlags::title);
+            WI_ClearFlag(_invalidations, InvalidationFlags::Title);
         }
     }
 
     // It's important that we invalidate here instead of in Present() with the rest.
     // Other functions, those called before Present(), might depend on _r fields.
     // But most of the time _invalidations will be ::none, making this very cheap.
-    if (_invalidations != InvalidationFlags::none)
+    if (_invalidations != InvalidationFlags::None)
     {
         RETURN_HR_IF(E_UNEXPECTED, _api.sizeInPixel == u16x2{} || _api.cellSize == u16x2{} || _api.cellCount == u16x2{});
 
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::device))
+        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Device))
         {
             _createResources();
+            WI_SetAllFlags(_invalidations, InvalidationFlags::Size | InvalidationFlags::Font);
         }
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::size))
+        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Size))
         {
             _recreateSizeDependentResources();
+            WI_SetFlag(_invalidations, InvalidationFlags::Cursor);
         }
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::font))
+        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Font))
         {
             _recreateFontDependentResources();
         }
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::settings))
+        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Settings))
         {
             _r.selectionColor = _api.selectionColor;
-            WI_SetFlag(_invalidations, InvalidationFlags::cbuffer);
         }
 
-        WI_ClearAllFlags(_invalidations, InvalidationFlags::device | InvalidationFlags::size | InvalidationFlags::font | InvalidationFlags::settings);
         _api.invalidatedRows = invalidatedRowsAll;
+        _invalidations = InvalidationFlags::None;
+
+        WI_ClearAllFlags(_invalidations, InvalidationFlags::Device | InvalidationFlags::Size | InvalidationFlags::Font | InvalidationFlags::Settings);
+        WI_SetFlag(_invalidations, InvalidationFlags::ConstBuffer);
     }
 
     if (_api.invalidatedRows == invalidatedRowsAll)
@@ -494,7 +498,7 @@ try
                 if (beg != cur)
                 {
                     static constexpr auto replacement = L'\uFFFD';
-                    _emplaceGlyph(&replacement, 1, y, beg, cur);
+                    _emplaceGlyph(nullptr, &replacement, 1, y, beg, cur);
                     beg = cur;
                 }
             }
@@ -509,19 +513,19 @@ try
         for (UINT32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
         {
             BOOL isTextSimple;
-            THROW_IF_FAILED(_sr.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, nullptr));
+            THROW_IF_FAILED(_sr.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
 
             if (isTextSimple)
             {
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
-                    _emplaceGlyph(&_api.bufferLine[idx + i], 1, y, _api.bufferLinePos[idx + i], _api.bufferLinePos[idx + i + 1u]);
+                    _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[idx + i], 1, y, _api.bufferLinePos[idx + i], _api.bufferLinePos[idx + i + 1u]);
                 }
             }
             else
             {
                 _api.analysisResults.clear();
-                _sr.textAnalyzer->AnalyzeScript(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer);
+                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer));
                 //_sr.textAnalyzer->AnalyzeBidi(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer);
 
                 for (const auto& a : _api.analysisResults)
@@ -555,6 +559,7 @@ try
                             // grow factor 1.5x
                             auto size = _api.glyphProps.size();
                             size = size + (size >> 1);
+                            Expects(size > _api.glyphProps.size());
                             _api.glyphIndices.resize(size);
                             _api.glyphProps.resize(size);
                             continue;
@@ -571,7 +576,7 @@ try
                     {
                         if (_api.textProps[i].canBreakShapingAfter)
                         {
-                            _emplaceGlyph(&_api.bufferLine[a.textPosition + beg], i + 1 - beg, y, _api.bufferLinePos[a.textPosition + beg], _api.bufferLinePos[a.textPosition + i + 1]);
+                            _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[a.textPosition + beg], i + 1 - beg, y, _api.bufferLinePos[a.textPosition + beg], _api.bufferLinePos[a.textPosition + i + 1]);
                             beg = i + 1;
                         }
                     }
@@ -597,6 +602,19 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintCursor(const CursorOptions& options) noexcept
 {
+    {
+        const CachedCursorOptions cachedOptions{
+            gsl::narrow_cast<u32>(options.fUseColor ? options.cursorColor : INVALID_COLOR),
+            gsl::narrow_cast<u16>(options.cursorType),
+            gsl::narrow_cast<u8>(options.ulCursorHeightPercent),
+        };
+        if (_r.cursorOptions != cachedOptions)
+        {
+            _r.cursorOptions = cachedOptions;
+            WI_SetFlag(_invalidations, InvalidationFlags::Cursor);
+        }
+    }
+
     // Clear the previous cursor
     if (_api.invalidatedCursorArea.non_empty())
     {
@@ -610,7 +628,7 @@ CATCH_RETURN()
         // the window is being resized and the cursor is on the last line of the viewport.
         const auto x = gsl::narrow_cast<SHORT>(std::min<int>(point.X, _r.cellCount.x - 1));
         const auto y = gsl::narrow_cast<SHORT>(std::min<int>(point.Y, _r.cellCount.y - 1));
-        const SHORT right = x + 1 + options.fIsDoubleWidth;
+        const SHORT right = x + 1 + (options.fIsDoubleWidth & (options.cursorType != CursorType::VerticalBar));
         const SHORT bottom = y + 1;
         _setCellFlags({ x, y, right, bottom }, CellFlags::Cursor, CellFlags::Cursor);
     }
@@ -632,7 +650,7 @@ CATCH_RETURN()
     else if (textAttributes.BackgroundIsDefault() && bg != _r.backgroundColor)
     {
         _r.backgroundColor = bg;
-        WI_SetFlag(_invalidations, InvalidationFlags::cbuffer);
+        WI_SetFlag(_invalidations, InvalidationFlags::ConstBuffer);
     }
 
     return S_OK;
@@ -646,7 +664,7 @@ CATCH_RETURN()
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == D2DERR_RECREATE_TARGET)
     {
         _r = {};
-        WI_SetFlag(_invalidations, InvalidationFlags::device);
+        WI_SetFlag(_invalidations, InvalidationFlags::Device);
         return E_PENDING; // Indicate a retry to the renderer
     }
     return hr;
@@ -819,8 +837,6 @@ void AtlasEngine::_createResources()
     //
     // TODO: In the future all D3D code should be moved into AtlasEngine.r.cpp
     WaitUntilCanRender();
-
-    WI_SetAllFlags(_invalidations, InvalidationFlags::size | InvalidationFlags::font | InvalidationFlags::cbuffer);
 }
 
 void AtlasEngine::_recreateSizeDependentResources()
@@ -894,8 +910,6 @@ void AtlasEngine::_recreateSizeDependentResources()
 
         _setShaderResources();
     }
-
-    WI_SetFlag(_invalidations, InvalidationFlags::cbuffer);
 }
 
 void AtlasEngine::_recreateFontDependentResources()
@@ -948,12 +962,25 @@ void AtlasEngine::_recreateFontDependentResources()
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
         THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, _r.atlasScratchpad.put()));
     }
+    // D3D specifically for UpdateDpi()
+    // This compensates for the built in scaling factor in a XAML SwapChainPanel (CompositionScaleX/Y).
+    if (HWND hwnd = nullptr; SUCCEEDED(_r.swapChain->GetHwnd(&hwnd)) && !hwnd)
+    {
+        if (const auto swapChain2 = _r.swapChain.try_query<IDXGISwapChain2>())
+        {
+            const auto inverseScale = static_cast<float>(USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_api.dpi);
+            DXGI_MATRIX_3X2_F matrix{};
+            matrix._11 = inverseScale;
+            matrix._22 = inverseScale;
+            THROW_IF_FAILED(swapChain2->SetMatrixTransform(&matrix));
+        }
+    }
 
     // D2D
     {
         D2D1_RENDER_TARGET_PROPERTIES props{};
         props.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
-        props.pixelFormat = { DXGI_FORMAT_UNKNOWN, D2D1_ALPHA_MODE_PREMULTIPLIED };
+        props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
         props.dpiX = static_cast<float>(_api.dpi);
         props.dpiY = static_cast<float>(_api.dpi);
         const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
@@ -961,7 +988,9 @@ void AtlasEngine::_recreateFontDependentResources()
         // We don't really use D2D for anything except DWrite, but it
         // can't hurt to ensure that everything it does is pixel aligned.
         _r.d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-        _r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
+        // We can't set the antialiasingMode here, as D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE
+        // will force the alpha channel to be 0 for _all_ text.
+        //_r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
     }
     {
         static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
@@ -980,8 +1009,6 @@ void AtlasEngine::_recreateFontDependentResources()
             }
         }
     }
-
-    WI_SetAllFlags(_invalidations, InvalidationFlags::cbuffer);
 }
 
 HRESULT AtlasEngine::_createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept
@@ -1024,7 +1051,7 @@ void AtlasEngine::_setCellFlags(SMALL_RECT coords, CellFlags mask, CellFlags bit
 
     for (; row != end; row += stride)
     {
-        auto dataEnd = row + width;
+        const auto dataEnd = row + width;
         for (auto data = row; data != dataEnd; ++data)
         {
             const auto current = data->flags;
@@ -1053,43 +1080,61 @@ AtlasEngine::u16x2 AtlasEngine::_allocateAtlasTile() noexcept
     return ret;
 }
 
-void AtlasEngine::_emplaceGlyph(const wchar_t* key, size_t keyLen, u16 y, u16 x1, u16 x2)
+void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* key, size_t keyLen, u16 y, u16 x1, u16 x2)
 {
     assert(key && keyLen != 0);
     assert(y < _r.cellCount.y);
     assert(x1 < x2 && x2 <= _r.cellCount.x);
 
-    if (keyLen > 15)
-    {
-        keyLen = 15;
-    }
-
-    u16 cells = x2 - x1;
-    if (cells > 16)
-    {
-        cells = 16;
-    }
+    keyLen = std::min(std::extent_v<decltype(AtlasKey::chars)>, keyLen);
+    const auto cells = std::min<u16>(std::extent_v<decltype(AtlasValue::coords)>, x2 - x1);
 
     AtlasKey entry{};
     memcpy(&entry.chars[0], key, keyLen * sizeof(wchar_t));
     entry.attributes = _api.attributes;
     entry.attributes.cells = cells - 1;
 
-    auto& coords = _r.glyphs[entry];
-    if (coords[0] == u16x2{})
+    auto& value = _r.glyphs[entry];
+    if (value.coords[0] == u16x2{})
     {
+        // Do fonts exist *in practice* which contain both colored and uncolored glyphs? I'm pretty sure...
+        // However doing it properly means using either of:
+        // * IDWriteFactory2::TranslateColorGlyphRun
+        // * IDWriteFactory4::TranslateColorGlyphRun
+        // * IDWriteFontFace4::GetGlyphImageData
+        //
+        // For the first two I wonder how one is supposed to restitch the 27 required parameters from a
+        // partial (!) text range returned by GetGlyphs(). Our caller breaks the GetGlyphs() result up
+        // into runs of characters up until the first canBreakShapingAfter == true after all.
+        // There's no documentation for it and I'm sure I'd mess it up.
+        // For very obvious reasons I didn't want to write this code.
+        //
+        // IDWriteFontFace4::GetGlyphImageData seems like the best approach and DirectWrite uses the
+        // same code that GetGlyphImageData uses to implement TranslateColorGlyphRun (well partially).
+        // However, it's a heavy operation and parses the font file on disk on every call (TranslateColorGlyphRun doesn't).
+        // For less obvious reasons I didn't want to write this code either.
+        //
+        // So this is a job for future me/someone.
+        // Bonus points for doing it without impacting performance.
+        if (fontFace)
+        {
+            const auto fontFace2 = wil::try_com_query<IDWriteFontFace2>(fontFace);
+            WI_SetFlagIf(value.flags, CellFlags::ColoredGlyph, fontFace2 && fontFace2->IsColorFont());
+        }
+
         for (u16 i = 0; i < cells; ++i)
         {
-            coords[i] = _allocateAtlasTile();
+            value.coords[i] = _allocateAtlasTile();
         }
-        _r.glyphQueue.emplace_back(entry, coords);
+
+        _r.glyphQueue.emplace_back(entry, value);
     }
 
     const auto data = _getCell(x1, y);
     for (uint32_t i = 0; i < cells; ++i)
     {
-        data[i].tileIndex = coords[i];
-        data[i].flags = CellFlags::None;
+        data[i].tileIndex = value.coords[i];
+        data[i].flags = value.flags;
         data[i].color = _api.currentColor;
     }
 }
