@@ -42,7 +42,13 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         StateMachine(std::unique_ptr<IStateMachineEngine> engine);
 
-        void SetAnsiMode(bool ansiMode) noexcept;
+        enum class Mode : size_t
+        {
+            AcceptC1,
+            Ansi,
+        };
+
+        void SetParserMode(const Mode mode, const bool enabled);
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
@@ -144,7 +150,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTStates _state;
 
-        bool _isInAnsiMode;
+        til::enumset<Mode> _parserMode{ Mode::Ansi };
 
         std::wstring_view _currentString;
         size_t _runOffset;

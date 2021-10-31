@@ -15,6 +15,7 @@
 
 using namespace Microsoft::Console;
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::StateMachine;
 using Microsoft::Console::VirtualTerminal::TerminalInput;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
@@ -273,7 +274,7 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
 bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
 {
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
-    stateMachine.SetAnsiMode(ansiMode);
+    stateMachine.SetParserMode(StateMachine::Mode::Ansi, ansiMode);
     auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
     terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
     return true;

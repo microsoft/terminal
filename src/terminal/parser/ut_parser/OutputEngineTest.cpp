@@ -1828,7 +1828,7 @@ class StateMachineExternalTest final
 
         pDispatch->ClearState();
         pDispatch->_isInAnsiMode = false;
-        mach.SetAnsiMode(false);
+        mach.SetParserMode(StateMachine::Mode::Ansi, false);
 
         mach.ProcessString(L"\x1b<");
         VERIFY_IS_TRUE(pDispatch->_isInAnsiMode);
@@ -2737,7 +2737,7 @@ class StateMachineExternalTest final
         StateMachine mach(std::move(engine));
 
         // ANSI mode must be reset for VT52 sequences to be recognized.
-        mach.SetAnsiMode(false);
+        mach.SetParserMode(StateMachine::Mode::Ansi, false);
 
         Log::Comment(L"Cursor Up");
         mach.ProcessCharacter(AsciiChars::ESC);
@@ -2823,7 +2823,7 @@ class StateMachineExternalTest final
         StateMachine mach(std::move(engine));
 
         Log::Comment(L"Identify Device in VT52 mode.");
-        mach.SetAnsiMode(false);
+        mach.SetParserMode(StateMachine::Mode::Ansi, false);
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_vt52DeviceAttributes);
@@ -2832,7 +2832,7 @@ class StateMachineExternalTest final
         pDispatch->ClearState();
 
         Log::Comment(L"Identify Device in ANSI mode.");
-        mach.SetAnsiMode(true);
+        mach.SetParserMode(StateMachine::Mode::Ansi, true);
         mach.ProcessCharacter(AsciiChars::ESC);
         mach.ProcessCharacter(L'Z');
         VERIFY_IS_TRUE(pDispatch->_deviceAttributes);
