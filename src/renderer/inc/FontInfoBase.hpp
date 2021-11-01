@@ -26,40 +26,32 @@ static constexpr wchar_t DEFAULT_RASTER_FONT_FACENAME[]{ L"Terminal" };
 class FontInfoBase
 {
 public:
-    FontInfoBase(const std::wstring_view faceName,
+    FontInfoBase(const std::wstring_view& faceName,
                  const unsigned char family,
                  const unsigned int weight,
                  const bool fSetDefaultRasterFont,
-                 const unsigned int uiCodePage);
+                 const unsigned int uiCodePage) noexcept;
 
-    FontInfoBase(const FontInfoBase& fibFont);
+    bool operator==(const FontInfoBase& other) noexcept;
 
-    ~FontInfoBase();
-
-    unsigned char GetFamily() const;
-    unsigned int GetWeight() const;
-    const std::wstring_view GetFaceName() const noexcept;
-    unsigned int GetCodePage() const;
-
-    HRESULT FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const;
-
-    bool IsTrueTypeFont() const;
-
-    void SetFromEngine(const std::wstring_view faceName,
+    unsigned char GetFamily() const noexcept;
+    unsigned int GetWeight() const noexcept;
+    const std::wstring& GetFaceName() const noexcept;
+    unsigned int GetCodePage() const noexcept;
+    void FillLegacyNameBuffer(wchar_t (&buffer)[LF_FACESIZE]) const noexcept;
+    bool IsTrueTypeFont() const noexcept;
+    void SetFromEngine(const std::wstring_view& faceName,
                        const unsigned char family,
                        const unsigned int weight,
-                       const bool fSetDefaultRasterFont);
-
-    bool WasDefaultRasterSetFromEngine() const;
-    void ValidateFont();
+                       const bool fSetDefaultRasterFont) noexcept;
+    bool WasDefaultRasterSetFromEngine() const noexcept;
+    void ValidateFont() noexcept;
 
     static Microsoft::Console::Render::IFontDefaultList* s_pFontDefaultList;
-    static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList);
-
-    friend bool operator==(const FontInfoBase& a, const FontInfoBase& b);
+    static void s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList) noexcept;
 
 protected:
-    bool IsDefaultRasterFontNoSize() const;
+    bool IsDefaultRasterFontNoSize() const noexcept;
 
 private:
     std::wstring _faceName;
@@ -68,5 +60,3 @@ private:
     unsigned int _codePage;
     bool _fDefaultRasterSetFromEngine;
 };
-
-bool operator==(const FontInfoBase& a, const FontInfoBase& b);
