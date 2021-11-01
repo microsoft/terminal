@@ -36,12 +36,12 @@ namespace Microsoft::Terminal
         IFACEMETHODIMP Navigate(_In_ NavigateDirection direction,
                                 _COM_Outptr_result_maybenull_ IRawElementProviderFragment** ppProvider) noexcept override;
         IFACEMETHODIMP get_HostRawElementProvider(IRawElementProviderSimple** ppProvider) noexcept override;
-        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) override;
+        IFACEMETHODIMP get_BoundingRectangle(_Out_ UiaRect* pRect) noexcept override;
         IFACEMETHODIMP get_FragmentRoot(_COM_Outptr_result_maybenull_ IRawElementProviderFragmentRoot** ppProvider) noexcept override;
 
-        const COORD GetFontSize() const;
-        const RECT GetPadding() const;
-        const double GetScaleFactor() const;
+        const COORD GetFontSize() const noexcept;
+        const RECT GetPadding() const noexcept;
+        const double GetScaleFactor() const noexcept;
         void ChangeViewport(const SMALL_RECT NewWindow) override;
 
     protected:

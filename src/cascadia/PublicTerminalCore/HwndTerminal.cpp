@@ -977,7 +977,7 @@ void HwndTerminal::_StringPaste(const wchar_t* const pData) noexcept
     CATCH_LOG();
 }
 
-COORD HwndTerminal::GetFontSize() const
+COORD HwndTerminal::GetFontSize() const noexcept
 {
     return _actualFont.GetSize();
 }

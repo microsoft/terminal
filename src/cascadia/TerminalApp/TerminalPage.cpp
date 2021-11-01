@@ -1594,7 +1594,10 @@ namespace winrt::TerminalApp::implementation
             // the control here instead.
             if (_startupState == StartupState::Initialized)
             {
-                _GetActiveControl().Focus(FocusState::Programmatic);
+                if (const auto control = _GetActiveControl())
+                {
+                    control.Focus(FocusState::Programmatic);
+                }
             }
         }
         CATCH_LOG();
@@ -1863,6 +1866,22 @@ namespace winrt::TerminalApp::implementation
                 {
                     Windows::Storage::IStorageItem item = items.GetAt(0);
                     text = item.Path();
+                }
+            }
+
+            if (_settings.GlobalSettings().TrimPaste())
+            {
+                std::wstring_view textView{ text };
+                const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
+                if (pos == textView.npos)
+                {
+                    // Text is all white space, nothing to paste
+                    co_return;
+                }
+                else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
+                {
+                    textView.remove_suffix(toRemove);
+                    text = { textView };
                 }
             }
 
