@@ -100,8 +100,10 @@ void AtlasEngine::_setShaderResources() const noexcept
 void AtlasEngine::_updateConstantBuffer() const noexcept
 {
     ConstBuffer data;
-    data.viewport.x = static_cast<float>(_r.cellCount.x * _r.cellSize.x);
-    data.viewport.y = static_cast<float>(_r.cellCount.y * _r.cellSize.y);
+    data.viewport.x = 0;
+    data.viewport.y = 0;
+    data.viewport.z = static_cast<float>(_r.cellCount.x * _r.cellSize.x);
+    data.viewport.w = static_cast<float>(_r.cellCount.y * _r.cellSize.y);
     data.cellSize.x = _r.cellSize.x;
     data.cellSize.y = _r.cellSize.y;
     data.cellCountX = _r.cellCount.x;
@@ -234,6 +236,10 @@ void AtlasEngine::_drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
     THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key.chars[0], gsl::narrow_cast<UINT32>(charsLength), textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
+    if (_r.typography)
+    {
+        textLayout->SetTypography(_r.typography.get(), { 0, gsl::narrow_cast<UINT32>(charsLength) });
+    }
 
     _r.d2dRenderTarget->BeginDraw();
     // We could call

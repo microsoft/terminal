@@ -406,6 +406,7 @@ void AtlasEngine::SetIntenseIsBold(bool enable) noexcept
 
 void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
 {
+    _api.warningCallback = std::move(pfn);
 }
 
 [[nodiscard]] HRESULT AtlasEngine::SetWindowSize(const SIZE pixels) noexcept
@@ -442,15 +443,75 @@ try
         RETURN_IF_FAILED(vec2_narrow(size.X, size.Y, newSize));
     }
 
+    std::vector<DWRITE_FONT_FEATURE> fontFeatures;
+    {
+        // All of these features are enabled by default by DirectWrite.
+        // If you want to (and can) peek into the source of DirectWrite
+        // you can look for the "GenericDefaultGsubFeatures" and "GenericDefaultGposFeatures" arrays.
+        // Gsub is for GetGlyphs() and Gpos for GetGlyphPlacements().
+        // GH#10774: Apparently specifying all of the features is just redundant.
+        static constexpr std::array<DWRITE_FONT_FEATURE_TAG, 4> defaults{ {
+            DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES,
+            DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES,
+            DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES,
+            DWRITE_FONT_FEATURE_TAG_KERNING,
+        } };
+        std::array<bool, defaults.size()> overriddenDefaults;
+
+        for (const auto& p : features)
+        {
+            if (p.first.size() == 4)
+            {
+                const auto s = p.first.data();
+                const auto tag = DWRITE_MAKE_FONT_FEATURE_TAG(s[0], s[1], s[2], s[3]);
+
+                fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ tag, p.second });
+
+                for (size_t i = 0; i < defaults.size(); ++i)
+                {
+                    if (defaults[i] == tag)
+                    {
+                        overriddenDefaults[i] = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        for (size_t i = 0; i < defaults.size(); ++i)
+        {
+            if (!overriddenDefaults[i])
+            {
+                fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ defaults[i], 1 });
+            }
+        }
+    }
+
+    std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
+    {
+        fontAxisValues.reserve(axes.size());
+
+        for (const auto& p : axes)
+        {
+            if (p.first.size() == 4)
+            {
+                const auto s = p.first.data();
+                fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_MAKE_FONT_AXIS_TAG(s[0], s[1], s[2], s[3]), p.second });
+            }
+        }
+    }
+
     const auto& faceName = fontInfo.GetFaceName();
-    auto fontName = wil::make_process_heap_string_nothrow(faceName.data(), faceName.size());
+    auto fontName = wil::make_process_heap_string(faceName.data(), faceName.size());
     RETURN_IF_NULL_ALLOC(fontName);
 
     // NOTE: From this point onward no early returns or throwing code should exist,
     // as we might cause _api to be in an inconsistent state otherwise.
 
-    _api.fontSize = fontInfo.GetUnscaledSize().Y;
+    _api.fontFeatures = std::move(fontFeatures);
+    _api.fontAxisValues = std::move(fontAxisValues);
     _api.fontName = std::move(fontName);
+    _api.fontSize = fontInfo.GetUnscaledSize().Y;
     _api.fontWeight = gsl::narrow_cast<u16>(fontInfo.GetWeight());
     WI_SetFlag(_invalidations, InvalidationFlags::Font);
 

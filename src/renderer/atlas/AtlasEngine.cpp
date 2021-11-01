@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <dwrite_3.h>
 #include <dxgidebug.h>
 #include <til/bit.h>
 
@@ -535,6 +536,18 @@ try
 
                     for (auto retry = 0;;)
                     {
+                        DWRITE_TYPOGRAPHIC_FEATURES feature;
+                        const DWRITE_TYPOGRAPHIC_FEATURES* features = &feature;
+                        UINT32 featureRangeLengths = a.textLength;
+                        UINT32 featureRanges = 0;
+
+                        if (!_api.fontFeatures.empty())
+                        {
+                            feature.features = _api.fontFeatures.data();
+                            feature.featureCount = gsl::narrow_cast<UINT32>(_api.fontFeatures.size());
+                            featureRanges = 1;
+                        }
+
                         const auto hr = _sr.textAnalyzer->GetGlyphs(
                             /* textString          */ _api.bufferLine.data() + a.textPosition,
                             /* textLength          */ a.textLength,
@@ -544,9 +557,9 @@ try
                             /* scriptAnalysis      */ &scriptAnalysis,
                             /* localeName          */ nullptr,
                             /* numberSubstitution  */ nullptr,
-                            /* features            */ nullptr,
-                            /* featureRangeLengths */ nullptr,
-                            /* featureRanges       */ 0,
+                            /* features            */ &features,
+                            /* featureRangeLengths */ &featureRangeLengths,
+                            /* featureRanges       */ featureRanges,
                             /* maxGlyphCount       */ gsl::narrow_cast<UINT32>(_api.glyphProps.size()),
                             /* clusterMap          */ _api.clusterMap.data(),
                             /* textProps           */ _api.textProps.data(),
@@ -642,10 +655,21 @@ CATCH_RETURN()
 
     if (!isSettingDefaultBrushes)
     {
+        auto flags = CellFlags::None;
+        WI_SetFlagIf(flags, CellFlags::BorderLeft, textAttributes.IsLeftVerticalDisplayed());
+        WI_SetFlagIf(flags, CellFlags::BorderTop, textAttributes.IsTopHorizontalDisplayed());
+        WI_SetFlagIf(flags, CellFlags::BorderRight, textAttributes.IsRightVerticalDisplayed());
+        WI_SetFlagIf(flags, CellFlags::BorderBottom, textAttributes.IsBottomHorizontalDisplayed());
+        WI_SetFlagIf(flags, CellFlags::Underline, textAttributes.IsUnderlined());
+        WI_SetFlagIf(flags, CellFlags::UnderlineDotted, textAttributes.IsHyperlink());
+        WI_SetFlagIf(flags, CellFlags::UnderlineDouble, textAttributes.IsDoublyUnderlined());
+        WI_SetFlagIf(flags, CellFlags::Strikethrough, textAttributes.IsCrossedOut());
+
         _api.currentColor.x = fg;
         _api.currentColor.y = bg;
         _api.attributes.bold = textAttributes.IsBold();
         _api.attributes.italic = textAttributes.IsItalic();
+        _api.flags = flags;
     }
     else if (textAttributes.BackgroundIsDefault() && bg != _r.backgroundColor)
     {
@@ -667,6 +691,15 @@ CATCH_RETURN()
         WI_SetFlag(_invalidations, InvalidationFlags::Device);
         return E_PENDING; // Indicate a retry to the renderer
     }
+
+    // NOTE: This isn't thread safe, as _handleException is called by AtlasEngine.r.cpp.
+    // However it's not too much of a concern at the moment as SetWarningCallback()
+    // is only called once during construction in practice.
+    if (_api.warningCallback)
+    {
+        _api.warningCallback(hr);
+    }
+
     return hr;
 }
 
@@ -1004,8 +1037,35 @@ void AtlasEngine::_recreateFontDependentResources()
             for (auto weight = 0; weight < 2; ++weight)
             {
                 const auto fontWeight = weight ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
-                const auto fontStyle = static_cast<DWRITE_FONT_STYLE>(style * DWRITE_FONT_STYLE_ITALIC);
-                THROW_IF_FAILED(_createTextFormat(_api.fontName.get(), fontWeight, fontStyle, _api.fontSize, _r.textFormats[style][weight].put()));
+                const auto fontStyle = style ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
+                auto& textFormat = _r.textFormats[style][weight];
+
+                THROW_IF_FAILED(_createTextFormat(_api.fontName.get(), fontWeight, fontStyle, _api.fontSize, textFormat.put()));
+
+                if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
+                {
+                    // By default GetAutomaticFontAxes() returns DWRITE_AUTOMATIC_FONT_AXES_NONE.
+                    // But the description of DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE and the idea
+                    // of getting automatic opsz variation seemed rather useful to pass out on this.
+                    textFormat3->SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE);
+
+                    if (!_api.fontAxisValues.empty())
+                    {
+                        textFormat3->SetFontAxisValues(_api.fontAxisValues.data(), gsl::narrow_cast<u32>(_api.fontAxisValues.size()));
+                    }
+                }
+            }
+        }
+    }
+    {
+        _r.typography.reset();
+
+        if (!_api.fontFeatures.empty())
+        {
+            _sr.dwriteFactory->CreateTypography(_r.typography.addressof());
+            for (const auto& v : _api.fontFeatures)
+            {
+                THROW_IF_FAILED(_r.typography->AddFontFeature(v));
             }
         }
     }

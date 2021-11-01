@@ -18,9 +18,7 @@
 
 #include <d2d1.h>
 #include <d3d11_1.h>
-#include <dwrite.h>
-#include <dwrite_1.h>
-#include <dwrite_2.h>
+#include <dwrite_3.h>
 #include <dcomp.h>
 #include <dxgi1_3.h>
 #include <dxgidebug.h>

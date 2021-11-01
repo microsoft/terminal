@@ -5,9 +5,7 @@
 
 #include <d2d1.h>
 #include <d3d11_1.h>
-#include <dwrite.h>
-#include <dwrite_1.h>
-#include <dwrite_2.h>
+#include <dwrite_3.h>
 #include <til/pair.h>
 
 #include "../../renderer/inc/IRenderEngine.hpp"
@@ -95,6 +93,13 @@ namespace Microsoft::Console::Render
         return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0; \
     }
 
+#define ATLAS_FLAG_OPS(type, underlying)                                                                                                                    \
+    friend constexpr type operator~(type v) noexcept { return static_cast<type>(~static_cast<underlying>(v)); }                                             \
+    friend constexpr type operator|(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) | static_cast<underlying>(rhs)); } \
+    friend constexpr type operator&(type lhs, type rhs) noexcept { return static_cast<type>(static_cast<underlying>(lhs) & static_cast<underlying>(rhs)); } \
+    friend constexpr void operator|=(type& lhs, type rhs) noexcept { lhs = lhs | rhs; }                                                                     \
+    friend constexpr void operator&=(type& lhs, type rhs) noexcept { lhs = lhs & rhs; }
+
         template<typename T>
         struct vec2
         {
@@ -108,6 +113,17 @@ namespace Microsoft::Console::Render
                 assert(rhs.x != 0 && rhs.y != 0);
                 return { gsl::narrow_cast<T>(x / rhs.x), gsl::narrow_cast<T>(y / rhs.y) };
             }
+        };
+
+        template<typename T>
+        struct vec4
+        {
+            T x{};
+            T y{};
+            T z{};
+            T w{};
+
+            ATLAS_POD_OPS(vec4)
         };
 
         template<typename T>
@@ -139,6 +155,7 @@ namespace Microsoft::Console::Render
 
         using f32 = float;
         using f32x2 = vec2<f32>;
+        using f32x4 = vec4<f32>;
 
         struct TextAnalyzerResult
         {
@@ -200,25 +217,34 @@ namespace Microsoft::Console::Render
         };
 
     private:
-        enum class CellFlags : u32
+        // u16 so it neatly fits into AtlasValue.
+        // These flags are shared with shader_ps.hlsl.
+        enum class CellFlags : u16
         {
             None = 0,
-            ColoredGlyph = 1 << 0,
-            Cursor = 1 << 1,
-            Selected = 1 << 2,
+            ColoredGlyph = 1,
+
+            Cursor = 2,
+            Selected = 4,
+
+            BorderLeft = 8,
+            BorderTop = 16,
+            BorderRight = 32,
+            BorderBottom = 64,
+
+            Underline = 128,
+            UnderlineDotted = 256,
+            UnderlineDouble = 512,
+            Strikethrough = 1024,
         };
-        friend constexpr CellFlags operator~(CellFlags v) noexcept { return static_cast<CellFlags>(~static_cast<u32>(v)); }
-        friend constexpr CellFlags operator|(CellFlags lhs, CellFlags rhs) noexcept { return static_cast<CellFlags>(static_cast<u32>(lhs) | static_cast<u32>(rhs)); }
-        friend constexpr CellFlags operator&(CellFlags lhs, CellFlags rhs) noexcept { return static_cast<CellFlags>(static_cast<u32>(lhs) & static_cast<u32>(rhs)); }
-        friend constexpr void operator|=(CellFlags& lhs, CellFlags rhs) noexcept { lhs = lhs | rhs; }
-        friend constexpr void operator&=(CellFlags& lhs, CellFlags rhs) noexcept { lhs = lhs & rhs; }
+        ATLAS_FLAG_OPS(CellFlags, u16)
 
         // This structure is shared with the GPU shader and needs to follow certain alignment rules.
         // You can generally assume that only u32 or types of that alignment are allowed.
         struct Cell
         {
             alignas(u32) u16x2 tileIndex;
-            CellFlags flags;
+            alignas(u32) CellFlags flags;
             u32x2 color;
         };
 
@@ -264,7 +290,7 @@ namespace Microsoft::Console::Render
         // D3D constant buffers sizes must be a multiple of 16 bytes.
         struct alignas(16) ConstBuffer
         {
-            f32x2 viewport;
+            f32x4 viewport;
             u32x2 cellSize;
             u32 cellCountX = 0;
             u32 backgroundColor = 0;
@@ -286,11 +312,7 @@ namespace Microsoft::Console::Render
             Cursor = 1 << 5,
             ConstBuffer = 1 << 6,
         };
-        friend constexpr InvalidationFlags operator~(InvalidationFlags v) noexcept { return static_cast<InvalidationFlags>(~static_cast<u8>(v)); }
-        friend constexpr InvalidationFlags operator|(InvalidationFlags lhs, InvalidationFlags rhs) noexcept { return static_cast<InvalidationFlags>(static_cast<u8>(lhs) | static_cast<u8>(rhs)); }
-        friend constexpr InvalidationFlags operator&(InvalidationFlags lhs, InvalidationFlags rhs) noexcept { return static_cast<InvalidationFlags>(static_cast<u8>(lhs) & static_cast<u8>(rhs)); }
-        friend constexpr void operator|=(InvalidationFlags& lhs, InvalidationFlags rhs) noexcept { lhs = lhs | rhs; }
-        friend constexpr void operator&=(InvalidationFlags& lhs, InvalidationFlags rhs) noexcept { lhs = lhs & rhs; }
+        ATLAS_FLAG_OPS(InvalidationFlags, u8)
 
         // MSVC STL (version 22000) implements std::clamp<T>(T, T, T) in terms of the generic
         // std::clamp<T, Predicate>(T, T, T, Predicate) with std::less{} as the argument,
@@ -365,6 +387,7 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID2D1RenderTarget> d2dRenderTarget;
             wil::com_ptr<ID2D1Brush> brush;
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
+            wil::com_ptr<IDWriteTypography> typography;
 
             AlignedBuffer<Cell> cells; // invalidated by InvalidationFlags::size
             f32x2 cellSizeDIP; // invalidated by InvalidationFlags::font, caches _api.cellSize but in DIP
@@ -392,7 +415,7 @@ namespace Microsoft::Console::Render
         struct ApiState
         {
             // This structure is loosely sorted in chunks from "very often accessed together"
-            // to seldom accessed and usually not together. Try to sorta stick with this.
+            // to seldom accessed and/or usually not together. Try to sorta stick with this.
 
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLinePos;
@@ -401,10 +424,14 @@ namespace Microsoft::Console::Render
             std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             std::vector<UINT16> glyphIndices;
             std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps;
+            std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as InvalidationFlags::font|size
 
-            u32 selectionColor = 0x7fffffff;
+            // UpdateDrawingBrushes()
             u32x2 currentColor{};
             AtlasKeyAttributes attributes{};
+            CellFlags flags = CellFlags::None;
+            // SetSelectionBackground()
+            u32 selectionColor = 0x7fffffff;
 
             // dirtyRect is a computed value based on invalidatedRows.
             til::rectangle dirtyRect;
@@ -417,12 +444,14 @@ namespace Microsoft::Console::Render
             u16x2 cellCount; // caches `sizeInPixel / cellSize`
             u16x2 sizeInPixel; // changes are flagged as InvalidationFlags::size
 
+            std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as InvalidationFlags::font|size
             wil::unique_process_heap_string fontName; // changes are flagged as InvalidationFlags::font|size
             u16 fontSize = 0; // changes are flagged as InvalidationFlags::font|size
             u16 fontWeight = 0; // changes are flagged as InvalidationFlags::font
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as InvalidationFlags::font|size
             u16 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as InvalidationFlags::font
 
+            std::function<void(HRESULT)> warningCallback;
             std::function<void()> swapChainChangedCallback;
             wil::unique_handle swapChainHandle;
             HWND hwnd = nullptr;
@@ -431,5 +460,6 @@ namespace Microsoft::Console::Render
         InvalidationFlags _invalidations = InvalidationFlags::Device;
 
 #undef ATLAS_POD_OPS
+#undef ATLAS_FLAG_OPS
     };
 }
