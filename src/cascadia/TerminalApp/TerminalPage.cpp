@@ -1588,7 +1588,7 @@ namespace winrt::TerminalApp::implementation
                 // Using the string following "-d "...
                 const auto afterDashD{ arguments.substr(dashD + 3) };
                 // Find the next space
-                const auto afterFirstWord = afterDashD.substr(dashD + 3).find(L" ");
+                const auto afterFirstWord = afterDashD.find(L" ");
                 // if that space _wasn't_ at the end of the commandline, then
                 // there were some other args. That means it was `wsl -d distro
                 // anything`, and we should ask the user.
