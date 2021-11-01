@@ -230,7 +230,7 @@ private:
 
     bool _zoomed{ false };
 
-    winrt::Windows::Media::Playback::MediaPlayer p{};
+    static winrt::Windows::Media::Playback::MediaPlayer s_bellPlayer;
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
@@ -284,6 +284,8 @@ private:
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
 
     std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
+
+    winrt::fire_and_forget _playBellSound(winrt::Windows::Foundation::Uri uri);
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

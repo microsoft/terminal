@@ -33,6 +33,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
+winrt::Windows::Media::Playback::MediaPlayer Pane::s_bellPlayer = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -69,6 +70,15 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
         _FocusFirstChild();
         e.Handled(true);
     });
+
+    if (!s_bellPlayer)
+    {
+        try
+        {
+            s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+        }
+        CATCH_LOG();
+    }
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -1108,6 +1118,23 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     }
 }
 
+winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
+{
+    auto weakThis{ shared_from_this() };
+
+    co_await winrt::resume_foreground(_root.Dispatcher());
+    if (auto pane{ weakThis.get() })
+    {
+        if (s_bellPlayer)
+        {
+            auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+            auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+            s_bellPlayer.Source(item);
+            s_bellPlayer.Play();
+        }
+    }
+}
+
 // Method Description:
 // - Plays a warning note when triggered by the BEL control character,
 //   using the sound configured for the "Critical Stop" system event.`
@@ -1135,16 +1162,12 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
                 if (sounds && sounds.Size() > 0)
                 {
                     winrt::Windows::Foundation::Uri uri{ sounds.GetAt(rand() % sounds.Size()) };
-                    auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-                    auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-                    p.Source(item);
-                    p.Play();
+                    _playBellSound(uri);
                 }
                 else
                 {
                     const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
                     PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
-
                 }
             }
 
