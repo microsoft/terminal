@@ -35,6 +35,7 @@ static constexpr std::string_view CopyOnSelectKey{ "copyOnSelect" };
 static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
 static constexpr std::string_view WarnAboutLargePasteKey{ "largePasteWarning" };
 static constexpr std::string_view WarnAboutMultiLinePasteKey{ "multiLinePasteWarning" };
+static constexpr std::string_view TrimPasteKey{ "trimPaste" };
 static constexpr std::string_view LaunchModeKey{ "launchMode" };
 static constexpr std::string_view ConfirmCloseAllKey{ "confirmCloseAllTabs" };
 static constexpr std::string_view SnapToGridOnResizeKey{ "snapToGridOnResize" };
@@ -101,6 +102,7 @@ winrt::com_ptr<GlobalAppSettings> GlobalAppSettings::Copy() const
     globals->_CopyFormatting = _CopyFormatting;
     globals->_WarnAboutLargePaste = _WarnAboutLargePaste;
     globals->_WarnAboutMultiLinePaste = _WarnAboutMultiLinePaste;
+    globals->_TrimPaste = _TrimPaste;
     globals->_InitialPosition = _InitialPosition;
     globals->_CenterOnLaunch = _CenterOnLaunch;
     globals->_LaunchMode = _LaunchMode;
@@ -201,6 +203,7 @@ void GlobalAppSettings::LayerJson(const Json::Value& json)
     JsonUtils::GetValueForKey(json, CopyFormattingKey, _CopyFormatting);
     JsonUtils::GetValueForKey(json, WarnAboutLargePasteKey, _WarnAboutLargePaste);
     JsonUtils::GetValueForKey(json, WarnAboutMultiLinePasteKey, _WarnAboutMultiLinePaste);
+    JsonUtils::GetValueForKey(json, TrimPasteKey, _TrimPaste);
     JsonUtils::GetValueForKey(json, FirstWindowPreferenceKey, _FirstWindowPreference);
     JsonUtils::GetValueForKey(json, LaunchModeKey, _LaunchMode);
     JsonUtils::GetValueForKey(json, LanguageKey, _Language);
@@ -306,6 +309,7 @@ Json::Value GlobalAppSettings::ToJson() const
     JsonUtils::SetValueForKey(json, CopyFormattingKey,              _CopyFormatting);
     JsonUtils::SetValueForKey(json, WarnAboutLargePasteKey,         _WarnAboutLargePaste);
     JsonUtils::SetValueForKey(json, WarnAboutMultiLinePasteKey,     _WarnAboutMultiLinePaste);
+    JsonUtils::SetValueForKey(json, TrimPasteKey,                   _TrimPaste);
     JsonUtils::SetValueForKey(json, FirstWindowPreferenceKey,       _FirstWindowPreference);
     JsonUtils::SetValueForKey(json, LaunchModeKey,                  _LaunchMode);
     JsonUtils::SetValueForKey(json, LanguageKey,                    _Language);

@@ -1675,29 +1675,27 @@ namespace winrt::TerminalApp::implementation
             if (const auto& tabImpl{ _GetTerminalTabImpl(tab) })
             {
                 tabImpl->GetRootPane()->WalkTree([warningControl, cmdline, tabImpl](std::shared_ptr<Pane> pane) -> bool {
-                    if (pane->GetUserControl() == *warningControl)
+                    const auto& projectedWarningControl{ pane->GetUserControl().try_as<TerminalApp::AdminWarningPlaceholder>() };
+                    // If it was a warning control, then get our implementation
+                    // type out of it.
+                    if (const auto& otherWarning{ winrt::get_self<AdminWarningPlaceholder>(projectedWarningControl) })
                     {
-                        // Hooray, we found us!
-                        pane->ReplaceControl(warningControl->Control());
-                        // Update the title, because replacing the control like
-                        // this is a little weird, and doesn't actually trigger
-                        // a TitleChanged by itself.
-                        tabImpl->UpdateTitle();
-                        // Don't return true here. We want to make sure to check
-                        // all the panes for the same commandline we just
-                        // approved.
-                    }
-                    else if (const auto& otherWarning{ winrt::get_self<AdminWarningPlaceholder>(pane->GetUserControl().try_as<TerminalApp::AdminWarningPlaceholder>()) })
-                    {
-                        // This pane wasn't us, but it did have a warning in it.
+                        // This pane had a warning in it.
                         // Was it a warning for the same commandline that we
                         // just approved?
                         if (otherWarning->Commandline() == cmdline)
                         {
-                            // Go ahead and allow them as well.
+                            // Go ahead and allow them. Swap the control into
+                            // the pane, which will initialize and start it.
                             pane->ReplaceControl(otherWarning->Control());
+                            // Update the title, because replacing the control like
+                            // this is a little weird, and doesn't actually trigger
+                            // a TitleChanged by itself.
                             tabImpl->UpdateTitle();
                         }
+                        // Don't return true here. We want to make sure to check
+                        // all the panes for the same commandline we just
+                        // approved.
                     }
                     // return false so we make sure to iterate on every leaf.
                     return false;
@@ -2223,6 +2221,22 @@ namespace winrt::TerminalApp::implementation
                 {
                     Windows::Storage::IStorageItem item = items.GetAt(0);
                     text = item.Path();
+                }
+            }
+
+            if (_settings.GlobalSettings().TrimPaste())
+            {
+                std::wstring_view textView{ text };
+                const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
+                if (pos == textView.npos)
+                {
+                    // Text is all white space, nothing to paste
+                    co_return;
+                }
+                else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
+                {
+                    textView.remove_suffix(toRemove);
+                    text = { textView };
                 }
             }
 
