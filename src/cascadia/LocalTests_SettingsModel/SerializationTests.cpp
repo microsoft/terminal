@@ -97,6 +97,7 @@ namespace SettingsModelLocalTests
                 "confirmCloseAllTabs": true,
                 "largePasteWarning": true,
                 "multiLinePasteWarning": true,
+                "trimPaste": true,
 
                 "experimental.input.forceVT": false,
                 "experimental.rendering.forceFullRepaint": false,
