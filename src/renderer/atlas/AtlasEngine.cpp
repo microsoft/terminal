@@ -534,20 +534,28 @@ try
                     DWRITE_SCRIPT_ANALYSIS scriptAnalysis{ a.script, static_cast<DWRITE_SCRIPT_SHAPES>(a.shapes) };
                     UINT32 actualGlyphCount = 0;
 
+#pragma warning(push)
+#pragma warning(disable : 26494) // Variable '...' is uninitialized. Always initialize an object (type.5).
+                    // None of these variables need to be initialized.
+                    // features/featureRangeLengths are marked _In_reads_opt_(featureRanges).
+                    // featureRanges is only > 0 when we also initialize all these variables.
+                    DWRITE_TYPOGRAPHIC_FEATURES feature;
+                    const DWRITE_TYPOGRAPHIC_FEATURES* features;
+                    UINT32 featureRangeLengths;
+#pragma warning(pop)
+                    UINT32 featureRanges = 0;
+
+                    if (!_api.fontFeatures.empty())
+                    {
+                        feature.features = _api.fontFeatures.data();
+                        feature.featureCount = gsl::narrow_cast<UINT32>(_api.fontFeatures.size());
+                        features = &feature;
+                        featureRangeLengths = a.textLength;
+                        featureRanges = 1;
+                    }
+
                     for (auto retry = 0;;)
                     {
-                        DWRITE_TYPOGRAPHIC_FEATURES feature;
-                        const DWRITE_TYPOGRAPHIC_FEATURES* features = &feature;
-                        UINT32 featureRangeLengths = a.textLength;
-                        UINT32 featureRanges = 0;
-
-                        if (!_api.fontFeatures.empty())
-                        {
-                            feature.features = _api.fontFeatures.data();
-                            feature.featureCount = gsl::narrow_cast<UINT32>(_api.fontFeatures.size());
-                            featureRanges = 1;
-                        }
-
                         const auto hr = _sr.textAnalyzer->GetGlyphs(
                             /* textString          */ _api.bufferLine.data() + a.textPosition,
                             /* textLength          */ a.textLength,
@@ -697,7 +705,11 @@ CATCH_RETURN()
     // is only called once during construction in practice.
     if (_api.warningCallback)
     {
-        _api.warningCallback(hr);
+        try
+        {
+            _api.warningCallback(hr);
+        }
+        CATCH_LOG()
     }
 
     return hr;

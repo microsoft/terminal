@@ -444,19 +444,23 @@ try
     }
 
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
-    {
+    if (!features.empty()) {
         // All of these features are enabled by default by DirectWrite.
         // If you want to (and can) peek into the source of DirectWrite
         // you can look for the "GenericDefaultGsubFeatures" and "GenericDefaultGposFeatures" arrays.
         // Gsub is for GetGlyphs() and Gpos for GetGlyphPlacements().
+        //
+        // These values are sorted by their numeric value on little endian (you can see them in a debugger).
+        // Please try to keep it that way.
+        // 
         // GH#10774: Apparently specifying all of the features is just redundant.
-        static constexpr std::array<DWRITE_FONT_FEATURE_TAG, 4> defaults{ {
-            DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES,
+        static constexpr auto defaults = std::array{
             DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES,
             DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES,
             DWRITE_FONT_FEATURE_TAG_KERNING,
-        } };
-        std::array<bool, defaults.size()> overriddenDefaults;
+            DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES,
+        };
+        std::array<bool, defaults.size()> overriddenDefaults{};
 
         for (const auto& p : features)
         {
@@ -488,7 +492,7 @@ try
     }
 
     std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
-    {
+    if (!axes.empty()) {
         fontAxisValues.reserve(axes.size());
 
         for (const auto& p : axes)
