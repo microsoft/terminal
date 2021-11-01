@@ -114,4 +114,5 @@ private:
     winrt::event_token _NotificationIconPressedToken;
     winrt::event_token _ShowNotificationIconContextMenuToken;
     winrt::event_token _NotificationIconMenuItemSelectedToken;
+    winrt::event_token _GetWindowLayoutRequestedToken;
 };

@@ -11,7 +11,7 @@
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>
     <Midl Include="IConsoleHandoff.idl">
-      <!-- 
+      <!--
         In Razzle, IDL files generate %FileName%.h
         In Visual Studio, IDL files generate %FileName%_h.h
         Visual Studio is easier to override than Razzle.
@@ -31,6 +31,7 @@
   <ItemGroup>
     <ClInclude Include="$(IntDir)\IConsoleHandoff.h" />
     <ClInclude Include="$(IntDir)\ITerminalHandoff.h" />
+    <ClInclude Include="nodefaultlib_shim.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(IntDir)\dlldata.c" />
@@ -56,14 +57,25 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <CallingConvention>StdCall</CallingConvention>
+      <AdditionalIncludeDirectories>.;..;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CallingConvention Condition="'$(Platform)'!='ARM64'">StdCall</CallingConvention>
       <!-- Must be Stdcall on all platforms to resolve _ObjectStublessClient3 -->
       <PreprocessorDefinitions>REGISTER_PROXY_DLL;WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <SDLCheck>false</SDLCheck>
+      <ForcedIncludeFiles>nodefaultlib_shim.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>OpenConsoleProxy.def</ModuleDefinitionFile>
+      <!--
+        Not depending on the CRT cuts binary size by half and prevents issues if this DLL
+        is copied elsewhere and executed outside of our app package without our bundled CRT present.
+      -->
+      <AdditionalDependencies />
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <EntryPointSymbol>DllMain</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->

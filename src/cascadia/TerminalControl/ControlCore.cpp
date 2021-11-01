@@ -600,6 +600,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
+        _actualFontFaceName = { fontFace };
         _desiredFont = { _actualFont };
 
         // Update the terminal core with its new Core settings
@@ -742,6 +743,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fontFace = _settings.FontFace();
             const auto fontWeight = _settings.FontWeight();
             _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+            _actualFontFaceName = { fontFace };
             _desiredFont = { _actualFont };
 
             auto lock = _terminal->LockForWriting();
@@ -1020,7 +1022,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
     {
-        const auto fontSize = GetFont().GetSize();
+        const auto fontSize = _actualFont.GetSize();
         return {
             ::base::saturated_cast<float>(fontSize.X),
             ::base::saturated_cast<float>(fontSize.Y)
@@ -1028,17 +1030,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     winrt::hstring ControlCore::FontFaceName() const noexcept
     {
-        return winrt::hstring{ GetFont().GetFaceName() };
+        // This getter used to return _actualFont.GetFaceName(), however GetFaceName() returns a STL
+        // string and we need to return a WinRT string. This would require an additional allocation.
+        // This method is called 10/s by TSFInputControl at the time of writing.
+        return _actualFontFaceName;
     }
 
     uint16_t ControlCore::FontWeight() const noexcept
     {
-        return static_cast<uint16_t>(GetFont().GetWeight());
+        return static_cast<uint16_t>(_actualFont.GetWeight());
     }
 
     til::size ControlCore::FontSizeInDips() const
     {
-        const til::size fontSize{ GetFont().GetSize() };
+        const til::size fontSize{ _actualFont.GetSize() };
         return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
     }
 

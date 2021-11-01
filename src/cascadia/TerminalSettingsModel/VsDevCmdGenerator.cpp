@@ -38,8 +38,15 @@ std::wstring VsDevCmdGenerator::GetProfileName(const VsSetupConfiguration::VsSet
 
 std::wstring VsDevCmdGenerator::GetProfileCommandLine(const VsSetupConfiguration::VsSetupInstance& instance) const
 {
-    std::wstring commandLine{ L"cmd.exe /k \"" + GetDevCmdScriptPath(instance) + L"\"" };
-
+    std::wstring commandLine;
+    commandLine.reserve(256);
+    commandLine.append(LR"(cmd.exe /k ")");
+    commandLine.append(GetDevCmdScriptPath(instance));
+#if defined(_M_ARM64)
+    commandLine.append(LR"(" -arch=arm64 -host_arch=x64)");
+#elif defined(_M_AMD64)
+    commandLine.append(LR"(" -arch=x64 -host_arch=x64)");
+#endif
     return commandLine;
 }
 

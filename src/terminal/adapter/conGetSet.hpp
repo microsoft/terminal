@@ -15,6 +15,7 @@ Author(s):
 
 #pragma once
 
+#include "../input/terminalInput.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 #include "../../buffer/out/LineRendition.hpp"
 #include "../../buffer/out/TextAttribute.hpp"
@@ -46,9 +47,8 @@ namespace Microsoft::Console::VirtualTerminal
                                                size_t& eventsWritten) = 0;
         virtual bool SetConsoleWindowInfo(const bool absolute,
                                           const SMALL_RECT& window) = 0;
-        virtual bool PrivateSetCursorKeysMode(const bool applicationMode) = 0;
-        virtual bool PrivateSetKeypadMode(const bool applicationMode) = 0;
-        virtual bool PrivateEnableWin32InputMode(const bool win32InputMode) = 0;
+
+        virtual bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) = 0;
 
         virtual bool PrivateSetAnsiMode(const bool ansiMode) = 0;
         virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;
@@ -66,12 +66,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateUseAlternateScreenBuffer() = 0;
         virtual bool PrivateUseMainScreenBuffer() = 0;
 
-        virtual bool PrivateEnableVT200MouseMode(const bool enabled) = 0;
-        virtual bool PrivateEnableUTF8ExtendedMouseMode(const bool enabled) = 0;
-        virtual bool PrivateEnableSGRExtendedMouseMode(const bool enabled) = 0;
-        virtual bool PrivateEnableButtonEventMouseMode(const bool enabled) = 0;
-        virtual bool PrivateEnableAnyEventMouseMode(const bool enabled) = 0;
-        virtual bool PrivateEnableAlternateScroll(const bool enabled) = 0;
         virtual bool PrivateEraseAll() = 0;
         virtual bool PrivateClearBuffer() = 0;
         virtual bool GetUserDefaultCursorStyle(CursorType& style) = 0;

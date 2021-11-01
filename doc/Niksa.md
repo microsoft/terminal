@@ -189,7 +189,7 @@ I think there might be a bit of a misunderstanding here - there are two differen
 * shell applications, like `cmd.exe`, `powershell`, `zsh`, etc. These are text-only applications that emit streams of characters. They don't care at all about how they're eventually rendered to the user. These are also sometimes referred to as "commandline client" applications.
 * terminal applications, like the Windows Terminal, gnome-terminal, xterm, iterm2, hyper. These are graphical applications that can be used to render the output of commandline clients. 
 
-On Windows, if you just run `cmd.exe` directly, the OS will create an instance of `conhost.exe` as the _terminal_ for `cmd.exe`. The same thing happens for `powershell.exe`, the system will creates a new conhost window for any client that's not already connected to a terminal of some sort. This has lead to an enormous amount of confusion for people thinking that a conhost window is actually a "`cmd` window". `cmd` can't have a window, it's just a commandline application. Its window is always some other terminal.
+On Windows, if you just run `cmd.exe` directly, the OS will create an instance of `conhost.exe` as the _terminal_ for `cmd.exe`. The same thing happens for `powershell.exe`, the system will create a new conhost window for any client that's not already connected to a terminal of some sort. This has lead to an enormous amount of confusion for people thinking that a conhost window is actually a "`cmd` window". `cmd` can't have a window, it's just a commandline application. Its window is always some other terminal.
 
 Any terminal can run any commandline client application. So you can use the Windows Terminal to run whatever shell you want. I use mine for both `cmd` and `powershell`, and also WSL:
 
