@@ -8,7 +8,6 @@
 #include "AdminWarningPlaceholder.g.cpp"
 #include <LibraryResources.h>
 using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Automation::Peers;
 
 namespace winrt::TerminalApp::implementation
 {

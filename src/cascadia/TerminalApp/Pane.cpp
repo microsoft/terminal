@@ -1337,7 +1337,8 @@ TermControl Pane::GetLastFocusedTerminalControl()
 //   TermControl of this Pane.
 TermControl Pane::GetTerminalControl() const
 {
-    return _IsLeaf() ? _control.try_as<TermControl>() : nullptr;
+    auto control{ GetUserControl() };
+    return control ? control.try_as<TermControl>() : nullptr;
 }
 
 Controls::UserControl Pane::GetUserControl() const
@@ -2554,7 +2555,7 @@ std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::_Split(SplitDirect
             _warningBellToken.value = 0;
         }
 
-        // Remove our old GotFocus handler from the control. We don't what the
+        // Remove our old GotFocus handler from the control. We don't want the
         // control telling us that it's now focused, we want it telling its new
         // parent.
         _gotFocusRevoker.revoke();
