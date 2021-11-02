@@ -1243,7 +1243,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    return _pConApi->PrivateSetAnsiMode(ansiMode);
+    _pConApi->SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _pConApi->SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+
+    // We don't check the SetInputMode return value, because we'll never want
+    // to forward a DECANM mode change over conpty.
+    return true;
 }
 
 // Routine Description:

@@ -125,16 +125,17 @@ public:
         return _setInputModeResult;
     }
 
-    bool PrivateSetAnsiMode(const bool ansiMode) override
+    bool SetParserMode(const StateMachine::Mode mode, const bool enabled) override
     {
-        Log::Comment(L"PrivateSetAnsiMode MOCK called...");
+        Log::Comment(L"SetParserMode MOCK called...");
 
-        if (_privateSetAnsiModeResult)
+        if (_setParserModeResult)
         {
-            VERIFY_ARE_EQUAL(_expectedAnsiMode, ansiMode);
+            VERIFY_ARE_EQUAL(_expectedParserMode, mode);
+            VERIFY_ARE_EQUAL(_expectedParserModeEnabled, enabled);
         }
 
-        return _privateSetAnsiModeResult;
+        return _setParserModeResult;
     }
 
     bool PrivateSetScreenMode(const bool /*reverseMode*/) override
@@ -712,8 +713,9 @@ public:
     bool _setInputModeResult = false;
     TerminalInput::Mode _expectedInputMode;
     bool _expectedInputModeEnabled = false;
-    bool _privateSetAnsiModeResult = false;
-    bool _expectedAnsiMode = false;
+    bool _setParserModeResult = false;
+    StateMachine::Mode _expectedParserMode;
+    bool _expectedParserModeEnabled = false;
     bool _privateAllowCursorBlinkingResult = false;
     bool _enable = false; // for cursor blinking
     bool _privateSetScrollingRegionResult = false;
@@ -2057,15 +2059,17 @@ public:
         // success cases
         // set ansi mode = true
         Log::Comment(L"Test 1: ansi mode = true");
-        _testGetSet->_privateSetAnsiModeResult = true;
-        _testGetSet->_expectedAnsiMode = true;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
+        _testGetSet->_expectedParserModeEnabled = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(true));
 
         // set ansi mode = false
         Log::Comment(L"Test 2: ansi mode = false.");
-        _testGetSet->_privateSetAnsiModeResult = true;
-        _testGetSet->_expectedAnsiMode = false;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
+        _testGetSet->_expectedParserModeEnabled = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(false));
     }
