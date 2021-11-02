@@ -452,6 +452,17 @@
                     ]
                 }
             ]
-        }
+        },
+        {
+            // Set opacity...
+            "name": { "key": "SetOpacityParentCommandName" },
+            "commands": [
+                { "command": { "action": "adjustOpacity", "opacity": 0 } },
+                { "command": { "action": "adjustOpacity", "opacity": 25 } },
+                { "command": { "action": "adjustOpacity", "opacity": 50 } },
+                { "command": { "action": "adjustOpacity", "opacity": 75 } },
+                { "command": { "action": "adjustOpacity", "opacity": 100 } }
+            ]
+        },
     ]
 }

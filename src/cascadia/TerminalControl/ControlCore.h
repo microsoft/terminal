@@ -170,6 +170,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static bool IsVintageOpacityAvailable() noexcept;
 
+        void AdjustOpacity(const int32_t& opacity, const bool& relative);
+
         RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
@@ -273,6 +275,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
+        void _setOpacity(const double opacity);
 
         inline bool _IsClosing() const noexcept
         {

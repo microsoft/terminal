@@ -115,6 +115,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
         void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
 
+        void AdjustOpacity(const int32_t& opacity, const bool& relative);
+
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
         WINRT_CALLBACK(FontSizeChanged, Control::FontSizeChangedEventArgs);

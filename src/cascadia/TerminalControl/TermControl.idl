@@ -72,5 +72,7 @@ namespace Microsoft.Terminal.Control
         void ToggleReadOnly();
 
         String ReadEntireBuffer();
+
+        void AdjustOpacity(Int32 Opacity, Boolean relative);
     }
 }

@@ -38,6 +38,7 @@
 #include "FocusPaneArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
+#include "AdjustOpacityArgs.g.h"
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
@@ -1863,6 +1864,60 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Actions);
         }
     };
+
+    struct AdjustOpacityArgs : public AdjustOpacityArgsT<AdjustOpacityArgs>
+    {
+        AdjustOpacityArgs() = default;
+        WINRT_PROPERTY(int32_t, Opacity, 0);
+        WINRT_PROPERTY(bool, Relative, false);
+        static constexpr std::string_view OpacityKey{ "opacity" };
+        static constexpr std::string_view RelativeKey{ "relative" };
+
+    public:
+        hstring GenerateName() const;
+
+        bool Equals(const IActionArgs& other)
+        {
+            auto otherAsUs = other.try_as<AdjustOpacityArgs>();
+            if (otherAsUs)
+            {
+                return otherAsUs->_Opacity == _Opacity &&
+                       otherAsUs->_Relative == _Relative;
+            }
+            return false;
+        };
+        static FromJsonResult FromJson(const Json::Value& json)
+        {
+            // LOAD BEARING: Not using make_self here _will_ break you in the future!
+            auto args = winrt::make_self<AdjustOpacityArgs>();
+            JsonUtils::GetValueForKey(json, OpacityKey, args->_Opacity);
+            JsonUtils::GetValueForKey(json, RelativeKey, args->_Relative);
+            return { *args, {} };
+        }
+        static Json::Value ToJson(const IActionArgs& val)
+        {
+            if (!val)
+            {
+                return {};
+            }
+            Json::Value json{ Json::ValueType::objectValue };
+            const auto args{ get_self<AdjustOpacityArgs>(val) };
+            JsonUtils::SetValueForKey(json, OpacityKey, args->_Opacity);
+            JsonUtils::SetValueForKey(json, RelativeKey, args->_Relative);
+            return json;
+        }
+        IActionArgs Copy() const
+        {
+            auto copy{ winrt::make_self<AdjustOpacityArgs>() };
+            copy->_Opacity = _Opacity;
+            copy->_Relative = _Relative;
+            return *copy;
+        }
+        size_t Hash() const
+        {
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Opacity(), Relative());
+        }
+    };
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -1891,4 +1946,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(NextTabArgs);
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
+    BASIC_FACTORY(AdjustOpacityArgs);
 }
