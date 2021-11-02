@@ -38,19 +38,35 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
                     <StackPanel>
-
-                        <!--  Header space  -->
-                        <StackPanel Style="{StaticResource SettingContainerHeaderStyle}">
-                            <TextBlock Text="{TemplateBinding Header}" />
-                            <Button x:Name="ResetButton"
-                                    Style="{StaticResource SettingContainerResetButtonStyle}">
-                                <FontIcon Glyph="&#xE845;"
-                                          Style="{StaticResource SettingContainerFontIconStyle}" />
-                            </Button>
-                        </StackPanel>
-
-                        <!--  This is where the actual setting control will go  -->
-                        <ContentPresenter Content="{TemplateBinding Content}" />
+                        <Grid Height="60"
+                  HorizontalAlignment="Stretch"
+                  Margin="16"
+                  CornerRadius="4"
+                  Background="{ThemeResource SystemChromeMediumLowColor}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="50" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon Grid.Column="0"
+                          Style="{StaticResource SettingContainerFontIconStyle}"
+                          Glyph="&#xE710;" />
+                            <StackPanel Grid.Column="1"
+                                Orientation="Vertical"
+                                VerticalAlignment="Center">
+                                <TextBlock Text="{TemplateBinding Header}"
+                                   FontSize="16"/>
+                                <TextBlock Text="{TemplateBinding HelpText}"
+                                   FontSize="14"
+                                   Foreground="{ThemeResource SystemBaseMediumColor}"/>
+                            </StackPanel>
+                            <ContentPresenter Grid.Column="2"
+                              HorizontalAlignment="Right"
+                              VerticalAlignment="Center"
+                              Margin="8"
+                              BorderBrush="Transparent"
+                              Content="{TemplateBinding Content}"/>
+                        </Grid>
                     </StackPanel>
                 </ControlTemplate>
             </Setter.Value>
