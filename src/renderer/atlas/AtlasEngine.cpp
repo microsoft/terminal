@@ -195,44 +195,40 @@ try
         LOG_IF_WIN32_BOOL_FALSE(GetClientRect(_api.hwnd, &rect));
         std::ignore = SetWindowSize({ rect.right - rect.left, rect.bottom - rect.top });
 
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Title))
+        if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Title))
         {
             LOG_IF_WIN32_BOOL_FALSE(PostMessageW(_api.hwnd, CM_UPDATE_TITLE, 0, 0));
-            WI_ClearFlag(_invalidations, InvalidationFlags::Title);
+            WI_ClearFlag(_api.invalidations, ApiInvalidations::Title);
         }
     }
 
     // It's important that we invalidate here instead of in Present() with the rest.
     // Other functions, those called before Present(), might depend on _r fields.
     // But most of the time _invalidations will be ::none, making this very cheap.
-    if (_invalidations != InvalidationFlags::None)
+    if (_api.invalidations != ApiInvalidations::None)
     {
         RETURN_HR_IF(E_UNEXPECTED, _api.sizeInPixel == u16x2{} || _api.cellSize == u16x2{} || _api.cellCount == u16x2{});
 
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Device))
+        if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Device))
         {
             _createResources();
-            WI_SetAllFlags(_invalidations, InvalidationFlags::Size | InvalidationFlags::Font);
         }
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Size))
+        if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Size))
         {
             _recreateSizeDependentResources();
-            WI_SetFlag(_invalidations, InvalidationFlags::Cursor);
         }
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Font))
+        if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Font))
         {
             _recreateFontDependentResources();
         }
-        if (WI_IsFlagSet(_invalidations, InvalidationFlags::Settings))
+        if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Settings))
         {
             _r.selectionColor = _api.selectionColor;
+            WI_SetFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
         }
 
+        // Equivalent to InvalidateAll().
         _api.invalidatedRows = invalidatedRowsAll;
-        _invalidations = InvalidationFlags::None;
-
-        WI_ClearAllFlags(_invalidations, InvalidationFlags::Device | InvalidationFlags::Size | InvalidationFlags::Font | InvalidationFlags::Settings);
-        WI_SetFlag(_invalidations, InvalidationFlags::ConstBuffer);
     }
 
     if (_api.invalidatedRows == invalidatedRowsAll)
@@ -625,14 +621,14 @@ CATCH_RETURN()
 {
     {
         const CachedCursorOptions cachedOptions{
-            gsl::narrow_cast<u32>(options.fUseColor ? options.cursorColor : INVALID_COLOR),
+            gsl::narrow_cast<u32>(options.fUseColor ? options.cursorColor | 0xff000000 : INVALID_COLOR),
             gsl::narrow_cast<u16>(options.cursorType),
             gsl::narrow_cast<u8>(options.ulCursorHeightPercent),
         };
         if (_r.cursorOptions != cachedOptions)
         {
             _r.cursorOptions = cachedOptions;
-            WI_SetFlag(_invalidations, InvalidationFlags::Cursor);
+            WI_SetFlag(_r.invalidations, RenderInvalidations::Cursor);
         }
     }
 
@@ -673,16 +669,16 @@ CATCH_RETURN()
         WI_SetFlagIf(flags, CellFlags::UnderlineDouble, textAttributes.IsDoublyUnderlined());
         WI_SetFlagIf(flags, CellFlags::Strikethrough, textAttributes.IsCrossedOut());
 
-        _api.currentColor.x = fg;
-        _api.currentColor.y = bg;
+        _api.currentColor.x = fg | 0xff000000;
+        _api.currentColor.y = bg | _api.backgroundOpaqueMixin;
         _api.attributes.bold = textAttributes.IsBold();
         _api.attributes.italic = textAttributes.IsItalic();
         _api.flags = flags;
     }
     else if (textAttributes.BackgroundIsDefault() && bg != _r.backgroundColor)
     {
-        _r.backgroundColor = bg;
-        WI_SetFlag(_invalidations, InvalidationFlags::ConstBuffer);
+        _r.backgroundColor = bg | _api.backgroundOpaqueMixin;
+        WI_SetFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
     }
 
     return S_OK;
@@ -695,8 +691,7 @@ CATCH_RETURN()
     const auto hr = exception.GetErrorCode();
     if (hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET || hr == D2DERR_RECREATE_TARGET)
     {
-        _r = {};
-        WI_SetFlag(_invalidations, InvalidationFlags::Device);
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
         return E_PENDING; // Indicate a retry to the renderer
     }
 
@@ -717,6 +712,8 @@ CATCH_RETURN()
 
 void AtlasEngine::_createResources()
 {
+    _r = {};
+
 #ifdef NDEBUG
     static constexpr
 #endif
@@ -817,7 +814,10 @@ void AtlasEngine::_createResources()
         desc.BufferCount = 2;
         desc.Scaling = DXGI_SCALING_NONE;
         desc.SwapEffect = _sr.isWindows10OrGreater ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
-        desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+        // * HWND swap chains can't do alpha.
+        // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
+        //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
+        desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin == 0xff000000 ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         desc.Flags = supportsFrameLatencyWaitableObject ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
 
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
@@ -825,6 +825,8 @@ void AtlasEngine::_createResources()
 
         if (_api.hwnd)
         {
+            desc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+
             if (FAILED(dxgiFactory->CreateSwapChainForHwnd(_r.device.get(), _api.hwnd, &desc, nullptr, nullptr, _r.swapChain.put())))
             {
                 // Platform Update for Windows 7:
@@ -882,6 +884,9 @@ void AtlasEngine::_createResources()
     //
     // TODO: In the future all D3D code should be moved into AtlasEngine.r.cpp
     WaitUntilCanRender();
+
+    WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
+    WI_SetAllFlags(_api.invalidations, ApiInvalidations::Size | ApiInvalidations::Font);
 }
 
 void AtlasEngine::_recreateSizeDependentResources()
@@ -955,6 +960,9 @@ void AtlasEngine::_recreateSizeDependentResources()
 
         _setShaderResources();
     }
+
+    WI_ClearFlag(_api.invalidations, ApiInvalidations::Size);
+    WI_SetAllFlags(_r.invalidations, RenderInvalidations::ConstBuffer);
 }
 
 void AtlasEngine::_recreateFontDependentResources()
@@ -1009,7 +1017,7 @@ void AtlasEngine::_recreateFontDependentResources()
     }
     // D3D specifically for UpdateDpi()
     // This compensates for the built in scaling factor in a XAML SwapChainPanel (CompositionScaleX/Y).
-    if (HWND hwnd = nullptr; SUCCEEDED(_r.swapChain->GetHwnd(&hwnd)) && !hwnd)
+    if (!_api.hwnd)
     {
         if (const auto swapChain2 = _r.swapChain.try_query<IDXGISwapChain2>())
         {
@@ -1081,6 +1089,9 @@ void AtlasEngine::_recreateFontDependentResources()
             }
         }
     }
+
+    WI_ClearFlag(_api.invalidations, ApiInvalidations::Font);
+    WI_SetAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
 }
 
 HRESULT AtlasEngine::_createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept

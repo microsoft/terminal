@@ -137,7 +137,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::InvalidateTitle(const std::wstring_view proposedTitle) noexcept
 {
-    WI_SetFlag(_invalidations, InvalidationFlags::Title);
+    WI_SetFlag(_api.invalidations, ApiInvalidations::Title);
     return S_OK;
 }
 
@@ -159,7 +159,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
     if (_api.dpi != newDPI)
     {
         _api.dpi = newDPI;
-        WI_SetFlag(_invalidations, InvalidationFlags::Font);
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
     }
 
     return S_OK;
@@ -329,10 +329,10 @@ HRESULT AtlasEngine::Enable() noexcept
 
 [[nodiscard]] HANDLE AtlasEngine::GetSwapChainHandle()
 {
-    if (WI_IsFlagSet(_invalidations, InvalidationFlags::Device))
+    if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Device))
     {
         _createResources();
-        WI_ClearFlag(_invalidations, InvalidationFlags::Device);
+        WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
     }
 
     return _api.swapChainHandle.get();
@@ -355,7 +355,7 @@ HRESULT AtlasEngine::Enable() noexcept
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
     _api.antialiasingMode = gsl::narrow_cast<u16>(antialiasingMode);
-    WI_SetFlag(_invalidations, InvalidationFlags::Font);
+    WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
 }
 
 void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
@@ -365,6 +365,8 @@ void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
 
 void AtlasEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
 {
+    _api.backgroundOpaqueMixin = opacity == 1.0f ? 0xff000000 : 0x00000000;
+    WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
 }
 
 void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
@@ -374,6 +376,7 @@ void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
 [[nodiscard]] HRESULT AtlasEngine::SetHwnd(const HWND hwnd) noexcept
 {
     _api.hwnd = hwnd;
+    WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
     return S_OK;
 }
 
@@ -392,7 +395,7 @@ void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha
     if (_api.selectionColor != selectionColor)
     {
         _api.selectionColor = selectionColor;
-        WI_SetFlag(_invalidations, InvalidationFlags::Settings);
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Settings);
     }
 }
 
@@ -421,7 +424,7 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     {
         _api.sizeInPixel = newSize;
         _api.cellCount = _api.sizeInPixel / _api.cellSize;
-        WI_SetFlag(_invalidations, InvalidationFlags::Size);
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
     }
 
     return S_OK;
@@ -444,7 +447,8 @@ try
     }
 
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
-    if (!features.empty()) {
+    if (!features.empty())
+    {
         // All of these features are enabled by default by DirectWrite.
         // If you want to (and can) peek into the source of DirectWrite
         // you can look for the "GenericDefaultGsubFeatures" and "GenericDefaultGposFeatures" arrays.
@@ -452,7 +456,7 @@ try
         //
         // These values are sorted by their numeric value on little endian (you can see them in a debugger).
         // Please try to keep it that way.
-        // 
+        //
         // GH#10774: Apparently specifying all of the features is just redundant.
         static constexpr auto defaults = std::array{
             DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES,
@@ -492,7 +496,8 @@ try
     }
 
     std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
-    if (!axes.empty()) {
+    if (!axes.empty())
+    {
         fontAxisValues.reserve(axes.size());
 
         for (const auto& p : axes)
@@ -517,13 +522,13 @@ try
     _api.fontName = std::move(fontName);
     _api.fontSize = fontInfo.GetUnscaledSize().Y;
     _api.fontWeight = gsl::narrow_cast<u16>(fontInfo.GetWeight());
-    WI_SetFlag(_invalidations, InvalidationFlags::Font);
+    WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
 
     if (newSize != _api.cellSize)
     {
         _api.cellSize = newSize;
         _api.cellCount = _api.sizeInPixel / _api.cellSize;
-        WI_SetFlag(_invalidations, InvalidationFlags::Size);
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
     }
 
     return S_OK;

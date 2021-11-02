@@ -299,20 +299,26 @@ namespace Microsoft::Console::Render
 #pragma warning(suppress : 4324) // structure was padded due to alignment specifier
         };
 
-        enum class InvalidationFlags : u8
+        // Handled in BeginPaint()
+        enum class ApiInvalidations : u8
         {
             None = 0,
-            // Handled in BeginPaint()
             Title = 1 << 0,
             Device = 1 << 1,
             Size = 1 << 2,
             Font = 1 << 3,
             Settings = 1 << 4,
-            // Handled in Present()
-            Cursor = 1 << 5,
-            ConstBuffer = 1 << 6,
         };
-        ATLAS_FLAG_OPS(InvalidationFlags, u8)
+        ATLAS_FLAG_OPS(ApiInvalidations, u8)
+
+        // Handled in Present()
+        enum class RenderInvalidations : u8
+        {
+            None = 0,
+            Cursor = 1 << 0,
+            ConstBuffer = 1 << 1,
+        };
+        ATLAS_FLAG_OPS(RenderInvalidations, u8)
 
         // MSVC STL (version 22000) implements std::clamp<T>(T, T, T) in terms of the generic
         // std::clamp<T, Predicate>(T, T, T, Predicate) with std::less{} as the argument,
@@ -389,12 +395,12 @@ namespace Microsoft::Console::Render
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
             wil::com_ptr<IDWriteTypography> typography;
 
-            AlignedBuffer<Cell> cells; // invalidated by InvalidationFlags::size
-            f32x2 cellSizeDIP; // invalidated by InvalidationFlags::font, caches _api.cellSize but in DIP
-            u16x2 cellSize; // invalidated by InvalidationFlags::font, caches _api.cellSize
-            u16x2 cellCount; // invalidated by InvalidationFlags::font|size, caches _api.cellCount
-            u16x2 atlasSizeInPixelLimit; // invalidated by InvalidationFlags::font
-            u16x2 atlasSizeInPixel; // invalidated by InvalidationFlags::font
+            AlignedBuffer<Cell> cells; // invalidated by ApiInvalidations::Size
+            f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
+            u16x2 cellSize; // invalidated by ApiInvalidations::Font, caches _api.cellSize
+            u16x2 cellCount; // invalidated by ApiInvalidations::Font|size, caches _api.cellCount
+            u16x2 atlasSizeInPixelLimit; // invalidated by ApiInvalidations::Font
+            u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
             u16x2 atlasPosition;
             std::unordered_map<AtlasKey, AtlasValue, AtlasKeyHasher> glyphs;
             std::vector<til::pair<AtlasKey, AtlasValue>> glyphQueue;
@@ -403,6 +409,7 @@ namespace Microsoft::Console::Render
             u32 selectionColor = 0x7fffffff;
 
             CachedCursorOptions cursorOptions;
+            RenderInvalidations invalidations = RenderInvalidations::None;
 
 #ifndef NDEBUG
             // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
@@ -424,9 +431,10 @@ namespace Microsoft::Console::Render
             std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
             std::vector<UINT16> glyphIndices;
             std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps;
-            std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as InvalidationFlags::font|size
+            std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as ApiInvalidations::Font|Size
 
             // UpdateDrawingBrushes()
+            u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::Device
             u32x2 currentColor{};
             AtlasKeyAttributes attributes{};
             CellFlags flags = CellFlags::None;
@@ -440,24 +448,24 @@ namespace Microsoft::Console::Render
             u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
 
-            u16x2 cellSize; // changes are flagged as InvalidationFlags::font
+            u16x2 cellSize; // changes are flagged as ApiInvalidations::Font
             u16x2 cellCount; // caches `sizeInPixel / cellSize`
-            u16x2 sizeInPixel; // changes are flagged as InvalidationFlags::size
+            u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 
-            std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as InvalidationFlags::font|size
-            wil::unique_process_heap_string fontName; // changes are flagged as InvalidationFlags::font|size
-            u16 fontSize = 0; // changes are flagged as InvalidationFlags::font|size
-            u16 fontWeight = 0; // changes are flagged as InvalidationFlags::font
-            u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as InvalidationFlags::font|size
-            u16 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as InvalidationFlags::font
+            std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
+            wil::unique_process_heap_string fontName; // changes are flagged as ApiInvalidations::Font|Size
+            u16 fontSize = 0; // changes are flagged as ApiInvalidations::Font|Size
+            u16 fontWeight = 0; // changes are flagged as ApiInvalidations::Font
+            u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
+            u16 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
 
             std::function<void(HRESULT)> warningCallback;
             std::function<void()> swapChainChangedCallback;
             wil::unique_handle swapChainHandle;
             HWND hwnd = nullptr;
-        } _api;
 
-        InvalidationFlags _invalidations = InvalidationFlags::Device;
+            ApiInvalidations invalidations = ApiInvalidations::Device;
+        } _api;
 
 #undef ATLAS_POD_OPS
 #undef ATLAS_FLAG_OPS

@@ -32,17 +32,17 @@ try
     _adjustAtlasSize();
     _processGlyphQueue();
 
-    if (WI_IsFlagSet(_invalidations, InvalidationFlags::Cursor))
+    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::Cursor))
     {
         _drawCursor();
-        WI_ClearFlag(_invalidations, InvalidationFlags::Cursor);
+        WI_ClearFlag(_r.invalidations, RenderInvalidations::Cursor);
     }
 
     // The values the constant buffer depends on are potentially updated after BeginPaint().
-    if (WI_IsFlagSet(_invalidations, InvalidationFlags::ConstBuffer))
+    if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::ConstBuffer))
     {
         _updateConstantBuffer();
-        WI_ClearFlag(_invalidations, InvalidationFlags::ConstBuffer);
+        WI_ClearFlag(_r.invalidations, RenderInvalidations::ConstBuffer);
     }
 
     {
