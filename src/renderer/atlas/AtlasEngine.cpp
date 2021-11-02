@@ -1096,6 +1096,11 @@ void AtlasEngine::_recreateFontDependentResources()
 
 HRESULT AtlasEngine::_createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept
 {
+    // Most applications (including OpenType itself) treat font sizes
+    // at a base scale of 72 DPI, whereas DirectWrite uses 96 DPI.
+    // --> Multiply by 1.333... to convert from 72 DPI to 96 DPI scale.
+    fontSize *= 4.0f / 3.0f;
+
     const auto hr = _sr.dwriteFactory->CreateTextFormat(fontFamilyName, nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", textFormat);
     if (SUCCEEDED(hr))
     {

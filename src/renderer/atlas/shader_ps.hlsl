@@ -91,7 +91,7 @@ float4 main(float4 pos: SV_Position): SV_Target
     }
 
     // Layer 4:
-    // The selection is drawn as a semi-transparent, non-premultiplied color on top.
+    // The current selection is drawn semi-transparent on top.
     if (cell.flags & 4)
     {
         color = alphaBlendPremultiplied(color, decodeRGBA(selectionColor));

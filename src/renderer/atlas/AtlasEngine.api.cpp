@@ -461,7 +461,6 @@ try
         static constexpr auto defaults = std::array{
             DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES,
             DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES,
-            DWRITE_FONT_FEATURE_TAG_KERNING,
             DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES,
         };
         std::array<bool, defaults.size()> overriddenDefaults{};
