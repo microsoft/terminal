@@ -734,7 +734,80 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
         til::color FromJson(const Json::Value& json)
         {
-            return ::Microsoft::Console::Utils::ColorFromHexString(Detail::GetStringView(json));
+            auto string{ Detail::GetStringView(json) };
+            if (!string.empty() && string.front() == '#')
+            {
+                return ::Microsoft::Console::Utils::ColorFromHexString(Detail::GetStringView(json));
+            }
+
+            if (til::starts_with(string, "rgba(") && til::ends_with(string, ")"))
+            {
+                static constexpr auto trimWhitespace = [](const std::string_view& str) {
+                    auto beg = str.data();
+                    auto end = str.data() + str.size();
+
+                    for (; beg != end && *beg == ' '; ++beg)
+                    {
+                    }
+
+                    for (; beg != end && end[-1] == ' '; --end)
+                    {
+                    }
+
+                    return std::string_view{ beg, gsl::narrow_cast<size_t>(end - beg) };
+                };
+                static constexpr auto getParameter = [](std::string_view& str, const std::string_view& needle) {
+                    return trimWhitespace(til::prefix_split(str, needle));
+                };
+                static constexpr auto parseRGB = [](const std::string_view& str) {
+                    uint8_t v;
+                    const auto last = str.data() + str.size();
+                    const auto [end, ec] = std::from_chars(str.data(), last, v, 10);
+                    THROW_HR_IF(E_INVALIDARG, ec != std::errc() || last - end > 1);
+                    if (last != end)
+                    {
+                        THROW_HR_IF(E_INVALIDARG, *last != '%' || v > 100);
+                        v = (v * 255 + 50) / 100;
+                    }
+                    return v;
+                };
+                static constexpr auto parseA = [](const std::string_view& str) {
+                    double v;
+                    const auto last = str.data() + str.size();
+                    const auto [end, ec] = std::from_chars(str.data(), last, v, std::chars_format::general);
+                    THROW_HR_IF(E_INVALIDARG, ec != std::errc() || last != end || v < 0 || v > 1);
+                    return static_cast<uint8_t>(std::round(v * 255.0));
+                };
+
+                string = string.substr(5);
+                // s[rgba] - the s stands for "string".
+                const auto sr = getParameter(string, ",");
+                const auto sg = getParameter(string, ",");
+                auto sb = getParameter(string, ",");
+                auto sa = getParameter(string, ")");
+
+                if (sb.empty())
+                {
+                    // a is optional in CSS' rgba().
+                    // If we have something like rgba(1, 2, 3), then
+                    //   sr == "1"
+                    //   sg == "2"
+                    //   sb == ""
+                    //   sa == "3"
+                    // because sa contains the parameter next to the ")".
+                    // --> Move sa into sb.
+                    sb = sa;
+                    sa = {};
+                }
+
+                const auto r = parseRGB(sr);
+                const auto g = parseRGB(sg);
+                const auto b = parseRGB(sb);
+                const uint8_t a = sa.empty() ? 255 : parseA(sa);
+                return til::color{ r, g, b, a };
+            }
+
+            THROW_HR(E_INVALIDARG);
         }
 
         bool CanConvert(const Json::Value& json)
@@ -745,17 +818,23 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             }
 
             const auto string{ Detail::GetStringView(json) };
-            return (string.length() == 7 || string.length() == 4) && string.front() == '#';
+            return ((string.length() == 7 || string.length() == 4) && string.front() == '#') ||
+                   (til::starts_with(string, "rgba(") && til::ends_with(string, ")"));
         }
 
         Json::Value ToJson(const til::color& val)
         {
-            return til::u16u8(val.ToHexString(true));
+            if (val.a == 255)
+            {
+                return fmt::format("#{:02X}{:02X}{:02X}", val.r, val.g, val.g);
+            }
+
+            return fmt::format("rgba({}, {}, {}, {:.6f})", val.r, val.g, val.g, static_cast<double>(val.a) / 255.0);
         }
 
         std::string TypeDescription() const
         {
-            return "color (#rrggbb, #rgb)";
+            return "color (rgba(r,g,b,a), #rrggbb, #rgb)";
         }
     };
 
