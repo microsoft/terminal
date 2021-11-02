@@ -62,6 +62,9 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget _UpdateSwitchToTabKeyChord();
         void _UpdateToolTip();
 
+        void _KeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                         Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
+
         friend class ::TerminalAppLocalTests::TabTests;
     };
 }
