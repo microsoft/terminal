@@ -250,5 +250,25 @@ namespace winrt::TerminalApp::implementation
                 tab->_RequestFocusActiveControlHandlers();
             }
         });
+
+        TabViewItem().KeyUp({ get_weak(), &TabBase::_KeyHandler });
+    }
+
+    void TabBase::_KeyHandler(Windows::Foundation::IInspectable const& /*sender*/,
+                              Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
+    {
+        const auto key = e.OriginalKey();
+        const auto scanCode = e.KeyStatus().ScanCode;
+        const auto coreWindow = CoreWindow::GetForCurrentThread();
+        const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(VirtualKey::Control), CoreVirtualKeyStates::Down);
+        const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(VirtualKey::Menu), CoreVirtualKeyStates::Down);
+        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(VirtualKey::Shift), CoreVirtualKeyStates::Down);
+
+        KeyChord kc{ ctrlDown, altDown, shiftDown, false, static_cast<int32_t>(key), static_cast<int32_t>(scanCode) };
+        if (const auto cmd{ _actionMap.GetActionByKeyChord(kc) })
+        {
+            _dispatch.DoAction(cmd.ActionAndArgs());
+            e.Handled(true);
+        }
     }
 }

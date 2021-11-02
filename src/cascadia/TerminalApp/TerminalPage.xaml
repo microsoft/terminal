@@ -10,6 +10,7 @@
       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
       xmlns:mux="using:Microsoft.UI.Xaml.Controls"
       Background="Transparent"
+      KeyDown="_KeyDownHandler"
       mc:Ignorable="d">
 
     <Grid x:Name="Root"
