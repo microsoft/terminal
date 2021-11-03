@@ -14,11 +14,10 @@ namespace winrt::TerminalApp::implementation
     {
         TitlebarControl(uint64_t handle);
 
-        void MaxButtonEntered();
-        void MaxButtonExited();
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
-        void ReleaseButton(CaptionButton button);
+        void ClickButton(CaptionButton button);
+        void ReleaseButtons();
 
         IInspectable Content();
         void Content(IInspectable content);

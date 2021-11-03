@@ -138,17 +138,10 @@ namespace winrt::TerminalApp::implementation
             break;
         }
     }
-    void MinMaxCloseControl::ReleaseButton(CaptionButton button)
+    void MinMaxCloseControl::ReleaseButtons()
     {
-        switch (button)
-        {
-        case CaptionButton::Minimize:
-        case CaptionButton::Maximize:
-        case CaptionButton::Close:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
-            break;
-        }
+        VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
+        VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
+        VisualStateManager::GoToState(CloseButton(), L"Normal", false);
     }
 }

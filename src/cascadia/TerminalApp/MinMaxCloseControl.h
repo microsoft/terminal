@@ -22,7 +22,7 @@ namespace winrt::TerminalApp::implementation
 
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
-        void ReleaseButton(CaptionButton button);
+        void ReleaseButtons();
 
         void _MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
                             winrt::Windows::UI::Xaml::RoutedEventArgs const& e);

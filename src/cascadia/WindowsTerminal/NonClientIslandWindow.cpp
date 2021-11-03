@@ -122,90 +122,107 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
 }
 
 // Function Description:
-// - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
+// - The window procedure for the drag bar forwards clicks on its client area to
+//   its parent as non-client clicks.
+// - BODGY: It also _manually_ handles the caption buttons. They exist in the
+//   titlebar, and work reasonably well with just XAML, if the drag bar isn't
+//   covering them.
+// - However, to get snap layout support (GH#9443), we need to actually return
+//   HTMAXBUTTON where the maximize button is. If the drag bar doesn't cover the
+//   caption buttons, then the core input site (which takes up the entirety of
+//   the XAML island) will steal the WM_NCHITTEST before we get a chance to
+//   handle it.
+// - So, the drag bar covers the caption buttons, and manually handles hovering
+//   and pressing them when needed. This gives the impression that they're
+//   getting input as they normally would, even if they're not _really_ getting
+//   input via XAML.
 LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
     switch (message)
     {
     case WM_NCHITTEST:
     {
-        const til::point pointer{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
-
-        return _dragBarNcHitTest(pointer);
+        // Try to determine what part of the window is being hovered here. This
+        // is absolutely critical to making sure Snap Layouts (GH#9443) works!
+        return _dragBarNcHitTest(til::point{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) });
     }
     break;
 
     case WM_NCMOUSEMOVE:
-        // Communicate state to the title bar control so that it can update its visuals.
-        // TODO! other buttons too
-
+        // When we get this message, it's because the mouse moved when it was
+        // over somewhere we said was the non-client area.
+        //
+        // We'll use this to communicate state to the title bar control, so that
+        // it can update its visuals.
+        // - If we're over a button, hover it.
+        // - If we're over _anything else_, stop hovering the buttons.
         switch (wparam)
         {
         case HTMINBUTTON:
             _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Minimize);
-            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
-            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
             break;
         case HTMAXBUTTON:
-            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
             _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Maximize);
-            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
             break;
         case HTCLOSE:
-            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
-            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
             _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Close);
             break;
         default:
-            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+            _titlebar.ReleaseButtons();
         }
 
-        if (!_trackingMouse && (wparam == HTMINBUTTON ||
-            wparam == HTMAXBUTTON ||
-            wparam == HTCLOSE))
+        // If we haven't previously asked for mouse tracking, request mouse
+        // tracking. We need to do this so we can get the WM_NCMOUSELEAVE
+        // message when the mouse leave the titlebar. Otherwise, we won't always
+        // get that message (especially if the user moves the mouse _real
+        // fast_).
+        if (!_trackingMouse &&
+            (wparam == HTMINBUTTON || wparam == HTMAXBUTTON || wparam == HTCLOSE))
         {
-            _trackingMouse = true;
             TRACKMOUSEEVENT ev{};
             ev.cbSize = sizeof(TRACKMOUSEEVENT);
+            // TME_NONCLIENT is absolutely critical here. In my experimentation,
+            // we'd get WM_MOUSELEAVE messages after just a HOVER_DEFAULT
+            // timeout even though we're not requesting TME_HOVER, which kinda
+            // ruined the whole point of this.
             ev.dwFlags = TME_LEAVE | TME_NONCLIENT;
             ev.hwndTrack = _dragBarWindow.get();
             ev.dwHoverTime = HOVER_DEFAULT; // we don't _really_ care about this.
             LOG_IF_WIN32_BOOL_FALSE(TrackMouseEvent(&ev));
+            _trackingMouse = true;
         }
-
-        // if (wparam == HTMAXBUTTON)
-        // {
-        //     _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Maximize);
-        //     // _titlebar.MaxButtonEntered();
-        // }
-        // else
-        // {
-        //     _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
-        //     // _titlebar.MaxButtonExited();
-        // }
+        // TODO! We no longer show tooltips for the caption buttons when they're
+        // hovered. That's not good.
         break;
 
     case WM_NCMOUSELEAVE:
     case WM_MOUSELEAVE:
-        // _titlebar.MaxButtonExited();
-        // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
-        // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
-        _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+        // When the mouse leaves the drag rect, make sure to dismiss any hover.
+        _titlebar.ReleaseButtons();
         _trackingMouse = false;
         break;
 
-    // NB: *Shouldn't be forwarding these* when they're not over the caption because they can inadvertently take action using the system's default metrics instead of our own.
+    // NB: *Shouldn't be forwarding these* when they're not over the caption
+    // because they can inadvertently take action using the system's default
+    // metrics instead of our own.
     case WM_NCLBUTTONDOWN:
     case WM_NCLBUTTONDBLCLK:
+        // Manual handling for mouse clicks in the drag bar. If it's in a
+        // caption button, then tell the titlebar to "press" the button, which
+        // should change its visual state.
+        //
+        // If it's not in a caption button, then just forward the message along
+        // to the root HWND.
         switch (wparam)
         {
         case HTCAPTION:
         {
             // Pass caption-related nonclient messages to the parent window.
-            // The buttons won't work as you'd expect; we need to handle those ourselves.
             auto parentWindow{ GetHandle() };
             return SendMessage(parentWindow, message, wparam, lparam);
         }
+        // The buttons won't work as you'd expect; we need to handle those
+        // ourselves.
         case HTMINBUTTON:
             _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Minimize);
             break;
@@ -217,8 +234,13 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
             break;
         }
         return 0;
-    // TODO!: I think we only want WM_NCLBUTTONUP
+
     case WM_NCLBUTTONUP:
+        // Manual handling for mouse RELEASES in the drag bar. If it's in a
+        // caption button, then manually handle what we'd expect for that button.
+        //
+        // If it's not in a caption button, then just forward the message along
+        // to the root HWND.
         switch (wparam)
         {
         case HTCAPTION:
@@ -233,20 +255,23 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         // Forward along to the button state machine.
         // As a proof of concept just locally handle the maximize button.
         case HTMINBUTTON:
-            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
-            ShowWindow(GetHandle(), SW_MINIMIZE);
+            _titlebar.ClickButton(winrt::TerminalApp::CaptionButton::Minimize);
+            _titlebar.ReleaseButtons();
+            // ShowWindow(GetHandle(), SW_MINIMIZE);
             break;
 
         case HTMAXBUTTON:
-            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+            _titlebar.ClickButton(winrt::TerminalApp::CaptionButton::Maximize);
+            _titlebar.ReleaseButtons();
             // If we're maximized, restore down. Otherwise, maximize
-            ShowWindow(GetHandle(), IsZoomed(GetHandle()) ? SW_RESTORE : SW_MAXIMIZE);
+            // ShowWindow(GetHandle(), IsZoomed(GetHandle()) ? SW_RESTORE : SW_MAXIMIZE);
             break;
 
         case HTCLOSE:
             // TODO! this seems to crash unreasonably frequently
-            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
-            Close();
+            _titlebar.ClickButton(winrt::TerminalApp::CaptionButton::Close);
+            _titlebar.ReleaseButtons();
+            // Close();
             break;
         }
         return 0;

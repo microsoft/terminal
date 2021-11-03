@@ -11,9 +11,9 @@ namespace TerminalApp
     };
 
     enum CaptionButton {
-        Minimize,
-        Maximize,
-        Close
+        Minimize = 8, // HTMINBUTTON
+        Maximize = 9, // HTMAXBUTTON
+        Close = 20 // HTCLOSE
     };
 
     [default_interface] runtimeclass TitlebarControl : Windows.UI.Xaml.Controls.Grid
@@ -23,10 +23,8 @@ namespace TerminalApp
 
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
-        void ReleaseButton(CaptionButton button);
-
-        void MaxButtonEntered();
-        void MaxButtonExited();
+        void ClickButton(CaptionButton button);
+        void ReleaseButtons();
 
         IInspectable Content;
         Windows.UI.Xaml.Controls.Border DragBar { get; };

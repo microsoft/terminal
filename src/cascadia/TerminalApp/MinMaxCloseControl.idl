@@ -13,7 +13,7 @@ namespace TerminalApp
 
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
-        void ReleaseButton(CaptionButton button);
+        void ReleaseButtons();
 
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MinimizeClick;
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MaximizeClick;
