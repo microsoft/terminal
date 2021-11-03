@@ -31,6 +31,9 @@ namespace winrt::TerminalApp::implementation
         void _CloseClick(winrt::Windows::Foundation::IInspectable const& sender,
                          winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
 
+        WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
+        WINRT_OBSERVABLE_PROPERTY(winrt::hstring, MinimizeToolTip, _PropertyChangedHandlers);
+
         TYPED_EVENT(MinimizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);

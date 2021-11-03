@@ -20,6 +20,7 @@ namespace winrt::TerminalApp::implementation
     MinMaxCloseControl::MinMaxCloseControl()
     {
         InitializeComponent();
+        _MinimizeToolTip = RS_(L"WindowMinimizeButtonToolTipText");
     }
 
     // These event handlers simply forward each buttons click events up to the
@@ -104,16 +105,45 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MinimizeButton(), L"PointerOver", false);
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            if (auto tt{ Controls::ToolTipService::GetToolTip(MinimizeButton()) })
+            {
+                if (auto tooltip{ tt.try_as<Controls::ToolTip>() })
+                {
+                    tooltip.IsOpen(true);
+                }
+            }
+
             break;
         case CaptionButton::Maximize:
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
             VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            if (auto tt{ Controls::ToolTipService::GetToolTip(MaximizeButton()) })
+            {
+                if (auto tooltip{ tt.try_as<Controls::ToolTip>() })
+                {
+                    tooltip.IsOpen(true);
+                }
+            }
             break;
         case CaptionButton::Close:
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"PointerOver", false);
+            if (auto tt{ Controls::ToolTipService::GetToolTip(CloseButton()) })
+            {
+                if (auto tooltip{ tt.try_as<Controls::ToolTip>() })
+                {
+                    tooltip.IsOpen(true);
+                }
+                else if (auto s{winrt::unbox_value<winrt::hstring>(tt)}; !s.empty()) 
+                {
+                    s;
+                    int a = 0;
+                    a++;
+                    a;
+                }
+            }
             break;
         }
     }
