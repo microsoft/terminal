@@ -90,20 +90,27 @@ void NonClientIslandWindow::MakeWindow() noexcept
 LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
 {
     RECT rcParent = GetWindowRect();
-    // Consider the entire caption control area (rough estimate) to be the maximize button
-    // TODO: Should consider drag distance also. This is considered in the parent window's nc hittest handler,
-    // I just didn't duplicate it here.
-    // TODO! Account for DPI scaling
-    // TODO! ask the titlebar for caption button size?
-    if ((rcParent.right - pointer.x()) < 46)
+    // The size of the buttons doesn't change over the life of the application.
+    static const auto buttonWidthInDips{ _titlebar.CaptionButtonWidth() };
+
+    // However, the dPI scaling might, so get the updated size of the buttons in pixels
+    const auto buttonWidthInPixels{ buttonWidthInDips * GetCurrentDpiScale() };
+
+    // From the right to the left,
+    // * are we in the close button?
+    // * the maximize button?
+    // * the minimize button?
+    // If we're not, then we're in either the top resize border, or just
+    // generally in the titlebar.
+    if ((rcParent.right - pointer.x()) < (buttonWidthInPixels))
     {
         return HTCLOSE;
     }
-    else if ((rcParent.right - pointer.x()) < (46 * 2))
+    else if ((rcParent.right - pointer.x()) < (buttonWidthInPixels * 2))
     {
         return HTMAXBUTTON;
     }
-    else if ((rcParent.right - pointer.x()) < (46 * 3))
+    else if ((rcParent.right - pointer.x()) < (buttonWidthInPixels * 3))
     {
         return HTMINBUTTON;
     }
@@ -134,7 +141,9 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
 //   and pressing them when needed. This gives the impression that they're
 //   getting input as they normally would, even if they're not _really_ getting
 //   input via XAML.
-LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
+LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
+                                                        WPARAM const wparam,
+                                                        LPARAM const lparam) noexcept
 {
     switch (message)
     {
@@ -678,8 +687,6 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     LPARAM lParam = MAKELONG(ptMouse.x, ptMouse.y);
     const auto originalRet = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
 
-    // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
-
     if (originalRet != HTCLIENT)
     {
         // If we're the quake window, suppress resizing on any side except the
@@ -890,10 +897,6 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
-    // case WM_NCMOUSELEAVE:
-    // case WM_MOUSELEAVE:
-    //     _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
-    //     break;
     case WM_NCRBUTTONUP:
         // The `DefWindowProc` function doesn't open the system menu for some
         // reason so we have to do it ourselves.

@@ -15,6 +15,7 @@ namespace winrt::TerminalApp::implementation
         void PressButton(CaptionButton button);
         winrt::fire_and_forget ClickButton(CaptionButton button);
         void ReleaseButtons();
+        double CaptionButtonWidth();
 
         IInspectable Content();
         void Content(IInspectable content);

@@ -23,6 +23,12 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl().CloseClick({ this, &TitlebarControl::Close_Click });
     }
 
+    double TitlebarControl::CaptionButtonWidth()
+    {
+        static double width{ MinMaxCloseControl().ActualWidth() / 3.0 };
+        return width;
+    }
+
     IInspectable TitlebarControl::Content()
     {
         return ContentRoot().Content();
