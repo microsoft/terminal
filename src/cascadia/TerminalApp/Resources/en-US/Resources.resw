@@ -423,7 +423,7 @@
   <data name="WindowMinimizeButton.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
     <value>Minimize</value>
   </data>
-  <data name="WindowMinimizeButtonToolTipText" xml:space="preserve">
+  <data name="WindowMinimizeButtonToolTip.Text" xml:space="preserve">
     <value>Minimize</value>
   </data>
   <data name="AboutDialog.Title" xml:space="preserve">

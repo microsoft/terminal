@@ -5,8 +5,7 @@ import "TitlebarControl.idl";
 
 namespace TerminalApp
 {
-    [default_interface] runtimeclass MinMaxCloseControl : Windows.UI.Xaml.Controls.StackPanel,
-                                                          Windows.UI.Xaml.Data.INotifyPropertyChanged
+    [default_interface] runtimeclass MinMaxCloseControl : Windows.UI.Xaml.Controls.StackPanel
     {
         MinMaxCloseControl();
 
@@ -15,8 +14,6 @@ namespace TerminalApp
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
         void ReleaseButtons();
-
-        String MinimizeToolTip { get; };
 
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MinimizeClick;
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MaximizeClick;
