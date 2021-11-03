@@ -1,7 +1,6 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
-// TitlebarControl.xaml.cpp
 // Implementation of the TitlebarControl class
 //
 
@@ -93,6 +92,10 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().SetWindowVisualState(visualState);
     }
+
+    // GH#9443: HoverButton, PressButton, ClickButton and ReleaseButtons are all
+    // used to manually interact with the buttons, in the same way that XAML
+    // would normally send events.
 
     void TitlebarControl::HoverButton(CaptionButton button)
     {

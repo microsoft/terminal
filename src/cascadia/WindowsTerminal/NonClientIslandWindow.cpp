@@ -93,8 +93,6 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
     // Consider the entire caption control area (rough estimate) to be the maximize button
     // TODO: Should consider drag distance also. This is considered in the parent window's nc hittest handler,
     // I just didn't duplicate it here.
-    // TODO! this 130 shouldn't be hardcoded
-    // TODO! other buttons too
     // TODO! Account for DPI scaling
     // TODO! ask the titlebar for caption button size?
     if ((rcParent.right - pointer.x()) < 46)
@@ -159,13 +157,9 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         switch (wparam)
         {
         case HTMINBUTTON:
-            _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Minimize);
-            break;
         case HTMAXBUTTON:
-            _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Maximize);
-            break;
         case HTCLOSE:
-            _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Close);
+            _titlebar.HoverButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
             break;
         default:
             _titlebar.ReleaseButtons();
@@ -224,13 +218,9 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         // The buttons won't work as you'd expect; we need to handle those
         // ourselves.
         case HTMINBUTTON:
-            _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Minimize);
-            break;
         case HTMAXBUTTON:
-            _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Maximize);
-            break;
         case HTCLOSE:
-            _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Close);
+            _titlebar.PressButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
             break;
         }
         return 0;
@@ -252,26 +242,13 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         }
         break;
 
-        // Forward along to the button state machine.
-        // As a proof of concept just locally handle the maximize button.
+        // If we do find a button, then tell the titlebar to raise the same
+        // event that would be raised if it were "tapped"
         case HTMINBUTTON:
-            _titlebar.ClickButton(winrt::TerminalApp::CaptionButton::Minimize);
-            _titlebar.ReleaseButtons();
-            // ShowWindow(GetHandle(), SW_MINIMIZE);
-            break;
-
         case HTMAXBUTTON:
-            _titlebar.ClickButton(winrt::TerminalApp::CaptionButton::Maximize);
-            _titlebar.ReleaseButtons();
-            // If we're maximized, restore down. Otherwise, maximize
-            // ShowWindow(GetHandle(), IsZoomed(GetHandle()) ? SW_RESTORE : SW_MAXIMIZE);
-            break;
-
         case HTCLOSE:
-            // TODO! this seems to crash unreasonably frequently
-            _titlebar.ClickButton(winrt::TerminalApp::CaptionButton::Close);
             _titlebar.ReleaseButtons();
-            // Close();
+            _titlebar.ClickButton(static_cast<winrt::TerminalApp::CaptionButton>(wparam));
             break;
         }
         return 0;
@@ -295,7 +272,7 @@ void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
                      rect.width<int>(),
                      rect.height<int>(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
-        SetLayeredWindowAttributes(_dragBarWindow.get(), 0 /*RGB(100, 20, 20)*/, 255, LWA_ALPHA);
+        SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
     }
     else
     {
@@ -422,17 +399,24 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
     {
         const auto scale = GetCurrentDpiScale();
         const auto transform = _dragBar.TransformToVisual(_rootGrid);
+
+        // GH#9443: Previously, we'd only extend the drag bar from the left of
+        // the tabs to the right of the caption buttons. Now, we're extending it
+        // all the way to the right side of the window, covering the caption
+        // buttons. We'll manually handle input to those buttons, to make it
+        // seem like they're still getting XAML input. We do this so we can get
+        // snap layout support for the maximize button.
         const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
             0.0f,
             0.0f,
-            static_cast<float>(/*_dragBar*/ _rootGrid.ActualWidth()),
+            static_cast<float>(_rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
         RECT dragBarRect = {
             static_cast<LONG>(clientDragBarRect.X * scale),
             static_cast<LONG>(clientDragBarRect.Y * scale),
-            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X + 300) * scale),
+            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
             static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
         return dragBarRect;

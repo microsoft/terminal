@@ -1,8 +1,5 @@
 ﻿// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-//
-// Declaration of the MainUserControl class.
-//
 
 #pragma once
 
