@@ -129,7 +129,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
     {
     case WM_NCHITTEST:
     {
-        til::point pointer{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
+        const til::point pointer{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
 
         return _dragBarNcHitTest(pointer);
     }
@@ -218,21 +218,19 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
 
         // Forward along to the button state machine.
         // As a proof of concept just locally handle the maximize button.
-        // TODO!
         case HTMINBUTTON:
-            // TODO! if we're maximized, restore down!
             _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
             ShowWindow(GetHandle(), SW_MINIMIZE);
             break;
 
         case HTMAXBUTTON:
-            // TODO! if we're maximized, restore down!
             _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
-            ShowWindow(GetHandle(), SW_MAXIMIZE);
+            // If we're maximized, restore down. Otherwise, maximize
+            ShowWindow(GetHandle(), IsZoomed(GetHandle()) ? SW_RESTORE : SW_MAXIMIZE);
             break;
 
         case HTCLOSE:
-            // TODO! if we're maximized, restore down!
+            // TODO! this seems to crash unreasonably frequently
             _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
             Close();
             break;
