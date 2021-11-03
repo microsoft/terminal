@@ -16,7 +16,7 @@ namespace winrt::TerminalApp::implementation
 
         void HoverButton(CaptionButton button);
         void PressButton(CaptionButton button);
-        void ClickButton(CaptionButton button);
+        winrt::fire_and_forget ClickButton(CaptionButton button);
         void ReleaseButtons();
 
         IInspectable Content();

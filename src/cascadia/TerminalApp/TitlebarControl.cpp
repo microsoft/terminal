@@ -102,19 +102,30 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().PressButton(button);
     }
-    void TitlebarControl::ClickButton(CaptionButton button)
+    winrt::fire_and_forget TitlebarControl::ClickButton(CaptionButton button)
     {
-        switch (button)
+        // GH#8587: Handle this on the _next_ pass of the UI thread. If we
+        // handle this immediately, then we'll accidentally leave the button in
+        // the "Hovered" state when we minimize. This will leave the button
+        // visibly hovered in the taskbar preview for our window.
+        auto weakThis{ get_weak() };
+        co_await MinMaxCloseControl().Dispatcher();
+        if (auto self{ weakThis.get() })
         {
-        case CaptionButton::Minimize:
-            Minimize_Click(nullptr, nullptr);
-            break;
-        case CaptionButton::Maximize:
-            Maximize_Click(nullptr, nullptr);
-            break;
-        case CaptionButton::Close:
-            Close_Click(nullptr, nullptr);
-            break;
+            // Just handle this in the same way we would if the button were
+            // clicked normally.
+            switch (button)
+            {
+            case CaptionButton::Minimize:
+                Minimize_Click(nullptr, nullptr);
+                break;
+            case CaptionButton::Maximize:
+                Maximize_Click(nullptr, nullptr);
+                break;
+            case CaptionButton::Close:
+                Close_Click(nullptr, nullptr);
+                break;
+            }
         }
     }
     void TitlebarControl::ReleaseButtons()
