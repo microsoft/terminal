@@ -655,7 +655,7 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     LPARAM lParam = MAKELONG(ptMouse.x, ptMouse.y);
     const auto originalRet = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
 
-    _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+    // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
 
     if (originalRet != HTCLIENT)
     {
@@ -867,6 +867,10 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
+    case WM_NCMOUSELEAVE:
+    case WM_MOUSELEAVE:
+        _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+        break;
     case WM_NCRBUTTONUP:
         // The `DefWindowProc` function doesn't open the system menu for some
         // reason so we have to do it ourselves.
