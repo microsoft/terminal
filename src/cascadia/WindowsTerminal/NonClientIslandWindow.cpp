@@ -91,47 +91,75 @@ void NonClientIslandWindow::MakeWindow() noexcept
 // - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
 LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
 {
-    std::optional<UINT> nonClientMessage{ std::nullopt };
-
-    // translate WM_ messages on the window to WM_NC* on the top level window
     switch (message)
     {
-    case WM_LBUTTONDOWN:
-        nonClientMessage = WM_NCLBUTTONDOWN;
-        break;
-    case WM_LBUTTONDBLCLK:
-        nonClientMessage = WM_NCLBUTTONDBLCLK;
-        break;
-    case WM_LBUTTONUP:
-        nonClientMessage = WM_NCLBUTTONUP;
-        break;
-    case WM_RBUTTONDOWN:
-        nonClientMessage = WM_NCRBUTTONDOWN;
-        break;
-    case WM_RBUTTONDBLCLK:
-        nonClientMessage = WM_NCRBUTTONDBLCLK;
-        break;
-    case WM_RBUTTONUP:
-        nonClientMessage = WM_NCRBUTTONUP;
-        break;
-    }
-
-    if (nonClientMessage.has_value())
+    case WM_NCHITTEST:
     {
-        const POINT clientPt{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
-        POINT screenPt{ clientPt };
-        if (ClientToScreen(_dragBarWindow.get(), &screenPt))
+        RECT rcParent = GetWindowRect();
+        // Consider the entire caption control area (rough estimate) to be the maximize button
+        // TODO: Should consider drag distance also. This is considered in the parent window's nc hittest handler,
+        // I just didn't duplicate it here.
+        if ((rcParent.right - GET_X_LPARAM(lparam)) < 130)
         {
-            auto parentWindow{ GetHandle() };
-
-            const LPARAM newLparam = MAKELPARAM(screenPt.x, screenPt.y);
-            // Hit test the parent window at the screen coordinates the user clicked in the drag input sink window,
-            // then pass that click through as an NC click in that location.
-            const LRESULT hitTest{ SendMessage(parentWindow, WM_NCHITTEST, 0, newLparam) };
-            SendMessage(parentWindow, nonClientMessage.value(), hitTest, newLparam);
-
-            return 0;
+            return HTMAXBUTTON;
         }
+        else
+        {
+            RECT rcWindow;
+            winrt::check_bool(::GetWindowRect(_window.get(), &rcWindow));
+
+            const auto resizeBorderHeight = _GetResizeHandleHeight();
+            const auto isOnResizeBorder = GET_Y_LPARAM(lparam) < rcWindow.top + resizeBorderHeight;
+
+            return isOnResizeBorder ? HTTOP : HTCAPTION;
+        }
+    }
+    break;
+
+    case WM_NCMOUSEMOVE:
+        // Communicate state to the title bar control so that it can update its visuals.
+        if (wparam == HTMAXBUTTON)
+        {
+            _titlebar.MaxButtonEntered();
+        }
+        else
+        {
+            _titlebar.MaxButtonExited();
+        }
+        break;
+
+    case WM_NCMOUSELEAVE:
+    case WM_MOUSELEAVE:
+        _titlebar.MaxButtonExited();
+        break;
+
+    // NB: *Shouldn't be forwarding these* when they're not over the caption because they can inadvertently take action using the system's default metrics instead of our own.
+    case WM_NCLBUTTONDOWN:
+    case WM_NCLBUTTONDBLCLK:
+    case WM_NCLBUTTONUP:
+        switch (wparam)
+        {
+        case HTCAPTION:
+        {
+            // Pass caption-related nonclient messages to the parent window.
+            // The buttons won't work as you'd expect; we need to handle those ourselves.
+            auto parentWindow{ GetHandle() };
+            return SendMessage(parentWindow, message, wparam, lparam);
+        }
+        break;
+
+        case HTMAXBUTTON:
+        case HTMINBUTTON:
+        case HTCLOSE:
+            // Forward along to the button state machine.
+            // As a proof of concept just locally handle the maximize button.
+            if ((wparam == HTMAXBUTTON) && (message == WM_NCLBUTTONUP))
+            {
+                ShowWindow(GetHandle(), SW_MAXIMIZE);
+            }
+            break;
+        }
+        return 0;
     }
 
     return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
@@ -152,7 +180,7 @@ void NonClientIslandWindow::_ResizeDragBarWindow() noexcept
                      rect.width<int>(),
                      rect.height<int>(),
                      SWP_NOACTIVATE | SWP_SHOWWINDOW);
-        SetLayeredWindowAttributes(_dragBarWindow.get(), 0, 255, LWA_ALPHA);
+        SetLayeredWindowAttributes(_dragBarWindow.get(), 0 /*RGB(100, 20, 20)*/, 255, LWA_ALPHA);
     }
     else
     {
@@ -282,14 +310,14 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
         const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
             0.0f,
             0.0f,
-            static_cast<float>(_dragBar.ActualWidth()),
+            static_cast<float>(/*_dragBar*/_rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);
         RECT dragBarRect = {
             static_cast<LONG>(clientDragBarRect.X * scale),
             static_cast<LONG>(clientDragBarRect.Y * scale),
-            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X) * scale),
+            static_cast<LONG>((clientDragBarRect.Width + clientDragBarRect.X + 300) * scale),
             static_cast<LONG>((clientDragBarRect.Height + clientDragBarRect.Y) * scale),
         };
         return dragBarRect;

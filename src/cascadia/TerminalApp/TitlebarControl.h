@@ -17,6 +17,9 @@ namespace winrt::TerminalApp::implementation
     {
         TitlebarControl(uint64_t handle);
 
+        void MaxButtonEntered();
+        void MaxButtonExited();
+
         IInspectable Content();
         void Content(IInspectable content);
 
