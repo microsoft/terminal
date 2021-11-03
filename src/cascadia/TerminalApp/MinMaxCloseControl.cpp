@@ -15,11 +15,40 @@
 
 using namespace winrt::Windows::UI::Xaml;
 
+// TODO! this should be a system constant
+constexpr const auto ToolTipInterval = std::chrono::milliseconds(400);
+
 namespace winrt::TerminalApp::implementation
 {
+    void _openToolTipForButton(const Controls::Button& button, const bool isOpen)
+    {
+        if (auto tt{ Controls::ToolTipService::GetToolTip(button) })
+        {
+            if (auto tooltip{ tt.try_as<Controls::ToolTip>() })
+            {
+                tooltip.IsOpen(isOpen);
+            }
+        }
+    }
+
     MinMaxCloseControl::MinMaxCloseControl()
     {
+        // Get our dispatcher. This will get us the same dispatcher as
+        // Dispatcher(), but it's a DispatcherQueue, so we can use it with
+        // ThrottledFunc
+        auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+
         InitializeComponent();
+
+        _displayMinimizeTooltip = std::make_shared<ThrottledFunc<false>>(
+            dispatcher,
+            ToolTipInterval,
+            [weakThis = get_weak()]() {
+                if (auto self{ weakThis.get() })
+                {
+                    _openToolTipForButton(self->MinimizeButton(), true);
+                }
+            });
     }
 
     // These event handlers simply forward each buttons click events up to the
@@ -96,17 +125,6 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    void _openToolTipForButton(const Controls::Button& button, const bool isOpen)
-    {
-        if (auto tt{ Controls::ToolTipService::GetToolTip(button) })
-        {
-            if (auto tooltip{ tt.try_as<Controls::ToolTip>() })
-            {
-                tooltip.IsOpen(isOpen);
-            }
-        }
-    }
-
     void MinMaxCloseControl::HoverButton(CaptionButton button)
     {
         switch (button)
@@ -115,7 +133,8 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MinimizeButton(), L"PointerOver", false);
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
-            _openToolTipForButton(MinimizeButton(), true);
+            // _openToolTipForButton(MinimizeButton(), true);
+            _displayMinimizeTooltip->Run();
             _openToolTipForButton(MaximizeButton(), false);
             _openToolTipForButton(CloseButton(), false);
             break;
@@ -124,6 +143,7 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
             _openToolTipForButton(MinimizeButton(), false);
+            _displayMinimizeTooltip->Dismiss();
             _openToolTipForButton(MaximizeButton(), true);
             _openToolTipForButton(CloseButton(), false);
             break;
@@ -132,6 +152,7 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"PointerOver", false);
             _openToolTipForButton(MinimizeButton(), false);
+            _displayMinimizeTooltip->Dismiss();
             _openToolTipForButton(MaximizeButton(), false);
             _openToolTipForButton(CloseButton(), true);
             break;
@@ -166,6 +187,7 @@ namespace winrt::TerminalApp::implementation
         VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
         VisualStateManager::GoToState(CloseButton(), L"Normal", false);
         _openToolTipForButton(MinimizeButton(), false);
+        _displayMinimizeTooltip->Dismiss();
         _openToolTipForButton(MaximizeButton(), false);
         _openToolTipForButton(CloseButton(), false);
     }
