@@ -95,9 +95,19 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
     // I just didn't duplicate it here.
     // TODO! this 130 shouldn't be hardcoded
     // TODO! other buttons too
-    if ((rcParent.right - pointer.x()) < 130)
+    // TODO! Account for DPI scaling
+    // TODO! ask the titlebar for caption button size?
+    if ((rcParent.right - pointer.x()) < 46)
+    {
+        return HTCLOSE;
+    }
+    else if ((rcParent.right - pointer.x()) < (46 * 2))
     {
         return HTMAXBUTTON;
+    }
+    else if ((rcParent.right - pointer.x()) < (46 * 3))
+    {
+        return HTMINBUTTON;
     }
     else
     {
@@ -128,22 +138,46 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
     case WM_NCMOUSEMOVE:
         // Communicate state to the title bar control so that it can update its visuals.
         // TODO! other buttons too
-        if (wparam == HTMAXBUTTON)
+
+        switch (wparam)
         {
+        case HTMINBUTTON:
+            _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Minimize);
+            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+            break;
+        case HTMAXBUTTON:
+            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
             _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Maximize);
-            // _titlebar.MaxButtonEntered();
+            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+            break;
+        case HTCLOSE:
+            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
+            // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+            _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Close);
+            break;
+        default:
+            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
         }
-        else
-        {
-            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
-            // _titlebar.MaxButtonExited();
-        }
+
+        // if (wparam == HTMAXBUTTON)
+        // {
+        //     _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Maximize);
+        //     // _titlebar.MaxButtonEntered();
+        // }
+        // else
+        // {
+        //     _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+        //     // _titlebar.MaxButtonExited();
+        // }
         break;
 
     case WM_NCMOUSELEAVE:
     case WM_MOUSELEAVE:
         // _titlebar.MaxButtonExited();
-        _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+        // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
+        // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+        _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
         break;
 
     // NB: *Shouldn't be forwarding these* when they're not over the caption because they can inadvertently take action using the system's default metrics instead of our own.
@@ -151,8 +185,21 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
     case WM_NCLBUTTONDBLCLK:
         switch (wparam)
         {
+        case HTCAPTION:
+        {
+            // Pass caption-related nonclient messages to the parent window.
+            // The buttons won't work as you'd expect; we need to handle those ourselves.
+            auto parentWindow{ GetHandle() };
+            return SendMessage(parentWindow, message, wparam, lparam);
+        }
+        case HTMINBUTTON:
+            _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Minimize);
+            break;
         case HTMAXBUTTON:
             _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Maximize);
+            break;
+        case HTCLOSE:
+            _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Close);
             break;
         }
         return 0;
@@ -169,16 +216,25 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         }
         break;
 
-        case HTMAXBUTTON:
+        // Forward along to the button state machine.
+        // As a proof of concept just locally handle the maximize button.
+        // TODO!
         case HTMINBUTTON:
+            // TODO! if we're maximized, restore down!
+            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
+            ShowWindow(GetHandle(), SW_MINIMIZE);
+            break;
+
+        case HTMAXBUTTON:
+            // TODO! if we're maximized, restore down!
+            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+            ShowWindow(GetHandle(), SW_MAXIMIZE);
+            break;
+
         case HTCLOSE:
-            // Forward along to the button state machine.
-            // As a proof of concept just locally handle the maximize button.
-            // TODO!
-            if ((wparam == HTMAXBUTTON) && (message == WM_NCLBUTTONUP))
-            {
-                ShowWindow(GetHandle(), SW_MAXIMIZE);
-            }
+            // TODO! if we're maximized, restore down!
+            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+            Close();
             break;
         }
         return 0;
