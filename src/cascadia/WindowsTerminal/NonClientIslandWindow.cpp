@@ -654,6 +654,9 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
     // we didn't change them.
     LPARAM lParam = MAKELONG(ptMouse.x, ptMouse.y);
     const auto originalRet = DefWindowProc(_window.get(), WM_NCHITTEST, 0, lParam);
+
+    _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+
     if (originalRet != HTCLIENT)
     {
         // If we're the quake window, suppress resizing on any side except the
