@@ -103,4 +103,18 @@ namespace winrt::TerminalApp::implementation
     {
         MinMaxCloseControl().SetWindowVisualState(visualState);
     }
+
+    void TitlebarControl::HoverButton(CaptionButton button)
+    {
+        MinMaxCloseControl().HoverButton(button);
+    }
+    void TitlebarControl::PressButton(CaptionButton button)
+    {
+        MinMaxCloseControl().PressButton(button);
+    }
+    void TitlebarControl::ReleaseButton(CaptionButton button)
+    {
+        MinMaxCloseControl().ReleaseButton(button);
+    }
+
 }

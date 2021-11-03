@@ -87,6 +87,30 @@ void NonClientIslandWindow::MakeWindow() noexcept
     THROW_HR_IF_NULL(E_UNEXPECTED, _dragBarWindow);
 }
 
+LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
+{
+    RECT rcParent = GetWindowRect();
+    // Consider the entire caption control area (rough estimate) to be the maximize button
+    // TODO: Should consider drag distance also. This is considered in the parent window's nc hittest handler,
+    // I just didn't duplicate it here.
+    // TODO! this 130 shouldn't be hardcoded
+    // TODO! other buttons too
+    if ((rcParent.right - pointer.x()) < 130)
+    {
+        return HTMAXBUTTON;
+    }
+    else
+    {
+        // If we're not on a caption button, then check if we're on the top
+        // border. If we're not on the top border, then we're just generally in
+        // the caption area.
+        const auto resizeBorderHeight = _GetResizeHandleHeight();
+        const auto isOnResizeBorder = pointer.y() < rcParent.top + resizeBorderHeight;
+
+        return isOnResizeBorder ? HTTOP : HTCAPTION;
+    }
+}
+
 // Function Description:
 // - The window procedure for the drag bar forwards clicks on its client area to its parent as non-client clicks.
 LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept
@@ -95,47 +119,44 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
     {
     case WM_NCHITTEST:
     {
-        RECT rcParent = GetWindowRect();
-        // Consider the entire caption control area (rough estimate) to be the maximize button
-        // TODO: Should consider drag distance also. This is considered in the parent window's nc hittest handler,
-        // I just didn't duplicate it here.
-        if ((rcParent.right - GET_X_LPARAM(lparam)) < 130)
-        {
-            return HTMAXBUTTON;
-        }
-        else
-        {
-            RECT rcWindow;
-            winrt::check_bool(::GetWindowRect(_window.get(), &rcWindow));
+        til::point pointer{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
 
-            const auto resizeBorderHeight = _GetResizeHandleHeight();
-            const auto isOnResizeBorder = GET_Y_LPARAM(lparam) < rcWindow.top + resizeBorderHeight;
-
-            return isOnResizeBorder ? HTTOP : HTCAPTION;
-        }
+        return _dragBarNcHitTest(pointer);
     }
     break;
 
     case WM_NCMOUSEMOVE:
         // Communicate state to the title bar control so that it can update its visuals.
+        // TODO! other buttons too
         if (wparam == HTMAXBUTTON)
         {
-            _titlebar.MaxButtonEntered();
+            _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Maximize);
+            // _titlebar.MaxButtonEntered();
         }
         else
         {
-            _titlebar.MaxButtonExited();
+            _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
+            // _titlebar.MaxButtonExited();
         }
         break;
 
     case WM_NCMOUSELEAVE:
     case WM_MOUSELEAVE:
-        _titlebar.MaxButtonExited();
+        // _titlebar.MaxButtonExited();
+        _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
         break;
 
     // NB: *Shouldn't be forwarding these* when they're not over the caption because they can inadvertently take action using the system's default metrics instead of our own.
     case WM_NCLBUTTONDOWN:
     case WM_NCLBUTTONDBLCLK:
+        switch (wparam)
+        {
+        case HTMAXBUTTON:
+            _titlebar.PressButton(winrt::TerminalApp::CaptionButton::Maximize);
+            break;
+        }
+        return 0;
+    // TODO!: I think we only want WM_NCLBUTTONUP
     case WM_NCLBUTTONUP:
         switch (wparam)
         {
@@ -153,6 +174,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         case HTCLOSE:
             // Forward along to the button state machine.
             // As a proof of concept just locally handle the maximize button.
+            // TODO!
             if ((wparam == HTMAXBUTTON) && (message == WM_NCLBUTTONUP))
             {
                 ShowWindow(GetHandle(), SW_MAXIMIZE);
@@ -310,7 +332,7 @@ RECT NonClientIslandWindow::_GetDragAreaRect() const noexcept
         const auto logicalDragBarRect = winrt::Windows::Foundation::Rect{
             0.0f,
             0.0f,
-            static_cast<float>(/*_dragBar*/_rootGrid.ActualWidth()),
+            static_cast<float>(/*_dragBar*/ _rootGrid.ActualWidth()),
             static_cast<float>(_dragBar.ActualHeight())
         };
         const auto clientDragBarRect = transform.TransformBounds(logicalDragBarRect);

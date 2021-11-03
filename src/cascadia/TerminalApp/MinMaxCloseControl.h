@@ -20,6 +20,10 @@ namespace winrt::TerminalApp::implementation
 
         void SetWindowVisualState(WindowVisualState visualState);
 
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        void ReleaseButton(CaptionButton button);
+
         void _MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
                             winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
         void _MaximizeClick(winrt::Windows::Foundation::IInspectable const& sender,

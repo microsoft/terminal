@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // MinMaxCloseControl.xaml.cpp
@@ -92,6 +92,62 @@ namespace winrt::TerminalApp::implementation
             MaximizeButton().Height(windowedHeight);
             CloseButton().Height(windowedHeight);
             MaximizeToolTip().Text(RS_(L"WindowMaximizeButtonToolTip"));
+            break;
+        }
+    }
+
+    void MinMaxCloseControl::HoverButton(CaptionButton button)
+    {
+        switch (button)
+        {
+        case CaptionButton::Minimize:
+            VisualStateManager::GoToState(MinimizeButton(), L"PointerOver", false);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            break;
+        case CaptionButton::Maximize:
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", false);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            break;
+        case CaptionButton::Close:
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(CloseButton(), L"PointerOver", false);
+            break;
+        }
+    }
+    void MinMaxCloseControl::PressButton(CaptionButton button)
+    {
+        switch (button)
+        {
+        case CaptionButton::Minimize:
+            VisualStateManager::GoToState(MinimizeButton(), L"Pressed", false);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            break;
+        case CaptionButton::Maximize:
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(MaximizeButton(), L"Pressed", false);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            break;
+        case CaptionButton::Close:
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(CloseButton(), L"Pressed", false);
+            break;
+        }
+    }
+    void MinMaxCloseControl::ReleaseButton(CaptionButton button)
+    {
+        switch (button)
+        {
+        case CaptionButton::Minimize:
+        case CaptionButton::Maximize:
+        case CaptionButton::Close:
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
             break;
         }
     }

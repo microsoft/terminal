@@ -10,10 +10,21 @@ namespace TerminalApp
         WindowVisualStateIconified
     };
 
+    enum CaptionButton {
+        Minimize,
+        Maximize,
+        Close
+    };
+
     [default_interface] runtimeclass TitlebarControl : Windows.UI.Xaml.Controls.Grid
     {
         TitlebarControl(UInt64 parentWindowHandle);
         void SetWindowVisualState(WindowVisualState visualState);
+
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        void ReleaseButton(CaptionButton button);
+
         void MaxButtonEntered();
         void MaxButtonExited();
 

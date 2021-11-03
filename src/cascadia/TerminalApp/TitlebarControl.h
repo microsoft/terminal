@@ -6,9 +6,6 @@
 
 #pragma once
 
-#include "winrt/Windows.UI.Xaml.h"
-#include "winrt/Windows.UI.Xaml.Markup.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
 #include "TitlebarControl.g.h"
 
 namespace winrt::TerminalApp::implementation
@@ -19,6 +16,9 @@ namespace winrt::TerminalApp::implementation
 
         void MaxButtonEntered();
         void MaxButtonExited();
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        void ReleaseButton(CaptionButton button);
 
         IInspectable Content();
         void Content(IInspectable content);
