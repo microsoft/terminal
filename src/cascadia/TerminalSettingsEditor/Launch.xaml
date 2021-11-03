@@ -37,8 +37,8 @@
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->
-                <local:SettingContainer x:Uid="Globals_DefaultProfile"
-                                        Margin="0">
+                <local:SettingContainer x:Name="zzzknn"
+                                        x:Uid="Globals_DefaultProfile">
                     <ComboBox x:Name="DefaultProfile"
                               ItemsSource="{x:Bind DefaultProfiles}"
                               SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
@@ -168,8 +168,7 @@
                            Style="{StaticResource SubtitleTextBlockStyle}" />
 
                 <!--  Columns  -->
-                <local:SettingContainer x:Uid="Globals_InitialCols"
-                                        Margin="0">
+                <local:SettingContainer x:Uid="Globals_InitialCols">
                     <muxc:NumberBox x:Uid="Globals_InitialColsBox"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />

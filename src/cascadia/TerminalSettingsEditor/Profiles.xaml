@@ -66,7 +66,6 @@
                             so the name will always be overridden.
                         -->
                         <local:SettingContainer x:Uid="Profile_Name"
-                                                Margin="0,0,0,24"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <TextBox Style="{StaticResource TextBoxSettingStyle}"
                                      Text="{x:Bind State.Profile.Name, Mode=TwoWay}" />
@@ -75,7 +74,6 @@
                         <!--  Commandline  -->
                         <local:SettingContainer x:Name="CommandlineContainer"
                                                 x:Uid="Profile_Commandline"
-                                                Margin="0,0,0,24"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCommandline}"
                                                 HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
@@ -94,7 +92,6 @@
                         <!--  Starting Directory  -->
                         <local:SettingContainer x:Name="StartingDirectoryContainer"
                                                 x:Uid="Profile_StartingDirectory"
-                                                Margin="0"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearStartingDirectory}"
                                                 HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
@@ -249,7 +246,6 @@
                             <!--  Opacity  -->
                             <local:SettingContainer x:Name="OpacityContainer"
                                                     x:Uid="Profile_Opacity"
-                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearOpacity}"
                                                     HasSettingValue="{x:Bind State.Profile.HasOpacity, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.OpacityOverrideSource, Mode=OneWay}">
@@ -271,7 +267,6 @@
 
                             <!--  Use Acrylic  -->
                             <local:SettingContainer x:Uid="Profile_UseAcrylic"
-                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearUseAcrylic}"
                                                     HasSettingValue="{x:Bind State.Profile.HasUseAcrylic, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.UseAcrylicOverrideSource, Mode=OneWay}">
@@ -288,7 +283,6 @@
 
                             <!--  Padding  -->
                             <local:SettingContainer x:Uid="Profile_Padding"
-                                                    Margin="0"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearPadding}"
                                                     HasSettingValue="{x:Bind State.Profile.HasPadding, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.PaddingOverrideSource, Mode=OneWay}">
@@ -405,7 +399,6 @@
                     <StackPanel Style="{StaticResource PivotStackStyle}">
                         <!--  Suppress Application Title  -->
                         <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
-                                                Margin="0"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearSuppressApplicationTitle}"
                                                 HasSettingValue="{x:Bind State.Profile.HasSuppressApplicationTitle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">

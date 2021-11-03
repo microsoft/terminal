@@ -45,7 +45,6 @@
 
             <!--  Color Scheme  -->
             <local:SettingContainer x:Uid="Profile_ColorScheme"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearColorSchemeName}"
                                     HasSettingValue="{x:Bind Appearance.HasColorSchemeName, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.ColorSchemeNameOverrideSource, Mode=OneWay}">
@@ -170,7 +169,6 @@
 
             <!--  Cursor Shape  -->
             <local:SettingContainer x:Uid="Profile_CursorShape"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
@@ -211,7 +209,6 @@
             <!--  Background Image  -->
             <local:SettingContainer x:Name="BackgroundImageContainer"
                                     x:Uid="Profile_BackgroundImage"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImagePath}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImagePath, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}">
@@ -450,7 +447,6 @@
 
             <!--  Intense is bold, bright  -->
             <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
-                                    Margin="0"
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">

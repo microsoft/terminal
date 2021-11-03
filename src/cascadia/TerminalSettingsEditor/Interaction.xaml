@@ -27,8 +27,7 @@
     <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Copy On Select  -->
-            <local:SettingContainer x:Uid="Globals_CopyOnSelect"
-                                    Margin="0">
+            <local:SettingContainer x:Uid="Globals_CopyOnSelect">
                 <ToggleSwitch IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}" />
             </local:SettingContainer>
 
