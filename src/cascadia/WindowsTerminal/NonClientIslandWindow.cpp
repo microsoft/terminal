@@ -160,6 +160,19 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
             _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
         }
 
+        if (!_trackingMouse && (wparam == HTMINBUTTON ||
+            wparam == HTMAXBUTTON ||
+            wparam == HTCLOSE))
+        {
+            _trackingMouse = true;
+            TRACKMOUSEEVENT ev{};
+            ev.cbSize = sizeof(TRACKMOUSEEVENT);
+            ev.dwFlags = TME_LEAVE | TME_NONCLIENT;
+            ev.hwndTrack = _dragBarWindow.get();
+            ev.dwHoverTime = HOVER_DEFAULT; // we don't _really_ care about this.
+            LOG_IF_WIN32_BOOL_FALSE(TrackMouseEvent(&ev));
+        }
+
         // if (wparam == HTMAXBUTTON)
         // {
         //     _titlebar.HoverButton(winrt::TerminalApp::CaptionButton::Maximize);
@@ -178,6 +191,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message, WPAR
         // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Minimize);
         // _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Maximize);
         _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+        _trackingMouse = false;
         break;
 
     // NB: *Shouldn't be forwarding these* when they're not over the caption because they can inadvertently take action using the system's default metrics instead of our own.
@@ -867,10 +881,10 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         return _OnNcHitTest({ GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) });
     case WM_PAINT:
         return _OnPaint();
-    case WM_NCMOUSELEAVE:
-    case WM_MOUSELEAVE:
-        _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
-        break;
+    // case WM_NCMOUSELEAVE:
+    // case WM_MOUSELEAVE:
+    //     _titlebar.ReleaseButton(winrt::TerminalApp::CaptionButton::Close);
+    //     break;
     case WM_NCRBUTTONUP:
         // The `DefWindowProc` function doesn't open the system menu for some
         // reason so we have to do it ourselves.

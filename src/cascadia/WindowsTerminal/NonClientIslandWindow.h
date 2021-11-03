@@ -62,6 +62,7 @@ private:
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
     bool _isMaximized;
+    bool _trackingMouse{ false };
 
     [[nodiscard]] static LRESULT __stdcall _StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
     [[nodiscard]] LRESULT _InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
