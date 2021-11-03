@@ -71,15 +71,6 @@ public:
         _storage.modify_pending(func);
     }
 
-    // This only really works for Trailing throttled funcs.
-    //
-    // Dismiss the currently pending callback, so it won't be called at the end
-    // of the timeout.
-    void Dismiss()
-    {
-        _storage.reset();
-    }
-
 private:
     static void __stdcall _timer_callback(PTP_CALLBACK_INSTANCE /*instance*/, PVOID context, PTP_TIMER /*timer*/) noexcept
     {
