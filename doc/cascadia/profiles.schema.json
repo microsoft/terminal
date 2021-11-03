@@ -1480,7 +1480,7 @@
         },
         "trimPaste": {
           "default": true,
-          "description": "When enabled, the Terminal will automatically trim trailing whitespace characters when pasting text to the Terminal",
+          "description": "When enabled, the Terminal will automatically trim trailing whitespace characters when pasting text",
           "type": "boolean"
         },
         "experimental.detectURLs": {
