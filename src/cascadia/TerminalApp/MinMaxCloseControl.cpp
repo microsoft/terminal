@@ -47,10 +47,22 @@ namespace winrt::TerminalApp::implementation
                 }
             };
         };
-        _displayMinimizeTooltip = std::make_shared<ThrottledFunc<false>>(
+
+        _displayMinimizeTooltip = std::make_shared<ThrottledFunc<false, Controls::Button>>(
             dispatcher,
             ToolTipInterval,
-            createOpenToolTipFn(MinimizeButton()));
+            [weakThis = get_weak()](Controls::Button button) {
+                if (button)
+                {
+                    if (auto tt{ Controls::ToolTipService::GetToolTip(button) })
+                    {
+                        if (auto tooltip{ tt.try_as<Controls::ToolTip>() })
+                        {
+                            tooltip.IsOpen(true);
+                        }
+                    }
+                }
+            });
         // TODO! I need to add a sentinel arg to this ThrottledFunc. With two
         // values: Open, and Ignore. Open will open the tt, and Ignore will do
         // nothing. WHere I'm dismissing below, instead, modifyPending(Ignore),
@@ -140,7 +152,9 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
             // _openToolTipForButton(MinimizeButton(), true);
-            _displayMinimizeTooltip->Run();
+
+            // _displayMinimizeTooltip->ModifyPending(MinimizeButton());
+            _displayMinimizeTooltip->Run(MinimizeButton());
             _openToolTipForButton(MaximizeButton(), false);
             _openToolTipForButton(CloseButton(), false);
             break;
@@ -148,7 +162,7 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
             VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
-            _displayMinimizeTooltip->Dismiss();
+            _displayMinimizeTooltip->Run(nullptr);
             _openToolTipForButton(MinimizeButton(), false);
             _openToolTipForButton(MaximizeButton(), true);
             _openToolTipForButton(CloseButton(), false);
@@ -157,7 +171,7 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"PointerOver", false);
-            _displayMinimizeTooltip->Dismiss();
+            _displayMinimizeTooltip->Run(nullptr);
             _openToolTipForButton(MinimizeButton(), false);
             _openToolTipForButton(MaximizeButton(), false);
             _openToolTipForButton(CloseButton(), true);
@@ -189,7 +203,7 @@ namespace winrt::TerminalApp::implementation
 
     void MinMaxCloseControl::ReleaseButtons()
     {
-        _displayMinimizeTooltip->Dismiss();
+        _displayMinimizeTooltip->Run(nullptr);
         VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
         VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
         VisualStateManager::GoToState(CloseButton(), L"Normal", false);
