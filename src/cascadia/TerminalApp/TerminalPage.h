@@ -82,6 +82,7 @@ namespace winrt::TerminalApp::implementation
         bool FocusMode() const;
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
+        void SetFullscreen(bool);
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
         void SetInboundListener(bool isEmbedding);

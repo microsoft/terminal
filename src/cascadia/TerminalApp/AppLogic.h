@@ -70,6 +70,7 @@ namespace winrt::TerminalApp::implementation
         uint64_t WindowId();
         void WindowId(const uint64_t& id);
         bool IsQuakeWindow() const noexcept;
+        void RequestExitFullscreen();
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         bool CenterOnLaunch();
