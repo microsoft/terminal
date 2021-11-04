@@ -211,7 +211,6 @@ namespace winrt::TerminalApp::implementation
         void _OpenNewTabDropdown();
         HRESULT _OpenNewTab(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         void _CreateNewTabFromPane(std::shared_ptr<Pane> pane);
-        void _CreateNewTabWithProfileAndSettings(const Microsoft::Terminal::Settings::Model::Profile& profile, const Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings, winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
         winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection _CreateConnectionFromSettings(Microsoft::Terminal::Settings::Model::Profile profile, Microsoft::Terminal::Settings::Model::TerminalSettings settings);
 
         winrt::fire_and_forget _OpenNewWindow(const bool elevate, const Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
@@ -299,14 +298,12 @@ namespace winrt::TerminalApp::implementation
         void _Scroll(ScrollDirection scrollDirection, const Windows::Foundation::IReference<uint32_t>& rowsToScroll);
 
         void _SplitPane(const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                        const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual,
-                        const float splitSize = 0.5f,
-                        const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
+                        const float splitSize,
+                        std::shared_ptr<Pane> newPane);
         void _SplitPane(TerminalTab& tab,
                         const Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                        const Microsoft::Terminal::Settings::Model::SplitType splitMode = Microsoft::Terminal::Settings::Model::SplitType::Manual,
-                        const float splitSize = 0.5f,
-                        const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr);
+                        const float splitSize,
+                        std::shared_ptr<Pane> newPane);
         void _ResizePane(const Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         void _ToggleSplitOrientation();
 
@@ -352,6 +349,10 @@ namespace winrt::TerminalApp::implementation
 
         winrt::Microsoft::Terminal::Control::TermControl _InitControl(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                                                                       const winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection& connection);
+
+        std::shared_ptr<Pane> _MakePane(const Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs = nullptr,
+                                        const bool duplicate = false,
+                                        winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection existingConnection = nullptr);
 
         void _RefreshUIForSettingsReload();
 
