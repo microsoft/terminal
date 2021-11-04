@@ -3377,7 +3377,7 @@ namespace winrt::TerminalApp::implementation
 
         TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipInteracted", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        _OpenSettingsUI();
+        OpenSettingsUI();
     }
 
     // Method Description:
