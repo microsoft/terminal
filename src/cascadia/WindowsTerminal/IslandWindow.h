@@ -8,6 +8,12 @@
 
 void SetWindowLongWHelper(const HWND hWnd, const int nIndex, const LONG dwNewLong) noexcept;
 
+struct SystemMenuItemInfo
+{
+    winrt::hstring label;
+    winrt::delegate<void()> callback;
+};
+
 class IslandWindow :
     public BaseWindow<IslandWindow>
 {
@@ -54,6 +60,8 @@ public:
     void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;
 
     void OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept;
+    void AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback);
+    void RemoveFromSystemMenu(const winrt::hstring& itemLabel);
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
@@ -130,6 +138,9 @@ protected:
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
     bool _minimizeToNotificationArea{ false };
+
+    std::unordered_map<UINT, SystemMenuItemInfo> _systemMenuItems;
+    UINT _systemMenuNextItemId;
 
 private:
     // This minimum width allows for width the tabs fit
