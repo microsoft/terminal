@@ -1,32 +1,23 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-//
-// MinMaxCloseControl.xaml.cpp
-// Implementation of the MinMaxCloseControl class
-//
 
 #include "pch.h"
 
 #include "MinMaxCloseControl.h"
-
 #include "MinMaxCloseControl.g.cpp"
-
 #include <LibraryResources.h>
 
 using namespace winrt::Windows::UI::Xaml;
 
-// TODO! this should be a system constant
-constexpr const auto ToolTipInterval = std::chrono::milliseconds(400);
-
 namespace winrt::TerminalApp::implementation
 {
-    void _openToolTipForButton(const Controls::Button& button, const bool isOpen)
+    void _closeToolTipForButton(const Controls::Button& button)
     {
         if (auto tt{ Controls::ToolTipService::GetToolTip(button) })
         {
             if (auto tooltip{ tt.try_as<Controls::ToolTip>() })
             {
-                tooltip.IsOpen(isOpen);
+                tooltip.IsOpen(false);
             }
         }
     }
@@ -39,19 +30,27 @@ namespace winrt::TerminalApp::implementation
         auto dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
 
         InitializeComponent();
-        auto createOpenToolTipFn = [weakThis = get_weak()](const Controls::Button& button) {
-            return [weakThis, button]() {
-                if (auto self{ weakThis.get() })
-                {
-                    _openToolTipForButton(button, true);
-                }
-            };
-        };
 
-        _displayMinimizeTooltip = std::make_shared<ThrottledFunc<false, Controls::Button>>(
+        // Get the tooltip hover time from the system, or default to 400ms
+        // (which should be the default, see:
+        // https://docs.microsoft.com/en-us/windows/win32/api/winuser/ns-winuser-trackmouseevent#remarks)
+        unsigned int hoverTimeoutMillis{ 400 };
+        LOG_IF_WIN32_BOOL_FALSE(SystemParametersInfoW(SPI_GETMOUSEHOVERTIME, 0, &hoverTimeoutMillis, 0));
+        const auto toolTipInterval = std::chrono::milliseconds(hoverTimeoutMillis);
+
+        // Create a ThrottledFunc for opening the tooltip after the hover
+        // timeout. If we hover another button, we should make sure to call
+        // Run() with the new button. Calling `_displayToolTip.Run(nullptr)`,
+        // which will cause us to not display a tooltip, which is used when we
+        // leave the control entirely.
+        _displayToolTip = std::make_shared<ThrottledFuncTrailing<Controls::Button>>(
             dispatcher,
-            ToolTipInterval,
+            toolTipInterval,
             [weakThis = get_weak()](Controls::Button button) {
+                // If we provide a button, then open the tooltip on that button.
+                // We can "dismiss" this throttled func by calling it with null,
+                // which will cause us to do nothing at the end of the timeout
+                // instead.
                 if (button)
                 {
                     if (auto tt{ Controls::ToolTipService::GetToolTip(button) })
@@ -63,10 +62,6 @@ namespace winrt::TerminalApp::implementation
                     }
                 }
             });
-        // TODO! I need to add a sentinel arg to this ThrottledFunc. With two
-        // values: Open, and Ignore. Open will open the tt, and Ignore will do
-        // nothing. WHere I'm dismissing below, instead, modifyPending(Ignore),
-        // so it does nothing on the next run.
     }
 
     // These event handlers simply forward each buttons click events up to the
@@ -143,6 +138,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Called when the mouse hovers a button.
+    //   - Transition that button to `PointerOver`
+    //   - run the throttled func with this button, to display the tooltip after
+    //     a timeout
+    //   - dismiss any open tooltips on other buttons.
+    // Arguments:
+    // - button: the button that was hovered
     void MinMaxCloseControl::HoverButton(CaptionButton button)
     {
         switch (button)
@@ -151,34 +154,39 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(MinimizeButton(), L"PointerOver", false);
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
-            // _openToolTipForButton(MinimizeButton(), true);
 
-            // _displayMinimizeTooltip->ModifyPending(MinimizeButton());
-            _displayMinimizeTooltip->Run(MinimizeButton());
-            _openToolTipForButton(MaximizeButton(), false);
-            _openToolTipForButton(CloseButton(), false);
+            _displayToolTip->Run(MinimizeButton());
+            _closeToolTipForButton(MaximizeButton());
+            _closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Maximize:
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
             VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", false);
             VisualStateManager::GoToState(CloseButton(), L"Normal", false);
-            _displayMinimizeTooltip->Run(nullptr);
-            _openToolTipForButton(MinimizeButton(), false);
-            _openToolTipForButton(MaximizeButton(), true);
-            _openToolTipForButton(CloseButton(), false);
+
+            _closeToolTipForButton(MinimizeButton());
+            _displayToolTip->Run(MaximizeButton());
+            _closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Close:
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
             VisualStateManager::GoToState(CloseButton(), L"PointerOver", false);
-            _displayMinimizeTooltip->Run(nullptr);
-            _openToolTipForButton(MinimizeButton(), false);
-            _openToolTipForButton(MaximizeButton(), false);
-            _openToolTipForButton(CloseButton(), true);
+
+            _closeToolTipForButton(MinimizeButton());
+            _closeToolTipForButton(MaximizeButton());
+            _displayToolTip->Run(CloseButton());
             break;
         }
     }
 
+    // Method Description:
+    // - Called when the mouse presses down on a button. NOT when it is
+    //   released. That's handled one level above, in
+    //   TitleBarControl::ReleaseButtons
+    //   - Transition that button to `Pressed`
+    // Arguments:
+    // - button: the button that was pressed
     void MinMaxCloseControl::PressButton(CaptionButton button)
     {
         switch (button)
@@ -201,14 +209,18 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    // Method Description:
+    // - Called when buttons are no longer hovered or pressed. Return them all
+    //   to the normal state, and dismiss the tooltips.
     void MinMaxCloseControl::ReleaseButtons()
     {
-        _displayMinimizeTooltip->Run(nullptr);
+        _displayToolTip->Run(nullptr);
         VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
         VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
         VisualStateManager::GoToState(CloseButton(), L"Normal", false);
-        _openToolTipForButton(MinimizeButton(), false);
-        _openToolTipForButton(MaximizeButton(), false);
-        _openToolTipForButton(CloseButton(), false);
+
+        _closeToolTipForButton(MinimizeButton());
+        _closeToolTipForButton(MaximizeButton());
+        _closeToolTipForButton(CloseButton());
     }
 }

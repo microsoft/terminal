@@ -194,8 +194,6 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
             LOG_IF_WIN32_BOOL_FALSE(TrackMouseEvent(&ev));
             _trackingMouse = true;
         }
-        // TODO! We no longer show tooltips for the caption buttons when they're
-        // hovered. That's not good.
         break;
 
     case WM_NCMOUSELEAVE:

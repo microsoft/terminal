@@ -33,7 +33,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
-        std::shared_ptr<ThrottledFunc<false, winrt::Windows::UI::Xaml::Controls::Button>> _displayMinimizeTooltip{ nullptr };
+        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
     };
 }
 
