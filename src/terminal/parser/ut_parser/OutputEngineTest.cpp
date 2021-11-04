@@ -269,6 +269,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x9b');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::CsiEntry);
@@ -446,6 +449,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto dispatch = std::make_unique<DummyDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
+
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
 
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x9d');
@@ -696,6 +702,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
 
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
         mach.ProcessCharacter(L'\x90');
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::DcsEntry);
@@ -912,6 +921,9 @@ class Microsoft::Console::VirtualTerminal::OutputEngineTest final
         auto dispatch = std::make_unique<DummyDispatch>();
         auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
         StateMachine mach(std::move(engine));
+
+        // Enable the acceptance of C1 control codes in the state machine.
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
 
         // C1 ST should terminate OSC string.
         VERIFY_ARE_EQUAL(mach._state, StateMachine::VTStates::Ground);
@@ -3298,73 +3310,73 @@ class StateMachineExternalTest final
 
         // First we test with no custom id
         // Process the opening osc 8 sequence
-        mach.ProcessString(L"\x1b]8;;test.url\x9c");
+        mach.ProcessString(L"\x1b]8;;test.url\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"test.url");
         VERIFY_IS_TRUE(pDispatch->_customId.empty());
 
         // Process the closing osc 8 sequences
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // Next we test with a custom id
         // Process the opening osc 8 sequence
-        mach.ProcessString(L"\x1b]8;id=testId;test2.url\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;test2.url\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"test2.url");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
         // Process the closing osc 8 sequence
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // Let's try more complicated params and URLs
-        mach.ProcessString(L"\x1b]8;id=testId;https://example.com\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // Multiple params
-        mach.ProcessString(L"\x1b]8;id=testId:foo=bar;https://example.com\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId:foo=bar;https://example.com\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
-        mach.ProcessString(L"\x1b]8;foo=bar:id=testId;https://example.com\x9c");
+        mach.ProcessString(L"\x1b]8;foo=bar:id=testId;https://example.com\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
         // URIs with query strings
-        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
-        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1;value2;value3\x9c");
+        mach.ProcessString(L"\x1b]8;id=testId;https://example.com?query1=value1;value2;value3\x1b\\");
         VERIFY_IS_TRUE(pDispatch->_hyperlinkMode);
         VERIFY_ARE_EQUAL(pDispatch->_uri, L"https://example.com?query1=value1;value2;value3");
         VERIFY_ARE_EQUAL(pDispatch->_customId, L"testId");
 
-        mach.ProcessString(L"\x1b]8;;\x9c");
+        mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
 
