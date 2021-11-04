@@ -661,13 +661,15 @@ bool Selection::_HandleColorSelection(const INPUT_KEY_INFO* const pInputKeyInfo)
     if (fAltPressed || fCtrlPressed)
     {
         TextAttribute selectionAttr;
-        const BYTE colorIndex = gsl::narrow_cast<BYTE>(wVirtualKeyCode - '0' + 6);
+        // The key number corresponds to the Windows color table order, so the value
+        // need to be transposed to obtain the index in an ANSI-compatible order.
+        const auto colorIndex = TextColor::TransposeLegacyIndex(wVirtualKeyCode - '0' + 6);
 
         if (fCtrlPressed)
         {
             //  Setting background color.  Set fg color to black.
             selectionAttr.SetIndexedBackground256(colorIndex);
-            selectionAttr.SetIndexedForeground256(0);
+            selectionAttr.SetIndexedForeground256(TextColor::DARK_BLACK);
         }
         else
         {
