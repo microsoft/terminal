@@ -112,10 +112,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_NULLABLE_SETTING(Model::Profile, Microsoft::Terminal::Core::Color, TabColor, nullptr);
         INHERITABLE_SETTING(Model::Profile, Model::IAppearanceConfig, UnfocusedAppearance, nullptr);
 
-        // Global settings
-        INHERITABLE_SETTING(Model::Profile, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::Profile, bool, SoftwareRendering, false);
-
         // Settings that cannot be put in the macro because of how they are handled in ToJson/LayerJson
         INHERITABLE_SETTING(Model::Profile, hstring, Name, L"Default");
         INHERITABLE_SETTING(Model::Profile, hstring, Source);
