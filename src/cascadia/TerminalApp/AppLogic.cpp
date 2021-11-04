@@ -334,6 +334,9 @@ namespace winrt::TerminalApp::implementation
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 
+        auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"), SystemMenuChangeAction::Add, SystemMenuItemHandler(this, &AppLogic::_OpenSettingsUI));
+        _SystemMenuChangeRequestedHandlers(*this, *args);
+
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "AppCreated",
@@ -1049,6 +1052,11 @@ namespace winrt::TerminalApp::implementation
         Jumplist::UpdateJumplist(_settings);
 
         _SettingsChangedHandlers(*this, nullptr);
+    }
+
+    void AppLogic::_OpenSettingsUI()
+    {
+        _root->OpenSettingsUI();
     }
 
     // Method Description:

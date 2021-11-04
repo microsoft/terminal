@@ -7,7 +7,9 @@
 #include "../TerminalSettingsModel/CascadiaSettings.h"
 #include "JsonTestClass.h"
 #include "TestUtils.h"
+
 #include <defaults.h>
+#include <userDefaults.h>
 
 using namespace Microsoft::Console;
 using namespace WEX::Logging;
@@ -70,6 +72,7 @@ namespace SettingsModelLocalTests
         TEST_METHOD(TestCloneInheritanceTree);
         TEST_METHOD(TestValidDefaults);
         TEST_METHOD(TestInheritedCommand);
+        TEST_METHOD(LoadFragmentsWithMultipleUpdates);
 
     private:
         static winrt::com_ptr<implementation::CascadiaSettings> createSettings(const std::string_view& userJSON)
@@ -1978,5 +1981,35 @@ namespace SettingsModelLocalTests
             const auto& actualKeyChord{ settings->ActionMap().GetKeyBindingForAction(ShortcutAction::ClosePane) };
             VERIFY_IS_NULL(actualKeyChord);
         }
+    }
+
+    // This test ensures GH#11597 doesn't regress.
+    void DeserializationTests::LoadFragmentsWithMultipleUpdates()
+    {
+        static constexpr std::wstring_view fragmentSource{ L"fragment" };
+        static constexpr std::string_view fragmentJson{ R"({
+            "profiles": [
+                {
+                    "updates": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
+                    "cursorShape": "filledBox"
+                },
+                {
+                    "updates": "{0caa0dad-35be-5f56-a8ff-afceeeaa6101}",
+                    "cursorShape": "filledBox"
+                },
+                {
+                    "guid": "{6239a42c-0000-49a3-80bd-e8fdd045185c}",
+                    "commandline": "cmd.exe"
+                }
+            ]
+        })" };
+
+        implementation::SettingsLoader loader{ std::string_view{}, DefaultJson };
+        loader.MergeInboxIntoUserSettings();
+        loader.MergeFragmentIntoUserSettings(winrt::hstring{ fragmentSource }, fragmentJson);
+        loader.FinalizeLayering();
+
+        VERIFY_IS_FALSE(loader.duplicateProfile);
+        VERIFY_ARE_EQUAL(3u, loader.userSettings.profiles.size());
     }
 }

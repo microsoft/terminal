@@ -325,6 +325,7 @@ void AppHost::Initialize()
     _logic.FocusModeChanged({ this, &AppHost::_FocusModeChanged });
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
     _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
+    _logic.SystemMenuChangeRequested({ this, &AppHost::_SystemMenuChangeRequested });
 
     _logic.Create();
 
@@ -1246,6 +1247,27 @@ void AppHost::_OpenSystemMenu(const winrt::Windows::Foundation::IInspectable&,
                               const winrt::Windows::Foundation::IInspectable&)
 {
     _window->OpenSystemMenu(std::nullopt, std::nullopt);
+}
+
+void AppHost::_SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable&, const winrt::TerminalApp::SystemMenuChangeArgs& args)
+{
+    switch (args.Action())
+    {
+    case winrt::TerminalApp::SystemMenuChangeAction::Add:
+    {
+        auto handler = args.Handler();
+        _window->AddToSystemMenu(args.Name(), [handler]() { handler(); });
+        break;
+    }
+    case winrt::TerminalApp::SystemMenuChangeAction::Remove:
+    {
+        _window->RemoveFromSystemMenu(args.Name());
+        break;
+    }
+    default:
+    {
+    }
+    }
 }
 
 // Method Description:

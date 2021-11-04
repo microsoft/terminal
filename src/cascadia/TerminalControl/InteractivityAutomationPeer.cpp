@@ -141,12 +141,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
 #pragma region IControlAccessibilityInfo
-    COORD InteractivityAutomationPeer::GetFontSize() const
+    COORD InteractivityAutomationPeer::GetFontSize() const noexcept
     {
         return til::size{ til::math::rounding, _interactivity->Core().FontSize() };
     }
 
-    RECT InteractivityAutomationPeer::GetBounds() const
+    RECT InteractivityAutomationPeer::GetBounds() const noexcept
     {
         return _controlBounds;
     }
@@ -159,12 +159,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return S_OK;
     }
 
-    RECT InteractivityAutomationPeer::GetPadding() const
+    RECT InteractivityAutomationPeer::GetPadding() const noexcept
     {
         return _controlPadding;
     }
 
-    double InteractivityAutomationPeer::GetScaleFactor() const
+    double InteractivityAutomationPeer::GetScaleFactor() const noexcept
     {
         return DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
     }

@@ -121,6 +121,8 @@ namespace winrt::TerminalApp::implementation
         bool IsQuakeWindow() const noexcept;
         bool IsElevated() const noexcept;
 
+        void OpenSettingsUI();
+
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
         // -------------------------------- WinRT Events ---------------------------------
@@ -366,8 +368,6 @@ namespace winrt::TerminalApp::implementation
         void _FocusActiveControl(IInspectable sender, IInspectable eventArgs);
 
         void _UnZoomIfNeeded();
-
-        void _OpenSettingsUI();
 
         static int _ComputeScrollDelta(ScrollDirection scrollDirection, const uint32_t rowsToScroll);
         static uint32_t _ReadSystemRowsToScroll();

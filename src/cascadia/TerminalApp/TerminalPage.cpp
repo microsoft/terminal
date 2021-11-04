@@ -1542,9 +1542,15 @@ namespace winrt::TerminalApp::implementation
         _UnZoomIfNeeded();
         tab.SplitPane(realSplitType, splitSize, newPane);
 
+        // After GH#6586, the control will no longer focus itself
+        // automatically when it's finished being laid out. Manually focus
+        // the control here instead.
         if (_startupState == StartupState::Initialized)
         {
-            _GetActiveControl().Focus(FocusState::Programmatic);
+            if (const auto control = _GetActiveControl())
+            {
+                control.Focus(FocusState::Programmatic);
+            }
         }
     }
 
@@ -1814,6 +1820,22 @@ namespace winrt::TerminalApp::implementation
                 }
             }
 
+            if (_settings.GlobalSettings().TrimPaste())
+            {
+                std::wstring_view textView{ text };
+                const auto pos = textView.find_last_not_of(L"\t\n\v\f\r ");
+                if (pos == textView.npos)
+                {
+                    // Text is all white space, nothing to paste
+                    co_return;
+                }
+                else if (const auto toRemove = textView.size() - 1 - pos; toRemove > 0)
+                {
+                    textView.remove_suffix(toRemove);
+                    text = { textView };
+                }
+            }
+
             bool warnMultiLine = _settings.GlobalSettings().WarnAboutMultiLinePaste();
             if (warnMultiLine)
             {
@@ -2037,7 +2059,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (target == SettingsTarget::SettingsUI)
         {
-            _OpenSettingsUI();
+            OpenSettingsUI();
         }
         else
         {
@@ -2775,7 +2797,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_OpenSettingsUI()
+    void TerminalPage::OpenSettingsUI()
     {
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)

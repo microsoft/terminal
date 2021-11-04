@@ -24,10 +24,10 @@ namespace Microsoft::Console::Types
     public:
         virtual ~IControlAccessibilityInfo() = 0;
 
-        virtual COORD GetFontSize() const = 0;
-        virtual RECT GetBounds() const = 0;
-        virtual RECT GetPadding() const = 0;
-        virtual double GetScaleFactor() const = 0;
+        virtual COORD GetFontSize() const noexcept = 0;
+        virtual RECT GetBounds() const noexcept = 0;
+        virtual RECT GetPadding() const noexcept = 0;
+        virtual double GetScaleFactor() const noexcept = 0;
         virtual void ChangeViewport(const SMALL_RECT NewWindow) = 0;
         virtual HRESULT GetHostUiaProvider(IRawElementProviderSimple** provider) = 0;
 
