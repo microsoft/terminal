@@ -508,6 +508,7 @@ dealloc
 Debian
 debolden
 debugtype
+DECAC1
 DECALN
 DECANM
 DECAUPSS

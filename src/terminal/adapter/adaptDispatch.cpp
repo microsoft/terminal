@@ -388,7 +388,7 @@ bool AdaptDispatch::CursorRestoreState()
     _termOutput = savedCursorState.TermOutput;
 
     // Restore the parsing state of C1 control codes.
-    _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, savedCursorState.C1ControlsAccepted);
+    AcceptC1Controls(savedCursorState.C1ControlsAccepted);
 
     // Restore the code page if it was previously saved.
     if (savedCursorState.CodePage != 0)
@@ -1722,7 +1722,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(28591);
         if (success)
         {
-            _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, true);
+            AcceptC1Controls(true);
             _termOutput.EnableGrTranslation(true);
         }
         break;
@@ -1730,7 +1730,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(CP_UTF8);
         if (success)
         {
-            _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, false);
+            AcceptC1Controls(false);
             _termOutput.EnableGrTranslation(false);
         }
         break;
@@ -1805,6 +1805,17 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 }
 
 //Routine Description:
+// DECAC1 - Enable or disable the reception of C1 control codes in the parser.
+//Arguments:
+// - enabled - true to allow C1 controls to be used, false to disallow.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::AcceptC1Controls(const bool enabled)
+{
+    return _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
@@ -1853,7 +1864,7 @@ bool AdaptDispatch::SoftReset()
         success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     }
     // Disable parsing of C1 control codes.
-    success = _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, false) && success;
+    success = AcceptC1Controls(false) && success;
 
     success = SetGraphicsRendition({}) && success; // Normal rendition.
 
