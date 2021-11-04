@@ -287,8 +287,6 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     DUPLICATE_SETTING_MACRO(Commandline);
     DUPLICATE_SETTING_MACRO(StartingDirectory);
     DUPLICATE_SETTING_MACRO(AntialiasingMode);
-    DUPLICATE_SETTING_MACRO(ForceFullRepaintRendering);
-    DUPLICATE_SETTING_MACRO(SoftwareRendering);
     DUPLICATE_SETTING_MACRO(HistorySize);
     DUPLICATE_SETTING_MACRO(SnapOnInput);
     DUPLICATE_SETTING_MACRO(AltGrAliasing);

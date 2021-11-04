@@ -104,8 +104,6 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
     profile->_Hidden = _Hidden;
     profile->_TabColor = _TabColor;
     profile->_Padding = _Padding;
-    profile->_ForceFullRepaintRendering = _ForceFullRepaintRendering;
-    profile->_SoftwareRendering = _SoftwareRendering;
     profile->_Origin = _Origin;
     profile->_FontInfo = *fontInfo;
     profile->_DefaultAppearance = *defaultAppearance;
