@@ -49,6 +49,7 @@ namespace Microsoft::Console::VirtualTerminal
         };
 
         void SetParserMode(const Mode mode, const bool enabled);
+        bool GetParserMode(const Mode mode) const;
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);

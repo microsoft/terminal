@@ -28,6 +28,11 @@ void StateMachine::SetParserMode(const Mode mode, const bool enabled)
     _parserMode.set(mode, enabled);
 }
 
+bool StateMachine::GetParserMode(const Mode mode) const
+{
+    return _parserMode.test(mode);
+}
+
 const IStateMachineEngine& StateMachine::Engine() const noexcept
 {
     return *_engine;

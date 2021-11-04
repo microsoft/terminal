@@ -51,6 +51,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) = 0;
         virtual bool SetParserMode(const StateMachine::Mode mode, const bool enabled) = 0;
+        virtual bool GetParserMode(const StateMachine::Mode mode) const = 0;
 
         virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;
         virtual bool PrivateSetAutoWrapMode(const bool wrapAtEOL) = 0;

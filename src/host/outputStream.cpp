@@ -280,6 +280,20 @@ bool ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const b
 }
 
 // Routine Description:
+// - Retrieves the various StateMachine parser modes.
+//   GetParserMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - mode - the parser mode to query.
+// Return Value:
+// - true if the mode is enabled. false if disabled.
+bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const
+{
+    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
+    return stateMachine.GetParserMode(mode);
+}
+
+// Routine Description:
 // - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on our public API surface.

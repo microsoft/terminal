@@ -138,6 +138,13 @@ public:
         return _setParserModeResult;
     }
 
+    bool GetParserMode(const StateMachine::Mode /*mode*/) const override
+    {
+        Log::Comment(L"GetParserMode MOCK called...");
+
+        return false;
+    }
+
     bool PrivateSetScreenMode(const bool /*reverseMode*/) override
     {
         Log::Comment(L"PrivateSetScreenMode MOCK called...");

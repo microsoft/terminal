@@ -344,6 +344,7 @@ bool AdaptDispatch::CursorSaveState()
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
+        savedCursorState.C1ControlsAccepted = _pConApi->GetParserMode(StateMachine::Mode::AcceptC1);
         _pConApi->GetConsoleOutputCP(savedCursorState.CodePage);
     }
 
@@ -385,6 +386,9 @@ bool AdaptDispatch::CursorRestoreState()
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
+
+    // Restore the parsing state of C1 control codes.
+    _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, savedCursorState.C1ControlsAccepted);
 
     // Restore the code page if it was previously saved.
     if (savedCursorState.CodePage != 0)
@@ -1848,6 +1852,8 @@ bool AdaptDispatch::SoftReset()
         // Restore initial code page if previously changed by a DOCS sequence.
         success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     }
+    // Disable parsing of C1 control codes.
+    success = _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, false) && success;
 
     success = SetGraphicsRendition({}) && success; // Normal rendition.
 
