@@ -74,6 +74,7 @@ namespace TerminalApp
         void SetPersistedLayoutIdx(UInt32 idx);
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
+        void RequestExitFullscreen();
         Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);

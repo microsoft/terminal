@@ -73,6 +73,7 @@ public:
     WINRT_CALLBACK(NotifyShowNotificationIconContextMenu, winrt::delegate<void(til::point)>);
     WINRT_CALLBACK(NotifyNotificationIconMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
     WINRT_CALLBACK(NotifyReAddNotificationIcon, winrt::delegate<void()>);
+    WINRT_CALLBACK(ShouldExitFullscreen, winrt::delegate<void()>);
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
 

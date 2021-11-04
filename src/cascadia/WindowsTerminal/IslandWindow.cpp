@@ -606,6 +606,15 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         }
         break;
     }
+    case WM_SYSCOMMAND:
+    {
+        if (wparam == SC_RESTORE && _fullscreen)
+        {
+            _ShouldExitFullscreenHandlers();
+            return 0;
+        }
+        break;
+    }
     case WM_MENUCOMMAND:
     {
         _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);

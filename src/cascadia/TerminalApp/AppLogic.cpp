@@ -1565,6 +1565,11 @@ namespace winrt::TerminalApp::implementation
         return _root->IsQuakeWindow();
     }
 
+    void AppLogic::RequestExitFullscreen()
+    {
+        _root->SetFullscreen(false);
+    }
+
     bool AppLogic::GetMinimizeToNotificationArea()
     {
         if constexpr (Feature_NotificationIcon::IsEnabled())

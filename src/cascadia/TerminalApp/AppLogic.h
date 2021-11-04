@@ -91,6 +91,7 @@ namespace winrt::TerminalApp::implementation
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         bool IsQuakeWindow() const noexcept;
+        void RequestExitFullscreen();
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         bool CenterOnLaunch();

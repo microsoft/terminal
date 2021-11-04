@@ -2535,9 +2535,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFullscreen()
     {
-        _isFullscreen = !_isFullscreen;
-        _UpdateTabView();
-        _FullscreenChangedHandlers(*this, nullptr);
+        SetFullscreen(!_isFullscreen);
     }
 
     // Method Description:
@@ -2752,6 +2750,17 @@ namespace winrt::TerminalApp::implementation
     bool TerminalPage::AlwaysOnTop() const
     {
         return _isAlwaysOnTop;
+    }
+
+    void TerminalPage::SetFullscreen(bool newFullscreen)
+    {
+        if (_isFullscreen == newFullscreen)
+        {
+            return;
+        }
+        _isFullscreen = newFullscreen;
+        _UpdateTabView();
+        _FullscreenChangedHandlers(*this, nullptr);
     }
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
