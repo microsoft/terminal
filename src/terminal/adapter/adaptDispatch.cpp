@@ -1692,9 +1692,10 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 
 //Routine Description:
 // DOCS - Selects the coding system through which character sets are activated.
-//     When ISO2022 is selected, the code page is set to ISO-8859-1, and both
-//     GL and GR areas of the code table can be remapped. When UTF8 is selected,
-//     the code page is set to UTF-8, and only the GL area can be remapped.
+//     When ISO2022 is selected, the code page is set to ISO-8859-1, C1 control
+//     codes are accepted, and both GL and GR areas of the code table can be
+//     remapped. When UTF8 is selected, the code page is set to UTF-8, the C1
+//     control codes are disabled, and only the GL area can be remapped.
 //Arguments:
 // - codingSystem - The coding system that will be selected.
 // Return value:
@@ -1717,6 +1718,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(28591);
         if (success)
         {
+            _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, true);
             _termOutput.EnableGrTranslation(true);
         }
         break;
@@ -1724,6 +1726,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(CP_UTF8);
         if (success)
         {
+            _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, false);
             _termOutput.EnableGrTranslation(false);
         }
         break;
