@@ -264,6 +264,8 @@ try
         const auto cy = std::ceil(metrics.height * scaling);
         resultingCellSize.X = gsl::narrow<SHORT>(cx);
         resultingCellSize.Y = gsl::narrow<SHORT>(cy);
+        resultingCellSize.X = 12;
+        resultingCellSize.Y = 27;
 
         faceNameBuffer.resize(textFormat->GetFontFamilyNameLength());
         THROW_IF_FAILED(textFormat->GetFontFamilyName(faceNameBuffer.data(), static_cast<UINT32>(faceNameBuffer.size() + 1)));

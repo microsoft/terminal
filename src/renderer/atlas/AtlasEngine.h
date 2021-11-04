@@ -287,12 +287,19 @@ namespace Microsoft::Console::Render
             ATLAS_POD_OPS(CachedCursorOptions)
         };
 
-        // D3D constant buffers sizes must be a multiple of 16 bytes.
+        // NOTE: D3D constant buffers sizes must be a multiple of 16 bytes.
         struct alignas(16) ConstBuffer
         {
+            // WARNING: Modify this carefully after understanding how HLSL struct packing works.
+            // The gist is:
+            // * Minimum alignment is 4 bytes (like `#pragma pack 4`)
+            // * Members cannot straddle 16 byte boundaries
+            //   This means a structure like {u32; u32; u32; u32x2} would require
+            //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
             f32x4 viewport;
             u32x2 cellSize;
             u32 cellCountX = 0;
+            f32 gamma = 0;
             u32 backgroundColor = 0;
             u32 cursorColor = 0;
             u32 selectionColor = 0;
@@ -405,6 +412,7 @@ namespace Microsoft::Console::Render
             std::unordered_map<AtlasKey, AtlasValue, AtlasKeyHasher> glyphs;
             std::vector<til::pair<AtlasKey, AtlasValue>> glyphQueue;
 
+            f32 gamma = 0;
             u32 backgroundColor = 0xff000000;
             u32 selectionColor = 0x7fffffff;
 

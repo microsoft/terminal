@@ -107,6 +107,7 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
     data.cellSize.x = _r.cellSize.x;
     data.cellSize.y = _r.cellSize.y;
     data.cellCountX = _r.cellCount.x;
+    data.gamma = _r.gamma;
     data.backgroundColor = _r.backgroundColor;
     data.cursorColor = _r.cursorOptions.cursorColor;
     data.selectionColor = _r.selectionColor;

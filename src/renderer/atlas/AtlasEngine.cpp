@@ -4,6 +4,7 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
+#include <d2d1_3.h>
 #include <dwrite_3.h>
 #include <dxgidebug.h>
 #include <til/bit.h>
@@ -171,7 +172,16 @@ private:
 #pragma warning(suppress : 26455) // Default constructor may not throw. Declare it 'noexcept' (f.6).
 AtlasEngine::AtlasEngine()
 {
-    THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, _uuidof(_sr.d2dFactory), reinterpret_cast<void**>(_sr.d2dFactory.addressof())));
+#ifdef NDEBUG
+    THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, _sr.d2dFactory.addressof()));
+#else
+    {
+        D2D1_FACTORY_OPTIONS options;
+        options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
+        THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, _sr.d2dFactory.addressof()));
+    }
+#endif
+
     THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_sr.dwriteFactory), reinterpret_cast<::IUnknown**>(_sr.dwriteFactory.addressof())));
     THROW_IF_FAILED(_sr.dwriteFactory.query<IDWriteFactory2>()->GetSystemFontFallback(_sr.systemFontFallback.addressof()));
     {
@@ -717,12 +727,7 @@ void AtlasEngine::_createResources()
 #ifdef NDEBUG
     static constexpr
 #endif
-        // Why D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS:
-        // This flag prevents the driver from creating a large thread pool for things like shader computations
-        // that would be advantageous for games. For us this has only a minimal performance benefit,
-        // but comes with a large memory usage overhead. At the time of writing the Nvidia
-        // driver launches "+$cpu_thread_count more worker threads without this flag.
-        auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+        auto deviceFlags = D3D11_CREATE_DEVICE_SINGLETHREADED | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 
 #ifndef NDEBUG
     // DXGI debug messages + enabling D3D11_CREATE_DEVICE_DEBUG if the Windows SDK was installed.
@@ -754,9 +759,14 @@ void AtlasEngine::_createResources()
     {
         wil::com_ptr<ID3D11DeviceContext> deviceContext;
 
+        // Why D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS:
+        // This flag prevents the driver from creating a large thread pool for things like shader computations
+        // that would be advantageous for games. For us this has only a minimal performance benefit,
+        // but comes with a large memory usage overhead. At the time of writing the Nvidia
+        // driver launches $cpu_thread_count more worker threads without this flag.
         static constexpr std::array driverTypes{
-            D3D_DRIVER_TYPE_HARDWARE,
-            D3D_DRIVER_TYPE_WARP,
+            til::pair{ D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS },
+            til::pair{ D3D_DRIVER_TYPE_WARP, static_cast<D3D11_CREATE_DEVICE_FLAG>(0) },
         };
         static constexpr std::array featureLevels{
             D3D_FEATURE_LEVEL_11_1,
@@ -765,13 +775,13 @@ void AtlasEngine::_createResources()
         };
 
         HRESULT hr = S_OK;
-        for (const auto driverType : driverTypes)
+        for (const auto& [driverType, additionalFlags] : driverTypes)
         {
             hr = D3D11CreateDevice(
                 /* pAdapter */ nullptr,
                 /* DriverType */ driverType,
                 /* Software */ nullptr,
-                /* Flags */ deviceFlags,
+                /* Flags */ deviceFlags | additionalFlags,
                 /* pFeatureLevels */ featureLevels.data(),
                 /* FeatureLevels */ gsl::narrow_cast<UINT>(featureLevels.size()),
                 /* SDKVersion */ D3D11_SDK_VERSION,
@@ -1031,16 +1041,24 @@ void AtlasEngine::_recreateFontDependentResources()
 
     // D2D
     {
+        const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
+
+        wil::com_ptr<IDWriteRenderingParams> renderingParams;
+        THROW_IF_FAILED(_sr.dwriteFactory->CreateRenderingParams(renderingParams.addressof()));
+        _r.gamma = renderingParams->GetGamma();
+
         D2D1_RENDER_TARGET_PROPERTIES props{};
         props.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
         props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
         props.dpiX = static_cast<float>(_api.dpi);
         props.dpiY = static_cast<float>(_api.dpi);
-        const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
         THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, _r.d2dRenderTarget.put()));
+
         // We don't really use D2D for anything except DWrite, but it
         // can't hurt to ensure that everything it does is pixel aligned.
         _r.d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        // Ensure that D2D uses the exact same gamma as our shader uses.
+        _r.d2dRenderTarget->SetTextRenderingParams(renderingParams.get());
         // We can't set the antialiasingMode here, as D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE
         // will force the alpha channel to be 0 for _all_ text.
         //_r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
@@ -1100,12 +1118,15 @@ HRESULT AtlasEngine::_createTextFormat(const wchar_t* fontFamilyName, DWRITE_FON
     // at a base scale of 72 DPI, whereas DirectWrite uses 96 DPI.
     // --> Multiply by 1.333... to convert from 72 DPI to 96 DPI scale.
     fontSize *= 4.0f / 3.0f;
+    fontSize = 21.8259335;
 
     const auto hr = _sr.dwriteFactory->CreateTextFormat(fontFamilyName, nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", textFormat);
     if (SUCCEEDED(hr))
     {
         const auto tf = *textFormat;
-        tf->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        // We can't set DWRITE_TEXT_ALIGNMENT_CENTER
+        //tf->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+        // ...
         tf->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
     }
     return hr;

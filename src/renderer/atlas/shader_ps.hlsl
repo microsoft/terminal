@@ -13,6 +13,7 @@ cbuffer ConstBuffer : register(b0)
     float4 viewport;
     uint2 cellSize;
     uint cellCountX;
+    float gamma;
     uint backgroundColor;
     uint cursorColor;
     uint selectionColor;
@@ -27,7 +28,11 @@ float4 decodeRGBA(uint i)
     uint b = (i >> 16) & 0xff;
     uint a = i >> 24;
     float4 c = float4(r, g, b, a) / 255.0;
+    // Convert to premultiplied alpha for simpler alpha blending.
     c.rgb *= c.a;
+    // Convert to linear space for correct alpha blending
+    // with color data in the glyphs texture.
+    c.rgb = pow(c.rgb, gamma);
     return c;
 }
 
@@ -44,7 +49,8 @@ float insideRect(float2 pos, float4 boundaries)
 
 float4 alphaBlendPremultiplied(float4 bottom, float4 top)
 {
-    return float4(top.rgb + bottom.rgb * (1 - top.a), top.a + bottom.a * (1 - top.a));
+    float ia = 1 - top.a;
+    return float4(bottom.rgb * ia + top.rgb, bottom.a * ia + top.a);
 }
 
 float4 main(float4 pos: SV_Position): SV_Target
@@ -66,6 +72,9 @@ float4 main(float4 pos: SV_Position): SV_Target
     // Colored cursors are drawn "in between" the background color and the text of a cell.
     if ((cell.flags & 2) && cursorColor != 0xffffffff)
     {
+        // The cursor texture is stored at the top-left-most glyph cell.
+        // Cursor pixels are either entirely transparent or opaque.
+        // --> We can just use .a as a mask to flip cursor pixels on or off.
         color = alphaBlendPremultiplied(color, decodeRGBA(cursorColor) * glyphs[cellPos].a);
     }
 
@@ -73,11 +82,14 @@ float4 main(float4 pos: SV_Position): SV_Target
     // The cell's glyph potentially drawn in the foreground color
     {
         float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
+        // TODO: Can we convert to linear space right during DirectWrite rasterization?
+        // Pros: Saves us cycles in this shader. Cons: Precision loss?
+        glyph.rgb = pow(abs(glyph.rgb), gamma);
 
         if ((cell.flags & 1) == 0)
         {
             // Unlike colored glyphs, regular glyphs are mixed with the current foreground color.
-            glyph = decodeRGBA(cell.color.x) * glyph.a;
+            glyph = decodeRGBA(cell.color.x) * glyph;
         }
 
         color = alphaBlendPremultiplied(color, glyph);
@@ -97,5 +109,6 @@ float4 main(float4 pos: SV_Position): SV_Target
         color = alphaBlendPremultiplied(color, decodeRGBA(selectionColor));
     }
 
+    color.rgb = pow(abs(color.rgb), 1.0 / gamma);
     return color;
 }
