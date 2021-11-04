@@ -133,18 +133,6 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     return textRun;
 }
 
-// Method Description:
-// - Returns whether the user is either a member of the Administrators group or
-//   is currently elevated.
-// - This will return **FALSE** if the user has UAC disabled entirely, because
-//   there's no separation of power between the user and an admin in that case.
-// Return Value:
-// - true if the user is an administrator
-static bool _isUserAdmin() noexcept
-{
-    return Microsoft::Console::Utils::IsElevated();
-}
-
 namespace winrt::TerminalApp::implementation
 {
     // Function Description:
@@ -196,7 +184,7 @@ namespace winrt::TerminalApp::implementation
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
-        _isElevated = _isUserAdmin();
+        _isElevated = Microsoft::Console::Utils::IsElevated();
         _root = winrt::make_self<TerminalPage>();
 
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
@@ -898,11 +886,20 @@ namespace winrt::TerminalApp::implementation
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
             [this, settingsBasename = settingsPath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
-                // DO NOT create a static reference to
-                // ApplicationState::SharedInstance here. See
-                // https://github.com/microsoft/terminal/pull/11222/files/9ff2775122a496fb8b1bcc7a0b83a64ce5b26c5f#r719627541
-                // for why. ApplicationState::SharedInstance already caches it's
-                // own static ref.
+                // DO NOT create a static reference to ApplicationState::SharedInstance here.
+                //
+                // ApplicationState::SharedInstance already caches its own
+                // static ref. If _we_ keep a static ref to the member in
+                // AppState, then our reference will keep ApplicationState alive
+                // after the `ActionToStringMap` gets cleaned up. Then, when we
+                // try to persist the actions in the window state, we won't be
+                // able to. We'll try to look up the action and the map just
+                // won't exist. We'll explode, even though the Terminal is
+                // tearing down anyways. So we'll just die, but still inboke
+                // WinDBG's post-mortem debugger, who won't be able to attach to
+                // the process that's already exiting.
+                //
+                // So DON'T ~give a mouse a cookie~ take a static ref here.
 
                 const winrt::hstring modifiedBasename{ std::filesystem::path{ fileModified }.filename().c_str() };
 

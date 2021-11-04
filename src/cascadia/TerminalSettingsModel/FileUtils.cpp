@@ -41,7 +41,17 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         return baseSettingsPath;
     }
 
-    static bool _hasExpectedPermissions(const std::filesystem::path& path)
+    // Function Description:
+    // - Checks the permissions on this file, to make sure it can only be opened
+    //   for writing by admins. We want to make sure that:
+    //   * Everyone has permission to read
+    //   * Admins can do anything
+    //   * No one else can do anything.
+    // Arguments:
+    // - path: the path to the file to check
+    // Return Value:
+    // - true if it had the expected permissions. False otherwise.
+    static bool _hasElevatedOnlyPermissions(const std::filesystem::path& path)
     {
         // If we want to only open the file if it's elevated, check the
         // permissions on this file. We want to make sure that:
@@ -74,17 +84,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
         // Now, get the Everyone and Admins SIDS so we can make sure they're
         // the ones in this file.
-
-        wil::unique_sid everyoneSid;
-        wil::unique_sid adminGroupSid;
-        SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-        SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-
         // Create a SID for the BUILTIN\Administrators group.
-        THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
+        const auto adminGroupSid = wil::make_static_sid(SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
 
         // Create a well-known SID for the Everyone group.
-        THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &everyoneSid));
+        const auto everyoneSid = wil::make_static_sid(SECURITY_WORLD_SID_AUTHORITY, SECURITY_WORLD_RID);
 
         bool hadExpectedPermissions = true;
 
@@ -114,7 +118,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     {
         if (elevatedOnly)
         {
-            const bool hadExpectedPermissions{ _hasExpectedPermissions(path) };
+            const bool hadExpectedPermissions{ _hasElevatedOnlyPermissions(path) };
             if (!hadExpectedPermissions)
             {
                 // delete the file. It's been compromised.
@@ -206,16 +210,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // SYSTEM, but if I did that, then even we can't write the file
             // while elevated, which isn't what we want.
 
-            wil::unique_sid everyoneSid;
-            wil::unique_sid adminGroupSid;
-            SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-            SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-
             // Create a SID for the BUILTIN\Administrators group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
+            const auto adminGroupSid = wil::make_static_sid(SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
 
             // Create a well-known SID for the Everyone group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &everyoneSid));
+            const auto everyoneSid = wil::make_static_sid(SECURITY_WORLD_SID_AUTHORITY, SECURITY_WORLD_RID);
 
             EXPLICIT_ACCESS ea[2]{};
 
