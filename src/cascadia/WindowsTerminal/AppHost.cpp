@@ -84,6 +84,7 @@ AppHost::AppHost() noexcept :
     _window->WindowMoved({ this, &AppHost::_WindowMoved });
     _window->HotkeyPressed({ this, &AppHost::_GlobalHotkeyPressed });
     _window->SetAlwaysOnTop(_logic.GetInitialAlwaysOnTop());
+    _window->ShouldExitFullscreen({ &_logic, &winrt::TerminalApp::AppLogic::RequestExitFullscreen });
     _window->MakeWindow();
 
     _GetWindowLayoutRequestedToken = _windowManager.GetWindowLayoutRequested([this](auto&&, const winrt::Microsoft::Terminal::Remoting::GetWindowLayoutArgs& args) {
