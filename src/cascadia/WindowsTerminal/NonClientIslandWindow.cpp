@@ -843,7 +843,11 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
         if (!buf || !opaqueDc)
         {
-            winrt::throw_last_error();
+            // MSFT:34673647 - BeginBufferedPaint can fail, but it probably
+            // shouldn't bring the whole Terminal down with it. So don't
+            // throw_last_error here.
+            LOG_LAST_ERROR();
+            return 0;
         }
 
         ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
