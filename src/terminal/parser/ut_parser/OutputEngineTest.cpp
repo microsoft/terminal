@@ -990,12 +990,14 @@ public:
     {
     }
 
-    virtual void Print(const wchar_t /*wchPrintable*/) override
+    virtual void Print(const wchar_t wchPrintable) override
     {
+        _printString += wchPrintable;
     }
 
-    virtual void PrintString(const std::wstring_view /*string*/) override
+    virtual void PrintString(const std::wstring_view string) override
     {
+        _printString += string;
     }
 
     StatefulDispatch() :
@@ -1483,6 +1485,7 @@ public:
         return true;
     }
 
+    std::wstring _printString;
     size_t _cursorDistance;
     size_t _line;
     size_t _column;
@@ -3379,6 +3382,57 @@ class StateMachineExternalTest final
         mach.ProcessString(L"\x1b]8;;\x1b\\");
         VERIFY_IS_FALSE(pDispatch->_hyperlinkMode);
         VERIFY_IS_TRUE(pDispatch->_uri.empty());
+
+        pDispatch->ClearState();
+    }
+
+    TEST_METHOD(TestC1ParserMode)
+    {
+        auto dispatch = std::make_unique<StatefulDispatch>();
+        auto pDispatch = dispatch.get();
+        auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
+        StateMachine mach(std::move(engine));
+
+        Log::Comment(L"C1 parsing disabled: CSI control ignored and rest of sequence printed");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, false);
+        mach.ProcessString(L"\u009b"
+                           L"123A");
+        VERIFY_IS_FALSE(pDispatch->_cursorUp);
+        VERIFY_ARE_EQUAL(pDispatch->_printString, L"123A");
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"C1 parsing enabled: CSI interpreted and CUP sequence executed");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+        mach.ProcessString(L"\u009b"
+                           L"123A");
+        VERIFY_IS_TRUE(pDispatch->_cursorUp);
+        VERIFY_ARE_EQUAL(pDispatch->_cursorDistance, 123u);
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"C1 parsing disabled: NEL has no effect within a sequence");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, false);
+        mach.ProcessString(L"\x1b[12"
+                           L"\u0085"
+                           L";34H");
+        VERIFY_IS_FALSE(pDispatch->_lineFeed);
+        VERIFY_IS_TRUE(pDispatch->_cursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_line, 12u);
+        VERIFY_ARE_EQUAL(pDispatch->_column, 34u);
+        VERIFY_ARE_EQUAL(pDispatch->_printString, L"");
+
+        pDispatch->ClearState();
+
+        Log::Comment(L"C1 parsing enabled: NEL aborts sequence and executes line feed");
+        mach.SetParserMode(StateMachine::Mode::AcceptC1, true);
+        mach.ProcessString(L"\x1b[12"
+                           L"\u0085"
+                           L";34H");
+        VERIFY_IS_TRUE(pDispatch->_lineFeed);
+        VERIFY_ARE_EQUAL(DispatchTypes::LineFeedType::WithReturn, pDispatch->_lineFeedType);
+        VERIFY_IS_FALSE(pDispatch->_cursorPosition);
+        VERIFY_ARE_EQUAL(pDispatch->_printString, L";34H");
 
         pDispatch->ClearState();
     }

@@ -394,10 +394,14 @@ public:
         return FALSE;
     }
 
-    bool SetConsoleOutputCP(const unsigned int /*codepage*/) override
+    bool SetConsoleOutputCP(const unsigned int codepage) override
     {
         Log::Comment(L"SetConsoleOutputCP MOCK called...");
-        return TRUE;
+        if (_setConsoleOutputCPResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedOutputCP, codepage);
+        }
+        return _setConsoleOutputCPResult;
     }
 
     bool GetConsoleOutputCP(unsigned int& codepage) override
@@ -737,6 +741,7 @@ public:
     CursorType _expectedCursorStyle;
     bool _setCursorColorResult = false;
     COLORREF _expectedCursorColor = 0;
+    bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _moveToBottomResult = false;
 
@@ -2632,6 +2637,39 @@ public:
         _testGetSet->_expectedCellSize = { 6, 16 };
         const auto bitmapOf6x18 = L"??????/??????/??????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x18));
+    }
+
+    TEST_METHOD(TogglingC1ParserMode)
+    {
+        Log::Comment(L"1. Accept C1 controls");
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(true));
+
+        Log::Comment(L"2. Don't accept C1 controls");
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(false));
+
+        Log::Comment(L"3. Designate ISO-2022 coding system");
+        // Code page should be set to ISO-8859-1 and C1 parsing enabled
+        _testGetSet->_setConsoleOutputCPResult = true;
+        _testGetSet->_expectedOutputCP = 28591;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::ISO2022));
+
+        Log::Comment(L"4. Designate UTF-8 coding system");
+        // Code page should be set to UTF-8 and C1 parsing disabled
+        _testGetSet->_setConsoleOutputCPResult = true;
+        _testGetSet->_expectedOutputCP = CP_UTF8;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8));
     }
 
 private:
