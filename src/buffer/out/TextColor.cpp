@@ -143,7 +143,7 @@ void TextColor::SetDefault() noexcept
 // - brighten: if true, we'll brighten a dark color table index.
 // Return Value:
 // - a COLORREF containing the real value of this TextColor.
-COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten) const noexcept
+COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable, const COLORREF defaultColor, bool brighten) const noexcept
 {
     if (IsDefault())
     {

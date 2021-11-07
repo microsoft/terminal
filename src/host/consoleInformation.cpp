@@ -230,7 +230,7 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 // - the default foreground color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 {
-    const auto fg = GetDefaultForegroundColor();
+    const auto fg = GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     return fg != INVALID_COLOR ? fg : GetLegacyColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
 }
 
@@ -245,7 +245,7 @@ COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 // - the default background color of the console.
 COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 {
-    const auto bg = GetDefaultBackgroundColor();
+    const auto bg = GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     return bg != INVALID_COLOR ? bg : GetLegacyColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
 }
 

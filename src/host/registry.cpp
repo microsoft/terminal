@@ -314,6 +314,30 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         }
     }
 
+    // Default foreground color
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_DEFAULTFOREGROUND,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 nullptr);
+    if (NT_SUCCESS(Status))
+    {
+        _pSettings->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwValue);
+    }
+
+    // Default background color
+    Status = RegistrySerialization::s_QueryValue(hTitleKey,
+                                                 CONSOLE_REGISTRY_DEFAULTBACKGROUND,
+                                                 sizeof(dwValue),
+                                                 REG_DWORD,
+                                                 (PBYTE)&dwValue,
+                                                 nullptr);
+    if (NT_SUCCESS(Status))
+    {
+        _pSettings->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwValue);
+    }
+
     GetEditKeys(hConsoleKey);
 
     // Close the registry keys

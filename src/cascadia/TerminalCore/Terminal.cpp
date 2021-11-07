@@ -41,8 +41,6 @@ Terminal::Terminal() :
     _mutableViewport{ Viewport::Empty() },
     _title{},
     _colorTable{},
-    _defaultFg{ RGB(255, 255, 255) },
-    _defaultBg{ ARGB(0, 0, 0, 0) },
     _screenReversed{ false },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
@@ -81,6 +79,9 @@ Terminal::Terminal() :
     _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
 
     _InitializeColorTable();
+
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = RGB(255, 255, 255);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = ARGB(0, 0, 0, 0);
 }
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
@@ -180,9 +181,11 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ appearance.DefaultBackground() };
-    _defaultBg = newBackgroundColor.with_alpha(0);
-    _defaultFg = appearance.DefaultForeground();
+    const til::color newBackgroundColor{ appearance.DefaultBackground() };
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    const til::color newForegroundColor{ appearance.DefaultForeground() };
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = newForegroundColor;
+
     _intenseIsBright = appearance.IntenseIsBright();
     _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
 

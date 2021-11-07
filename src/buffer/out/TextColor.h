@@ -65,6 +65,10 @@ public:
     static constexpr BYTE BRIGHT_CYAN = 14;
     static constexpr BYTE BRIGHT_WHITE = 15;
 
+    static constexpr size_t DEFAULT_FOREGROUND = 256;
+    static constexpr size_t DEFAULT_BACKGROUND = 257;
+    static constexpr size_t TABLE_SIZE = 258;
+
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },
         _red{ 0 },
@@ -103,7 +107,7 @@ public:
     void SetIndex(const BYTE index, const bool isIndex256) noexcept;
     void SetDefault() noexcept;
 
-    COLORREF GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten = false) const noexcept;
+    COLORREF GetColor(const std::array<COLORREF, TABLE_SIZE>& colorTable, const COLORREF defaultColor, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept

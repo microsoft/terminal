@@ -96,8 +96,8 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
 
-        gci.SetDefaultForegroundColor(INVALID_COLOR);
-        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);

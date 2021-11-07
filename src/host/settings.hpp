@@ -167,7 +167,7 @@ public:
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
     // The first 16 items of the color table are the same as the 16-color palette.
-    inline const std::array<COLORREF, XTERM_COLOR_TABLE_SIZE>& GetColorTable() const noexcept
+    inline const std::array<COLORREF, TextColor::TABLE_SIZE>& GetColorTable() const noexcept
     {
         return _colorTable;
     }
@@ -185,12 +185,6 @@ public:
 
     bool GetInterceptCopyPaste() const noexcept;
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
-
-    COLORREF GetDefaultForegroundColor() const noexcept;
-    void SetDefaultForegroundColor(const COLORREF defaultForeground) noexcept;
-
-    COLORREF GetDefaultBackgroundColor() const noexcept;
-    void SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
@@ -242,7 +236,7 @@ private:
     UseDx _fUseDx;
     bool _fCopyColor;
 
-    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
+    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
@@ -254,8 +248,6 @@ private:
 
     bool _fInterceptCopyPaste;
 
-    COLORREF _DefaultForeground;
-    COLORREF _DefaultBackground;
     bool _TerminalScrolling;
     friend class RegistrySerialization;
 };

@@ -73,19 +73,19 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
         if (attr.IsReverseVideo() ^ _screenReversed)
         {
             colors.first = _adjustedForegroundColors[fgIndex][bgIndex];
-            colors.second = fgTextColor.GetColor(_colorTable, _defaultFg);
+            colors.second = fgTextColor.GetColor(_colorTable, _colorTable.at(TextColor::DEFAULT_FOREGROUND));
         }
         else
         {
             colors.first = _adjustedForegroundColors[bgIndex][fgIndex];
-            colors.second = bgTextColor.GetColor(_colorTable, _defaultBg);
+            colors.second = bgTextColor.GetColor(_colorTable, _colorTable.at(TextColor::DEFAULT_BACKGROUND));
         }
     }
     else
     {
         colors = attr.CalculateRgbColors(_colorTable,
-                                         _defaultFg,
-                                         _defaultBg,
+                                         _colorTable.at(TextColor::DEFAULT_FOREGROUND),
+                                         _colorTable.at(TextColor::DEFAULT_BACKGROUND),
                                          _screenReversed,
                                          _blinkingState.IsBlinkingFaint(),
                                          _intenseIsBright);
@@ -312,8 +312,8 @@ void Terminal::_MakeAdjustedColorArray()
     // to include the default background and default foreground colors
     std::array<COLORREF, 18> colorTableWithDefaults;
     std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
-    colorTableWithDefaults[DefaultBgIndex] = _defaultBg;
-    colorTableWithDefaults[DefaultFgIndex] = _defaultFg;
+    colorTableWithDefaults[DefaultBgIndex] = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
+    colorTableWithDefaults[DefaultFgIndex] = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
     for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
     {
         const auto fg = til::at(colorTableWithDefaults, fgIndex);

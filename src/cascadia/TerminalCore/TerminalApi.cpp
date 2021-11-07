@@ -451,7 +451,7 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
 bool Terminal::SetDefaultForeground(const COLORREF color) noexcept
 try
 {
-    _defaultFg = color;
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = color;
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
@@ -468,7 +468,7 @@ CATCH_RETURN_FALSE()
 bool Terminal::SetDefaultBackground(const COLORREF color) noexcept
 try
 {
-    _defaultBg = color;
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = color;
     _pfnBackgroundColorChanged(color);
 
     // Repaint everything - the colors might have changed
@@ -479,7 +479,7 @@ CATCH_RETURN_FALSE()
 
 til::color Terminal::GetDefaultBackground() const noexcept
 {
-    return _defaultBg;
+    return _colorTable.at(TextColor::DEFAULT_BACKGROUND);
 }
 
 bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept

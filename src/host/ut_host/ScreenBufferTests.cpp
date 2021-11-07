@@ -59,8 +59,8 @@ class ScreenBufferTests
     {
         // Set up some sane defaults
         CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        gci.SetDefaultForegroundColor(INVALID_COLOR);
-        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
 
         m_state->PrepareNewTextBufferInfo();
@@ -1388,8 +1388,8 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
 
     const COLORREF yellow = RGB(255, 255, 0);
     const COLORREF magenta = RGB(255, 0, 255);
-    gci.SetDefaultForegroundColor(yellow);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     const TextAttribute defaultAttrs = {};
     si.SetAttributes(defaultAttrs);
 
@@ -2259,8 +2259,8 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     COLORREF brightGreen = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     COLORREF darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
 
-    gci.SetDefaultForegroundColor(yellow);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
@@ -2361,8 +2361,8 @@ void ScreenBufferTests::SetDefaultsTogether()
     COLORREF yellow = RGB(255, 255, 0);
     COLORREF color250 = gci.GetColorTableEntry(250);
 
-    gci.SetDefaultForegroundColor(yellow);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
@@ -2432,8 +2432,8 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultForegroundColor(INVALID_COLOR);
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 3 X's:"));
@@ -2501,7 +2501,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
@@ -2564,7 +2564,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
@@ -2632,7 +2632,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
 
     COLORREF magenta = RGB(255, 0, 255);
 
-    gci.SetDefaultBackgroundColor(magenta);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
     TextAttribute expectedDefaults{};
 
@@ -2889,15 +2889,15 @@ void ScreenBufferTests::SetDefaultForegroundColor()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
 
-    COLORREF originalColor = gci.GetDefaultForegroundColor();
-    COLORREF newColor = gci.GetDefaultForegroundColor();
+    COLORREF originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    COLORREF newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
     stateMachine.ProcessString(L"\x1b]10;rgb:33/66/99\x1b\\");
 
-    newColor = gci.GetDefaultForegroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
@@ -2905,7 +2905,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     testColor = RGB(0xff, 0xff, 0xff);
     stateMachine.ProcessString(L"\x1b]10;rgb:ff/ff/ff\x1b\\");
 
-    newColor = gci.GetDefaultForegroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Invalid syntax");
@@ -2913,7 +2913,7 @@ void ScreenBufferTests::SetDefaultForegroundColor()
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]10;99/66/33\x1b\\");
 
-    newColor = gci.GetDefaultForegroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);
@@ -2934,15 +2934,15 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
 
     StateMachine& stateMachine = mainBuffer.GetStateMachine();
 
-    COLORREF originalColor = gci.GetDefaultBackgroundColor();
-    COLORREF newColor = gci.GetDefaultBackgroundColor();
+    COLORREF originalColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+    COLORREF newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     COLORREF testColor = RGB(0x33, 0x66, 0x99);
     VERIFY_ARE_NOT_EQUAL(originalColor, testColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
     stateMachine.ProcessString(L"\x1b]11;rgb:33/66/99\x1b\\");
 
-    newColor = gci.GetDefaultBackgroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Valid Hexadecimal Notation");
@@ -2950,7 +2950,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     testColor = RGB(0xff, 0xff, 0xff);
     stateMachine.ProcessString(L"\x1b]11;rgb:ff/ff/ff\x1b\\");
 
-    newColor = gci.GetDefaultBackgroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     VERIFY_ARE_EQUAL(testColor, newColor);
 
     Log::Comment(L"Invalid Syntax");
@@ -2958,7 +2958,7 @@ void ScreenBufferTests::SetDefaultBackgroundColor()
     testColor = RGB(153, 102, 51);
     stateMachine.ProcessString(L"\x1b]11;99/66/33\x1b\\");
 
-    newColor = gci.GetDefaultBackgroundColor();
+    newColor = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     VERIFY_ARE_NOT_EQUAL(testColor, newColor);
     // it will, in fact leave the color the way it was
     VERIFY_ARE_EQUAL(originalColor, newColor);

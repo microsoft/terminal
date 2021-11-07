@@ -135,7 +135,7 @@ bool TextAttribute::IsLegacy() const noexcept
 // - boldIsBright: true if "bold" should be interpreted as bright. (defaults to true)
 // Return Value:
 // - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable,
                                                                 const COLORREF defaultFgColor,
                                                                 const COLORREF defaultBgColor,
                                                                 const bool reverseScreenMode,

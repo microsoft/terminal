@@ -23,7 +23,7 @@ class TextColorTests
     TEST_METHOD(TestRgbColor);
     TEST_METHOD(TestChangeColor);
 
-    std::array<COLORREF, 256> _colorTable;
+    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
     COLORREF _defaultFg = RGB(1, 2, 3);
     COLORREF _defaultBg = RGB(4, 5, 6);
 };

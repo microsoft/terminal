@@ -376,8 +376,8 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     pStateInfo->InterceptCopyPaste = gci.GetInterceptCopyPaste();
 
     // Get the properties from the settings
-    pStateInfo->DefaultForeground = gci.GetDefaultForegroundColor();
-    pStateInfo->DefaultBackground = gci.GetDefaultBackgroundColor();
+    pStateInfo->DefaultForeground = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    pStateInfo->DefaultBackground = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
 
     pStateInfo->TerminalScrolling = gci.IsTerminalScrolling();
     // end console v2 properties
@@ -579,8 +579,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFillAttribute(pStateInfo->ScreenAttributes);
     gci.SetPopupFillAttribute(pStateInfo->PopupAttributes);
     // Store our updated Default Color values
-    gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
-    gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, pStateInfo->DefaultForeground);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, pStateInfo->DefaultBackground);
 
     // Make sure the updated fill attributes are passed on to the TextAttribute class.
     TextAttribute::SetLegacyDefaultAttributes(pStateInfo->ScreenAttributes);

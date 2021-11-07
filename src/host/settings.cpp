@@ -56,8 +56,6 @@ Settings::Settings() :
     _fScreenReversed(false),
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
-    _DefaultForeground(INVALID_COLOR),
-    _DefaultBackground(INVALID_COLOR),
     _fUseDx(UseDx::Disabled),
     _fCopyColor(false)
 {
@@ -83,6 +81,9 @@ Settings::Settings() :
 
     gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     ::Microsoft::Console::Utils::InitializeColorTable(tableView);
+
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = INVALID_COLOR;
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = INVALID_COLOR;
 }
 
 // Routine Description:
@@ -232,8 +233,8 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _CursorColor = pStateInfo->CursorColor;
     _CursorType = static_cast<CursorType>(pStateInfo->CursorType);
     _fInterceptCopyPaste = pStateInfo->InterceptCopyPaste;
-    _DefaultForeground = pStateInfo->DefaultForeground;
-    _DefaultBackground = pStateInfo->DefaultBackground;
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = pStateInfo->DefaultForeground;
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = pStateInfo->DefaultBackground;
     _TerminalScrolling = pStateInfo->TerminalScrolling;
 }
 
@@ -277,8 +278,8 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.CursorColor = _CursorColor;
     csi.CursorType = static_cast<unsigned int>(_CursorType);
     csi.InterceptCopyPaste = _fInterceptCopyPaste;
-    csi.DefaultForeground = _DefaultForeground;
-    csi.DefaultBackground = _DefaultBackground;
+    csi.DefaultForeground = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
+    csi.DefaultBackground = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
     csi.TerminalScrolling = _TerminalScrolling;
     return csi;
 }
@@ -330,16 +331,20 @@ void Settings::Validate()
     WI_ClearAllFlags(_wFillAttribute, ~(FG_ATTRS | BG_ATTRS));
     WI_ClearAllFlags(_wPopupFillAttribute, ~(FG_ATTRS | BG_ATTRS));
 
+    const auto defaultForeground = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
+    const auto defaultBackground = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
+
     // If the extended color options are set to invalid values (all the same color), reset them.
-    if (_CursorColor != Cursor::s_InvertCursorColor && _CursorColor == _DefaultBackground)
+    if (_CursorColor != Cursor::s_InvertCursorColor && _CursorColor == defaultBackground)
     {
         _CursorColor = Cursor::s_InvertCursorColor;
     }
 
-    if (_DefaultForeground != INVALID_COLOR && _DefaultForeground == _DefaultBackground)
+    if (defaultForeground != INVALID_COLOR && defaultForeground == defaultBackground)
     {
         // INVALID_COLOR is used as an "unset" sentinel in future attribute functions.
-        _DefaultForeground = _DefaultBackground = INVALID_COLOR;
+        _colorTable.at(TextColor::DEFAULT_FOREGROUND) = INVALID_COLOR;
+        _colorTable.at(TextColor::DEFAULT_BACKGROUND) = INVALID_COLOR;
         // If the damaged settings _further_ propagated to the default fill attribute, fix it.
         if (_wFillAttribute == 0)
         {
@@ -788,26 +793,6 @@ bool Settings::GetInterceptCopyPaste() const noexcept
 void Settings::SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept
 {
     _fInterceptCopyPaste = interceptCopyPaste;
-}
-
-COLORREF Settings::GetDefaultForegroundColor() const noexcept
-{
-    return _DefaultForeground;
-}
-
-void Settings::SetDefaultForegroundColor(const COLORREF defaultForeground) noexcept
-{
-    _DefaultForeground = defaultForeground;
-}
-
-COLORREF Settings::GetDefaultBackgroundColor() const noexcept
-{
-    return _DefaultBackground;
-}
-
-void Settings::SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept
-{
-    _DefaultBackground = defaultBackground;
 }
 
 bool Settings::IsTerminalScrolling() const noexcept

@@ -59,7 +59,6 @@ void TerminalApiTest::SetColorTableEntry()
     VERIFY_IS_TRUE(term.SetColorTableEntry(128, 100));
     VERIFY_IS_TRUE(term.SetColorTableEntry(255, 100));
 
-    VERIFY_IS_FALSE(term.SetColorTableEntry(256, 100));
     VERIFY_IS_FALSE(term.SetColorTableEntry(512, 100));
 }
 

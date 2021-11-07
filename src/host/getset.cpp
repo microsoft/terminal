@@ -2031,7 +2031,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetDefaultForegroundColor(value);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.
@@ -2058,7 +2058,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetDefaultBackgroundColor(value);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.
