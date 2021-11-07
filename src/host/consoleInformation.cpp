@@ -220,33 +220,33 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 }
 
 // Method Description:
-// - Return the default foreground color of the console. If the settings are
-//      configured to have a default foreground color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
+// - Return the color table index of the default foreground color. If the settings
+//      are configured to have a default foreground color (separate from the color
+//      table), this will return the extended index TextColor::DEFAULT_FOREGROUND.
+//      Otherwise it will return an index in the range 0 to 15.
 // Arguments:
 // - <none>
 // Return Value:
-// - the default foreground color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
+// - the color table index of the default foreground color.
+size_t CONSOLE_INFORMATION::GetDefaultForegroundIndex() const noexcept
 {
     const auto fg = GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
-    return fg != INVALID_COLOR ? fg : GetLegacyColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
+    return fg != INVALID_COLOR ? TextColor::DEFAULT_FOREGROUND : TextColor::TransposeLegacyIndex(LOBYTE(GetFillAttribute()) & FG_ATTRS);
 }
 
 // Method Description:
-// - Return the default background color of the console. If the settings are
-//      configured to have a default background color (separate from the color
-//      table), this will return that value. Otherwise it will return the value
-//      from the colortable corresponding to our default attributes.
+// - Return the color table index of the default background color. If the settings
+//      are configured to have a default background color (separate from the color
+//      table), this will return the extended index TextColor::DEFAULT_BACKGROUND.
+//      Otherwise it will return an index in the range 0 to 15.
 // Arguments:
 // - <none>
 // Return Value:
-// - the default background color of the console.
-COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
+// - the color table index of the default background color.
+size_t CONSOLE_INFORMATION::GetDefaultBackgroundIndex() const noexcept
 {
     const auto bg = GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
-    return bg != INVALID_COLOR ? bg : GetLegacyColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
+    return bg != INVALID_COLOR ? TextColor::DEFAULT_BACKGROUND : TextColor::TransposeLegacyIndex((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
 }
 
 // Method Description:
@@ -258,7 +258,7 @@ COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 // - The color values of the attribute's foreground and background.
 std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
-    return LookupAttributeColors(attr, GetDefaultForeground(), GetDefaultBackground());
+    return LookupAttributeColors(attr, GetDefaultForegroundIndex(), GetDefaultBackgroundIndex());
 }
 
 // Method Description:
@@ -266,17 +266,17 @@ std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const T
 //      and the given default color values.
 // Arguments:
 // - attr: the TextAttribute to retrieve the foreground and background color of.
-// - defaultFg: the COLORREF to use for a default foreground color.
-// - defaultBg: the COLORREF to use for a default background color.
+// - defaultFgIndex: the color table index to use for a default foreground color.
+// - defaultBgIndex: the color table index to use for a default background color.
 // Return Value:
 // - The color values of the attribute's foreground and background.
-std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr, const COLORREF defaultFg, const COLORREF defaultBg) const noexcept
+std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr, const size_t defaultFgIndex, const size_t defaultBgIndex) const noexcept
 {
     _blinkingState.RecordBlinkingUsage(attr);
     return attr.CalculateRgbColors(
         GetColorTable(),
-        defaultFg,
-        defaultBg,
+        defaultFgIndex,
+        defaultBgIndex,
         IsScreenReversed(),
         _blinkingState.IsBlinkingFaint());
 }

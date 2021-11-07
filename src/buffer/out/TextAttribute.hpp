@@ -65,8 +65,8 @@ public:
     WORD GetLegacyAttributes() const noexcept;
 
     std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable,
-                                                     const COLORREF defaultFgColor,
-                                                     const COLORREF defaultBgColor,
+                                                     const size_t defaultFgIndex,
+                                                     const size_t defaultBgIndex,
                                                      const bool reverseScreenMode = false,
                                                      const bool blinkingIsFaint = false,
                                                      const bool boldIsBright = true) const noexcept;

@@ -74,6 +74,6 @@ public:
 #pragma endregion
 
 private:
-    COLORREF _defaultForeground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 7);
-    COLORREF _defaultBackground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 0);
+    size_t _defaultForegroundIndex = 7;
+    size_t _defaultBackgroundIndex = 0;
 };

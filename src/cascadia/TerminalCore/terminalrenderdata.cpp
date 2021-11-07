@@ -73,19 +73,19 @@ std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& 
         if (attr.IsReverseVideo() ^ _screenReversed)
         {
             colors.first = _adjustedForegroundColors[fgIndex][bgIndex];
-            colors.second = fgTextColor.GetColor(_colorTable, _colorTable.at(TextColor::DEFAULT_FOREGROUND));
+            colors.second = fgTextColor.GetColor(_colorTable, TextColor::DEFAULT_FOREGROUND);
         }
         else
         {
             colors.first = _adjustedForegroundColors[bgIndex][fgIndex];
-            colors.second = bgTextColor.GetColor(_colorTable, _colorTable.at(TextColor::DEFAULT_BACKGROUND));
+            colors.second = bgTextColor.GetColor(_colorTable, TextColor::DEFAULT_BACKGROUND);
         }
     }
     else
     {
         colors = attr.CalculateRgbColors(_colorTable,
-                                         _colorTable.at(TextColor::DEFAULT_FOREGROUND),
-                                         _colorTable.at(TextColor::DEFAULT_BACKGROUND),
+                                         TextColor::DEFAULT_FOREGROUND,
+                                         TextColor::DEFAULT_BACKGROUND,
                                          _screenReversed,
                                          _blinkingState.IsBlinkingFaint(),
                                          _intenseIsBright);
