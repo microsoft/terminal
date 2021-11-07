@@ -2273,7 +2273,7 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
+    const bool success = _pConApi->SetColorTableEntry(tableIndex, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2296,7 +2296,7 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
+    success = _pConApi->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2319,7 +2319,7 @@ bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
+    success = _pConApi->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use

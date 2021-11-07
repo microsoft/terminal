@@ -608,30 +608,50 @@ bool ConhostInternalGetSet::MoveToBottom() const
 }
 
 // Method Description:
-// - Connects the PrivateGetColorTableEntry call directly into our Driver Message servicing
-//      call inside Conhost.exe
+// - Retrieves the value in the colortable at the specified index.
 // Arguments:
-// - index: the index in the table to retrieve.
-// - value: receives the RGB value for the color at that index in the table.
+// - tableIndex: the index of the color table to retrieve.
 // Return Value:
-// - true if successful (see DoSrvPrivateGetColorTableEntry). false otherwise.
-bool ConhostInternalGetSet::PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept
+// - the COLORREF value for the color at that index in the table.
+COLORREF ConhostInternalGetSet::GetColorTableEntry(const size_t tableIndex) const noexcept
+try
 {
-    return SUCCEEDED(DoSrvPrivateGetColorTableEntry(index, value));
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+
+    return gci.GetColorTableEntry(tableIndex);
+}
+catch (...)
+{
+    return INVALID_COLOR;
 }
 
 // Method Description:
-// - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
-//      call inside Conhost.exe
+// - Updates the value in the colortable at index tableIndex to the new color
+//   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
-// - index: the index in the table to change.
-// - value: the new RGB value to use for that index in the color table.
+// - tableIndex: the index of the color table to update.
+// - color: the new COLORREF to use as that color table value.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetColorTableEntry). false otherwise.
-bool ConhostInternalGetSet::PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
+try
 {
-    return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+
+    gci.SetColorTableEntry(tableIndex, color);
+
+    // Update the screen colors if we're not a pty
+    // No need to force a redraw in pty mode.
+    if (g.pRender && !gci.IsInVtIoMode())
+    {
+        g.pRender->TriggerRedrawAll();
+    }
+
+    return true;
 }
+CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Connects the PrivateFillRegion call directly into our Driver Message servicing

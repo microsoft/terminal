@@ -63,9 +63,6 @@ void DoSrvPrivateInsertLines(const size_t count);
 
 void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
 
-[[nodiscard]] HRESULT DoSrvPrivateGetColorTableEntry(const size_t index, COLORREF& value) noexcept;
-[[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept;
-
 [[nodiscard]] HRESULT DoSrvPrivateFillRegion(SCREEN_INFORMATION& screenInfo,
                                              const COORD startPosition,
                                              const size_t fillLength,

@@ -438,31 +438,31 @@ public:
         return _moveToBottomResult;
     }
 
-    bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept override
+    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override
     {
-        Log::Comment(L"PrivateGetColorTableEntry MOCK called...");
+        Log::Comment(L"GetColorTableEntry MOCK called...");
 
-        if (_privateGetColorTableEntryResult)
+        if (_getColorTableEntryResult)
         {
-            VERIFY_ARE_EQUAL(_expectedColorTableIndex, index);
+            VERIFY_ARE_EQUAL(_expectedColorTableIndex, tableIndex);
             // Simply returning the index as the color value makes it easy for
             // tests to confirm that they've received the color they expected.
-            value = gsl::narrow_cast<COLORREF>(index);
+            return gsl::narrow_cast<COLORREF>(tableIndex);
         }
 
-        return _privateGetColorTableEntryResult;
+        return INVALID_COLOR;
     }
 
-    bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept override
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
     {
-        Log::Comment(L"PrivateSetColorTableEntry MOCK called...");
-        if (_privateSetColorTableEntryResult)
+        Log::Comment(L"SetColorTableEntry MOCK called...");
+        if (_setColorTableEntryResult)
         {
-            VERIFY_ARE_EQUAL(_expectedColorTableIndex, index);
-            VERIFY_ARE_EQUAL(_expectedColorValue, value);
+            VERIFY_ARE_EQUAL(_expectedColorTableIndex, tableIndex);
+            VERIFY_ARE_EQUAL(_expectedColorValue, color);
         }
 
-        return _privateSetColorTableEntryResult;
+        return _setColorTableEntryResult;
     }
 
     bool PrivateFillRegion(const COORD /*startPosition*/,
@@ -723,8 +723,8 @@ public:
     bool _getConsoleOutputCPResult = false;
     bool _moveToBottomResult = false;
 
-    bool _privateGetColorTableEntryResult = false;
-    bool _privateSetColorTableEntryResult = false;
+    bool _getColorTableEntryResult = false;
+    bool _setColorTableEntryResult = false;
     size_t _expectedColorTableIndex = SIZE_MAX;
     COLORREF _expectedColorValue = INVALID_COLOR;
 
@@ -2278,7 +2278,7 @@ public:
         VTParameter rgOptions[16];
         size_t cOptions = 3;
 
-        _testGetSet->_privateGetColorTableEntryResult = true;
+        _testGetSet->_getColorTableEntryResult = true;
         _testGetSet->_expectedAttribute = _testGetSet->_attribute;
 
         Log::Comment(L"Test 1: Change Foreground");
@@ -2328,7 +2328,7 @@ public:
 
         VTParameter rgOptions[16];
 
-        _testGetSet->_privateGetColorTableEntryResult = true;
+        _testGetSet->_getColorTableEntryResult = true;
         _testGetSet->_expectedAttribute = _testGetSet->_attribute;
 
         Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
@@ -2371,7 +2371,7 @@ public:
     {
         _testGetSet->PrepData();
 
-        _testGetSet->_privateSetColorTableEntryResult = true;
+        _testGetSet->_setColorTableEntryResult = true;
         const auto testColor = RGB(1, 2, 3);
         _testGetSet->_expectedColorValue = testColor;
 
@@ -2381,7 +2381,7 @@ public:
             VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(i, testColor));
         }
 
-        // Test in pty mode - we should fail, but PrivateSetColorTableEntry should still be called
+        // Test in pty mode - we should fail, but SetColorTableEntry should still be called
         _testGetSet->_isPty = true;
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE

@@ -371,6 +371,22 @@ try
 CATCH_RETURN_FALSE()
 
 // Method Description:
+// - Retrieves the value in the colortable at the specified index.
+// Arguments:
+// - tableIndex: the index of the color table to retrieve.
+// Return Value:
+// - the COLORREF value for the color at that index in the table.
+COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const noexcept
+try
+{
+    return _colorTable.at(tableIndex);
+}
+catch (...)
+{
+    return INVALID_COLOR;
+}
+
+// Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
 //   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
