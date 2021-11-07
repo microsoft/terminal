@@ -109,8 +109,6 @@ public:
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
     bool SetCursorColor(const COLORREF color) noexcept override;
-    bool SetDefaultForeground(const COLORREF color) noexcept override;
-    bool SetDefaultBackground(const COLORREF color) noexcept override;
 
     bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;
 
@@ -212,7 +210,6 @@ public:
     void ClearPatternTree() noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;
-    til::color GetDefaultBackground() const noexcept;
 
     Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
 

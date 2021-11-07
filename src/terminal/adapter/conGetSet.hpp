@@ -89,8 +89,6 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const = 0;
         virtual bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const = 0;
-        virtual bool PrivateSetDefaultForeground(const COLORREF value) const = 0;
-        virtual bool PrivateSetDefaultBackground(const COLORREF value) const = 0;
 
         virtual bool PrivateFillRegion(const COORD startPosition,
                                        const size_t fillLength,

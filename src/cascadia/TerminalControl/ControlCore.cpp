@@ -1089,7 +1089,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return _terminal->GetDefaultBackground();
+        return _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     }
 
     // Method Description:

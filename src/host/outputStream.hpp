@@ -122,10 +122,6 @@ public:
     bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept override;
     bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept override;
 
-    bool PrivateSetDefaultForeground(const COLORREF value) const noexcept override;
-
-    bool PrivateSetDefaultBackground(const COLORREF value) const noexcept override;
-
     bool PrivateFillRegion(const COORD startPosition,
                            const size_t fillLength,
                            const wchar_t fillChar,

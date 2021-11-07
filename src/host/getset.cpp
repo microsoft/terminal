@@ -1998,67 +1998,13 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
 //      terminals as well is global, not per-screen-buffer.
 [[nodiscard]] HRESULT DoSrvPrivateSetColorTableEntry(const size_t index, const COLORREF value) noexcept
 {
-    RETURN_HR_IF(E_INVALIDARG, index >= 256);
+    RETURN_HR_IF(E_INVALIDARG, index >= TextColor::TABLE_SIZE);
     try
     {
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
         gci.SetColorTableEntry(index, value);
-
-        // Update the screen colors if we're not a pty
-        // No need to force a redraw in pty mode.
-        if (g.pRender && !gci.IsInVtIoMode())
-        {
-            g.pRender->TriggerRedrawAll();
-        }
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Method Description:
-// - Sets the default foreground color to the color specified in value.
-// Arguments:
-// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT DoSrvPrivateSetDefaultForegroundColor(const COLORREF value) noexcept
-{
-    try
-    {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, value);
-
-        // Update the screen colors if we're not a pty
-        // No need to force a redraw in pty mode.
-        if (g.pRender && !gci.IsInVtIoMode())
-        {
-            g.pRender->TriggerRedrawAll();
-        }
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Method Description:
-// - Sets the default background color to the color specified in value.
-// Arguments:
-// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// - S_OK
-[[nodiscard]] HRESULT DoSrvPrivateSetDefaultBackgroundColor(const COLORREF value) noexcept
-{
-    try
-    {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
-
-        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.

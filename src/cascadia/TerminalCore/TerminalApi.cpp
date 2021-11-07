@@ -383,6 +383,11 @@ try
 {
     _colorTable.at(tableIndex) = color;
 
+    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
+    {
+        _pfnBackgroundColorChanged(color);
+    }
+
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
@@ -440,46 +445,6 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     _buffer->GetCursor().SetBlinkingAllowed(shouldBlink);
 
     return true;
-}
-
-// Method Description:
-// - Updates the default foreground color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default foreground color
-// Return Value:
-// - true
-bool Terminal::SetDefaultForeground(const COLORREF color) noexcept
-try
-{
-    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = color;
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
-}
-CATCH_RETURN_FALSE()
-
-// Method Description:
-// - Updates the default background color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default background color
-// Return Value:
-// - true
-bool Terminal::SetDefaultBackground(const COLORREF color) noexcept
-try
-{
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = color;
-    _pfnBackgroundColorChanged(color);
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
-}
-CATCH_RETURN_FALSE()
-
-til::color Terminal::GetDefaultBackground() const noexcept
-{
-    return _colorTable.at(TextColor::DEFAULT_BACKGROUND);
 }
 
 bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept

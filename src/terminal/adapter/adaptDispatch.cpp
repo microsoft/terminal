@@ -2293,10 +2293,10 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetDefaultForeground(dwColor);
+    success = _pConApi->PrivateSetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2316,10 +2316,10 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(co
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetDefaultBackground(dwColor);
+    success = _pConApi->PrivateSetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use

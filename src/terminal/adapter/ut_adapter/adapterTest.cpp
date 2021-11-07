@@ -465,28 +465,6 @@ public:
         return _privateSetColorTableEntryResult;
     }
 
-    bool PrivateSetDefaultForeground(const COLORREF value) const noexcept override
-    {
-        Log::Comment(L"PrivateSetDefaultForeground MOCK called...");
-        if (_privateSetDefaultForegroundResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedDefaultForegroundColorValue, value);
-        }
-
-        return _privateSetDefaultForegroundResult;
-    }
-
-    bool PrivateSetDefaultBackground(const COLORREF value) const noexcept override
-    {
-        Log::Comment(L"PrivateSetDefaultForeground MOCK called...");
-        if (_privateSetDefaultBackgroundResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedDefaultBackgroundColorValue, value);
-        }
-
-        return _privateSetDefaultBackgroundResult;
-    }
-
     bool PrivateFillRegion(const COORD /*startPosition*/,
                            const size_t /*fillLength*/,
                            const wchar_t /*fillChar*/,
@@ -749,12 +727,6 @@ public:
     bool _privateSetColorTableEntryResult = false;
     size_t _expectedColorTableIndex = SIZE_MAX;
     COLORREF _expectedColorValue = INVALID_COLOR;
-
-    bool _privateSetDefaultForegroundResult = false;
-    COLORREF _expectedDefaultForegroundColorValue = INVALID_COLOR;
-
-    bool _privateSetDefaultBackgroundResult = false;
-    COLORREF _expectedDefaultBackgroundColorValue = INVALID_COLOR;
 
     SIZE _expectedCellSize = {};
 
