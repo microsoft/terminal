@@ -138,9 +138,6 @@
     <ClCompile Include="..\writeData.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\conattrs.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\VtInputThread.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

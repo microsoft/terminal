@@ -19,6 +19,20 @@ namespace TerminalApp
         String WindowName { get; };
     };
 
+    delegate void SystemMenuItemHandler();
+
+    enum SystemMenuChangeAction
+    {
+        Add = 0,
+        Remove = 1
+    };
+
+    [default_interface] runtimeclass SystemMenuChangeArgs {
+        String Name { get; };
+        SystemMenuChangeAction Action { get; };
+        SystemMenuItemHandler Handler { get; };
+    };
+
     [default_interface] runtimeclass AppLogic : IDirectKeyListener, IDialogPresenter
     {
         AppLogic();
@@ -60,6 +74,7 @@ namespace TerminalApp
         void SetPersistedLayoutIdx(UInt32 idx);
         void SetNumberOfOpenWindows(UInt64 num);
         void RenameFailed();
+        void RequestExitFullscreen();
         Boolean IsQuakeWindow();
 
         Windows.Foundation.Size GetLaunchDimensions(UInt32 dpi);
@@ -110,5 +125,6 @@ namespace TerminalApp
         event Windows.Foundation.TypedEventHandler<Object, Object> CloseRequested;
         event Windows.Foundation.TypedEventHandler<Object, Object> OpenSystemMenu;
         event Windows.Foundation.TypedEventHandler<Object, Object> QuitRequested;
+        event Windows.Foundation.TypedEventHandler<Object, TerminalApp.SystemMenuChangeArgs> SystemMenuChangeRequested;
     }
 }
