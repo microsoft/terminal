@@ -135,7 +135,8 @@
 
                 <!--  First Window Behavior  -->
                 <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
-                                        Visibility="{x:Bind ShowFirstWindowPreference}">
+                                        Visibility="{x:Bind ShowFirstWindowPreference}"
+                                        Style="{StaticResource AlternativeSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind FirstWindowPreferenceList}"
@@ -145,7 +146,8 @@
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Name="Globals_LaunchMode"
-                                        x:Uid="Globals_LaunchMode">
+                                        x:Uid="Globals_LaunchMode"
+                                        Style="{StaticResource AlternativeSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind LaunchModeList}"
@@ -153,7 +155,8 @@
                 </local:SettingContainer>
 
                 <!--  Launch Mode  -->
-                <local:SettingContainer x:Uid="Globals_WindowingBehavior">
+                <local:SettingContainer x:Uid="Globals_WindowingBehavior"
+                                        Style="{StaticResource AlternativeSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind WindowingBehaviorList}"

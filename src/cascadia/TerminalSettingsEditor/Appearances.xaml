@@ -171,7 +171,8 @@
             <local:SettingContainer x:Uid="Profile_CursorShape"
                                     ClearSettingValue="{x:Bind Appearance.ClearCursorShape}"
                                     HasSettingValue="{x:Bind Appearance.HasCursorShape, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.CursorShapeOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource AlternativeSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind CursorShapeList, Mode=OneWay}"
@@ -449,7 +450,8 @@
             <local:SettingContainer x:Uid="Appearance_IntenseTextStyle"
                                     ClearSettingValue="{x:Bind Appearance.ClearIntenseTextStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasIntenseTextStyle, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.IntenseTextStyleOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource AlternativeSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind IntenseTextStyleList, Mode=OneWay}"

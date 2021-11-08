@@ -304,7 +304,8 @@
                             <local:SettingContainer x:Uid="Profile_ScrollbarVisibility"
                                                     ClearSettingValue="{x:Bind State.Profile.ClearScrollState}"
                                                     HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
-                                                    SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}">
+                                                    SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}"
+                                                    Style="{StaticResource AlternativeSettingContainerStyle}">
                                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                    ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
@@ -409,7 +410,8 @@
                         <local:SettingContainer x:Uid="Profile_AntialiasingMode"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
                                                 HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}">
+                                                SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}"
+                                                Style="{StaticResource AlternativeSettingContainerStyle}">
                             <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
@@ -449,7 +451,8 @@
                         <local:SettingContainer x:Uid="Profile_CloseOnExit"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
                                                 HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}">
+                                                SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}"
+                                                Style="{StaticResource AlternativeSettingContainerStyle}">
                             <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
@@ -460,7 +463,8 @@
                         <local:SettingContainer x:Uid="Profile_BellStyle"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
                                                 HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}">
+                                                SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}"
+                                                Style="{StaticResource AlternativeSettingContainerStyle}">
                             <StackPanel>
                                 <CheckBox x:Uid="Profile_BellStyleAudible"
                                           IsChecked="{x:Bind IsBellStyleFlagSet(1), BindBack=SetBellStyleAudible, Mode=TwoWay}" />

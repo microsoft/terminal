@@ -10,16 +10,6 @@
                     mc:Ignorable="d">
 
     <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Default">
-            <StaticResource x:Key="ExpanderBorderBrushExpandedPointerOver"
-                            ResourceKey="SystemControlForegroundTransparentBrush" />
-            <StaticResource x:Key="ExpanderTextColorExpandedPointerOver"
-                            ResourceKey="SystemControlForegroundBaseHighBrush" />
-            <Style x:Key="SecondaryTextBlockStyle"
-                   TargetType="TextBlock">
-                <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
-            </Style>
-        </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
             <StaticResource x:Key="ExpanderBorderBrushExpandedPointerOver"
                             ResourceKey="SystemControlForegroundTransparentBrush" />
@@ -29,6 +19,16 @@
                    TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
             </Style>
+            <Color x:Key="CardBackgroundFillColorDefault">#B3FFFFFF</Color>
+            <Color x:Key="CardStrokeColorDefault">#0F000000</Color>
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource CardBackgroundFillColorDefault}" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
+            <SolidColorBrush x:Key="SubgroupHeaderBrush" Color="{StaticResource SystemBaseMediumColor}" />
+            <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="CardBackgroundFillColorDefaultBrush" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
+            <x:Double x:Key="FlyoutThemeMinWidth">96</x:Double>
+            <Thickness x:Key="ExpanderHeaderBorderThickness">1</Thickness>
+            <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
             <StaticResource x:Key="ExpanderBorderBrushExpandedPointerOver"
@@ -38,6 +38,16 @@
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock" />
             <!--  Do not mess with the foreground color for High Contrast. Let it ride as is.  -->
+            <Color x:Key="CardBackgroundFillColorDefault">#FF0000</Color>
+            <Color x:Key="CardStrokeColorDefault">#FF0000</Color>
+            <StaticResource x:Key="CardBackgroundFillColorDefaultBrush" ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="CardStrokeColorDefaultBrush" ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="SystemColorButtonFaceColorBrush" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="SystemColorButtonTextColorBrush" />
+            <SolidColorBrush x:Key="SubgroupHeaderBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <x:Double x:Key="FlyoutThemeMinWidth">96</x:Double>
+            <Thickness x:Key="ExpanderHeaderBorderThickness">2</Thickness>
+            <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <StaticResource x:Key="ExpanderBorderBrushExpandedPointerOver"
@@ -48,6 +58,16 @@
                    TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
             </Style>
+            <Color x:Key="CardBackgroundFillColorDefault">#0DFFFFFF</Color>
+            <Color x:Key="CardStrokeColorDefault">#19000000</Color>
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource CardBackgroundFillColorDefault}" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
+            <SolidColorBrush x:Key="SubgroupHeaderBrush" Color="{StaticResource SystemBaseMediumColor}" />
+            <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="CardBackgroundFillColorDefaultBrush" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
+            <x:Double x:Key="FlyoutThemeMinWidth">96</x:Double>
+            <Thickness x:Key="ExpanderHeaderBorderThickness">1</Thickness>
+            <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -73,28 +93,59 @@
         <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
     </Style>
 
+    <Style x:Key="NonExpanderGrid" TargetType="Grid">
+        <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
+        <Setter Property="MinWidth" Value="{ThemeResource FlyoutThemeMinWidth}" />
+        <Setter Property="MinHeight" Value="64" />
+        <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
+        <Setter Property="Padding" Value="16,0,8,0" />
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
+        <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+
+    <Style
+        x:Key="SettingsPageItemHeaderStyle"
+        BasedOn="{StaticResource BodyTextBlockStyle}"
+        TargetType="TextBlock">
+        <Setter Property="Margin" Value="0,12,0,0" />
+        <Setter Property="LineHeight" Value="20" />
+        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+    </Style>
+
+    <Style
+        x:Key="SettingsPageItemDescriptionStyle"
+        BasedOn="{StaticResource CaptionTextBlockStyle}"
+        TargetType="TextBlock">
+        <Setter Property="Margin" Value="0,0,24,12" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="Foreground" Value="{ThemeResource SubgroupHeaderBrush}" />
+        <Setter Property="TextWrapping" Value="WrapWholeWords" />
+    </Style>
+    
     <Style x:Key="HeaderToggleButtonStyle"
            TargetType="ToggleButton">
         <Setter Property="Background" Value="{ThemeResource SystemControlTransparentBrush}" />
         <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseHighBrush}" />
-        <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundTransparentBrush}" />
-        <Setter Property="BorderThickness" Value="{ThemeResource ToggleButtonBorderThemeThickness}" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="Height" Value="70" />
-        <Setter Property="Margin" Value="2" />
+        <Setter Property="MinHeight" Value="64" />
+        <Setter Property="Margin" Value="0,4,0,0" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Stretch" />
         <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
-        <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}" />
         <Setter Property="UseSystemFocusVisuals" Value="True" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="ToggleButton">
                     <Grid x:Name="RootGrid"
-                          Background="{ThemeResource SystemChromeMediumColor}"
-                          CornerRadius="6">
+                          Background="{ThemeResource ExpanderHeaderBackground}"
+                          CornerRadius="{ThemeResource ControlCornerRadius}"
+                          BorderBrush="{ThemeResource ExpanderHeaderBorderBrush}"
+                          BorderThickness="{ThemeResource ExpanderHeaderBorderThickness}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
@@ -446,10 +497,15 @@
                                     Grid.Row="1"
                                     Grid.RowSpan="1"
                                     Height="Auto"
-                                    Margin="12,4,0,0"
-                                    Visibility="Collapsed">
+                                    Margin="0,0,0,2"
+                                    CornerRadius="{ThemeResource ControlCornerRadius}"
+                                    BorderThickness="{ThemeResource ExpanderHeaderBorderThickness}"
+                                    BorderBrush="{ThemeResource ExpanderHeaderBorderBrush}"
+                                    Visibility="Collapsed"
+                                    Background="{ThemeResource CardStrokeColorDefaultBrush}">
                                 <ContentPresenter HorizontalContentAlignment="Stretch"
                                                   VerticalContentAlignment="Stretch"
+                                                  Margin="16,4,16,8"
                                                   Content="{TemplateBinding Content}" />
                             </Border>
                         </Grid>
@@ -493,32 +549,26 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
                     <StackPanel>
-                        <Grid Height="70"
-                              Margin="2"
-                              HorizontalAlignment="Stretch"
-                              Background="{ThemeResource SystemChromeMediumColor}"
-                              CornerRadius="6">
+                        <Grid Style="{StaticResource NonExpanderGrid}"
+                              x:Name="ayy">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0"
-                                        Margin="12,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Orientation="Vertical">
-                                <TextBlock FontWeight="SemiBold"
-                                           Text="{TemplateBinding Header}" />
-                                <TextBlock FontSize="12"
-                                           FontWeight="Normal"
-                                           Style="{ThemeResource SecondaryTextBlockStyle}"
-                                           Text="{TemplateBinding HelpText}" />
+                            <StackPanel>
+                                <TextBlock
+                                Text="{TemplateBinding Header}"
+                                Style="{StaticResource SettingsPageItemHeaderStyle}" />
+                                <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                           Text="{TemplateBinding HelpText}"/>
                             </StackPanel>
-                            <ContentPresenter Grid.Column="1"
-                                              Margin="8"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Center"
-                                              BorderBrush="Transparent"
-                                              Content="{TemplateBinding Content}" />
+                            <ContentPresenter
+                            Grid.Column="1"
+                            MinWidth="0"
+                            HighContrastAdjustment="None"
+                                HorizontalAlignment="Right"
+                                VerticalAlignment="Center"
+                            Content="{TemplateBinding Content}" />
                         </Grid>
                     </StackPanel>
                 </ControlTemplate>
