@@ -72,7 +72,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr operator COLORREF() const noexcept
         {
-            return static_cast<COLORREF>(abgr & 0x00FFFFFFu);
+            return static_cast<COLORREF>(abgr);
         }
 #endif
 
