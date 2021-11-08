@@ -9,6 +9,8 @@
 #include <WtExeUtils.h>
 
 #include <aclapi.h>
+#include <sddl.h>
+#include <wil/token_helpers.h>
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
@@ -53,6 +55,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     // - true if it had the expected permissions. False otherwise.
     static bool _hasElevatedOnlyPermissions(const std::filesystem::path& path)
     {
+        path;
+        return true;
+        /*
         // If we want to only open the file if it's elevated, check the
         // permissions on this file. We want to make sure that:
         // * Everyone has permission to read
@@ -111,6 +116,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         hadExpectedPermissions &= *(pEA[1].Trustee.ptstrName) == *(LPWSTR)(everyoneSid.get());
 
         return hadExpectedPermissions;
+        */
     }
     // Tries to read a file somewhat atomically without locking it.
     // Strips the UTF8 BOM if it exists.
@@ -198,53 +204,62 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         SECURITY_ATTRIBUTES sa;
         if (elevatedOnly)
         {
-            // This is very vaguely taken from
-            // https://docs.microsoft.com/en-us/windows/win32/secauthz/creating-a-security-descriptor-for-a-new-object-in-c--
-            // With using https://docs.microsoft.com/en-us/windows/win32/secauthz/well-known-sids
-            // to find out that
-            // * SECURITY_NT_AUTHORITY+SECURITY_LOCAL_SYSTEM_RID == NT AUTHORITY\SYSTEM
-            // * SECURITY_NT_AUTHORITY+SECURITY_BUILTIN_DOMAIN_RID+DOMAIN_ALIAS_RID_ADMINS == BUILTIN\Administrators
-            // * SECURITY_WORLD_SID_AUTHORITY+SECURITY_WORLD_RID == Everyone
-            //
-            // Raymond Chen recommended that I make this file only writable by
-            // SYSTEM, but if I did that, then even we can't write the file
-            // while elevated, which isn't what we want.
+            // // This is very vaguely taken from
+            // // https://docs.microsoft.com/en-us/windows/win32/secauthz/creating-a-security-descriptor-for-a-new-object-in-c--
+            // // With using https://docs.microsoft.com/en-us/windows/win32/secauthz/well-known-sids
+            // // to find out that
+            // // * SECURITY_NT_AUTHORITY+SECURITY_LOCAL_SYSTEM_RID == NT AUTHORITY\SYSTEM
+            // // * SECURITY_NT_AUTHORITY+SECURITY_BUILTIN_DOMAIN_RID+DOMAIN_ALIAS_RID_ADMINS == BUILTIN\Administrators
+            // // * SECURITY_WORLD_SID_AUTHORITY+SECURITY_WORLD_RID == Everyone
+            // //
+            // // Raymond Chen recommended that I make this file only writable by
+            // // SYSTEM, but if I did that, then even we can't write the file
+            // // while elevated, which isn't what we want.
 
-            // Create a SID for the BUILTIN\Administrators group.
-            const auto adminGroupSid = wil::make_static_sid(SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+            // // Create a SID for the BUILTIN\Administrators group.
+            // const auto adminGroupSid = wil::make_static_sid(SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
 
-            // Create a well-known SID for the Everyone group.
-            const auto everyoneSid = wil::make_static_sid(SECURITY_WORLD_SID_AUTHORITY, SECURITY_WORLD_RID);
+            // // Create a well-known SID for the Everyone group.
+            // const auto everyoneSid = wil::make_static_sid(SECURITY_WORLD_SID_AUTHORITY, SECURITY_WORLD_RID);
 
-            EXPLICIT_ACCESS ea[2]{};
+            // EXPLICIT_ACCESS ea[2]{};
 
-            // Grant Admins all permissions on this file
-            ea[0].grfAccessPermissions = GENERIC_ALL;
-            ea[0].grfAccessMode = SET_ACCESS;
-            ea[0].grfInheritance = NO_INHERITANCE;
-            ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-            ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[0].Trustee.ptstrName = (LPWSTR)(adminGroupSid.get());
+            // // Grant Admins all permissions on this file
+            // ea[0].grfAccessPermissions = GENERIC_ALL;
+            // ea[0].grfAccessMode = SET_ACCESS;
+            // ea[0].grfInheritance = NO_INHERITANCE;
+            // ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+            // ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+            // ea[0].Trustee.ptstrName = (LPWSTR)(adminGroupSid.get());
 
-            // Grant Everyone the permission or read this file
-            ea[1].grfAccessPermissions = GENERIC_READ;
-            ea[1].grfAccessMode = SET_ACCESS;
-            ea[1].grfInheritance = NO_INHERITANCE;
-            ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-            ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[1].Trustee.ptstrName = (LPWSTR)(everyoneSid.get());
+            // // Grant Everyone the permission or read this file
+            // ea[1].grfAccessPermissions = GENERIC_READ;
+            // ea[1].grfAccessMode = SET_ACCESS;
+            // ea[1].grfInheritance = NO_INHERITANCE;
+            // ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+            // ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
+            // ea[1].Trustee.ptstrName = (LPWSTR)(everyoneSid.get());
 
-            ACL acl;
-            PACL pAcl = &acl;
-            THROW_IF_WIN32_ERROR(SetEntriesInAcl(2, ea, nullptr, &pAcl));
+            // ACL acl;
+            // PACL pAcl = &acl;
+            // THROW_IF_WIN32_ERROR(SetEntriesInAcl(2, ea, nullptr, &pAcl));
 
-            SECURITY_DESCRIPTOR sd;
-            THROW_IF_WIN32_BOOL_FALSE(InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION));
-            THROW_IF_WIN32_BOOL_FALSE(SetSecurityDescriptorDacl(&sd, true, pAcl, false));
+            // SECURITY_DESCRIPTOR sd;
+            // THROW_IF_WIN32_BOOL_FALSE(InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION));
+            // THROW_IF_WIN32_BOOL_FALSE(SetSecurityDescriptorDacl(&sd, true, pAcl, false));
+
+            // TODO!: I need to LocalFree this somehow.
+            PSECURITY_DESCRIPTOR psd;
+            unsigned long cb;
+            ConvertStringSecurityDescriptorToSecurityDescriptor(L"S:(ML;;NW;;;HI)",
+                                                                SDDL_REVISION_1,
+                                                                &psd,
+                                                                &cb);
 
             // Initialize a security attributes structure.
             sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-            sa.lpSecurityDescriptor = &sd;
+            // sa.lpSecurityDescriptor = &sd;
+            sa.lpSecurityDescriptor = psd;
             sa.bInheritHandle = false;
         }
 

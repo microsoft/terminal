@@ -184,7 +184,7 @@ namespace winrt::TerminalApp::implementation
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
-        _isElevated = Microsoft::Console::Utils::IsElevated();
+        _isElevated = ::Microsoft::Console::Utils::IsElevated();
         _root = winrt::make_self<TerminalPage>();
 
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
