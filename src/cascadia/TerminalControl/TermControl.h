@@ -58,6 +58,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         int BufferHeight() const;
 
         bool BracketedPasteEnabled() const noexcept;
+
+        double BackgroundOpacity() const;
 #pragma endregion
 
         void ScrollViewport(int viewTop);

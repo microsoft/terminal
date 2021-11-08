@@ -49,8 +49,9 @@ namespace winrt::TerminalApp::implementation
         switch (_lastPreviewedCommand.ActionAndArgs().Action())
         {
         case ShortcutAction::SetColorScheme:
+        case ShortcutAction::AdjustOpacity:
         {
-            _EndPreviewColorScheme();
+            _RunRestorePreviews();
             break;
         }
         }
@@ -65,7 +66,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_EndPreviewColorScheme()
+    void TerminalPage::_RunRestorePreviews()
     {
         for (const auto& f : _restorePreviewFuncs)
         {
@@ -109,6 +110,30 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
+    {
+        // if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
+        // {
+        // Clear the saved preview funcs because we don't need to add a restore each time
+        // the preview color changes, we only need to be able to restore the last one.
+        _restorePreviewFuncs.clear();
+
+        _ApplyToActiveControls([&](const auto& control) {
+            // Stash a copy of the original scheme.
+            auto originalOpacity{ control.BackgroundOpacity() };
+
+            // Apply the new opacity
+            control.AdjustOpacity(args.Opacity(), args.Relative());
+
+            _restorePreviewFuncs.emplace_back([=]() {
+                // On dismiss:
+                // Don't adjust relatively, just set outright.
+                control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity*100), false);
+            });
+        });
+        // }
+    }
+
     // Method Description:
     // - Handler for the CommandPalette::PreviewAction event. The Command
     //   Palette will raise this even when an action is selected, but _not_
@@ -138,6 +163,11 @@ namespace winrt::TerminalApp::implementation
             case ShortcutAction::SetColorScheme:
             {
                 _PreviewColorScheme(args.ActionAndArgs().Args().try_as<SetColorSchemeArgs>());
+                break;
+            }
+            case ShortcutAction::AdjustOpacity:
+            {
+                _PreviewAdjustOpacity(args.ActionAndArgs().Args().try_as<AdjustOpacityArgs>());
                 break;
             }
             }
