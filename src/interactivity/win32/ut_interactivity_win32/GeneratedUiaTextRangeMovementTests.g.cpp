@@ -89,7 +89,9 @@ constexpr til::point segment1LmidHistory{ segment1, midHistory.y() };
 constexpr til::point segment1LmidTop{ segment1, midTop.y() };
 constexpr til::point segment1LmidTopP1L{ segment1, midTopP1L.y() };
 constexpr til::point segment2LmidDocEnd{ segment2, midDocEnd.y() };
+constexpr til::point segment2LmidDocEndM1L{ segment2, midDocEndM1L.y() };
 constexpr til::point segment2LmidHistory{ segment2, midHistory.y() };
+constexpr til::point segment2LmidHistoryM1L{ segment2, midHistoryM1L.y() };
 constexpr til::point segment2LmidHistoryP1L{ segment2, midHistoryP1L.y() };
 constexpr til::point segment2LmidTop{ segment2, midTop.y() };
 constexpr til::point segment2LmidTopP1L{ segment2, midTopP1L.y() };
@@ -102,9 +104,7 @@ constexpr til::point segment3LmidTop{ segment3, midTop.y() };
 constexpr til::point segment3LmidTopP1L{ segment3, midTopP1L.y() };
 constexpr til::point segment4LlastCharPosM1L{ segment4, lastCharPosM1L.y() };
 constexpr til::point segment4LmidDocEnd{ segment4, midDocEnd.y() };
-constexpr til::point segment4LmidDocEndM1L{ segment4, midDocEndM1L.y() };
 constexpr til::point segment4LmidHistory{ segment4, midHistory.y() };
-constexpr til::point segment4LmidHistoryM1L{ segment4, midHistoryM1L.y() };
 constexpr til::point segment4LmidTop{ segment4, midTop.y() };
 struct GeneratedMovementTestInput
 {
@@ -3319,7 +3319,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -3,
             origin,
             origin },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 2 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3331,7 +3331,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment2LmidTop,
             segment2LmidTop },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 2 0 times by Word",
         GeneratedMovementTestInput{
@@ -3439,7 +3439,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             segment3LmidHistoryM1L,
             segment3LmidHistoryM1L },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 3 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3451,7 +3451,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment2LmidHistory,
             segment2LmidHistory },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 3 0 times by Word",
         GeneratedMovementTestInput{
@@ -3497,9 +3497,9 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             midHistoryP1C },
         GeneratedMovementTestExpected{
             -5,
-            segment3LmidHistoryM1L,
-            segment4LmidHistoryM1L },
-        true },
+            segment2LmidHistoryM1L,
+            segment3LmidHistoryM1L },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 3 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3559,7 +3559,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             segment3LmidDocEndM1L,
             segment3LmidDocEndM1L },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 4 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3571,7 +3571,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment2LmidDocEnd,
             segment2LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 4 0 times by Word",
         GeneratedMovementTestInput{
@@ -3617,9 +3617,9 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             midDocEndP1C },
         GeneratedMovementTestExpected{
             -5,
-            segment3LmidDocEndM1L,
-            segment4LmidDocEndM1L },
-        true },
+            segment2LmidDocEndM1L,
+            segment3LmidDocEndM1L },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 4 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3679,7 +3679,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             lastCharPosLeft,
             lastCharPosLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 5 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3691,7 +3691,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 5 0 times by Word",
         GeneratedMovementTestInput{
@@ -3799,7 +3799,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             midDocEndLeft,
             midDocEndLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 6 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3811,7 +3811,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 6 0 times by Word",
         GeneratedMovementTestInput{
@@ -3859,7 +3859,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             midDocEndLeft,
             midDocEndLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 6 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3871,7 +3871,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 6 0 times by Word",
         GeneratedMovementTestInput{
@@ -3919,7 +3919,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             midDocEndLeft,
             midDocEndLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 7 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3931,7 +3931,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 7 0 times by Word",
         GeneratedMovementTestInput{
@@ -3979,7 +3979,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             midDocEndLeft,
             midDocEndLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 7 -1 times by Word",
         GeneratedMovementTestInput{
@@ -3991,7 +3991,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 7 0 times by Word",
         GeneratedMovementTestInput{
@@ -4039,7 +4039,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             midDocEndLeft,
             midDocEndLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 8 -1 times by Word",
         GeneratedMovementTestInput{
@@ -4051,7 +4051,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 8 0 times by Word",
         GeneratedMovementTestInput{
@@ -4099,7 +4099,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             midDocEndLeft,
             midDocEndLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 8 -1 times by Word",
         GeneratedMovementTestInput{
@@ -4111,7 +4111,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move non-degenerate range at position 8 0 times by Word",
         GeneratedMovementTestInput{
@@ -4159,7 +4159,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -5,
             midDocEndLeft,
             midDocEndLeft },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 9 -1 times by Word",
         GeneratedMovementTestInput{
@@ -4171,7 +4171,7 @@ static constexpr std::array<GeneratedMovementTest, 340> s_movementTests{
             -1,
             segment4LmidDocEnd,
             segment4LmidDocEnd },
-        true },
+        false },
     GeneratedMovementTest{
         L"Move degenerate range at position 9 0 times by Word",
         GeneratedMovementTestInput{
