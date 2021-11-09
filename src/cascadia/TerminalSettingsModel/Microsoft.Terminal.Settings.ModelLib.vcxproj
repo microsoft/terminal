@@ -50,6 +50,7 @@
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="HashUtils.h" />

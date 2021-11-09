@@ -364,7 +364,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
     for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
     {
-        lpColorTable[i] = gci.GetColorTableEntry(i);
+        lpColorTable[i] = gci.GetLegacyColorTableEntry(i);
     }
 
     *pcoordMaximumWindowSize = GetMaxWindowSizeInCharacters();

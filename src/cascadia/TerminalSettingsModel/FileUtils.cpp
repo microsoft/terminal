@@ -9,6 +9,8 @@
 #include <WtExeUtils.h>
 
 #include <aclapi.h>
+#include <sddl.h>
+#include <wil/token_helpers.h>
 
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
@@ -41,72 +43,43 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         return baseSettingsPath;
     }
 
-    static bool _hasExpectedPermissions(const std::filesystem::path& path)
+    // Function Description:
+    // - Checks the permissions on this file, to make sure it can only be opened
+    //   for writing by admins. We will be checking to see if the file is owned
+    //   by the Builtin\Administrators group. If it's not, then it was likely
+    //   tampered with.
+    // Arguments:
+    // - path: the path to the file to check
+    // Return Value:
+    // - true if it had the expected permissions. False otherwise.
+    static bool _hasElevatedOnlyPermissions(const std::filesystem::path& path)
     {
-        // If we want to only open the file if it's elevated, check the
-        // permissions on this file. We want to make sure that:
-        // * Everyone has permission to read
-        // * admins can do anything
-        // * no one else can do anything.
-        PACL pAcl{ nullptr }; // This doesn't need to be cleanup up apparently
+        // If the file is owned by the administrators group, trust the
+        // administrators instead of checking the DACL permissions. It's simpler
+        // and more flexible.
 
-        auto status = GetNamedSecurityInfo(path.c_str(),
-                                           SE_FILE_OBJECT,
-                                           DACL_SECURITY_INFORMATION,
-                                           nullptr,
-                                           nullptr,
-                                           &pAcl,
-                                           nullptr,
-                                           nullptr);
+        wil::unique_hlocal_security_descriptor sd;
+        PSID psidOwner{ nullptr };
+        // The psidOwner pointer references the security descriptor, so it
+        // doesn't have to be freed separate from sd.
+        const auto status = GetNamedSecurityInfoW(path.c_str(),
+                                                  SE_FILE_OBJECT,
+                                                  OWNER_SECURITY_INFORMATION,
+                                                  &psidOwner,
+                                                  nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd));
         THROW_IF_WIN32_ERROR(status);
 
-        PEXPLICIT_ACCESS pEA{ nullptr };
-        DWORD count = 0;
-        status = GetExplicitEntriesFromAcl(pAcl, &count, &pEA);
-        THROW_IF_WIN32_ERROR(status);
+        wil::unique_any_psid psidAdmins{ nullptr };
+        THROW_IF_WIN32_BOOL_FALSE(
+            ConvertStringSidToSidW(L"BA", wil::out_param_ptr<PSID*>(psidAdmins)));
 
-        auto explicitAccessCleanup = wil::scope_exit([&]() { ::LocalFree(pEA); });
-
-        if (count != 2)
-        {
-            return false;
-        }
-
-        // Now, get the Everyone and Admins SIDS so we can make sure they're
-        // the ones in this file.
-
-        wil::unique_sid everyoneSid;
-        wil::unique_sid adminGroupSid;
-        SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-        SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-
-        // Create a SID for the BUILTIN\Administrators group.
-        THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
-
-        // Create a well-known SID for the Everyone group.
-        THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &everyoneSid));
-
-        bool hadExpectedPermissions = true;
-
-        // Check that the permissions are what we'd expect them to be if only
-        // admins can write to the file. This is basically a mirror of what we
-        // set up in `WriteUTF8File`.
-
-        // For grfAccessPermissions, GENERIC_ALL turns into STANDARD_RIGHTS_ALL,
-        // and GENERIC_READ -> READ_CONTROL
-        hadExpectedPermissions &= WI_AreAllFlagsSet(pEA[0].grfAccessPermissions, STANDARD_RIGHTS_ALL);
-        hadExpectedPermissions &= pEA[0].grfInheritance == NO_INHERITANCE;
-        hadExpectedPermissions &= pEA[0].Trustee.TrusteeForm == TRUSTEE_IS_SID;
-        // SIDs are void*'s that happen to convert to a wchar_t
-        hadExpectedPermissions &= *(pEA[0].Trustee.ptstrName) == *(LPWSTR)(adminGroupSid.get());
-
-        // Now check the other EXPLICIT_ACCESS
-        hadExpectedPermissions &= WI_IsFlagSet(pEA[1].grfAccessPermissions, READ_CONTROL);
-        hadExpectedPermissions &= pEA[1].grfInheritance == NO_INHERITANCE;
-        hadExpectedPermissions &= pEA[1].Trustee.TrusteeForm == TRUSTEE_IS_SID;
-        hadExpectedPermissions &= *(pEA[1].Trustee.ptstrName) == *(LPWSTR)(everyoneSid.get());
-
-        return hadExpectedPermissions;
+        // Compare the owner SID to the administrators SID via
+        // EqualSid(psidOwner, psidAdmins). This does a low-level memory
+        // comparison of the SIDs.
+        return EqualSid(psidOwner, psidAdmins.get());
     }
     // Tries to read a file somewhat atomically without locking it.
     // Strips the UTF8 BOM if it exists.
@@ -114,7 +87,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     {
         if (elevatedOnly)
         {
-            const bool hadExpectedPermissions{ _hasExpectedPermissions(path) };
+            const bool hadExpectedPermissions{ _hasElevatedOnlyPermissions(path) };
             if (!hadExpectedPermissions)
             {
                 // delete the file. It's been compromised.
@@ -192,61 +165,56 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                        const bool elevatedOnly)
     {
         SECURITY_ATTRIBUTES sa;
+        // stash the security descriptor here, so it will stay in context until
+        // after the call to CreateFile. If it gets cleaned up before that, then
+        // CreateFile will fail
+        wil::unique_hlocal_security_descriptor sd;
         if (elevatedOnly)
         {
-            // This is very vaguely taken from
-            // https://docs.microsoft.com/en-us/windows/win32/secauthz/creating-a-security-descriptor-for-a-new-object-in-c--
-            // With using https://docs.microsoft.com/en-us/windows/win32/secauthz/well-known-sids
-            // to find out that
-            // * SECURITY_NT_AUTHORITY+SECURITY_LOCAL_SYSTEM_RID == NT AUTHORITY\SYSTEM
-            // * SECURITY_NT_AUTHORITY+SECURITY_BUILTIN_DOMAIN_RID+DOMAIN_ALIAS_RID_ADMINS == BUILTIN\Administrators
-            // * SECURITY_WORLD_SID_AUTHORITY+SECURITY_WORLD_RID == Everyone
+            // Initialize the security descriptor so only admins can write the
+            // file. We'll initialize the SECURITY_DESCRIPTOR with a
+            // single entry (ACE) -- a mandatory label (i.e. a
+            // LABEL_SECURITY_INFORMATION) that sets the file integrity level to
+            // "high",  with a no-write-up policy.
             //
-            // Raymond Chen recommended that I make this file only writable by
-            // SYSTEM, but if I did that, then even we can't write the file
-            // while elevated, which isn't what we want.
+            // When accessed from a security context at a lower integrity level,
+            // the no-write-up policy filters out rights that aren't in the
+            // object type's generic read and execute set (for the file type,
+            // that's FILE_GENERIC_READ | FILE_GENERIC_EXECUTE).
+            //
+            // Another option we considered here was manually setting the ACLs
+            // on this file such that Builtin\Admins could read&write the file,
+            // and all users could only read.
+            //
+            // Big thanks to @eryksun in GH#11222 for helping with this. This
+            // alternative method was chosen because it's considerably simpler.
 
-            wil::unique_sid everyoneSid;
-            wil::unique_sid adminGroupSid;
-            SID_IDENTIFIER_AUTHORITY SIDAuthNT = SECURITY_NT_AUTHORITY;
-            SID_IDENTIFIER_AUTHORITY SIDAuthWorld = SECURITY_WORLD_SID_AUTHORITY;
-
-            // Create a SID for the BUILTIN\Administrators group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthNT, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
-
-            // Create a well-known SID for the Everyone group.
-            THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&SIDAuthWorld, 1, SECURITY_WORLD_RID, 0, 0, 0, 0, 0, 0, 0, &everyoneSid));
-
-            EXPLICIT_ACCESS ea[2]{};
-
-            // Grant Admins all permissions on this file
-            ea[0].grfAccessPermissions = GENERIC_ALL;
-            ea[0].grfAccessMode = SET_ACCESS;
-            ea[0].grfInheritance = NO_INHERITANCE;
-            ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-            ea[0].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[0].Trustee.ptstrName = (LPWSTR)(adminGroupSid.get());
-
-            // Grant Everyone the permission or read this file
-            ea[1].grfAccessPermissions = GENERIC_READ;
-            ea[1].grfAccessMode = SET_ACCESS;
-            ea[1].grfInheritance = NO_INHERITANCE;
-            ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-            ea[1].Trustee.TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP;
-            ea[1].Trustee.ptstrName = (LPWSTR)(everyoneSid.get());
-
-            ACL acl;
-            PACL pAcl = &acl;
-            THROW_IF_WIN32_ERROR(SetEntriesInAcl(2, ea, nullptr, &pAcl));
-
-            SECURITY_DESCRIPTOR sd;
-            THROW_IF_WIN32_BOOL_FALSE(InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION));
-            THROW_IF_WIN32_BOOL_FALSE(SetSecurityDescriptorDacl(&sd, true, pAcl, false));
+            // The required security descriptor can be created easily from the
+            // SDDL string: "S:(ML;;NW;;;HI)"
+            // (i.e. SACL:mandatory label;;no write up;;;high integrity level)
+            unsigned long cb;
+            THROW_IF_WIN32_BOOL_FALSE(
+                ConvertStringSecurityDescriptorToSecurityDescriptor(L"S:(ML;;NW;;;HI)",
+                                                                    SDDL_REVISION_1,
+                                                                    wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd),
+                                                                    &cb));
 
             // Initialize a security attributes structure.
             sa.nLength = sizeof(SECURITY_ATTRIBUTES);
-            sa.lpSecurityDescriptor = &sd;
+            sa.lpSecurityDescriptor = sd.get();
             sa.bInheritHandle = false;
+
+            // If we're running in an elevated context, when this file is
+            // created, it will automatically be owned by
+            // Builtin\Administrators, which will pass the above
+            // _hasElevatedOnlyPermissions check.
+            //
+            // Programs running in an elevated context will be free to write the
+            // file, and unelevated processes will be able to read the file. An
+            // unelevated process could always delete the file and rename a new
+            // file in it's place (a la the way `vim.exe` saves files), but if
+            // they do that, the new file _won't_ be owned by Administrators,
+            // failing the above check.
         }
 
         wil::unique_hfile file{ CreateFileW(path.c_str(),

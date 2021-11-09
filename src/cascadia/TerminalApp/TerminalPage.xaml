@@ -153,7 +153,7 @@
         </ContentDialog>
 
         <local:CommandPalette x:Name="CommandPalette"
-                              Grid.Row="1"
+                              Grid.Row="2"
                               VerticalAlignment="Stretch"
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
