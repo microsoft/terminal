@@ -304,6 +304,9 @@ namespace winrt::TerminalApp::implementation
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
 
+        auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"), SystemMenuChangeAction::Add, SystemMenuItemHandler(this, &AppLogic::_OpenSettingsUI));
+        _SystemMenuChangeRequestedHandlers(*this, *args);
+
         TraceLoggingWrite(
             g_hTerminalAppProvider,
             "AppCreated",
@@ -1034,6 +1037,11 @@ namespace winrt::TerminalApp::implementation
         _SettingsChangedHandlers(*this, nullptr);
     }
 
+    void AppLogic::_OpenSettingsUI()
+    {
+        _root->OpenSettingsUI();
+    }
+
     // Method Description:
     // - Returns a pointer to the global shared settings.
     [[nodiscard]] CascadiaSettings AppLogic::GetSettings() const noexcept
@@ -1538,6 +1546,11 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::IsQuakeWindow() const noexcept
     {
         return _root->IsQuakeWindow();
+    }
+
+    void AppLogic::RequestExitFullscreen()
+    {
+        _root->SetFullscreen(false);
     }
 
     bool AppLogic::GetMinimizeToNotificationArea()

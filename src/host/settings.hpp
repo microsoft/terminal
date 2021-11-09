@@ -167,6 +167,8 @@ public:
 
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
+    void SetLegacyColorTableEntry(const size_t index, const COLORREF ColorValue);
+    COLORREF GetLegacyColorTableEntry(const size_t index) const;
 
     COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;

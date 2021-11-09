@@ -41,8 +41,8 @@ public:
 
     explicit constexpr TextAttribute(const WORD wLegacyAttr) noexcept :
         _wAttrLegacy{ gsl::narrow_cast<WORD>(wLegacyAttr & META_ATTRS) },
-        _foreground{ s_LegacyIndexOrDefault(wLegacyAttr & FG_ATTRS, s_legacyDefaultForeground) },
-        _background{ s_LegacyIndexOrDefault((wLegacyAttr & BG_ATTRS) >> 4, s_legacyDefaultBackground) },
+        _foreground{ gsl::at(s_legacyForegroundColorMap, wLegacyAttr & FG_ATTRS) },
+        _background{ gsl::at(s_legacyBackgroundColorMap, (wLegacyAttr & BG_ATTRS) >> 4) },
         _extendedAttrs{ ExtendedAttributes::Normal },
         _hyperlinkId{ 0 }
     {
@@ -167,13 +167,8 @@ public:
     }
 
 private:
-    static constexpr TextColor s_LegacyIndexOrDefault(const BYTE requestedIndex, const BYTE defaultIndex)
-    {
-        return requestedIndex == defaultIndex ? TextColor{} : TextColor{ requestedIndex, true };
-    }
-
-    static BYTE s_legacyDefaultForeground;
-    static BYTE s_legacyDefaultBackground;
+    static std::array<TextColor, 16> s_legacyForegroundColorMap;
+    static std::array<TextColor, 16> s_legacyBackgroundColorMap;
 
     uint16_t _wAttrLegacy; // sizeof: 2, alignof: 2
     uint16_t _hyperlinkId; // sizeof: 2, alignof: 2
