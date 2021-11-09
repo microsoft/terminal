@@ -66,6 +66,8 @@
                             so the name will always be overridden.
                         -->
                         <local:SettingContainer x:Uid="Profile_Name"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}"
+                                                CurrentValue="{x:Bind State.Profile.Name, Mode=OneWay}"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <TextBox Style="{StaticResource TextBoxSettingStyle}"
                                      Text="{x:Bind State.Profile.Name, Mode=TwoWay}" />
@@ -77,6 +79,8 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCommandline}"
                                                 HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}"
+                                                CurrentValue="{x:Bind State.Profile.Commandline, Mode=OneWay}"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_CommandlineBox"
@@ -92,6 +96,8 @@
                         <!--  Starting Directory  -->
                         <local:SettingContainer x:Name="StartingDirectoryContainer"
                                                 x:Uid="Profile_StartingDirectory"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}"
+                                                CurrentValue="{x:Bind State.Profile.StartingDirectory, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearStartingDirectory}"
                                                 HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
@@ -118,6 +124,8 @@
                         <local:SettingContainer x:Uid="Profile_Icon"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearIcon}"
                                                 HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}"
+                                                CurrentValue="{x:Bind State.Profile.Icon, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_IconBox"
@@ -134,6 +142,8 @@
                         <!--  Tab Title  -->
                         <local:SettingContainer x:Uid="Profile_TabTitle"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearTabTitle}"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}"
+                                                CurrentValue="{x:Bind State.Profile.TabTitle, Mode=OneWay}"
                                                 HasSettingValue="{x:Bind State.Profile.HasTabTitle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.TabTitleOverrideSource, Mode=OneWay}">
                             <TextBox Style="{StaticResource TextBoxSettingStyle}"
@@ -305,7 +315,7 @@
                                                     ClearSettingValue="{x:Bind State.Profile.ClearScrollState}"
                                                     HasSettingValue="{x:Bind State.Profile.HasScrollState, Mode=OneWay}"
                                                     SettingOverrideSource="{x:Bind State.Profile.ScrollStateOverrideSource, Mode=OneWay}"
-                                                    Style="{StaticResource AlternativeSettingContainerStyle}">
+                                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                    ItemsSource="{x:Bind ScrollStateList, Mode=OneWay}"
@@ -411,7 +421,7 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
                                                 HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}"
-                                                Style="{StaticResource AlternativeSettingContainerStyle}">
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind AntiAliasingModeList, Mode=OneWay}"
@@ -452,7 +462,7 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
                                                 HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}"
-                                                Style="{StaticResource AlternativeSettingContainerStyle}">
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                                ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                                ItemsSource="{x:Bind CloseOnExitModeList, Mode=OneWay}"
@@ -464,7 +474,7 @@
                                                 ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
                                                 HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}"
-                                                Style="{StaticResource AlternativeSettingContainerStyle}">
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <StackPanel>
                                 <CheckBox x:Uid="Profile_BellStyleAudible"
                                           IsChecked="{x:Bind IsBellStyleFlagSet(1), BindBack=SetBellStyleAudible, Mode=TwoWay}" />

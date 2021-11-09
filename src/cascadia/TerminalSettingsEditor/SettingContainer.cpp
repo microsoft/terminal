@@ -12,6 +12,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
     DependencyProperty SettingContainer::_HeaderProperty{ nullptr };
     DependencyProperty SettingContainer::_HelpTextProperty{ nullptr };
+    DependencyProperty SettingContainer::_CurrentValueProperty{ nullptr };
     DependencyProperty SettingContainer::_HasSettingValueProperty{ nullptr };
     DependencyProperty SettingContainer::_SettingOverrideSourceProperty{ nullptr };
 
@@ -39,6 +40,15 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _HelpTextProperty =
                 DependencyProperty::Register(
                     L"HelpText",
+                    xaml_typename<hstring>(),
+                    xaml_typename<Editor::SettingContainer>(),
+                    PropertyMetadata{ box_value(L"") });
+        }
+        if (!_CurrentValueProperty)
+        {
+            _CurrentValueProperty =
+                DependencyProperty::Register(
+                    L"CurrentValue",
                     xaml_typename<hstring>(),
                     xaml_typename<Editor::SettingContainer>(),
                     PropertyMetadata{ box_value(L"") });
@@ -72,23 +82,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void SettingContainer::OnApplyTemplate()
     {
-        if (const auto& child{ GetTemplateChild(L"ExpanderButton") })
-        {
-            if (const auto& toggleButton{ child.try_as<Controls::Primitives::ToggleButton>() })
-            {
-                toggleButton.Click([=](auto&&, auto&&) {
-                    if (const auto& expanderChild{ GetTemplateChild(L"MainContentContainer") })
-                    {
-                        if (const auto& expander{ expanderChild.try_as<Controls::Border>() })
-                        {
-                            const auto newVisibility = expander.Visibility() == Visibility::Visible ? Visibility::Collapsed : Visibility::Visible;
-                            expander.Visibility(newVisibility);
-                        }
-                    }
-                });
-            }
-        }
-
         if (const auto& child{ GetTemplateChild(L"ResetButton") })
         {
             if (const auto& button{ child.try_as<Controls::Button>() })

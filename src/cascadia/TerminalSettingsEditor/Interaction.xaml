@@ -33,7 +33,7 @@
 
             <!--  Copy Format  -->
             <local:SettingContainer x:Uid="Globals_CopyFormat"
-                                    Style="{StaticResource AlternativeSettingContainerStyle}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
@@ -51,7 +51,9 @@
             </local:SettingContainer>
 
             <!--  Word Delimiters  -->
-            <local:SettingContainer x:Uid="Globals_WordDelimiters">
+            <local:SettingContainer x:Uid="Globals_WordDelimiters"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}"
+                                    CurrentValue="{x:Bind State.Globals.WordDelimiters, Mode=OneWay}">
                 <TextBox IsSpellCheckEnabled="False"
                          Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" />
@@ -64,7 +66,7 @@
 
             <!--  Tab Switcher Mode  -->
             <local:SettingContainer x:Uid="Globals_TabSwitcherMode"
-                                    Style="{StaticResource AlternativeSettingContainerStyle}">
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"

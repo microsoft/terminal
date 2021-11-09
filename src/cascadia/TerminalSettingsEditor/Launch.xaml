@@ -37,8 +37,7 @@
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->
-                <local:SettingContainer x:Name="zzzknn"
-                                        x:Uid="Globals_DefaultProfile">
+                <local:SettingContainer x:Uid="Globals_DefaultProfile">
                     <ComboBox x:Name="DefaultProfile"
                               ItemsSource="{x:Bind DefaultProfiles}"
                               SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
@@ -136,7 +135,7 @@
                 <!--  First Window Behavior  -->
                 <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
                                         Visibility="{x:Bind ShowFirstWindowPreference}"
-                                        Style="{StaticResource AlternativeSettingContainerStyle}">
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind FirstWindowPreferenceList}"
@@ -147,7 +146,7 @@
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Name="Globals_LaunchMode"
                                         x:Uid="Globals_LaunchMode"
-                                        Style="{StaticResource AlternativeSettingContainerStyle}">
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind LaunchModeList}"
@@ -156,7 +155,7 @@
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_WindowingBehavior"
-                                        Style="{StaticResource AlternativeSettingContainerStyle}">
+                                        Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind WindowingBehaviorList}"
