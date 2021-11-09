@@ -44,7 +44,7 @@ IFACEMETHODIMP TermControlUiaProvider::Navigate(_In_ NavigateDirection direction
     return S_OK;
 }
 
-IFACEMETHODIMP TermControlUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect)
+IFACEMETHODIMP TermControlUiaProvider::get_BoundingRectangle(_Out_ UiaRect* pRect) noexcept
 {
     // TODO GitHub #1914: Re-attach Tracing to UIA Tree
     //Tracing::s_TraceUia(this, ApiCall::GetBoundingRectangle, nullptr);
@@ -89,17 +89,17 @@ IFACEMETHODIMP TermControlUiaProvider::get_FragmentRoot(_COM_Outptr_result_maybe
     return S_OK;
 }
 
-const COORD TermControlUiaProvider::GetFontSize() const
+const COORD TermControlUiaProvider::GetFontSize() const noexcept
 {
     return _controlInfo->GetFontSize();
 }
 
-const RECT TermControlUiaProvider::GetPadding() const
+const RECT TermControlUiaProvider::GetPadding() const noexcept
 {
     return _controlInfo->GetPadding();
 }
 
-const double TermControlUiaProvider::GetScaleFactor() const
+const double TermControlUiaProvider::GetScaleFactor() const noexcept
 {
     return _controlInfo->GetScaleFactor();
 }

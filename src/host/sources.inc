@@ -89,7 +89,6 @@ SOURCES = \
     ..\utf8ToWideCharParser.cpp \
     ..\conareainfo.cpp \
     ..\conimeinfo.cpp \
-    ..\conattrs.cpp \
     ..\ConsoleArguments.cpp \
     ..\CommandNumberPopup.cpp \
     ..\CommandListPopup.cpp \

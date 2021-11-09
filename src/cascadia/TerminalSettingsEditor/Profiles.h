@@ -23,6 +23,21 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetAcrylicOpacityPercentageValue(double value)
         {
             Opacity(winrt::Microsoft::Terminal::Settings::Editor::Converters::PercentageValueToPercentage(value));
+
+            // GH#11372: If we're on Windows 10, and someone wants opacity, then
+            // we'll turn acrylic on for them. Opacity doesn't work without
+            // acrylic on Windows 10.
+            //
+            // BODGY: CascadiaSettings's function IsDefaultTerminalAvailable
+            // is basically a "are we on Windows 11" check, because defterm
+            // only works on Win11. So we'll use that.
+            //
+            // Remove when we can remove the rest of GH#11285
+            if (value < 100.0 &&
+                !winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
+            {
+                UseAcrylic(true);
+            }
         };
 
         void SetPadding(double value)
@@ -71,8 +86,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
-        OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);

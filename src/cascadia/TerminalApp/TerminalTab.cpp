@@ -25,18 +25,6 @@ namespace winrt
 
 namespace winrt::TerminalApp::implementation
 {
-    TerminalTab::TerminalTab(const Profile& profile, const TermControl& control)
-    {
-        _rootPane = std::make_shared<Pane>(profile, control, true);
-
-        _rootPane->Id(_nextPaneId);
-        _activePane = _rootPane;
-        _mruPanes.insert(_mruPanes.begin(), _nextPaneId);
-        ++_nextPaneId;
-
-        _Setup();
-    }
-
     TerminalTab::TerminalTab(std::shared_ptr<Pane> rootPane)
     {
         _rootPane = rootPane;
@@ -64,8 +52,9 @@ namespace winrt::TerminalApp::implementation
         // focus the first one.
         if (_activePane == nullptr)
         {
-            _rootPane->FocusPane(firstId);
-            _activePane = _rootPane->GetActivePane();
+            const auto firstPane = _rootPane->FindPane(firstId);
+            firstPane->SetActive();
+            _activePane = firstPane;
         }
         // If the focused pane is a leaf, add it to the MRU panes
         if (const auto id = _activePane->Id())
@@ -503,39 +492,48 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Split the focused pane in our tree of panes, and place the
-    //   given TermControl into the newly created pane.
+    //   given pane into the tree of panes according to the split
     // Arguments:
-    // - splitType: The type of split we want to create.
-    // - profile: The profile GUID to associate with the newly created pane.
-    // - control: A TermControl to use in the new pane.
+    // - splitType: The type of split we want to create
+    // - splitSize: The size of the split we want to create
+    // - pane: The new pane to add to the tree of panes; note that this pane
+    //         could itself be a parent pane/the root node of a tree of panes
     // Return Value:
     // - <none>
     void TerminalTab::SplitPane(SplitDirection splitType,
                                 const float splitSize,
-                                const Profile& profile,
-                                TermControl& control)
+                                std::shared_ptr<Pane> pane)
     {
+        // Add the new event handlers to the new pane(s)
+        // and update their ids.
+        pane->WalkTree([&](auto p) {
+            _AttachEventHandlersToPane(p);
+            if (p->_IsLeaf())
+            {
+                p->Id(_nextPaneId);
+                _AttachEventHandlersToControl(p->Id().value(), p->_control);
+                _nextPaneId++;
+            }
+            return false;
+        });
         // Make sure to take the ID before calling Split() - Split() will clear out the active pane's ID
         const auto activePaneId = _activePane->Id();
         // Depending on which direction will be split, the new pane can be
         // either the first or second child, but this will always return the
         // original pane first.
-        auto [original, newPane] = _activePane->Split(splitType, splitSize, profile, control);
+        auto [original, newPane] = _activePane->Split(splitType, splitSize, pane);
+
         // The active pane has an id if it is a leaf
         if (activePaneId)
         {
             original->Id(activePaneId.value());
         }
-        newPane->Id(_nextPaneId);
-        ++_nextPaneId;
 
         _activePane = original;
 
         // Add a event handlers to the new panes' GotFocus event. When the pane
         // gains focus, we'll mark it as the new active pane.
-        _AttachEventHandlersToControl(newPane->Id().value(), control);
         _AttachEventHandlersToPane(original);
-        _AttachEventHandlersToPane(newPane);
 
         // Immediately update our tracker of the focused pane now. If we're
         // splitting panes during startup (from a commandline), then it's
@@ -1461,15 +1459,10 @@ namespace winrt::TerminalApp::implementation
         // when the TabViewItem is unselected. So we still need to set the other
         // properties ourselves.
         //
-        // GH#11294: DESPITE the fact that there's a Background() API that we
-        // could just call like:
-        //
-        //     TabViewItem().Background(deselectedTabBrush);
-        //
-        // We actually can't, because it will make the part of the tab that
-        // doesn't contain the text totally transparent to hit tests. So we
-        // actually _do_ still need to set TabViewItemHeaderBackground manually.
-        TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackground"), deselectedTabBrush);
+        // In GH#11294 we thought we'd still need to set
+        // TabViewItemHeaderBackground manually, but GH#11382 discovered that
+        // Background() was actually okay after all.
+        TabViewItem().Background(deselectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundSelected"), selectedTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPointerOver"), hoverTabBrush);
         TabViewItem().Resources().Insert(winrt::box_value(L"TabViewItemHeaderBackgroundPressed"), selectedTabBrush);
@@ -1535,6 +1528,11 @@ namespace winrt::TerminalApp::implementation
                 TabViewItem().Resources().Remove(key);
             }
         }
+
+        // GH#11382 DON'T set the background to null. If you do that, then the
+        // tab won't be hit testable at all. Transparent, however, is a totally
+        // valid hit test target. That makes sense.
+        TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
 
         _RefreshVisualState();
         _colorCleared();

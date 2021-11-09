@@ -610,7 +610,7 @@ GdiEngine::~GdiEngine()
         // NOTE: not using what GDI gave us because some fonts don't quite roundtrip (e.g. MS Gothic and VL Gothic)
         lf.lfPitchAndFamily = (FIXED_PITCH | FF_MODERN);
 
-        RETURN_IF_FAILED(FontDesired.FillLegacyNameBuffer(gsl::make_span(lf.lfFaceName)));
+        FontDesired.FillLegacyNameBuffer(lf.lfFaceName);
 
         // Create font.
         hFont.reset(CreateFontIndirectW(&lf));

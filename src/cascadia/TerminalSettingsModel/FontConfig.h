@@ -19,6 +19,7 @@ Author(s):
 #include "pch.h"
 #include "FontConfig.g.h"
 #include "JsonUtils.h"
+#include "MTSMSettings.h"
 #include "../inc/cppwinrt_utils.h"
 #include "IInheritable.h"
 #include <DefaultSettings.h>
@@ -39,11 +40,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         Model::Profile SourceProfile();
 
-        INHERITABLE_SETTING(Model::FontConfig, hstring, FontFace, DEFAULT_FONT_FACE);
-        INHERITABLE_SETTING(Model::FontConfig, int32_t, FontSize, DEFAULT_FONT_SIZE);
-        INHERITABLE_SETTING(Model::FontConfig, Windows::UI::Text::FontWeight, FontWeight, DEFAULT_FONT_WEIGHT);
-        INHERITABLE_SETTING(Model::FontConfig, IFontAxesMap, FontAxes);
-        INHERITABLE_SETTING(Model::FontConfig, IFontFeatureMap, FontFeatures);
+#define FONT_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_SETTING(Model::FontConfig, type, name, ##__VA_ARGS__)
+        MTSM_FONT_SETTINGS(FONT_SETTINGS_INITIALIZE)
+#undef FONT_SETTINGS_INITIALIZE
 
     private:
         winrt::weak_ref<Profile> _sourceProfile;

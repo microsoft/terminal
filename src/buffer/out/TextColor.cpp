@@ -4,6 +4,8 @@
 #include "precomp.h"
 #include "TextColor.h"
 
+#include <til/bit.h>
+
 // clang-format off
 
 // A table mapping 8-bit RGB colors, in the form RRRGGGBB,
@@ -30,7 +32,7 @@ constexpr std::array<BYTE, 256> CompressedRgbToIndex16 = {
 // A table mapping indexed colors from the 256-color palette,
 // down to one of the 16 colors in the legacy palette.
 constexpr std::array<BYTE, 256> Index256ToIndex16 = {
-     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
+     0,  4,  2,  6,  1,  5,  3,  7,  8, 12, 10, 14,  9, 13, 11, 15,
      0,  1,  1,  1,  9,  9,  2,  1,  1,  1,  1,  1,  2,  2,  3,  3,
      3,  3,  2,  2, 11, 11,  3,  3, 10, 10, 11, 11, 11, 11, 10, 10,
     10, 10, 11, 11,  5,  5,  5,  5,  1,  1,  8,  8,  1,  1,  9,  9,
@@ -186,7 +188,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const 
             //    the result will be something like 0b00100000.
             // 5. Use BitScanForward (bsf) to find the index of the most significant 1 bit.
             const auto haystack = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(colorTable.data())); // 1.
-            const auto needle = _mm256_set1_epi32(__builtin_bit_cast(int, defaultColor)); // 2.
+            const auto needle = _mm256_set1_epi32(til::bit_cast<int>(defaultColor)); // 2.
             const auto result = _mm256_cmpeq_epi32(haystack, needle); // 3.
             const auto mask = _mm256_movemask_ps(_mm256_castsi256_ps(result)); // 4.
             unsigned long index;
@@ -203,7 +205,7 @@ COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const 
             //   --> the index returned by _BitScanForward must be divided by 2.
             const auto haystack1 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 0));
             const auto haystack2 = _mm_loadu_si128(reinterpret_cast<const __m128i*>(colorTable.data() + 4));
-            const auto needle = _mm_set1_epi32(__builtin_bit_cast(int, defaultColor));
+            const auto needle = _mm_set1_epi32(til::bit_cast<int>(defaultColor));
             const auto result1 = _mm_cmpeq_epi32(haystack1, needle);
             const auto result2 = _mm_cmpeq_epi32(haystack2, needle);
             const auto result = _mm_packs_epi32(result1, result2); // 3.5
@@ -250,11 +252,7 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
     {
         return defaultIndex;
     }
-    else if (IsIndex16())
-    {
-        return GetIndex();
-    }
-    else if (IsIndex256())
+    else if (IsIndex16() || IsIndex256())
     {
         return til::at(Index256ToIndex16, GetIndex());
     }

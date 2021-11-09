@@ -28,11 +28,12 @@ typedef enum _PROCESSINFOCLASS
 
 typedef struct _PROCESS_BASIC_INFORMATION
 {
-    PVOID Reserved1;
+    NTSTATUS ExitStatus;
     PVOID PebBaseAddress;
-    PVOID Reserved2[2];
+    ULONG_PTR AffinityMask;
+    LONG BasePriority;
     ULONG_PTR UniqueProcessId;
-    ULONG_PTR Reserved3;
+    ULONG_PTR InheritedFromUniqueProcessId;
 } PROCESS_BASIC_INFORMATION;
 typedef PROCESS_BASIC_INFORMATION* PPROCESS_BASIC_INFORMATION;
 

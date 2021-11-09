@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -246,6 +246,10 @@
   <data name="Globals_TrimBlockSelection.Header" xml:space="preserve">
     <value>Remove trailing white-space in rectangular selection</value>
     <comment>Header for a control to toggle whether a text selected with block selection should be trimmed of white spaces when copied to the clipboard, or not.</comment>
+  </data>
+  <data name="Globals_TrimPaste.Header" xml:space="preserve">
+    <value>Remove trailing white-space when pasting</value>
+    <comment>Header for a control to toggle whether pasted text should be trimmed of white spaces, or not.</comment>
   </data>
   <data name="Globals_KeybindingsDisclaimer.Text" xml:space="preserve">
     <value>Below are the currently bound keys, which can be modified by editing the JSON settings file.</value>
@@ -798,6 +802,14 @@
   <data name="Profile_RetroTerminalEffect.HelpText" xml:space="preserve">
     <value>When enabled, enables retro terminal effects such as glowing text and scan lines.</value>
     <comment>A description for what the "retro terminal effects" setting does. Presented near "Profile_RetroTerminalEffect".</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColors.Header" xml:space="preserve">
+    <value>Automatically adjust lightness of indistinguishable text</value>
+    <comment>Header for a control to toggle if we should adjust the foreground color's lightness to make it more visible when necessary, based on the background color.</comment>
+  </data>
+  <data name="Profile_AdjustIndistinguishableColors.HelpText" xml:space="preserve">
+    <value>When enabled, enables automatic adjustment of indistinguishable colors, which will, only when necessary, adjust the foreground color's lightness to make it more visible (based on the background color).</value>
+    <comment>A description for what the "adjust indistinguishable colors" setting does. Presented near "Profile_AdjustIndistinguishableColors".</comment>
   </data>
   <data name="Profile_ScrollbarVisibility.Header" xml:space="preserve">
     <value>Scrollbar visibility</value>

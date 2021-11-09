@@ -110,6 +110,8 @@ void RenderData::UnlockConsole() noexcept
 const TextAttribute RenderData::GetDefaultBrushColors() noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    _defaultForeground = gci.GetDefaultForeground();
+    _defaultBackground = gci.GetDefaultBackground();
     return gci.GetActiveOutputBuffer().GetAttributes();
 }
 
@@ -362,7 +364,7 @@ const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) con
 std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupAttributeColors(attr);
+    return gci.LookupAttributeColors(attr, _defaultForeground, _defaultBackground);
 }
 #pragma endregion
 

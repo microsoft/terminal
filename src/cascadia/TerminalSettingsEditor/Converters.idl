@@ -20,6 +20,6 @@ namespace Microsoft.Terminal.Settings.Editor
         static Double PercentageValueToPercentage(Double value);
         static Boolean StringsAreNotEqual(String expected, String actual);
         static Windows.UI.Xaml.Visibility StringNotEmptyToVisibility(String value);
-        static String StringFallBackToEmptyString(String expected, String actual);
+        static String StringOrEmptyIfPlaceholder(String placeholder, String value);
     }
 }

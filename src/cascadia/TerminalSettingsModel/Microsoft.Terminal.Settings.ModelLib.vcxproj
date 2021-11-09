@@ -14,7 +14,6 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
-    <ClInclude Include="VcDevCmdGenerator.h" />
     <ClInclude Include="VisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>
@@ -51,6 +50,7 @@
       <DependentUpon>GlobalAppSettings.idl</DependentUpon>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IDynamicProfileGenerator.h" />
     <ClInclude Include="JsonUtils.h" />
     <ClInclude Include="HashUtils.h" />
@@ -85,7 +85,6 @@
   </ItemGroup>
   <!-- ========================= Cpp Files ======================== -->
   <ItemGroup>
-    <ClCompile Include="VcDevCmdGenerator.cpp" />
     <ClCompile Include="VisualStudioGenerator.cpp" />
     <ClCompile Include="DefaultTerminal.cpp">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>

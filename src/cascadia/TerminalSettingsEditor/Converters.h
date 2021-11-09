@@ -21,7 +21,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         static double PercentageValueToPercentage(double value);
         static bool StringsAreNotEqual(winrt::hstring expected, winrt::hstring actual);
         static winrt::Windows::UI::Xaml::Visibility StringNotEmptyToVisibility(winrt::hstring value);
-        static winrt::hstring StringFallBackToEmptyString(winrt::hstring expected, winrt::hstring actual);
+        static winrt::hstring StringOrEmptyIfPlaceholder(winrt::hstring placeholder, winrt::hstring value);
     };
 }
 

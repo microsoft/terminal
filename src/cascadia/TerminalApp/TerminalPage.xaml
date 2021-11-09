@@ -16,14 +16,57 @@
           Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <local:TabRowControl x:Name="TabRow"
                              Grid.Row="0" />
 
+        <StackPanel Grid.Row="1">
+            <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
+                         x:Load="False"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
+                         Severity="Warning">
+                <mux:InfoBar.ActionButton>
+                    <Button x:Uid="InfoBarDismissButton"
+                            Click="_KeyboardServiceWarningInfoDismissHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+
+            <mux:InfoBar x:Name="CloseOnExitInfoBar"
+                         x:Uid="CloseOnExitInfoBar"
+                         x:Load="False"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Severity="Informational">
+                <mux:InfoBar.ActionButton>
+                    <Button x:Uid="InfoBarDismissButton"
+                            Click="_CloseOnExitInfoDismissHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+
+            <mux:InfoBar x:Name="SetAsDefaultInfoBar"
+                         x:Uid="SetAsDefaultInfoBar"
+                         x:Load="False"
+                         CloseButtonClick="_SetAsDefaultDismissHandler"
+                         IsClosable="True"
+                         IsIconVisible="True"
+                         IsOpen="False"
+                         Severity="Informational">
+                <mux:InfoBar.ActionButton>
+                    <HyperlinkButton x:Uid="SetAsDefaultTip_OpenSettingsLink"
+                                     Click="_SetAsDefaultOpenSettingsHandler" />
+                </mux:InfoBar.ActionButton>
+            </mux:InfoBar>
+        </StackPanel>
+
         <Grid x:Name="TabContent"
-              Grid.Row="1"
+              Grid.Row="2"
               HorizontalAlignment="Stretch"
               VerticalAlignment="Stretch" />
 
@@ -110,38 +153,10 @@
         </ContentDialog>
 
         <local:CommandPalette x:Name="CommandPalette"
-                              Grid.Row="1"
+                              Grid.Row="2"
                               VerticalAlignment="Stretch"
                               PreviewKeyDown="_KeyDownHandler"
                               Visibility="Collapsed" />
-
-        <StackPanel>
-            <mux:InfoBar x:Name="KeyboardServiceWarningInfoBar"
-                         x:Load="False"
-                         IsClosable="True"
-                         IsIconVisible="True"
-                         IsOpen="False"
-                         Message="{x:Bind KeyboardServiceDisabledText, Mode=OneWay}"
-                         Severity="Warning">
-                <mux:InfoBar.ActionButton>
-                    <Button x:Uid="InfoBarDismissButton"
-                            Click="_KeyboardServiceWarningInfoDismissHandler" />
-                </mux:InfoBar.ActionButton>
-            </mux:InfoBar>
-
-            <mux:InfoBar x:Name="CloseOnExitInfoBar"
-                         x:Uid="CloseOnExitInfoBar"
-                         x:Load="False"
-                         IsClosable="True"
-                         IsIconVisible="True"
-                         IsOpen="False"
-                         Severity="Informational">
-                <mux:InfoBar.ActionButton>
-                    <Button x:Uid="InfoBarDismissButton"
-                            Click="_CloseOnExitInfoDismissHandler" />
-                </mux:InfoBar.ActionButton>
-            </mux:InfoBar>
-        </StackPanel>
 
         <!--
             A TeachingTip with IsLightDismissEnabled="True" will immediately

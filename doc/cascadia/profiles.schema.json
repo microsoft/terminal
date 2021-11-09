@@ -188,6 +188,10 @@
           ],
           "type": "string"
         },
+        "adjustIndistinguishableColors": {
+          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
+          "type": "boolean"
+        },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects when unfocused. This is an experimental feature, and its continued existence is not guaranteed.",
           "type": "boolean"
@@ -455,7 +459,7 @@
         },
         "suppressApplicationTitle": {
           "type": "boolean",
-          "default": "false",
+          "default": false,
           "description": "When set to true, tabTitle overrides the default title of the tab and any title change messages from the application will be suppressed. When set to false, tabTitle behaves as normal"
         },
         "colorScheme": {
@@ -502,7 +506,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "adjustFontSize"
+              "const": "adjustFontSize"
             },
             "delta": {
               "type": "integer",
@@ -526,7 +530,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "copy"
+              "const": "copy"
             },
             "singleLine": {
               "type": "boolean",
@@ -562,7 +566,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "newTab"
+              "const": "newTab"
             }
           }
         }
@@ -578,7 +582,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "switchToTab"
+              "const": "switchToTab"
             },
             "index": {
               "type": "integer",
@@ -602,7 +606,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "movePane"
+              "const": "movePane"
             },
             "index": {
               "type": "integer",
@@ -626,7 +630,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "moveFocus"
+              "const": "moveFocus"
             },
             "direction": {
               "$ref": "#/$defs/FocusDirection",
@@ -650,7 +654,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "swapPane"
+              "const": "swapPane"
             },
             "direction": {
               "$ref": "#/$defs/FocusDirection",
@@ -674,7 +678,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "resizePane"
+              "const": "resizePane"
             },
             "direction": {
               "$ref": "#/$defs/ResizeDirection",
@@ -698,7 +702,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "sendInput"
+              "const": "sendInput"
             },
             "input": {
               "type": "string",
@@ -725,7 +729,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "splitPane"
+              "const": "splitPane"
             },
             "split": {
               "$ref": "#/$defs/SplitDirection",
@@ -757,7 +761,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "openSettings"
+              "const": "openSettings"
             },
             "target": {
               "type": "string",
@@ -784,7 +788,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "setTabColor"
+              "const": "setTabColor"
             },
             "color": {
               "$ref": "#/$defs/Color",
@@ -805,7 +809,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "setColorScheme"
+              "const": "setColorScheme"
             },
             "colorScheme": {
               "type": "string",
@@ -829,7 +833,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "wt"
+              "const": "wt"
             },
             "commandline": {
               "type": "string",
@@ -853,7 +857,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeOtherTabs"
+              "const": "closeOtherTabs"
             },
             "index": {
               "oneOf": [
@@ -881,7 +885,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeTabsAfter"
+              "const": "closeTabsAfter"
             },
             "index": {
               "oneOf": [
@@ -909,7 +913,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "closeTab"
+              "const": "closeTab"
             },
             "index": {
               "oneOf": [
@@ -937,7 +941,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "scrollUp"
+              "const": "scrollUp"
             },
             "rowsToScroll": {
               "type": [
@@ -961,7 +965,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "scrollDown"
+              "const": "scrollDown"
             },
             "rowsToScroll": {
               "type": [
@@ -985,7 +989,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "moveTab"
+              "const": "moveTab"
             },
             "direction": {
               "$ref": "#/$defs/MoveTabDirection",
@@ -1008,7 +1012,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "multipleActions"
+              "const": "multipleActions"
             },
             "actions": {
               "$ref": "#/$defs/ShortcutAction",
@@ -1033,7 +1037,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "commandPalette"
+              "const": "commandPalette"
             },
             "launchMode": {
               "$ref": "#/$defs/CommandPaletteLaunchMode",
@@ -1054,7 +1058,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "findMatch"
+              "const": "findMatch"
             },
             "direction": {
               "$ref": "#/$defs/FindMatchDirection",
@@ -1081,7 +1085,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "newWindow"
+              "const": "newWindow"
             }
           }
         }
@@ -1097,7 +1101,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "prevTab"
+              "const": "prevTab"
             },
             "tabSwitcherMode": {
               "$ref": "#/$defs/SwitchToAdjacentTabArgs",
@@ -1118,7 +1122,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "nextTab"
+              "const": "nextTab"
             },
             "tabSwitcherMode": {
               "$ref": "#/$defs/SwitchToAdjacentTabArgs",
@@ -1139,7 +1143,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "renameTab"
+              "const": "renameTab"
             },
             "title": {
               "type": "string",
@@ -1160,7 +1164,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "renameWindow"
+              "const": "renameWindow"
             },
             "name": {
               "type": "string",
@@ -1181,7 +1185,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "focusPane"
+              "const": "focusPane"
             },
             "id": {
               "type": "integer",
@@ -1203,7 +1207,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "globalSummon"
+              "const": "globalSummon"
             },
             "desktop": {
               "type": "string",
@@ -1254,7 +1258,7 @@
           "properties": {
             "action": {
               "type": "string",
-              "pattern": "quakeMode"
+              "const": "quakeMode"
             }
           }
         }
@@ -1328,6 +1332,12 @@
             },
             {
               "$ref": "#/$defs/MoveTabAction"
+            },
+            {
+              "$ref": "#/$defs/MultipleActionsAction"
+            },
+            {
+              "$ref": "#/$defs/CommandPaletteAction"
             },
             {
               "$ref": "#/$defs/FindMatchAction"
@@ -1468,6 +1478,11 @@
           "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
           "type": "boolean"
         },
+        "trimPaste": {
+          "default": true,
+          "description": "When enabled, the Terminal will automatically trim trailing whitespace characters when pasting text",
+          "type": "boolean"
+        },
         "experimental.detectURLs": {
           "default": true,
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
@@ -1571,22 +1586,22 @@
           "deprecated": true
         },
         "minimizeToNotificationArea": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, minimizing a Terminal window will no longer appear in the taskbar. Instead, a Terminal icon will appear in the notification area through which the user can access their windows.",
           "type": "boolean"
         },
         "alwaysShowNotificationIcon": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, the Terminal's notification icon will always be shown in the notification area.",
           "type": "boolean"
         },
         "showAdminShield": {
-          "default": "true",
+          "default": true,
           "description": "When set to true, the Terminal's tab row will display a shield icon when the Terminal is running with administrator privileges",
           "type": "boolean"
         },
         "useAcrylicInTabRow": {
-          "default": "false",
+          "default": false,
           "description": "When set to true, the tab row will have an acrylic background with 50% opacity.",
           "type": "boolean"
         },
@@ -1972,6 +1987,10 @@
               "type": "integer"
             }
           ]
+        },
+        "adjustIndistinguishableColors": {
+          "description": "When set to true, we will (when necessary) adjust the foreground color to make it more visible, based on the background color.",
+          "type": "boolean"
         },
         "scrollbarState": {
           "default": "visible",

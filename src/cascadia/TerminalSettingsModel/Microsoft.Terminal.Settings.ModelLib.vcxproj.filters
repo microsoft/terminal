@@ -46,9 +46,6 @@
     <ClCompile Include="VsSetupConfiguration.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
-    <ClCompile Include="VcDevCmdGenerator.cpp">
-      <Filter>profileGeneration</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -79,6 +76,7 @@
       <Filter>json</Filter>
     </ClInclude>
     <ClInclude Include="IInheritable.h" />
+    <ClInclude Include="MTSMSettings.h" />
     <ClInclude Include="IconPathConverter.h" />
     <ClInclude Include="DefaultTerminal.h" />
     <ClInclude Include="FileUtils.h" />
@@ -93,9 +91,6 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="VsSetupConfiguration.h">
-      <Filter>profileGeneration</Filter>
-    </ClInclude>
-    <ClInclude Include="VcDevCmdGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
   </ItemGroup>

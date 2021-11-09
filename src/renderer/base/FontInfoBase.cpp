@@ -7,20 +7,11 @@
 
 #include "../inc/FontInfoBase.hpp"
 
-bool operator==(const FontInfoBase& a, const FontInfoBase& b)
-{
-    return a._faceName == b._faceName &&
-           a._weight == b._weight &&
-           a._family == b._family &&
-           a._codePage == b._codePage &&
-           a._fDefaultRasterSetFromEngine == b._fDefaultRasterSetFromEngine;
-}
-
-FontInfoBase::FontInfoBase(const std::wstring_view faceName,
+FontInfoBase::FontInfoBase(const std::wstring_view& faceName,
                            const unsigned char family,
                            const unsigned int weight,
                            const bool fSetDefaultRasterFont,
-                           const unsigned int codePage) :
+                           const unsigned int codePage) noexcept :
     _faceName(faceName),
     _family(family),
     _weight(weight),
@@ -30,20 +21,16 @@ FontInfoBase::FontInfoBase(const std::wstring_view faceName,
     ValidateFont();
 }
 
-FontInfoBase::FontInfoBase(const FontInfoBase& fibFont) :
-    FontInfoBase(fibFont.GetFaceName(),
-                 fibFont.GetFamily(),
-                 fibFont.GetWeight(),
-                 fibFont.WasDefaultRasterSetFromEngine(),
-                 fibFont.GetCodePage())
+bool FontInfoBase::operator==(const FontInfoBase& other) noexcept
 {
+    return _faceName == other._faceName &&
+           _weight == other._weight &&
+           _family == other._family &&
+           _codePage == other._codePage &&
+           _fDefaultRasterSetFromEngine == other._fDefaultRasterSetFromEngine;
 }
 
-FontInfoBase::~FontInfoBase()
-{
-}
-
-unsigned char FontInfoBase::GetFamily() const
+unsigned char FontInfoBase::GetFamily() const noexcept
 {
     return _family;
 }
@@ -51,22 +38,22 @@ unsigned char FontInfoBase::GetFamily() const
 // When the default raster font is forced set from the engine, this is how we differentiate it from a simple apply.
 // Default raster font is internally represented as a blank face name and zeros for weight, family, and size. This is
 // the hint for the engine to use whatever comes back from GetStockObject(OEM_FIXED_FONT) (at least in the GDI world).
-bool FontInfoBase::WasDefaultRasterSetFromEngine() const
+bool FontInfoBase::WasDefaultRasterSetFromEngine() const noexcept
 {
     return _fDefaultRasterSetFromEngine;
 }
 
-unsigned int FontInfoBase::GetWeight() const
+unsigned int FontInfoBase::GetWeight() const noexcept
 {
     return _weight;
 }
 
-const std::wstring_view FontInfoBase::GetFaceName() const noexcept
+const std::wstring& FontInfoBase::GetFaceName() const noexcept
 {
     return _faceName;
 }
 
-unsigned int FontInfoBase::GetCodePage() const
+unsigned int FontInfoBase::GetCodePage() const noexcept
 {
     return _codePage;
 }
@@ -77,21 +64,18 @@ unsigned int FontInfoBase::GetCodePage() const
 // Arguments:
 // - buffer: the buffer into which to copy characters
 // - size: the size of buffer
-HRESULT FontInfoBase::FillLegacyNameBuffer(gsl::span<wchar_t> buffer) const
-try
+void FontInfoBase::FillLegacyNameBuffer(wchar_t (&buffer)[LF_FACESIZE]) const noexcept
 {
-    auto toCopy = std::min<size_t>(buffer.size() - 1, _faceName.size());
-    auto last = std::copy(_faceName.cbegin(), _faceName.cbegin() + toCopy, buffer.begin());
-    std::fill(last, buffer.end(), L'\0');
-    return S_OK;
+    const auto toCopy = std::min(std::size(buffer) - 1, _faceName.size());
+    const auto last = std::copy_n(_faceName.data(), toCopy, &buffer[0]);
+    *last = L'\0';
 }
-CATCH_RETURN();
 
 // NOTE: this method is intended to only be used from the engine itself to respond what font it has chosen.
-void FontInfoBase::SetFromEngine(const std::wstring_view faceName,
+void FontInfoBase::SetFromEngine(const std::wstring_view& faceName,
                                  const unsigned char family,
                                  const unsigned int weight,
-                                 const bool fSetDefaultRasterFont)
+                                 const bool fSetDefaultRasterFont) noexcept
 {
     _faceName = faceName;
     _family = family;
@@ -101,12 +85,12 @@ void FontInfoBase::SetFromEngine(const std::wstring_view faceName,
 
 // Internally, default raster font is represented by empty facename, and zeros for weight, family, and size. Since
 // FontInfoBase doesn't have sizing information, this helper checks everything else.
-bool FontInfoBase::IsDefaultRasterFontNoSize() const
+bool FontInfoBase::IsDefaultRasterFontNoSize() const noexcept
 {
     return (_weight == 0 && _family == 0 && _faceName.empty());
 }
 
-void FontInfoBase::ValidateFont()
+void FontInfoBase::ValidateFont() noexcept
 {
     // If we were given a blank name, it meant raster fonts, which to us is always Terminal.
     if (!IsDefaultRasterFontNoSize() && s_pFontDefaultList != nullptr)
@@ -128,14 +112,14 @@ void FontInfoBase::ValidateFont()
     }
 }
 
-bool FontInfoBase::IsTrueTypeFont() const
+bool FontInfoBase::IsTrueTypeFont() const noexcept
 {
     return WI_IsFlagSet(_family, TMPF_TRUETYPE);
 }
 
 Microsoft::Console::Render::IFontDefaultList* FontInfoBase::s_pFontDefaultList;
 
-void FontInfoBase::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList)
+void FontInfoBase::s_SetFontDefaultList(_In_ Microsoft::Console::Render::IFontDefaultList* const pFontDefaultList) noexcept
 {
     s_pFontDefaultList = pFontDefaultList;
 }

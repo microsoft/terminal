@@ -8,7 +8,8 @@ namespace Microsoft.Terminal.Settings.Model
     enum InfoBarMessage
     {
         CloseOnExitInfo = 0,
-        KeyboardServiceWarning
+        KeyboardServiceWarning,
+        SetAsDefault,
     };
 
     runtimeclass WindowLayout
@@ -27,6 +28,7 @@ namespace Microsoft.Terminal.Settings.Model
         static ApplicationState SharedInstance();
 
         void Reload();
+        void Reset();
 
         String FilePath { get; };
 

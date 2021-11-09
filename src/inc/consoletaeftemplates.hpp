@@ -17,6 +17,8 @@ Revision History:
 
 #pragma once
 
+#include <til/bit.h>
+
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
 #define INIT_TEST_PROPERTY(type, identifer, description) \
     type identifer;                                      \
@@ -43,6 +45,45 @@ Revision History:
 
 namespace WEX::TestExecution
 {
+    // Compare two floats using a ULP (unit last place) tolerance of up to 4.
+    // Allows you to compare two floats that are almost equal.
+    // Think of: 0.200000000000000 vs. 0.200000000000001.
+    template<typename T, typename U>
+    bool CompareFloats(T a, T b) noexcept
+    {
+        if (std::isnan(a))
+        {
+            return std::isnan(b);
+        }
+
+        if (a == b)
+        {
+            return true;
+        }
+
+        const auto nDiff = static_cast<std::make_signed_t<U>>(til::bit_cast<U>(a) - til::bit_cast<U>(b));
+        const auto uDiff = static_cast<U>(nDiff < 0 ? -nDiff : nDiff);
+        return uDiff <= 4;
+    }
+
+    template<>
+    struct VerifyCompareTraits<float, float>
+    {
+        static bool AreEqual(float a, float b) noexcept
+        {
+            return CompareFloats<float, uint32_t>(a, b);
+        }
+    };
+
+    template<>
+    struct VerifyCompareTraits<double, double>
+    {
+        static bool AreEqual(double a, double b) noexcept
+        {
+            return CompareFloats<double, uint64_t>(a, b);
+        }
+    };
+
     template<>
     class VerifyOutputTraits<SMALL_RECT>
     {
