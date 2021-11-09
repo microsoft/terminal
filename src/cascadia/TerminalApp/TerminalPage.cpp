@@ -655,16 +655,6 @@ namespace winrt::TerminalApp::implementation
         co_return ContentDialogResult::None;
     }
 
-    // TODO! get rid of me
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCommandlineApproveWarning()
-    {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"ApproveCommandlineWarning").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
-    }
-
     // Method Description:
     // - Builds the flyout (dropdown) attached to the new tab button, and
     //   attaches it to the button. Populates the flyout with one entry per

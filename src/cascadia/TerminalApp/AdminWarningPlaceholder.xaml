@@ -45,23 +45,27 @@
                                HorizontalAlignment="Left"
                                FontSize="20"
                                FontWeight="Normal"
+                               IsTextSelectionEnabled="True"
                                TextWrapping="WrapWholeWords" />
 
                     <TextBlock x:Name="PrefixTextBlock"
                                x:Uid="ApproveCommandlineWarningPrefixTextBlock"
                                HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
                                TextWrapping="WrapWholeWords" />
 
                     <TextBlock x:Name="CommandlineText"
                                Margin="0,16,0,16"
                                HorizontalAlignment="Left"
                                FontFamily="Cascadia Mono"
+                               IsTextSelectionEnabled="True"
                                Text="{x:Bind Commandline, Mode=OneWay}"
                                TextWrapping="WrapWholeWords" />
 
                     <TextBlock x:Name="SuffixTextBlock"
                                x:Uid="ApproveCommandlineWarningSuffixTextBlock"
                                HorizontalAlignment="Left"
+                               IsTextSelectionEnabled="True"
                                TextWrapping="WrapWholeWords" />
                     <Grid Margin="0,8,0,8"
                           HorizontalAlignment="Stretch"
