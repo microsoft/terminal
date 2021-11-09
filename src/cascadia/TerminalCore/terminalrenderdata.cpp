@@ -206,7 +206,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
 
     SetSelectionAnchor(realCoordStart);
-    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
+    SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept
@@ -233,6 +233,9 @@ catch (...)
 void Terminal::LockConsole() noexcept
 {
     _readWriteLock.lock();
+#ifndef NDEBUG
+    _lastLocker = GetCurrentThreadId();
+#endif
 }
 
 // Method Description:
@@ -249,4 +252,13 @@ void Terminal::UnlockConsole() noexcept
 bool Terminal::IsScreenReversed() const noexcept
 {
     return _screenReversed;
+}
+
+const bool Terminal::IsUiaDataInitialized() const noexcept
+{
+    // GH#11135: Windows Terminal needs to create and return an automation peer
+    // when a screen reader requests it. However, the terminal might not be fully
+    // initialized yet. So we use this to check if any crucial components of
+    // UiaData are not yet initialized.
+    return !!_buffer;
 }

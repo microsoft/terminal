@@ -24,7 +24,9 @@ DTDs
 DWINRT
 enablewttlogging
 Intelli
+IVisual
 LKG
+LOCKFILE
 Lxss
 mfcribbon
 microsoft

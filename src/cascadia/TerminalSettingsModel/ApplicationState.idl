@@ -15,6 +15,9 @@ namespace Microsoft.Terminal.Settings.Model
     {
         WindowLayout();
 
+        static String ToJson(WindowLayout layout);
+        static WindowLayout FromJson(String json);
+
         Windows.Foundation.Collections.IVector<ActionAndArgs> TabLayout;
         Windows.Foundation.IReference<LaunchPosition> InitialPosition;
         Windows.Foundation.IReference<Windows.Foundation.Size> InitialSize;

@@ -5,6 +5,8 @@
 #include "CascadiaSettings.h"
 #include "CascadiaSettings.g.cpp"
 
+#include "FileUtils.h"
+
 #include <LibraryResources.h>
 #include <VersionHelpers.h>
 
@@ -553,9 +555,11 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
                    FindProfile(GlobalSettings().DefaultProfile()) :
                    ProfileDefaults();
     }
-
-    // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
-    return FindProfile(GlobalSettings().DefaultProfile());
+    else
+    {
+        // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
+        return FindProfile(GlobalSettings().DefaultProfile());
+    }
 }
 
 // Method Description:
@@ -877,4 +881,13 @@ Settings::Model::DefaultTerminal CascadiaSettings::CurrentDefaultTerminal() noex
 void CascadiaSettings::CurrentDefaultTerminal(const Model::DefaultTerminal& terminal)
 {
     _currentDefaultTerminal = terminal;
+}
+
+void CascadiaSettings::ExportFile(winrt::hstring path, winrt::hstring content)
+{
+    try
+    {
+        winrt::Microsoft::Terminal::Settings::Model::WriteUTF8FileAtomic({ path.c_str() }, til::u16u8(content));
+    }
+    CATCH_LOG();
 }

@@ -472,7 +472,7 @@ using namespace Microsoft::Console::Render;
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK or suitable GDI HRESULT error or E_FAIL for GDI errors in functions that don't reliably return a specific error code.
-[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLines lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
+[[nodiscard]] HRESULT GdiEngine::PaintBufferGridLines(const GridLineSet lines, const COLORREF color, const size_t cchLine, const COORD coordTarget) noexcept
 {
     LOG_IF_FAILED(_FlushBufferLines());
 
@@ -499,7 +499,7 @@ using namespace Microsoft::Console::Render;
         return PatBlt(_hdcMemoryContext, x, y, w, h, PATCOPY);
     };
 
-    if (lines & GridLines::Left)
+    if (lines.test(GridLines::Left))
     {
         auto x = ptTarget.x;
         for (size_t i = 0; i < cchLine; i++, x += fontWidth)
@@ -508,7 +508,7 @@ using namespace Microsoft::Console::Render;
         }
     }
 
-    if (lines & GridLines::Right)
+    if (lines.test(GridLines::Right))
     {
         // NOTE: We have to subtract the stroke width from the cell width
         // to ensure the x coordinate remains inside the clipping rectangle.
@@ -519,13 +519,13 @@ using namespace Microsoft::Console::Render;
         }
     }
 
-    if (lines & GridLines::Top)
+    if (lines.test(GridLines::Top))
     {
         const auto y = ptTarget.y;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
-    if (lines & GridLines::Bottom)
+    if (lines.test(GridLines::Bottom))
     {
         // NOTE: We have to subtract the stroke width from the cell height
         // to ensure the y coordinate remains inside the clipping rectangle.
@@ -533,19 +533,19 @@ using namespace Microsoft::Console::Render;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.gridlineWidth));
     }
 
-    if (lines & (GridLines::Underline | GridLines::DoubleUnderline))
+    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline))
     {
         const auto y = ptTarget.y + _lineMetrics.underlineOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.underlineWidth));
 
-        if (lines & GridLines::DoubleUnderline)
+        if (lines.test(GridLines::DoubleUnderline))
         {
             const auto y2 = ptTarget.y + _lineMetrics.underlineOffset2;
             RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y2, widthOfAllCells, _lineMetrics.underlineWidth));
         }
     }
 
-    if (lines & GridLines::Strikethrough)
+    if (lines.test(GridLines::Strikethrough))
     {
         const auto y = ptTarget.y + _lineMetrics.strikethroughOffset;
         RETURN_HR_IF(E_FAIL, !DrawLine(ptTarget.x, y, widthOfAllCells, _lineMetrics.strikethroughWidth));

@@ -190,6 +190,9 @@
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
+  <data name="MultiplePanes" xml:space="preserve">
+    <value>Multiple panes</value>
+  </data>
   <data name="TabCloseSubMenu" xml:space="preserve">
     <value>Close...</value>
   </data>
@@ -380,6 +383,9 @@
   </data>
   <data name="CmdFocusDesc" xml:space="preserve">
     <value>Launch the window in focus mode</value>
+  </data>
+  <data name="CmdSavedLayoutArgDesc" xml:space="preserve">
+    <value>This parameter is an internal implementation detail and should not be used.</value>
   </data>
   <data name="CmdWindowTargetArgDesc" xml:space="preserve">
     <value>Specify a terminal window to run the given commandline in. "0" always refers to the current window. </value>
@@ -714,5 +720,8 @@
   </data>
   <data name="InfoBarDismissButton.Content" xml:space="preserve">
     <value>Don't show again</value>
+  </data>
+  <data name="ElevationShield.[using:Windows.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve">
+    <value>This Terminal window is running as Admin</value>
   </data>
 </root>

@@ -28,6 +28,7 @@
     </ClCompile>
     <ClCompile Include="LibraryResources.cpp" />
     <ClCompile Include="ScopedResourceLoader.cpp" />
+    <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <!-- ========================= idl Files ======================== -->
   <ItemGroup>

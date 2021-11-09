@@ -247,6 +247,7 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 void DxEngine::ToggleShaderEffects()
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
+    _recreateDeviceRequested = true;
     LOG_IF_FAILED(InvalidateAll());
 }
 
@@ -493,6 +494,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 //   actual failure from the API itself.
 [[nodiscard]] HRESULT DxEngine::_CreateSurfaceHandle() noexcept
 {
+#pragma warning(suppress : 26447)
     wil::unique_hmodule hDComp{ LoadLibraryEx(L"Dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
     RETURN_LAST_ERROR_IF(hDComp.get() == nullptr);
 
@@ -1704,7 +1706,7 @@ CATCH_RETURN()
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
+[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLineSet const lines,
                                                      COLORREF const color,
                                                      size_t const cchLine,
                                                      COORD const coordTarget) noexcept
@@ -1731,13 +1733,13 @@ try
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
     const DxFontRenderData::LineMetrics lineMetrics = _fontRenderData->GetLineMetrics();
-    if (WI_IsAnyFlagSet(lines, (GridLines::Left | GridLines::Right)))
+    if (lines.any(GridLines::Left, GridLines::Right))
     {
         const auto halfGridlineWidth = lineMetrics.gridlineWidth / 2.0f;
         const auto startY = target.y + halfGridlineWidth;
         const auto endY = target.y + font.height - halfGridlineWidth;
 
-        if (WI_IsFlagSet(lines, GridLines::Left))
+        if (lines.test(GridLines::Left))
         {
             auto x = target.x + halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1746,7 +1748,7 @@ try
             }
         }
 
-        if (WI_IsFlagSet(lines, GridLines::Right))
+        if (lines.test(GridLines::Right))
         {
             auto x = target.x + font.width - halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1756,19 +1758,19 @@ try
         }
     }
 
-    if (WI_IsAnyFlagSet(lines, GridLines::Top | GridLines::Bottom))
+    if (lines.any(GridLines::Top, GridLines::Bottom))
     {
         const auto halfGridlineWidth = lineMetrics.gridlineWidth / 2.0f;
         const auto startX = target.x + halfGridlineWidth;
         const auto endX = target.x + fullRunWidth - halfGridlineWidth;
 
-        if (WI_IsFlagSet(lines, GridLines::Top))
+        if (lines.test(GridLines::Top))
         {
             const auto y = target.y + halfGridlineWidth;
             DrawLine(startX, y, endX, y, lineMetrics.gridlineWidth);
         }
 
-        if (WI_IsFlagSet(lines, GridLines::Bottom))
+        if (lines.test(GridLines::Bottom))
         {
             const auto y = target.y + font.height - halfGridlineWidth;
             DrawLine(startX, y, endX, y, lineMetrics.gridlineWidth);
@@ -1778,24 +1780,24 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (WI_IsAnyFlagSet(lines, GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
+    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline, GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + lineMetrics.underlineOffset;
 
-        if (WI_IsFlagSet(lines, GridLines::Underline))
+        if (lines.test(GridLines::Underline))
         {
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (WI_IsFlagSet(lines, GridLines::HyperlinkUnderline))
+        if (lines.test(GridLines::HyperlinkUnderline))
         {
             DrawHyperlinkLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (WI_IsFlagSet(lines, GridLines::DoubleUnderline))
+        if (lines.test(GridLines::DoubleUnderline))
         {
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
             const auto y2 = target.y + lineMetrics.underlineOffset2;
@@ -1803,7 +1805,7 @@ try
         }
     }
 
-    if (WI_IsFlagSet(lines, GridLines::Strikethrough))
+    if (lines.test(GridLines::Strikethrough))
     {
         const auto halfStrikethroughWidth = lineMetrics.strikethroughWidth / 2.0f;
         const auto startX = target.x + halfStrikethroughWidth;

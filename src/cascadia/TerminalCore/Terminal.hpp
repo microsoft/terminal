@@ -199,6 +199,7 @@ public:
     const COORD GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
+    const bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
@@ -227,16 +228,30 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    enum class SelectionExpansionMode
+    enum class SelectionDirection
     {
-        Cell,
-        Word,
-        Line
+        Left,
+        Right,
+        Up,
+        Down
     };
-    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
+
+    enum class SelectionExpansion
+    {
+        Char,
+        Word,
+        Line, // Mouse selection only!
+        Viewport,
+        Buffer
+    };
+    void MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
+    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
+    void UpdateSelection(SelectionDirection direction, SelectionExpansion mode);
+
+    using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
+    static UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey);
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -254,6 +269,9 @@ private:
     // But we can abuse the fact that the surrounding members rarely change and are huge
     // (std::function is like 64 bytes) to create some natural padding without wasting space.
     til::ticket_lock _readWriteLock;
+#ifndef NDEBUG
+    DWORD _lastLocker;
+#endif
 
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const til::color)> _pfnBackgroundColorChanged;
@@ -308,7 +326,7 @@ private:
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
     std::wstring _wordDelimiters;
-    SelectionExpansionMode _multiClickSelectionMode;
+    SelectionExpansion _multiClickSelectionMode;
 #pragma endregion
 
     // TODO: These members are not shared by an alt-buffer. They should be
@@ -375,6 +393,10 @@ private:
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    void _MoveByChar(SelectionDirection direction, COORD& pos);
+    void _MoveByWord(SelectionDirection direction, COORD& pos);
+    void _MoveByViewport(SelectionDirection direction, COORD& pos);
+    void _MoveByBuffer(SelectionDirection direction, COORD& pos);
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;

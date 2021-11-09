@@ -104,3 +104,40 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
     }();
     return exePath;
 }
+
+// Method Description:
+// - Quotes and escapes the given string so that it can be used as a command-line arg.
+// - e.g. given `\";foo\` will return `"\\\"\;foo\\"` so that the caller can construct a command-line
+//   using something such as `fmt::format(L"wt --title {}", QuoteAndQuoteAndEscapeCommandlineArg(TabTitle()))`.
+// Arguments:
+// - arg - the command-line argument to quote and escape.
+// Return Value:
+// - the quoted and escaped command-line argument.
+_TIL_INLINEPREFIX std::wstring QuoteAndEscapeCommandlineArg(const std::wstring_view& arg)
+{
+    std::wstring out;
+    out.reserve(arg.size() + 2);
+    out.push_back(L'"');
+
+    size_t backslashes = 0;
+    for (const auto ch : arg)
+    {
+        if (ch == L'\\')
+        {
+            backslashes++;
+        }
+        else
+        {
+            if (ch == L';' || ch == L'"')
+            {
+                out.append(backslashes + 1, L'\\');
+            }
+            backslashes = 0;
+        }
+        out.push_back(ch);
+    }
+
+    out.append(backslashes, L'\\');
+    out.push_back(L'"');
+    return out;
+}

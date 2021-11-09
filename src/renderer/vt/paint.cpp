@@ -142,7 +142,7 @@ using namespace Microsoft::Console::Types;
 // - coordTarget - The starting X/Y position of the first character to draw on.
 // Return Value:
 // - S_OK
-[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLines /*lines*/,
+[[nodiscard]] HRESULT VtEngine::PaintBufferGridLines(const GridLineSet /*lines*/,
                                                      const COLORREF /*color*/,
                                                      const size_t /*cchLine*/,
                                                      const COORD /*coordTarget*/) noexcept

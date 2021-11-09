@@ -373,7 +373,7 @@ struct IntAsFloatPercentConversionTrait : ::Microsoft::Terminal::Settings::Model
 // Possible FocusDirection values
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
 {
-    JSON_MAPPINGS(8) = {
+    JSON_MAPPINGS(10) = {
         pair_type{ "left", ValueType::Left },
         pair_type{ "right", ValueType::Right },
         pair_type{ "up", ValueType::Up },
@@ -382,6 +382,8 @@ JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::FocusDirection)
         pair_type{ "previousInOrder", ValueType::PreviousInOrder },
         pair_type{ "nextInOrder", ValueType::NextInOrder },
         pair_type{ "first", ValueType::First },
+        pair_type{ "parent", ValueType::Parent },
+        pair_type{ "child", ValueType::Child },
     };
 };
 

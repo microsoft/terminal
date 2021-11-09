@@ -59,6 +59,9 @@ namespace winrt::TerminalApp::implementation
         void Create();
 
         bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+        std::optional<uint32_t> LoadPersistedLayoutIdx(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+        winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+        Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();
 
         winrt::fire_and_forget NewTerminalByDrop(winrt::Windows::UI::Xaml::DragEventArgs& e);
 
@@ -82,7 +85,6 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
-        void PersistWindowLayout();
 
         void SetInboundListener(bool isEmbedding);
         static std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> ConvertExecuteCommandlineToActions(const Microsoft::Terminal::Settings::Model::ExecuteCommandlineArgs& args);
@@ -111,10 +113,12 @@ namespace winrt::TerminalApp::implementation
         void WindowId(const uint64_t& value);
 
         void SetNumberOfOpenWindows(const uint64_t value);
+        void SetPersistedLayoutIdx(const uint32_t value);
 
         winrt::hstring WindowIdForDisplay() const noexcept;
         winrt::hstring WindowNameForDisplay() const noexcept;
         bool IsQuakeWindow() const noexcept;
+        bool IsElevated() const noexcept;
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
 
@@ -132,6 +136,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(RenameWindowRequested, Windows::Foundation::IInspectable, winrt::TerminalApp::RenameWindowRequestedArgs);
         TYPED_EVENT(IsQuakeWindowChanged, IInspectable, IInspectable);
         TYPED_EVENT(SummonWindowRequested, IInspectable, IInspectable);
+        TYPED_EVENT(CloseRequested, IInspectable, IInspectable);
         TYPED_EVENT(OpenSystemMenu, IInspectable, IInspectable);
         TYPED_EVENT(QuitRequested, IInspectable, IInspectable);
 
@@ -165,6 +170,7 @@ namespace winrt::TerminalApp::implementation
         bool _isAlwaysOnTop{ false };
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
+        std::optional<uint32_t> _loadFromPersistedLayoutIdx{};
         uint64_t _numOpenWindows{ 0 };
 
         bool _maintainStateOnTabClose{ false };
@@ -255,6 +261,26 @@ namespace winrt::TerminalApp::implementation
         bool _MoveFocus(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _SwapPane(const Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool _MovePane(const uint32_t tabIdx);
+
+        template<typename F>
+        bool _ApplyToActiveControls(F f)
+        {
+            if (const auto tab{ _GetFocusedTabImpl() })
+            {
+                if (const auto activePane = tab->GetActivePane())
+                {
+                    activePane->WalkTree([&](auto p) {
+                        if (const auto& control{ p->GetTerminalControl() })
+                        {
+                            f(control);
+                        }
+                    });
+
+                    return true;
+                }
+            }
+            return false;
+        }
 
         winrt::Microsoft::Terminal::Control::TermControl _GetActiveControl();
         std::optional<uint32_t> _GetFocusedTabIndex() const noexcept;
@@ -359,7 +385,7 @@ namespace winrt::TerminalApp::implementation
         void _EndPreviewColorScheme();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
         winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
-        winrt::Microsoft::Terminal::Settings::Model::TerminalSettings _originalSettings{ nullptr };
+        std::vector<std::function<void()>> _restorePreviewFuncs{};
 
         HRESULT _OnNewConnection(winrt::Microsoft::Terminal::TerminalConnection::ITerminalConnection connection);
         void _HandleToggleInboundPty(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::ActionEventArgs& args);

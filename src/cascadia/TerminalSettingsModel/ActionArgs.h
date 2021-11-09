@@ -864,6 +864,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
     {
         SetTabColorArgs() = default;
+        SetTabColorArgs(Windows::UI::Color tabColor) :
+            _TabColor{ tabColor } {}
         ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
 
         static constexpr std::string_view ColorKey{ "color" };
@@ -1582,6 +1584,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     struct RenameWindowArgs : public RenameWindowArgsT<RenameWindowArgs>
     {
         RenameWindowArgs() = default;
+        RenameWindowArgs(winrt::hstring name) :
+            _Name{ name } {};
         ACTION_ARG(winrt::hstring, Name);
         static constexpr std::string_view NameKey{ "name" };
 
@@ -1679,7 +1683,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             JsonUtils::SetValueForKey(json, NameKey, args->_Name);
             JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
             JsonUtils::SetValueForKey(json, MonitorKey, args->_Monitor);
-            JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
+            JsonUtils::SetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
             JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
             return json;
         }
@@ -1869,9 +1873,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(NewTabArgs);
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(MovePaneArgs);
+    BASIC_FACTORY(SetTabColorArgs);
     BASIC_FACTORY(SwapPaneArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
+    BASIC_FACTORY(RenameWindowArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);
     BASIC_FACTORY(CloseOtherTabsArgs);
     BASIC_FACTORY(CloseTabsAfterArgs);
