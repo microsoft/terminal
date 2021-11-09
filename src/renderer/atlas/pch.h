@@ -18,16 +18,18 @@
 
 #include <d2d1.h>
 #include <d3d11_1.h>
+#include <d3dcompiler.h>
 #include <dwrite_3.h>
 #include <dcomp.h>
 #include <dxgi1_3.h>
 #include <dxgidebug.h>
 #include <VersionHelpers.h>
 
+#include <gsl/gsl_util>
 #include <gsl/pointers>
 #include <gsl/span>
-#include <gsl/gsl_util>
 #include <wil/com.h>
+#include <wil/filesystem.h>
 #include <wil/result_macros.h>
 #include <wil/stl.h>
 #include <wil/win32_helpers.h>
@@ -46,5 +48,5 @@
 #include <base/numerics/safe_math.h>
 #pragma warning(pop)
 
-#include "til.h"
-#include <til/pair.h>
+#include <til.h>
+#include <til/bit.h>

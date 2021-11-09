@@ -4,15 +4,12 @@
 #include "pch.h"
 #include "AtlasEngine.h"
 
-#include <d2d1_3.h>
-#include <dwrite_3.h>
-#include <dxgidebug.h>
-#include <til/bit.h>
-
 #include <shader_ps.h>
 #include <shader_vs.h>
 
 #include "../../interactivity/win32/CustomWindowMessages.h"
+
+#define SHADER_SOURCE_DIRECTORY LR"(..\..\renderer\atlas\)"
 
 // #### NOTE ####
 // This file should only contain methods that are only accessed by the caller of Present() (the "Renderer" class).
@@ -175,21 +172,35 @@ AtlasEngine::AtlasEngine()
 #ifdef NDEBUG
     THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, _sr.d2dFactory.addressof()));
 #else
-    {
-        D2D1_FACTORY_OPTIONS options;
-        options.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-        THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, _sr.d2dFactory.addressof()));
-    }
+    static constexpr D2D1_FACTORY_OPTIONS options{ D2D1_DEBUG_LEVEL_INFORMATION };
+    THROW_IF_FAILED(D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, options, _sr.d2dFactory.addressof()));
 #endif
 
     THROW_IF_FAILED(DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(_sr.dwriteFactory), reinterpret_cast<::IUnknown**>(_sr.dwriteFactory.addressof())));
-    THROW_IF_FAILED(_sr.dwriteFactory.query<IDWriteFactory2>()->GetSystemFontFallback(_sr.systemFontFallback.addressof()));
+    if (const auto factory2 = _sr.dwriteFactory.try_query<IDWriteFactory2>())
+    {
+        THROW_IF_FAILED(factory2->GetSystemFontFallback(_sr.systemFontFallback.addressof()));
+    }
     {
         wil::com_ptr<IDWriteTextAnalyzer> textAnalyzer;
         THROW_IF_FAILED(_sr.dwriteFactory->CreateTextAnalyzer(textAnalyzer.addressof()));
         _sr.textAnalyzer = textAnalyzer.query<IDWriteTextAnalyzer1>();
     }
+
     _sr.isWindows10OrGreater = IsWindows10OrGreater();
+
+#ifndef NDEBUG
+    // If you run the Host.EXE project inside Visual Studio it'll have a working directory of
+    // $(SolutionDir)\src\host\exe. This relative path will thus end up in this source directory.
+    _sr.sourceCodeWatcher = wil::make_folder_change_reader_nothrow(SHADER_SOURCE_DIRECTORY, false, wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime, [this](wil::FolderChangeEvent, PCWSTR path) {
+        if (til::ends_with(path, L".hlsl"))
+        {
+            auto expected = INT64_MAX;
+            const auto invalidationTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+            _sr.sourceCodeInvalidationTime.compare_exchange_strong(expected, invalidationTime.time_since_epoch().count(), std::memory_order_relaxed);
+        }
+    });
+#endif
 }
 
 #pragma region IRenderEngine
@@ -240,6 +251,62 @@ try
         // Equivalent to InvalidateAll().
         _api.invalidatedRows = invalidatedRowsAll;
     }
+
+#ifndef NDEBUG
+    if (const auto invalidationTime = _sr.sourceCodeInvalidationTime.load(std::memory_order_relaxed); invalidationTime != INT64_MAX && invalidationTime <= std::chrono::steady_clock::now().time_since_epoch().count())
+    {
+        _sr.sourceCodeInvalidationTime.store(INT64_MAX, std::memory_order_relaxed);
+
+        try
+        {
+            static const auto compile = [](const wchar_t* path, const char* target) {
+                const wil::unique_hfile fileHandle{ CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
+                THROW_LAST_ERROR_IF(!fileHandle);
+
+                const auto fileSize = GetFileSize(fileHandle.get(), nullptr);
+                const wil::unique_handle mappingHandle{ CreateFileMappingW(fileHandle.get(), nullptr, PAGE_READONLY, 0, fileSize, nullptr) };
+                THROW_LAST_ERROR_IF(!mappingHandle);
+
+                const wil::unique_mapview_ptr<void> dataBeg{ MapViewOfFile(mappingHandle.get(), FILE_MAP_READ, 0, 0, 0) };
+                THROW_LAST_ERROR_IF(!dataBeg);
+
+                wil::com_ptr<ID3DBlob> error;
+                wil::com_ptr<ID3DBlob> blob;
+                const auto hr = D3DCompile(
+                    /* pSrcData    */ dataBeg.get(),
+                    /* SrcDataSize */ fileSize,
+                    /* pFileName   */ nullptr,
+                    /* pDefines    */ nullptr,
+                    /* pInclude    */ D3D_COMPILE_STANDARD_FILE_INCLUDE,
+                    /* pEntrypoint */ "main",
+                    /* pTarget     */ target,
+                    /* Flags1      */ D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION | D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS,
+                    /* Flags2      */ 0,
+                    /* ppCode      */ blob.addressof(),
+                    /* ppErrorMsgs */ error.addressof());
+
+                if (error)
+                {
+                    std::thread t{ [error = std::move(error)]() noexcept {
+                        MessageBoxA(nullptr, static_cast<const char*>(error->GetBufferPointer()), "Compilation error", MB_ICONERROR | MB_OK);
+                    } };
+                    t.detach();
+                }
+
+                THROW_IF_FAILED(hr);
+                return blob;
+            };
+
+            const auto vs = compile(SHADER_SOURCE_DIRECTORY "shader_vs.hlsl", "vs_4_1");
+            const auto ps = compile(SHADER_SOURCE_DIRECTORY "shader_ps.hlsl", "ps_4_1");
+
+            THROW_IF_FAILED(_r.device->CreateVertexShader(vs->GetBufferPointer(), vs->GetBufferSize(), nullptr, _r.vertexShader.put()));
+            THROW_IF_FAILED(_r.device->CreatePixelShader(ps->GetBufferPointer(), ps->GetBufferSize(), nullptr, _r.pixelShader.put()));
+            _setShaderResources();
+        }
+        CATCH_LOG()
+    }
+#endif
 
     if (_api.invalidatedRows == invalidatedRowsAll)
     {
@@ -321,6 +388,8 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::EndPaint() noexcept
 {
+    _flushBufferLine();
+
     _api.invalidatedCursorArea = invalidatedAreaNone;
     _api.invalidatedRows = invalidatedRowsNone;
     _api.scrollOffset = 0;
@@ -329,7 +398,7 @@ CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
-    return debugGeneralPerformance;
+    return continuousRedraw;
 }
 
 void AtlasEngine::WaitUntilCanRender() noexcept
@@ -385,231 +454,40 @@ void AtlasEngine::WaitUntilCanRender() noexcept
 [[nodiscard]] HRESULT AtlasEngine::PaintBufferLine(const gsl::span<const Cluster> clusters, const COORD coord, const bool fTrimLeft, const bool lineWrapped) noexcept
 try
 {
-    const auto x = gsl::narrow_cast<u16>(coord.X);
-    const auto y = gsl::narrow_cast<u16>(coord.Y);
+    const auto x = gsl::narrow_cast<u16>(clamp<int>(coord.X, 0, _api.cellCount.x));
+    const auto y = gsl::narrow_cast<u16>(clamp<int>(coord.Y, 0, _api.cellCount.y));
 
+    if (_api.currentRow != y)
     {
-        // Let's guess that every cell consists of a surrogate pair.
-        const auto projectedTextSize = static_cast<size_t>(_api.cellCount.x) * 2;
-        // IDWriteTextAnalyzer::GetGlyphs says:
-        //   The recommended estimate for the per-glyph output buffers is (3 * textLength / 2 + 16).
-        // We already set the textLength to twice the cell count.
-        const auto projectedGlyphSize = 3 * projectedTextSize + 16;
-
-        _api.bufferLine.clear();
-        _api.bufferLinePos.clear();
-
-        _api.bufferLine.reserve(projectedTextSize);
-        _api.bufferLinePos.reserve(projectedTextSize + 1);
-
-        if (_api.clusterMap.size() < projectedTextSize)
-        {
-            _api.clusterMap.resize(projectedTextSize);
-        }
-        if (_api.textProps.size() < projectedTextSize)
-        {
-            _api.textProps.resize(projectedTextSize);
-        }
-        if (_api.glyphIndices.size() < projectedGlyphSize)
-        {
-            _api.glyphIndices.resize(projectedGlyphSize);
-        }
-        if (_api.glyphProps.size() < projectedGlyphSize)
-        {
-            _api.glyphProps.resize(projectedGlyphSize);
-        }
+        _flushBufferLine();
     }
+
+    _api.currentRow = y;
 
     // Due to the current IRenderEngine interface (that wasn't refactored yet) we need to assemble
     // the current buffer line first as the remaining function operates on whole lines of text.
     {
+        if (!_api.bufferLineColumn.empty())
+        {
+            _api.bufferLineColumn.pop_back();
+        }
+
         u16 column = x;
         for (const auto& cluster : clusters)
         {
             for (const auto& ch : cluster.GetText())
             {
                 _api.bufferLine.emplace_back(ch);
-                _api.bufferLinePos.emplace_back(column);
+                _api.bufferLineColumn.emplace_back(column);
             }
 
             column += gsl::narrow_cast<u16>(cluster.GetColumns());
         }
 
-        _api.bufferLinePos.emplace_back(column);
-    }
+        _api.bufferLineColumn.emplace_back(column);
 
-    // UH OH UNICODE MADNESS AHEAD
-    //
-    // # What do we want?
-    //
-    // Segment a line of text (_api.bufferLine) into unicode "clusters".
-    // Each cluster is one "whole" glyph with diacritics, ligatures, zero width joiners
-    // and whatever else, that should be cached as a whole in our texture atlas.
-    //
-    // # How do we get that?
-    //
-    // ## The unfortunate preface
-    //
-    // DirectWrite seems "reluctant" to segment text into clusters and I found no API which offers simply that.
-    // What it offers are a large number of low level APIs that can sort of be used in combination to do this.
-    // The resulting text parsing is very slow unfortunately, consuming up to 95% of rendering time in extreme cases.
-    // On my machine a full screen of text that needs font fallback drops the frame-rate from 7000 FPS down to 90.
-    //
-    // ## The actual approach
-    //
-    // DirectWrite has 2 APIs which can segment text properly (including ligatures and zero width joiners):
-    // * IDWriteTextAnalyzer1::GetTextComplexity
-    // * IDWriteTextAnalyzer::GetGlyphs
-    //
-    // Both APIs require us to attain an IDWriteFontFace as the functions themselves don't handle font fallback.
-    // This forces us to call IDWriteFontFallback::MapCharacters first.
-    //
-    // Additionally IDWriteTextAnalyzer::GetGlyphs requires an instance of DWRITE_SCRIPT_ANALYSIS,
-    // which can only be attained by running IDWriteTextAnalyzer::AnalyzeScript first.
-    //
-    // Font fallback with IDWriteFontFallback::MapCharacters is very slow.
-
-    const auto textFormat = _getTextFormat(_api.attributes.bold, _api.attributes.italic);
-    TextAnalyzer atlasAnalyzer{ _api.bufferLine, _api.analysisResults };
-
-#pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
-    for (UINT32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
-    {
-        wil::com_ptr<IDWriteFontCollection> fontCollection;
-        THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
-
-        UINT32 mappedLength = 0;
-        wil::com_ptr<IDWriteFont> mappedFont;
-        float scale = 0;
-        THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
-            /* analysisSource     */ &atlasAnalyzer,
-            /* textPosition       */ idx,
-            /* textLength         */ gsl::narrow_cast<UINT32>(_api.bufferLine.size()) - idx,
-            /* baseFontCollection */ fontCollection.get(),
-            /* baseFamilyName     */ _api.fontName.get(),
-            /* baseWeight         */ _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight),
-            /* baseStyle          */ static_cast<DWRITE_FONT_STYLE>(_api.attributes.italic * DWRITE_FONT_STYLE_ITALIC),
-            /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
-            /* mappedLength       */ &mappedLength,
-            /* mappedFont         */ mappedFont.addressof(),
-            /* scale              */ &scale));
-        mappedEnd = idx + mappedLength;
-
-        if (!mappedFont)
-        {
-            // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-            auto beg = _api.bufferLinePos[idx++];
-            for (; idx <= mappedEnd; ++idx)
-            {
-                const auto cur = _api.bufferLinePos[idx];
-                if (beg != cur)
-                {
-                    static constexpr auto replacement = L'\uFFFD';
-                    _emplaceGlyph(nullptr, &replacement, 1, y, beg, cur);
-                    beg = cur;
-                }
-            }
-
-            continue;
-        }
-
-        wil::com_ptr<IDWriteFontFace> mappedFontFace;
-        THROW_IF_FAILED(mappedFont->CreateFontFace(mappedFontFace.addressof()));
-
-        // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-        for (UINT32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
-        {
-            BOOL isTextSimple;
-            THROW_IF_FAILED(_sr.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
-
-            if (isTextSimple)
-            {
-                for (size_t i = 0; i < complexityLength; ++i)
-                {
-                    _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[idx + i], 1, y, _api.bufferLinePos[idx + i], _api.bufferLinePos[idx + i + 1u]);
-                }
-            }
-            else
-            {
-                _api.analysisResults.clear();
-                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer));
-                //_sr.textAnalyzer->AnalyzeBidi(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer);
-
-                for (const auto& a : _api.analysisResults)
-                {
-                    DWRITE_SCRIPT_ANALYSIS scriptAnalysis{ a.script, static_cast<DWRITE_SCRIPT_SHAPES>(a.shapes) };
-                    UINT32 actualGlyphCount = 0;
-
-#pragma warning(push)
-#pragma warning(disable : 26494) // Variable '...' is uninitialized. Always initialize an object (type.5).
-                    // None of these variables need to be initialized.
-                    // features/featureRangeLengths are marked _In_reads_opt_(featureRanges).
-                    // featureRanges is only > 0 when we also initialize all these variables.
-                    DWRITE_TYPOGRAPHIC_FEATURES feature;
-                    const DWRITE_TYPOGRAPHIC_FEATURES* features;
-                    UINT32 featureRangeLengths;
-#pragma warning(pop)
-                    UINT32 featureRanges = 0;
-
-                    if (!_api.fontFeatures.empty())
-                    {
-                        feature.features = _api.fontFeatures.data();
-                        feature.featureCount = gsl::narrow_cast<UINT32>(_api.fontFeatures.size());
-                        features = &feature;
-                        featureRangeLengths = a.textLength;
-                        featureRanges = 1;
-                    }
-
-                    for (auto retry = 0;;)
-                    {
-                        const auto hr = _sr.textAnalyzer->GetGlyphs(
-                            /* textString          */ _api.bufferLine.data() + a.textPosition,
-                            /* textLength          */ a.textLength,
-                            /* fontFace            */ mappedFontFace.get(),
-                            /* isSideways          */ false,
-                            /* isRightToLeft       */ a.bidiLevel & 1,
-                            /* scriptAnalysis      */ &scriptAnalysis,
-                            /* localeName          */ nullptr,
-                            /* numberSubstitution  */ nullptr,
-                            /* features            */ &features,
-                            /* featureRangeLengths */ &featureRangeLengths,
-                            /* featureRanges       */ featureRanges,
-                            /* maxGlyphCount       */ gsl::narrow_cast<UINT32>(_api.glyphProps.size()),
-                            /* clusterMap          */ _api.clusterMap.data(),
-                            /* textProps           */ _api.textProps.data(),
-                            /* glyphIndices        */ _api.glyphIndices.data(),
-                            /* glyphProps          */ _api.glyphProps.data(),
-                            /* actualGlyphCount    */ &actualGlyphCount);
-
-                        if (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER) && ++retry < 8)
-                        {
-                            // grow factor 1.5x
-                            auto size = _api.glyphProps.size();
-                            size = size + (size >> 1);
-                            Expects(size > _api.glyphProps.size());
-                            _api.glyphIndices.resize(size);
-                            _api.glyphProps.resize(size);
-                            continue;
-                        }
-
-                        THROW_IF_FAILED(hr);
-                        break;
-                    }
-
-                    _api.textProps[a.textLength - 1].canBreakShapingAfter = 1;
-
-                    size_t beg = 0;
-                    for (size_t i = 0; i < a.textLength; ++i)
-                    {
-                        if (_api.textProps[i].canBreakShapingAfter)
-                        {
-                            _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[a.textPosition + beg], i + 1 - beg, y, _api.bufferLinePos[a.textPosition + beg], _api.bufferLinePos[a.textPosition + i + 1]);
-                            beg = i + 1;
-                        }
-                    }
-                }
-            }
-        }
+        const BufferLineMetadata metadata{ _api.currentColor, _api.flags };
+        std::fill_n(_api.bufferLineMetadata.data() + x, column - x, metadata);
     }
 
     return S_OK;
@@ -623,12 +501,21 @@ CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(SMALL_RECT rect) noexcept
 {
+    // Unfortunately there's no step after Renderer::_PaintBufferOutput that
+    // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
+    // As such we got to call _flushBufferLine() here just to be sure.
+    _flushBufferLine();
     _setCellFlags(rect, CellFlags::Selected, CellFlags::Selected);
     return S_OK;
 }
 
 [[nodiscard]] HRESULT AtlasEngine::PaintCursor(const CursorOptions& options) noexcept
 {
+    // Unfortunately there's no step after Renderer::_PaintBufferOutput that
+    // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
+    // As such we got to call _flushBufferLine() here just to be sure.
+    _flushBufferLine();
+
     {
         const CachedCursorOptions cachedOptions{
             gsl::narrow_cast<u32>(options.fUseColor ? options.cursorColor | 0xff000000 : INVALID_COLOR),
@@ -679,10 +566,16 @@ CATCH_RETURN()
         WI_SetFlagIf(flags, CellFlags::UnderlineDouble, textAttributes.IsDoublyUnderlined());
         WI_SetFlagIf(flags, CellFlags::Strikethrough, textAttributes.IsCrossedOut());
 
-        _api.currentColor.x = fg | 0xff000000;
-        _api.currentColor.y = bg | _api.backgroundOpaqueMixin;
-        _api.attributes.bold = textAttributes.IsBold();
-        _api.attributes.italic = textAttributes.IsItalic();
+        u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
+        AtlasKeyAttributes attributes{ 0, textAttributes.IsBold(), textAttributes.IsItalic(), 0 };
+
+        if (_api.attributes != attributes)
+        {
+            _flushBufferLine();
+        }
+
+        _api.currentColor = newColors;
+        _api.attributes = attributes;
         _api.flags = flags;
     }
     else if (textAttributes.BackgroundIsDefault() && bg != _r.backgroundColor)
@@ -765,8 +658,8 @@ void AtlasEngine::_createResources()
         // but comes with a large memory usage overhead. At the time of writing the Nvidia
         // driver launches $cpu_thread_count more worker threads without this flag.
         static constexpr std::array driverTypes{
-            til::pair{ D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS },
-            til::pair{ D3D_DRIVER_TYPE_WARP, static_cast<D3D11_CREATE_DEVICE_FLAG>(0) },
+            std::pair{ D3D_DRIVER_TYPE_HARDWARE, D3D11_CREATE_DEVICE_PREVENT_INTERNAL_THREADING_OPTIMIZATIONS },
+            std::pair{ D3D_DRIVER_TYPE_WARP, static_cast<D3D11_CREATE_DEVICE_FLAG>(0) },
         };
         static constexpr std::array featureLevels{
             D3D_FEATURE_LEVEL_11_1,
@@ -821,13 +714,13 @@ void AtlasEngine::_createResources()
         desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
         desc.SampleDesc.Count = 1;
         desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-        desc.BufferCount = 2;
+        desc.BufferCount = 2; // TODO: 3?
         desc.Scaling = DXGI_SCALING_NONE;
         desc.SwapEffect = _sr.isWindows10OrGreater ? DXGI_SWAP_EFFECT_FLIP_DISCARD : DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
         // * HWND swap chains can't do alpha.
         // * If our background is opaque we can enable "independent" flips by setting DXGI_SWAP_EFFECT_FLIP_DISCARD and DXGI_ALPHA_MODE_IGNORE.
         //   As our swap chain won't have to compose with DWM anymore it reduces the display latency dramatically.
-        desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin == 0xff000000 ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
+        desc.AlphaMode = _api.hwnd || _api.backgroundOpaqueMixin ? DXGI_ALPHA_MODE_IGNORE : DXGI_ALPHA_MODE_PREMULTIPLIED;
         desc.Flags = supportsFrameLatencyWaitableObject ? DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT : 0;
 
         wil::com_ptr<IDXGIFactory2> dxgiFactory;
@@ -862,7 +755,9 @@ void AtlasEngine::_createResources()
 
         if (supportsFrameLatencyWaitableObject)
         {
-            _r.frameLatencyWaitableObject.reset(_r.swapChain.query<IDXGISwapChain2>()->GetFrameLatencyWaitableObject());
+            const auto swapChain2 = _r.swapChain.query<IDXGISwapChain2>();
+            THROW_IF_FAILED(swapChain2->SetMaximumFrameLatency(1)); // TODO: 2?
+            _r.frameLatencyWaitableObject.reset(swapChain2->GetFrameLatencyWaitableObject());
             THROW_LAST_ERROR_IF(!_r.frameLatencyWaitableObject);
         }
     }
@@ -904,10 +799,11 @@ void AtlasEngine::_recreateSizeDependentResources()
     // ResizeBuffer() docs:
     //   Before you call ResizeBuffers, ensure that the application releases all references [...].
     //   You can use ID3D11DeviceContext::ClearState to ensure that all [internal] references are released.
-    _r.renderTargetView.reset();
-    _r.deviceContext->ClearState();
-
-    THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
+    {
+        _r.renderTargetView.reset();
+        _r.deviceContext->ClearState();
+        THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
+    }
 
     // The RenderTargetView is later used with OMSetRenderTargets
     // to tell D3D where stuff is supposed to be rendered at.
@@ -932,17 +828,37 @@ void AtlasEngine::_recreateSizeDependentResources()
     if (_api.cellCount != _r.cellCount)
     {
         const auto totalCellCount = static_cast<size_t>(_api.cellCount.x) * static_cast<size_t>(_api.cellCount.y);
+        // Let's guess that every cell consists of a surrogate pair.
+        const auto projectedTextSize = static_cast<size_t>(_api.cellCount.x) * 2;
+        // IDWriteTextAnalyzer::GetGlyphs says:
+        //   The recommended estimate for the per-glyph output buffers is (3 * textLength / 2 + 16).
+        // We already set the textLength to twice the cell count.
+        const auto projectedGlyphSize = 3 * projectedTextSize + 16;
 
+        // This buffer is a bit larger than the others (multiple MB).
         // Prevent a memory usage spike, by first deallocating and then allocating.
         _r.cells = {};
         // Our render loop heavily relies on memcpy() which is between 1.5x
         // and 40x faster for allocations with an alignment of 32 or greater.
         // (40x on AMD Zen1-3, which have a rep movsb performance issue. MSFT:33358259.)
-        _r.cells = AlignedBuffer<Cell>{ totalCellCount, 32 };
+        _r.cells = Buffer<Cell, 32>{ totalCellCount };
         _r.cellCount = _api.cellCount;
 
+        // .clear() doesn't free the memory of these buffers.
+        // This code allows them to shrink again.
+        _api.bufferLine = {};
+        _api.bufferLine.reserve(projectedTextSize);
+        _api.bufferLineColumn.reserve(projectedTextSize + 1);
+        _api.bufferLineMetadata = Buffer<BufferLineMetadata>{ _api.cellCount.x };
+        _api.analysisResults = {};
+
+        _api.clusterMap = Buffer<u16>{ projectedTextSize };
+        _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ projectedTextSize };
+        _api.glyphIndices = Buffer<u16>{ projectedGlyphSize };
+        _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>{ projectedGlyphSize };
+
         D3D11_BUFFER_DESC desc;
-        desc.ByteWidth = gsl::narrow<UINT32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
+        desc.ByteWidth = gsl::narrow<u32>(totalCellCount * sizeof(Cell)); // totalCellCount can theoretically be UINT32_MAX!
         desc.Usage = D3D11_USAGE_DYNAMIC;
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
         desc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -954,22 +870,7 @@ void AtlasEngine::_recreateSizeDependentResources()
 
     // We have called _r.deviceContext->ClearState() in the beginning and lost all D3D state.
     // This forces us to set up everything up from scratch again.
-    {
-        _r.deviceContext->VSSetShader(_r.vertexShader.get(), nullptr, 0);
-        _r.deviceContext->PSSetShader(_r.pixelShader.get(), nullptr, 0);
-
-        // Our vertex shader uses a trick from Bill Bilodeau published in
-        // "Vertex Shader Tricks" at GDC14 to draw a fullscreen triangle
-        // without vertex/index buffers. This prepares our context for this.
-        _r.deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
-        _r.deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
-        _r.deviceContext->IASetInputLayout(nullptr);
-        _r.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-        _r.deviceContext->PSSetConstantBuffers(0, 1, _r.constantBuffer.addressof());
-
-        _setShaderResources();
-    }
+    _setShaderResources();
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Size);
     WI_SetAllFlags(_r.invalidations, RenderInvalidations::ConstBuffer);
@@ -978,6 +879,19 @@ void AtlasEngine::_recreateSizeDependentResources()
 void AtlasEngine::_recreateFontDependentResources()
 {
     {
+        // We're likely resizing the atlas anyways and can
+        // thus also release any of these buffers prematurely.
+        _r.d2dRenderTarget.reset(); // depends on _r.atlasScratchpad
+        _r.atlasScratchpad.reset();
+        _r.atlasView.reset();
+        _r.atlasBuffer.reset();
+    }
+
+    // D3D
+    {
+        // TODO: Consider using IDXGIAdapter3::QueryVideoMemoryInfo() and IDXGIAdapter3::RegisterVideoMemoryBudgetChangeNotificationEvent()
+        // That way we can make better to use of a user's available video memory.
+
         static constexpr size_t sizePerPixel = 4;
         static constexpr size_t sizeLimit = D3D10_REQ_RESOURCE_SIZE_IN_MEGABYTES * 1024 * 1024;
         const size_t dimensionLimit = _r.device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION : D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
@@ -1006,25 +920,6 @@ void AtlasEngine::_recreateFontDependentResources()
         _r.glyphQueue = {};
         _r.glyphQueue.reserve(64);
     }
-
-    // D3D
-    {
-        // We're likely resizing the atlas anyways and we've set _r.atlasSizeInPixel accordingly.
-        // We can thus also release the glyph buffer.
-        _r.atlasView.reset();
-        _r.atlasBuffer.reset();
-    }
-    {
-        D3D11_TEXTURE2D_DESC desc{};
-        desc.Width = _api.cellSize.x * 16;
-        desc.Height = _api.cellSize.y;
-        desc.MipLevels = 1;
-        desc.ArraySize = 1;
-        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-        desc.SampleDesc = { 1, 0 };
-        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
-        THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, _r.atlasScratchpad.put()));
-    }
     // D3D specifically for UpdateDpi()
     // This compensates for the built in scaling factor in a XAML SwapChainPanel (CompositionScaleX/Y).
     if (!_api.hwnd)
@@ -1041,55 +936,63 @@ void AtlasEngine::_recreateFontDependentResources()
 
     // D2D
     {
-        const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
-
-        wil::com_ptr<IDWriteRenderingParams> renderingParams;
-        THROW_IF_FAILED(_sr.dwriteFactory->CreateRenderingParams(renderingParams.addressof()));
-        _r.gamma = renderingParams->GetGamma();
-
-        D2D1_RENDER_TARGET_PROPERTIES props{};
-        props.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
-        props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
-        props.dpiX = static_cast<float>(_api.dpi);
-        props.dpiY = static_cast<float>(_api.dpi);
-        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, _r.d2dRenderTarget.put()));
-
-        // We don't really use D2D for anything except DWrite, but it
-        // can't hurt to ensure that everything it does is pixel aligned.
-        _r.d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
-        // Ensure that D2D uses the exact same gamma as our shader uses.
-        _r.d2dRenderTarget->SetTextRenderingParams(renderingParams.get());
-        // We can't set the antialiasingMode here, as D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE
-        // will force the alpha channel to be 0 for _all_ text.
-        //_r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
+        _r.dpi = _api.dpi;
+        _r.maxEncounteredCellCount = 0;
+        _r.scratchpadCellWidth = 0;
     }
     {
-        static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
-        wil::com_ptr<ID2D1SolidColorBrush> brush;
-        THROW_IF_FAILED(_r.d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, brush.addressof()));
-        _r.brush = brush.query<ID2D1Brush>();
-    }
-    {
-        for (auto style = 0; style < 2; ++style)
+        // See AtlasEngine::UpdateFont.
+        // It hardcodes indices 0/1/2 in fontAxisValues to the weight/italic/slant axes.
+        // If they're -1.0f they haven't been set by the user and must be filled by us.
+        // When we call SetFontAxisValues() we basically override (disable) DirectWrite's internal font axes,
+        // and if either of the 3 aren't set we'd make it impossible for the user to see bold/italic text.
+        std::array<DWRITE_FONT_AXIS_VALUE, 3> standardAxes;
+
+        if (!_api.fontAxisValues.empty())
         {
-            for (auto weight = 0; weight < 2; ++weight)
+            assert(_api.fontAxisValues.size() >= standardAxes.size());
+            std::copy_n(_api.fontAxisValues.data(), standardAxes.size(), standardAxes.data());
+        }
+
+        const auto restoreFontAxisValues = wil::scope_exit([&]() {
+            if (!_api.fontAxisValues.empty())
             {
-                const auto fontWeight = weight ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
-                const auto fontStyle = style ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
-                auto& textFormat = _r.textFormats[style][weight];
+                std::copy_n(standardAxes.data(), standardAxes.size(), _api.fontAxisValues.data());
+            }
+        });
+
+        for (auto italic = 0; italic < 2; ++italic)
+        {
+            for (auto bold = 0; bold < 2; ++bold)
+            {
+                const auto fontWeight = bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
+                const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
+                auto& textFormat = _r.textFormats[italic][bold];
 
                 THROW_IF_FAILED(_createTextFormat(_api.fontName.get(), fontWeight, fontStyle, _api.fontSize, textFormat.put()));
+                // DWRITE_LINE_SPACING_METHOD_UNIFORM:
+                // > Lines are explicitly set to uniform spacing, regardless of contained font sizes.
+                // > This can be useful to avoid the uneven appearance that can occur from font fallback.
+                // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
+                //
+                // "baseline" parameter:
+                // > Distance from top of line to baseline. A reasonable ratio to lineSpacing is 80%.
+                // So... let's set it to 80%.
+                THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _r.cellSizeDIP.y * 0.8f));
 
-                if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
+                if (!_api.fontAxisValues.empty())
                 {
-                    // By default GetAutomaticFontAxes() returns DWRITE_AUTOMATIC_FONT_AXES_NONE.
-                    // But the description of DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE and the idea
-                    // of getting automatic opsz variation seemed rather useful to pass out on this.
-                    textFormat3->SetAutomaticFontAxes(DWRITE_AUTOMATIC_FONT_AXES_OPTICAL_SIZE);
-
-                    if (!_api.fontAxisValues.empty())
+                    if (const auto textFormat3 = textFormat.try_query<IDWriteTextFormat3>())
                     {
-                        textFormat3->SetFontAxisValues(_api.fontAxisValues.data(), gsl::narrow_cast<u32>(_api.fontAxisValues.size()));
+                        // The wght axis defaults to the font weight.
+                        _api.fontAxisValues[0].value = bold || standardAxes[0].value == -1.0f ? static_cast<float>(fontWeight) : standardAxes[0].value;
+                        // The ital axis defaults to 1 if this is italic and 0 otherwise.
+                        _api.fontAxisValues[1].value = italic ? 1.0f : (standardAxes[1].value == -1.0f ? 0.0f : standardAxes[1].value);
+                        // The slnt axis defaults to -12 if this is italic and 0 otherwise.
+                        _api.fontAxisValues[2].value = italic ? -12.0f : (standardAxes[2].value == -1.0f ? 0.0f : standardAxes[2].value);
+
+                        THROW_IF_FAILED(textFormat3->SetFontAxisValues(_api.fontAxisValues.data(), gsl::narrow_cast<u32>(_api.fontAxisValues.size())));
+                        _r.textFormatAxes[italic][bold] = { _api.fontAxisValues.data(), _api.fontAxisValues.size() };
                     }
                 }
             }
@@ -1114,19 +1017,16 @@ void AtlasEngine::_recreateFontDependentResources()
 
 HRESULT AtlasEngine::_createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept
 {
-    // Most applications (including OpenType itself) treat font sizes
+    // Most applications (even OpenType itself) treat font sizes
     // at a base scale of 72 DPI, whereas DirectWrite uses 96 DPI.
-    // --> Multiply by 1.333... to convert from 72 DPI to 96 DPI scale.
+    // --> Multiply by 1.333 to convert from 72 DPI to 96 DPI scale.
     fontSize *= 4.0f / 3.0f;
-    fontSize = 21.8259335;
 
     const auto hr = _sr.dwriteFactory->CreateTextFormat(fontFamilyName, nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", textFormat);
     if (SUCCEEDED(hr))
     {
         const auto tf = *textFormat;
-        // We can't set DWRITE_TEXT_ALIGNMENT_CENTER
-        //tf->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        // ...
+        tf->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
         tf->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
     }
     return hr;
@@ -1135,6 +1035,11 @@ HRESULT AtlasEngine::_createTextFormat(const wchar_t* fontFamilyName, DWRITE_FON
 IDWriteTextFormat* AtlasEngine::_getTextFormat(bool bold, bool italic) const noexcept
 {
     return _r.textFormats[italic][bold].get();
+}
+
+const AtlasEngine::Buffer<DWRITE_FONT_AXIS_VALUE>& AtlasEngine::_getTextFormatAxis(bool bold, bool italic) const noexcept
+{
+    return _r.textFormatAxes[italic][bold];
 }
 
 AtlasEngine::Cell* AtlasEngine::_getCell(u16 x, u16 y) noexcept
@@ -1189,22 +1094,271 @@ AtlasEngine::u16x2 AtlasEngine::_allocateAtlasTile() noexcept
     return ret;
 }
 
-void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* key, size_t keyLen, u16 y, u16 x1, u16 x2)
+void AtlasEngine::_flushBufferLine()
 {
-    assert(key && keyLen != 0);
-    assert(y < _r.cellCount.y);
+    if (_api.bufferLine.empty())
+    {
+        return;
+    }
+
+    const auto cleanup = wil::scope_exit([this]() {
+        _api.bufferLine.clear();
+        _api.bufferLineColumn.clear();
+    });
+
+    // NOTE:
+    // This entire function is one huge hack to see if it works.
+
+    // UH OH UNICODE MADNESS AHEAD
+    //
+    // # What do we want?
+    //
+    // Segment a line of text (_api.bufferLine) into unicode "clusters".
+    // Each cluster is one "whole" glyph with diacritics, ligatures, zero width joiners
+    // and whatever else, that should be cached as a whole in our texture atlas.
+    //
+    // # How do we get that?
+    //
+    // ## The unfortunate preface
+    //
+    // DirectWrite can be "reluctant" to segment text into clusters and I found no API which offers simply that.
+    // What it offers are a large number of low level APIs that can sort of be used in combination to do this.
+    // The resulting text parsing is very slow unfortunately, consuming up to 95% of rendering time in extreme cases.
+    //
+    // ## The actual approach
+    //
+    // DirectWrite has 2 APIs which can segment text properly (including ligatures and zero width joiners):
+    // * IDWriteTextAnalyzer1::GetTextComplexity
+    // * IDWriteTextAnalyzer::GetGlyphs
+    //
+    // Both APIs require us to attain an IDWriteFontFace as the functions themselves don't handle font fallback.
+    // This forces us to call IDWriteFontFallback::MapCharacters first.
+    //
+    // Additionally IDWriteTextAnalyzer::GetGlyphs requires an instance of DWRITE_SCRIPT_ANALYSIS,
+    // which can only be attained by running IDWriteTextAnalyzer::AnalyzeScript first.
+    //
+    // Font fallback with IDWriteFontFallback::MapCharacters is very slow.
+
+    const auto textFormat = _getTextFormat(_api.attributes.bold, _api.attributes.italic);
+    const auto& textFormatAxis = _getTextFormatAxis(_api.attributes.bold, _api.attributes.italic);
+
+    TextAnalyzer atlasAnalyzer{ _api.bufferLine, _api.analysisResults };
+
+    wil::com_ptr<IDWriteFontCollection> fontCollection;
+    THROW_IF_FAILED(textFormat->GetFontCollection(fontCollection.addressof()));
+
+    wil::com_ptr<IDWriteFontFace> mappedFontFace;
+
+#pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
+    for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
+    {
+        if (_sr.systemFontFallback)
+        {
+            u32 mappedLength = 0;
+            float scale = 0;
+
+            if (textFormatAxis)
+            {
+                const auto systemFontFallback1 = reinterpret_cast<IDWriteFontFallback1*>(_sr.systemFontFallback.get());
+                wil::com_ptr<IDWriteFontFace5> fontFace5;
+                THROW_IF_FAILED(systemFontFallback1->MapCharacters(
+                    /* analysisSource */ &atlasAnalyzer,
+                    /* textPosition */ idx,
+                    /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
+                    /* baseFontCollection */ fontCollection.get(),
+                    /* baseFamilyName */ _api.fontName.get(),
+                    /* fontAxisValues */ textFormatAxis.data(),
+                    /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
+                    /* mappedLength */ &mappedLength,
+                    /* scale */ &scale,
+                    /* mappedFontFace */ reinterpret_cast<IDWriteFontFace5**>(mappedFontFace.put())));
+            }
+            else
+            {
+                const auto baseWeight = _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
+                const auto baseStyle = _api.attributes.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
+                wil::com_ptr<IDWriteFont> font;
+
+                THROW_IF_FAILED(_sr.systemFontFallback->MapCharacters(
+                    /* analysisSource     */ &atlasAnalyzer,
+                    /* textPosition       */ idx,
+                    /* textLength         */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
+                    /* baseFontCollection */ fontCollection.get(),
+                    /* baseFamilyName     */ _api.fontName.get(),
+                    /* baseWeight         */ baseWeight,
+                    /* baseStyle          */ baseStyle,
+                    /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
+                    /* mappedLength       */ &mappedLength,
+                    /* mappedFont         */ font.addressof(),
+                    /* scale              */ &scale));
+
+                mappedFontFace.reset();
+                if (font)
+                {
+                    THROW_IF_FAILED(font->CreateFontFace(mappedFontFace.addressof()));
+                }
+            }
+
+            mappedEnd = idx + mappedLength;
+
+            if (!mappedFontFace)
+            {
+                // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
+                auto beg = _api.bufferLineColumn[idx++];
+                for (; idx <= mappedEnd; ++idx)
+                {
+                    const auto cur = _api.bufferLineColumn[idx];
+                    if (beg != cur)
+                    {
+                        static constexpr auto replacement = L'\uFFFD';
+                        _emplaceGlyph(nullptr, &replacement, 1, beg, cur);
+                        beg = cur;
+                    }
+                }
+
+                continue;
+            }
+
+            assert(scale == 1.0f);
+        }
+        else
+        {
+            if (!mappedFontFace)
+            {
+                const auto baseWeight = _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
+                const auto baseStyle = _api.attributes.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
+
+                wil::com_ptr<IDWriteFontFamily> fontFamily;
+                THROW_IF_FAILED(fontCollection->GetFontFamily(0, fontFamily.addressof()));
+
+                wil::com_ptr<IDWriteFont> font;
+                THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(baseWeight, DWRITE_FONT_STRETCH_NORMAL, baseStyle, font.addressof()));
+
+                THROW_IF_FAILED(font->CreateFontFace(mappedFontFace.put()));
+            }
+
+            mappedEnd = gsl::narrow_cast<u32>(_api.bufferLine.size());
+        }
+
+        // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
+        for (u32 complexityLength = 0; idx < mappedEnd; idx += complexityLength)
+        {
+            BOOL isTextSimple;
+            THROW_IF_FAILED(_sr.textAnalyzer->GetTextComplexity(_api.bufferLine.data() + idx, mappedEnd - idx, mappedFontFace.get(), &isTextSimple, &complexityLength, _api.glyphIndices.data()));
+
+            if (isTextSimple)
+            {
+                for (size_t i = 0; i < complexityLength; ++i)
+                {
+                    _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[idx + i], 1, _api.bufferLineColumn[idx + i], _api.bufferLineColumn[idx + i + 1u]);
+                }
+            }
+            else
+            {
+                _api.analysisResults.clear();
+                THROW_IF_FAILED(_sr.textAnalyzer->AnalyzeScript(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer));
+                //_sr.textAnalyzer->AnalyzeBidi(&atlasAnalyzer, idx, complexityLength, &atlasAnalyzer);
+
+                for (const auto& a : _api.analysisResults)
+                {
+                    DWRITE_SCRIPT_ANALYSIS scriptAnalysis{ a.script, static_cast<DWRITE_SCRIPT_SHAPES>(a.shapes) };
+                    u32 actualGlyphCount = 0;
+
+#pragma warning(push)
+#pragma warning(disable : 26494) // Variable '...' is uninitialized. Always initialize an object (type.5).
+                    // None of these variables need to be initialized.
+                    // features/featureRangeLengths are marked _In_reads_opt_(featureRanges).
+                    // featureRanges is only > 0 when we also initialize all these variables.
+                    DWRITE_TYPOGRAPHIC_FEATURES feature;
+                    const DWRITE_TYPOGRAPHIC_FEATURES* features;
+                    u32 featureRangeLengths;
+#pragma warning(pop)
+                    u32 featureRanges = 0;
+
+                    if (!_api.fontFeatures.empty())
+                    {
+                        feature.features = _api.fontFeatures.data();
+                        feature.featureCount = gsl::narrow_cast<u32>(_api.fontFeatures.size());
+                        features = &feature;
+                        featureRangeLengths = a.textLength;
+                        featureRanges = 1;
+                    }
+
+                    if (_api.clusterMap.size() < a.textLength)
+                    {
+                        _api.clusterMap = Buffer<u16>{ a.textLength };
+                        _api.textProps = Buffer<DWRITE_SHAPING_TEXT_PROPERTIES>{ a.textLength };
+                    }
+
+                    for (auto retry = 0;;)
+                    {
+                        const auto hr = _sr.textAnalyzer->GetGlyphs(
+                            /* textString          */ _api.bufferLine.data() + a.textPosition,
+                            /* textLength          */ a.textLength,
+                            /* fontFace            */ mappedFontFace.get(),
+                            /* isSideways          */ false,
+                            /* isRightToLeft       */ a.bidiLevel & 1,
+                            /* scriptAnalysis      */ &scriptAnalysis,
+                            /* localeName          */ nullptr,
+                            /* numberSubstitution  */ nullptr,
+                            /* features            */ &features,
+                            /* featureRangeLengths */ &featureRangeLengths,
+                            /* featureRanges       */ featureRanges,
+                            /* maxGlyphCount       */ gsl::narrow_cast<u32>(_api.glyphProps.size()),
+                            /* clusterMap          */ _api.clusterMap.data(),
+                            /* textProps           */ _api.textProps.data(),
+                            /* glyphIndices        */ _api.glyphIndices.data(),
+                            /* glyphProps          */ _api.glyphProps.data(),
+                            /* actualGlyphCount    */ &actualGlyphCount);
+
+                        if (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER) && ++retry < 8)
+                        {
+                            // Grow factor 1.5x.
+                            auto size = _api.glyphProps.size();
+                            size = size + (size >> 1);
+                            // Overflow check.
+                            Expects(size > _api.glyphProps.size());
+                            _api.glyphIndices = Buffer<u16>{ size };
+                            _api.glyphProps = Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES>(size);
+                            continue;
+                        }
+
+                        THROW_IF_FAILED(hr);
+                        break;
+                    }
+
+                    _api.textProps[a.textLength - 1].canBreakShapingAfter = 1;
+
+                    size_t beg = 0;
+                    for (size_t i = 0; i < a.textLength; ++i)
+                    {
+                        if (_api.textProps[i].canBreakShapingAfter)
+                        {
+                            _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[a.textPosition + beg], i + 1 - beg, _api.bufferLineColumn[a.textPosition + beg], _api.bufferLineColumn[a.textPosition + i + 1]);
+                            beg = i + 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* chars, size_t charCount, u16 x1, u16 x2)
+{
+    assert(chars && charCount != 0);
     assert(x1 < x2 && x2 <= _r.cellCount.x);
 
-    keyLen = std::min(std::extent_v<decltype(AtlasKey::chars)>, keyLen);
-    const auto cells = std::min<u16>(std::extent_v<decltype(AtlasValue::coords)>, x2 - x1);
+    const u16 cellCount = x2 - x1;
 
-    AtlasKey entry{};
-    memcpy(&entry.chars[0], key, keyLen * sizeof(wchar_t));
-    entry.attributes = _api.attributes;
-    entry.attributes.cells = cells - 1;
+    auto attributes = _api.attributes;
+    attributes.cellCount = cellCount;
 
-    auto& value = _r.glyphs[entry];
-    if (value.coords[0] == u16x2{})
+    auto [it, inserted] = _r.glyphs.emplace(std::piecewise_construct, std::forward_as_tuple(attributes, gsl::narrow<u16>(charCount), chars), std::forward_as_tuple());
+    const auto& key = it->first;
+    auto& value = it->second;
+
+    if (inserted)
     {
         // Do fonts exist *in practice* which contain both colored and uncolored glyphs? I'm pretty sure...
         // However doing it properly means using either of:
@@ -1225,25 +1379,33 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* key, s
         //
         // So this is a job for future me/someone.
         // Bonus points for doing it without impacting performance.
+        auto flags = CellFlags::None;
         if (fontFace)
         {
             const auto fontFace2 = wil::try_com_query<IDWriteFontFace2>(fontFace);
-            WI_SetFlagIf(value.flags, CellFlags::ColoredGlyph, fontFace2 && fontFace2->IsColorFont());
+            WI_SetFlagIf(flags, CellFlags::ColoredGlyph, fontFace2 && fontFace2->IsColorFont());
         }
 
-        for (u16 i = 0; i < cells; ++i)
+        const auto coords = value.initialize(flags, cellCount);
+        for (u16 i = 0; i < cellCount; ++i)
         {
-            value.coords[i] = _allocateAtlasTile();
+            coords[i] = _allocateAtlasTile();
         }
 
-        _r.glyphQueue.emplace_back(entry, value);
+        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value });
+        _r.maxEncounteredCellCount = std::max(_r.maxEncounteredCellCount, cellCount);
     }
 
-    const auto data = _getCell(x1, y);
-    for (uint32_t i = 0; i < cells; ++i)
+    const auto& valueData = value.data();
+    const auto coords = &valueData.coords[0];
+    const auto flags = valueData.flags | _api.bufferLineMetadata[x1].flags;
+    const auto color = _api.bufferLineMetadata[x1].colors;
+    const auto data = _getCell(x1, _api.currentRow);
+
+    for (u32 i = 0; i < cellCount; ++i)
     {
-        data[i].tileIndex = value.coords[i];
-        data[i].flags = value.flags;
-        data[i].color = _api.currentColor;
+        data[i].tileIndex = coords[i];
+        data[i].flags = flags;
+        data[i].color = color;
     }
 }

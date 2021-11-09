@@ -25,11 +25,11 @@ using namespace Microsoft::Console::Render;
 
 // Present() is called without the console buffer lock being held.
 // --> Put as much in here as possible.
-// DO NOT put stuff in here
 [[nodiscard]] HRESULT AtlasEngine::Present() noexcept
 try
 {
     _adjustAtlasSize();
+    _reserveScratchpadSize(_r.maxEncounteredCellCount);
     _processGlyphQueue();
 
     if (WI_IsFlagSet(_r.invalidations, RenderInvalidations::Cursor))
@@ -90,10 +90,22 @@ CATCH_RETURN()
 
 #pragma endregion
 
-void AtlasEngine::_setShaderResources() const noexcept
+void AtlasEngine::_setShaderResources() const
 {
+    _r.deviceContext->VSSetShader(_r.vertexShader.get(), nullptr, 0);
+    _r.deviceContext->PSSetShader(_r.pixelShader.get(), nullptr, 0);
+
+    // Our vertex shader uses a trick from Bill Bilodeau published in
+    // "Vertex Shader Tricks" at GDC14 to draw a fullscreen triangle
+    // without vertex/index buffers. This prepares our context for this.
+    _r.deviceContext->IASetVertexBuffers(0, 0, nullptr, nullptr, nullptr);
+    _r.deviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+    _r.deviceContext->IASetInputLayout(nullptr);
+    _r.deviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+    _r.deviceContext->PSSetConstantBuffers(0, 1, _r.constantBuffer.addressof());
+
     const std::array resources{ _r.cellView.get(), _r.atlasView.get() };
-#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function '...' which may throw exceptions (f.6).
     _r.deviceContext->PSSetShaderResources(0, gsl::narrow_cast<UINT>(resources.size()), resources.data());
 }
 
@@ -108,6 +120,7 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
     data.cellSize.y = _r.cellSize.y;
     data.cellCountX = _r.cellCount.x;
     data.gamma = _r.gamma;
+    data.grayscaleEnhancedContrast = _r.grayscaleEnhancedContrast;
     data.backgroundColor = _r.backgroundColor;
     data.cursorColor = _r.cursorOptions.cursorColor;
     data.selectionColor = _r.selectionColor;
@@ -205,10 +218,72 @@ void AtlasEngine::_adjustAtlasSize()
     _r.atlasView = std::move(atlasView);
     _setShaderResources();
 
-    if (!copyFromExisting)
+    WI_SetFlagIf(_r.invalidations, RenderInvalidations::Cursor, !copyFromExisting);
+}
+
+void AtlasEngine::_reserveScratchpadSize(u16 minWidth)
+{
+    if (minWidth <= _r.scratchpadCellWidth)
     {
-        _drawCursor();
+        return;
     }
+
+    // The new size is the greater of ... cells wide:
+    // * 2
+    // * minWidth
+    // * current size * 1.5
+    const auto newWidth = std::max<UINT>(std::max<UINT>(2, minWidth), _r.scratchpadCellWidth + (_r.scratchpadCellWidth >> 1));
+
+    _r.d2dRenderTarget.reset();
+    _r.atlasScratchpad.reset();
+
+    {
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width = _r.cellSize.x * newWidth;
+        desc.Height = _r.cellSize.y;
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+        desc.SampleDesc = { 1, 0 };
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_RENDER_TARGET;
+        THROW_IF_FAILED(_r.device->CreateTexture2D(&desc, nullptr, _r.atlasScratchpad.put()));
+    }
+    {
+        const auto surface = _r.atlasScratchpad.query<IDXGISurface>();
+
+        wil::com_ptr<IDWriteRenderingParams1> defaultParams;
+        THROW_IF_FAILED(_sr.dwriteFactory->CreateRenderingParams(reinterpret_cast<IDWriteRenderingParams**>(defaultParams.addressof())));
+        wil::com_ptr<IDWriteRenderingParams1> renderingParams;
+        THROW_IF_FAILED(_sr.dwriteFactory->CreateCustomRenderingParams(1.0f, 0.0f, 0.0f, defaultParams->GetClearTypeLevel(), defaultParams->GetPixelGeometry(), defaultParams->GetRenderingMode(), renderingParams.addressof()));
+
+        _r.gamma = defaultParams->GetGamma();
+        _r.grayscaleEnhancedContrast = defaultParams->GetGrayscaleEnhancedContrast();
+
+        D2D1_RENDER_TARGET_PROPERTIES props{};
+        props.type = D2D1_RENDER_TARGET_TYPE_DEFAULT;
+        props.pixelFormat = { DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED };
+        props.dpiX = static_cast<float>(_r.dpi);
+        props.dpiY = static_cast<float>(_r.dpi);
+        THROW_IF_FAILED(_sr.d2dFactory->CreateDxgiSurfaceRenderTarget(surface.get(), &props, _r.d2dRenderTarget.put()));
+
+        // We don't really use D2D for anything except DWrite, but it
+        // can't hurt to ensure that everything it does is pixel aligned.
+        _r.d2dRenderTarget->SetAntialiasMode(D2D1_ANTIALIAS_MODE_ALIASED);
+        // Ensure that D2D uses the exact same gamma as our shader uses.
+        _r.d2dRenderTarget->SetTextRenderingParams(renderingParams.get());
+        // We can't set the antialiasingMode here, as D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE
+        // will force the alpha channel to be 0 for _all_ text.
+        //_r.d2dRenderTarget->SetTextAntialiasMode(static_cast<D2D1_TEXT_ANTIALIAS_MODE>(_api.antialiasingMode));
+    }
+    {
+        static constexpr D2D1_COLOR_F color{ 1, 1, 1, 1 };
+        wil::com_ptr<ID2D1SolidColorBrush> brush;
+        THROW_IF_FAILED(_r.d2dRenderTarget->CreateSolidColorBrush(&color, nullptr, brush.addressof()));
+        _r.brush = brush.query<ID2D1Brush>();
+    }
+
+    _r.scratchpadCellWidth = _r.maxEncounteredCellCount;
+    WI_SetAllFlags(_r.invalidations, RenderInvalidations::ConstBuffer);
 }
 
 void AtlasEngine::_processGlyphQueue()
@@ -226,21 +301,27 @@ void AtlasEngine::_processGlyphQueue()
     _r.glyphQueue.clear();
 }
 
-void AtlasEngine::_drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const
+void AtlasEngine::_drawGlyph(const AtlasQueueItem& pair) const
 {
-    const auto& key = pair.first;
-    const auto& value = pair.second;
-    const auto charsLength = wcsnlen_s(&key.chars[0], std::size(key.chars));
-    const auto cells = key.attributes.cells + UINT32_C(1);
+    const auto& key = pair.key->data();
+    const auto& value = pair.value->data();
+    const auto coords = &value.coords[0];
+    const auto charsLength = key.charCount;
+    const auto cells = static_cast<u32>(key.attributes.cellCount);
     const auto textFormat = _getTextFormat(key.attributes.bold, key.attributes.italic);
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
-    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key.chars[0], gsl::narrow_cast<UINT32>(charsLength), textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
+    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key.chars[0], charsLength, textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
     if (_r.typography)
     {
-        textLayout->SetTypography(_r.typography.get(), { 0, gsl::narrow_cast<UINT32>(charsLength) });
+        textLayout->SetTypography(_r.typography.get(), { 0, charsLength });
     }
+
+    auto options = D2D1_DRAW_TEXT_OPTIONS_NONE;
+    // D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT enables a bunch of internal machinery
+    // which doesn't have to run if we know we can't use it anyways in the shader.
+    WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, WI_IsFlagSet(value.flags, CellFlags::ColoredGlyph));
 
     _r.d2dRenderTarget->BeginDraw();
     // We could call
@@ -248,7 +329,7 @@ void AtlasEngine::_drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const
     // now to reduce the surface that needs to be cleared, but this decreases
     // performance by 10% (tested using debugGlyphGenerationPerformance).
     _r.d2dRenderTarget->Clear();
-    _r.d2dRenderTarget->DrawTextLayout({}, textLayout.get(), _r.brush.get(), D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
+    _r.d2dRenderTarget->DrawTextLayout({}, textLayout.get(), _r.brush.get(), options);
     THROW_IF_FAILED(_r.d2dRenderTarget->EndDraw());
 
     for (uint32_t i = 0; i < cells; ++i)
@@ -259,12 +340,17 @@ void AtlasEngine::_drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const
         //
         // Since our shader only draws whatever is in the atlas, and since we don't replace glyph tiles that are in use,
         // we can safely (?) tell the GPU that we don't overwrite parts of our atlas that are in use.
-        _copyScratchpadTile(i, value.coords[i], D3D11_COPY_NO_OVERWRITE);
+        _copyScratchpadTile(i, coords[i], D3D11_COPY_NO_OVERWRITE);
     }
 }
 
-void AtlasEngine::_drawCursor() const
+void AtlasEngine::_drawCursor()
 {
+    _reserveScratchpadSize(1);
+
+    // lineWidth is in D2D's DIPs. For instance if we have a 150-200% zoom scale we want to draw a 2px wide line.
+    // At 150% scale lineWidth thus needs to be 1.33333... because at a zoom scale of 1.5 this results in a 2px wide line.
+    const auto lineWidth = std::max(1.0f, static_cast<float>((_r.dpi + USER_DEFAULT_SCREEN_DPI / 2) / USER_DEFAULT_SCREEN_DPI * USER_DEFAULT_SCREEN_DPI) / static_cast<float>(_r.dpi));
     const auto cursorType = static_cast<CursorType>(_r.cursorOptions.cursorType);
     D2D1_RECT_F rect;
     rect.left = 0.0f;
@@ -278,20 +364,23 @@ void AtlasEngine::_drawCursor() const
         rect.top = _r.cellSizeDIP.y * static_cast<float>(100 - _r.cursorOptions.ulCursorHeightPercent) / 100.0f;
         break;
     case CursorType::VerticalBar:
-        rect.right = 1.0f;
+        rect.right = lineWidth;
         break;
     case CursorType::EmptyBox:
+    {
         // EmptyBox is drawn as a line and unlike filled rectangles those are drawn centered on their
         // coordinates in such a way that the line border extends half the width to each side.
         // --> Our coordinates have to be 0.5 DIP off in order to draw a 2px line on a 200% scaling.
-        rect.left = 0.5f;
-        rect.top = 0.5f;
-        rect.right -= 0.5f;
-        rect.bottom -= 0.5f;
+        const auto halfWidth = lineWidth / 2.0f;
+        rect.left = halfWidth;
+        rect.top = halfWidth;
+        rect.right -= halfWidth;
+        rect.bottom -= halfWidth;
         break;
+    }
     case CursorType::Underscore:
     case CursorType::DoubleUnderscore:
-        rect.top = _r.cellSizeDIP.y - 1.0f;
+        rect.top = _r.cellSizeDIP.y - lineWidth;
         break;
     default:
         break;
@@ -302,7 +391,7 @@ void AtlasEngine::_drawCursor() const
 
     if (cursorType == CursorType::EmptyBox)
     {
-        _r.d2dRenderTarget->DrawRectangle(&rect, _r.brush.get());
+        _r.d2dRenderTarget->DrawRectangle(&rect, _r.brush.get(), lineWidth);
     }
     else
     {

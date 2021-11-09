@@ -264,8 +264,6 @@ try
         const auto cy = std::ceil(metrics.height * scaling);
         resultingCellSize.X = gsl::narrow<SHORT>(cx);
         resultingCellSize.Y = gsl::narrow<SHORT>(cy);
-        resultingCellSize.X = 12;
-        resultingCellSize.Y = 27;
 
         faceNameBuffer.resize(textFormat->GetFontFamilyNameLength());
         THROW_IF_FAILED(textFormat->GetFontFamilyName(faceNameBuffer.data(), static_cast<UINT32>(faceNameBuffer.size() + 1)));
@@ -451,47 +449,38 @@ try
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
     if (!features.empty())
     {
+        fontFeatures.reserve(features.size() + 3);
+
         // All of these features are enabled by default by DirectWrite.
         // If you want to (and can) peek into the source of DirectWrite
         // you can look for the "GenericDefaultGsubFeatures" and "GenericDefaultGposFeatures" arrays.
         // Gsub is for GetGlyphs() and Gpos for GetGlyphPlacements().
         //
-        // These values are sorted by their numeric value on little endian (you can see them in a debugger).
-        // Please try to keep it that way.
-        //
         // GH#10774: Apparently specifying all of the features is just redundant.
-        static constexpr auto defaults = std::array{
-            DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES,
-            DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES,
-            DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES,
-        };
-        std::array<bool, defaults.size()> overriddenDefaults{};
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES, 1 });
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES, 1 });
+        fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES, 1 });
 
         for (const auto& p : features)
         {
             if (p.first.size() == 4)
             {
                 const auto s = p.first.data();
-                const auto tag = DWRITE_MAKE_FONT_FEATURE_TAG(s[0], s[1], s[2], s[3]);
-
-                fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ tag, p.second });
-
-                for (size_t i = 0; i < defaults.size(); ++i)
+                switch (const auto tag = DWRITE_MAKE_FONT_FEATURE_TAG(s[0], s[1], s[2], s[3]))
                 {
-                    if (defaults[i] == tag)
-                    {
-                        overriddenDefaults[i] = true;
-                        break;
-                    }
+                case DWRITE_FONT_FEATURE_TAG_STANDARD_LIGATURES:
+                    fontFeatures[0].parameter = p.second;
+                    break;
+                case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_LIGATURES:
+                    fontFeatures[1].parameter = p.second;
+                    break;
+                case DWRITE_FONT_FEATURE_TAG_CONTEXTUAL_ALTERNATES:
+                    fontFeatures[2].parameter = p.second;
+                    break;
+                default:
+                    fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ tag, p.second });
+                    break;
                 }
-            }
-        }
-
-        for (size_t i = 0; i < defaults.size(); ++i)
-        {
-            if (!overriddenDefaults[i])
-            {
-                fontFeatures.emplace_back(DWRITE_FONT_FEATURE{ defaults[i], 1 });
             }
         }
     }
@@ -499,14 +488,34 @@ try
     std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues;
     if (!axes.empty())
     {
-        fontAxisValues.reserve(axes.size());
+        fontAxisValues.reserve(axes.size() + 3);
+
+        // AtlasEngine::_recreateFontDependentResources() relies on these fields to
+        // exist in this particular order in order to create appropriate default axes.
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_WEIGHT, -1.0f });
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_ITALIC, -1.0f });
+        fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_FONT_AXIS_TAG_SLANT, -1.0f });
 
         for (const auto& p : axes)
         {
             if (p.first.size() == 4)
             {
                 const auto s = p.first.data();
-                fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ DWRITE_MAKE_FONT_AXIS_TAG(s[0], s[1], s[2], s[3]), p.second });
+                switch (const auto tag = DWRITE_MAKE_FONT_AXIS_TAG(s[0], s[1], s[2], s[3]))
+                {
+                case DWRITE_FONT_AXIS_TAG_WEIGHT:
+                    fontAxisValues[0].value = p.second;
+                    break;
+                case DWRITE_FONT_AXIS_TAG_ITALIC:
+                    fontAxisValues[1].value = p.second;
+                    break;
+                case DWRITE_FONT_AXIS_TAG_SLANT:
+                    fontAxisValues[2].value = p.second;
+                    break;
+                default:
+                    fontAxisValues.emplace_back(DWRITE_FONT_AXIS_VALUE{ tag, p.second });
+                    break;
+                }
             }
         }
     }

@@ -6,7 +6,6 @@
 #include <d2d1.h>
 #include <d3d11_1.h>
 #include <dwrite_3.h>
-#include <til/pair.h>
 
 #include "../../renderer/inc/IRenderEngine.hpp"
 
@@ -170,35 +169,60 @@ namespace Microsoft::Console::Render
             u8 bidiLevel = 0;
         };
 
-        template<typename T>
-        struct AlignedBuffer
+        template<typename T, size_t Alignment = alignof(T)>
+        struct Buffer
         {
-            constexpr AlignedBuffer() noexcept = default;
+            constexpr Buffer() noexcept = default;
 
-            explicit AlignedBuffer(size_t size, size_t alignment) :
-                _data{ THROW_IF_NULL_ALLOC(static_cast<T*>(_aligned_malloc(size * sizeof(T), alignment))) },
+            explicit Buffer(size_t size) :
+                _data{ allocate(size) },
                 _size{ size }
             {
             }
 
-            ~AlignedBuffer()
+            Buffer(const T* data, size_t size) :
+                _data{ allocate(size) },
+                _size{ size }
             {
-                _aligned_free(_data);
+                static_assert(std::is_trivially_copyable_v<T>);
+                memcpy(_data, data, size * sizeof(T));
             }
 
-            AlignedBuffer(AlignedBuffer&& other) noexcept :
+            ~Buffer()
+            {
+                deallocate(_data);
+            }
+
+            Buffer(Buffer&& other) noexcept :
                 _data{ std::exchange(other._data, nullptr) },
                 _size{ std::exchange(other._size, 0) }
             {
             }
 
 #pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
-            AlignedBuffer& operator=(AlignedBuffer&& other) noexcept
+            Buffer& operator=(Buffer&& other) noexcept
             {
-                _aligned_free(_data);
+                deallocate(_data);
                 _data = std::exchange(other._data, nullptr);
                 _size = std::exchange(other._size, 0);
                 return *this;
+            }
+
+            explicit operator bool() const noexcept
+            {
+                return _data;
+            }
+
+            T& operator[](size_t index) noexcept
+            {
+                assert(index < _size);
+                return _data[index];
+            }
+
+            const T& operator[](size_t index) const noexcept
+            {
+                assert(index < _size);
+                return _data[index];
             }
 
             T* data() noexcept
@@ -206,12 +230,41 @@ namespace Microsoft::Console::Render
                 return _data;
             }
 
-            size_t size() noexcept
+            const T* data() const noexcept
+            {
+                return _data;
+            }
+
+            size_t size() const noexcept
             {
                 return _size;
             }
 
         private:
+            static T* allocate(size_t size)
+            {
+                if constexpr (Alignment <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+                {
+                    return static_cast<T*>(::operator new[](size * sizeof(T)));
+                }
+                else
+                {
+                    return static_cast<T*>(::operator new[](size * sizeof(T), static_cast<std::align_val_t>(Alignment)));
+                }
+            }
+
+            static void deallocate(T* data) noexcept
+            {
+                if constexpr (Alignment <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
+                {
+                    ::operator delete[](data);
+                }
+                else
+                {
+                    ::operator delete[](data, static_cast<std::align_val_t>(Alignment));
+                }
+            }
+
             T* _data = nullptr;
             size_t _size = 0;
         };
@@ -219,25 +272,27 @@ namespace Microsoft::Console::Render
     private:
         // u16 so it neatly fits into AtlasValue.
         // These flags are shared with shader_ps.hlsl.
-        enum class CellFlags : u16
+        enum class CellFlags : u32
         {
             None = 0,
-            ColoredGlyph = 1,
+            Inlined = 1,
 
-            Cursor = 2,
-            Selected = 4,
+            ColoredGlyph = 2,
+            ThinFont = 4,
 
-            BorderLeft = 8,
-            BorderTop = 16,
-            BorderRight = 32,
-            BorderBottom = 64,
+            Cursor = 8,
+            Selected = 16,
 
-            Underline = 128,
-            UnderlineDotted = 256,
-            UnderlineDouble = 512,
-            Strikethrough = 1024,
+            BorderLeft = 32,
+            BorderTop = 64,
+            BorderRight = 128,
+            BorderBottom = 256,
+            Underline = 512,
+            UnderlineDotted = 1024,
+            UnderlineDouble = 2048,
+            Strikethrough = 4096,
         };
-        ATLAS_FLAG_OPS(CellFlags, u16)
+        ATLAS_FLAG_OPS(CellFlags, u32)
 
         // This structure is shared with the GPU shader and needs to follow certain alignment rules.
         // You can generally assume that only u32 or types of that alignment are allowed.
@@ -250,32 +305,196 @@ namespace Microsoft::Console::Render
 
         struct AtlasKeyAttributes
         {
-            wchar_t cells : 4;
-            wchar_t bold : 1;
-            wchar_t italic : 1;
+            u16 inlined : 1;
+            u16 bold : 1;
+            u16 italic : 1;
+            u16 cellCount : 13;
+
+            ATLAS_POD_OPS(AtlasKeyAttributes)
         };
 
-        struct AtlasKey
+        struct AtlasKeyData
         {
-            wchar_t chars[15];
             AtlasKeyAttributes attributes;
+            u16 charCount;
+            wchar_t chars[14];
+        };
 
-            ATLAS_POD_OPS(AtlasKey)
+        union AtlasKey
+        {
+            AtlasKey(AtlasKeyAttributes attributes, u16 charCount, const wchar_t* chars)
+            {
+                AtlasKeyData* data;
+
+                if (charCount <= std::size(inlined.chars))
+                {
+                    attributes.inlined = 1;
+                    data = &inlined;
+                }
+                else
+                {
+                    data = heap = THROW_IF_NULL_ALLOC(static_cast<AtlasKeyData*>(malloc(dataSize(charCount))));
+                }
+
+                data->attributes = attributes;
+                data->charCount = charCount;
+                memcpy(&data->chars[0], chars, static_cast<size_t>(charCount) * sizeof(AtlasKeyData::chars[0]));
+            }
+
+            AtlasKey(const AtlasKey& other)
+            {
+                if (other.inlined.attributes.inlined)
+                {
+                    memcpy(&inlined, &other.inlined, sizeof(inlined));
+                }
+                else
+                {
+                    const auto size = dataSize(other.heap->charCount);
+                    heap = THROW_IF_NULL_ALLOC(static_cast<AtlasKeyData*>(malloc(size)));
+                    memcpy(heap, other.heap, size);
+                }
+            }
+
+            AtlasKey(AtlasKey&&) = default;
+            AtlasKey& operator=(AtlasKey&&) = default;
+
+            ~AtlasKey()
+            {
+                if (!inlined.attributes.inlined)
+                {
+                    free(heap);
+                }
+            }
+
+            const AtlasKeyData& data() const noexcept
+            {
+                return inlined.attributes.inlined ? inlined : *heap;
+            }
+
+            size_t hash() const noexcept
+            {
+                const auto& d = data();
+                return std::_Fnv1a_append_bytes(std::_FNV_offset_basis, reinterpret_cast<const u8*>(&d), dataSize(d.charCount));
+            }
+
+            bool operator==(const AtlasKey& rhs) const noexcept
+            {
+                const auto& a = data();
+                const auto& b = rhs.data();
+                return a.charCount == b.charCount && memcmp(&a, &b, dataSize(a.charCount)) == 0;
+            }
+
+        private:
+            // This structure works similar to how std::string works:
+            // You can think of a std::string as a structure consisting of:
+            //   char*  data;
+            //   size_t size;
+            //   size_t capacity;
+            // where data is some backing memory allocated on the heap.
+            //
+            // But std::string employs an optimization called "small string optimization" (SSO).
+            // To simplify things it could be explained as:
+            // If the string capacity is small, then the characters are stored inside the "data"
+            // pointer and you make sure to set the lowest bit in the pointer one way or another.
+            // Heap allocations are always aligned by at least 4-8 bytes on any platform.
+            // If the address of the "data" pointer is not even you know data is stored inline.
+            //
+            // We use the same trick here:
+            // If we have only few .chars (<= 2) then we store all our fields inside the .heap pointer.
+            // Otherwise (.charCount > 2) we allocate an AtlasKey on the heap.
+            AtlasKeyData* heap = nullptr;
+            AtlasKeyData inlined;
+
+            static constexpr size_t dataSize(u16 charCount) noexcept
+            {
+                // This returns the actual byte size of a AtlasKeyData struct for the given charCount.
+                // The `wchar_t chars[2]` is only a buffer for the inlined variant after
+                // all and the actual charCount can be smaller or larger. Due to this we
+                // remove the size of the `chars` array and add it's true length on top.
+                return sizeof(AtlasKeyData) - sizeof(AtlasKeyData::chars) + static_cast<size_t>(charCount) * sizeof(AtlasKeyData::chars[0]);
+            }
         };
 
         struct AtlasKeyHasher
         {
-            size_t operator()(const AtlasKey& entry) const noexcept
+            size_t operator()(const AtlasKey& key) const noexcept
             {
-                static_assert(sizeof(entry) == 32);
-                return gsl::narrow_cast<size_t>(XXH3_len_32_64b(&entry));
+                return key.hash();
             }
         };
 
-        struct AtlasValue
+        struct AtlasValueData
         {
-            u16x2 coords[15];
             CellFlags flags = CellFlags::None;
+            u16x2 coords[7];
+        };
+
+        union AtlasValue
+        {
+            AtlasValue() = default;
+            AtlasValue(const AtlasValue& other)
+            {
+                if (WI_IsFlagSet(other.inlined.flags, CellFlags::Inlined))
+                {
+                    memcpy(&inlined, &other.inlined, sizeof(inlined));
+                }
+                else
+                {
+                    const auto size = _msize(other.heap);
+                    heap = THROW_IF_NULL_ALLOC(static_cast<AtlasValueData*>(malloc(size)));
+                    memcpy(heap, other.heap, size);
+                }
+            }
+
+            AtlasValue(AtlasValue&&) = default;
+            AtlasValue& operator=(AtlasValue&&) = default;
+
+            ~AtlasValue()
+            {
+                if (!WI_IsFlagSet(inlined.flags, CellFlags::Inlined))
+                {
+                    free(heap);
+                }
+            }
+
+            u16x2* initialize(CellFlags flags, u16 cellCount)
+            {
+                AtlasValueData* data;
+
+                if (cellCount <= std::size(inlined.coords))
+                {
+                    WI_SetFlag(flags, CellFlags::Inlined);
+                    data = &inlined;
+                }
+                else
+                {
+                    data = heap = THROW_IF_NULL_ALLOC(static_cast<AtlasValueData*>(malloc(dataSize(cellCount))));
+                }
+
+                data->flags = flags;
+                return &data->coords[0];
+            }
+
+            const AtlasValueData& data() const noexcept
+            {
+                return WI_IsFlagSet(inlined.flags, CellFlags::Inlined) ? inlined : *heap;
+            }
+
+        private:
+            // See AtlasKey for a long description about how this works.
+            AtlasValueData* heap = nullptr;
+            AtlasValueData inlined;
+
+            static constexpr size_t dataSize(u16 coordCount) noexcept
+            {
+                return sizeof(AtlasValueData) - sizeof(AtlasValueData::coords) + static_cast<size_t>(coordCount) * sizeof(AtlasValueData::coords[0]);
+            }
+        };
+
+        struct AtlasQueueItem
+        {
+            const AtlasKey* key;
+            const AtlasValue* value;
         };
 
         struct CachedCursorOptions
@@ -287,6 +506,12 @@ namespace Microsoft::Console::Render
             ATLAS_POD_OPS(CachedCursorOptions)
         };
 
+        struct BufferLineMetadata
+        {
+            u32x2 colors;
+            CellFlags flags = CellFlags::None;
+        };
+
         // NOTE: D3D constant buffers sizes must be a multiple of 16 bytes.
         struct alignas(16) ConstBuffer
         {
@@ -296,13 +521,14 @@ namespace Microsoft::Console::Render
             // * Members cannot straddle 16 byte boundaries
             //   This means a structure like {u32; u32; u32; u32x2} would require
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
-            f32x4 viewport;
-            u32x2 cellSize;
-            u32 cellCountX = 0;
-            f32 gamma = 0;
-            u32 backgroundColor = 0;
-            u32 cursorColor = 0;
-            u32 selectionColor = 0;
+            alignas(sizeof(f32x4)) f32x4 viewport;
+            alignas(sizeof(u32x2)) u32x2 cellSize;
+            alignas(sizeof(u32)) u32 cellCountX = 0;
+            alignas(sizeof(f32)) f32 gamma = 0;
+            alignas(sizeof(f32)) f32 grayscaleEnhancedContrast = 0;
+            alignas(sizeof(u32)) u32 backgroundColor = 0;
+            alignas(sizeof(u32)) u32 cursorColor = 0;
+            alignas(sizeof(u32)) u32 selectionColor = 0;
 #pragma warning(suppress : 4324) // structure was padded due to alignment specifier
         };
 
@@ -336,8 +562,6 @@ namespace Microsoft::Console::Render
             return std::max(min, std::min(max, val));
         }
 
-        static uint64_t XXH3_len_32_64b(const void* data) noexcept;
-
         // AtlasEngine.cpp
         [[nodiscard]] HRESULT _handleException(const wil::ResultException& exception) noexcept;
         __declspec(noinline) void _createResources();
@@ -345,22 +569,26 @@ namespace Microsoft::Console::Render
         __declspec(noinline) void _recreateFontDependentResources();
         HRESULT _createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept;
         IDWriteTextFormat* _getTextFormat(bool bold, bool italic) const noexcept;
+        const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
         Cell* _getCell(u16 x, u16 y) noexcept;
         void _setCellFlags(SMALL_RECT coords, CellFlags mask, CellFlags bits) noexcept;
         u16x2 _allocateAtlasTile() noexcept;
-        void _emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* key, size_t keyLen, u16 y, u16 x1, u16 x2);
+        void _flushBufferLine();
+        void _emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* chars, size_t charCount, u16 x1, u16 x2);
 
         // AtlasEngine.r.cpp
-        void _setShaderResources() const noexcept;
+        void _setShaderResources() const;
         void _updateConstantBuffer() const noexcept;
         void _adjustAtlasSize();
+        void _reserveScratchpadSize(u16 minWidth);
         void _processGlyphQueue();
-        void _drawGlyph(const til::pair<AtlasKey, AtlasValue>& pair) const;
-        void _drawCursor() const;
+        void _drawGlyph(const AtlasQueueItem& pair) const;
+        void _drawCursor();
         void _copyScratchpadTile(uint32_t scratchpadIndex, u16x2 target, uint32_t copyFlags = 0) const noexcept;
 
         static constexpr bool debugGlyphGenerationPerformance = false;
         static constexpr bool debugGeneralPerformance = false || debugGlyphGenerationPerformance;
+        static constexpr bool continuousRedraw = false || debugGeneralPerformance;
 
         static constexpr u16 u16min = 0x0000;
         static constexpr u16 u16max = 0xffff;
@@ -373,10 +601,15 @@ namespace Microsoft::Console::Render
         struct StaticResources
         {
             wil::com_ptr<ID2D1Factory> d2dFactory;
-            wil::com_ptr<IDWriteFactory> dwriteFactory;
+            wil::com_ptr<IDWriteFactory1> dwriteFactory;
             wil::com_ptr<IDWriteFontFallback> systemFontFallback;
             wil::com_ptr<IDWriteTextAnalyzer1> textAnalyzer;
             bool isWindows10OrGreater = true;
+
+#ifndef NDEBUG
+            wil::unique_folder_change_reader_nothrow sourceCodeWatcher;
+            std::atomic<int64_t> sourceCodeInvalidationTime{ INT64_MAX };
+#endif
         } _sr;
 
         struct Resources
@@ -400,19 +633,24 @@ namespace Microsoft::Console::Render
             wil::com_ptr<ID2D1RenderTarget> d2dRenderTarget;
             wil::com_ptr<ID2D1Brush> brush;
             wil::com_ptr<IDWriteTextFormat> textFormats[2][2];
+            Buffer<DWRITE_FONT_AXIS_VALUE> textFormatAxes[2][2];
             wil::com_ptr<IDWriteTypography> typography;
 
-            AlignedBuffer<Cell> cells; // invalidated by ApiInvalidations::Size
+            Buffer<Cell, 32> cells; // invalidated by ApiInvalidations::Size
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
             u16x2 cellSize; // invalidated by ApiInvalidations::Font, caches _api.cellSize
-            u16x2 cellCount; // invalidated by ApiInvalidations::Font|size, caches _api.cellCount
+            u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
+            u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
+            u16 maxEncounteredCellCount = 0;
+            u16 scratchpadCellWidth = 0;
             u16x2 atlasSizeInPixelLimit; // invalidated by ApiInvalidations::Font
             u16x2 atlasSizeInPixel; // invalidated by ApiInvalidations::Font
             u16x2 atlasPosition;
             std::unordered_map<AtlasKey, AtlasValue, AtlasKeyHasher> glyphs;
-            std::vector<til::pair<AtlasKey, AtlasValue>> glyphQueue;
+            std::vector<AtlasQueueItem> glyphQueue;
 
             f32 gamma = 0;
+            f32 grayscaleEnhancedContrast = 0;
             u32 backgroundColor = 0xff000000;
             u32 selectionColor = 0x7fffffff;
 
@@ -433,18 +671,24 @@ namespace Microsoft::Console::Render
             // to seldom accessed and/or usually not together. Try to sorta stick with this.
 
             std::vector<wchar_t> bufferLine;
-            std::vector<u16> bufferLinePos;
+            std::vector<u16> bufferLineColumn;
+            Buffer<BufferLineMetadata> bufferLineMetadata;
             std::vector<TextAnalyzerResult> analysisResults;
-            std::vector<UINT16> clusterMap;
-            std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
-            std::vector<UINT16> glyphIndices;
-            std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps;
+            Buffer<u16> clusterMap;
+            Buffer<DWRITE_SHAPING_TEXT_PROPERTIES> textProps;
+            Buffer<u16> glyphIndices;
+            Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps;
             std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as ApiInvalidations::Font|Size
+
+            u16x2 cellSize; // changes are flagged as ApiInvalidations::Font
+            u16x2 cellCount; // caches `sizeInPixel / cellSize`
+            u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 
             // UpdateDrawingBrushes()
             u32 backgroundOpaqueMixin = 0xff000000; // changes are flagged as ApiInvalidations::Device
-            u32x2 currentColor{};
+            u32x2 currentColor;
             AtlasKeyAttributes attributes{};
+            u16 currentRow = 0;
             CellFlags flags = CellFlags::None;
             // SetSelectionBackground()
             u32 selectionColor = 0x7fffffff;
@@ -455,10 +699,6 @@ namespace Microsoft::Console::Render
             u16r invalidatedCursorArea = invalidatedAreaNone;
             u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
-
-            u16x2 cellSize; // changes are flagged as ApiInvalidations::Font
-            u16x2 cellCount; // caches `sizeInPixel / cellSize`
-            u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 
             std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
             wil::unique_process_heap_string fontName; // changes are flagged as ApiInvalidations::Font|Size
