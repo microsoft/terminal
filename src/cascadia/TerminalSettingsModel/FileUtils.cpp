@@ -54,106 +54,32 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     // - true if it had the expected permissions. False otherwise.
     static bool _hasElevatedOnlyPermissions(const std::filesystem::path& path)
     {
-        path;
-        wil::unique_sid sidOwner;
+        // If the file is owned by the administrators group, trust the
+        // administrators instead of checking the DACL permissions. It's simpler
+        // and more flexible.
 
+        wil::unique_hlocal_security_descriptor sd;
         PSID psidOwner{ nullptr };
-        // wil::unique_hlocal_security_descriptor sd;
-        PSECURITY_DESCRIPTOR pSD{ nullptr }; // TODO! LocalFree me
-        auto status = GetNamedSecurityInfoW(path.c_str(),
-                                            SE_FILE_OBJECT,
-                                            OWNER_SECURITY_INFORMATION,
-                                            &psidOwner,
-                                            nullptr,
-                                            nullptr,
-                                            nullptr,
-                                            // wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd));
-                                            &pSD);
+        // The psidOwner pointer references the security descriptor, so it
+        // doesn't have to be freed separate from sd.
+        const auto status = GetNamedSecurityInfoW(path.c_str(),
+                                                  SE_FILE_OBJECT,
+                                                  OWNER_SECURITY_INFORMATION,
+                                                  &psidOwner,
+                                                  nullptr,
+                                                  nullptr,
+                                                  nullptr,
+                                                  wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd));
         THROW_IF_WIN32_ERROR(status);
-        /*if (status == ERROR_FILE_NOT_FOUND)
-        {
-            return true;
-        }
-        if (LOG_IF_WIN32_ERROR(status))
-        {
-            return false;
-        }*/
-
-        const auto adminGroupSid = wil::make_static_sid(SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
-        adminGroupSid; // for debugging;
 
         wil::unique_any_psid psidAdmins{ nullptr };
-        ConvertStringSidToSidW(L"BA", wil::out_param_ptr<PSID*>(psidAdmins));
+        THROW_IF_WIN32_BOOL_FALSE(
+            ConvertStringSidToSidW(L"BA", wil::out_param_ptr<PSID*>(psidAdmins)));
+
         // Compare the owner SID to the administrators SID via
         // EqualSid(psidOwner, psidAdmins). This does a low-level memory
         // comparison of the SIDs.
         return EqualSid(psidOwner, psidAdmins.get());
-
-        // The psidOwner pointer references the security descriptor, so it
-        // doesn't have to be freed separate from pSD.
-        // LocalFree(pSD); // called when the unique_hlocal_security_descriptor exits scope
-
-        // return true;
-        /*
-        // If we want to only open the file if it's elevated, check the
-        // permissions on this file. We want to make sure that:
-        // * Everyone has permission to read
-        // * admins can do anything
-        // * no one else can do anything.
-        PACL pAcl{ nullptr }; // This doesn't need to be cleanup up apparently
-
-        auto status = GetNamedSecurityInfo(path.c_str(),
-                                           SE_FILE_OBJECT,
-                                           DACL_SECURITY_INFORMATION,
-                                           nullptr,
-                                           nullptr,
-                                           &pAcl,
-                                           nullptr,
-                                           nullptr);
-        THROW_IF_WIN32_ERROR(status);
-
-        PEXPLICIT_ACCESS pEA{ nullptr };
-        DWORD count = 0;
-        status = GetExplicitEntriesFromAcl(pAcl, &count, &pEA);
-        THROW_IF_WIN32_ERROR(status);
-
-        auto explicitAccessCleanup = wil::scope_exit([&]() { ::LocalFree(pEA); });
-
-        if (count != 2)
-        {
-            return false;
-        }
-
-        // Now, get the Everyone and Admins SIDS so we can make sure they're
-        // the ones in this file.
-        // Create a SID for the BUILTIN\Administrators group.
-        const auto adminGroupSid = wil::make_static_sid(SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
-
-        // Create a well-known SID for the Everyone group.
-        const auto everyoneSid = wil::make_static_sid(SECURITY_WORLD_SID_AUTHORITY, SECURITY_WORLD_RID);
-
-        bool hadExpectedPermissions = true;
-
-        // Check that the permissions are what we'd expect them to be if only
-        // admins can write to the file. This is basically a mirror of what we
-        // set up in `WriteUTF8File`.
-
-        // For grfAccessPermissions, GENERIC_ALL turns into STANDARD_RIGHTS_ALL,
-        // and GENERIC_READ -> READ_CONTROL
-        hadExpectedPermissions &= WI_AreAllFlagsSet(pEA[0].grfAccessPermissions, STANDARD_RIGHTS_ALL);
-        hadExpectedPermissions &= pEA[0].grfInheritance == NO_INHERITANCE;
-        hadExpectedPermissions &= pEA[0].Trustee.TrusteeForm == TRUSTEE_IS_SID;
-        // SIDs are void*'s that happen to convert to a wchar_t
-        hadExpectedPermissions &= *(pEA[0].Trustee.ptstrName) == *(LPWSTR)(adminGroupSid.get());
-
-        // Now check the other EXPLICIT_ACCESS
-        hadExpectedPermissions &= WI_IsFlagSet(pEA[1].grfAccessPermissions, READ_CONTROL);
-        hadExpectedPermissions &= pEA[1].grfInheritance == NO_INHERITANCE;
-        hadExpectedPermissions &= pEA[1].Trustee.TrusteeForm == TRUSTEE_IS_SID;
-        hadExpectedPermissions &= *(pEA[1].Trustee.ptstrName) == *(LPWSTR)(everyoneSid.get());
-
-        return hadExpectedPermissions;
-        */
     }
     // Tries to read a file somewhat atomically without locking it.
     // Strips the UTF8 BOM if it exists.
@@ -260,21 +186,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // on this file such that Builtin\Admins could read&write the file,
             // and all users could only read.
             //
-            // Big thanks to @eryksun in
-            // https://github.com/microsoft/terminal/pull/11222 for helping with
-            // this.
-            //
-            // This alternative method was chosen because it's considerably
-            // simpler.
+            // Big thanks to @eryksun in GH#11222 for helping with this. This
+            // alternative method was chosen because it's considerably simpler.
 
             // The required security descriptor can be created easily from the
             // SDDL string: "S:(ML;;NW;;;HI)"
             // (i.e. SACL:mandatory label;;no write up;;;high integrity level)
             unsigned long cb;
-            ConvertStringSecurityDescriptorToSecurityDescriptor(L"S:(ML;;NW;;;HI)",
-                                                                SDDL_REVISION_1,
-                                                                wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd),
-                                                                &cb);
+            THROW_IF_WIN32_BOOL_FALSE(
+                ConvertStringSecurityDescriptorToSecurityDescriptor(L"S:(ML;;NW;;;HI)",
+                                                                    SDDL_REVISION_1,
+                                                                    wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd),
+                                                                    &cb));
 
             // Initialize a security attributes structure.
             sa.nLength = sizeof(SECURITY_ATTRIBUTES);
