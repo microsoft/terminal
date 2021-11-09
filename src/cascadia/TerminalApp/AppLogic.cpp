@@ -10,6 +10,7 @@
 
 #include <LibraryResources.h>
 #include <WtExeUtils.h>
+#include <wil/token_helpers.h >
 
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
@@ -131,17 +132,28 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
 // Method Description:
 // - Returns whether the user is either a member of the Administrators group or
 //   is currently elevated.
+// - This will return **FALSE** if the user has UAC disabled entirely, because
+//   there's no separation of power between the user and an admin in that case.
 // Return Value:
 // - true if the user is an administrator
 static bool _isUserAdmin() noexcept
 try
 {
-    SID_IDENTIFIER_AUTHORITY ntAuthority{ SECURITY_NT_AUTHORITY };
-    wil::unique_sid adminGroupSid{};
-    THROW_IF_WIN32_BOOL_FALSE(AllocateAndInitializeSid(&ntAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0, &adminGroupSid));
-    BOOL b;
-    THROW_IF_WIN32_BOOL_FALSE(CheckTokenMembership(NULL, adminGroupSid.get(), &b));
-    return !!b;
+    wil::unique_handle processToken{ GetCurrentProcessToken() };
+    const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
+    const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
+    if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
+    {
+        // In this case, the user has UAC entirely disabled. This is sort of
+        // weird, we treat this like the user isn't an admin at all. There's no
+        // separation of powers, so the things we normally want to gate on
+        // "having special powers" doesn't apply.
+        //
+        // See GH#7754, GH#11096
+        return false;
+    }
+
+    return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
 }
 catch (...)
 {
@@ -327,6 +339,14 @@ namespace winrt::TerminalApp::implementation
             TraceLoggingBool(_settings.GlobalSettings().ShowTabsInTitlebar(), "TabsInTitlebar"),
             TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
             TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+    }
+
+    void AppLogic::Quit()
+    {
+        if (_root)
+        {
+            _root->CloseWindow(true);
+        }
     }
 
     // Method Description:
@@ -596,12 +616,30 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        // Use the default profile to determine how big of a window we need.
-        const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
-
-        auto proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+        winrt::Windows::Foundation::Size proposedSize{};
 
         const float scale = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+        if (_root->ShouldUsePersistedLayout(_settings))
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialSize())
+            {
+                proposedSize = layouts.GetAt(0).InitialSize().Value();
+                // The size is saved as a non-scaled real pixel size,
+                // so we need to scale it appropriately.
+                proposedSize.Height = proposedSize.Height * scale;
+                proposedSize.Width = proposedSize.Width * scale;
+            }
+        }
+
+        if (proposedSize.Width == 0 && proposedSize.Height == 0)
+        {
+            // Use the default profile to determine how big of a window we need.
+            const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, nullptr, nullptr) };
+
+            proposedSize = TermControl::GetProposedDimensions(settings.DefaultSettings(), dpi);
+        }
 
         // GH#2061 - If the global setting "Always show tab bar" is
         // set or if "Show tabs in title bar" is set, then we'll need to add
@@ -683,7 +721,18 @@ namespace winrt::TerminalApp::implementation
             LoadSettings();
         }
 
-        const auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
+        auto initialPosition{ _settings.GlobalSettings().InitialPosition() };
+
+        if (_root->ShouldUsePersistedLayout(_settings))
+        {
+            const auto layouts = ApplicationState::SharedInstance().PersistedWindowLayouts();
+
+            if (layouts && layouts.Size() > 0 && layouts.GetAt(0).InitialPosition())
+            {
+                initialPosition = layouts.GetAt(0).InitialPosition().Value();
+            }
+        }
+
         return {
             initialPosition.X ? initialPosition.X.Value() : defaultInitialX,
             initialPosition.Y ? initialPosition.Y.Value() : defaultInitialY
@@ -1125,7 +1174,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (_root)
         {
-            _root->CloseWindow();
+            _root->CloseWindow(false);
         }
     }
 
@@ -1429,6 +1478,14 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void AppLogic::SetNumberOfOpenWindows(const uint64_t num)
+    {
+        if (_root)
+        {
+            _root->SetNumberOfOpenWindows(num);
+        }
+    }
+
     void AppLogic::RenameFailed()
     {
         if (_root)
@@ -1442,9 +1499,9 @@ namespace winrt::TerminalApp::implementation
         return _root->IsQuakeWindow();
     }
 
-    bool AppLogic::GetMinimizeToTray()
+    bool AppLogic::GetMinimizeToNotificationArea()
     {
-        if constexpr (Feature_TrayIcon::IsEnabled())
+        if constexpr (Feature_NotificationIcon::IsEnabled())
         {
             if (!_loadedInitialSettings)
             {
@@ -1452,7 +1509,7 @@ namespace winrt::TerminalApp::implementation
                 LoadSettings();
             }
 
-            return _settings.GlobalSettings().MinimizeToTray();
+            return _settings.GlobalSettings().MinimizeToNotificationArea();
         }
         else
         {
@@ -1460,9 +1517,9 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
-    bool AppLogic::GetAlwaysShowTrayIcon()
+    bool AppLogic::GetAlwaysShowNotificationIcon()
     {
-        if constexpr (Feature_TrayIcon::IsEnabled())
+        if constexpr (Feature_NotificationIcon::IsEnabled())
         {
             if (!_loadedInitialSettings)
             {
@@ -1470,11 +1527,16 @@ namespace winrt::TerminalApp::implementation
                 LoadSettings();
             }
 
-            return _settings.GlobalSettings().AlwaysShowTrayIcon();
+            return _settings.GlobalSettings().AlwaysShowNotificationIcon();
         }
         else
         {
             return false;
         }
+    }
+
+    bool AppLogic::GetShowTitleInTitlebar()
+    {
+        return _settings.GlobalSettings().ShowTitleInTitlebar();
     }
 }

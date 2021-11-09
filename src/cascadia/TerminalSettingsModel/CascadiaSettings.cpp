@@ -9,6 +9,8 @@
 
 #include "AzureCloudShellGenerator.h"
 #include "PowershellCoreProfileGenerator.h"
+#include "VsDevCmdGenerator.h"
+#include "VsDevShellGenerator.h"
 #include "WslDistroGenerator.h"
 
 using namespace ::Microsoft::Terminal::Settings::Model;
@@ -51,6 +53,8 @@ CascadiaSettings::CascadiaSettings(const bool addDynamicProfiles) :
         _profileGenerators.emplace_back(std::make_unique<PowershellCoreProfileGenerator>());
         _profileGenerators.emplace_back(std::make_unique<WslDistroGenerator>());
         _profileGenerators.emplace_back(std::make_unique<AzureCloudShellGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<VsDevCmdGenerator>());
+        _profileGenerators.emplace_back(std::make_unique<VsDevShellGenerator>());
     }
 }
 
@@ -59,6 +63,7 @@ CascadiaSettings::CascadiaSettings(winrt::hstring json) :
 {
     const auto jsonString{ til::u16u8(json) };
     _ParseJsonString(jsonString, false);
+    _ApplyDefaultsFromUserSettings();
     LayerJson(_userSettings);
     _ValidateSettings();
 }
@@ -832,7 +837,32 @@ winrt::Microsoft::Terminal::Settings::Model::Profile CascadiaSettings::GetProfil
         profileByName = _GetProfileGuidByName(newTerminalArgs.Profile());
     }
 
-    return FindProfile(til::coalesce_value(profileByName, profileByIndex, _globals->DefaultProfile()));
+    if (profileByName)
+    {
+        return FindProfile(*profileByName);
+    }
+
+    if (profileByIndex)
+    {
+        return FindProfile(*profileByIndex);
+    }
+
+    if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
+    {
+        // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
+        // what we do is dependent on whether there was a commandline.
+        // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
+        // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
+        //   launch in the user's actual default profile.
+        // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
+        // TODO GH#10952: Detect the profile based on the commandline (add matching support)
+        return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
+                   FindProfile(GlobalSettings().DefaultProfile()) :
+                   ProfileDefaults();
+    }
+
+    // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
+    return FindProfile(GlobalSettings().DefaultProfile());
 }
 
 // Method Description:

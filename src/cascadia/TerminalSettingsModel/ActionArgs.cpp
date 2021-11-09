@@ -34,6 +34,8 @@
 #include "RenameWindowArgs.g.cpp"
 #include "GlobalSummonArgs.g.cpp"
 #include "FocusPaneArgs.g.cpp"
+#include "ClearBufferArgs.g.cpp"
+#include "MultipleActionsArgs.g.cpp"
 
 #include <LibraryResources.h>
 
@@ -296,7 +298,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"MoveFocusNextInOrder");
         case FocusDirection::PreviousInOrder:
             return RS_(L"MoveFocusPreviousInOrder");
+        case FocusDirection::First:
+            return RS_(L"MoveFocusFirstPane");
         }
+
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"MoveFocusWithArgCommandKey")),
                         directionString)
@@ -326,7 +331,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return RS_(L"SwapPaneNextInOrder");
         case FocusDirection::PreviousInOrder:
             return RS_(L"SwapPanePreviousInOrder");
+        case FocusDirection::First:
+            return RS_(L"SwapPaneFirstPane");
         }
+
         return winrt::hstring{
             fmt::format(std::wstring_view(RS_(L"SwapPaneWithArgCommandKey")),
                         directionString)
@@ -391,13 +399,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // This text is intentionally _not_ localized, to attempt to mirror the
         // exact syntax that the property would have in JSON.
-        switch (SplitStyle())
+        switch (SplitDirection())
         {
-        case SplitState::Vertical:
-            ss << L"split: vertical, ";
+        case SplitDirection::Up:
+            ss << L"split: up, ";
             break;
-        case SplitState::Horizontal:
-            ss << L"split: horizontal, ";
+        case SplitDirection::Right:
+            ss << L"split: right, ";
+            break;
+        case SplitDirection::Down:
+            ss << L"split: down, ";
+            break;
+        case SplitDirection::Left:
+            ss << L"split: left, ";
             break;
         }
 
@@ -680,5 +694,28 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             fmt::format(std::wstring_view(RS_(L"FocusPaneCommandKey")),
                         Id())
         };
+    }
+    winrt::hstring ClearBufferArgs::GenerateName() const
+    {
+        // "Clear Buffer"
+        // "Clear Viewport"
+        // "Clear Scrollback"
+        switch (Clear())
+        {
+        case Control::ClearBufferType::All:
+            return RS_(L"ClearAllCommandKey");
+        case Control::ClearBufferType::Screen:
+            return RS_(L"ClearViewportCommandKey");
+        case Control::ClearBufferType::Scrollback:
+            return RS_(L"ClearScrollbackCommandKey");
+        }
+
+        // Return the empty string - the Clear() should be one of these values
+        return winrt::hstring{ L"" };
+    }
+
+    winrt::hstring MultipleActionsArgs::GenerateName() const
+    {
+        return L"";
     }
 }

@@ -184,6 +184,9 @@
   <data name="CloseAll" xml:space="preserve">
     <value>Close all</value>
   </data>
+  <data name="Quit" xml:space="preserve">
+    <value>Quit</value>
+  </data>
   <data name="CloseWindowWarningTitle" xml:space="preserve">
     <value>Do you want to close all tabs?</value>
   </data>
@@ -441,6 +444,15 @@
     <value>Third-Party Notices</value>
     <comment>A hyperlink name for the Terminal's third-party notices</comment>
   </data>
+  <data name="QuitDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="QuitDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Close all</value>
+  </data>
+  <data name="QuitDialog.Title" xml:space="preserve">
+    <value>Do you want to close all windows?</value>
+  </data>
   <data name="CloseAllDialog.CloseButtonText" xml:space="preserve">
     <value>Cancel</value>
   </data>
@@ -653,11 +665,11 @@
   <data name="CommandPaletteMenuItem" xml:space="preserve">
     <value>Command Palette</value>
   </data>
-  <data name="TrayIconFocusTerminal" xml:space="preserve">
+  <data name="NotificationIconFocusTerminal" xml:space="preserve">
     <value>Focus Terminal</value>
     <comment>This is displayed as a label for the context menu item that focuses the terminal.</comment>
   </data>
-  <data name="TrayIconWindowSubmenu" xml:space="preserve">
+  <data name="NotificationIconWindowSubmenu" xml:space="preserve">
     <value>Windows</value>
     <comment>This is displayed as a label for the context menu item that holds the submenu of available windows.</comment>
   </data>
@@ -684,5 +696,23 @@
   </data>
   <data name="DropPathTabSplit.Text" xml:space="preserve">
     <value>Split the window and start in given directory</value>
+  </data>
+  <data name="ExportTabText" xml:space="preserve">
+    <value>Export Text</value>
+  </data>
+  <data name="ExportFailure" xml:space="preserve">
+    <value>Failed to export terminal content</value>
+  </data>
+  <data name="ExportSuccess" xml:space="preserve">
+    <value>Successfully exported terminal content</value>
+  </data>
+  <data name="PlainText" xml:space="preserve">
+    <value>Plain Text</value>
+  </data>
+  <data name="CloseOnExitInfoBar.Message" xml:space="preserve">
+    <value>Termination behavior can be configured in advanced profile settings.</value>
+  </data>
+  <data name="InfoBarDismissButton.Content" xml:space="preserve">
+    <value>Don't show again</value>
   </data>
 </root>

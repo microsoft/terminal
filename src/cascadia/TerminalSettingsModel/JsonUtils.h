@@ -117,6 +117,127 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         std::string expectedType;
     };
 
+    // Method Description:
+    // - Helper that will populate a reference with a value converted from a json object.
+    // Arguments:
+    // - json: the json object to convert
+    // - target: the value to populate with the converted result
+    // Return Value:
+    // - a boolean indicating whether the value existed (in this case, was non-null)
+    //
+    // GetValue, type-deduced, manual converter
+    template<typename T, typename Converter>
+    bool GetValue(const Json::Value& json, T& target, Converter&& conv)
+    {
+        if (!conv.CanConvert(json))
+        {
+            DeserializationError e{ json };
+            e.expectedType = conv.TypeDescription();
+            throw e;
+        }
+
+        target = conv.FromJson(json);
+        return true;
+    }
+
+    // GetValue, forced return type, manual converter
+    template<typename T, typename Converter>
+    std::decay_t<T> GetValue(const Json::Value& json, Converter&& conv)
+    {
+        std::decay_t<T> local{};
+        GetValue(json, local, std::forward<Converter>(conv));
+        return local; // returns zero-initialized or value
+    }
+
+    // GetValueForKey, type-deduced, manual converter
+    template<typename T, typename Converter>
+    bool GetValueForKey(const Json::Value& json, std::string_view key, T& target, Converter&& conv)
+    {
+        if (auto found{ json.find(&*key.cbegin(), (&*key.cbegin()) + key.size()) })
+        {
+            try
+            {
+                return GetValue(*found, target, std::forward<Converter>(conv));
+            }
+            catch (DeserializationError& e)
+            {
+                e.SetKey(key);
+                throw; // rethrow now that it has a key
+            }
+        }
+        return false;
+    }
+
+    // GetValueForKey, forced return type, manual converter
+    template<typename T, typename Converter>
+    std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key, Converter&& conv)
+    {
+        std::decay_t<T> local{};
+        GetValueForKey(json, key, local, std::forward<Converter>(conv));
+        return local; // returns zero-initialized?
+    }
+
+    // GetValue, type-deduced, with automatic converter
+    template<typename T>
+    bool GetValue(const Json::Value& json, T& target)
+    {
+        return GetValue(json, target, ConversionTrait<typename std::decay<T>::type>{});
+    }
+
+    // GetValue, forced return type, with automatic converter
+    template<typename T>
+    std::decay_t<T> GetValue(const Json::Value& json)
+    {
+        std::decay_t<T> local{};
+        GetValue(json, local, ConversionTrait<typename std::decay<T>::type>{});
+        return local; // returns zero-initialized or value
+    }
+
+    // GetValueForKey, type-deduced, with automatic converter
+    template<typename T>
+    bool GetValueForKey(const Json::Value& json, std::string_view key, T& target)
+    {
+        return GetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
+    }
+
+    // GetValueForKey, forced return type, with automatic converter
+    template<typename T>
+    std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key)
+    {
+        return GetValueForKey<T>(json, key, ConversionTrait<typename std::decay<T>::type>{});
+    }
+
+    // Get multiple values for keys (json, k, &v, k, &v, k, &v, ...).
+    // Uses the default converter for each v.
+    // Careful: this can cause a template explosion.
+    constexpr void GetValuesForKeys(const Json::Value& /*json*/) {}
+
+    template<typename T, typename... Args>
+    void GetValuesForKeys(const Json::Value& json, std::string_view key1, T&& val1, Args&&... args)
+    {
+        GetValueForKey(json, key1, val1);
+        GetValuesForKeys(json, std::forward<Args>(args)...);
+    }
+
+    // SetValueForKey, type-deduced, manual converter
+    template<typename T, typename Converter>
+    void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
+    {
+        // We don't want to write any empty optionals into JSON (right now).
+        if (OptionOracle<T>::HasValue(target))
+        {
+            // demand guarantees that it will return a value or throw an exception
+            *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
+        }
+    }
+
+    // SetValueForKey, type-deduced, with automatic converter
+    template<typename T>
+    void SetValueForKey(Json::Value& json, std::string_view key, const T& target)
+    {
+        SetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
+    }
+
     template<typename T>
     struct ConversionTrait
     {
@@ -161,7 +282,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return til::u8u16(Detail::GetStringView(json));
         }
 
-        bool CanConvert(const Json::Value& json)
+        bool CanConvert(const Json::Value& json) const
         {
             return json.isString();
         }
@@ -178,6 +299,90 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
+    struct ConversionTrait<std::vector<T>>
+    {
+        std::vector<T> FromJson(const Json::Value& json)
+        {
+            std::vector<T> val;
+            val.reserve(json.size());
+
+            ConversionTrait<T> trait;
+            for (const auto& element : json)
+            {
+                val.push_back(trait.FromJson(element));
+            }
+
+            return val;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<T> trait;
+            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); });
+        }
+
+        Json::Value ToJson(const std::vector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            ConversionTrait<T> trait;
+            for (const auto& v : val)
+            {
+                json.append(trait.ToJson(v));
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{}[]", ConversionTrait<T>{}.TypeDescription());
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<std::unordered_set<T>>
+    {
+        std::unordered_set<T> FromJson(const Json::Value& json) const
+        {
+            ConversionTrait<T> trait;
+            std::unordered_set<T> val;
+            val.reserve(json.size());
+
+            for (const auto& element : json)
+            {
+                val.emplace(trait.FromJson(element));
+            }
+
+            return val;
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<T> trait;
+            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) mutable -> bool { return trait.CanConvert(json); });
+        }
+
+        Json::Value ToJson(const std::unordered_set<T>& val)
+        {
+            ConversionTrait<T> trait;
+            Json::Value json{ Json::arrayValue };
+
+            for (const auto& key : val)
+            {
+                json.append(trait.ToJson(key));
+            }
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return fmt::format("{}[]", ConversionTrait<GUID>{}.TypeDescription());
+        }
+    };
+
+    template<typename T>
+
     struct ConversionTrait<std::unordered_map<std::string, T>>
     {
         std::unordered_map<std::string, T> FromJson(const Json::Value& json) const
@@ -252,10 +457,46 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return til::u16u8(val);
         }
 
-        bool CanConvert(const Json::Value& json)
+        bool CanConvert(const Json::Value& json) const
         {
             // hstring has a specific behavior for null, so it can convert it
             return ConversionTrait<std::wstring>::CanConvert(json) || json.isNull();
+        }
+    };
+
+    template<typename T>
+    struct ConversionTrait<winrt::Windows::Foundation::Collections::IVector<T>>
+    {
+        winrt::Windows::Foundation::Collections::IVector<T> FromJson(const Json::Value& json)
+        {
+            ConversionTrait<std::vector<T>> trait;
+            return winrt::single_threaded_vector<T>(std::move(trait.FromJson(json)));
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            ConversionTrait<std::vector<T>> trait;
+            return trait.CanConvert(json);
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Collections::IVector<T>& val)
+        {
+            Json::Value json{ Json::arrayValue };
+
+            if (val)
+            {
+                ConversionTrait<T> trait;
+                for (const auto& v : val)
+                {
+                    json.append(trait.ToJson(v));
+                }
+            }
+
+            return json;
+        }
+        std::string TypeDescription() const
+        {
+            return fmt::format("{}[]", ConversionTrait<T>{}.TypeDescription());
         }
     };
 
@@ -518,6 +759,46 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
         }
     };
 
+#ifdef WINRT_Windows_Foundation_H
+    template<>
+    struct ConversionTrait<winrt::Windows::Foundation::Size>
+    {
+        winrt::Windows::Foundation::Size FromJson(const Json::Value& json)
+        {
+            winrt::Windows::Foundation::Size size{};
+            GetValueForKey(json, std::string_view("width"), size.Width);
+            GetValueForKey(json, std::string_view("height"), size.Height);
+
+            return size;
+        }
+
+        bool CanConvert(const Json::Value& json)
+        {
+            if (!json.isObject())
+            {
+                return false;
+            }
+
+            return json.isMember("width") && json.isMember("height");
+        }
+
+        Json::Value ToJson(const winrt::Windows::Foundation::Size& val)
+        {
+            Json::Value json{ Json::objectValue };
+
+            SetValueForKey(json, std::string_view("width"), val.Width);
+            SetValueForKey(json, std::string_view("height"), val.Height);
+
+            return json;
+        }
+
+        std::string TypeDescription() const
+        {
+            return "size { width, height }";
+        }
+    };
+#endif
+
 #ifdef WINRT_Windows_UI_H
     template<>
     struct ConversionTrait<winrt::Windows::UI::Color>
@@ -775,127 +1056,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
             return "any";
         }
     };
-
-    // Method Description:
-    // - Helper that will populate a reference with a value converted from a json object.
-    // Arguments:
-    // - json: the json object to convert
-    // - target: the value to populate with the converted result
-    // Return Value:
-    // - a boolean indicating whether the value existed (in this case, was non-null)
-    //
-    // GetValue, type-deduced, manual converter
-    template<typename T, typename Converter>
-    bool GetValue(const Json::Value& json, T& target, Converter&& conv)
-    {
-        if (!conv.CanConvert(json))
-        {
-            DeserializationError e{ json };
-            e.expectedType = conv.TypeDescription();
-            throw e;
-        }
-
-        target = conv.FromJson(json);
-        return true;
-    }
-
-    // GetValue, forced return type, manual converter
-    template<typename T, typename Converter>
-    std::decay_t<T> GetValue(const Json::Value& json, Converter&& conv)
-    {
-        std::decay_t<T> local{};
-        GetValue(json, local, std::forward<Converter>(conv));
-        return local; // returns zero-initialized or value
-    }
-
-    // GetValueForKey, type-deduced, manual converter
-    template<typename T, typename Converter>
-    bool GetValueForKey(const Json::Value& json, std::string_view key, T& target, Converter&& conv)
-    {
-        if (auto found{ json.find(&*key.cbegin(), (&*key.cbegin()) + key.size()) })
-        {
-            try
-            {
-                return GetValue(*found, target, std::forward<Converter>(conv));
-            }
-            catch (DeserializationError& e)
-            {
-                e.SetKey(key);
-                throw; // rethrow now that it has a key
-            }
-        }
-        return false;
-    }
-
-    // GetValueForKey, forced return type, manual converter
-    template<typename T, typename Converter>
-    std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key, Converter&& conv)
-    {
-        std::decay_t<T> local{};
-        GetValueForKey(json, key, local, std::forward<Converter>(conv));
-        return local; // returns zero-initialized?
-    }
-
-    // GetValue, type-deduced, with automatic converter
-    template<typename T>
-    bool GetValue(const Json::Value& json, T& target)
-    {
-        return GetValue(json, target, ConversionTrait<typename std::decay<T>::type>{});
-    }
-
-    // GetValue, forced return type, with automatic converter
-    template<typename T>
-    std::decay_t<T> GetValue(const Json::Value& json)
-    {
-        std::decay_t<T> local{};
-        GetValue(json, local, ConversionTrait<typename std::decay<T>::type>{});
-        return local; // returns zero-initialized or value
-    }
-
-    // GetValueForKey, type-deduced, with automatic converter
-    template<typename T>
-    bool GetValueForKey(const Json::Value& json, std::string_view key, T& target)
-    {
-        return GetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
-    }
-
-    // GetValueForKey, forced return type, with automatic converter
-    template<typename T>
-    std::decay_t<T> GetValueForKey(const Json::Value& json, std::string_view key)
-    {
-        return GetValueForKey<T>(json, key, ConversionTrait<typename std::decay<T>::type>{});
-    }
-
-    // Get multiple values for keys (json, k, &v, k, &v, k, &v, ...).
-    // Uses the default converter for each v.
-    // Careful: this can cause a template explosion.
-    constexpr void GetValuesForKeys(const Json::Value& /*json*/) {}
-
-    template<typename T, typename... Args>
-    void GetValuesForKeys(const Json::Value& json, std::string_view key1, T&& val1, Args&&... args)
-    {
-        GetValueForKey(json, key1, val1);
-        GetValuesForKeys(json, std::forward<Args>(args)...);
-    }
-
-    // SetValueForKey, type-deduced, manual converter
-    template<typename T, typename Converter>
-    void SetValueForKey(Json::Value& json, std::string_view key, const T& target, Converter&& conv)
-    {
-        // We don't want to write any empty optionals into JSON (right now).
-        if (OptionOracle<T>::HasValue(target))
-        {
-            // demand guarantees that it will return a value or throw an exception
-            *json.demand(&*key.cbegin(), (&*key.cbegin()) + key.size()) = conv.ToJson(target);
-        }
-    }
-
-    // SetValueForKey, type-deduced, with automatic converter
-    template<typename T>
-    void SetValueForKey(Json::Value& json, std::string_view key, const T& target)
-    {
-        SetValueForKey(json, key, target, ConversionTrait<typename std::decay<T>::type>{});
-    }
 };
 
 #define JSON_ENUM_MAPPER(...)                                                                \

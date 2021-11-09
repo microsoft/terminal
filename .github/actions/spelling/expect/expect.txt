@@ -536,6 +536,7 @@ DECRC
 DECREQTPARM
 DECRLM
 DECRQM
+DECRQSS
 DECRST
 DECSASD
 DECSC
@@ -2577,6 +2578,7 @@ VREDRAW
 vsc
 vscprintf
 VSCROLL
+vsdevshell
 vsinfo
 vsnprintf
 vso

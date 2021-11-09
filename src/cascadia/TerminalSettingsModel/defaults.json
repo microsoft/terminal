@@ -29,8 +29,8 @@
     "disableAnimations": false,
     "startupActions": "",
     "focusFollowMouse": false,
-    "minimizeToTray": false,
-    "alwaysShowTrayIcon": false,
+    "minimizeToNotificationArea": false,
+    "alwaysShowNotificationIcon": false,
 
     "profiles":
     [
@@ -301,6 +301,8 @@
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
         { "command": "quakeMode", "keys":"win+sc(41)" },
+        { "command": "openSystemMenu", "keys": "alt+space" },
+        { "command": "quit" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -335,8 +337,10 @@
 
         // Pane Management
         { "command": "closePane", "keys": "ctrl+shift+w" },
-        { "command": { "action": "splitPane", "split": "horizontal" }, "keys": "alt+shift+-" },
-        { "command": { "action": "splitPane", "split": "vertical" }, "keys": "alt+shift+plus" },
+        { "command": { "action": "splitPane", "split": "up" } },
+        { "command": { "action": "splitPane", "split": "down" }, "keys": "alt+shift+-" },
+        { "command": { "action": "splitPane", "split": "left" } },
+        { "command": { "action": "splitPane", "split": "right" }, "keys": "alt+shift+plus" },
         { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
         { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
         { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
@@ -348,6 +352,7 @@
         { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left"},
         { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
         { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
+        { "command": { "action": "moveFocus", "direction": "first" } },
         { "command": { "action": "swapPane", "direction": "down" } },
         { "command": { "action": "swapPane", "direction": "left" } },
         { "command": { "action": "swapPane", "direction": "right" } },
@@ -355,6 +360,7 @@
         { "command": { "action": "swapPane", "direction": "previous"} },
         { "command": { "action": "swapPane", "direction": "previousInOrder"} },
         { "command": { "action": "swapPane", "direction": "nextInOrder"} },
+        { "command": { "action": "swapPane", "direction": "first" } },
         { "command": "togglePaneZoom" },
         { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
@@ -381,6 +387,7 @@
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
+        { "command": { "action": "clearBuffer", "clear": "all" } },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
@@ -388,6 +395,7 @@
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+numpad_plus" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+numpad_minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
+        { "command": "resetFontSize", "keys": "ctrl+numpad_0" },
 
         // Other commands
         {
@@ -426,10 +434,16 @@
                             "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "up" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "left" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" }
                         }
                     ]
                 }

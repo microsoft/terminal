@@ -66,6 +66,7 @@ iosfwd
 IPackage
 IPeasant
 isspace
+ISetup
 IStorage
 istream
 IStringable
@@ -180,6 +181,7 @@ xlocmes
 xlocmon
 xlocnum
 xloctime
+XMax
 xmemory
 XParse
 xpath
@@ -188,3 +190,4 @@ xstring
 xtree
 xutility
 YIcon
+YMax

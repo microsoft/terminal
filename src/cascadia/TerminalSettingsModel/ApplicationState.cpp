@@ -5,54 +5,53 @@
 #include "ApplicationState.h"
 #include "CascadiaSettings.h"
 #include "ApplicationState.g.cpp"
-
+#include "WindowLayout.g.cpp"
+#include "ActionAndArgs.h"
 #include "JsonUtils.h"
 #include "FileUtils.h"
 
-constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::wstring_view stateFileName{ L"state.json" };
+static constexpr std::string_view TabLayoutKey{ "tabLayout" };
+static constexpr std::string_view InitialPositionKey{ "initialPosition" };
+static constexpr std::string_view InitialSizeKey{ "initialSize" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
-    // This trait exists in order to serialize the std::unordered_set for GeneratedProfiles.
-    template<typename T>
-    struct ConversionTrait<std::unordered_set<T>>
+    using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<WindowLayout>
     {
-        std::unordered_set<T> FromJson(const Json::Value& json) const
+        WindowLayout FromJson(const Json::Value& json)
         {
-            ConversionTrait<T> trait;
-            std::unordered_set<T> val;
-            val.reserve(json.size());
+            auto layout = winrt::make_self<implementation::WindowLayout>();
 
-            for (const auto& element : json)
-            {
-                val.emplace(trait.FromJson(element));
-            }
+            GetValueForKey(json, TabLayoutKey, layout->_TabLayout);
+            GetValueForKey(json, InitialPositionKey, layout->_InitialPosition);
+            GetValueForKey(json, InitialSizeKey, layout->_InitialSize);
 
-            return val;
+            return *layout;
         }
 
-        bool CanConvert(const Json::Value& json) const
+        bool CanConvert(const Json::Value& json)
         {
-            ConversionTrait<T> trait;
-            return json.isArray() && std::all_of(json.begin(), json.end(), [trait](const auto& json) -> bool { return trait.CanConvert(json); });
+            return json.isObject();
         }
 
-        Json::Value ToJson(const std::unordered_set<T>& val)
+        Json::Value ToJson(const WindowLayout& val)
         {
-            ConversionTrait<T> trait;
-            Json::Value json{ Json::arrayValue };
+            Json::Value json{ Json::objectValue };
 
-            for (const auto& key : val)
-            {
-                json.append(trait.ToJson(key));
-            }
+            SetValueForKey(json, TabLayoutKey, val.TabLayout());
+            SetValueForKey(json, InitialPositionKey, val.InitialPosition());
+            SetValueForKey(json, InitialSizeKey, val.InitialSize());
 
             return json;
         }
 
         std::string TypeDescription() const
         {
-            return fmt::format("{}[]", ConversionTrait<GUID>{}.TypeDescription());
+            return "WindowLayout";
         }
     };
 }

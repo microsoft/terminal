@@ -291,6 +291,22 @@
     <value>The number of rows displayed in the window upon first load. Measured in characters.</value>
     <comment>A description for what the "rows" setting does. Presented near "Globals_InitialRows.Header".</comment>
   </data>
+  <data name="Globals_FirstWindowPreference.Header" xml:space="preserve">
+    <value>When Terminal starts</value>
+    <comment>Header for a control to select how the terminal should load its first window.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreference.HelpText" xml:space="preserve">
+    <value>What should be shown when the first terminal is created.</value>
+    <comment></comment>
+  </data>
+  <data name="Globals_FirstWindowPreferenceDefaultProfile.Content" xml:space="preserve">
+    <value>Open a tab with the default profile</value>
+    <comment>An option to choose from for the "First window preference" setting. Open the default profile.</comment>
+  </data>
+  <data name="Globals_FirstWindowPreferencePersistedWindowLayout.Content" xml:space="preserve">
+    <value>Open tabs from a previous session</value>
+    <comment>An option to choose from for the "First window preference" setting. Reopen the layout from the last session.</comment>
+  </data>
   <data name="Globals_LaunchMode.Header" xml:space="preserve">
     <value>Launch mode</value>
     <comment>Header for a control to select what mode to launch the terminal in.</comment>
@@ -1089,6 +1105,14 @@
   <data name="Globals_DisableAnimationsReversed.Header" xml:space="preserve">
     <value>Pane animations</value>
     <comment>Header for a control to toggle animations on panes. "Enabled" value enables the animations.</comment>
+  </data>
+  <data name="Globals_AlwaysShowNotificationIcon.Header" xml:space="preserve">
+    <value>Always display an icon in the notification area</value>
+    <comment>Header for a control to toggle whether the notification icon should always be shown.</comment>
+  </data>
+  <data name="Globals_MinimizeToNotificationArea.Header" xml:space="preserve">
+    <value>Hide Terminal in the notification area when it is minimized</value>
+    <comment>Header for a control to toggle whether the terminal should hide itself in the notification area instead of the taskbar when minimized.</comment>
   </data>
   <data name="SettingContainer_OverrideMessageBaseLayer" xml:space="preserve">
     <value>Reset to inherited value.</value>

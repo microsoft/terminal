@@ -178,6 +178,9 @@
   <data name="CloseWindowCommandKey" xml:space="preserve">
     <value>Close window</value>
   </data>
+  <data name="OpenSystemMenuCommandKey" xml:space="preserve">
+    <value>Open system menu</value>
+  </data>
   <data name="CommandPromptDisplayName" xml:space="preserve">
     <value>Command Prompt</value>
     <comment>This is the name of "Command Prompt", as localized in Windows. The localization here should match the one in the Windows product for "Command Prompt"</comment>
@@ -246,6 +249,15 @@
   <data name="MoveFocusToLastUsedPane" xml:space="preserve">
     <value>Move focus to the last used pane</value>
   </data>
+  <data name="MoveFocusNextInOrder" xml:space="preserve">
+    <value>Move focus to the next pane in order</value>
+  </data>
+  <data name="MoveFocusPreviousInOrder" xml:space="preserve">
+    <value>Move focus to the previous pane in order</value>
+  </data>
+  <data name="MoveFocusFirstPane" xml:space="preserve">
+    <value>Move focus to the first pane</value>
+  </data>
   <data name="SwapPaneCommandKey" xml:space="preserve">
     <value>Swap pane</value>
   </data>
@@ -255,6 +267,15 @@
   </data>
   <data name="SwapPaneToLastUsedPane" xml:space="preserve">
     <value>Swap panes with the last used pane</value>
+  </data>
+  <data name="SwapPaneNextInOrder" xml:space="preserve">
+    <value>Swap panes with the next pane in order</value>
+  </data>
+  <data name="SwapPanePreviousInOrder" xml:space="preserve">
+    <value>Swap panes with the previous pane in order</value>
+  </data>
+  <data name="SwapPaneFirstPane" xml:space="preserve">
+    <value>Swap panes with the first pane</value>
   </data>
   <data name="NewTabCommandKey" xml:space="preserve">
     <value>New tab</value>
@@ -428,6 +449,18 @@
     <value>Focus pane {0}</value>
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
+  <data name="ClearAllCommandKey" xml:space="preserve">
+    <value>Clear Buffer</value>
+    <comment>A command to clear the entirety of the Terminal output buffer</comment>
+  </data>
+  <data name="ClearViewportCommandKey" xml:space="preserve">
+    <value>Clear Viewport</value>
+    <comment>A command to clear the active viewport of the Terminal</comment>
+  </data>
+  <data name="ClearScrollbackCommandKey" xml:space="preserve">
+    <value>Clear Scrollback</value>
+    <comment>A command to clear the part of the buffer above the viewport</comment>
+  </data>
   <data name="InboxWindowsConsoleAuthor" xml:space="preserve">
     <value>Microsoft Corporation</value>
     <comment>Paired with `InboxWindowsConsoleName`, this is the application author... which is us: Microsoft.</comment>
@@ -436,19 +469,7 @@
     <value>Windows Console Host</value>
     <comment>Name describing the usage of the classic windows console as the terminal UI. (`conhost.exe`)</comment>
   </data>
-  <data name="MoveFocusNextInOrder" xml:space="preserve">
-    <value>Move focus to the next pane in order</value>
-  </data>
-  <data name="MoveFocusPreviousInOrder" xml:space="preserve">
-    <value>Move focus to the previous pane in order</value>
-  </data>
-  <data name="SwapPaneNextInOrder" xml:space="preserve">
-    <value>Swap panes with the next pane in order</value>
-  </data>
-  <data name="SwapPanePreviousInOrder" xml:space="preserve">
-    <value>Swap panes with the previous pane in order</value>
-  </data>
-  <data name="MinimizeToTrayCommandKey" xml:space="preserve">
-    <value>Minimize current window to tray</value>
+  <data name="QuitCommandKey" xml:space="preserve">
+    <value>Quit the Terminal</value>
   </data>
 </root>

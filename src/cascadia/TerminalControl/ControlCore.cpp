@@ -414,6 +414,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This is a scroll event that wasn't initiated by the terminal
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(viewTop);
+
+        _updatePatternLocations->Run();
     }
 
     void ControlCore::AdjustOpacity(const double adjustment)
@@ -1495,6 +1497,65 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Start the throttled update of where our hyperlinks are.
         _updatePatternLocations->Run();
+    }
+
+    // Method Description:
+    // - Clear the contents of the buffer. The region cleared is given by
+    //   clearType:
+    //   * Screen: Clear only the contents of the visible viewport, leaving the
+    //     cursor row at the top of the viewport.
+    //   * Scrollback: Clear the contents of the scrollback.
+    //   * All: Do both - clear the visible viewport and the scrollback, leaving
+    //     only the cursor row at the top of the viewport.
+    // Arguments:
+    // - clearType: The type of clear to perform.
+    // Return Value:
+    // - <none>
+    void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
+    {
+        if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
+        {
+            _terminal->EraseInDisplay(::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType::Scrollback);
+        }
+
+        if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
+        {
+            // Send a signal to conpty to clear the buffer.
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                // ConPTY will emit sequences to sync up our buffer with its new
+                // contents.
+                conpty.ClearBuffer();
+            }
+        }
+    }
+
+    hstring ControlCore::ReadEntireBuffer() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::wstringstream ss;
+        const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
+        {
+            const auto& row = textBuffer.GetRowByOffset(rowIndex);
+            auto rowText = row.GetText();
+            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                rowText.erase(strEnd + 1);
+                ss << rowText;
+            }
+
+            if (!row.WasWrapForced())
+            {
+                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+            }
+        }
+
+        return hstring(ss.str());
     }
 
 }

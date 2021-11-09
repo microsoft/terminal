@@ -49,18 +49,20 @@ public:
 
     void HideWindow();
 
-    void SetMinimizeToTrayBehavior(bool minimizeToTray) noexcept;
+    void SetMinimizeToNotificationAreaBehavior(bool MinimizeToNotificationArea) noexcept;
+
+    void OpenSystemMenu(const std::optional<int> mouseX, const std::optional<int> mouseY) const noexcept;
 
     DECLARE_EVENT(DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
     DECLARE_EVENT(WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
     WINRT_CALLBACK(MouseScrolled, winrt::delegate<void(til::point, int32_t)>);
     WINRT_CALLBACK(WindowActivated, winrt::delegate<void()>);
     WINRT_CALLBACK(HotkeyPressed, winrt::delegate<void(long)>);
-    WINRT_CALLBACK(NotifyTrayIconPressed, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyNotificationIconPressed, winrt::delegate<void()>);
     WINRT_CALLBACK(NotifyWindowHidden, winrt::delegate<void()>);
-    WINRT_CALLBACK(NotifyShowTrayContextMenu, winrt::delegate<void(til::point)>);
-    WINRT_CALLBACK(NotifyTrayMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
-    WINRT_CALLBACK(NotifyReAddTrayIcon, winrt::delegate<void()>);
+    WINRT_CALLBACK(NotifyShowNotificationIconContextMenu, winrt::delegate<void(til::point)>);
+    WINRT_CALLBACK(NotifyNotificationIconMenuItemSelected, winrt::delegate<void(HMENU, UINT)>);
+    WINRT_CALLBACK(NotifyReAddNotificationIcon, winrt::delegate<void()>);
 
     WINRT_CALLBACK(WindowMoved, winrt::delegate<void()>);
 
@@ -125,7 +127,7 @@ protected:
 
     void _summonWindowRoutineBody(winrt::Microsoft::Terminal::Remoting::SummonWindowBehavior args);
 
-    bool _minimizeToTray{ false };
+    bool _minimizeToNotificationArea{ false };
 
 private:
     // This minimum width allows for width the tabs fit

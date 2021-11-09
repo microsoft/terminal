@@ -62,6 +62,8 @@ namespace RemotingUnitTests
         void AssignID(uint64_t /*id*/) { throw winrt::hresult_error{}; };
         uint64_t GetID() { throw winrt::hresult_error{}; };
         winrt::hstring WindowName() { throw winrt::hresult_error{}; };
+        winrt::hstring ActiveTabTitle() { throw winrt::hresult_error{}; };
+        void ActiveTabTitle(const winrt::hstring& /*value*/) { throw winrt::hresult_error{}; };
         uint64_t GetPID() { throw winrt::hresult_error{}; };
         bool ExecuteCommandline(const Remoting::CommandlineArgs& /*args*/) { throw winrt::hresult_error{}; }
         void ActivateWindow(const Remoting::WindowActivatedArgs& /*args*/) { throw winrt::hresult_error{}; }
@@ -71,16 +73,20 @@ namespace RemotingUnitTests
         Remoting::WindowActivatedArgs GetLastActivatedArgs() { throw winrt::hresult_error{}; }
         void RequestRename(const Remoting::RenameRequestArgs& /*args*/) { throw winrt::hresult_error{}; }
         void Summon(const Remoting::SummonWindowBehavior& /*args*/) { throw winrt::hresult_error{}; };
-        void RequestShowTrayIcon() { throw winrt::hresult_error{}; };
-        void RequestHideTrayIcon() { throw winrt::hresult_error{}; };
+        void RequestShowNotificationIcon() { throw winrt::hresult_error{}; };
+        void RequestHideNotificationIcon() { throw winrt::hresult_error{}; };
+        void RequestQuitAll() { throw winrt::hresult_error{}; };
+        void Quit() { throw winrt::hresult_error{}; };
         TYPED_EVENT(WindowActivated, winrt::Windows::Foundation::IInspectable, Remoting::WindowActivatedArgs);
         TYPED_EVENT(ExecuteCommandlineRequested, winrt::Windows::Foundation::IInspectable, Remoting::CommandlineArgs);
         TYPED_EVENT(IdentifyWindowsRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(DisplayWindowIdRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
         TYPED_EVENT(RenameRequested, winrt::Windows::Foundation::IInspectable, Remoting::RenameRequestArgs);
         TYPED_EVENT(SummonRequested, winrt::Windows::Foundation::IInspectable, Remoting::SummonWindowBehavior);
-        TYPED_EVENT(ShowTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
-        TYPED_EVENT(HideTrayIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(ShowNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(HideNotificationIconRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitAllRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(QuitRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
     };
 
     class RemotingTests
@@ -134,10 +140,15 @@ namespace RemotingUnitTests
 
         TEST_METHOD(TestSummonMostRecentIsQuake);
 
+        TEST_METHOD(TestSummonAfterWindowClose);
+
         TEST_CLASS_SETUP(ClassSetup)
         {
             return true;
         }
+
+        static void _closePeasant(const com_ptr<Remoting::implementation::Monarch>& m,
+                                  const uint64_t peasantID);
 
         static void _killPeasant(const com_ptr<Remoting::implementation::Monarch>& m,
                                  const uint64_t peasantID);
@@ -157,6 +168,19 @@ namespace RemotingUnitTests
             return { new winrt::impl::heap_implements<T>(std::forward<Args>(args)...), winrt::take_ownership_from_abi };
         }
     };
+
+    // Helper to tell the monarch that a peasant is closing, this emulates when
+    // a peasant is closed normally instead of when it crashes.
+    void RemotingTests::_closePeasant(const com_ptr<Remoting::implementation::Monarch>& m,
+                                      const uint64_t peasantID)
+    {
+        if (peasantID <= 0)
+        {
+            return;
+        }
+
+        m->SignalClose(peasantID);
+    }
 
     // Helper to replace the specified peasant in a monarch with a
     // "DeadPeasant", which will emulate what happens when the peasant process
@@ -2370,6 +2394,129 @@ namespace RemotingUnitTests
             m0->SummonWindow(args);
             VERIFY_IS_TRUE(args.FoundMatch());
         }
+    }
+
+    void RemotingTests::TestSummonAfterWindowClose()
+    {
+        Log::Comment(L"Test that we can summon a window on the current desktop,"
+                     L" when the MRU window on that desktop closes normally.");
+
+        const winrt::guid guid1{ Utils::GuidFromString(L"{11111111-1111-1111-1111-111111111111}") };
+        const winrt::guid guid2{ Utils::GuidFromString(L"{22222222-2222-2222-2222-222222222222}") };
+
+        constexpr auto monarch0PID = 12345u;
+        constexpr auto peasant1PID = 23456u;
+        constexpr auto peasant2PID = 34567u;
+        constexpr auto peasant3PID = 45678u;
+
+        auto m0 = make_private<Remoting::implementation::Monarch>(monarch0PID);
+        auto p1 = make_private<Remoting::implementation::Peasant>(peasant1PID);
+        auto p2 = make_private<Remoting::implementation::Peasant>(peasant2PID);
+        auto p3 = make_private<Remoting::implementation::Peasant>(peasant3PID);
+
+        p1->WindowName(L"one");
+        p2->WindowName(L"two");
+        p3->WindowName(L"three");
+
+        VERIFY_ARE_EQUAL(0, p1->GetID());
+        VERIFY_ARE_EQUAL(0, p2->GetID());
+        VERIFY_ARE_EQUAL(0, p3->GetID());
+
+        m0->AddPeasant(*p1);
+        m0->AddPeasant(*p2);
+        m0->AddPeasant(*p3);
+
+        VERIFY_ARE_EQUAL(1, p1->GetID());
+        VERIFY_ARE_EQUAL(2, p2->GetID());
+        VERIFY_ARE_EQUAL(3, p3->GetID());
+
+        VERIFY_ARE_EQUAL(3u, m0->_peasants.size());
+
+        bool p1ExpectedToBeSummoned = false;
+        bool p2ExpectedToBeSummoned = false;
+        bool p3ExpectedToBeSummoned = false;
+
+        p1->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p1 summoned");
+            VERIFY_IS_TRUE(p1ExpectedToBeSummoned);
+        });
+        p2->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p2 summoned");
+            VERIFY_IS_TRUE(p2ExpectedToBeSummoned);
+        });
+        p3->SummonRequested([&](auto&&, auto&&) {
+            Log::Comment(L"p3 summoned");
+            VERIFY_IS_TRUE(p3ExpectedToBeSummoned);
+        });
+
+        {
+            Log::Comment(L"Activate the first peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p1->GetID(),
+                                                         p1->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p1->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the second peasant, second desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p2->GetID(),
+                                                         p2->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid2,
+                                                         winrt::clock().now() };
+            p2->ActivateWindow(activatedArgs);
+        }
+        {
+            Log::Comment(L"Activate the third peasant, first desktop");
+            Remoting::WindowActivatedArgs activatedArgs{ p3->GetID(),
+                                                         p3->GetPID(), // USE PID as HWND, because these values don't _really_ matter
+                                                         guid1,
+                                                         winrt::clock().now() };
+            p3->ActivateWindow(activatedArgs);
+        }
+
+        Log::Comment(L"Create a mock IVirtualDesktopManager to handle checking if a window is on a given desktop");
+        auto manager = winrt::make_self<MockDesktopManager>();
+        m0->_desktopManager = manager.try_as<IVirtualDesktopManager>();
+
+        auto firstCallback = [&](HWND h, BOOL* result) -> HRESULT {
+            Log::Comment(L"firstCallback: Checking if window is on desktop 1");
+
+            const uint64_t hwnd = reinterpret_cast<uint64_t>(h);
+            if (hwnd == peasant1PID || hwnd == peasant3PID)
+            {
+                *result = true;
+            }
+            else if (hwnd == peasant2PID)
+            {
+                *result = false;
+            }
+            else
+            {
+                VERIFY_IS_TRUE(false, L"IsWindowOnCurrentVirtualDesktop called with unexpected value");
+            }
+            return S_OK;
+        };
+        manager->pfnIsWindowOnCurrentVirtualDesktop = firstCallback;
+
+        Remoting::SummonWindowSelectionArgs args;
+
+        Log::Comment(L"Summon window three - it is the MRU on desktop 1");
+        p3ExpectedToBeSummoned = true;
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
+
+        Log::Comment(L"Close window 3. Window 1 is now the MRU on desktop 1.");
+        RemotingTests::_closePeasant(m0, p3->GetID());
+
+        Log::Comment(L"Summon window three - it is the MRU on desktop 1");
+        p1ExpectedToBeSummoned = true;
+        p2ExpectedToBeSummoned = false;
+        p3ExpectedToBeSummoned = false;
+        args.FoundMatch(false);
+        args.OnCurrentDesktop(true);
+        m0->SummonWindow(args);
+        VERIFY_IS_TRUE(args.FoundMatch());
     }
 
 }

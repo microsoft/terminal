@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     interface IActionArgs
@@ -35,15 +37,17 @@ namespace Microsoft.Terminal.Settings.Model
         Down,
         Previous,
         PreviousInOrder,
-        NextInOrder
+        NextInOrder,
+        First
     };
 
-    enum SplitState
+    enum SplitDirection
     {
-        Automatic = -1,
-        None = 0,
-        Vertical = 1,
-        Horizontal = 2
+        Automatic = 0,
+        Up,
+        Right,
+        Down,
+        Left
     };
 
     enum SplitType
@@ -184,12 +188,12 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
 
-        SplitState SplitStyle { get; };
+        SplitDirection SplitDirection { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
         Double SplitSize { get; };
@@ -306,5 +310,17 @@ namespace Microsoft.Terminal.Settings.Model
     {
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
+    };
+
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs
+    {
+        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
+        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     };
 }
