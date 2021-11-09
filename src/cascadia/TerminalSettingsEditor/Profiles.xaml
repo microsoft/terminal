@@ -66,8 +66,8 @@
                             so the name will always be overridden.
                         -->
                         <local:SettingContainer x:Uid="Profile_Name"
-                                                Style="{StaticResource ExpanderSettingContainerStyle}"
                                                 CurrentValue="{x:Bind State.Profile.Name, Mode=OneWay}"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <TextBox Style="{StaticResource TextBoxSettingStyle}"
                                      Text="{x:Bind State.Profile.Name, Mode=TwoWay}" />
@@ -77,10 +77,10 @@
                         <local:SettingContainer x:Name="CommandlineContainer"
                                                 x:Uid="Profile_Commandline"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearCommandline}"
+                                                CurrentValue="{x:Bind State.Profile.Commandline, Mode=OneWay}"
                                                 HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
                                                 SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
                                                 Style="{StaticResource ExpanderSettingContainerStyle}"
-                                                CurrentValue="{x:Bind State.Profile.Commandline, Mode=OneWay}"
                                                 Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_CommandlineBox"
@@ -96,11 +96,11 @@
                         <!--  Starting Directory  -->
                         <local:SettingContainer x:Name="StartingDirectoryContainer"
                                                 x:Uid="Profile_StartingDirectory"
-                                                Style="{StaticResource ExpanderSettingContainerStyle}"
-                                                CurrentValue="{x:Bind State.Profile.StartingDirectory, Mode=OneWay}"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearStartingDirectory}"
+                                                CurrentValue="{x:Bind State.Profile.StartingDirectory, Mode=OneWay}"
                                                 HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}">
+                                                SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
                                     <TextBox x:Uid="Profile_StartingDirectoryBox"
@@ -123,10 +123,10 @@
                         <!--  Icon  -->
                         <local:SettingContainer x:Uid="Profile_Icon"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearIcon}"
-                                                HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
-                                                Style="{StaticResource ExpanderSettingContainerStyle}"
                                                 CurrentValue="{x:Bind State.Profile.Icon, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}">
+                                                HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Uid="Profile_IconBox"
                                          FontFamily="Segoe UI, Segoe MDL2 Assets"
@@ -142,10 +142,10 @@
                         <!--  Tab Title  -->
                         <local:SettingContainer x:Uid="Profile_TabTitle"
                                                 ClearSettingValue="{x:Bind State.Profile.ClearTabTitle}"
-                                                Style="{StaticResource ExpanderSettingContainerStyle}"
                                                 CurrentValue="{x:Bind State.Profile.TabTitle, Mode=OneWay}"
                                                 HasSettingValue="{x:Bind State.Profile.HasTabTitle, Mode=OneWay}"
-                                                SettingOverrideSource="{x:Bind State.Profile.TabTitleOverrideSource, Mode=OneWay}">
+                                                SettingOverrideSource="{x:Bind State.Profile.TabTitleOverrideSource, Mode=OneWay}"
+                                                Style="{StaticResource ExpanderSettingContainerStyle}">
                             <TextBox Style="{StaticResource TextBoxSettingStyle}"
                                      Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}" />
                         </local:SettingContainer>

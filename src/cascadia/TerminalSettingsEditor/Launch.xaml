@@ -134,8 +134,8 @@
 
                 <!--  First Window Behavior  -->
                 <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
-                                        Visibility="{x:Bind ShowFirstWindowPreference}"
-                                        Style="{StaticResource ExpanderSettingContainerStyle}">
+                                        Style="{StaticResource ExpanderSettingContainerStyle}"
+                                        Visibility="{x:Bind ShowFirstWindowPreference}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind FirstWindowPreferenceList}"

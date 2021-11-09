@@ -210,11 +210,11 @@
             <!--  Background Image  -->
             <local:SettingContainer x:Name="BackgroundImageContainer"
                                     x:Uid="Profile_BackgroundImage"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
-                                    CurrentValue="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay}"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImagePath}"
+                                    CurrentValue="{x:Bind Appearance.BackgroundImagePath, Mode=OneWay}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImagePath, Mode=OneWay}"
-                                    SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}">
+                                    SettingOverrideSource="{x:Bind Appearance.BackgroundImagePathOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal">
                         <TextBox IsEnabled="{x:Bind local:Converters.StringsAreNotEqual('desktopWallpaper', Appearance.BackgroundImagePath), Mode=OneWay}"
@@ -236,8 +236,8 @@
             <local:SettingContainer x:Uid="Profile_BackgroundImageStretchMode"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageStretchMode}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageStretchMode, Mode=OneWay}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageStretchModeOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
@@ -248,9 +248,9 @@
             <!--  Background Image Alignment  -->
             <local:SettingContainer x:Uid="Profile_BackgroundImageAlignment"
                                     ClearSettingValue="{x:Bind Appearance.ClearBackgroundImageAlignment}"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     HasSettingValue="{x:Bind Appearance.HasBackgroundImageAlignment, Mode=OneWay}"
                                     SettingOverrideSource="{x:Bind Appearance.BackgroundImageAlignmentOverrideSource, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}"
                                     Visibility="{x:Bind Appearance.BackgroundImageSettingsVisible, Mode=OneWay}">
                 <Grid HorizontalAlignment="Left">
                     <Grid.RowDefinitions>

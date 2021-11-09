@@ -52,8 +52,8 @@
 
             <!--  Word Delimiters  -->
             <local:SettingContainer x:Uid="Globals_WordDelimiters"
-                                    Style="{StaticResource ExpanderSettingContainerStyle}"
-                                    CurrentValue="{x:Bind State.Globals.WordDelimiters, Mode=OneWay}">
+                                    CurrentValue="{x:Bind State.Globals.WordDelimiters, Mode=OneWay}"
+                                    Style="{StaticResource ExpanderSettingContainerStyle}">
                 <TextBox IsSpellCheckEnabled="False"
                          Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" />

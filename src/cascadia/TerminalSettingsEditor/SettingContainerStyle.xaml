@@ -12,63 +12,27 @@
 
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-            <StaticResource x:Key="ExpanderBorderBrushExpandedPointerOver"
-                            ResourceKey="SystemControlForegroundTransparentBrush" />
-            <StaticResource x:Key="ExpanderTextColorExpandedPointerOver"
-                            ResourceKey="SystemControlForegroundBaseHighBrush" />
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
             </Style>
-            <Color x:Key="CardBackgroundFillColorDefault">#B3FFFFFF</Color>
-            <Color x:Key="CardStrokeColorDefault">#0F000000</Color>
-            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource CardBackgroundFillColorDefault}" />
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
-            <SolidColorBrush x:Key="SubgroupHeaderBrush" Color="{StaticResource SystemBaseMediumColor}" />
-            <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="CardBackgroundFillColorDefaultBrush" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
-            <x:Double x:Key="FlyoutThemeMinWidth">96</x:Double>
-            <Thickness x:Key="ExpanderHeaderBorderThickness">1</Thickness>
-            <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+            <SolidColorBrush x:Key="SubgroupHeaderBrush"
+                             Color="{StaticResource SystemBaseMediumColor}" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
-            <StaticResource x:Key="ExpanderBorderBrushExpandedPointerOver"
-                            ResourceKey="SystemControlHighlightBaseHighBrush" />
-            <StaticResource x:Key="ExpanderTextColorExpandedPointerOver"
-                            ResourceKey="SystemColorHighlightTextColor" />
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock" />
             <!--  Do not mess with the foreground color for High Contrast. Let it ride as is.  -->
-            <Color x:Key="CardBackgroundFillColorDefault">#FF0000</Color>
-            <Color x:Key="CardStrokeColorDefault">#FF0000</Color>
-            <StaticResource x:Key="CardBackgroundFillColorDefaultBrush" ResourceKey="SystemColorButtonFaceColorBrush" />
-            <StaticResource x:Key="CardStrokeColorDefaultBrush" ResourceKey="SystemColorButtonTextColorBrush" />
-            <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="SystemColorButtonFaceColorBrush" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="SystemColorButtonTextColorBrush" />
-            <SolidColorBrush x:Key="SubgroupHeaderBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
-            <x:Double x:Key="FlyoutThemeMinWidth">96</x:Double>
-            <Thickness x:Key="ExpanderHeaderBorderThickness">2</Thickness>
-            <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+            <SolidColorBrush x:Key="SubgroupHeaderBrush"
+                             Color="{ThemeResource SystemColorWindowTextColor}" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-            <StaticResource x:Key="ExpanderBorderBrushExpandedPointerOver"
-                            ResourceKey="SystemControlForegroundTransparentBrush" />
-            <StaticResource x:Key="ExpanderTextColorExpandedPointerOver"
-                            ResourceKey="SystemControlForegroundBaseHighBrush" />
             <Style x:Key="SecondaryTextBlockStyle"
                    TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{ThemeResource SystemBaseMediumColor}" />
             </Style>
-            <Color x:Key="CardBackgroundFillColorDefault">#0DFFFFFF</Color>
-            <Color x:Key="CardStrokeColorDefault">#19000000</Color>
-            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="{StaticResource CardBackgroundFillColorDefault}" />
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
-            <SolidColorBrush x:Key="SubgroupHeaderBrush" Color="{StaticResource SystemBaseMediumColor}" />
-            <StaticResource x:Key="ExpanderHeaderBackground" ResourceKey="CardBackgroundFillColorDefaultBrush" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
-            <x:Double x:Key="FlyoutThemeMinWidth">96</x:Double>
-            <Thickness x:Key="ExpanderHeaderBorderThickness">1</Thickness>
-            <CornerRadius x:Key="ControlCornerRadius">4</CornerRadius>
+            <SolidColorBrush x:Key="SubgroupHeaderBrush"
+                             Color="{StaticResource SystemBaseMediumColor}" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -94,7 +58,8 @@
         <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
     </Style>
 
-    <Style x:Key="NonExpanderGrid" TargetType="Grid">
+    <Style x:Key="NonExpanderGrid"
+           TargetType="Grid">
         <Setter Property="Background" Value="{ThemeResource ExpanderHeaderBackground}" />
         <Setter Property="MinWidth" Value="{ThemeResource FlyoutThemeMinWidth}" />
         <Setter Property="MinHeight" Value="64" />
@@ -107,19 +72,17 @@
         <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
 
-    <Style
-        x:Key="SettingsPageItemHeaderStyle"
-        BasedOn="{StaticResource BodyTextBlockStyle}"
-        TargetType="TextBlock">
+    <Style x:Key="SettingsPageItemHeaderStyle"
+           BasedOn="{StaticResource BodyTextBlockStyle}"
+           TargetType="TextBlock">
         <Setter Property="Margin" Value="0,12,0,0" />
         <Setter Property="LineHeight" Value="20" />
         <Setter Property="TextWrapping" Value="WrapWholeWords" />
     </Style>
 
-    <Style
-        x:Key="SettingsPageItemDescriptionStyle"
-        BasedOn="{StaticResource CaptionTextBlockStyle}"
-        TargetType="TextBlock">
+    <Style x:Key="SettingsPageItemDescriptionStyle"
+           BasedOn="{StaticResource CaptionTextBlockStyle}"
+           TargetType="TextBlock">
         <Setter Property="Margin" Value="0,0,24,12" />
         <Setter Property="LineHeight" Value="16" />
         <Setter Property="Foreground" Value="{ThemeResource SubgroupHeaderBrush}" />
@@ -133,26 +96,23 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
                     <StackPanel>
-                        <Grid Style="{StaticResource NonExpanderGrid}"
-                              x:Name="ayy">
+                        <Grid Style="{StaticResource NonExpanderGrid}">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock
-                                Text="{TemplateBinding Header}"
-                                Style="{StaticResource SettingsPageItemHeaderStyle}" />
+                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                           Text="{TemplateBinding Header}" />
                                 <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                           Text="{TemplateBinding HelpText}"/>
+                                           Text="{TemplateBinding HelpText}" />
                             </StackPanel>
-                            <ContentPresenter
-                            Grid.Column="1"
-                            MinWidth="0"
-                            HighContrastAdjustment="None"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                            Content="{TemplateBinding Content}" />
+                            <ContentPresenter Grid.Column="1"
+                                              MinWidth="0"
+                                              HorizontalAlignment="Right"
+                                              VerticalAlignment="Center"
+                                              Content="{TemplateBinding Content}"
+                                              HighContrastAdjustment="None" />
                         </Grid>
                     </StackPanel>
                 </ControlTemplate>
@@ -160,8 +120,8 @@
         </Setter>
     </Style>
 
-    <Style TargetType="local:SettingContainer"
-           x:Key="ExpanderSettingContainerStyle">
+    <Style x:Key="ExpanderSettingContainerStyle"
+           TargetType="local:SettingContainer">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
@@ -175,22 +135,21 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
-                                    <TextBlock
-                                        Text="{TemplateBinding Header}"
-                                        Style="{StaticResource SettingsPageItemHeaderStyle}" />
-                                    <TextBlock Text="{TemplateBinding HelpText}"
-                                               Style="{StaticResource SettingsPageItemDescriptionStyle}" />
+                                    <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                               Text="{TemplateBinding Header}" />
+                                    <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                               Text="{TemplateBinding HelpText}" />
                                 </StackPanel>
                                 <TextBlock Grid.Column="1"
-                                           HorizontalAlignment="Right"
                                            Margin="0,0,-16,0"
+                                           HorizontalAlignment="Right"
                                            VerticalAlignment="Center"
                                            Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                           Text="{TemplateBinding CurrentValue}"/>
+                                           Text="{TemplateBinding CurrentValue}" />
                             </Grid>
                         </muxc:Expander.Header>
                         <muxc:Expander.Content>
-                            <ContentPresenter Content="{TemplateBinding Content}"/>
+                            <ContentPresenter Content="{TemplateBinding Content}" />
                         </muxc:Expander.Content>
                     </muxc:Expander>
                 </ControlTemplate>
