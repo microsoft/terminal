@@ -56,7 +56,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     static bool _hasElevatedOnlyPermissions(const std::filesystem::path& path)
     {
         path;
-        return true;
+        wil::unique_sid sidOwner;
+
+        PSID psidOwner{ nullptr };
+        // wil::unique_hlocal_security_descriptor sd;
+        PSECURITY_DESCRIPTOR pSD{ nullptr }; // TODO! LocalFree me
+        auto status = GetNamedSecurityInfoW(path.c_str(),
+                                            SE_FILE_OBJECT,
+                                            OWNER_SECURITY_INFORMATION,
+                                            &psidOwner,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            // wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd));
+                                            &pSD);
+        THROW_IF_WIN32_ERROR(status);
+        /*if (status == ERROR_FILE_NOT_FOUND)
+        {
+            return true;
+        }
+        if (LOG_IF_WIN32_ERROR(status))
+        {
+            return false;
+        }*/
+
+        const auto adminGroupSid = wil::make_static_sid(SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+        adminGroupSid; // for debugging;
+
+        wil::unique_any_psid psidAdmins{ nullptr };
+        ConvertStringSidToSidW(L"BA", wil::out_param_ptr<PSID*>(psidAdmins));
+        // Compare the owner SID to the administrators SID via
+        // EqualSid(psidOwner, psidAdmins). This does a low-level memory
+        // comparison of the SIDs.
+        return EqualSid(psidOwner, psidAdmins.get());
+
+        // The psidOwner pointer references the security descriptor, so it
+        // doesn't have to be freed separate from pSD.
+        // LocalFree(pSD); // called when the unique_hlocal_security_descriptor exits scope
+
+        // return true;
         /*
         // If we want to only open the file if it's elevated, check the
         // permissions on this file. We want to make sure that:
@@ -202,6 +240,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                        const bool elevatedOnly)
     {
         SECURITY_ATTRIBUTES sa;
+        // wil::unique_hlocal_security_descriptor sd;
         if (elevatedOnly)
         {
             // // This is very vaguely taken from
@@ -248,18 +287,19 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // THROW_IF_WIN32_BOOL_FALSE(InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION));
             // THROW_IF_WIN32_BOOL_FALSE(SetSecurityDescriptorDacl(&sd, true, pAcl, false));
 
-            // TODO!: I need to LocalFree this somehow.
-            PSECURITY_DESCRIPTOR psd;
             unsigned long cb;
+            PSECURITY_DESCRIPTOR pSD{ nullptr };
             ConvertStringSecurityDescriptorToSecurityDescriptor(L"S:(ML;;NW;;;HI)",
                                                                 SDDL_REVISION_1,
-                                                                &psd,
+                                                                // wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd),
+                                                                &pSD,
                                                                 &cb);
 
             // Initialize a security attributes structure.
             sa.nLength = sizeof(SECURITY_ATTRIBUTES);
             // sa.lpSecurityDescriptor = &sd;
-            sa.lpSecurityDescriptor = psd;
+            // sa.lpSecurityDescriptor = sd.addressof();
+            sa.lpSecurityDescriptor = pSD;
             sa.bInheritHandle = false;
         }
 
