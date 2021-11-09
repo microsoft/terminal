@@ -240,7 +240,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
                        const bool elevatedOnly)
     {
         SECURITY_ATTRIBUTES sa;
-        // wil::unique_hlocal_security_descriptor sd;
+        wil::unique_hlocal_security_descriptor sd;
         if (elevatedOnly)
         {
             // // This is very vaguely taken from
@@ -288,18 +288,20 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // THROW_IF_WIN32_BOOL_FALSE(SetSecurityDescriptorDacl(&sd, true, pAcl, false));
 
             unsigned long cb;
-            PSECURITY_DESCRIPTOR pSD{ nullptr };
+            //PSECURITY_DESCRIPTOR pSD{ nullptr };
+
             ConvertStringSecurityDescriptorToSecurityDescriptor(L"S:(ML;;NW;;;HI)",
                                                                 SDDL_REVISION_1,
-                                                                // wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd),
-                                                                &pSD,
+                                                                wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd),
+                                                                // &pSD,
+                                                                // sd.put(),
                                                                 &cb);
 
             // Initialize a security attributes structure.
             sa.nLength = sizeof(SECURITY_ATTRIBUTES);
             // sa.lpSecurityDescriptor = &sd;
-            // sa.lpSecurityDescriptor = sd.addressof();
-            sa.lpSecurityDescriptor = pSD;
+            sa.lpSecurityDescriptor = sd.get();
+            // sa.lpSecurityDescriptor = pSD;
             sa.bInheritHandle = false;
         }
 
