@@ -93,6 +93,9 @@ namespace winrt::TerminalApp::implementation
 
         std::shared_ptr<Pane> GetRootPane() const { return _rootPane; }
 
+        void ReplaceControl(std::shared_ptr<Pane> pane,
+                            const winrt::Windows::UI::Xaml::Controls::UserControl& control);
+
         winrt::TerminalApp::TerminalTabStatus TabStatus()
         {
             return _tabStatus;

@@ -516,10 +516,9 @@ namespace winrt::TerminalApp::implementation
                 p->Id(_nextPaneId);
                 if (auto termControl{ p->_control.try_as<TermControl>() })
                 {
-                    // TODO! make sure that the event handlers are still wired up for splitting a pane that creates an unapproved commandline, I don't think they are. 
                     _AttachEventHandlersToControl(p->Id().value(), termControl);
                 }
-                
+
                 _nextPaneId++;
             }
             return false;
@@ -1754,6 +1753,19 @@ namespace winrt::TerminalApp::implementation
         }
 
         return Title();
+    }
+
+    void TerminalTab::ReplaceControl(std::shared_ptr<Pane> pane, const Controls::UserControl& control)
+    {
+        pane->ReplaceControl(control);
+
+        if (auto termControl{ pane->_control.try_as<TermControl>() })
+        {
+            _AttachEventHandlersToControl(pane->Id().value(), termControl);
+        }
+
+        // Update the title manually.
+        UpdateTitle();
     }
 
     DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);

@@ -847,14 +847,17 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
     return false;
 }
 
-winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt::Windows::UI::Xaml::Controls::UserControl& control)
+Controls::UserControl Pane::ReplaceControl(const Controls::UserControl& control)
 {
     if (!_IsLeaf())
     {
         return nullptr;
     }
 
+    // Remove old control's event handlers
     const auto& oldControl = _control;
+    _gotFocusRevoker.revoke();
+    _lostFocusRevoker.revoke();
     if (const auto& oldTermControl{ _control.try_as<TermControl>() })
     {
         oldTermControl.ConnectionStateChanged(_connectionStateChangedToken);
@@ -862,7 +865,13 @@ winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt
     }
 
     _control = control;
+
     _borderFirst.Child(_control);
+
+    // Register an event with the control to have it inform us when it gains focus.
+    _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+    _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+
     if (const auto& termControl{ _control.try_as<TermControl>() })
     {
         _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });

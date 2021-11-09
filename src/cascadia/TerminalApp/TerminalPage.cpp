@@ -1612,7 +1612,7 @@ namespace winrt::TerminalApp::implementation
     {
         // NOTE: For debugging purposes, changing this to `true || IsElevated()`
         // is a handy way of forcing the elevation logic, even when unelevated.
-        if (IsElevated())
+        if (true || IsElevated())
         {
             // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.
@@ -1662,11 +1662,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             // Go ahead and allow them. Swap the control into
                             // the pane, which will initialize and start it.
-                            pane->ReplaceControl(otherWarning->Control());
-                            // Update the title, because replacing the control like
-                            // this is a little weird, and doesn't actually trigger
-                            // a TitleChanged by itself.
-                            tabImpl->UpdateTitle();
+                            tabImpl->ReplaceControl(pane, otherWarning->Control());
                         }
                         // Don't return true here. We want to make sure to check
                         // all the panes for the same commandline we just
