@@ -1485,9 +1485,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
-    // - Returns true if this commandline is precisely an executable in
-    //   system32. We can use this to bypass the elevated state check, because
-    //   we're confident that executables in that path won't have been hijacked.
+    // - Returns true if this commandline is a commandline that we know is safe.
+    //   Generally, this is true for any executables in system32. We can use
+    //   this to bypass the elevated state check, because we're confident that
+    //   executables in that path won't have been hijacked.
     //   - TECHNICALLY a user can take ownership of a file in system32 and
     //     replace it as the system administrator. You could say it's OK though
     //     because you'd already have to have had admin rights to mess that
@@ -1495,6 +1496,8 @@ namespace winrt::TerminalApp::implementation
     // - Will attempt to resolve environment strings.
     // - Will also manually allow commandlines as generated for the default WSL
     //   distros.
+    // - Will also trust %ProgramFiles%\Powershell\...\pwsh.exe paths, for
+    //   PowerShell Core.
     // Arguments:
     // - commandLine: the command to check.
     // Return Value (example):
@@ -1503,7 +1506,7 @@ namespace winrt::TerminalApp::implementation
     // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
     // - %SystemRoot%\System32\cmd.exe -> returns true
     // - %SystemRoot%\System32\wsl.exe -d <distro name> -> returns true
-    static bool _isInSystem32(std::wstring_view commandLine)
+    static bool _isTrustedCommandline(std::wstring_view commandLine)
     {
         // use C++11 magic statics to make sure we only do this once.
         static std::wstring systemDirectory = []() -> std::wstring {
@@ -1595,6 +1598,33 @@ namespace winrt::TerminalApp::implementation
                 }
             }
         }
+        else if (executableFilename == L"pwsh" || executableFilename == L"pwsh.exe")
+        {
+            // is does executablePath start with %ProgramFiles%\\PowerShell?
+            const std::filesystem::path powershellCoreRoot
+            {
+                wil::ExpandEnvironmentStringsW<std::wstring>(
+#if defined(_M_AMD64) || defined(_M_ARM64) // No point in looking for WOW if we're not somewhere it exists
+                    L"%ProgramFiles(x86)%\\PowerShell"
+#elif defined(_M_ARM64) // same with ARM
+                    L"%ProgramFiles(Arm)%\\PowerShell"
+#else
+                    L"%ProgramFiles%\\PowerShell"
+#endif
+                )
+            };
+
+            // Is the path to the commandline actually exactly one of the
+            // versions that exists in this directory?
+            for (const auto& versionedDir : std::filesystem::directory_iterator(powershellCoreRoot))
+            {
+                const auto versionedPath = versionedDir.path();
+                if (executablePath.parent_path() == versionedPath)
+                {
+                    return true;
+                }
+            }
+        }
 
         return false;
     }
@@ -1616,7 +1646,7 @@ namespace winrt::TerminalApp::implementation
         {
             // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.
-            if (_isInSystem32(cmdline))
+            if (_isTrustedCommandline(cmdline))
             {
                 return false;
             }
