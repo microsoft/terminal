@@ -59,12 +59,6 @@ namespace SettingsModelLocalTests
 
         TEST_METHOD(TestGetKeyBindingForAction);
         TEST_METHOD(KeybindingsWithoutVkey);
-
-        TEST_CLASS_SETUP(ClassSetup)
-        {
-            InitializeJsonReader();
-            return true;
-        }
     };
 
     void KeyBindingsTests::KeyChords()

@@ -11,7 +11,7 @@
 static constexpr std::string_view Utf8Bom{ u8"\uFEFF" };
 static constexpr std::wstring_view UnpackagedSettingsFolderName{ L"Microsoft\\Windows Terminal\\" };
 
-namespace Microsoft::Terminal::Settings::Model
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
     // Returns a path like C:\Users\<username>\AppData\Local\Packages\<packagename>\LocalState
     // You can put your settings.json or state.json in this directory.
@@ -106,7 +106,7 @@ namespace Microsoft::Terminal::Settings::Model
         }
     }
 
-    void WriteUTF8File(const std::filesystem::path& path, const std::string_view content)
+    void WriteUTF8File(const std::filesystem::path& path, const std::string_view& content)
     {
         wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_WRITE, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr) };
         THROW_LAST_ERROR_IF(!file);
@@ -121,7 +121,7 @@ namespace Microsoft::Terminal::Settings::Model
         }
     }
 
-    void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view content)
+    void WriteUTF8FileAtomic(const std::filesystem::path& path, const std::string_view& content)
     {
         // GH#10787: rename() will replace symbolic links themselves and not the path they point at.
         // It's thus important that we first resolve them before generating temporary path.

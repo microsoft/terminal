@@ -16,12 +16,12 @@ Author(s):
 #pragma once
 #include "BaseVisualStudioGenerator.h"
 
-namespace Microsoft::Terminal::Settings::Model
+namespace winrt::Microsoft::Terminal::Settings::Model
 {
-    class VsDevCmdGenerator : public BaseVisualStudioGenerator
+    class VsDevCmdGenerator final : public BaseVisualStudioGenerator
     {
     public:
-        std::wstring_view GetNamespace() override
+        std::wstring_view GetNamespace() const noexcept override
         {
             return std::wstring_view{ L"Windows.Terminal.VisualStudio.CommandPrompt" };
         }

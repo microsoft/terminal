@@ -685,9 +685,18 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    MARGINS margins = {};
+    MARGINS margins = { 0, 0, 0, 0 };
 
-    if (_GetTopBorderHeight() != 0)
+    // GH#603: When we're in Focus Mode, hide the titlebar, by setting it to a single
+    // pixel tall. Otherwise, the titlebar will be visible underneath controls with
+    // vintage opacity set.
+    //
+    // We can't set it to all 0's unfortunately.
+    if (_borderless)
+    {
+        margins.cyTopHeight = 1;
+    }
+    else if (_GetTopBorderHeight() != 0)
     {
         RECT frame = {};
         winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
@@ -895,6 +904,10 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
     {
         _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
     }
+
+    // Update the margins when entering/leaving focus mode, so we can prevent
+    // the titlebar from showing through transparent terminal controls
+    _UpdateFrameMargins();
 
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.

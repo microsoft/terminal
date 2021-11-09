@@ -4,7 +4,7 @@
 #include "pch.h"
 #include "VsDevCmdGenerator.h"
 
-using namespace Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::Settings::Model;
 
 std::wstring VsDevCmdGenerator::GetProfileName(const VsSetupConfiguration::VsSetupInstance& instance) const
 {

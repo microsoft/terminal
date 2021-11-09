@@ -16,6 +16,10 @@
 #include "LibraryResources.h"
 
 using namespace ::Microsoft::Console;
+using namespace std::string_view_literals;
+
+// Format is: "DecimalResult (HexadecimalForm)"
+static constexpr auto _errorFormat = L"{0} ({0:#010x})"sv;
 
 // Notes:
 // There is a number of ways that the Conpty connection can be terminated (voluntarily or not):
@@ -417,7 +421,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         const auto hr = wil::ResultFromCaughtException();
 
         winrt::hstring failureText{ fmt::format(std::wstring_view{ RS_(L"ProcessFailedToLaunch") },
-                                                gsl::narrow_cast<unsigned long>(hr),
+                                                fmt::format(_errorFormat, hr),
                                                 _commandline) };
         _TerminalOutputHandlers(failureText);
 
@@ -444,7 +448,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         try
         {
-            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, status) };
+            winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);
         }
