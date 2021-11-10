@@ -248,6 +248,7 @@ void DxEngine::ToggleShaderEffects() noexcept
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
     _recreateDeviceRequested = true;
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
     LOG_IF_FAILED(InvalidateAll());
 }
 
@@ -971,12 +972,12 @@ CATCH_RETURN();
 
 void DxEngine::SetCallback(std::function<void()> pfn) noexcept
 {
-    _pfn = pfn;
+    _pfn = std::move(pfn);
 }
 
 void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept
 {
-    _pfnWarningCallback = pfn;
+    _pfnWarningCallback = std::move(pfn);
 }
 
 bool DxEngine::GetRetroTerminalEffect() const noexcept
@@ -1046,11 +1047,12 @@ try
 }
 CATCH_LOG()
 
-HANDLE DxEngine::GetSwapChainHandle()
+HANDLE DxEngine::GetSwapChainHandle() noexcept
 {
     if (!_swapChainHandle)
     {
-        THROW_IF_FAILED(_CreateDeviceResources(true));
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
+        LOG_IF_FAILED(_CreateDeviceResources(true));
     }
 
     return _swapChainHandle.get();
