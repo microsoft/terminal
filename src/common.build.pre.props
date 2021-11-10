@@ -174,7 +174,7 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <Import Condition="'$(PgoTarget)' == 'true'" Project="$(SolutionDir)\build\Terminal.PGO.props" />
+  <Import Condition="'$(PgoTarget)' == 'true'" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
 
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">
