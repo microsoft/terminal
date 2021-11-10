@@ -2,6 +2,7 @@ parameters:
   dependsOn: ''
   pgoArtifact: PGO
   platform: ''
+  configuration: ''
 
 jobs:
 - job: MergePGD
@@ -12,6 +13,7 @@ jobs:
     artifactsPath: $(Build.SourcesDirectory)\Artifacts
     pgoArtifactsPath: $(artifactsPath)\${{ parameters.pgoArtifact }}
     buildPlatform: ${{ parameters.platform }}
+    buildConfiguration: ${{ parameters.configuration }}
 
   steps:
   # The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.
@@ -29,53 +31,13 @@ jobs:
       artifactName: ${{ parameters.pgoArtifact }}
       downloadPath: $(artifactsPath)
 
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge WindowsTerminal*.pgc WindowsTerminal.pgd
-    displayName: 'Merge Terminal pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
-
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge OpenConsole*.pgc OpenConsole.pgd
-    displayName: 'Merge OpenConsole pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
-
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Control*.pgc Microsoft.Terminal.Control.pgd
-    displayName: 'Merge Microsoft.Terminal.Control pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
-
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Remoting*.pgc Microsoft.Terminal.Remoting.pgd
-    displayName: 'Merge Microsoft.Terminal.Remoting pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
-
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Settings.Editor*.pgc Microsoft.Terminal.Settings.Editor.pgd
-    displayName: 'Merge Microsoft.Terminal.Settings.Editor pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
-
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge Microsoft.Terminal.Settings.Model*.pgc Microsoft.Terminal.Settings.Model.pgd
-    displayName: 'Merge Microsoft.Terminal.Settings.Model pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
-
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge TerminalApp*.pgc TerminalApp.pgd
-    displayName: 'Merge TerminalApp pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
-
-  - script: |
-      cd $(buildPlatform)
-      "%VCToolsInstallDir%\bin\hostx64\x64\pgomgr.exe" /merge TerminalConnection*.pgc TerminalConnection.pgd
-    displayName: 'Merge TerminalConnection pgc files into pgd'
-    workingDirectory: $(pgoArtifactsPath)
+  - task: MSBuild@1
+    displayName: Merge counts into PGD
+    inputs:
+      solution: $(Build.SourcesDirectory)\OpenConsole.sln
+      platform: $(buildPlatform)
+      configuration: $(buildConfiguration)
+      msbuildArguments: '/t:MergePGOCounts /p:PGDPath=$(pgoArtifactsPath)\$(buildPlatform) /p:PGCRootPath=$(pgoArtifactsPath)\$(buildPlatform)'
 
   - task: CopyFiles@2
     displayName: 'Copy merged pgd to artifact staging'

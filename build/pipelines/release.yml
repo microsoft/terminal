@@ -140,12 +140,6 @@ jobs:
       filePath: .\build\scripts\Generate-ThirdPartyNotices.ps1
       arguments: -MarkdownNoticePath .\NOTICE.md -OutputPath .\src\cascadia\CascadiaPackage\NOTICE.html
       pwsh: true
-  - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
-    - task: PowerShell@2
-      displayName: Restore PGO Database
-      inputs:
-        filePath: tools/PGODatabase/restore-pgodb.ps1
-        workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln
@@ -164,20 +158,6 @@ jobs:
       inputs:
         PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
         ArtifactName: binlog-$(BuildPlatform)
-    - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
-      - task: PowerShell@2
-        displayName: Validate binaries are optimized
-        condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
-        inputs:
-          targetType: inline
-          script: >-
-            $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
-
-            foreach ($BinFile in $Binaries) {
-
-              & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile"
-
-            }
     - task: PowerShell@2
       displayName: Check MSIX for common regressions
       inputs:

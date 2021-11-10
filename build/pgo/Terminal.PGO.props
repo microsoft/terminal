@@ -1,0 +1,38 @@
+<Project>
+  <PropertyGroup>
+    <NuGetPackageDirectory>$(MSBuildThisFileDirectory)..\..\packages</NuGetPackageDirectory>
+    <PkgMicrosoft_PGO_Helpers_Cpp>$(NuGetPackageDirectory)\Microsoft.PGO-Helpers.Cpp.0.2.18</PkgMicrosoft_PGO_Helpers_Cpp>
+  </PropertyGroup>
+
+  <!-- Get version information -->
+  <Import Project="$(MSBuildThisFileDirectory)..\..\custom.props" />
+
+  <PropertyGroup>
+    <!-- Optional, defaults to main.  Name of the branch which will be used for calculating branch point. -->
+    <PGOBranch>main</PGOBranch>
+
+    <!-- Mandatory.  Name of the NuGet package which will contain PGO databases for consumption by build system. -->
+    <PGOPackageName>Microsoft.Internal.Windows.Terminal.PGODatabase</PGOPackageName>
+
+    <!-- Mandatory.  Major version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <PGOPackageVersionMajor>$(VersionMajor)</PGOPackageVersionMajor>
+
+    <!-- Mandatory.  Minor version number of the PGO database which should match the version of the product.  This can be hardcoded or obtained from other sources in build system. -->
+    <PGOPackageVersionMinor>$(VersionMinor)</PGOPackageVersionMinor>
+
+    <!-- Mandatory.  Path to nuget.config file for the project.  Path is relative to where the props file will be. -->
+    <PGONuGetConfigPath>$(MSBuildThisFileDirectory)..\..\nuget.config</PGONuGetConfigPath>
+
+    <!-- Mandatory.  Path to PGO database NuSpec, see section below. -->
+    <PGONuspecPath>$(MSBuildThisFileDirectory)Terminal.PGO.DB.nuspec</PGONuspecPath>
+
+    <!-- Optional, defaults to true.  Should verification result in build failure or error? -->
+    <PGOVerifyFailureTreatedAsError>true</PGOVerifyFailureTreatedAsError>
+
+    <!-- Optional, defaults to $(IntDir)\Nuspec.  Temporary path where PGD files are copied to. -->
+    <PGONuspecBasePath>$(MSBuildThisFileDirectory)..\Nuspec</PGONuspecBasePath>
+
+    <!-- Optional, defaults to true.  Specifies whether to use default information for PGD files. -->
+    <PGOUseDefaultPGDFileInfo>true</PGOUseDefaultPGDFileInfo>
+  </PropertyGroup>
+</Project>
