@@ -59,10 +59,10 @@ namespace Microsoft.Terminal.Core
 
         Microsoft.Terminal.Core.Color CursorColor;
 
-        // Table: A WinRT struct doesn't allow pointers (like an array) in
-        // structs, but we very much would like this object to be a struct. So
-        // we'll call out each color individually. There's only 16, it's not
-        // that bad.
+        // Table: A WinRT struct doesn't allow pointers (READ: doesn't allow
+        // array members) in structs, but we very much would like this object to
+        // be a struct. So we'll call out each color individually. There's only
+        // 16, it's not that bad.
         Microsoft.Terminal.Core.Color Black;
         Microsoft.Terminal.Core.Color Red;
         Microsoft.Terminal.Core.Color Green;

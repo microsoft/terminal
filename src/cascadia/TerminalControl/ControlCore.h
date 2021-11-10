@@ -39,7 +39,7 @@ private:                                                          \
     void name(const type newValue) { _runtime##name = newValue; } \
                                                                   \
 public:                                                           \
-    type name() const { return _runtime##name ? *_runtime##name : setting; }
+    type name() const { return til::coalesce_value(_runtime##name, setting); }
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {

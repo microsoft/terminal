@@ -29,8 +29,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     public:
         winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
         {
-            return _runtimeColorTable.at(index) ? *_runtimeColorTable.at(index) :
-                                                  _ColorTable.at(index);
+            return til::coalesce_value(_runtimeColorTable.at(index), _ColorTable.at(index));
         }
         void SetColorTableEntry(int32_t index,
                                 winrt::Microsoft::Terminal::Core::Color color) noexcept

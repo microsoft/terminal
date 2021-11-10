@@ -15,7 +15,6 @@
 #include "SearchBoxControl.h"
 
 #include "ControlInteractivity.h"
-#include "ControlSettings.h"
 
 namespace Microsoft::Console::VirtualTerminal
 {

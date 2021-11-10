@@ -64,10 +64,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                              const Model::NewTerminalArgs& newTerminalArgs,
                                                                              const Control::IKeyBindings& keybindings);
 
-        Model::TerminalSettings GetParent();
-
-        void SetParent(const Model::TerminalSettings& parent);
-
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
         // --------------------------- Core Settings ---------------------------
