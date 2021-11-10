@@ -24,6 +24,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Color table is _extra_ special because each individual color is
         // overridable, not the whole array.
+        // TODO! Pretty sure this is overkill, or never actually used. Remove?
         std::array<std::optional<winrt::Microsoft::Terminal::Core::Color>, COLOR_TABLE_SIZE> _runtimeColorTable;
 
     public:

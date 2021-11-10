@@ -127,6 +127,12 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_PreviewActionHandler(const IInspectable& /*sender*/,
                                              const Microsoft::Terminal::Settings::Model::Command& args)
     {
+        // TODO! Before PR merges:
+        // - The changes in here were trying to fix "Open the select scheme
+        //   menu, preview a few, dismiss -> second-last scheme gets restored"
+        //   bug. They resulted in a new bug: "previewing a scheme while using
+        //   an unfocused apprearance, then dismissing -> unfocused scheme gets
+        //   applied". Fix in morning.
         _EndPreview();
         if (args == nullptr || args.ActionAndArgs() == nullptr)
         {
