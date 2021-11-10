@@ -210,7 +210,7 @@ namespace Microsoft::Console::Render
 
             explicit operator bool() const noexcept
             {
-                return _data;
+                return _data != nullptr;
             }
 
             T& operator[](size_t index) noexcept
@@ -241,6 +241,9 @@ namespace Microsoft::Console::Render
             }
 
         private:
+#pragma warning(push)
+#pragma warning(disable : 26402) // Return a scoped object instead of a heap-allocated if it has a move constructor (r.3).
+#pragma warning(disable : 26409) // Avoid calling new and delete explicitly, use std::make_unique<T> instead (r.11).
             static T* allocate(size_t size)
             {
                 if constexpr (Alignment <= __STDCPP_DEFAULT_NEW_ALIGNMENT__)
@@ -264,12 +267,104 @@ namespace Microsoft::Console::Render
                     ::operator delete[](data, static_cast<std::align_val_t>(Alignment));
                 }
             }
+#pragma warning(pop)
 
             T* _data = nullptr;
             size_t _size = 0;
         };
 
     private:
+        // This structure works similar to how std::string works:
+        // You can think of a std::string as a structure consisting of:
+        //   char*  data;
+        //   size_t size;
+        //   size_t capacity;
+        // where data is some backing memory allocated on the heap.
+        //
+        // But std::string employs an optimization called "small string optimization" (SSO).
+        // To simplify things it could be explained as:
+        // If the string capacity is small, then the characters are stored inside the "data"
+        // pointer and you make sure to set the lowest bit in the pointer one way or another.
+        // Heap allocations are always aligned by at least 4-8 bytes on any platform.
+        // If the address of the "data" pointer is not even you know data is stored inline.
+        template<typename T>
+        union SmallObjectOptimizer
+        {
+            static_assert(std::is_trivially_copyable_v<T>);
+            static_assert(std::has_unique_object_representations_v<T>);
+
+            T* allocated = nullptr;
+            T inlined;
+
+            constexpr SmallObjectOptimizer() = default;
+
+            SmallObjectOptimizer(const SmallObjectOptimizer& other)
+            {
+                const auto otherData = other.data();
+                const auto otherSize = other.size();
+                const auto data = initialize(otherSize);
+                memcpy(data, otherData, otherSize);
+            }
+
+            SmallObjectOptimizer& operator=(const SmallObjectOptimizer& other)
+            {
+                delete this;
+                return *new (this) SmallObjectOptimizer(other);
+            }
+
+            SmallObjectOptimizer(SmallObjectOptimizer&& other) noexcept
+            {
+                memcpy(this, &other, std::max(sizeof(allocated), sizeof(inlined)));
+                other.allocated = nullptr;
+            }
+
+            SmallObjectOptimizer& operator=(SmallObjectOptimizer&& other) noexcept
+            {
+                return *new (this) SmallObjectOptimizer(other);
+            }
+
+            ~SmallObjectOptimizer()
+            {
+                if (!is_inline())
+                {
+#pragma warning(suppress : 26408) // Avoid malloc() and free(), prefer the nothrow version of new with delete (r.10).
+                    free(allocated);
+                }
+            }
+
+            T* initialize(size_t byteSize)
+            {
+                if (would_inline(byteSize))
+                {
+                    return &inlined;
+                }
+
+#pragma warning(suppress : 26408) // Avoid malloc() and free(), prefer the nothrow version of new with delete (r.10).
+                allocated = THROW_IF_NULL_ALLOC(static_cast<T*>(malloc(byteSize)));
+                return allocated;
+            }
+
+            constexpr bool would_inline(size_t byteSize) const noexcept
+            {
+                return byteSize <= sizeof(T);
+            }
+
+            bool is_inline() const noexcept
+            {
+                return (__builtin_bit_cast(uintptr_t, allocated) & 1) != 0;
+            }
+
+            const T* data() const noexcept
+            {
+                return is_inline() ? &inlined : allocated;
+            }
+
+            size_t size() const noexcept
+            {
+                return is_inline() ? sizeof(inlined) : _msize(allocated);
+            }
+        };
+
         // u16 so it neatly fits into AtlasValue.
         // These flags are shared with shader_ps.hlsl.
         enum class CellFlags : u32
@@ -320,90 +415,39 @@ namespace Microsoft::Console::Render
             wchar_t chars[14];
         };
 
-        union AtlasKey
+        struct AtlasKey
         {
             AtlasKey(AtlasKeyAttributes attributes, u16 charCount, const wchar_t* chars)
             {
-                AtlasKeyData* data;
-
-                if (charCount <= std::size(inlined.chars))
-                {
-                    attributes.inlined = 1;
-                    data = &inlined;
-                }
-                else
-                {
-                    data = heap = THROW_IF_NULL_ALLOC(static_cast<AtlasKeyData*>(malloc(dataSize(charCount))));
-                }
-
+                const auto size = dataSize(charCount);
+                const auto data = _data.initialize(size);
+                attributes.inlined = _data.would_inline(size);
                 data->attributes = attributes;
                 data->charCount = charCount;
                 memcpy(&data->chars[0], chars, static_cast<size_t>(charCount) * sizeof(AtlasKeyData::chars[0]));
             }
 
-            AtlasKey(const AtlasKey& other)
+            const AtlasKeyData* data() const noexcept
             {
-                if (other.inlined.attributes.inlined)
-                {
-                    memcpy(&inlined, &other.inlined, sizeof(inlined));
-                }
-                else
-                {
-                    const auto size = dataSize(other.heap->charCount);
-                    heap = THROW_IF_NULL_ALLOC(static_cast<AtlasKeyData*>(malloc(size)));
-                    memcpy(heap, other.heap, size);
-                }
-            }
-
-            AtlasKey(AtlasKey&&) = default;
-            AtlasKey& operator=(AtlasKey&&) = default;
-
-            ~AtlasKey()
-            {
-                if (!inlined.attributes.inlined)
-                {
-                    free(heap);
-                }
-            }
-
-            const AtlasKeyData& data() const noexcept
-            {
-                return inlined.attributes.inlined ? inlined : *heap;
+                return _data.data();
             }
 
             size_t hash() const noexcept
             {
-                const auto& d = data();
-                return std::_Fnv1a_append_bytes(std::_FNV_offset_basis, reinterpret_cast<const u8*>(&d), dataSize(d.charCount));
+                const auto d = data();
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+                return std::_Fnv1a_append_bytes(std::_FNV_offset_basis, reinterpret_cast<const u8*>(d), dataSize(d->charCount));
             }
 
             bool operator==(const AtlasKey& rhs) const noexcept
             {
-                const auto& a = data();
-                const auto& b = rhs.data();
-                return a.charCount == b.charCount && memcmp(&a, &b, dataSize(a.charCount)) == 0;
+                const auto a = data();
+                const auto b = rhs.data();
+                return a->charCount == b->charCount && memcmp(a, b, dataSize(a->charCount)) == 0;
             }
 
         private:
-            // This structure works similar to how std::string works:
-            // You can think of a std::string as a structure consisting of:
-            //   char*  data;
-            //   size_t size;
-            //   size_t capacity;
-            // where data is some backing memory allocated on the heap.
-            //
-            // But std::string employs an optimization called "small string optimization" (SSO).
-            // To simplify things it could be explained as:
-            // If the string capacity is small, then the characters are stored inside the "data"
-            // pointer and you make sure to set the lowest bit in the pointer one way or another.
-            // Heap allocations are always aligned by at least 4-8 bytes on any platform.
-            // If the address of the "data" pointer is not even you know data is stored inline.
-            //
-            // We use the same trick here:
-            // If we have only few .chars (<= 2) then we store all our fields inside the .heap pointer.
-            // Otherwise (.charCount > 2) we allocate an AtlasKey on the heap.
-            AtlasKeyData* heap = nullptr;
-            AtlasKeyData inlined;
+            SmallObjectOptimizer<AtlasKeyData> _data;
 
             static constexpr size_t dataSize(u16 charCount) noexcept
             {
@@ -429,61 +473,24 @@ namespace Microsoft::Console::Render
             u16x2 coords[7];
         };
 
-        union AtlasValue
+        struct AtlasValue
         {
-            AtlasValue() = default;
-            AtlasValue(const AtlasValue& other)
-            {
-                if (WI_IsFlagSet(other.inlined.flags, CellFlags::Inlined))
-                {
-                    memcpy(&inlined, &other.inlined, sizeof(inlined));
-                }
-                else
-                {
-                    const auto size = _msize(other.heap);
-                    heap = THROW_IF_NULL_ALLOC(static_cast<AtlasValueData*>(malloc(size)));
-                    memcpy(heap, other.heap, size);
-                }
-            }
-
-            AtlasValue(AtlasValue&&) = default;
-            AtlasValue& operator=(AtlasValue&&) = default;
-
-            ~AtlasValue()
-            {
-                if (!WI_IsFlagSet(inlined.flags, CellFlags::Inlined))
-                {
-                    free(heap);
-                }
-            }
-
             u16x2* initialize(CellFlags flags, u16 cellCount)
             {
-                AtlasValueData* data;
-
-                if (cellCount <= std::size(inlined.coords))
-                {
-                    WI_SetFlag(flags, CellFlags::Inlined);
-                    data = &inlined;
-                }
-                else
-                {
-                    data = heap = THROW_IF_NULL_ALLOC(static_cast<AtlasValueData*>(malloc(dataSize(cellCount))));
-                }
-
+                const auto size = dataSize(cellCount);
+                const auto data = _data.initialize(size);
+                WI_SetFlagIf(flags, CellFlags::Inlined, _data.would_inline(size));
                 data->flags = flags;
                 return &data->coords[0];
             }
 
-            const AtlasValueData& data() const noexcept
+            const AtlasValueData* data() const noexcept
             {
-                return WI_IsFlagSet(inlined.flags, CellFlags::Inlined) ? inlined : *heap;
+                return _data.data();
             }
 
         private:
-            // See AtlasKey for a long description about how this works.
-            AtlasValueData* heap = nullptr;
-            AtlasValueData inlined;
+            SmallObjectOptimizer<AtlasValueData> _data;
 
             static constexpr size_t dataSize(u16 coordCount) noexcept
             {
@@ -495,6 +502,7 @@ namespace Microsoft::Console::Render
         {
             const AtlasKey* key;
             const AtlasValue* value;
+            float scale;
         };
 
         struct CachedCursorOptions
@@ -574,7 +582,7 @@ namespace Microsoft::Console::Render
         void _setCellFlags(SMALL_RECT coords, CellFlags mask, CellFlags bits) noexcept;
         u16x2 _allocateAtlasTile() noexcept;
         void _flushBufferLine();
-        void _emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* chars, size_t charCount, u16 x1, u16 x2);
+        void _emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.r.cpp
         void _setShaderResources() const;
@@ -582,7 +590,7 @@ namespace Microsoft::Console::Render
         void _adjustAtlasSize();
         void _reserveScratchpadSize(u16 minWidth);
         void _processGlyphQueue();
-        void _drawGlyph(const AtlasQueueItem& pair) const;
+        void _drawGlyph(const AtlasQueueItem& item) const;
         void _drawCursor();
         void _copyScratchpadTile(uint32_t scratchpadIndex, u16x2 target, uint32_t copyFlags = 0) const noexcept;
 
@@ -668,7 +676,7 @@ namespace Microsoft::Console::Render
         struct ApiState
         {
             // This structure is loosely sorted in chunks from "very often accessed together"
-            // to seldom accessed and/or usually not together. Try to sorta stick with this.
+            // to seldom accessed and/or usually not together.
 
             std::vector<wchar_t> bufferLine;
             std::vector<u16> bufferLineColumn;

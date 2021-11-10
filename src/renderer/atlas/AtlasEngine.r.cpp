@@ -301,18 +301,22 @@ void AtlasEngine::_processGlyphQueue()
     _r.glyphQueue.clear();
 }
 
-void AtlasEngine::_drawGlyph(const AtlasQueueItem& pair) const
+void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
 {
-    const auto& key = pair.key->data();
-    const auto& value = pair.value->data();
-    const auto coords = &value.coords[0];
-    const auto charsLength = key.charCount;
-    const auto cells = static_cast<u32>(key.attributes.cellCount);
-    const auto textFormat = _getTextFormat(key.attributes.bold, key.attributes.italic);
+    const auto key = item.key->data();
+    const auto value = item.value->data();
+    const auto coords = &value->coords[0];
+    const auto charsLength = key->charCount;
+    const auto cells = static_cast<u32>(key->attributes.cellCount);
+    const auto textFormat = _getTextFormat(key->attributes.bold, key->attributes.italic);
 
     // See D2DFactory::DrawText
     wil::com_ptr<IDWriteTextLayout> textLayout;
-    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key.chars[0], charsLength, textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
+    THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key->chars[0], charsLength, textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
+    if (item.scale != 1.0f)
+    {
+        textLayout->SetFontSize(textFormat->GetFontSize() * item.scale, { 0, charsLength });
+    }
     if (_r.typography)
     {
         textLayout->SetTypography(_r.typography.get(), { 0, charsLength });
@@ -321,7 +325,7 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& pair) const
     auto options = D2D1_DRAW_TEXT_OPTIONS_NONE;
     // D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT enables a bunch of internal machinery
     // which doesn't have to run if we know we can't use it anyways in the shader.
-    WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, WI_IsFlagSet(value.flags, CellFlags::ColoredGlyph));
+    WI_SetFlagIf(options, D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT, WI_IsFlagSet(value->flags, CellFlags::ColoredGlyph));
 
     _r.d2dRenderTarget->BeginDraw();
     // We could call

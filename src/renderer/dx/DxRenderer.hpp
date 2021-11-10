@@ -103,8 +103,6 @@ namespace Microsoft::Console::Render
             ForComposition
         };
 
-        static constexpr bool debugGeneralPerformance = false;
-
         SwapChainMode _chainMode;
 
         HWND _hwndTarget;

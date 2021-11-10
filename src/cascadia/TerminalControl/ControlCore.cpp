@@ -285,7 +285,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(_settings.Opacity()) * static_cast<int>(_settings.BackgroundImage().empty()));
+            const auto backgroundIsOpaque = _settings.Opacity() == 1.0 && _settings.BackgroundImage().empty();
+            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(backgroundIsOpaque));
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -1308,7 +1309,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             auto lock = _terminal->LockForWriting();
-            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(opacity) * static_cast<int>(_settings.BackgroundImage().empty()));
+            const auto backgroundIsOpaque = opacity == 1.0 && _settings.BackgroundImage().empty();
+            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(backgroundIsOpaque));
         }
     }
 

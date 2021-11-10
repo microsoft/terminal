@@ -1459,7 +1459,7 @@ CATCH_RETURN()
     // Finally... if we're not using effects at all... let the render thread
     // go to sleep. It deserves it. That thread works hard. Also it sleeping
     // saves battery power and all sorts of related perf things.
-    return debugGeneralPerformance || (_terminalEffectsEnabled && !_pixelShaderPath.empty());
+    return _terminalEffectsEnabled && !_pixelShaderPath.empty();
 }
 
 // Method Description:
@@ -1467,16 +1467,18 @@ CATCH_RETURN()
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
 {
-    if constexpr (!debugGeneralPerformance)
+    if (!_swapChainFrameLatencyWaitableObject)
     {
-        // Throttle the DxEngine a bit down to ~60 FPS.
-        // This improves throughput for rendering complex or colored text.
-        Sleep(8);
+        return;
+    }
 
-        if (_swapChainFrameLatencyWaitableObject)
-        {
-            WaitForSingleObjectEx(_swapChainFrameLatencyWaitableObject.get(), 1000, true);
-        }
+    const auto ret = WaitForSingleObjectEx(
+        _swapChainFrameLatencyWaitableObject.get(),
+        1000, // 1 second timeout (shouldn't ever occur)
+        true);
+    if (ret != WAIT_OBJECT_0)
+    {
+        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
     }
 }
 

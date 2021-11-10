@@ -387,6 +387,7 @@ catch (const wil::ResultException& exception)
 CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::EndPaint() noexcept
+try
 {
     _flushBufferLine();
 
@@ -395,6 +396,7 @@ CATCH_RETURN()
     _api.scrollOffset = 0;
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] bool AtlasEngine::RequiresContinuousRedraw() noexcept
 {
@@ -407,7 +409,7 @@ void AtlasEngine::WaitUntilCanRender() noexcept
     {
         if (_r.frameLatencyWaitableObject)
         {
-            WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 1000, true);
+            WaitForSingleObjectEx(_r.frameLatencyWaitableObject.get(), 100, true);
 #ifndef NDEBUG
             _r.frameLatencyWaitableObjectUsed = true;
 #endif
@@ -500,6 +502,7 @@ CATCH_RETURN()
 }
 
 [[nodiscard]] HRESULT AtlasEngine::PaintSelection(SMALL_RECT rect) noexcept
+try
 {
     // Unfortunately there's no step after Renderer::_PaintBufferOutput that
     // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
@@ -508,8 +511,10 @@ CATCH_RETURN()
     _setCellFlags(rect, CellFlags::Selected, CellFlags::Selected);
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::PaintCursor(const CursorOptions& options) noexcept
+try
 {
     // Unfortunately there's no step after Renderer::_PaintBufferOutput that
     // would inform us that it's done with the last AtlasEngine::PaintBufferLine.
@@ -549,8 +554,10 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 [[nodiscard]] HRESULT AtlasEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes, const gsl::not_null<IRenderData*> pData, const bool usingSoftFont, const bool isSettingDefaultBrushes) noexcept
+try
 {
     const auto [fg, bg] = pData->GetAttributeColors(textAttributes);
 
@@ -586,6 +593,7 @@ CATCH_RETURN()
 
     return S_OK;
 }
+CATCH_RETURN()
 
 #pragma endregion
 
@@ -946,18 +954,19 @@ void AtlasEngine::_recreateFontDependentResources()
         // If they're -1.0f they haven't been set by the user and must be filled by us.
         // When we call SetFontAxisValues() we basically override (disable) DirectWrite's internal font axes,
         // and if either of the 3 aren't set we'd make it impossible for the user to see bold/italic text.
+#pragma warning(suppress : 26494) // Variable 'standardAxes' is uninitialized. Always initialize an object (type.5).
         std::array<DWRITE_FONT_AXIS_VALUE, 3> standardAxes;
 
         if (!_api.fontAxisValues.empty())
         {
-            assert(_api.fontAxisValues.size() >= standardAxes.size());
-            std::copy_n(_api.fontAxisValues.data(), standardAxes.size(), standardAxes.data());
+            Expects(_api.fontAxisValues.size() >= standardAxes.size());
+            memcpy(standardAxes.data(), _api.fontAxisValues.data(), sizeof(standardAxes));
         }
 
-        const auto restoreFontAxisValues = wil::scope_exit([&]() {
+        const auto restoreFontAxisValues = wil::scope_exit([&]() noexcept {
             if (!_api.fontAxisValues.empty())
             {
-                std::copy_n(standardAxes.data(), standardAxes.size(), _api.fontAxisValues.data());
+                memcpy(_api.fontAxisValues.data(), standardAxes.data(), sizeof(standardAxes));
             }
         });
 
@@ -1101,10 +1110,13 @@ void AtlasEngine::_flushBufferLine()
         return;
     }
 
-    const auto cleanup = wil::scope_exit([this]() {
+    const auto cleanup = wil::scope_exit([this]() noexcept {
         _api.bufferLine.clear();
         _api.bufferLineColumn.clear();
     });
+
+    // This would seriously blow us up otherwise.
+    Expects(_api.bufferLineColumn.size() == _api.bufferLine.size() + 1);
 
     // NOTE:
     // This entire function is one huge hack to see if it works.
@@ -1152,16 +1164,16 @@ void AtlasEngine::_flushBufferLine()
 #pragma warning(suppress : 26494) // Variable 'mappedEnd' is uninitialized. Always initialize an object (type.5).
     for (u32 idx = 0, mappedEnd; idx < _api.bufferLine.size(); idx = mappedEnd)
     {
+        float scale = 1.0f;
+
         if (_sr.systemFontFallback)
         {
             u32 mappedLength = 0;
-            float scale = 0;
 
             if (textFormatAxis)
             {
-                const auto systemFontFallback1 = reinterpret_cast<IDWriteFontFallback1*>(_sr.systemFontFallback.get());
                 wil::com_ptr<IDWriteFontFace5> fontFace5;
-                THROW_IF_FAILED(systemFontFallback1->MapCharacters(
+                THROW_IF_FAILED(_sr.systemFontFallback.query<IDWriteFontFallback1>()->MapCharacters(
                     /* analysisSource */ &atlasAnalyzer,
                     /* textPosition */ idx,
                     /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
@@ -1171,7 +1183,8 @@ void AtlasEngine::_flushBufferLine()
                     /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
                     /* mappedLength */ &mappedLength,
                     /* scale */ &scale,
-                    /* mappedFontFace */ reinterpret_cast<IDWriteFontFace5**>(mappedFontFace.put())));
+                    /* mappedFontFace */ fontFace5.put()));
+                mappedFontFace = std::move(fontFace5);
             }
             else
             {
@@ -1203,23 +1216,21 @@ void AtlasEngine::_flushBufferLine()
 
             if (!mappedFontFace)
             {
-                // We can reuse idx here, as it'll be reset to "idx = mappedEnd" in the outer loop anyways.
-                auto beg = _api.bufferLineColumn[idx++];
-                for (; idx <= mappedEnd; ++idx)
+                auto pos1 = idx;
+                auto col1 = _api.bufferLineColumn[pos1];
+                for (auto pos2 = idx + 1; pos2 <= mappedEnd; ++pos2)
                 {
-                    const auto cur = _api.bufferLineColumn[idx];
-                    if (beg != cur)
+                    if (const auto col2 = _api.bufferLineColumn[pos2]; col1 != col2)
                     {
                         static constexpr auto replacement = L'\uFFFD';
-                        _emplaceGlyph(nullptr, &replacement, 1, beg, cur);
-                        beg = cur;
+                        _emplaceGlyph(nullptr, scale, pos1, pos2);
+                        pos1 = pos2;
+                        col1 = col2;
                     }
                 }
 
                 continue;
             }
-
-            assert(scale == 1.0f);
         }
         else
         {
@@ -1250,7 +1261,7 @@ void AtlasEngine::_flushBufferLine()
             {
                 for (size_t i = 0; i < complexityLength; ++i)
                 {
-                    _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[idx + i], 1, _api.bufferLineColumn[idx + i], _api.bufferLineColumn[idx + i + 1u]);
+                    _emplaceGlyph(mappedFontFace.get(), scale, idx + i, idx + i + 1u);
                 }
             }
             else
@@ -1334,7 +1345,7 @@ void AtlasEngine::_flushBufferLine()
                     {
                         if (_api.textProps[i].canBreakShapingAfter)
                         {
-                            _emplaceGlyph(mappedFontFace.get(), &_api.bufferLine[a.textPosition + beg], i + 1 - beg, _api.bufferLineColumn[a.textPosition + beg], _api.bufferLineColumn[a.textPosition + i + 1]);
+                            _emplaceGlyph(mappedFontFace.get(), scale, a.textPosition + beg, a.textPosition + i + 1);
                             beg = i + 1;
                         }
                     }
@@ -1344,17 +1355,25 @@ void AtlasEngine::_flushBufferLine()
     }
 }
 
-void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* chars, size_t charCount, u16 x1, u16 x2)
+void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2)
 {
-    assert(chars && charCount != 0);
-    assert(x1 < x2 && x2 <= _r.cellCount.x);
+    // This would seriously blow us up otherwise.
+    Expects(bufferPos1 < bufferPos2 && bufferPos2 <= _api.bufferLine.size());
+
+    const auto chars = &_api.bufferLine[bufferPos1];
+    const auto charCount = bufferPos2 - bufferPos1;
+    // _flushBufferLine() ensures that bufferLineColumn.size() > bufferLine.size().
+    const auto x1 = _api.bufferLineColumn[bufferPos1];
+    const auto x2 = _api.bufferLineColumn[bufferPos2];
+
+    Expects(x1 < x2 && x2 <= _api.cellCount.x);
 
     const u16 cellCount = x2 - x1;
 
     auto attributes = _api.attributes;
     attributes.cellCount = cellCount;
 
-    auto [it, inserted] = _r.glyphs.emplace(std::piecewise_construct, std::forward_as_tuple(attributes, gsl::narrow<u16>(charCount), chars), std::forward_as_tuple());
+    const auto [it, inserted] = _r.glyphs.emplace(std::piecewise_construct, std::forward_as_tuple(attributes, gsl::narrow<u16>(charCount), chars), std::forward_as_tuple());
     const auto& key = it->first;
     auto& value = it->second;
 
@@ -1396,9 +1415,9 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, const wchar_t* chars,
         _r.maxEncounteredCellCount = std::max(_r.maxEncounteredCellCount, cellCount);
     }
 
-    const auto& valueData = value.data();
-    const auto coords = &valueData.coords[0];
-    const auto flags = valueData.flags | _api.bufferLineMetadata[x1].flags;
+    const auto valueData = value.data();
+    const auto coords = &valueData->coords[0];
+    const auto flags = valueData->flags | _api.bufferLineMetadata[x1].flags;
     const auto color = _api.bufferLineMetadata[x1].colors;
     const auto data = _getCell(x1, _api.currentRow);
 

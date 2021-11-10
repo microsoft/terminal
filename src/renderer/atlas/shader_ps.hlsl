@@ -60,7 +60,7 @@ float4 main(float4 pos: SV_Position): SV_Target
 
     // If you want to write test a before/after change simultaneously
     // you can turn the image into a checkerboard by writing:
-    //   if ((uint(pos.x / 4) ^ uint(pos.y / 4)) & 1) { return float(1, 0, 0, 1); }
+    //   if ((uint(pos.x) ^ uint(pos.y)) / 4 & 1) { return float4(1, 0, 0, 1); }
     // This will generate a checkerboard of 4*4px red squares.
     // Of course you wouldn't just return a red color there, but instead
     // for instance run your new code and compare it with the old.
@@ -68,8 +68,6 @@ float4 main(float4 pos: SV_Position): SV_Target
     uint2 cellIndex = pos.xy / cellSize;
     uint2 cellPos = pos.xy % cellSize;
     Cell cell = cells[cellIndex.y * cellCountX + cellIndex.x];
-
-    //return glyphs[decodeU16x2(cell.glyphPos) + cellPos];
 
     // Layer 0:
     // The cell's background color
