@@ -52,7 +52,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     // - path: the path to the file to check
     // Return Value:
     // - true if it had the expected permissions. False otherwise.
-    static bool _hasElevatedOnlyPermissions(const std::filesystem::path& path)
+    static bool _isOwnedByAdministrators(const std::filesystem::path& path)
     {
         // If the file is owned by the administrators group, trust the
         // administrators instead of checking the DACL permissions. It's simpler
@@ -84,7 +84,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     {
         if (elevatedOnly)
         {
-            const bool hadExpectedPermissions{ _hasElevatedOnlyPermissions(path) };
+            const bool hadExpectedPermissions{ _isOwnedByAdministrators(path) };
             if (!hadExpectedPermissions)
             {
                 // delete the file. It's been compromised.
@@ -204,7 +204,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
             // If we're running in an elevated context, when this file is
             // created, it will automatically be owned by
             // Builtin\Administrators, which will pass the above
-            // _hasElevatedOnlyPermissions check.
+            // _isOwnedByAdministrators check.
             //
             // Programs running in an elevated context will be free to write the
             // file, and unelevated processes will be able to read the file. An
@@ -216,7 +216,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model
 
         wil::unique_hfile file{ CreateFileW(path.c_str(),
                                             GENERIC_WRITE,
-                                            FILE_SHARE_READ | FILE_SHARE_WRITE,
+                                            FILE_SHARE_READ | FILE_SHARE_DELETE,
                                             elevatedOnly ? &sa : nullptr,
                                             CREATE_ALWAYS,
                                             FILE_ATTRIBUTE_NORMAL,
