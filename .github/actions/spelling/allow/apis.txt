@@ -17,6 +17,7 @@ COLORPROPERTY
 colspan
 COMDLG
 comparand
+commandlinetoargv
 cstdint
 CXICON
 CYICON
@@ -161,6 +162,7 @@ toupper
 TTask
 TVal
 UChar
+ULARGE
 UPDATEINIFILE
 userenv
 wcsstr
