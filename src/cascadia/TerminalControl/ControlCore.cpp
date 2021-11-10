@@ -451,16 +451,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // is what the Terminal did prior to 1.12.
         if (!IsVintageOpacityAvailable())
         {
-            // const auto oldUseAcrylic{ UseAcrylic() };
             _runtimeUseAcrylic = newOpacity < 1.0;
-            // // If they've changed the value of UseAcrylic, then update the
-            // // renderer as well.
-            // if (oldUseAcrylic != UseAcrylic() && _renderEngine)
-            // {
-            //     // GH#5098: Inform the engine of the new opacity of the default
-            //     // text background.
-            // }
         }
+
+        // Update the renderer as well. It might need to fall back from
+        // cleartype -> grayscale if the BG is transparent / acrylic.
         _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);

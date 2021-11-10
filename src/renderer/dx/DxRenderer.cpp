@@ -1941,11 +1941,16 @@ CATCH_RETURN()
 {
     const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultBackgroundIsTransparent != 0;
+    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+    // (usingCleartype && !(_defaultBackgroundIsTransparent == 0)) -> wrong, both acry(50)&vint(50) got solid BGs, as well as acry(100)
+
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     // October 2021: small changes were made to the way BG color interacts with
     // grayscale AA, esp. with regards to acrylic and GH#5098. See comment in
     // _ShouldForceGrayscaleAA for more details.
-    _backgroundColor = _ColorFFromColorRef(colorBackground);
+    _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
