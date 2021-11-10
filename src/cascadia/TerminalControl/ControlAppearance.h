@@ -37,9 +37,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _runtimeColorTable.at(index) = color;
         }
 
-        std::array<winrt::Microsoft::Terminal::Core::Color, 16> ColorTable() { return _ColorTable; }
-        void ColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> /*colors*/) {}
-
         ControlAppearance(Control::IControlAppearance appearance)
         {
 #define COPY_SETTING(type, name, ...) _##name = appearance.name();

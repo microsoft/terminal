@@ -244,7 +244,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
+            _renderEngine->SetSelectionBackground(til::color{ _settings->FocusedAppearance()->SelectionBackground() });
 
             const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
@@ -267,11 +267,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
             _renderEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
 
-            _renderEngine->SetRetroTerminalEffect(_settings->RetroTerminalEffect());
-            _renderEngine->SetPixelShaderPath(_settings->PixelShaderPath());
+            _renderEngine->SetRetroTerminalEffect(_settings->FocusedAppearance()->RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings->FocusedAppearance()->PixelShaderPath());
             _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
-            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
+            _renderEngine->SetIntenseIsBold(_settings->FocusedAppearance()->IntenseIsBold());
 
             _updateAntiAliasingMode(_renderEngine.get());
 
@@ -475,7 +475,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // specify a custom pixel shader, manually enable the legacy retro
         // effect first. This will ensure that a toggle off->on will still work,
         // even if they currently have retro effect off.
-        if (_settings->PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
+        if (_settings->FocusedAppearance()->PixelShaderPath().empty() && !_renderEngine->GetRetroTerminalEffect())
         {
             // SetRetroTerminalEffect to true will enable the effect. In this
             // case, the shader effect will already be disabled (because neither
@@ -597,7 +597,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
         // didn't explicitly request acrylic, then opt them in to acrylic.
         // On Windows 11+, this isn't needed, because we can have vintage opacity.
-        if (!IsVintageOpacityAvailable() && _settings->Opacity() < 1.0 && !_settings->UseAcrylic())
+        if (!IsVintageOpacityAvailable() && _settings->FocusedAppearance()->Opacity() < 1.0 && !_settings->UseAcrylic())
         {
             _runtimeUseAcrylic = true;
         }
@@ -660,7 +660,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance->SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance->RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance->PixelShaderPath());
-            _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
+            _renderEngine->SetIntenseIsBold(newAppearance->IntenseIsBold());
             _renderer->TriggerRedrawAll();
         }
     }
@@ -993,7 +993,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      til::color{ _settings->DefaultBackground() }) :
+                                                      til::color{ _settings->FocusedAppearance()->DefaultBackground() }) :
                                   "";
 
         // convert to RTF format
@@ -1001,7 +1001,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    til::color{ _settings->DefaultBackground() }) :
+                                                    til::color{ _settings->FocusedAppearance()->DefaultBackground() }) :
                                  "";
 
         if (!_settings->CopyOnSelect())
