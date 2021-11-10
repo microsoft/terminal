@@ -67,9 +67,7 @@
         <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
         <Setter Property="Padding" Value="16,0,8,0" />
         <Setter Property="Margin" Value="0,4,0,0" />
-        <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
-        <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
 
     <Style x:Key="SettingsPageItemHeaderStyle"
@@ -95,26 +93,22 @@
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="local:SettingContainer">
-                    <StackPanel>
-                        <Grid Style="{StaticResource NonExpanderGrid}">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel>
-                                <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
-                                           Text="{TemplateBinding Header}" />
-                                <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
-                                           Text="{TemplateBinding HelpText}" />
-                            </StackPanel>
-                            <ContentPresenter Grid.Column="1"
-                                              MinWidth="0"
-                                              HorizontalAlignment="Right"
-                                              VerticalAlignment="Center"
-                                              Content="{TemplateBinding Content}"
-                                              HighContrastAdjustment="None" />
-                        </Grid>
-                    </StackPanel>
+                    <Grid Style="{StaticResource NonExpanderGrid}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Style="{StaticResource SettingsPageItemHeaderStyle}"
+                                       Text="{TemplateBinding Header}" />
+                            <TextBlock Style="{StaticResource SettingsPageItemDescriptionStyle}"
+                                       Text="{TemplateBinding HelpText}" />
+                        </StackPanel>
+                        <ContentPresenter Grid.Column="1"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          Content="{TemplateBinding Content}" />
+                    </Grid>
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
@@ -127,7 +121,8 @@
                 <ControlTemplate TargetType="local:SettingContainer">
                     <muxc:Expander Margin="0,4,8,0"
                                    HorizontalAlignment="Stretch"
-                                   HorizontalContentAlignment="Stretch">
+                                   HorizontalContentAlignment="Stretch"
+                                   Content="{TemplateBinding Content}">
                         <muxc:Expander.Header>
                             <Grid MinHeight="64">
                                 <Grid.ColumnDefinitions>
@@ -148,9 +143,6 @@
                                            Text="{TemplateBinding CurrentValue}" />
                             </Grid>
                         </muxc:Expander.Header>
-                        <muxc:Expander.Content>
-                            <ContentPresenter Content="{TemplateBinding Content}" />
-                        </muxc:Expander.Content>
                     </muxc:Expander>
                 </ControlTemplate>
             </Setter.Value>
