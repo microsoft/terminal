@@ -170,7 +170,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         static bool IsVintageOpacityAvailable() noexcept;
 
-        RUNTIME_SETTING(double, Opacity, _settings->FocusedAppearance()->Opacity());
+        RUNTIME_SETTING(double, Opacity, _settings->Opacity());
         RUNTIME_SETTING(bool, UseAcrylic, _settings->UseAcrylic());
 
         // -------------------------------- WinRT Events ---------------------------------

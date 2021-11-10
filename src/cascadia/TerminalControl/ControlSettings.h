@@ -15,7 +15,7 @@ using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstrin
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
-    struct ControlSettings : public winrt::implements<ControlSettings, Microsoft::Terminal::Control::IControlSettings, Microsoft::Terminal::Core::ICoreSettings>
+    struct ControlSettings : public winrt::implements<ControlSettings, Microsoft::Terminal::Control::IControlSettings, Microsoft::Terminal::Control::IControlAppearance, Microsoft::Terminal::Core::ICoreSettings, Microsoft::Terminal::Core::ICoreAppearance>
     {
         // Getters and setters for each *Setting member. We're not using
         // WINRT_PROPERTY for these, because they actually exist inside the
@@ -53,7 +53,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         winrt::com_ptr<ControlAppearance> FocusedAppearance() { return _focusedAppearance; }
         bool HasUnfocusedAppearance() { return _hasUnfocusedAppearance; }
 
-        // NOTABLY: ControlSettings is not an Appearance. Make sure to get the
-        // Appearance you actually want out of it.
+        // Getters and setters for each Appearance member. We're not using
+        // WINRT_PROPERTY for these, because they actually exist inside the
+        // _focusedAppearance member. We don't need to reserve another member to
+        // hold them.
+        //
+        // The Appearance members (including GetColorTableEntry below) are used
+        // when this ControlSettings is cast to a IControlAppearance or
+        // ICoreAppearance. In those cases, we'll always return the Focused
+        // appearance's version of the member. Callers who care about which
+        // appearance is being used should be more careful. Fortunately, this
+        // situation is generally only used when a control is first created, or
+        // when calling UpdateSettings.
+#define APPEARANCE_GEN(type, name, ...)                               \
+    type name() const noexcept { return _focusedAppearance->name(); } \
+    void name(const type& value) noexcept { _focusedAppearance->name(value); }
+
+        CORE_APPEARANCE_SETTINGS(APPEARANCE_GEN)
+        CONTROL_APPEARANCE_SETTINGS(APPEARANCE_GEN)
+#undef APPEARANCE_GEN
+
+        winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
+        {
+            return _focusedAppearance->GetColorTableEntry(index);
+        }
     };
 }
