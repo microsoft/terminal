@@ -76,9 +76,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         THROW_IF_WIN32_BOOL_FALSE(
             ConvertStringSidToSidW(L"BA", wil::out_param_ptr<PSID*>(psidAdmins)));
 
-        // Compare the owner SID to the administrators SID via
-        // EqualSid(psidOwner, psidAdmins). This does a low-level memory
-        // comparison of the SIDs.
         return EqualSid(psidOwner, psidAdmins.get());
     }
     // Tries to read a file somewhat atomically without locking it.
