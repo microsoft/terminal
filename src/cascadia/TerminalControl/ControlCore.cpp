@@ -277,7 +277,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
+            _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -459,7 +459,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 // GH#5098: Inform the engine of the new opacity of the default
                 // text background.
                 auto lock = _terminal->LockForWriting();
-                _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
+                _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
             }
         }
 
@@ -629,7 +629,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
-        _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
+        _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
 
         _updateAntiAliasingMode(_renderEngine.get());
 
@@ -1632,6 +1632,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _settings->FocusedAppearance()->SetColorTableEntry(15, scheme.BrightWhite);
 
         _terminal->ApplyScheme(scheme);
+        _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
         _renderer->TriggerRedrawAll();
         _BackgroundColorChangedHandlers(*this, nullptr);
@@ -1640,5 +1641,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::HasUnfocusedAppearance() const
     {
         return _settings->HasUnfocusedAppearance();
+    }
+
+    bool ControlCore::_correctForTransparency()
+    {
+        return Opacity() < 1.0f || UseAcrylic();
     }
 }

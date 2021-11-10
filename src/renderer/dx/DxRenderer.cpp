@@ -88,7 +88,7 @@ DxEngine::DxEngine() :
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
-    _defaultBackgroundIsTransparent{ false },
+    _defaultBackgroundIsTransparent{ 0xff000000 },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -2248,7 +2248,7 @@ CATCH_LOG()
 void DxEngine::SetDefaultTextBackgroundOpacity(const bool useAcrylic) noexcept
 try
 {
-    _defaultBackgroundIsTransparent = useAcrylic;
+    _defaultBackgroundIsTransparent = useAcrylic ? 0xff000000 : 0;
 
     // Make sure we redraw all the cells, to update whether they're actually
     // drawn with cleartype or not.

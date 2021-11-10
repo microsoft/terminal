@@ -257,7 +257,7 @@ namespace Microsoft::Console::Render
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
-        bool _defaultBackgroundIsTransparent;
+        uint32_t _defaultBackgroundIsTransparent;
         bool _intenseIsBold;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.

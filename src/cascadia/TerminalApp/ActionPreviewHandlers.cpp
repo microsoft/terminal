@@ -92,7 +92,7 @@ namespace winrt::TerminalApp::implementation
         {
             // Clear the saved preview funcs because we don't need to add a restore each time
             // the preview color changes, we only need to be able to restore the last one.
-            _restorePreviewFuncs.clear();
+            // _restorePreviewFuncs.clear();
 
             _ApplyToActiveControls([&](const auto& control) {
                 // Stash a copy of the original scheme.
@@ -127,9 +127,10 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_PreviewActionHandler(const IInspectable& /*sender*/,
                                              const Microsoft::Terminal::Settings::Model::Command& args)
     {
+        _EndPreview();
         if (args == nullptr || args.ActionAndArgs() == nullptr)
         {
-            _EndPreview();
+            // _EndPreview();
         }
         else
         {

@@ -274,6 +274,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
 
+        bool _correctForTransparency();
+
         inline bool _IsClosing() const noexcept
         {
 #ifndef NDEBUG
