@@ -1498,18 +1498,13 @@ CATCH_RETURN()
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
 {
-    if (!_swapChainFrameLatencyWaitableObject)
-    {
-        return;
-    }
+    // Throttle the DxEngine a bit down to ~60 FPS.
+    // This improves throughput for rendering complex or colored text.
+    Sleep(8);
 
-    const auto ret = WaitForSingleObjectEx(
-        _swapChainFrameLatencyWaitableObject.get(),
-        1000, // 1 second timeout (shouldn't ever occur)
-        true);
-    if (ret != WAIT_OBJECT_0)
+    if (_swapChainFrameLatencyWaitableObject)
     {
-        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
+        WaitForSingleObjectEx(_swapChainFrameLatencyWaitableObject.get(), 100, true);
     }
 }
 

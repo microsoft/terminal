@@ -74,6 +74,6 @@ HRESULT RenderEngineBase::PrepareLineTransform(const LineRendition /*lineRenditi
 // - Blocks until the engine is able to render without blocking.
 void RenderEngineBase::WaitUntilCanRender() noexcept
 {
-    // Throttle the render loop a bit by default.
+    // Throttle the render loop a bit by default (~60 FPS), improving throughput.
     Sleep(8);
 }
