@@ -898,7 +898,7 @@ namespace winrt::TerminalApp::implementation
                 // try to persist the actions in the window state, we won't be
                 // able to. We'll try to look up the action and the map just
                 // won't exist. We'll explode, even though the Terminal is
-                // tearing down anyways. So we'll just die, but still inboke
+                // tearing down anyways. So we'll just die, but still invoke
                 // WinDBG's post-mortem debugger, who won't be able to attach to
                 // the process that's already exiting.
                 //

@@ -131,6 +131,7 @@ RETURNCMD
 rfind
 roundf
 RSHIFT
+SACL
 schandle
 semver
 serializer
