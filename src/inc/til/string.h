@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "string_ext.h"
-
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
     _TIL_INLINEPREFIX std::wstring visualize_control_codes(std::wstring str) noexcept
@@ -160,6 +158,20 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }
 
         return c;
+    }
+
+    // Just like std::wstring_view::operator==().
+    //
+    // At the time of writing wmemcmp() is not an intrinsic for MSVC,
+    // but the STL uses it to implement wide string comparisons.
+    // This produces 3x the assembly _per_ comparison and increases
+    // runtime by 2-3x for strings of medium length (16 characters)
+    // and 5x or more for long strings (128 characters or more).
+    // See: https://github.com/microsoft/STL/issues/2289
+    template<typename T, typename Traits>
+    bool equals(const std::basic_string_view<T, Traits>& str1, const std::basic_string_view<T, Traits>& str2) noexcept
+    {
+        return lhs.size() == rhs.size() && __builtin_memcmp(lhs.data(), rhs.data(), lhs.size() * sizeof(T)) == 0;
     }
 
     // Just like _memicmp, but without annoying locales.
