@@ -2509,53 +2509,55 @@ ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
 // - None
 void AdaptDispatch::_ReportSGRSetting() const
 {
+    using namespace std::string_view_literals;
+
     // A valid response always starts with DCS 1 $ r.
     // Then the '0' parameter is to reset the SGR attributes to the defaults.
-    std::wstring response = L"\033P1$r0";
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r0"sv);
 
     TextAttribute attr;
     if (_pConApi->PrivateGetTextAttributes(attr))
     {
         // For each boolean attribute that is set, we add the appropriate
         // parameter value to the response string.
-        const auto addAttribute = [&](const auto parameter, const auto enabled) {
+        const auto addAttribute = [&](const auto& parameter, const auto enabled) {
             if (enabled)
             {
-                response += parameter;
+                response.append(parameter);
             }
         };
-        addAttribute(L";1", attr.IsBold());
-        addAttribute(L";2", attr.IsFaint());
-        addAttribute(L";3", attr.IsItalic());
-        addAttribute(L";4", attr.IsUnderlined());
-        addAttribute(L";5", attr.IsBlinking());
-        addAttribute(L";7", attr.IsReverseVideo());
-        addAttribute(L";8", attr.IsInvisible());
-        addAttribute(L";9", attr.IsCrossedOut());
-        addAttribute(L";21", attr.IsDoublyUnderlined());
-        addAttribute(L";53", attr.IsOverlined());
+        addAttribute(L";1"sv, attr.IsBold());
+        addAttribute(L";2"sv, attr.IsFaint());
+        addAttribute(L";3"sv, attr.IsItalic());
+        addAttribute(L";4"sv, attr.IsUnderlined());
+        addAttribute(L";5"sv, attr.IsBlinking());
+        addAttribute(L";7"sv, attr.IsReverseVideo());
+        addAttribute(L";8"sv, attr.IsInvisible());
+        addAttribute(L";9"sv, attr.IsCrossedOut());
+        addAttribute(L";21"sv, attr.IsDoublyUnderlined());
+        addAttribute(L";53"sv, attr.IsOverlined());
 
         // We also need to add the appropriate color encoding parameters for
         // both the foreground and background colors.
         const auto addColor = [&](const auto base, const auto color) {
-            const auto iterator = std::back_insert_iterator(response);
             if (color.IsIndex16())
             {
                 const auto index = color.GetIndex();
                 const auto colorParameter = base + (index >= 8 ? 60 : 0) + (index % 8);
-                fmt::format_to(iterator, FMT_STRING(L";{}"), colorParameter);
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}"), colorParameter);
             }
             else if (color.IsIndex256())
             {
                 const auto index = color.GetIndex();
-                fmt::format_to(iterator, FMT_STRING(L";{};5;{}"), base + 8, index);
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
             }
             else if (color.IsRgb())
             {
                 const auto r = GetRValue(color.GetRGB());
                 const auto g = GetGValue(color.GetRGB());
                 const auto b = GetBValue(color.GetRGB());
-                fmt::format_to(iterator, FMT_STRING(L";{};2;{};{};{}"), base + 8, r, g, b);
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};2;{};{};{}"), base + 8, r, g, b);
             }
         };
         addColor(30, attr.GetForeground());
@@ -2563,8 +2565,8 @@ void AdaptDispatch::_ReportSGRSetting() const
     }
 
     // The 'm' indicates this is an SGR response, and ST ends the sequence.
-    response += L"m\033\\";
-    _WriteResponse(response);
+    response.append(L"m\033\\"sv);
+    _WriteResponse({ response.data(), response.size() });
 }
 
 // Method Description:
@@ -2575,8 +2577,11 @@ void AdaptDispatch::_ReportSGRSetting() const
 // - None
 void AdaptDispatch::_ReportDECSTBMSetting() const
 {
+    using namespace std::string_view_literals;
+
     // A valid response always starts with DCS 1 $ r.
-    std::wstring response = L"\033P1$r";
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
     csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
@@ -2592,11 +2597,10 @@ void AdaptDispatch::_ReportDECSTBMSetting() const
             marginTop = 1;
             marginBottom = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
         }
-        const auto iterator = std::back_insert_iterator(response);
-        fmt::format_to(iterator, FMT_STRING(L"{};{}"), marginTop, marginBottom);
+        fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop, marginBottom);
     }
 
     // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
-    response += L"r\033\\";
-    _WriteResponse(response);
+    response.append(L"r\033\\"sv);
+    _WriteResponse({ response.data(), response.size() });
 }
