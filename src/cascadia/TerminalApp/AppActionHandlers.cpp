@@ -174,10 +174,9 @@ namespace winrt::TerminalApp::implementation
         else if (const auto& realArgs = args.ActionArgs().try_as<SplitPaneArgs>())
         {
             _SplitPane(realArgs.SplitDirection(),
-                       realArgs.SplitMode(),
                        // This is safe, we're already filtering so the value is (0, 1)
                        ::base::saturated_cast<float>(realArgs.SplitSize()),
-                       realArgs.TerminalArgs());
+                       _MakePane(realArgs.TerminalArgs(), realArgs.SplitMode() == SplitType::Duplicate));
             args.Handled(true);
         }
     }

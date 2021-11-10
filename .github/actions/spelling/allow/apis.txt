@@ -9,6 +9,7 @@ BUILDBRANCH
 BUILDMSG
 BUILDNUMBER
 BYPOSITION
+BYCOMMAND
 charconv
 CLASSNOTAVAILABLE
 cmdletbinding
@@ -16,6 +17,7 @@ COLORPROPERTY
 colspan
 COMDLG
 comparand
+commandlinetoargv
 cstdint
 CXICON
 CYICON
@@ -85,6 +87,7 @@ LSHIFT
 MENUCOMMAND
 MENUDATA
 MENUINFO
+MENUITEMINFOW
 memicmp
 mptt
 mov
@@ -159,6 +162,7 @@ toupper
 TTask
 TVal
 UChar
+ULARGE
 UPDATEINIFILE
 userenv
 wcsstr

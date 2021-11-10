@@ -8,7 +8,7 @@
 using namespace Microsoft::Console;
 using namespace std::string_view_literals;
 
-static constexpr std::array<til::color, 16> campbellColorTable{
+static constexpr std::array<til::color, 256> standard256ColorTable{
     til::color{ 0x0C, 0x0C, 0x0C },
     til::color{ 0xC5, 0x0F, 0x1F },
     til::color{ 0x13, 0xA1, 0x0E },
@@ -25,25 +25,6 @@ static constexpr std::array<til::color, 16> campbellColorTable{
     til::color{ 0xB4, 0x00, 0x9E },
     til::color{ 0x61, 0xD6, 0xD6 },
     til::color{ 0xF2, 0xF2, 0xF2 },
-};
-
-static constexpr std::array<til::color, 256> standardXterm256ColorTable{
-    til::color{ 0x00, 0x00, 0x00 },
-    til::color{ 0x80, 0x00, 0x00 },
-    til::color{ 0x00, 0x80, 0x00 },
-    til::color{ 0x80, 0x80, 0x00 },
-    til::color{ 0x00, 0x00, 0x80 },
-    til::color{ 0x80, 0x00, 0x80 },
-    til::color{ 0x00, 0x80, 0x80 },
-    til::color{ 0xC0, 0xC0, 0xC0 },
-    til::color{ 0x80, 0x80, 0x80 },
-    til::color{ 0xFF, 0x00, 0x00 },
-    til::color{ 0x00, 0xFF, 0x00 },
-    til::color{ 0xFF, 0xFF, 0x00 },
-    til::color{ 0x00, 0x00, 0xFF },
-    til::color{ 0xFF, 0x00, 0xFF },
-    til::color{ 0x00, 0xFF, 0xFF },
-    til::color{ 0xFF, 0xFF, 0xFF },
     til::color{ 0x00, 0x00, 0x00 },
     til::color{ 0x00, 0x00, 0x5F },
     til::color{ 0x00, 0x00, 0x87 },
@@ -454,73 +435,21 @@ static constexpr til::presorted_static_map xorgAppColorTable{
     std::pair{ "yellowgreen"sv, til::color{ 154, 205, 50 } }
 };
 
-// Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the ANSI/VT RGB order.
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTable(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-
-    std::copy(campbellColorTable.begin(), campbellColorTable.end(), table.begin());
-}
-
-void Utils::InitializeCampbellColorTable(const gsl::span<til::color> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-
-    std::copy(campbellColorTable.begin(), campbellColorTable.end(), table.begin());
-}
-
 gsl::span<const til::color> Utils::CampbellColorTable()
 {
-    return gsl::make_span(campbellColorTable);
+    return gsl::make_span(standard256ColorTable).first(16);
 }
 
 // Function Description:
-// - Fill the first 16 entries of a given color table with the Campbell color
-//   scheme, in the Windows BGR order.
+// - Fill up to 256 entries of a given color table with the default values
 // Arguments:
-// - table: a color table with at least 16 entries
+// - table: a color table to be filled
 // Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::InitializeCampbellColorTableForConhost(const gsl::span<COLORREF> table)
+// - <none>
+void Utils::InitializeColorTable(const gsl::span<COLORREF> table)
 {
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    InitializeCampbellColorTable(table);
-    SwapANSIColorOrderForConhost(table);
-}
-
-// Function Description:
-// - modifies in-place the given color table from ANSI (RGB) order to Console order (BRG).
-// Arguments:
-// - table: a color table with at least 16 entries
-// Return Value:
-// - <none>, throws if the table has less that 16 entries
-void Utils::SwapANSIColorOrderForConhost(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 16);
-    std::swap(til::at(table, 1), til::at(table, 4));
-    std::swap(til::at(table, 3), til::at(table, 6));
-    std::swap(til::at(table, 9), til::at(table, 12));
-    std::swap(til::at(table, 11), til::at(table, 14));
-}
-
-// Function Description:
-// - Fill the first 255 entries of a given color table with the default values
-//      of a full 256-color table
-// Arguments:
-// - table: a color table with at least 256 entries
-// Return Value:
-// - <none>, throws if the table has less that 256 entries
-void Utils::Initialize256ColorTable(const gsl::span<COLORREF> table)
-{
-    THROW_HR_IF(E_INVALIDARG, table.size() < 256);
-
-    std::copy(standardXterm256ColorTable.begin(), standardXterm256ColorTable.end(), table.begin());
+    const auto tableSize = std::min(table.size(), standard256ColorTable.size());
+    std::copy_n(standard256ColorTable.begin(), tableSize, table.begin());
 }
 
 #pragma warning(push)

@@ -185,9 +185,9 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT _ClearScreen() noexcept;
         [[nodiscard]] HRESULT _ClearScrollback() noexcept;
         [[nodiscard]] HRESULT _ChangeTitle(const std::string& title) noexcept;
-        [[nodiscard]] HRESULT _SetGraphicsRendition16Color(const WORD wAttr,
+        [[nodiscard]] HRESULT _SetGraphicsRendition16Color(const BYTE index,
                                                            const bool fIsForeground) noexcept;
-        [[nodiscard]] HRESULT _SetGraphicsRendition256Color(const WORD index,
+        [[nodiscard]] HRESULT _SetGraphicsRendition256Color(const BYTE index,
                                                             const bool fIsForeground) noexcept;
         [[nodiscard]] HRESULT _SetGraphicsRenditionRGBColor(const COLORREF color,
                                                             const bool fIsForeground) noexcept;

@@ -1478,6 +1478,11 @@
           "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
           "type": "boolean"
         },
+        "trimPaste": {
+          "default": true,
+          "description": "When enabled, the Terminal will automatically trim trailing whitespace characters when pasting text",
+          "type": "boolean"
+        },
         "experimental.detectURLs": {
           "default": true,
           "description": "When set to true, URLs will be detected by the Terminal. This will cause URLs to underline on hover and be clickable by pressing Ctrl.",
