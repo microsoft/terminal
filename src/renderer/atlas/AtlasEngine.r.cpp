@@ -315,7 +315,8 @@ void AtlasEngine::_drawGlyph(const AtlasQueueItem& item) const
     THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(&key->chars[0], charsLength, textFormat, cells * _r.cellSizeDIP.x, _r.cellSizeDIP.y, textLayout.addressof()));
     if (item.scale != 1.0f)
     {
-        textLayout->SetFontSize(textFormat->GetFontSize() * item.scale, { 0, charsLength });
+        const auto f = textFormat->GetFontSize();
+        textLayout->SetFontSize(f * item.scale, { 0, charsLength });
     }
     if (_r.typography)
     {

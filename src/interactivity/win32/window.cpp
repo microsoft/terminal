@@ -222,7 +222,7 @@ void Window::_UpdateSystemMetrics() const
         switch (useDx)
         {
 #if TIL_FEATURE_CONHOSTDXENGINE_ENABLED
-        case 1:
+        case UseDx::DxEngine:
             pDxEngine = new DxEngine();
             // TODO: MSFT:21255595 make this less gross
             // Manually set the Dx Engine to Hwnd mode. When we're trying to
@@ -234,7 +234,7 @@ void Window::_UpdateSystemMetrics() const
             break;
 #endif
 #if TIL_FEATURE_ATLASENGINE_ENABLED
-        case 2:
+        case UseDx::AtlasEngine:
             pAtlasEngine = new AtlasEngine();
             g.pRender->AddRenderEngine(pAtlasEngine);
             break;

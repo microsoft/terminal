@@ -365,28 +365,31 @@ namespace Microsoft::Console::Render
             }
         };
 
-        // u16 so it neatly fits into AtlasValue.
         // These flags are shared with shader_ps.hlsl.
+        // If you change this be sure to copy it over to shader_ps.hlsl.
+        //
+        // clang-format off
         enum class CellFlags : u32
         {
-            None = 0,
-            Inlined = 1,
+            None            = 0x00000000,
+            Inlined         = 0x00000001,
 
-            ColoredGlyph = 2,
-            ThinFont = 4,
+            ColoredGlyph    = 0x00000002,
+            ThinFont        = 0x00000004,
 
-            Cursor = 8,
-            Selected = 16,
+            Cursor          = 0x00000008,
+            Selected        = 0x00000010,
 
-            BorderLeft = 32,
-            BorderTop = 64,
-            BorderRight = 128,
-            BorderBottom = 256,
-            Underline = 512,
-            UnderlineDotted = 1024,
-            UnderlineDouble = 2048,
-            Strikethrough = 4096,
+            BorderLeft      = 0x00000020,
+            BorderTop       = 0x00000040,
+            BorderRight     = 0x00000080,
+            BorderBottom    = 0x00000100,
+            Underline       = 0x00000200,
+            UnderlineDotted = 0x00000400,
+            UnderlineDouble = 0x00000800,
+            Strikethrough   = 0x00001000,
         };
+        // clang-format on
         ATLAS_FLAG_OPS(CellFlags, u32)
 
         // This structure is shared with the GPU shader and needs to follow certain alignment rules.

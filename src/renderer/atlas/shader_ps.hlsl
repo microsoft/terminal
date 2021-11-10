@@ -1,3 +1,27 @@
+#define INVALID_COLOR 0xffffffff
+
+// These flags are shared with AtlasEngine::CellFlags.
+//
+// clang-format off
+#define CellFlags_None            0x00000000
+#define CellFlags_Inlined         0x00000001
+
+#define CellFlags_ColoredGlyph    0x00000002
+#define CellFlags_ThinFont        0x00000004
+
+#define CellFlags_Cursor          0x00000008
+#define CellFlags_Selected        0x00000010
+
+#define CellFlags_BorderLeft      0x00000020
+#define CellFlags_BorderTop       0x00000040
+#define CellFlags_BorderRight     0x00000080
+#define CellFlags_BorderBottom    0x00000100
+#define CellFlags_Underline       0x00000200
+#define CellFlags_UnderlineDotted 0x00000400
+#define CellFlags_UnderlineDouble 0x00000800
+#define CellFlags_Strikethrough   0x00001000
+// clang-format on
+
 // According to Nvidia's "Understanding Structured Buffer Performance" guide
 // one should aim for structures with sizes divisible by 128 bits (16 bytes).
 // This prevents elements from spanning cache lines.
@@ -51,7 +75,9 @@ float4 alphaBlendPremultiplied(float4 bottom, float4 top)
     return float4(bottom.rgb * ia + top.rgb, bottom.a * ia + top.a);
 }
 
+// clang-format off
 float4 main(float4 pos: SV_Position): SV_Target
+// clang-format on
 {
     if (!insideRect(pos.xy, viewport))
     {
@@ -75,7 +101,7 @@ float4 main(float4 pos: SV_Position): SV_Target
 
     // Layer 1 (optional):
     // Colored cursors are drawn "in between" the background color and the text of a cell.
-    if ((cell.flags & 8) && cursorColor != 0xffffffff)
+    if ((cell.flags & CellFlags_Cursor) && cursorColor != INVALID_COLOR)
     {
         // The cursor texture is stored at the top-left-most glyph cell.
         // Cursor pixels are either entirely transparent or opaque.
@@ -88,7 +114,7 @@ float4 main(float4 pos: SV_Position): SV_Target
     {
         float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
 
-        if ((cell.flags & 2) == 0)
+        if (!(cell.flags & CellFlags_ColoredGlyph))
         {
             float4 fg = decodeRGBA(cell.color.x);
 
@@ -103,14 +129,14 @@ float4 main(float4 pos: SV_Position): SV_Target
 
     // Layer 3 (optional):
     // Uncolored cursors invert the cells color.
-    if ((cell.flags & 8) && cursorColor == 0xffffffff)
+    if ((cell.flags & CellFlags_Cursor) && cursorColor == INVALID_COLOR)
     {
         color.rgb = abs(glyphs[cellPos].rgb - color.rgb);
     }
 
     // Layer 4:
     // The current selection is drawn semi-transparent on top.
-    if (cell.flags & 16)
+    if (cell.flags & CellFlags_Selected)
     {
         color = alphaBlendPremultiplied(color, decodeRGBA(selectionColor));
     }

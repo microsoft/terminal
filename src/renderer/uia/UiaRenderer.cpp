@@ -262,7 +262,7 @@ CATCH_RETURN();
 }
 
 // RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
-// But UiaEngine is never the only the engine running. Overriding this function prevents
+// But UiaEngine is never the only engine running. Overriding this function prevents
 // us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
 void UiaEngine::WaitUntilCanRender() noexcept
 {

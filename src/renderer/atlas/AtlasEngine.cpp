@@ -1411,7 +1411,7 @@ void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t b
             coords[i] = _allocateAtlasTile();
         }
 
-        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value });
+        _r.glyphQueue.push_back(AtlasQueueItem{ &key, &value, scale });
         _r.maxEncounteredCellCount = std::max(_r.maxEncounteredCellCount, cellCount);
     }
 
