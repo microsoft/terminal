@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../renderer/inc/IRenderData.hpp"
+#include "../types/inc/colorTable.hpp"
 #include "../types/IUiaData.h"
 
 class RenderData final :
@@ -71,4 +72,8 @@ public:
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
     const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
+
+private:
+    COLORREF _defaultForeground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 7);
+    COLORREF _defaultBackground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 0);
 };

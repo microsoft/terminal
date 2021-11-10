@@ -5,7 +5,7 @@
 #include "inc/utils.hpp"
 #include "inc/colorTable.hpp"
 
-#include <wil/token_helpers.h >
+#include <wil/token_helpers.h>
 
 using namespace Microsoft::Console;
 

@@ -674,15 +674,6 @@ namespace winrt::TerminalApp::implementation
         co_return ContentDialogResult::None;
     }
 
-    winrt::Windows::Foundation::IAsyncOperation<ContentDialogResult> TerminalPage::_ShowCommandlineApproveWarning()
-    {
-        if (auto presenter{ _dialogPresenter.get() })
-        {
-            co_return co_await presenter.ShowDialog(FindName(L"ApproveCommandlineWarning").try_as<WUX::Controls::ContentDialog>());
-        }
-        co_return ContentDialogResult::None;
-    }
-
     // Method Description:
     // - Builds the flyout (dropdown) attached to the new tab button, and
     //   attaches it to the button. Populates the flyout with one entry per
@@ -876,14 +867,7 @@ namespace winrt::TerminalApp::implementation
                         WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
 
-        if (altPressed && !debugTap)
-        {
-            this->_SplitPane(SplitDirection::Automatic,
-                             SplitType::Manual,
-                             0.5f,
-                             newTerminalArgs);
-        }
-        else if (shiftPressed && !debugTap)
+        if (shiftPressed && !debugTap)
         {
             // Manually fill in the evaluated profile.
             if (newTerminalArgs.ProfileIndex() != nullptr)
@@ -899,7 +883,24 @@ namespace winrt::TerminalApp::implementation
         }
         else
         {
-            LOG_IF_FAILED(this->_OpenNewTab(newTerminalArgs));
+            const auto newPane = _MakePane(newTerminalArgs);
+            // If the newTerminalArgs caused us to open an elevated window
+            // instead of creating a pane, it may have returned nullptr. Just do
+            // nothing then.
+            if (!newPane)
+            {
+                return;
+            }
+            if (altPressed && !debugTap)
+            {
+                this->_SplitPane(SplitDirection::Automatic,
+                                 0.5f,
+                                 newPane);
+            }
+            else
+            {
+                _CreateNewTabFromPane(newPane);
+            }
         }
     }
 
@@ -1510,9 +1511,10 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Function Description:
-    // - Returns true if this commandline is precisely an executable in
-    //   system32. We can use this to bypass the elevated state check, because
-    //   we're confident that executables in that path won't have been hijacked.
+    // - Returns true if this commandline is a commandline that we know is safe.
+    //   Generally, this is true for any executables in system32. We can use
+    //   this to bypass the elevated state check, because we're confident that
+    //   executables in that path won't have been hijacked.
     //   - TECHNICALLY a user can take ownership of a file in system32 and
     //     replace it as the system administrator. You could say it's OK though
     //     because you'd already have to have had admin rights to mess that
@@ -1520,6 +1522,8 @@ namespace winrt::TerminalApp::implementation
     // - Will attempt to resolve environment strings.
     // - Will also manually allow commandlines as generated for the default WSL
     //   distros.
+    // - Will also trust %ProgramFiles%\Powershell\...\pwsh.exe paths, for
+    //   PowerShell Core.
     // Arguments:
     // - commandLine: the command to check.
     // Return Value (example):
@@ -1528,7 +1532,7 @@ namespace winrt::TerminalApp::implementation
     // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
     // - %SystemRoot%\System32\cmd.exe -> returns true
     // - %SystemRoot%\System32\wsl.exe -d <distro name> -> returns true
-    static bool _isInSystem32(std::wstring_view commandLine)
+    static bool _isTrustedCommandline(std::wstring_view commandLine)
     {
         // use C++11 magic statics to make sure we only do this once.
         static std::wstring systemDirectory = []() -> std::wstring {
@@ -1607,7 +1611,7 @@ namespace winrt::TerminalApp::implementation
                 // Using the string following "-d "...
                 const auto afterDashD{ arguments.substr(dashD + 3) };
                 // Find the next space
-                const auto afterFirstWord = afterDashD.substr(dashD + 3).find(L" ");
+                const auto afterFirstWord = afterDashD.find(L" ");
                 // if that space _wasn't_ at the end of the commandline, then
                 // there were some other args. That means it was `wsl -d distro
                 // anything`, and we should ask the user.
@@ -1615,6 +1619,33 @@ namespace winrt::TerminalApp::implementation
                 // So if it was at the end of the commandline, then there were
                 // no other args besides the distro name.
                 if (afterFirstWord == std::wstring::npos)
+                {
+                    return true;
+                }
+            }
+        }
+        else if (executableFilename == L"pwsh" || executableFilename == L"pwsh.exe")
+        {
+            // is does executablePath start with %ProgramFiles%\\PowerShell?
+            const std::filesystem::path powershellCoreRoot
+            {
+                wil::ExpandEnvironmentStringsW<std::wstring>(
+#if defined(_M_AMD64) || defined(_M_ARM64) // No point in looking for WOW if we're not somewhere it exists
+                    L"%ProgramFiles(x86)%\\PowerShell"
+#elif defined(_M_ARM64) // same with ARM
+                    L"%ProgramFiles(Arm)%\\PowerShell"
+#else
+                    L"%ProgramFiles%\\PowerShell"
+#endif
+                )
+            };
+
+            // Is the path to the commandline actually exactly one of the
+            // versions that exists in this directory?
+            for (const auto& versionedDir : std::filesystem::directory_iterator(powershellCoreRoot))
+            {
+                const auto versionedPath = versionedDir.path();
+                if (executablePath.parent_path() == versionedPath)
                 {
                     return true;
                 }
@@ -1637,11 +1668,11 @@ namespace winrt::TerminalApp::implementation
     {
         // NOTE: For debugging purposes, changing this to `true || IsElevated()`
         // is a handy way of forcing the elevation logic, even when unelevated.
-        if (IsElevated())
+        if (true || IsElevated())
         {
             // If the cmdline is EXACTLY an executable in
             // `C:\WINDOWS\System32`, then ignore this check.
-            if (_isInSystem32(cmdline))
+            if (_isTrustedCommandline(cmdline))
             {
                 return false;
             }
@@ -1687,11 +1718,7 @@ namespace winrt::TerminalApp::implementation
                         {
                             // Go ahead and allow them. Swap the control into
                             // the pane, which will initialize and start it.
-                            pane->ReplaceControl(otherWarning->Control());
-                            // Update the title, because replacing the control like
-                            // this is a little weird, and doesn't actually trigger
-                            // a TitleChanged by itself.
-                            tabImpl->UpdateTitle();
+                            tabImpl->ReplaceControl(pane, otherWarning->Control());
                         }
                         // Don't return true here. We want to make sure to check
                         // all the panes for the same commandline we just
@@ -1790,172 +1817,71 @@ namespace winrt::TerminalApp::implementation
 
     // Method Description:
     // - Split the focused pane either horizontally or vertically, and place the
-    //   given TermControl into the newly created pane.
+    //   given pane accordingly in the tree
     // Arguments:
+    // - newPane: the pane to add to our tree of panes
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
-    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
-    // - newTerminalArgs: An object that may contain a blob of parameters to
-    //   control which profile is created and with possible other
-    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    // - splitSize: the size of the split
     void TerminalPage::_SplitPane(const SplitDirection splitDirection,
-                                  const SplitType splitMode,
                                   const float splitSize,
-                                  const NewTerminalArgs& newTerminalArgs)
+                                  std::shared_ptr<Pane> newPane)
     {
         const auto focusedTab{ _GetFocusedTabImpl() };
-
-        // Do nothing if no TerminalTab is focused
-        if (!focusedTab)
-        {
-            // GH#632
-            // If there's no tab, but we're requesting a elevated split,
-            // we still want to toss that over to the elevated window. This is
-            // for something like
-            //
-            //   `wtd nt -p "elevated cmd" ; sp -p "elevated cmd"`
-            //
-            // We should just make two elevated tabs for that.
-
-            // Note: If the action was a "duplicate pane" action, but there's no
-            // existing tab to duplicate, then we can't resolve the profile from
-            // the existing pane. So in that scenario, we won't be able to toss
-            // anything over to the elevated window.
-            TerminalSettingsCreateResult controlSettings{ TerminalSettings::CreateWithNewTerminalArgs(_settings,
-                                                                                                      newTerminalArgs,
-                                                                                                      *_bindings) };
-            Profile profile{ _settings.GetProfileForArgs(newTerminalArgs) };
-            _maybeElevate(newTerminalArgs, controlSettings, profile);
-
-            return;
-        }
-
-        _SplitPane(*focusedTab, splitDirection, splitMode, splitSize, newTerminalArgs);
+        _SplitPane(*focusedTab, splitDirection, splitSize, newPane);
     }
 
     // Method Description:
     // - Split the focused pane of the given tab, either horizontally or vertically, and place the
-    //   given TermControl into the newly created pane.
+    //   given pane accordingly
     // Arguments:
     // - tab: The tab that is going to be split.
+    // - newPane: the pane to add to our tree of panes
     // - splitDirection: one value from the TerminalApp::SplitDirection enum, indicating how the
     //   new pane should be split from its parent.
-    // - splitMode: value from TerminalApp::SplitType enum, indicating the profile to be used in the newly split pane.
-    // - newTerminalArgs: An object that may contain a blob of parameters to
-    //   control which profile is created and with possible other
-    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    // - splitSize: the size of the split
     void TerminalPage::_SplitPane(TerminalTab& tab,
                                   const SplitDirection splitDirection,
-                                  const SplitType splitMode,
                                   const float splitSize,
-                                  const NewTerminalArgs& newTerminalArgs)
+                                  std::shared_ptr<Pane> newPane)
     {
-        try
+        // If the caller is calling us with the return value of _MakePane
+        // directly, it's possible that nullptr was returned, if the connections
+        // was supposed to be launched in an elevated window. In that case, do
+        // nothing here. We don't have a pane with which to create the split.
+        if (!newPane)
         {
-            TerminalSettingsCreateResult controlSettings{ nullptr };
-            Profile profile{ nullptr };
+            return;
+        }
+        const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
+        const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
+        const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
 
-            if (splitMode == SplitType::Duplicate)
+        auto realSplitType = splitDirection;
+        if (realSplitType == SplitDirection::Automatic)
+        {
+            realSplitType = tab.PreCalculateAutoSplit(availableSpace);
+        }
+
+        const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
+        if (!canSplit)
+        {
+            return;
+        }
+
+        _UnZoomIfNeeded();
+        tab.SplitPane(realSplitType, splitSize, newPane);
+
+        // After GH#6586, the control will no longer focus itself
+        // automatically when it's finished being laid out. Manually focus
+        // the control here instead.
+        if (_startupState == StartupState::Initialized)
+        {
+            if (const auto control = _GetActiveControl())
             {
-                profile = tab.GetFocusedProfile();
-                if (profile)
-                {
-                    // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
-                    profile = GetClosestProfileForDuplicationOfProfile(profile);
-                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
-                    const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
-                    const auto validWorkingDirectory = !workingDirectory.empty();
-                    if (validWorkingDirectory)
-                    {
-                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
-                    }
-                }
-                // TODO: GH#5047 - In the future, we should get the Profile of
-                // the focused pane, and use that to build a new instance of the
-                // settings so we can duplicate this tab/pane.
-                //
-                // Currently, if the profile doesn't exist anymore in our
-                // settings, we'll silently do nothing.
-                //
-                // In the future, it will be preferable to just duplicate the
-                // current control's settings, but we can't do that currently,
-                // because we won't be able to create a new instance of the
-                // connection without keeping an instance of the original Profile
-                // object around.
-            }
-            if (!profile)
-            {
-                profile = _settings.GetProfileForArgs(newTerminalArgs);
-                controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
-            }
-
-            // Try to handle auto-elevation
-            if (_maybeElevate(newTerminalArgs, controlSettings, profile))
-            {
-                return;
-            }
-
-            const auto controlConnection = _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
-
-            const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
-            const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
-            const winrt::Windows::Foundation::Size availableSpace{ contentWidth, contentHeight };
-
-            auto realSplitType = splitDirection;
-            if (realSplitType == SplitDirection::Automatic)
-            {
-                realSplitType = tab.PreCalculateAutoSplit(availableSpace);
-            }
-
-            const auto canSplit = tab.PreCalculateCanSplit(realSplitType, splitSize, availableSpace);
-            if (!canSplit)
-            {
-                return;
-            }
-
-            auto newControl = _InitControl(controlSettings, controlConnection);
-            WUX::Controls::UserControl controlToAdd{ newControl };
-
-            const auto& cmdline{ controlSettings.DefaultSettings().Commandline() };
-            const auto doAdminWarning{ _shouldPromptForCommandline(cmdline) };
-            if (doAdminWarning)
-            {
-                auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(newControl, cmdline) };
-                warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
-                warningControl->CancelButtonClicked({ get_weak(), &TerminalPage::_adminWarningCancelClicked });
-                controlToAdd = *warningControl;
-            }
-
-            // Hookup our event handlers to the new terminal
-            _RegisterTerminalEvents(newControl);
-
-            _UnZoomIfNeeded();
-
-            tab.SplitPane(realSplitType, splitSize, profile, controlToAdd);
-
-            // After GH#6586, the control will no longer focus itself
-            // automatically when it's finished being laid out. Manually focus
-            // the control here instead.
-            if (_startupState == StartupState::Initialized)
-            {
-                if (const auto& activeControl{ _GetActiveControl() })
-                {
-                    activeControl.Focus(FocusState::Programmatic);
-                }
-            }
-
-            if (doAdminWarning)
-            {
-                // We know this is safe - we literally just added the
-                // AdminWarningPlaceholder as the controlToAdd like 20 lines up.
-                //
-                // Focus the warning here. The LayoutUpdated within the dialog
-                // itself isn't good enough. That, for some reason, fires _before_
-                // the dialog is in the UI tree, which is useless for us.
-                controlToAdd.try_as<implementation::AdminWarningPlaceholder>()->FocusOnLaunch();
+                control.Focus(FocusState::Programmatic);
             }
         }
-        CATCH_LOG();
     }
 
     // Method Description:
@@ -2463,7 +2389,7 @@ namespace winrt::TerminalApp::implementation
     {
         if (target == SettingsTarget::SettingsUI)
         {
-            _OpenSettingsUI();
+            OpenSettingsUI();
         }
         else
         {
@@ -2538,6 +2464,133 @@ namespace winrt::TerminalApp::implementation
         term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
 
         return term;
+    }
+
+    // Method Description:
+    // - Creates a pane and returns a shared_ptr to it
+    // - The caller should handle where the pane goes after creation,
+    //   either to split an already existing pane or to create a new tab with it
+    // Arguments:
+    // - newTerminalArgs: an object that may contain a blob of parameters to
+    //   control which profile is created and with possible other
+    //   configurations. See CascadiaSettings::BuildSettings for more details.
+    // - duplicate: a boolean to indicate whether the pane we create should be
+    //   a duplicate of the currently focused pane
+    // - existingConnection: optionally receives a connection from the outside
+    //   world instead of attempting to create one
+    // Return Value:
+    // - If the newTerminalArgs required us to open the pane as a new elevated
+    //   connection, then we'll return nullptr. Otherwise, we'll return a new
+    //   Pane for this connection.
+    std::shared_ptr<Pane> TerminalPage::_MakePane(const NewTerminalArgs& newTerminalArgs,
+                                                  const bool duplicate,
+                                                  TerminalConnection::ITerminalConnection existingConnection)
+    {
+        TerminalSettingsCreateResult controlSettings{ nullptr };
+        Profile profile{ nullptr };
+
+        if (duplicate)
+        {
+            const auto focusedTab{ _GetFocusedTabImpl() };
+            if (focusedTab)
+            {
+                profile = focusedTab->GetFocusedProfile();
+                if (profile)
+                {
+                    // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
+                    profile = GetClosestProfileForDuplicationOfProfile(profile);
+                    controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
+                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
+                    const auto validWorkingDirectory = !workingDirectory.empty();
+                    if (validWorkingDirectory)
+                    {
+                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                    }
+                }
+            }
+        }
+        if (!profile)
+        {
+            profile = _settings.GetProfileForArgs(newTerminalArgs);
+            controlSettings = TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings);
+        }
+
+        // Try to handle auto-elevation
+        if (_maybeElevate(newTerminalArgs, controlSettings, profile))
+        {
+            return nullptr;
+        }
+
+        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, controlSettings.DefaultSettings());
+        if (existingConnection)
+        {
+            connection.Resize(controlSettings.DefaultSettings().InitialRows(), controlSettings.DefaultSettings().InitialCols());
+        }
+
+        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
+        if (_settings.GlobalSettings().DebugFeaturesEnabled())
+        {
+            const CoreWindow window = CoreWindow::GetForCurrentThread();
+            const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
+            const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
+            const bool bothAltsPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
+                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
+            if (bothAltsPressed)
+            {
+                std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
+            }
+        }
+
+        const auto control = _InitControl(controlSettings, connection);
+        _RegisterTerminalEvents(control);
+
+        WUX::Controls::UserControl controlToAdd{ control };
+
+        // Check if we should warn the user about running a new unelevated
+        // commandline.
+        const auto& cmdline{ controlSettings.DefaultSettings().Commandline() };
+        const auto doAdminWarning{ _shouldPromptForCommandline(cmdline) };
+        if (doAdminWarning)
+        {
+            auto warningControl{ winrt::make_self<implementation::AdminWarningPlaceholder>(control, cmdline) };
+            warningControl->PrimaryButtonClicked({ get_weak(), &TerminalPage::_adminWarningPrimaryClicked });
+            warningControl->CancelButtonClicked({ get_weak(), &TerminalPage::_adminWarningCancelClicked });
+            controlToAdd = *warningControl;
+        }
+
+        auto resultPane = std::make_shared<Pane>(profile, controlToAdd);
+
+        if (debugConnection) // this will only be set if global debugging is on and tap is active
+        {
+            auto newControl = _InitControl(controlSettings, debugConnection);
+            _RegisterTerminalEvents(newControl);
+            // Split (auto) with the debug tap.
+            auto debugPane = std::make_shared<Pane>(profile, newControl);
+
+            // Since we're doing this split directly on the pane (instead of going through TerminalTab,
+            // we need to handle the panes 'active' states
+
+            // Set the pane we're splitting to active (otherwise Split will not do anything)
+            resultPane->SetActive();
+            auto [original, _] = resultPane->Split(SplitDirection::Automatic, 0.5f, debugPane);
+
+            // Set the non-debug pane as active
+            resultPane->ClearActive();
+            original->SetActive();
+        }
+
+        if (doAdminWarning)
+        {
+            // We know this is safe - we literally just added the
+            // AdminWarningPlaceholder as the controlToAdd like 20 lines up.
+            //
+            // Focus the warning here. The LayoutUpdated within the dialog
+            // itself isn't good enough. That, for some reason, fires _before_
+            // the dialog is in the UI tree, which is useless for us.
+            controlToAdd.try_as<implementation::AdminWarningPlaceholder>()->FocusOnLaunch();
+        }
+
+        return resultPane;
     }
 
     // Method Description:
@@ -2849,9 +2902,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFullscreen()
     {
-        _isFullscreen = !_isFullscreen;
-        _UpdateTabView();
-        _FullscreenChangedHandlers(*this, nullptr);
+        SetFullscreen(!_isFullscreen);
     }
 
     // Method Description:
@@ -3068,6 +3119,17 @@ namespace winrt::TerminalApp::implementation
         return _isAlwaysOnTop;
     }
 
+    void TerminalPage::SetFullscreen(bool newFullscreen)
+    {
+        if (_isFullscreen == newFullscreen)
+        {
+            return;
+        }
+        _isFullscreen = newFullscreen;
+        _UpdateTabView();
+        _FullscreenChangedHandlers(*this, nullptr);
+    }
+
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
     {
         // We need to be on the UI thread in order for _OpenNewTab to run successfully.
@@ -3095,7 +3157,7 @@ namespace winrt::TerminalApp::implementation
             const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
             const auto settings{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
 
-            _CreateNewTabWithProfileAndSettings(profile, settings, connection);
+            _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, connection));
 
             // Request a summon of this window to the foreground
             _SummonWindowRequestedHandlers(*this, nullptr);
@@ -3111,7 +3173,7 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TerminalPage::_OpenSettingsUI()
+    void TerminalPage::OpenSettingsUI()
     {
         // If we're holding the settings tab's switch command, don't create a new one, switch to the existing one.
         if (!_settingsTab)
@@ -3786,7 +3848,7 @@ namespace winrt::TerminalApp::implementation
 
         TraceLoggingWrite(g_hTerminalAppProvider, "SetAsDefaultTipInteracted", TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES), TelemetryPrivacyDataTag(PDT_ProductAndServiceUsage));
 
-        _OpenSettingsUI();
+        OpenSettingsUI();
     }
 
     // Method Description:

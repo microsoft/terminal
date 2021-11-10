@@ -847,14 +847,17 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
     return false;
 }
 
-winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt::Windows::UI::Xaml::Controls::UserControl& control)
+Controls::UserControl Pane::ReplaceControl(const Controls::UserControl& control)
 {
     if (!_IsLeaf())
     {
         return nullptr;
     }
 
+    // Remove old control's event handlers
     const auto& oldControl = _control;
+    _gotFocusRevoker.revoke();
+    _lostFocusRevoker.revoke();
     if (const auto& oldTermControl{ _control.try_as<TermControl>() })
     {
         oldTermControl.ConnectionStateChanged(_connectionStateChangedToken);
@@ -862,7 +865,13 @@ winrt::Windows::UI::Xaml::Controls::UserControl Pane::ReplaceControl(const winrt
     }
 
     _control = control;
+
     _borderFirst.Child(_control);
+
+    // Register an event with the control to have it inform us when it gains focus.
+    _gotFocusRevoker = _control.GotFocus(winrt::auto_revoke, { this, &Pane::_ControlGotFocusHandler });
+    _lostFocusRevoker = _control.LostFocus(winrt::auto_revoke, { this, &Pane::_ControlLostFocusHandler });
+
     if (const auto& termControl{ _control.try_as<TermControl>() })
     {
         _connectionStateChangedToken = termControl.ConnectionStateChanged({ this, &Pane::_ControlConnectionStateChangedHandler });
@@ -2426,35 +2435,32 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
 }
 
 // Method Description:
-// - Split the focused pane in our tree of panes, and place the given
-//   UserControl into the newly created pane. If we're the focused pane, then
-//   we'll create two new children, and place them side-by-side in our Grid.
+// - The same as above, except this takes in the pane directly instead of a
+//   profile and control to make a pane with
 // Arguments:
 // - splitType: what type of split we want to create.
-// - profile: The profile to associate with the newly created pane.
-// - control: A UserControl to use in the new pane.
+// - splitSize: the desired size of the split
+// - newPane: the new pane
 // Return Value:
 // - The two newly created Panes, with the original pane first
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
-                                                                    const Profile& profile,
-                                                                    const Controls::UserControl& control)
+                                                                    std::shared_ptr<Pane> newPane)
 {
     if (!_lastActive)
     {
         if (_firstChild && _firstChild->_HasFocusedChild())
         {
-            return _firstChild->Split(splitType, splitSize, profile, control);
+            return _firstChild->Split(splitType, splitSize, newPane);
         }
         else if (_secondChild && _secondChild->_HasFocusedChild())
         {
-            return _secondChild->Split(splitType, splitSize, profile, control);
+            return _secondChild->Split(splitType, splitSize, newPane);
         }
 
         return { nullptr, nullptr };
     }
 
-    auto newPane = std::make_shared<Pane>(profile, control);
     return _Split(splitType, splitSize, newPane);
 }
 

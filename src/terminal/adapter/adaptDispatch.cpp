@@ -2541,13 +2541,13 @@ void AdaptDispatch::_ReportSGRSetting() const
             const auto iterator = std::back_insert_iterator(response);
             if (color.IsIndex16())
             {
-                const auto index = XtermToWindowsIndex(color.GetIndex());
+                const auto index = color.GetIndex();
                 const auto colorParameter = base + (index >= 8 ? 60 : 0) + (index % 8);
                 fmt::format_to(iterator, FMT_STRING(L";{}"), colorParameter);
             }
             else if (color.IsIndex256())
             {
-                const auto index = Xterm256ToWindowsIndex(color.GetIndex());
+                const auto index = color.GetIndex();
                 fmt::format_to(iterator, FMT_STRING(L";{};5;{}"), base + 8, index);
             }
             else if (color.IsRgb())
