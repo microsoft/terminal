@@ -1,7 +1,9 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
+
+#include "string_ext.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
@@ -34,10 +36,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     template<typename T, typename Traits>
     constexpr bool starts_with(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& prefix) noexcept
     {
-#ifdef __cpp_lib_starts_ends_with
-#error This code can be replaced in C++20, which natively supports .starts_with().
-#endif
-        return str.size() >= prefix.size() && Traits::compare(str.data(), prefix.data(), prefix.size()) == 0;
+        return str.size() >= prefix.size() && __builtin_memcmp(str.data(), prefix.data(), prefix.size() * sizeof(T)) == 0;
     }
 
     constexpr bool starts_with(const std::string_view& str, const std::string_view& prefix) noexcept
@@ -52,15 +51,10 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     // std::string_view::ends_with support for C++17.
     template<typename T, typename Traits>
-    constexpr bool ends_with(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& prefix) noexcept
+    constexpr bool ends_with(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& suffix) noexcept
     {
-#ifdef __cpp_lib_ends_ends_with
-#error This code can be replaced in C++20, which natively supports .ends_with().
-#endif
-#pragma warning(push)
-#pragma warning(disable : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
-        return str.size() >= prefix.size() && Traits::compare(str.data() + (str.size() - prefix.size()), prefix.data(), prefix.size()) == 0;
-#pragma warning(pop)
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+        return str.size() >= suffix.size() && __builtin_memcmp(str.data() + (str.size() - suffix.size()), suffix.data(), suffix.size() * sizeof(T)) == 0;
     }
 
     constexpr bool ends_with(const std::string_view& str, const std::string_view& prefix) noexcept
@@ -203,6 +197,39 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     inline bool equals_insensitive_ascii(const std::wstring_view& str1, const std::wstring_view& str2) noexcept
     {
         return equals_insensitive_ascii<>(str1, str2);
+    }
+
+    template<typename T, typename Traits>
+    constexpr bool starts_with_insensitive_ascii(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& prefix) noexcept
+    {
+        return str.size() >= prefix.size() && equals_insensitive_ascii<>({ str.data(), prefix.size() }, prefix);
+    }
+
+    constexpr bool starts_with_insensitive_ascii(const std::string_view& str, const std::string_view& prefix) noexcept
+    {
+        return starts_with_insensitive_ascii<>(str, prefix);
+    }
+
+    constexpr bool starts_with_insensitive_ascii(const std::wstring_view& str, const std::wstring_view& prefix) noexcept
+    {
+        return starts_with_insensitive_ascii<>(str, prefix);
+    }
+
+    template<typename T, typename Traits>
+    constexpr bool ends_with_insensitive_ascii(const std::basic_string_view<T, Traits>& str, const std::basic_string_view<T, Traits>& suffix) noexcept
+    {
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
+        return str.size() >= suffix.size() && equals_insensitive_ascii<>({ str.data() - suffix.size(), suffix.size() }, suffix);
+    }
+
+    constexpr bool ends_with_insensitive_ascii(const std::string_view& str, const std::string_view& prefix) noexcept
+    {
+        return ends_with_insensitive_ascii<>(str, prefix);
+    }
+
+    constexpr bool ends_with_insensitive_ascii(const std::wstring_view& str, const std::wstring_view& prefix) noexcept
+    {
+        return ends_with<>(str, prefix);
     }
 
     // Give the arguments ("foo bar baz", " "), this method will
