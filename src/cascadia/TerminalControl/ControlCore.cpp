@@ -439,6 +439,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      0.0,
                                      1.0);
 
+        auto lock = _terminal->LockForWriting();
         // Update our runtime opacity value
         Opacity(newOpacity);
 
@@ -450,18 +451,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // is what the Terminal did prior to 1.12.
         if (!IsVintageOpacityAvailable())
         {
-            const auto oldUseAcrylic{ UseAcrylic() };
+            // const auto oldUseAcrylic{ UseAcrylic() };
             _runtimeUseAcrylic = newOpacity < 1.0;
-            // If they've changed the value of UseAcrylic, then update the
-            // renderer as well.
-            if (oldUseAcrylic != UseAcrylic() && _renderEngine)
-            {
-                // GH#5098: Inform the engine of the new opacity of the default
-                // text background.
-                auto lock = _terminal->LockForWriting();
-                _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
-            }
+            // // If they've changed the value of UseAcrylic, then update the
+            // // renderer as well.
+            // if (oldUseAcrylic != UseAcrylic() && _renderEngine)
+            // {
+            //     // GH#5098: Inform the engine of the new opacity of the default
+            //     // text background.
+            // }
         }
+        _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);
