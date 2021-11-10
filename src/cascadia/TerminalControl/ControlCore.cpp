@@ -277,7 +277,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
+            _renderEngine->SetDefaultTextBackgroundOpacity(_isBackgroundTransparent());
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -456,7 +456,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
-        _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
+        _renderEngine->SetDefaultTextBackgroundOpacity(_isBackgroundTransparent());
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);
@@ -624,7 +624,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
-        _renderEngine->SetDefaultTextBackgroundOpacity(_correctForTransparency());
+        _renderEngine->SetDefaultTextBackgroundOpacity(_isBackgroundTransparent());
 
         _updateAntiAliasingMode(_renderEngine.get());
 
@@ -1638,7 +1638,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings->HasUnfocusedAppearance();
     }
 
-    bool ControlCore::_correctForTransparency()
+    bool ControlCore::_isBackgroundTransparent()
     {
         return Opacity() < 1.0f || UseAcrylic();
     }

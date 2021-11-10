@@ -88,7 +88,7 @@ DxEngine::DxEngine() :
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
-    _defaultBackgroundIsTransparent{ 0xff000000 },
+    _defaultBackgroundIsTransparent{ true },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -909,15 +909,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     // DANGER: Layers slow us down. Only do this in the specific case where
     // someone has chosen the slower ClearType antialiasing (versus the faster
     // grayscale antialiasing)
-    //
-    // October 2021: We're no longer forcing the BG of the run to be opaque when
-    // cleartype is enabled and the background isn't fully opaque. In the case
-    // of (!useAcrylic && opacity<1.0), we actually can still render cleartype
-    // text just fine. It's only acrylic that messes us up. So we're making a
-    // small change. Now, when the user requests acrylic, text that's rendered
-    // on the default text BG will always use grayscale, rather than cleartype.
-    // This helps support the scenario where the user has (useAcrylic &&
-    // opacity==1.0)
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
     const bool usingTransparency = _defaultBackgroundIsTransparent;
     // Another way of naming "bgIsDefault" is "bgHasTransparency"
@@ -1942,9 +1933,8 @@ CATCH_RETURN()
     const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultBackgroundIsTransparent != 0;
+    const bool usingTransparency = _defaultBackgroundIsTransparent;
     const bool forceOpaqueBG = usingCleartype && !usingTransparency;
-    // (usingCleartype && !(_defaultBackgroundIsTransparent == 0)) -> wrong, both acry(50)&vint(50) got solid BGs, as well as acry(100)
 
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     // October 2021: small changes were made to the way BG color interacts with
@@ -2246,14 +2236,19 @@ CATCH_LOG()
 //   rendering onto a transparent surface (like acrylic), then cleartype won't
 //   work correctly, and will actually just additively blend with the
 //   background. This is here to support GH#5098.
+// - We'll use this, along with whether cleartype was requested, to manually set
+//   the alpha channel of the background brush to 1.0. We need to do that to
+//   make cleartype work without blending. However, we don't want to do that too
+//   often - if we do that on top of a transparent BG, then the entire swap
+//   chain will be fully opaque.
 // Arguments:
-// - opacity: the new opacity of our background, on [0.0f, 1.0f]
+// - isTransparent: true if our BG is transparent (acrylic, or anything that's not fully opaque)
 // Return Value:
 // - <none>
-void DxEngine::SetDefaultTextBackgroundOpacity(const bool useAcrylic) noexcept
+void DxEngine::SetDefaultTextBackgroundOpacity(const bool isTransparent) noexcept
 try
 {
-    _defaultBackgroundIsTransparent = useAcrylic ? 0xff000000 : 0;
+    _defaultBackgroundIsTransparent = isTransparent;
 
     // Make sure we redraw all the cells, to update whether they're actually
     // drawn with cleartype or not.
