@@ -321,8 +321,12 @@ HRESULT AtlasEngine::Enable() noexcept
 
 void AtlasEngine::SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept
 {
-    _api.antialiasingMode = gsl::narrow_cast<u16>(antialiasingMode);
-    WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
+    const auto mode = gsl::narrow_cast<u16>(antialiasingMode);
+    if (_api.antialiasingMode != mode)
+    {
+        _api.antialiasingMode = mode;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
+    }
 }
 
 void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
@@ -332,8 +336,12 @@ void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
 
 void AtlasEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
 {
-    _api.backgroundOpaqueMixin = opacity == 1.0f ? 0xff000000 : 0x00000000;
-    WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    const auto mixin = opacity == 1.0f ? 0xff000000 : 0x00000000;
+    if (_api.backgroundOpaqueMixin != mixin)
+    {
+        _api.backgroundOpaqueMixin = mixin;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::SwapChain);
+    }
 }
 
 void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
@@ -342,8 +350,11 @@ void AtlasEngine::SetForceFullRepaintRendering(bool enable) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::SetHwnd(const HWND hwnd) noexcept
 {
-    _api.hwnd = hwnd;
-    WI_SetFlag(_api.invalidations, ApiInvalidations::Device);
+    if (_api.hwnd != hwnd)
+    {
+        _api.hwnd = hwnd;
+        WI_SetFlag(_api.invalidations, ApiInvalidations::SwapChain);
+    }
     return S_OK;
 }
 
@@ -358,7 +369,6 @@ void AtlasEngine::SetRetroTerminalEffect(bool enable) noexcept
 void AtlasEngine::SetSelectionBackground(const COLORREF color, const float alpha) noexcept
 {
     const u32 selectionColor = (color & 0xffffff) | gsl::narrow_cast<u32>(std::lroundf(alpha * 255.0f)) << 24;
-
     if (_api.selectionColor != selectionColor)
     {
         _api.selectionColor = selectionColor;

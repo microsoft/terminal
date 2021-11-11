@@ -234,6 +234,10 @@ try
         {
             _createResources();
         }
+        if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::SwapChain))
+        {
+            _createSwapChain();
+        }
         if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Size))
         {
             _recreateSizeDependentResources();
@@ -711,6 +715,34 @@ void AtlasEngine::_createResources()
     }
 #endif // NDEBUG
 
+    // Our constant buffer will never get resized
+    {
+        D3D11_BUFFER_DESC desc{};
+        desc.ByteWidth = sizeof(ConstBuffer);
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+        THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.constantBuffer.put()));
+    }
+
+    THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
+    THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
+
+    WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
+    WI_SetAllFlags(_api.invalidations, ApiInvalidations::SwapChain | ApiInvalidations::Font);
+}
+
+void AtlasEngine::_createSwapChain()
+{
+    // ResizeBuffer() docs:
+    //   Before you call ResizeBuffers, ensure that the application releases all references [...].
+    //   You can use ID3D11DeviceContext::ClearState to ensure that all [internal] references are released.
+    if (_r.swapChain)
+    {
+        _r.renderTargetView.reset();
+        _r.deviceContext->ClearState();
+        _r.deviceContext->Flush();
+    }
+
     // D3D swap chain setup (the thing that allows us to present frames on the screen)
     {
         const auto supportsFrameLatencyWaitableObject = IsWindows8Point1OrGreater();
@@ -770,17 +802,12 @@ void AtlasEngine::_createResources()
         }
     }
 
-    // Our constant buffer will never get resized
-    {
-        D3D11_BUFFER_DESC desc{};
-        desc.ByteWidth = sizeof(ConstBuffer);
-        desc.Usage = D3D11_USAGE_DEFAULT;
-        desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        THROW_IF_FAILED(_r.device->CreateBuffer(&desc, nullptr, _r.constantBuffer.put()));
-    }
-
-    THROW_IF_FAILED(_r.device->CreateVertexShader(&shader_vs[0], sizeof(shader_vs), nullptr, _r.vertexShader.put()));
-    THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
+    // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
+    // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
+    // > Note that this requirement includes the first frame the app renders with the swap chain.
+    //
+    // TODO: In the future all D3D code should be moved into AtlasEngine.r.cpp
+    WaitUntilCanRender();
 
     if (_api.swapChainChangedCallback)
     {
@@ -791,15 +818,8 @@ void AtlasEngine::_createResources()
         CATCH_LOG();
     }
 
-    // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
-    // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
-    // > Note that this requirement includes the first frame the app renders with the swap chain.
-    //
-    // TODO: In the future all D3D code should be moved into AtlasEngine.r.cpp
-    WaitUntilCanRender();
-
-    WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
-    WI_SetAllFlags(_api.invalidations, ApiInvalidations::Size | ApiInvalidations::Font);
+    WI_ClearFlag(_api.invalidations, ApiInvalidations::SwapChain);
+    WI_SetAllFlags(_api.invalidations, ApiInvalidations::Size);
 }
 
 void AtlasEngine::_recreateSizeDependentResources()
@@ -807,9 +827,11 @@ void AtlasEngine::_recreateSizeDependentResources()
     // ResizeBuffer() docs:
     //   Before you call ResizeBuffers, ensure that the application releases all references [...].
     //   You can use ID3D11DeviceContext::ClearState to ensure that all [internal] references are released.
+    if (_r.renderTargetView)
     {
         _r.renderTargetView.reset();
         _r.deviceContext->ClearState();
+        _r.deviceContext->Flush();
         THROW_IF_FAILED(_r.swapChain->ResizeBuffers(0, _api.sizeInPixel.x, _api.sizeInPixel.y, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT));
     }
 

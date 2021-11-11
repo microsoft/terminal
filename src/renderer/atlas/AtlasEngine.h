@@ -558,9 +558,10 @@ namespace Microsoft::Console::Render
             None = 0,
             Title = 1 << 0,
             Device = 1 << 1,
-            Size = 1 << 2,
-            Font = 1 << 3,
-            Settings = 1 << 4,
+            SwapChain = 1 << 2,
+            Size = 1 << 3,
+            Font = 1 << 4,
+            Settings = 1 << 5,
         };
         ATLAS_FLAG_OPS(ApiInvalidations, u8)
 
@@ -585,6 +586,7 @@ namespace Microsoft::Console::Render
         // AtlasEngine.cpp
         [[nodiscard]] HRESULT _handleException(const wil::ResultException& exception) noexcept;
         __declspec(noinline) void _createResources();
+        __declspec(noinline) void _createSwapChain();
         __declspec(noinline) void _recreateSizeDependentResources();
         __declspec(noinline) void _recreateFontDependentResources();
         HRESULT _createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept;
