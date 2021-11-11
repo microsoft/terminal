@@ -2271,6 +2271,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
 
                     std::wstring fullPath{ item.Path() };
+
+                    // Fix path for WSL
+                    if (_settings.ProfileSource() == L"Windows.Terminal.Wsl")
+                    {
+                        std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
+
+                        if (fullPath.size() >= 2 && fullPath.at(1) == L':')
+                        {
+                            // C:/foo/bar -> Cc/foo/bar
+                            fullPath.at(1) = til::tolower_ascii(fullPath.at(0));
+                            // Cc/foo/bar -> /mnt/c/foo/bar
+                            fullPath.replace(0, 1, L"/mnt/");
+                        }
+                        else
+                        {
+                            static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
+                            for (auto prefix : wslPathPrefixes)
+                            {
+                                if (til::starts_with(fullPath, prefix))
+                                {
+                                    if (const auto idx = fullPath.find(L'/', prefix.size()); idx != std::wstring::npos)
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
+                                        fullPath.erase(0, idx);
+                                    }
+                                    else
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04 -> /
+                                        fullPath = L"/";
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     const auto containsSpaces = std::find(fullPath.begin(),
                                                           fullPath.end(),
                                                           L' ') != fullPath.end();
@@ -2283,6 +2319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     allPaths += fullPath;
                 }
+
                 _core.PasteText(winrt::hstring{ allPaths });
             }
         }
