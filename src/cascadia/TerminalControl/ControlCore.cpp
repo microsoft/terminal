@@ -1650,6 +1650,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return s;
     }
 
+    // Method Description:
+    // - Apply the given color scheme to this control. We'll take the colors out
+    //   of it and apply them to our focused appearance, and update the terminal
+    //   buffer with the new color table.
+    // - This is here to support the Set Color Scheme action, and the ability to
+    //   preview schemes in the control.
+    // Arguments:
+    // - scheme: the collection of colors to apply.
+    // Return Value:
+    // - <none>
     void ControlCore::ColorScheme(const Core::Scheme& scheme)
     {
         auto l{ _terminal->LockForWriting() };

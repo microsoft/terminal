@@ -22,20 +22,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Color Table is special because it's an array
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
 
-        // Color table is _extra_ special because each individual color is
-        // overridable, not the whole array.
-        // TODO! Pretty sure this is overkill, or never actually used. Remove?
-        std::array<std::optional<winrt::Microsoft::Terminal::Core::Color>, COLOR_TABLE_SIZE> _runtimeColorTable;
-
     public:
         winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
         {
-            return til::coalesce_value(_runtimeColorTable.at(index), _ColorTable.at(index));
+            return _ColorTable.at(index);
         }
         void SetColorTableEntry(int32_t index,
                                 winrt::Microsoft::Terminal::Core::Color color) noexcept
         {
-            _runtimeColorTable.at(index) = color;
+            _ColorTable.at(index) = color;
         }
 
         ControlAppearance(Control::IControlAppearance appearance)
