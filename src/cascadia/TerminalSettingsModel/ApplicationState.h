@@ -86,7 +86,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         };
         til::shared_mutex<state_t> _state;
         std::filesystem::path _sharedPath;
-        std::filesystem::path _userPath;
         std::filesystem::path _elevatedPath;
         til::throttled_func_trailing<> _throttler;
 

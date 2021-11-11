@@ -145,6 +145,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     try
     {
         LOG_LAST_ERROR_IF(!DeleteFile(_sharedPath.c_str()));
+        LOG_LAST_ERROR_IF(!DeleteFile(_elevatedPath.c_str()));
         *_state.lock() = {};
     }
     CATCH_LOG()
