@@ -128,7 +128,7 @@ namespace Microsoft::Console::Render
 
         void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;
         void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
-        void SetDefaultTextBackgroundOpacity(const bool isTransparent) noexcept;
+        void EnableTransparentBackground(const bool isTransparent) noexcept;
         void SetIntenseIsBold(const bool opacity) noexcept;
 
         void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;

@@ -2245,7 +2245,7 @@ CATCH_LOG()
 // - isTransparent: true if our BG is transparent (acrylic, or anything that's not fully opaque)
 // Return Value:
 // - <none>
-void DxEngine::SetDefaultTextBackgroundOpacity(const bool isTransparent) noexcept
+void DxEngine::EnableTransparentBackground(const bool isTransparent) noexcept
 try
 {
     _defaultBackgroundIsTransparent = isTransparent;
