@@ -67,8 +67,11 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_EndPreviewColorScheme()
     {
-        for (const auto& f : _restorePreviewFuncs)
+        for (auto i{ _restorePreviewFuncs.rbegin() }; i < _restorePreviewFuncs.rend(); i++)
+        // for (const auto& f : _restorePreviewFuncs)
         {
+            // f();
+            auto f = *i;
             f();
         }
         _restorePreviewFuncs.clear();
@@ -133,10 +136,10 @@ namespace winrt::TerminalApp::implementation
         //   bug. They resulted in a new bug: "previewing a scheme while using
         //   an unfocused apprearance, then dismissing -> unfocused scheme gets
         //   applied". Fix in morning.
-        _EndPreview();
+        // _EndPreview();
         if (args == nullptr || args.ActionAndArgs() == nullptr)
         {
-            // _EndPreview();
+            _EndPreview();
         }
         else
         {
