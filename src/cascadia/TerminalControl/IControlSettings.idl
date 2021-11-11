@@ -27,6 +27,7 @@ namespace Microsoft.Terminal.Control
     interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings, Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
+        String ProfileSource;
 
         Boolean UseAcrylic;
         ScrollbarState ScrollState;

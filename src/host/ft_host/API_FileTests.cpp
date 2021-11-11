@@ -7,7 +7,7 @@
 
 #include <future>
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using WEX::TestExecution::TestData;
 using namespace WEX::Common;
 

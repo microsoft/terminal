@@ -51,6 +51,8 @@ public:
 
     void LogRipMessage(_In_z_ const char* pszMessage, ...) const;
 
+    bool IsUserInteractive();
+
     // Names are from the external API call names.  Note that some names can be different
     // than the internal API calls.
     // Don't worry about the following APIs, because they are external to our conhost codebase and hard to track through
