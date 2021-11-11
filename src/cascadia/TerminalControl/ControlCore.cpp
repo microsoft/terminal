@@ -456,7 +456,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update the renderer as well. It might need to fall back from
         // cleartype -> grayscale if the BG is transparent / acrylic.
-        _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+        if (_renderEngine)
+        {
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
+        }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
         _TransparencyChangedHandlers(*this, *eventArgs);

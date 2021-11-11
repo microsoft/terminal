@@ -111,6 +111,7 @@ namespace ControlUnitTests
         settings->Opacity(0.5f);
 
         auto [core, interactivity] = _createCoreAndInteractivity(*settings, *conn);
+        auto controlSettings = core->_settings;
 
         // A callback to make sure that we're raising TransparencyChanged events
         double expectedOpacity = 0.5;
