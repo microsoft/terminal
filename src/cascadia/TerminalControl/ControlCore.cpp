@@ -1592,11 +1592,61 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Core::Scheme ControlCore::ColorScheme() const noexcept
     {
-        auto s = _terminal->GetColorScheme();
+        Core::Scheme s;
+
+        // This part is definitely a hack.
+        //
+        // This function is usually used by the "Preview Color Scheme"
+        // functionality in TerminalPage. If we've got an unfocused appearance,
+        // then we've applied that appearance before this is even getting called
+        // (because the command palette is open with focus on top of us). If we
+        // return the _current_ colors now, we'll return out the _unfocused_
+        // colors. If we do that, and the user dismisses the command palette,
+        // then the scheme that will get restored is the _unfocused_ one, which
+        // is not what we want.
+        //
+        // So if that's the case, then let's grab the colors from the focused
+        // appearance as the scheme instead. We'll lose any current runtime
+        // changes to the color table, but those were already blown away when we
+        // switched to an unfocused appearance.
+        //
+        // IF WE DON'T HAVE AN UNFOCUSED APPEARANCE: then just ask the Terminal
+        // for it's current color table. That way, we can restore those colors
+        // back.
+        if (HasUnfocusedAppearance())
+        {
+            s.Foreground = _settings->FocusedAppearance()->DefaultForeground();
+            s.Background = _settings->FocusedAppearance()->DefaultBackground();
+
+            s.CursorColor = _settings->FocusedAppearance()->CursorColor();
+
+            s.Black = _settings->FocusedAppearance()->GetColorTableEntry(0);
+            s.Red = _settings->FocusedAppearance()->GetColorTableEntry(1);
+            s.Green = _settings->FocusedAppearance()->GetColorTableEntry(2);
+            s.Yellow = _settings->FocusedAppearance()->GetColorTableEntry(3);
+            s.Blue = _settings->FocusedAppearance()->GetColorTableEntry(4);
+            s.Purple = _settings->FocusedAppearance()->GetColorTableEntry(5);
+            s.Cyan = _settings->FocusedAppearance()->GetColorTableEntry(6);
+            s.White = _settings->FocusedAppearance()->GetColorTableEntry(7);
+            s.BrightBlack = _settings->FocusedAppearance()->GetColorTableEntry(8);
+            s.BrightRed = _settings->FocusedAppearance()->GetColorTableEntry(9);
+            s.BrightGreen = _settings->FocusedAppearance()->GetColorTableEntry(10);
+            s.BrightYellow = _settings->FocusedAppearance()->GetColorTableEntry(11);
+            s.BrightBlue = _settings->FocusedAppearance()->GetColorTableEntry(12);
+            s.BrightPurple = _settings->FocusedAppearance()->GetColorTableEntry(13);
+            s.BrightCyan = _settings->FocusedAppearance()->GetColorTableEntry(14);
+            s.BrightWhite = _settings->FocusedAppearance()->GetColorTableEntry(15);
+        }
+        else
+        {
+            s = _terminal->GetColorScheme();
+        }
+
         // This might be a tad bit of a hack. This event only gets called by set
         // color scheme / preview color scheme, and in that case, we know the
         // control _is_ focused.
         s.SelectionBackground = _settings->FocusedAppearance()->SelectionBackground();
+
         return s;
     }
 
