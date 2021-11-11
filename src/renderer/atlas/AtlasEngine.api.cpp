@@ -534,8 +534,6 @@ void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 
 #pragma endregion
 
-#pragma warning(disable : 4189)
-
 AtlasEngine::FontMetrics AtlasEngine::_getFontMetrics(const wchar_t* faceName, double fontSize, DWRITE_FONT_WEIGHT weight)
 {
     if (!faceName)
@@ -568,6 +566,7 @@ AtlasEngine::FontMetrics AtlasEngine::_getFontMetrics(const wchar_t* faceName, d
     wil::com_ptr<IDWriteFontFace> fontFace;
     THROW_IF_FAILED(font->CreateFontFace(fontFace.addressof()));
 
+#pragma warning(suppress : 26494) // Variable 'fontMetrics' is uninitialized. Always initialize an object (type.5).
     DWRITE_FONT_METRICS1 fontMetrics;
     fontFace->GetMetrics(&fontMetrics);
 
