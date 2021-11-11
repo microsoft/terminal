@@ -2298,7 +2298,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     std::wstring fullPath{ item.Path() };
 
                     // Fix path for WSL
-                    if (_settings.ProfileSource() == L"Windows.Terminal.Wsl")
+                    // In the fullness of time, we should likely plumb this up
+                    // to the TerminalApp layer, and have it make the decision
+                    // if this control should have it's path mangled (and do the
+                    // mangling), rather than exposing the source concept to the
+                    // Control layer.
+                    //
+                    // However, it's likely that the control layer may need to
+                    // know about the source anyways in the future, to support
+                    // GH#3158
+                    if (_interactivity.ManglePathsForWsl())
                     {
                         std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
 
