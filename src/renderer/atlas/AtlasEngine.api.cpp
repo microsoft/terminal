@@ -480,6 +480,8 @@ try
 
     const auto previousCellSize = _api.fontMetrics.cellSize;
     _resolveFontMetrics(fontInfoDesired, fontInfo, &_api.fontMetrics);
+    _api.fontFeatures = std::move(fontFeatures);
+    _api.fontAxisValues = std::move(fontAxisValues);
 
     WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
 

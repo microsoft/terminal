@@ -310,8 +310,12 @@ namespace Microsoft::Console::Render
 
             SmallObjectOptimizer& operator=(const SmallObjectOptimizer& other)
             {
-                delete this;
-                return *new (this) SmallObjectOptimizer(other);
+                if (this != &other)
+                {
+                    delete this;
+                    new (this) SmallObjectOptimizer(other);
+                }
+                return &this;
             }
 
             SmallObjectOptimizer(SmallObjectOptimizer&& other) noexcept
@@ -411,7 +415,7 @@ namespace Microsoft::Console::Render
         struct Cell
         {
             alignas(u32) u16x2 tileIndex;
-            alignas(u32) CellFlags flags;
+            alignas(u32) CellFlags flags = CellFlags::None;
             u32x2 color;
         };
 
@@ -492,6 +496,8 @@ namespace Microsoft::Console::Render
 
         struct AtlasValue
         {
+            constexpr AtlasValue() = default;
+
             u16x2* initialize(CellFlags flags, u16 cellCount)
             {
                 const auto size = dataSize(cellCount);
@@ -597,7 +603,6 @@ namespace Microsoft::Console::Render
         __declspec(noinline) void _createSwapChain();
         __declspec(noinline) void _recreateSizeDependentResources();
         __declspec(noinline) void _recreateFontDependentResources();
-        HRESULT _createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept;
         IDWriteTextFormat* _getTextFormat(bool bold, bool italic) const noexcept;
         const Buffer<DWRITE_FONT_AXIS_VALUE>& _getTextFormatAxis(bool bold, bool italic) const noexcept;
         Cell* _getCell(u16 x, u16 y) noexcept;
@@ -607,7 +612,7 @@ namespace Microsoft::Console::Render
         void _emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
-        [[maybe_unused]] void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
+        void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
         void _setShaderResources() const;
@@ -718,7 +723,7 @@ namespace Microsoft::Console::Render
             std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as ApiInvalidations::Font|Size
             std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
             FontMetrics fontMetrics; // changes are flagged as ApiInvalidations::Font|Size
-            
+
             u16x2 cellCount; // caches `sizeInPixel / cellSize`
             u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 

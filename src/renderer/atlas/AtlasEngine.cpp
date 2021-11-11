@@ -334,7 +334,7 @@ try
         }
         {
             const auto limit = gsl::narrow_cast<i16>(_api.cellCount.y & 0x7fff);
-            _api.scrollOffset = clamp<i16>(_api.scrollOffset, -limit, limit);
+            _api.scrollOffset = gsl::narrow_cast<i16>(clamp<int>(_api.scrollOffset, -limit, limit));
         }
 
         // Scroll the buffer by the given offset and mark the newly uncovered rows as "invalid".
