@@ -49,10 +49,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     //   by the Builtin\Administrators group. If it's not, then it was likely
     //   tampered with.
     // Arguments:
-    // - path: the path to the file to check
+    // - handle: a HANDLE to the file to check
     // Return Value:
     // - true if it had the expected permissions. False otherwise.
-    static bool _isOwnedByAdministrators(const std::filesystem::path& path)
+    static bool _isOwnedByAdministrators(const HANDLE& handle)
     {
         // If the file is owned by the administrators group, trust the
         // administrators instead of checking the DACL permissions. It's simpler
@@ -62,14 +62,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model
         PSID psidOwner{ nullptr };
         // The psidOwner pointer references the security descriptor, so it
         // doesn't have to be freed separate from sd.
-        const auto status = GetNamedSecurityInfoW(path.c_str(),
-                                                  SE_FILE_OBJECT,
-                                                  OWNER_SECURITY_INFORMATION,
-                                                  &psidOwner,
-                                                  nullptr,
-                                                  nullptr,
-                                                  nullptr,
-                                                  wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd));
+        const auto status = GetSecurityInfo(handle,
+                                            SE_FILE_OBJECT,
+                                            OWNER_SECURITY_INFORMATION,
+                                            &psidOwner,
+                                            nullptr,
+                                            nullptr,
+                                            nullptr,
+                                            wil::out_param_ptr<PSECURITY_DESCRIPTOR*>(sd));
         THROW_IF_WIN32_ERROR(status);
 
         wil::unique_any_psid psidAdmins{ nullptr };
@@ -82,26 +82,45 @@ namespace winrt::Microsoft::Terminal::Settings::Model
     // Strips the UTF8 BOM if it exists.
     std::string ReadUTF8File(const std::filesystem::path& path, const bool elevatedOnly)
     {
-        if (elevatedOnly)
-        {
-            const bool hadExpectedPermissions{ _isOwnedByAdministrators(path) };
-            if (!hadExpectedPermissions)
-            {
-                // delete the file. It's been compromised.
-                LOG_LAST_ERROR_IF(!DeleteFile(path.c_str()));
-                // Exit early, because obviously there's nothing to read from the deleted file.
-                return "";
-            }
-        }
-
         // From some casual observations we can determine that:
         // * ReadFile() always returns the requested amount of data (unless the file is smaller)
         // * It's unlikely that the file was changed between GetFileSize() and ReadFile()
         // -> Lets add a retry-loop just in case, to not fail if the file size changed while reading.
         for (int i = 0; i < 3; ++i)
         {
-            wil::unique_hfile file{ CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr) };
+            wil::unique_hfile file{ CreateFileW(path.c_str(),
+                                                GENERIC_READ,
+                                                FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+                                                nullptr,
+                                                OPEN_EXISTING,
+                                                FILE_ATTRIBUTE_NORMAL,
+                                                nullptr) };
             THROW_LAST_ERROR_IF(!file);
+
+            // Open the file _first_, then check if it has the right
+            // permissions. This prevents a "Time-of-check to time-of-use"
+            // vulnerability where a malicious exe could delete the file and
+            // replace it between us checking the permissions, and reading the
+            // contents. We've got a handle to the file now, which means we're
+            // going to read the contents of that instance of the file
+            // regardless. If someone replaces the file on us before we get to
+            // the GetSecurityInfo call below, then only the subsequent call to
+            // ReadUTF8File will notice it.
+            if (elevatedOnly)
+            {
+                const bool hadExpectedPermissions{ _isOwnedByAdministrators(file.get()) };
+                if (!hadExpectedPermissions)
+                {
+                    // Close the handle
+                    file.reset();
+
+                    // delete the file. It's been compromised.
+                    LOG_LAST_ERROR_IF(!DeleteFile(path.c_str()));
+
+                    // Exit early, because obviously there's nothing to read from the deleted file.
+                    return "";
+                }
+            }
 
             const auto fileSize = GetFileSize(file.get(), nullptr);
             THROW_LAST_ERROR_IF(fileSize == INVALID_FILE_SIZE);
