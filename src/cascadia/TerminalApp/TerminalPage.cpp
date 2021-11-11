@@ -1506,7 +1506,7 @@ namespace winrt::TerminalApp::implementation
     // - C:\windows\system32\cmd.exe /k echo sneaky sneak -> returns false
     // - %SystemRoot%\System32\cmd.exe -> returns true
     // - %SystemRoot%\System32\wsl.exe -d <distro name> -> returns true
-    static bool _isTrustedCommandline(std::wstring_view commandLine)
+    bool TerminalPage::_isTrustedCommandline(std::wstring_view commandLine)
     {
         // use C++11 magic statics to make sure we only do this once.
         static std::wstring systemDirectory = []() -> std::wstring {
@@ -1543,6 +1543,13 @@ namespace winrt::TerminalApp::implementation
                 return true;
             }
         }
+
+        // TODO! Remove the WSL allowing. it's trivial to insert some malicious
+        // stuff into WSL, via .bash_profile, so we're not giving them the (y)
+
+        // TODO! CommandlineToArgv to get the executable from the commandline.
+        // If there's one argc, and it's parent path is %ProgramFiles%, and it
+        // ends in pwsh.exe, then it's fine.
 
         // Also, if the path is literally
         //   %SystemRoot%\System32\wsl.exe -d <distro name>
@@ -1601,27 +1608,33 @@ namespace winrt::TerminalApp::implementation
         else if (executableFilename == L"pwsh" || executableFilename == L"pwsh.exe")
         {
             // is does executablePath start with %ProgramFiles%\\PowerShell?
-            const std::filesystem::path powershellCoreRoot
+            const std::vector<std::filesystem::path> powershellCoreRoots
             {
-                wil::ExpandEnvironmentStringsW<std::wstring>(
+                // Always look in "%ProgramFiles%
+                { wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles%\\PowerShell") },
+
 #if defined(_M_AMD64) || defined(_M_ARM64) // No point in looking for WOW if we're not somewhere it exists
-                    L"%ProgramFiles(x86)%\\PowerShell"
-#elif defined(_M_ARM64) // same with ARM
-                    L"%ProgramFiles(Arm)%\\PowerShell"
-#else
-                    L"%ProgramFiles%\\PowerShell"
+                    { wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles(x86)%\\PowerShell") },
 #endif
-                )
+
+#if defined(_M_ARM64) // same with ARM
+                {
+                    wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles(Arm)%\\PowerShell")
+                }
+#endif
             };
 
-            // Is the path to the commandline actually exactly one of the
-            // versions that exists in this directory?
-            for (const auto& versionedDir : std::filesystem::directory_iterator(powershellCoreRoot))
+            for (const auto& pwshRoot : powershellCoreRoots)
             {
-                const auto versionedPath = versionedDir.path();
-                if (executablePath.parent_path() == versionedPath)
+                // Is the path to the commandline actually exactly one of the
+                // versions that exists in this directory?
+                for (const auto& versionedDir : std::filesystem::directory_iterator(pwshRoot))
                 {
-                    return true;
+                    const auto versionedPath = versionedDir.path();
+                    if (executablePath.parent_path() == versionedPath)
+                    {
+                        return true;
+                    }
                 }
             }
         }

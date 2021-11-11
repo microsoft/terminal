@@ -19,6 +19,7 @@ namespace TerminalAppLocalTests
 {
     class TabTests;
     class SettingsTests;
+    class TrustCommandlineTests;
 };
 
 namespace winrt::TerminalApp::implementation
@@ -417,6 +418,7 @@ namespace winrt::TerminalApp::implementation
         void _SetAsDefaultOpenSettingsHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args);
         static bool _IsMessageDismissed(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
         static void _DismissMessage(const winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage& message);
+        static bool _isTrustedCommandline(std::wstring_view commandLine);
 
 #pragma region ActionHandlers
         // These are all defined in AppActionHandlers.cpp
@@ -427,6 +429,7 @@ namespace winrt::TerminalApp::implementation
 
         friend class TerminalAppLocalTests::TabTests;
         friend class TerminalAppLocalTests::SettingsTests;
+        friend class TerminalAppLocalTests::TrustCommandlineTests;
     };
 }
 

@@ -43,7 +43,8 @@
     <ClCompile Include="CommandlineTest.cpp" />
     <ClCompile Include="SettingsTests.cpp" />
     <ClCompile Include="TabTests.cpp" />
-	<ClCompile Include="FilteredCommandTests.cpp" />
+    <ClCompile Include="TrustCommandlineTests.cpp" />
+	  <ClCompile Include="FilteredCommandTests.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
