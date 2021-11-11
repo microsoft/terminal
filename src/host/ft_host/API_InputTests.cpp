@@ -11,7 +11,7 @@
 #define NUMBER_OF_SCENARIO_INPUTS 10
 #define READ_BATCH 3
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 // This class is intended to test:

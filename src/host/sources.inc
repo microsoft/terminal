@@ -133,6 +133,7 @@ CRTLIBS = \
 
 TARGETLIBS = \
     $(TARGETLIBS) \
+    $(MINCORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\api-ms-win-core-commandlinetoargv-l1.lib \
     $(ONECORE_INTERNAL_SDK_LIB_PATH)\onecoreuuid.lib \
     $(ONECOREUAP_INTERNAL_SDK_LIB_PATH)\onecoreuapuuid.lib \
     $(ONECORE_INTERNAL_PRIV_SDK_LIB_VPATH_L)\onecore_internal.lib \

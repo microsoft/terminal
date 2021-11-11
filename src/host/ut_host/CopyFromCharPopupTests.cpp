@@ -24,6 +24,7 @@ class CopyFromCharPopupTests
     TEST_CLASS(CopyFromCharPopupTests);
 
     std::unique_ptr<CommonState> m_state;
+    CommandHistory* m_pHistory;
 
     TEST_CLASS_SETUP(ClassSetup)
     {
@@ -43,12 +44,20 @@ class CopyFromCharPopupTests
         m_state->PrepareGlobalScreenBuffer();
         m_state->PrepareGlobalInputBuffer();
         m_state->PrepareReadHandle();
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
+        if (!m_pHistory)
+        {
+            return false;
+        }
+        // History must be prepared before COOKED_READ (as it uses s_Find to get at it)
         m_state->PrepareCookedReadData();
         return true;
     }
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        CommandHistory::s_Free(nullptr);
+        m_pHistory = nullptr;
         m_state->CleanupCookedReadData();
         m_state->CleanupReadHandle();
         m_state->CleanupGlobalInputBuffer();
