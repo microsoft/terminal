@@ -40,7 +40,7 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::Invalidate(const SMALL_RECT* const psrRegion) noexcept
 {
-    assert(psrRegion->Top < psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
+    //assert(psrRegion->Top < psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
 
     // BeginPaint() protects against invalid out of bounds numbers.
     _api.invalidatedRows.x = std::min(_api.invalidatedRows.x, gsl::narrow_cast<u16>(psrRegion->Top));
@@ -50,8 +50,8 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 
 [[nodiscard]] HRESULT AtlasEngine::InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept
 {
-    assert(psrRegion->Left <= psrRegion->Right && psrRegion->Left >= 0 && psrRegion->Right <= _api.cellCount.x);
-    assert(psrRegion->Top <= psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
+    //assert(psrRegion->Left <= psrRegion->Right && psrRegion->Left >= 0 && psrRegion->Right <= _api.cellCount.x);
+    //assert(psrRegion->Top <= psrRegion->Bottom && psrRegion->Top >= 0 && psrRegion->Bottom <= _api.cellCount.y);
 
     const auto left = gsl::narrow_cast<u16>(psrRegion->Left);
     const auto top = gsl::narrow_cast<u16>(psrRegion->Top);
@@ -173,28 +173,6 @@ constexpr HRESULT vec2_narrow(U x, U y, AtlasEngine::vec2<T>& out) noexcept
 [[nodiscard]] HRESULT AtlasEngine::GetProposedFont(const FontInfoDesired& fontInfoDesired, _Out_ FontInfo& fontInfo, const int dpi) noexcept
 try
 {
-    const wchar_t* requestedFaceName = fontInfoDesired.GetFaceName().data();
-    const auto requestedFamily = fontInfoDesired.GetFamily();
-    auto requestedWeight = fontInfoDesired.GetWeight();
-    auto requestedSize = fontInfoDesired.GetEngineSize();
-
-    if (!requestedFaceName)
-    {
-        requestedFaceName = L"Consolas";
-    }
-    if (!requestedWeight)
-    {
-        requestedWeight = DWRITE_FONT_WEIGHT_NORMAL;
-    }
-    if (!requestedSize.Y)
-    {
-        requestedSize = { 0, 16 };
-    }
-
-    std::wstring faceNameBuffer;
-    std::wstring_view resultingFaceName = requestedFaceName;
-    COORD resultingCellSize{};
-
     // One day I'm going to implement GDI for AtlasEngine...
     // Until then this code is work in progress.
 #if 0
@@ -247,30 +225,19 @@ try
         resultingCellSize.X = gsl::narrow<SHORT>(sz.cx);
         resultingCellSize.Y = gsl::narrow<SHORT>(sz.cy);
     }
-    else
 #endif
-    {
-        wil::com_ptr<IDWriteTextFormat> textFormat;
-        THROW_IF_FAILED(_createTextFormat(requestedFaceName, static_cast<DWRITE_FONT_WEIGHT>(requestedWeight), DWRITE_FONT_STYLE_NORMAL, requestedSize.Y, textFormat.addressof()));
 
-        wil::com_ptr<IDWriteTextLayout> textLayout;
-        THROW_IF_FAILED(_sr.dwriteFactory->CreateTextLayout(L"M", 1, textFormat.get(), FLT_MAX, FLT_MAX, textLayout.addressof()));
+    const wchar_t* requestedFaceName = fontInfoDesired.GetFaceName().c_str();
+    const auto requestedFamily = fontInfoDesired.GetFamily();
+    const auto requestedWeight = fontInfoDesired.GetWeight();
+    const auto requestedSize = fontInfoDesired.GetEngineSize();
+    const auto metrics = _getFontMetrics(requestedFaceName, requestedSize.Y, static_cast<DWRITE_FONT_WEIGHT>(requestedWeight));
 
-        DWRITE_TEXT_METRICS metrics;
-        THROW_IF_FAILED(textLayout->GetMetrics(&metrics));
+    COORD resultingCellSize;
+    resultingCellSize.X = gsl::narrow<SHORT>(metrics.cellSize.x);
+    resultingCellSize.Y = gsl::narrow<SHORT>(metrics.cellSize.y);
 
-        const auto scaling = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-        const auto cx = std::ceil(metrics.width * scaling);
-        const auto cy = std::ceil(metrics.height * scaling);
-        resultingCellSize.X = gsl::narrow<SHORT>(cx);
-        resultingCellSize.Y = gsl::narrow<SHORT>(cy);
-
-        faceNameBuffer.resize(textFormat->GetFontFamilyNameLength());
-        THROW_IF_FAILED(textFormat->GetFontFamilyName(faceNameBuffer.data(), static_cast<UINT32>(faceNameBuffer.size() + 1)));
-        resultingFaceName = faceNameBuffer;
-    }
-
-    fontInfo.SetFromEngine(resultingFaceName, requestedFamily, requestedWeight, false, resultingCellSize, requestedSize);
+    fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, resultingCellSize, requestedSize);
     return S_OK;
 }
 CATCH_RETURN()
@@ -437,14 +404,19 @@ void AtlasEngine::ToggleShaderEffects() noexcept
 [[nodiscard]] HRESULT AtlasEngine::UpdateFont(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
-    // This must be the first action as it actually modifies fontInfo, which we use later on in this function.
-    RETURN_IF_FAILED(GetProposedFont(fontInfoDesired, fontInfo, _api.dpi));
+    // vvvv This block of code is a copy from GetProposedFont().
+    const wchar_t* requestedFaceName = fontInfoDesired.GetFaceName().c_str();
+    const auto requestedFamily = fontInfoDesired.GetFamily();
+    const auto requestedWeight = fontInfoDesired.GetWeight();
+    const auto requestedSize = fontInfoDesired.GetEngineSize();
+    const auto metrics = _getFontMetrics(requestedFaceName, requestedSize.Y, static_cast<DWRITE_FONT_WEIGHT>(requestedWeight));
 
-    u16x2 newSize;
-    {
-        const auto size = fontInfo.GetSize();
-        RETURN_IF_FAILED(vec2_narrow(size.X, size.Y, newSize));
-    }
+    COORD resultingCellSize;
+    resultingCellSize.X = gsl::narrow<SHORT>(metrics.cellSize.x);
+    resultingCellSize.Y = gsl::narrow<SHORT>(metrics.cellSize.y);
+
+    fontInfo.SetFromEngine(requestedFaceName, requestedFamily, requestedWeight, false, resultingCellSize, requestedSize);
+    // ^^^^ This block of code is a copy from GetProposedFont().
 
     std::vector<DWRITE_FONT_FEATURE> fontFeatures;
     if (!features.empty())
@@ -530,14 +502,15 @@ try
     _api.fontFeatures = std::move(fontFeatures);
     _api.fontAxisValues = std::move(fontAxisValues);
     _api.fontName = std::move(fontName);
-    _api.fontSize = fontInfo.GetUnscaledSize().Y;
+    _api.baselineInDIP = metrics.baselineInDIP;
+    _api.fontSizeInDIP = metrics.fontSizeInDIP;
     _api.fontWeight = gsl::narrow_cast<u16>(fontInfo.GetWeight());
     WI_SetFlag(_api.invalidations, ApiInvalidations::Font);
 
-    if (newSize != _api.cellSize)
+    if (metrics.cellSize != _api.cellSize)
     {
-        _api.cellSize = newSize;
-        _api.cellCount = _api.sizeInPixel / _api.cellSize;
+        _api.cellSize = metrics.cellSize;
+        _api.cellCount = _api.sizeInPixel / metrics.cellSize;
         WI_SetFlag(_api.invalidations, ApiInvalidations::Size);
     }
 
@@ -550,3 +523,70 @@ void AtlasEngine::UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept
 }
 
 #pragma endregion
+
+#pragma warning(disable : 4189)
+
+AtlasEngine::FontMetrics AtlasEngine::_getFontMetrics(const wchar_t* faceName, double fontSize, DWRITE_FONT_WEIGHT weight)
+{
+    if (!faceName)
+    {
+        faceName = L"Consolas";
+    }
+    if (!fontSize)
+    {
+        fontSize = 12.0f;
+    }
+    if (!weight)
+    {
+        weight = DWRITE_FONT_WEIGHT_NORMAL;
+    }
+
+    wil::com_ptr<IDWriteFontCollection> systemFontCollection;
+    THROW_IF_FAILED(_sr.dwriteFactory->GetSystemFontCollection(systemFontCollection.addressof(), false));
+
+    u32 index = 0;
+    BOOL exists = false;
+    THROW_IF_FAILED(systemFontCollection->FindFamilyName(faceName, &index, &exists));
+    THROW_HR_IF(DWRITE_E_NOFONT, !exists);
+
+    wil::com_ptr<IDWriteFontFamily> fontFamily;
+    THROW_IF_FAILED(systemFontCollection->GetFontFamily(index, fontFamily.addressof()));
+
+    wil::com_ptr<IDWriteFont> font;
+    THROW_IF_FAILED(fontFamily->GetFirstMatchingFont(weight, DWRITE_FONT_STRETCH_NORMAL, DWRITE_FONT_STYLE_NORMAL, font.addressof()));
+
+    wil::com_ptr<IDWriteFontFace> fontFace;
+    THROW_IF_FAILED(font->CreateFontFace(fontFace.addressof()));
+
+    DWRITE_FONT_METRICS1 fontMetrics;
+    fontFace->GetMetrics(&fontMetrics);
+
+    static constexpr u32 codePoint = L'M';
+    u16 glyphIndex;
+    THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));
+
+    DWRITE_GLYPH_METRICS glyphMetrics;
+    THROW_IF_FAILED(fontFace->GetDesignGlyphMetrics(&glyphIndex, 1, &glyphMetrics));
+
+    // Point sizes are commonly treated at a 72 DPI scale
+    // (including by OpenType), whereas DirectWrite uses 96 DPI.
+    // Since we want the height in px we multiply by the display's DPI.
+    const auto fontSizeInPx = std::ceil(fontSize / 72.0 * static_cast<double>(_api.dpi));
+
+    const auto designUnitsPerPx = fontSizeInPx / static_cast<double>(fontMetrics.designUnitsPerEm);
+    const auto ascentInPx = static_cast<double>(fontMetrics.ascent) * designUnitsPerPx;
+    const auto descentInPx = static_cast<double>(fontMetrics.descent) * designUnitsPerPx;
+    const auto lineGapInPx = static_cast<double>(fontMetrics.lineGap) * designUnitsPerPx;
+    const auto advanceWidthInPx = static_cast<double>(glyphMetrics.advanceWidth) * designUnitsPerPx;
+
+    const auto halfGapInPx = lineGapInPx / 2.0;
+    const auto baseline = std::ceil(ascentInPx + halfGapInPx);
+    const auto cellHeight = gsl::narrow<u16>(std::ceil((baseline + descentInPx + halfGapInPx)));
+    const auto cellWidth = gsl::narrow<u16>(std::round(advanceWidthInPx));
+
+    return {
+        { cellWidth, cellHeight },
+        static_cast<float>(fontSizeInPx / 96.0 * static_cast<double>(_api.dpi)),
+        static_cast<float>(baseline / 96.0 * static_cast<double>(_api.dpi)),
+    };
+}

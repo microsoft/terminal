@@ -978,7 +978,10 @@ void AtlasEngine::_recreateFontDependentResources()
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
-                THROW_IF_FAILED(_createTextFormat(_api.fontName.get(), fontWeight, fontStyle, _api.fontSize, textFormat.put()));
+                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontName.get(), nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontSizeInDIP, L"", textFormat.put()));
+                textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
+                textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
+
                 // DWRITE_LINE_SPACING_METHOD_UNIFORM:
                 // > Lines are explicitly set to uniform spacing, regardless of contained font sizes.
                 // > This can be useful to avoid the uneven appearance that can occur from font fallback.
@@ -987,7 +990,7 @@ void AtlasEngine::_recreateFontDependentResources()
                 // "baseline" parameter:
                 // > Distance from top of line to baseline. A reasonable ratio to lineSpacing is 80%.
                 // So... let's set it to 80%.
-                THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _r.cellSizeDIP.y * 0.8f));
+                THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.baselineInDIP));
 
                 if (!_api.fontAxisValues.empty())
                 {
@@ -1022,23 +1025,6 @@ void AtlasEngine::_recreateFontDependentResources()
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Font);
     WI_SetAllFlags(_r.invalidations, RenderInvalidations::Cursor | RenderInvalidations::ConstBuffer);
-}
-
-HRESULT AtlasEngine::_createTextFormat(const wchar_t* fontFamilyName, DWRITE_FONT_WEIGHT fontWeight, DWRITE_FONT_STYLE fontStyle, float fontSize, _COM_Outptr_ IDWriteTextFormat** textFormat) const noexcept
-{
-    // Most applications (even OpenType itself) treat font sizes
-    // at a base scale of 72 DPI, whereas DirectWrite uses 96 DPI.
-    // --> Multiply by 1.333 to convert from 72 DPI to 96 DPI scale.
-    fontSize *= 4.0f / 3.0f;
-
-    const auto hr = _sr.dwriteFactory->CreateTextFormat(fontFamilyName, nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, fontSize, L"", textFormat);
-    if (SUCCEEDED(hr))
-    {
-        const auto tf = *textFormat;
-        tf->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
-        tf->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
-    }
-    return hr;
 }
 
 IDWriteTextFormat* AtlasEngine::_getTextFormat(bool bold, bool italic) const noexcept

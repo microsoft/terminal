@@ -35,10 +35,10 @@ struct Cell
 cbuffer ConstBuffer : register(b0)
 {
     float4 viewport;
-    uint2 cellSize;
-    uint cellCountX;
-    float gamma;
+    float4 gammaRatios;
     float grayscaleEnhancedContrast;
+    uint cellCountX;
+    uint2 cellSize;
     uint backgroundColor;
     uint cursorColor;
     uint selectionColor;
@@ -73,6 +73,28 @@ float4 alphaBlendPremultiplied(float4 bottom, float4 top)
 {
     float ia = 1 - top.a;
     return float4(bottom.rgb * ia + top.rgb, bottom.a * ia + top.a);
+}
+
+float applyLightOnDarkContrastAdjustment(float3 color)
+{
+    float lightness = 0.30f * color.r + 0.59f * color.g + 0.11f * color.b;
+    float multiplier = saturate(4.0f * (0.75f - lightness));
+    return grayscaleEnhancedContrast * multiplier;
+}
+
+float calcColorIntensity(float3 color)
+{
+    return (color.r + color.g + color.g + color.b) / 4.0f;
+}
+
+float enhanceContrast(float alpha, float k)
+{
+    return alpha * (k + 1.0f) / (alpha * k + 1.0f);
+}
+
+float applyAlphaCorrection(float a, float f, float4 g)
+{
+    return a + a * (1 - a) * ((g.x * f + g.y) * a + (g.z * f + g.w));
 }
 
 // clang-format off
@@ -117,10 +139,11 @@ float4 main(float4 pos: SV_Position): SV_Target
         if (!(cell.flags & CellFlags_ColoredGlyph))
         {
             float4 fg = decodeRGBA(cell.color.x);
-
-            // Put DirectWrite's secret magic sauce here.
-            float correctedAlpha = glyph.a;
-
+            float contrastBoost = (cell.flags & CellFlags_ThinFont) == 0 ? 0.0f : 0.5f;
+            float enhancedContrast = contrastBoost + applyLightOnDarkContrastAdjustment(fg.rgb);
+            float intensity = calcColorIntensity(fg.rgb);
+            float contrasted = enhanceContrast(glyph.a, enhancedContrast);
+            float correctedAlpha = applyAlphaCorrection(contrasted, intensity, gammaRatios);
             glyph = fg * correctedAlpha;
         }
 

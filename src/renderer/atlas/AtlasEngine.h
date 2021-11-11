@@ -152,6 +152,8 @@ namespace Microsoft::Console::Render
         using u32 = uint32_t;
         using u32x2 = vec2<u32>;
 
+        using i32 = int32_t;
+
         using f32 = float;
         using f32x2 = vec2<f32>;
         using f32x4 = vec4<f32>;
@@ -169,6 +171,7 @@ namespace Microsoft::Console::Render
             u8 bidiLevel = 0;
         };
 
+    private:
         template<typename T, size_t Alignment = alignof(T)>
         struct Buffer
         {
@@ -273,7 +276,6 @@ namespace Microsoft::Console::Render
             size_t _size = 0;
         };
 
-    private:
         // This structure works similar to how std::string works:
         // You can think of a std::string as a structure consisting of:
         //   char*  data;
@@ -363,6 +365,13 @@ namespace Microsoft::Console::Render
             {
                 return is_inline() ? sizeof(inlined) : _msize(allocated);
             }
+        };
+
+        struct FontMetrics
+        {
+            u16x2 cellSize;
+            float fontSizeInDIP;
+            float baselineInDIP;
         };
 
         // These flags are shared with shader_ps.hlsl.
@@ -533,10 +542,10 @@ namespace Microsoft::Console::Render
             //   This means a structure like {u32; u32; u32; u32x2} would require
             //   padding so that it is {u32; u32; u32; <4 byte padding>; u32x2}.
             alignas(sizeof(f32x4)) f32x4 viewport;
-            alignas(sizeof(u32x2)) u32x2 cellSize;
-            alignas(sizeof(u32)) u32 cellCountX = 0;
-            alignas(sizeof(f32)) f32 gamma = 0;
+            alignas(sizeof(f32x4)) f32x4 gammaRatios;
             alignas(sizeof(f32)) f32 grayscaleEnhancedContrast = 0;
+            alignas(sizeof(u32)) u32 cellCountX = 0;
+            alignas(sizeof(u32x2)) u32x2 cellSize;
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
@@ -568,7 +577,7 @@ namespace Microsoft::Console::Render
         // std::clamp<T, Predicate>(T, T, T, Predicate) with std::less{} as the argument,
         // which introduces branching. While not perfect, this is still better than std::clamp.
         template<typename T>
-        constexpr T clamp(T val, T min, T max)
+        static constexpr T clamp(T val, T min, T max)
         {
             return std::max(min, std::min(max, val));
         }
@@ -587,8 +596,12 @@ namespace Microsoft::Console::Render
         void _flushBufferLine();
         void _emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2);
 
+        // AtlasEngine.api.cpp
+        FontMetrics _getFontMetrics(const wchar_t* faceName, double fontSize, DWRITE_FONT_WEIGHT weight);
+
         // AtlasEngine.r.cpp
         void _setShaderResources() const;
+        static f32x4 _getGammaRatios(float gamma) noexcept;
         void _updateConstantBuffer() const noexcept;
         void _adjustAtlasSize();
         void _reserveScratchpadSize(u16 minWidth);
@@ -713,7 +726,8 @@ namespace Microsoft::Console::Render
 
             std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
             wil::unique_process_heap_string fontName; // changes are flagged as ApiInvalidations::Font|Size
-            u16 fontSize = 0; // changes are flagged as ApiInvalidations::Font|Size
+            float baselineInDIP = 0.0f; // changes are flagged as ApiInvalidations::Font
+            float fontSizeInDIP = 0; // changes are flagged as ApiInvalidations::Font|Size
             u16 fontWeight = 0; // changes are flagged as ApiInvalidations::Font
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
             u16 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
