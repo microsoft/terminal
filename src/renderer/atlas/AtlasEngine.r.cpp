@@ -148,6 +148,10 @@ void AtlasEngine::_updateConstantBuffer() const noexcept
     data.cellCountX = _r.cellCount.x;
     data.cellSize.x = _r.cellSize.x;
     data.cellSize.y = _r.cellSize.y;
+    data.underlinePos.x = _r.underlinePos;
+    data.underlinePos.y = _r.underlinePos + _r.lineThickness;
+    data.strikethroughPos.x = _r.strikethroughPos;
+    data.strikethroughPos.y = _r.strikethroughPos + _r.lineThickness;
     data.backgroundColor = _r.backgroundColor;
     data.cursorColor = _r.cursorOptions.cursorColor;
     data.selectionColor = _r.selectionColor;
@@ -393,7 +397,7 @@ void AtlasEngine::_drawCursor()
     switch (cursorType)
     {
     case CursorType::Legacy:
-        rect.top = _r.cellSizeDIP.y * static_cast<float>(100 - _r.cursorOptions.ulCursorHeightPercent) / 100.0f;
+        rect.top = _r.cellSizeDIP.y * static_cast<float>(100 - _r.cursorOptions.heightPercentage) / 100.0f;
         break;
     case CursorType::VerticalBar:
         rect.right = lineWidth;

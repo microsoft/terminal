@@ -369,9 +369,14 @@ namespace Microsoft::Console::Render
 
         struct FontMetrics
         {
+            wil::unique_process_heap_string fontName;
+            float baselineInDIP = 0.0f;
+            float fontSizeInDIP = 0.0f;
             u16x2 cellSize;
-            float fontSizeInDIP;
-            float baselineInDIP;
+            u16 fontWeight = 0;
+            u16 underlinePos = 0;
+            u16 strikethroughPos = 0;
+            u16 lineThickness = 0;
         };
 
         // These flags are shared with shader_ps.hlsl.
@@ -521,7 +526,7 @@ namespace Microsoft::Console::Render
         {
             u32 cursorColor = INVALID_COLOR;
             u16 cursorType = gsl::narrow_cast<u16>(CursorType::Legacy);
-            u8 ulCursorHeightPercent = 25;
+            u8 heightPercentage = 20;
 
             ATLAS_POD_OPS(CachedCursorOptions)
         };
@@ -546,10 +551,11 @@ namespace Microsoft::Console::Render
             alignas(sizeof(f32)) f32 grayscaleEnhancedContrast = 0;
             alignas(sizeof(u32)) u32 cellCountX = 0;
             alignas(sizeof(u32x2)) u32x2 cellSize;
+            alignas(sizeof(u32x2)) u32x2 underlinePos;
+            alignas(sizeof(u32x2)) u32x2 strikethroughPos;
             alignas(sizeof(u32)) u32 backgroundColor = 0;
             alignas(sizeof(u32)) u32 cursorColor = 0;
             alignas(sizeof(u32)) u32 selectionColor = 0;
-#pragma warning(suppress : 4324) // structure was padded due to alignment specifier
         };
 
         // Handled in BeginPaint()
@@ -586,6 +592,7 @@ namespace Microsoft::Console::Render
         // AtlasEngine.cpp
         [[nodiscard]] HRESULT _handleException(const wil::ResultException& exception) noexcept;
         __declspec(noinline) void _createResources();
+        void _releaseSwapChain();
         __declspec(noinline) void _createSwapChain();
         __declspec(noinline) void _recreateSizeDependentResources();
         __declspec(noinline) void _recreateFontDependentResources();
@@ -599,7 +606,7 @@ namespace Microsoft::Console::Render
         void _emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2);
 
         // AtlasEngine.api.cpp
-        FontMetrics _getFontMetrics(const wchar_t* faceName, double fontSize, DWRITE_FONT_WEIGHT weight);
+        [[maybe_unused]] void _resolveFontMetrics(const FontInfoDesired& fontInfoDesired, FontInfo& fontInfo, FontMetrics* fontMetrics = nullptr) const;
 
         // AtlasEngine.r.cpp
         void _setShaderResources() const;
@@ -666,6 +673,9 @@ namespace Microsoft::Console::Render
             f32x2 cellSizeDIP; // invalidated by ApiInvalidations::Font, caches _api.cellSize but in DIP
             u16x2 cellSize; // invalidated by ApiInvalidations::Font, caches _api.cellSize
             u16x2 cellCount; // invalidated by ApiInvalidations::Font|Size, caches _api.cellCount
+            u16 underlinePos = 0;
+            u16 strikethroughPos = 0;
+            u16 lineThickness = 0;
             u16 dpi = USER_DEFAULT_SCREEN_DPI; // invalidated by ApiInvalidations::Font, caches _api.dpi
             u16 maxEncounteredCellCount = 0;
             u16 scratchpadCellWidth = 0;
@@ -705,8 +715,9 @@ namespace Microsoft::Console::Render
             Buffer<u16> glyphIndices;
             Buffer<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps;
             std::vector<DWRITE_FONT_FEATURE> fontFeatures; // changes are flagged as ApiInvalidations::Font|Size
-
-            u16x2 cellSize; // changes are flagged as ApiInvalidations::Font
+            std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
+            FontMetrics fontMetrics; // changes are flagged as ApiInvalidations::Font|Size
+            
             u16x2 cellCount; // caches `sizeInPixel / cellSize`
             u16x2 sizeInPixel; // changes are flagged as ApiInvalidations::Size
 
@@ -726,18 +737,12 @@ namespace Microsoft::Console::Render
             u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
             i16 scrollOffset = 0;
 
-            std::vector<DWRITE_FONT_AXIS_VALUE> fontAxisValues; // changes are flagged as ApiInvalidations::Font|Size
-            wil::unique_process_heap_string fontName; // changes are flagged as ApiInvalidations::Font|Size
-            float baselineInDIP = 0.0f; // changes are flagged as ApiInvalidations::Font
-            float fontSizeInDIP = 0; // changes are flagged as ApiInvalidations::Font|Size
-            u16 fontWeight = 0; // changes are flagged as ApiInvalidations::Font
-            u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
-            u16 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
-
             std::function<void(HRESULT)> warningCallback;
             std::function<void()> swapChainChangedCallback;
             wil::unique_handle swapChainHandle;
             HWND hwnd = nullptr;
+            u16 dpi = USER_DEFAULT_SCREEN_DPI; // changes are flagged as ApiInvalidations::Font|Size
+            u16 antialiasingMode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE; // changes are flagged as ApiInvalidations::Font
 
             ApiInvalidations invalidations = ApiInvalidations::Device;
         } _api;

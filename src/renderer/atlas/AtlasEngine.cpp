@@ -228,7 +228,7 @@ try
     // But most of the time _invalidations will be ::none, making this very cheap.
     if (_api.invalidations != ApiInvalidations::None)
     {
-        RETURN_HR_IF(E_UNEXPECTED, _api.sizeInPixel == u16x2{} || _api.cellSize == u16x2{} || _api.cellCount == u16x2{});
+        RETURN_HR_IF(E_UNEXPECTED, _api.cellCount == u16x2{});
 
         if (WI_IsFlagSet(_api.invalidations, ApiInvalidations::Device))
         {
@@ -577,8 +577,8 @@ try
         WI_SetFlagIf(flags, CellFlags::UnderlineDouble, textAttributes.IsDoublyUnderlined());
         WI_SetFlagIf(flags, CellFlags::Strikethrough, textAttributes.IsCrossedOut());
 
-        u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
-        AtlasKeyAttributes attributes{ 0, textAttributes.IsBold(), textAttributes.IsItalic(), 0 };
+        const u32x2 newColors{ gsl::narrow_cast<u32>(fg | 0xff000000), gsl::narrow_cast<u32>(bg | _api.backgroundOpaqueMixin) };
+        const AtlasKeyAttributes attributes{ 0, textAttributes.IsBold(), textAttributes.IsItalic(), 0 };
 
         if (_api.attributes != attributes)
         {
@@ -627,6 +627,7 @@ CATCH_RETURN()
 
 void AtlasEngine::_createResources()
 {
+    _releaseSwapChain();
     _r = {};
 
 #ifdef NDEBUG
@@ -731,17 +732,26 @@ void AtlasEngine::_createResources()
     WI_SetAllFlags(_api.invalidations, ApiInvalidations::SwapChain | ApiInvalidations::Font);
 }
 
-void AtlasEngine::_createSwapChain()
+void AtlasEngine::_releaseSwapChain()
 {
-    // ResizeBuffer() docs:
-    //   Before you call ResizeBuffers, ensure that the application releases all references [...].
-    //   You can use ID3D11DeviceContext::ClearState to ensure that all [internal] references are released.
-    if (_r.swapChain)
+    // Flush() docs:
+    //   However, if an application must actually destroy an old swap chain and create a new swap chain,
+    //   the application must force the destruction of all objects that the application freed.
+    //   To force the destruction, call ID3D11DeviceContext::ClearState (or otherwise ensure
+    //   no views are bound to pipeline state), and then call Flush on the immediate context.
+    if (_r.swapChain && _r.deviceContext)
     {
+        _r.frameLatencyWaitableObject.reset();
+        _r.swapChain.reset();
         _r.renderTargetView.reset();
         _r.deviceContext->ClearState();
         _r.deviceContext->Flush();
     }
+}
+
+void AtlasEngine::_createSwapChain()
+{
+    _releaseSwapChain();
 
     // D3D swap chain setup (the thing that allows us to present frames on the screen)
     {
@@ -805,8 +815,6 @@ void AtlasEngine::_createSwapChain()
     // See documentation for IDXGISwapChain2::GetFrameLatencyWaitableObject method:
     // > For every frame it renders, the app should wait on this handle before starting any rendering operations.
     // > Note that this requirement includes the first frame the app renders with the swap chain.
-    //
-    // TODO: In the future all D3D code should be moved into AtlasEngine.r.cpp
     WaitUntilCanRender();
 
     if (_api.swapChainChangedCallback)
@@ -925,8 +933,8 @@ void AtlasEngine::_recreateFontDependentResources()
         static constexpr size_t sizePerPixel = 4;
         static constexpr size_t sizeLimit = D3D10_REQ_RESOURCE_SIZE_IN_MEGABYTES * 1024 * 1024;
         const size_t dimensionLimit = _r.device->GetFeatureLevel() >= D3D_FEATURE_LEVEL_11_0 ? D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION : D3D10_REQ_TEXTURE2D_U_OR_V_DIMENSION;
-        const size_t csx = _api.cellSize.x;
-        const size_t csy = _api.cellSize.y;
+        const size_t csx = _api.fontMetrics.cellSize.x;
+        const size_t csy = _api.fontMetrics.cellSize.y;
         const auto xLimit = (dimensionLimit / csx) * csx;
         const auto pixelsPerCellRow = xLimit * csy;
         const auto yLimitDueToDimension = (dimensionLimit / csy) * csy;
@@ -934,16 +942,16 @@ void AtlasEngine::_recreateFontDependentResources()
         const auto yLimit = std::min(yLimitDueToDimension, yLimitDueToSize);
         const auto scaling = GetScaling();
 
-        _r.cellSizeDIP.x = static_cast<float>(_api.cellSize.x) / scaling;
-        _r.cellSizeDIP.y = static_cast<float>(_api.cellSize.y) / scaling;
-        _r.cellSize = _api.cellSize;
+        _r.cellSizeDIP.x = static_cast<float>(_api.fontMetrics.cellSize.x) / scaling;
+        _r.cellSizeDIP.y = static_cast<float>(_api.fontMetrics.cellSize.y) / scaling;
+        _r.cellSize = _api.fontMetrics.cellSize;
         _r.cellCount = _api.cellCount;
         // x/yLimit are strictly smaller than dimensionLimit, which is smaller than a u16.
         _r.atlasSizeInPixelLimit = u16x2{ gsl::narrow_cast<u16>(xLimit), gsl::narrow_cast<u16>(yLimit) };
         _r.atlasSizeInPixel = { 0, 0 };
         // The first Cell at {0, 0} is always our cursor texture.
         // --> The first glyph starts at {1, 0}.
-        _r.atlasPosition.x = _api.cellSize.x;
+        _r.atlasPosition.x = _api.fontMetrics.cellSize.x;
         _r.atlasPosition.y = 0;
 
         _r.glyphs = {};
@@ -966,6 +974,9 @@ void AtlasEngine::_recreateFontDependentResources()
 
     // D2D
     {
+        _r.underlinePos = _api.fontMetrics.underlinePos;
+        _r.strikethroughPos = _api.fontMetrics.strikethroughPos;
+        _r.lineThickness = _api.fontMetrics.lineThickness;
         _r.dpi = _api.dpi;
         _r.maxEncounteredCellCount = 0;
         _r.scratchpadCellWidth = 0;
@@ -996,11 +1007,11 @@ void AtlasEngine::_recreateFontDependentResources()
         {
             for (auto bold = 0; bold < 2; ++bold)
             {
-                const auto fontWeight = bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
+                const auto fontWeight = bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontMetrics.fontWeight);
                 const auto fontStyle = italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 auto& textFormat = _r.textFormats[italic][bold];
 
-                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontName.get(), nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontSizeInDIP, L"", textFormat.put()));
+                THROW_IF_FAILED(_sr.dwriteFactory->CreateTextFormat(_api.fontMetrics.fontName.get(), nullptr, fontWeight, fontStyle, DWRITE_FONT_STRETCH_NORMAL, _api.fontMetrics.fontSizeInDIP, L"", textFormat.put()));
                 textFormat->SetTextAlignment(DWRITE_TEXT_ALIGNMENT_CENTER);
                 textFormat->SetWordWrapping(DWRITE_WORD_WRAPPING_NO_WRAP);
 
@@ -1012,7 +1023,7 @@ void AtlasEngine::_recreateFontDependentResources()
                 // "baseline" parameter:
                 // > Distance from top of line to baseline. A reasonable ratio to lineSpacing is 80%.
                 // So... let's set it to 80%.
-                THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.baselineInDIP));
+                THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
 
                 if (!_api.fontAxisValues.empty())
                 {
@@ -1186,7 +1197,7 @@ void AtlasEngine::_flushBufferLine()
                     /* textPosition */ idx,
                     /* textLength */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
-                    /* baseFamilyName */ _api.fontName.get(),
+                    /* baseFamilyName */ _api.fontMetrics.fontName.get(),
                     /* fontAxisValues */ textFormatAxis.data(),
                     /* fontAxisValueCount */ gsl::narrow_cast<u32>(textFormatAxis.size()),
                     /* mappedLength */ &mappedLength,
@@ -1196,7 +1207,7 @@ void AtlasEngine::_flushBufferLine()
             }
             else
             {
-                const auto baseWeight = _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
+                const auto baseWeight = _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontMetrics.fontWeight);
                 const auto baseStyle = _api.attributes.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
                 wil::com_ptr<IDWriteFont> font;
 
@@ -1205,7 +1216,7 @@ void AtlasEngine::_flushBufferLine()
                     /* textPosition       */ idx,
                     /* textLength         */ gsl::narrow_cast<u32>(_api.bufferLine.size()) - idx,
                     /* baseFontCollection */ fontCollection.get(),
-                    /* baseFamilyName     */ _api.fontName.get(),
+                    /* baseFamilyName     */ _api.fontMetrics.fontName.get(),
                     /* baseWeight         */ baseWeight,
                     /* baseStyle          */ baseStyle,
                     /* baseStretch        */ DWRITE_FONT_STRETCH_NORMAL,
@@ -1244,7 +1255,7 @@ void AtlasEngine::_flushBufferLine()
         {
             if (!mappedFontFace)
             {
-                const auto baseWeight = _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontWeight);
+                const auto baseWeight = _api.attributes.bold ? DWRITE_FONT_WEIGHT_BOLD : static_cast<DWRITE_FONT_WEIGHT>(_api.fontMetrics.fontWeight);
                 const auto baseStyle = _api.attributes.italic ? DWRITE_FONT_STYLE_ITALIC : DWRITE_FONT_STYLE_NORMAL;
 
                 wil::com_ptr<IDWriteFontFamily> fontFamily;

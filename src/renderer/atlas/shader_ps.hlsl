@@ -39,6 +39,8 @@ cbuffer ConstBuffer : register(b0)
     float grayscaleEnhancedContrast;
     uint cellCountX;
     uint2 cellSize;
+    uint2 underlinePos;
+    uint2 strikethroughPos;
     uint backgroundColor;
     uint cursorColor;
     uint selectionColor;
@@ -61,12 +63,6 @@ float4 decodeRGBA(uint i)
 uint2 decodeU16x2(uint i)
 {
     return uint2(i & 0xffff, i >> 16);
-}
-
-float insideRect(float2 pos, float4 boundaries)
-{
-    float2 v = step(boundaries.xy, pos) - step(boundaries.zw, pos);
-    return v.x * v.y;
 }
 
 float4 alphaBlendPremultiplied(float4 bottom, float4 top)
@@ -101,7 +97,7 @@ float applyAlphaCorrection(float a, float f, float4 g)
 float4 main(float4 pos: SV_Position): SV_Target
 // clang-format on
 {
-    if (!insideRect(pos.xy, viewport))
+    if (any(pos.xy < viewport.xy) || any(pos.xy >= viewport.zw))
     {
         return decodeRGBA(backgroundColor);
     }
@@ -113,13 +109,15 @@ float4 main(float4 pos: SV_Position): SV_Target
     // Of course you wouldn't just return a red color there, but instead
     // for instance run your new code and compare it with the old.
 
-    uint2 cellIndex = pos.xy / cellSize;
-    uint2 cellPos = pos.xy % cellSize;
+    uint2 viewportPos = pos.xy - viewport.xy;
+    uint2 cellIndex = viewportPos / cellSize;
+    uint2 cellPos = viewportPos % cellSize;
     Cell cell = cells[cellIndex.y * cellCountX + cellIndex.x];
 
     // Layer 0:
     // The cell's background color
     float4 color = decodeRGBA(cell.color.y);
+    float4 fg = decodeRGBA(cell.color.x);
 
     // Layer 1 (optional):
     // Colored cursors are drawn "in between" the background color and the text of a cell.
@@ -132,13 +130,21 @@ float4 main(float4 pos: SV_Position): SV_Target
     }
 
     // Layer 2:
-    // The cell's glyph potentially drawn in the foreground color
+    // Step 1: Underlines
+    if ((cell.flags & CellFlags_Underline) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y)
+    {
+        color = alphaBlendPremultiplied(color, fg);
+    }
+    if ((cell.flags & CellFlags_UnderlineDotted) && cellPos.y >= underlinePos.x && cellPos.y < underlinePos.y && (viewportPos.x / (underlinePos.y - underlinePos.x) & 1))
+    {
+        color = alphaBlendPremultiplied(color, fg);
+    }
+    // Step 2: The cell's glyph, potentially drawn in the foreground color
     {
         float4 glyph = glyphs[decodeU16x2(cell.glyphPos) + cellPos];
 
         if (!(cell.flags & CellFlags_ColoredGlyph))
         {
-            float4 fg = decodeRGBA(cell.color.x);
             float contrastBoost = (cell.flags & CellFlags_ThinFont) == 0 ? 0.0f : 0.5f;
             float enhancedContrast = contrastBoost + applyLightOnDarkContrastAdjustment(fg.rgb);
             float intensity = calcColorIntensity(fg.rgb);
@@ -148,6 +154,11 @@ float4 main(float4 pos: SV_Position): SV_Target
         }
 
         color = alphaBlendPremultiplied(color, glyph);
+    }
+    // Step 3: Lines, but not "under"lines
+    if ((cell.flags & CellFlags_Strikethrough) && cellPos.y >= strikethroughPos.x && cellPos.y < strikethroughPos.y)
+    {
+        color = alphaBlendPremultiplied(color, fg);
     }
 
     // Layer 3 (optional):
