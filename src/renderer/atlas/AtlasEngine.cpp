@@ -731,7 +731,7 @@ void AtlasEngine::_createResources()
     THROW_IF_FAILED(_r.device->CreatePixelShader(&shader_ps[0], sizeof(shader_ps), nullptr, _r.pixelShader.put()));
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::Device);
-    WI_SetAllFlags(_api.invalidations, ApiInvalidations::SwapChain | ApiInvalidations::Font);
+    WI_SetAllFlags(_api.invalidations, ApiInvalidations::SwapChain);
 }
 
 void AtlasEngine::_releaseSwapChain()
@@ -829,7 +829,7 @@ void AtlasEngine::_createSwapChain()
     }
 
     WI_ClearFlag(_api.invalidations, ApiInvalidations::SwapChain);
-    WI_SetAllFlags(_api.invalidations, ApiInvalidations::Size);
+    WI_SetAllFlags(_api.invalidations, ApiInvalidations::Size | ApiInvalidations::Font);
 }
 
 void AtlasEngine::_recreateSizeDependentResources()
