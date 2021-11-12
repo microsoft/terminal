@@ -33,9 +33,6 @@
 
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
 
-  <!-- PGO -->
-  <Import Condition="'$(PgoTarget)' == 'true'" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
-
   <!-- Exclude our dependencies from static analysis. CAExcludePath can only be
        set after we've imported Microsoft.Cpp.targets -->
   <PropertyGroup>

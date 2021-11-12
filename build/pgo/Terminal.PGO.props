@@ -1,7 +1,7 @@
 <Project>
   <PropertyGroup>
     <NuGetPackageDirectory>$(MSBuildThisFileDirectory)..\..\packages</NuGetPackageDirectory>
-    <PkgMicrosoft_PGO_Helpers_Cpp>$(NuGetPackageDirectory)\Microsoft.PGO-Helpers.Cpp.0.2.18</PkgMicrosoft_PGO_Helpers_Cpp>
+    <PkgMicrosoft_PGO_Helpers_Cpp>$(NuGetPackageDirectory)\Microsoft.PGO-Helpers.Cpp.0.2.22</PkgMicrosoft_PGO_Helpers_Cpp>
   </PropertyGroup>
 
   <!-- Get version information -->
