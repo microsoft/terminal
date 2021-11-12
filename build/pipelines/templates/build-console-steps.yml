@@ -56,10 +56,7 @@ steps:
     vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    ${{ if eq(variables['PGOBuildMode'], 'Instrument') }}:
-      msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /p:PGOCopyRuntime=true"
-    ${{ if ne(variables['PGOBuildMode'], 'Instrument') }}:
-      msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode)"
+    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /p:PGOCopyRuntime=true"
     clean: true
     maximumCpuCount: true
 
