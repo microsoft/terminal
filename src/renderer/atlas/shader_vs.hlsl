@@ -1,4 +1,9 @@
-float4 main(uint id : SV_VERTEXID) : SV_POSITION
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+// clang-format off
+float4 main(uint id: SV_VERTEXID): SV_POSITION
+// clang-format on
 {
     // The algorithm below is a fast way to generate a full screen triangle,
     // published by Bill Bilodeau "Vertex Shader Tricks" at GDC14.

@@ -1,3 +1,6 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
 #define INVALID_COLOR 0xffffffff
 
 // These flags are shared with AtlasEngine::CellFlags.

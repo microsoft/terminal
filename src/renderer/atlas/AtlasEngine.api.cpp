@@ -385,7 +385,8 @@ void AtlasEngine::SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept
     RETURN_IF_FAILED(vec2_narrow(pixels.cx, pixels.cy, newSize));
 
     // At the time of writing:
-    // When Win+D is pressed a render pass is initiated. As conhost is in the background, GetClientRect will return {0,0}.
+    // When Win+D is pressed, `TriggerRedrawCursor` is called and a render pass is initiated.
+    // As conhost is in the background, GetClientRect will return {0,0} and we'll get called with {0,0}.
     // This isn't a valid value for _api.sizeInPixel and would crash _recreateSizeDependentResources().
     if (_api.sizeInPixel != newSize && newSize != u16x2{})
     {
@@ -541,6 +542,11 @@ void AtlasEngine::_resolveFontMetrics(const FontInfoDesired& fontInfoDesired, Fo
     DWRITE_FONT_METRICS metrics;
     fontFace->GetMetrics(&metrics);
 
+    // According to Wikipedia:
+    // > One em was traditionally defined as the width of the capital 'M' in the current typeface and point size,
+    // > because the 'M' was commonly cast the full-width of the square blocks [...] which are used in printing presses.
+    // Even today M is often the widest character in a font that supports ASCII.
+    // In the future a more robust solution could be written, until then this simple solution works for most cases.
     static constexpr u32 codePoint = L'M';
     u16 glyphIndex;
     THROW_IF_FAILED(fontFace->GetGlyphIndicesW(&codePoint, 1, &glyphIndex));

@@ -48,14 +48,34 @@ struct TextAnalyzer final : IDWriteTextAnalysisSource, IDWriteTextAnalysisSink
         Ensures(_text.size() <= UINT32_MAX);
     }
 
-#ifndef NDEBUG
-private:
+    // TextAnalyzer will be allocated on the stack and reference counting is pointless because of that.
+    // The debug version will assert that we don't leak any references though.
+#ifdef NDEBUG
+    ULONG __stdcall AddRef() noexcept override
+    {
+        return 1;
+    }
+
+    ULONG __stdcall Release() noexcept override
+    {
+        return 1;
+    }
+#else
     ULONG _refCount = 1;
 
-public:
     ~TextAnalyzer()
     {
         assert(_refCount == 1);
+    }
+
+    ULONG __stdcall AddRef() noexcept override
+    {
+        return ++_refCount;
+    }
+
+    ULONG __stdcall Release() noexcept override
+    {
+        return --_refCount;
     }
 #endif
 
@@ -71,24 +91,6 @@ public:
 
         *ppvObject = nullptr;
         return E_NOINTERFACE;
-    }
-
-    ULONG __stdcall AddRef() noexcept override
-    {
-#ifdef NDEBUG
-        return 1;
-#else
-        return ++_refCount;
-#endif
-    }
-
-    ULONG __stdcall Release() noexcept override
-    {
-#ifdef NDEBUG
-        return 1;
-#else
-        return --_refCount;
-#endif
     }
 
     HRESULT __stdcall GetTextAtPosition(UINT32 textPosition, const WCHAR** textString, UINT32* textLength) noexcept override
@@ -1019,10 +1021,6 @@ void AtlasEngine::_recreateFontDependentResources()
                 // > Lines are explicitly set to uniform spacing, regardless of contained font sizes.
                 // > This can be useful to avoid the uneven appearance that can occur from font fallback.
                 // We want that. Otherwise fallback fonts might be rendered with an incorrect baseline and get cut off vertically.
-                //
-                // "baseline" parameter:
-                // > Distance from top of line to baseline. A reasonable ratio to lineSpacing is 80%.
-                // So... let's set it to 80%.
                 THROW_IF_FAILED(textFormat->SetLineSpacing(DWRITE_LINE_SPACING_METHOD_UNIFORM, _r.cellSizeDIP.y, _api.fontMetrics.baselineInDIP));
 
                 if (!_api.fontAxisValues.empty())
@@ -1235,13 +1233,21 @@ void AtlasEngine::_flushBufferLine()
 
             if (!mappedFontFace)
             {
+                // Task: Replace all characters in this range with unicode replacement characters.
+                // Input (where "n" is a narrow and "ww" is a wide character):
+                //    _api.bufferLine       = "nwwnnw"
+                //    _api.bufferLineColumn = {0, 1, 1, 2, 3, 4, 4, 5}
+                //                             n  w  w  n  n  w  w
+                // Solution:
+                //   Iterate through bufferLineColumn until the value changes, because this indicates we passed over a
+                //   complete (narrow or wide) cell. To do so we'll use col1 (previous column) and col2 (next column).
+                //   Then we emit a replacement character by telling _emplaceGlyph that this range has no font face.
                 auto pos1 = idx;
                 auto col1 = _api.bufferLineColumn[pos1];
                 for (auto pos2 = idx + 1; pos2 <= mappedEnd; ++pos2)
                 {
                     if (const auto col2 = _api.bufferLineColumn[pos2]; col1 != col2)
                     {
-                        static constexpr auto replacement = L'\uFFFD';
                         _emplaceGlyph(nullptr, scale, pos1, pos2);
                         pos1 = pos2;
                         col1 = col2;
@@ -1376,11 +1382,14 @@ void AtlasEngine::_flushBufferLine()
 
 void AtlasEngine::_emplaceGlyph(IDWriteFontFace* fontFace, float scale, size_t bufferPos1, size_t bufferPos2)
 {
+    static constexpr auto replacement = L'\uFFFD';
+
     // This would seriously blow us up otherwise.
     Expects(bufferPos1 < bufferPos2 && bufferPos2 <= _api.bufferLine.size());
 
-    const auto chars = &_api.bufferLine[bufferPos1];
-    const auto charCount = bufferPos2 - bufferPos1;
+    const auto chars = fontFace ? &_api.bufferLine[bufferPos1] : &replacement;
+    const auto charCount = fontFace ? bufferPos2 - bufferPos1 : 1;
+
     // _flushBufferLine() ensures that bufferLineColumn.size() > bufferLine.size().
     const auto x1 = _api.bufferLineColumn[bufferPos1];
     const auto x2 = _api.bufferLineColumn[bufferPos2];

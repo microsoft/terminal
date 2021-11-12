@@ -1304,7 +1304,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SetBackgroundOpacity(double opacity)
+    void ControlCore::SetBackgroundOpacity(const double opacity)
     {
         if (_renderEngine)
         {
