@@ -36,6 +36,6 @@
     <PGOUseDefaultPGDFileInfo>true</PGOUseDefaultPGDFileInfo>
   </PropertyGroup>
 
-    <!-- Import PGO-Helpers -->
+  <!-- Import PGO-Helpers -->
   <Import Project="$(PkgMicrosoft_PGO_Helpers_Cpp)\build\Microsoft.PGO-Helpers.Cpp.props" />
 </Project>
