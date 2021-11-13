@@ -220,36 +220,6 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 }
 
 // Method Description:
-// - Return the color table index of the default foreground color. If the settings
-//      are configured to have a default foreground color (separate from the color
-//      table), this will return the extended index TextColor::DEFAULT_FOREGROUND.
-//      Otherwise it will return an index in the range 0 to 15.
-// Arguments:
-// - <none>
-// Return Value:
-// - the color table index of the default foreground color.
-size_t CONSOLE_INFORMATION::GetDefaultForegroundIndex() const noexcept
-{
-    const auto fg = GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
-    return fg != INVALID_COLOR ? TextColor::DEFAULT_FOREGROUND : TextColor::TransposeLegacyIndex(LOBYTE(GetFillAttribute()) & FG_ATTRS);
-}
-
-// Method Description:
-// - Return the color table index of the default background color. If the settings
-//      are configured to have a default background color (separate from the color
-//      table), this will return the extended index TextColor::DEFAULT_BACKGROUND.
-//      Otherwise it will return an index in the range 0 to 15.
-// Arguments:
-// - <none>
-// Return Value:
-// - the color table index of the default background color.
-size_t CONSOLE_INFORMATION::GetDefaultBackgroundIndex() const noexcept
-{
-    const auto bg = GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
-    return bg != INVALID_COLOR ? TextColor::DEFAULT_BACKGROUND : TextColor::TransposeLegacyIndex((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
-}
-
-// Method Description:
 // - Get the colors of a particular text attribute, using our color table,
 //      and our configured default attributes.
 // Arguments:
@@ -258,25 +228,11 @@ size_t CONSOLE_INFORMATION::GetDefaultBackgroundIndex() const noexcept
 // - The color values of the attribute's foreground and background.
 std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
-    return LookupAttributeColors(attr, GetDefaultForegroundIndex(), GetDefaultBackgroundIndex());
-}
-
-// Method Description:
-// - Get the colors of a particular text attribute, using our color table,
-//      and the given default color values.
-// Arguments:
-// - attr: the TextAttribute to retrieve the foreground and background color of.
-// - defaultFgIndex: the color table index to use for a default foreground color.
-// - defaultBgIndex: the color table index to use for a default background color.
-// Return Value:
-// - The color values of the attribute's foreground and background.
-std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr, const size_t defaultFgIndex, const size_t defaultBgIndex) const noexcept
-{
     _blinkingState.RecordBlinkingUsage(attr);
     return attr.CalculateRgbColors(
         GetColorTable(),
-        defaultFgIndex,
-        defaultBgIndex,
+        GetDefaultForegroundIndex(),
+        GetDefaultBackgroundIndex(),
         IsScreenReversed(),
         _blinkingState.IsBlinkingFaint());
 }

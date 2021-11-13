@@ -72,8 +72,4 @@ public:
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
     const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
-
-private:
-    size_t _defaultForegroundIndex = 7;
-    size_t _defaultBackgroundIndex = 0;
 };

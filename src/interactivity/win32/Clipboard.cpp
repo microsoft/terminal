@@ -208,10 +208,8 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-    const auto defaultForegroundIndex = gci.GetDefaultForegroundIndex();
-    const auto defaultBackgroundIndex = gci.GetDefaultBackgroundIndex();
     const auto GetAttributeColors = [=, &gci](const auto& attr) {
-        return gci.LookupAttributeColors(attr, defaultForegroundIndex, defaultBackgroundIndex);
+        return gci.LookupAttributeColors(attr);
     };
 
     bool includeCRLF, trimTrailingWhitespace;

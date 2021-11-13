@@ -186,6 +186,12 @@ public:
     bool GetInterceptCopyPaste() const noexcept;
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
+    void CalculateDefaultColorIndices() noexcept;
+    size_t GetDefaultForegroundIndex() const noexcept;
+    void SetDefaultForegroundIndex(const size_t index) noexcept;
+    size_t GetDefaultBackgroundIndex() const noexcept;
+    void SetDefaultBackgroundIndex(const size_t index) noexcept;
+
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
@@ -247,6 +253,9 @@ private:
     CursorType _CursorType;
 
     bool _fInterceptCopyPaste;
+
+    size_t _defaultForegroundIndex;
+    size_t _defaultBackgroundIndex;
 
     bool _TerminalScrolling;
     friend class RegistrySerialization;

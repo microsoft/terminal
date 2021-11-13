@@ -62,6 +62,7 @@ class ScreenBufferTests
         gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
         gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
+        gci.CalculateDefaultColorIndices();
 
         m_state->PrepareNewTextBufferInfo();
         auto& currentBuffer = gci.GetActiveOutputBuffer();
@@ -1390,6 +1391,7 @@ void ScreenBufferTests::VtScrollMarginsNewlineColor()
     const COLORREF magenta = RGB(255, 0, 255);
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     const TextAttribute defaultAttrs = {};
     si.SetAttributes(defaultAttrs);
 
@@ -2261,6 +2263,7 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
 
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
@@ -2363,6 +2366,7 @@ void ScreenBufferTests::SetDefaultsTogether()
 
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, yellow);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 6 X's:"));
@@ -2434,6 +2438,7 @@ void ScreenBufferTests::ReverseResetWithDefaultBackground()
 
     gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 3 X's:"));
@@ -2502,6 +2507,7 @@ void ScreenBufferTests::BackspaceDefaultAttrs()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
@@ -2565,6 +2571,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
 
     Log::Comment(NoThrowString().Format(L"Write 2 X's, then backspace one."));
@@ -2633,6 +2640,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsInPrompt()
     COLORREF magenta = RGB(255, 0, 255);
 
     gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, magenta);
+    gci.CalculateDefaultColorIndices();
     si.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
     TextAttribute expectedDefaults{};
 

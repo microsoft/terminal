@@ -56,6 +56,8 @@ Settings::Settings() :
     _fScreenReversed(false),
     // window size pixels initialized below
     _fInterceptCopyPaste(0),
+    _defaultForegroundIndex(TextColor::DARK_WHITE),
+    _defaultBackgroundIndex(TextColor::DARK_BLACK),
     _fUseDx(UseDx::Disabled),
     _fCopyColor(false)
 {
@@ -356,6 +358,8 @@ void Settings::Validate()
     // At this point the default fill attributes are fully initialized
     // so we can pass on the final colors to the TextAttribute class.
     TextAttribute::SetLegacyDefaultAttributes(_wFillAttribute);
+    // And calculate the position of the default colors in the color table.
+    CalculateDefaultColorIndices();
 
     FAIL_FAST_IF(!(_dwWindowSize.X > 0));
     FAIL_FAST_IF(!(_dwWindowSize.Y > 0));
@@ -793,6 +797,37 @@ bool Settings::GetInterceptCopyPaste() const noexcept
 void Settings::SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept
 {
     _fInterceptCopyPaste = interceptCopyPaste;
+}
+
+void Settings::CalculateDefaultColorIndices() noexcept
+{
+    const auto foregroundColor = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
+    const auto foregroundIndex = TextColor::TransposeLegacyIndex(_wFillAttribute & FG_ATTRS);
+    _defaultForegroundIndex = foregroundColor != INVALID_COLOR ? TextColor::DEFAULT_FOREGROUND : foregroundIndex;
+
+    const auto backgroundColor = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
+    const auto backgroundIndex = TextColor::TransposeLegacyIndex((_wFillAttribute & BG_ATTRS) >> 4);
+    _defaultBackgroundIndex = backgroundColor != INVALID_COLOR ? TextColor::DEFAULT_BACKGROUND : backgroundIndex;
+}
+
+size_t Settings::GetDefaultForegroundIndex() const noexcept
+{
+    return _defaultForegroundIndex;
+}
+
+void Settings::SetDefaultForegroundIndex(const size_t index) noexcept
+{
+    _defaultForegroundIndex = index;
+}
+
+size_t Settings::GetDefaultBackgroundIndex() const noexcept
+{
+    return _defaultBackgroundIndex;
+}
+
+void Settings::SetDefaultBackgroundIndex(const size_t index) noexcept
+{
+    _defaultBackgroundIndex = index;
 }
 
 bool Settings::IsTerminalScrolling() const noexcept

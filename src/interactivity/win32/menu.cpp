@@ -584,6 +584,8 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     // Make sure the updated fill attributes are passed on to the TextAttribute class.
     TextAttribute::SetLegacyDefaultAttributes(pStateInfo->ScreenAttributes);
+    // And recalculate the position of the default colors in the color table.
+    gci.CalculateDefaultColorIndices();
 
     // Set the screen info's default text attributes to defaults -
     ScreenInfo.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });
