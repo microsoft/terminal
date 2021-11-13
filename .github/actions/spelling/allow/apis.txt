@@ -1,5 +1,7 @@
 ACCEPTFILES
 ACCESSDENIED
+acl
+aclapi
 alignas
 alignof
 APPLYTOSUBMENUS
@@ -21,6 +23,7 @@ commandlinetoargv
 cstdint
 CXICON
 CYICON
+Dacl
 dataobject
 dcomp
 DERR
@@ -117,15 +120,19 @@ OSVERSIONINFOEXW
 otms
 OUTLINETEXTMETRICW
 overridable
+PACL
 PAGESCROLL
+PEXPLICIT
 PICKFOLDERS
 pmr
+ptstr
 rcx
 REGCLS
 RETURNCMD
 rfind
 roundf
 RSHIFT
+SACL
 schandle
 semver
 serializer
