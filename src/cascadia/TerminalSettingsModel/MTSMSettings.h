@@ -73,7 +73,8 @@ Author(s):
     X(hstring, Icon, "icon", L"\uE756")                                                                                                                        \
     X(CloseOnExitMode, CloseOnExit, "closeOnExit", CloseOnExitMode::Graceful)                                                                                  \
     X(hstring, TabTitle, "tabTitle")                                                                                                                           \
-    X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)
+    X(Model::BellStyle, BellStyle, "bellStyle", BellStyle::Audible)                                                                                            \
+    X(bool, UseAtlasEngine, "experimental.useAtlasEngine", false)
 
 #define MTSM_FONT_SETTINGS(X)                                                          \
     X(hstring, FontFace, "face", DEFAULT_FONT_FACE)                                    \
