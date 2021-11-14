@@ -315,7 +315,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     const Cursor& cursor = ScreenInfo.GetTextBuffer().GetCursor();
     pStateInfo->CursorSize = cursor.GetSize();
-    pStateInfo->CursorColor = cursor.GetColor();
+    pStateInfo->CursorColor = gci.GetColorTableEntry(TextColor::CURSOR_COLOR);
     pStateInfo->CursorType = static_cast<unsigned int>(cursor.GetType());
 
     // Retrieve small icon for use in displaying the dialog
@@ -461,13 +461,12 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     // Set the cursor properties in the Settings
     const auto cursorType = static_cast<CursorType>(pStateInfo->CursorType);
-    gci.SetCursorColor(pStateInfo->CursorColor);
     gci.SetCursorType(cursorType);
+    gci.SetColorTableEntry(TextColor::CURSOR_COLOR, pStateInfo->CursorColor);
 
     // Then also apply them to the buffer's cursor
     ScreenInfo.SetCursorInformation(pStateInfo->CursorSize,
                                     ScreenInfo.GetTextBuffer().GetCursor().IsVisible());
-    ScreenInfo.SetCursorColor(pStateInfo->CursorColor, true);
     ScreenInfo.SetCursorType(cursorType, true);
 
     gci.SetTerminalScrolling(pStateInfo->TerminalScrolling);

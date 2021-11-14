@@ -57,7 +57,6 @@ const RegistrySerialization::_RegPropertyMap RegistrySerialization::s_PropertyMa
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_TRIMZEROHEADINGS,              SET_FIELD_AND_SIZE(_fTrimLeadingZeros)           },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_ENABLE_COLOR_SELECTION,        SET_FIELD_AND_SIZE(_fEnableColorSelection)       },
     { _RegPropertyType::Coordinate,     CONSOLE_REGISTRY_WINDOWPOS,                     SET_FIELD_AND_SIZE(_dwWindowOrigin)              },
-    { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORCOLOR,                   SET_FIELD_AND_SIZE(_CursorColor)                 },
     { _RegPropertyType::Dword,          CONSOLE_REGISTRY_CURSORTYPE,                    SET_FIELD_AND_SIZE(_CursorType)                  },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_INTERCEPTCOPYPASTE,            SET_FIELD_AND_SIZE(_fInterceptCopyPaste)         },
     { _RegPropertyType::Boolean,        CONSOLE_REGISTRY_TERMINALSCROLLING,             SET_FIELD_AND_SIZE(_TerminalScrolling)           },

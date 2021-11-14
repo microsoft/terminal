@@ -360,12 +360,11 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     auto mainCursorPos = COORD{ 3, 5 };
     auto mainCursorVisible = false;
     auto mainCursorSize = 33u;
-    auto mainCursorColor = RGB(1, 2, 3);
     auto mainCursorType = CursorType::DoubleUnderscore;
     auto mainCursorBlinking = false;
     mainCursor.SetPosition(mainCursorPos);
     mainCursor.SetIsVisible(mainCursorVisible);
-    mainCursor.SetStyle(mainCursorSize, mainCursorColor, mainCursorType);
+    mainCursor.SetStyle(mainCursorSize, mainCursorType);
     mainCursor.SetBlinkingAllowed(mainCursorBlinking);
 
     Log::Comment(L"Switch to the alternate buffer.");
@@ -380,7 +379,6 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     VERIFY_ARE_EQUAL(mainCursorVisible, altCursor.IsVisible());
     Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
     VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
-    VERIFY_ARE_EQUAL(mainCursorColor, altCursor.GetColor());
     VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
     VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinkingAllowed());
 
@@ -388,12 +386,11 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     auto altCursorPos = COORD{ 5, 3 };
     auto altCursorVisible = true;
     auto altCursorSize = 66u;
-    auto altCursorColor = RGB(3, 2, 1);
     auto altCursorType = CursorType::EmptyBox;
     auto altCursorBlinking = true;
     altCursor.SetPosition(altCursorPos);
     altCursor.SetIsVisible(altCursorVisible);
-    altCursor.SetStyle(altCursorSize, altCursorColor, altCursorType);
+    altCursor.SetStyle(altCursorSize, altCursorType);
     altCursor.SetBlinkingAllowed(altCursorBlinking);
 
     Log::Comment(L"Switch back to the main buffer.");
@@ -407,7 +404,6 @@ void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
     VERIFY_ARE_EQUAL(altCursorVisible, mainCursor.IsVisible());
     Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
     VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
-    VERIFY_ARE_EQUAL(altCursorColor, mainCursor.GetColor());
     VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
     VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinkingAllowed());
 }
@@ -1743,7 +1739,6 @@ void ScreenBufferTests::ResizeCursorUnchanged()
     // Get initial cursor values
     const CursorType initialType = initialCursor.GetType();
     const auto initialSize = initialCursor.GetSize();
-    const COLORREF initialColor = initialCursor.GetColor();
 
     // set our wrap mode accordingly - ResizeScreenBuffer will be smart enough
     //  to call the appropriate implementation
@@ -1758,10 +1753,8 @@ void ScreenBufferTests::ResizeCursorUnchanged()
     const auto& finalCursor = si.GetTextBuffer().GetCursor();
     const CursorType finalType = finalCursor.GetType();
     const auto finalSize = finalCursor.GetSize();
-    const COLORREF finalColor = finalCursor.GetColor();
 
     VERIFY_ARE_EQUAL(initialType, finalType);
-    VERIFY_ARE_EQUAL(initialColor, finalColor);
     VERIFY_ARE_EQUAL(initialSize, finalSize);
 }
 
@@ -2124,7 +2117,6 @@ void ScreenBufferTests::TestAltBufferCursorState()
         // Validate that the cursor state was copied appropriately into the
         //      alternate buffer
         VERIFY_ARE_EQUAL(mainCursor.GetSize(), altCursor.GetSize());
-        VERIFY_ARE_EQUAL(mainCursor.GetColor(), altCursor.GetColor());
         VERIFY_ARE_EQUAL(mainCursor.GetType(), altCursor.GetType());
     }
 }

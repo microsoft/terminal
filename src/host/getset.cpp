@@ -1499,12 +1499,6 @@ void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
     screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetType(cursorType);
 }
 
-void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
-                         const COLORREF cursorColor)
-{
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetColor(cursorColor);
-}
-
 void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view uri,
                        const std::wstring_view params)

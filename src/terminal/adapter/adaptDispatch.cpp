@@ -2250,7 +2250,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
         return false;
     }
 
-    return _pConApi->SetCursorColor(cursorColor);
+    return _pConApi->SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
 }
 
 // Routine Description:

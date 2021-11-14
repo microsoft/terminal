@@ -224,8 +224,7 @@ ULONG RenderData::GetCursorPixelWidth() const noexcept
 COLORREF RenderData::GetCursorColor() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetColor();
+    return gci.GetColorTableEntry(TextColor::CURSOR_COLOR);
 }
 
 // Routine Description:

@@ -78,7 +78,6 @@ Settings::Settings() :
     ZeroMemory((void*)&_FaceName, sizeof(_FaceName));
     wcscpy_s(_FaceName, DEFAULT_TT_FONT_FACENAME);
 
-    _CursorColor = Cursor::s_InvertCursorColor;
     _CursorType = CursorType::Legacy;
 
     gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
@@ -86,6 +85,7 @@ Settings::Settings() :
 
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = INVALID_COLOR;
     _colorTable.at(TextColor::DEFAULT_BACKGROUND) = INVALID_COLOR;
+    _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
 }
 
 // Routine Description:
@@ -232,11 +232,11 @@ void Settings::InitFromStateInfo(_In_ PCONSOLE_STATE_INFO pStateInfo)
     _fCtrlKeyShortcutsDisabled = pStateInfo->fCtrlKeyShortcutsDisabled;
     _bLineSelection = pStateInfo->fLineSelection;
     _bWindowAlpha = pStateInfo->bWindowTransparency;
-    _CursorColor = pStateInfo->CursorColor;
     _CursorType = static_cast<CursorType>(pStateInfo->CursorType);
     _fInterceptCopyPaste = pStateInfo->InterceptCopyPaste;
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = pStateInfo->DefaultForeground;
     _colorTable.at(TextColor::DEFAULT_BACKGROUND) = pStateInfo->DefaultBackground;
+    _colorTable.at(TextColor::CURSOR_COLOR) = pStateInfo->CursorColor;
     _TerminalScrolling = pStateInfo->TerminalScrolling;
 }
 
@@ -277,11 +277,11 @@ CONSOLE_STATE_INFO Settings::CreateConsoleStateInfo() const
     csi.fCtrlKeyShortcutsDisabled = _fCtrlKeyShortcutsDisabled;
     csi.fLineSelection = _bLineSelection;
     csi.bWindowTransparency = _bWindowAlpha;
-    csi.CursorColor = _CursorColor;
     csi.CursorType = static_cast<unsigned int>(_CursorType);
     csi.InterceptCopyPaste = _fInterceptCopyPaste;
     csi.DefaultForeground = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
     csi.DefaultBackground = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
+    csi.CursorColor = _colorTable.at(TextColor::CURSOR_COLOR);
     csi.TerminalScrolling = _TerminalScrolling;
     return csi;
 }
@@ -335,11 +335,13 @@ void Settings::Validate()
 
     const auto defaultForeground = _colorTable.at(TextColor::DEFAULT_FOREGROUND);
     const auto defaultBackground = _colorTable.at(TextColor::DEFAULT_BACKGROUND);
+    const auto cursorColor = _colorTable.at(TextColor::CURSOR_COLOR);
 
     // If the extended color options are set to invalid values (all the same color), reset them.
-    if (_CursorColor != Cursor::s_InvertCursorColor && _CursorColor == defaultBackground)
+    if (cursorColor != INVALID_COLOR && cursorColor == defaultBackground)
     {
-        _CursorColor = Cursor::s_InvertCursorColor;
+        // INVALID_COLOR is used to represent "Invert Colors"
+        _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
     }
 
     if (defaultForeground != INVALID_COLOR && defaultForeground == defaultBackground)
@@ -769,19 +771,9 @@ COLORREF Settings::GetLegacyColorTableEntry(const size_t index) const
     return _colorTable.at(TextColor::TransposeLegacyIndex(index));
 }
 
-COLORREF Settings::GetCursorColor() const noexcept
-{
-    return _CursorColor;
-}
-
 CursorType Settings::GetCursorType() const noexcept
 {
     return _CursorType;
-}
-
-void Settings::SetCursorColor(const COLORREF CursorColor) noexcept
-{
-    _CursorColor = CursorColor;
 }
 
 void Settings::SetCursorType(const CursorType cursorType) noexcept

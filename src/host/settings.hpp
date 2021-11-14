@@ -177,10 +177,7 @@ public:
     void SetLegacyColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetLegacyColorTableEntry(const size_t index) const;
 
-    COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;
-
-    void SetCursorColor(const COLORREF CursorColor) noexcept;
     void SetCursorType(const CursorType cursorType) noexcept;
 
     bool GetInterceptCopyPaste() const noexcept;
@@ -248,8 +245,6 @@ private:
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
 
-    // Technically a COLORREF, but using INVALID_COLOR as "Invert Colors"
-    unsigned int _CursorColor;
     CursorType _CursorType;
 
     bool _fInterceptCopyPaste;

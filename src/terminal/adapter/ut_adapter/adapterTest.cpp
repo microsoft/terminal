@@ -370,16 +370,6 @@ public:
         return _setCursorStyleResult;
     }
 
-    bool SetCursorColor(const COLORREF cursorColor) override
-    {
-        Log::Comment(L"SetCursorColor MOCK called...");
-        if (_setCursorColorResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedCursorColor, cursorColor);
-        }
-        return _setCursorColorResult;
-    }
-
     bool PrivateRefreshWindow() override
     {
         Log::Comment(L"PrivateRefreshWindow MOCK called...");
@@ -717,8 +707,6 @@ public:
     std::wstring_view _expectedWindowTitle{};
     bool _setCursorStyleResult = false;
     CursorType _expectedCursorStyle;
-    bool _setCursorColorResult = false;
-    COLORREF _expectedCursorColor = 0;
     bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _moveToBottomResult = false;

@@ -67,7 +67,8 @@ public:
 
     static constexpr size_t DEFAULT_FOREGROUND = 256;
     static constexpr size_t DEFAULT_BACKGROUND = 257;
-    static constexpr size_t TABLE_SIZE = 258;
+    static constexpr size_t CURSOR_COLOR = 258;
+    static constexpr size_t TABLE_SIZE = 259;
 
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },

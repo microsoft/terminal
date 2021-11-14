@@ -44,7 +44,6 @@ namespace Microsoft::Terminal::Core
         virtual bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept = 0;
 
         virtual bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept = 0;
-        virtual bool SetCursorColor(const DWORD color) noexcept = 0;
 
         virtual bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept = 0;
 

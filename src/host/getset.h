@@ -36,8 +36,6 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo);
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType);
-void DoSrvSetCursorColor(SCREEN_INFORMATION& screenInfo,
-                         const COLORREF cursorColor);
 
 void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view uri,

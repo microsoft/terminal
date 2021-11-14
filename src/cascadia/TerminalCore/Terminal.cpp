@@ -82,6 +82,7 @@ Terminal::Terminal() :
 
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = RGB(255, 255, 255);
     _colorTable.at(TextColor::DEFAULT_BACKGROUND) = ARGB(0, 0, 0, 0);
+    _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
 }
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
@@ -185,6 +186,8 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
     const til::color newForegroundColor{ appearance.DefaultForeground() };
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = newForegroundColor;
+    const til::color newCursorColor{ appearance.CursorColor() };
+    _colorTable.at(TextColor::CURSOR_COLOR) = newCursorColor;
 
     _intenseIsBright = appearance.IntenseIsBright();
     _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
@@ -224,9 +227,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     if (_buffer)
     {
-        _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
-                                      til::color{ appearance.CursorColor() },
-                                      cursorShape);
+        _buffer->GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
     }
 
     _defaultCursorShape = cursorShape;

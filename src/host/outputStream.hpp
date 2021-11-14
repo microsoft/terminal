@@ -101,7 +101,6 @@ public:
 
     bool GetUserDefaultCursorStyle(CursorType& style) override;
     bool SetCursorStyle(CursorType const style) override;
-    bool SetCursorColor(COLORREF const color) override;
 
     bool PrivateRefreshWindow() override;
 

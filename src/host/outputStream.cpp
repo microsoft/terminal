@@ -553,21 +553,6 @@ bool ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 }
 
 // Routine Description:
-// - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
-//   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
-// Arguments:
-// - cursorColor: The color to change the cursor to. INVALID_COLOR will revert
-//      it to the legacy inverting behavior.
-// Return Value:
-// - true if successful (see DoSrvSetCursorStyle). false otherwise.
-bool ConhostInternalGetSet::SetCursorColor(const COLORREF cursorColor)
-{
-    DoSrvSetCursorColor(_io.GetActiveOutputBuffer(), cursorColor);
-    return true;
-}
-
-// Routine Description:
 // - Connects the IsConsolePty call directly into our Driver Message servicing call inside Conhost.exe
 // - NOTE: This ONE method behaves differently! The rest of the methods on this
 //   interface return true if successful. This one just returns the result.
