@@ -314,42 +314,6 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
         }
     }
 
-    // Default foreground color
-    Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                 CONSOLE_REGISTRY_DEFAULTFOREGROUND,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)&dwValue,
-                                                 nullptr);
-    if (NT_SUCCESS(Status))
-    {
-        _pSettings->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwValue);
-    }
-
-    // Default background color
-    Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                 CONSOLE_REGISTRY_DEFAULTBACKGROUND,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)&dwValue,
-                                                 nullptr);
-    if (NT_SUCCESS(Status))
-    {
-        _pSettings->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwValue);
-    }
-
-    // Cursor color
-    Status = RegistrySerialization::s_QueryValue(hTitleKey,
-                                                 CONSOLE_REGISTRY_CURSORCOLOR,
-                                                 sizeof(dwValue),
-                                                 REG_DWORD,
-                                                 (PBYTE)&dwValue,
-                                                 nullptr);
-    if (NT_SUCCESS(Status))
-    {
-        _pSettings->SetColorTableEntry(TextColor::CURSOR_COLOR, dwValue);
-    }
-
     GetEditKeys(hConsoleKey);
 
     // Close the registry keys
