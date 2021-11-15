@@ -11,7 +11,7 @@ jobs:
     vmImage: 'windows-2019'
   variables:
     artifactsPath: $(Build.SourcesDirectory)\Artifacts
-    pgoToolsPath: $(Build.SourcesDirectory)\PGO
+    pgoToolsPath: $(Build.SourcesDirectory)\build\PGO
     nuspecPath: $(pgoToolsPath)\NuSpecs
     nuspecFilename: PGO.nuspec
 
