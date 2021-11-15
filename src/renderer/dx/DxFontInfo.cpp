@@ -395,18 +395,11 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
     const auto folder{ module.parent_path() };
 
-    for (auto& p : std::filesystem::directory_iterator(folder))
+    for (const auto& p : std::filesystem::directory_iterator(folder))
     {
-        if (p.is_regular_file())
+        if (til::ends_with(p.path().native(), L".ttf"))
         {
-            auto extension = p.path().extension().wstring();
-            std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
-
-            static constexpr std::wstring_view ttfExtension{ L".ttf" };
-            if (ttfExtension == extension)
-            {
-                paths.push_back(p);
-            }
+            paths.push_back(p.path());
         }
     }
 
