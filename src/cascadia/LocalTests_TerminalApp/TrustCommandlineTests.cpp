@@ -39,6 +39,7 @@ namespace TerminalAppLocalTests
         TEST_METHOD(SimpleTests);
         TEST_METHOD(TestCommandlineWithArgs);
         TEST_METHOD(TestCommandlineWithSpaces);
+        TEST_METHOD(TestCommandlineWithEnvVars);
         TEST_METHOD(WslTests);
         TEST_METHOD(TestPwshLocation);
 
@@ -68,14 +69,30 @@ namespace TerminalAppLocalTests
 
     void TrustCommandlineTests::TestCommandlineWithSpaces()
     {
-        VERIFY_IS_TRUE(false, L"TODO! implement me.");
+        VERIFY_IS_TRUE(trust(L"C:\\Program Files\\PowerShell\\7\\pwsh.exe"));
+        VERIFY_IS_FALSE(trust(L"C:\\Windows\\System 32\\cmd.exe"));
+        VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\ cmd.exe"));
+        VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\cmd.exe /c cmd.exe"));
     }
+
+    void TrustCommandlineTests::TestCommandlineWithEnvVars()
+    {
+        VERIFY_IS_TRUE(trust(L"%WINDIR%\\system32\\cmd.exe"));
+        VERIFY_IS_TRUE(trust(L"%WINDIR%\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"));
+        VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe"));
+    }
+
     void TrustCommandlineTests::WslTests()
     {
-        VERIFY_IS_TRUE(false, L"TODO! implement me.");
+        VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\wsl"));
+        VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\wsl.exe"));
+        VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\wsl.exe -d Ubuntu"));
+        VERIFY_IS_FALSE(trust(L"wsl.exe"));
     }
+
     void TrustCommandlineTests::TestPwshLocation()
     {
-        VERIFY_IS_TRUE(false, L"TODO! implement me.");
+        VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe"));
+        VERIFY_IS_TRUE(trust(L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\pwsh.exe"));
     }
 }
