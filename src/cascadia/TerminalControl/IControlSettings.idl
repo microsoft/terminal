@@ -31,7 +31,7 @@ namespace Microsoft.Terminal.Control
 
         Boolean UseAcrylic;
         ScrollbarState ScrollState;
-
+        Boolean UseAtlasEngine;
         String FontFace;
         Int32 FontSize;
         Windows.UI.Text.FontWeight FontWeight;

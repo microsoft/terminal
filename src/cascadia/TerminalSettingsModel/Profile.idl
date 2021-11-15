@@ -79,5 +79,6 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
+        INHERITABLE_PROFILE_SETTING(Boolean, UseAtlasEngine);
     }
 }

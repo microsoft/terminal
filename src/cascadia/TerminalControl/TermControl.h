@@ -92,13 +92,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void Settings(IControlSettings newSettings);
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
-        static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
-                                                               const int32_t& fontSize,
-                                                               const winrt::Windows::UI::Text::FontWeight& fontWeight,
-                                                               const winrt::hstring& fontFace,
-                                                               const ScrollbarState& scrollState,
-                                                               const winrt::hstring& padding,
-                                                               const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars);
 
         void BellLightOn();
 

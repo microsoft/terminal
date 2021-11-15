@@ -927,6 +927,10 @@
     <value>Controls what happens when the application emits a BEL character.</value>
     <comment>A description for what the "bell style" setting does. Presented near "Profile_BellStyle".{Locked="BEL"}</comment>
   </data>
+  <data name="Profile_UseAtlasEngine.Header" xml:space="preserve">
+    <value>Enable experimental text rendering engine</value>
+    <comment>An option to enable an experimental text rendering engine</comment>
+  </data>
   <data name="Profile_BellStyleAudible.Content" xml:space="preserve">
     <value>Audible</value>
     <comment>An option to choose from for the "bell style" setting. When selected, an audible cue is used to notify the user.</comment>

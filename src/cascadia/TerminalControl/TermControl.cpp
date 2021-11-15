@@ -3,17 +3,16 @@
 
 #include "pch.h"
 #include "TermControl.h"
-#include <argb.h>
-#include <DefaultSettings.h>
+
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
-#include <Utils.h>
 #include <LibraryResources.h>
+
+#include "TermControlAutomationPeer.h"
 #include "../../types/inc/GlyphWidth.hpp"
-#include "../../types/inc/Utils.hpp"
+#include "../../renderer/atlas/AtlasEngine.h"
 
 #include "TermControl.g.cpp"
-#include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -1828,13 +1827,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
-        return GetProposedDimensions(initialSize,
-                                     settings.FontSize(),
-                                     settings.FontWeight(),
-                                     settings.FontFace(),
-                                     settings.ScrollState(),
-                                     settings.Padding(),
-                                     dpi);
+        return GetProposedDimensions(settings, dpi, initialSize);
     }
 
     // Function Description:
@@ -1855,16 +1848,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   caller knows what monitor the control is about to appear on.
     // Return Value:
     // - a size containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
-                                                                        const int32_t& fontHeight,
-                                                                        const winrt::Windows::UI::Text::FontWeight& fontWeight,
-                                                                        const winrt::hstring& fontFace,
-                                                                        const ScrollbarState& scrollState,
-                                                                        const winrt::hstring& padding,
-                                                                        const uint32_t dpi)
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars)
     {
         const auto cols = ::base::saturated_cast<int>(initialSizeInChars.Width);
         const auto rows = ::base::saturated_cast<int>(initialSizeInChars.Height);
+        const auto fontSize = settings.FontSize();
+        const auto fontWeight = settings.FontWeight();
+        const auto fontFace = settings.FontFace();
+        const auto scrollState = settings.ScrollState();
+        const auto padding = settings.Padding();
 
         // Initialize our font information.
         // The font width doesn't terribly matter, we'll only be using the
@@ -1873,28 +1865,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, gsl::narrow_cast<short>(fontHeight) }, CP_UTF8, false };
+        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, gsl::narrow_cast<short>(fontSize) }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns
         // will take up.
         // TODO: MSFT:21254947 - use a static function to do this instead of
-        // instantiating a DxEngine
+        // instantiating a DxEngine/AtlasEngine.
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
-        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        LOG_IF_FAILED(dxEngine->UpdateDpi(dpi));
-        LOG_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
+        double scale;
+        if (Feature_AtlasEngine::IsEnabled() && settings.UseAtlasEngine())
+        {
+            auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+            LOG_IF_FAILED(engine->UpdateDpi(dpi));
+            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
+            scale = engine->GetScaling();
+        }
+        else
+        {
+            auto engine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            LOG_IF_FAILED(engine->UpdateDpi(dpi));
+            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
+            scale = engine->GetScaling();
+        }
 
-        const auto scale = dxEngine->GetScaling();
-        const auto fontSize = actualFont.GetSize();
+        const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * fontSize.X;
+        double width = cols * actualFontSize.X;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (scrollState == ScrollbarState::Visible)
@@ -1902,7 +1905,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * fontSize.Y;
+        double height = rows * actualFontSize.Y;
         const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
@@ -1962,13 +1965,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
-            return GetProposedDimensions(minSize,
-                                         _settings.FontSize(),
-                                         _settings.FontWeight(),
-                                         _settings.FontFace(),
-                                         _settings.ScrollState(),
-                                         _settings.Padding(),
-                                         dpi);
+            return GetProposedDimensions(_settings, dpi, minSize);
         }
     }
 
