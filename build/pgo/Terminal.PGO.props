@@ -30,7 +30,7 @@
     <PGOVerifyFailureTreatedAsError>true</PGOVerifyFailureTreatedAsError>
 
     <!-- Optional, defaults to $(IntDir)\Nuspec.  Temporary path where PGD files are copied to. -->
-    <PGONuspecBasePath>$(MSBuildThisFileDirectory)..\Nuspec</PGONuspecBasePath>
+    <PGONuspecBasePath>$(PGDPathForAllArch)</PGONuspecBasePath>
 
     <!-- Optional, defaults to true.  Specifies whether to use default information for PGD files. -->
     <PGOUseDefaultPGDFileInfo>true</PGOUseDefaultPGDFileInfo>
