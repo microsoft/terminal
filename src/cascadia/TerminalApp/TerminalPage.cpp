@@ -1547,7 +1547,7 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // We're explicitly not auto-allowing wsl.exe -d <distroname>. It's
+        // We're explicitly not auto-allowing wsl.exe -d <distro name>. It's
         // trivial to insert some malicious stuff into WSL, via .bash_profile,
         // so we're not giving them the (y)
 

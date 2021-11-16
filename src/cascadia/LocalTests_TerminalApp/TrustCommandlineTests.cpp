@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 //
 // A series of tests for the TerminalPage::_isTrustedCommandline function.
-// That's a heuristac function for deciding if we should automatically trust
+// That's a heuristic function for deciding if we should automatically trust
 // certain commandlines by default. The logic in there is weird and there are
 // lots of edge cases, so it's easier to just write a unit test.
 
