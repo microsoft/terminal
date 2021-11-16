@@ -958,7 +958,8 @@ try
     const auto maxLengthOpt = (maxLength == -1) ?
                                   std::nullopt :
                                   std::optional<unsigned int>{ maxLength };
-    const auto text = _getTextValue(maxLengthOpt);
+    //const auto text = _getTextValue(maxLengthOpt);
+    const std::wstring text = L"Fake Data from UIA";
     Unlock.reset();
 
     *pRetVal = SysAllocString(text.c_str());
