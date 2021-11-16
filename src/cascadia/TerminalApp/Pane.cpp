@@ -33,7 +33,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
-// winrt::Windows::Media::Playback::MediaPlayer Pane::s_bellPlayer = { nullptr };
+winrt::Windows::Media::Playback::MediaPlayer Pane::s_bellPlayer = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -71,14 +71,14 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
         e.Handled(true);
     });
 
-    // if (!s_bellPlayer)
-    // {
-    //     try
-    //     {
-    //         s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
-    //     }
-    //     CATCH_LOG();
-    // }
+    if (!s_bellPlayer)
+    {
+        try
+        {
+            s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+        }
+        CATCH_LOG();
+    }
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -1125,13 +1125,13 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
     co_await winrt::resume_foreground(_root.Dispatcher());
     if (auto pane{ weakThis.get() })
     {
-        // if (s_bellPlayer)
-        // {
-        //     auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-        //     auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
-        //     s_bellPlayer.Source(item);
-        //     s_bellPlayer.Play();
-        // }
+        if (s_bellPlayer)
+        {
+            auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+            auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+            s_bellPlayer.Source(item);
+            s_bellPlayer.Play();
+        }
     }
 }
 

@@ -229,7 +229,7 @@ private:
 
     bool _zoomed{ false };
 
-    // static winrt::Windows::Media::Playback::MediaPlayer s_bellPlayer;
+    static winrt::Windows::Media::Playback::MediaPlayer s_bellPlayer;
 
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
