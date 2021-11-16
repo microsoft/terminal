@@ -148,6 +148,15 @@ namespace winrt::TerminalApp::implementation
     // - button: the button that was hovered
     void MinMaxCloseControl::HoverButton(CaptionButton button)
     {
+        // Keep track of the button that's been pressed. we get a mouse move
+        // message when we open the tooltip. If we move the mouse on top of this
+        // button, that we've already pressed, then no need to move to the
+        // "hovered" state, we should stay in the pressed state.
+        if (_lastPressedButton && _lastPressedButton.value() == button)
+        {
+            return;
+        }
+
         switch (button)
         {
         case CaptionButton::Minimize:
@@ -207,6 +216,7 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(CloseButton(), L"Pressed", false);
             break;
         }
+        _lastPressedButton = button;
     }
 
     // Method Description:
@@ -222,5 +232,7 @@ namespace winrt::TerminalApp::implementation
         _closeToolTipForButton(MinimizeButton());
         _closeToolTipForButton(MaximizeButton());
         _closeToolTipForButton(CloseButton());
+
+        _lastPressedButton = std::nullopt;
     }
 }

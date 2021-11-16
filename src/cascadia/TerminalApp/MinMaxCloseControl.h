@@ -34,6 +34,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
 
         std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
+        std::optional<CaptionButton> _lastPressedButton{ std::nullopt };
     };
 }
 

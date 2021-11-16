@@ -25,6 +25,8 @@ namespace winrt::TerminalApp::implementation
 
     double TitlebarControl::CaptionButtonWidth()
     {
+        // Divide by three, since we know there are only three buttons. When
+        // Windows 12 comes along and adds another, we can update this /s
         static double width{ MinMaxCloseControl().ActualWidth() / 3.0 };
         return width;
     }
