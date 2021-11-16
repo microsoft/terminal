@@ -894,11 +894,11 @@ void DxFontRenderData::_BuildFontRenderData(const FontInfoDesired& desired, Font
     _glyphCell = actual.GetSize();
 }
 
-Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName)
+Microsoft::WRL::ComPtr<IDWriteTextFormat> DxFontRenderData::_BuildTextFormat(const DxFontInfo& fontInfo, const std::wstring_view localeName)
 {
     Microsoft::WRL::ComPtr<IDWriteTextFormat> format;
     THROW_IF_FAILED(_dwriteFactory->CreateTextFormat(fontInfo.GetFamilyName().data(),
-                                                     nullptr,
+                                                     fontInfo.GetNearbyCollection(),
                                                      fontInfo.GetWeight(),
                                                      fontInfo.GetStyle(),
                                                      fontInfo.GetStretch(),
