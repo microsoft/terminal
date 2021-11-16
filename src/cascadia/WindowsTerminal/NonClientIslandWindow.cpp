@@ -172,6 +172,8 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTCAPTION:
         {
             // Pass caption-related nonclient messages to the parent window.
+            // Make sure to do this for the HTTOP, which is the top resize
+            // border, so we can resize the window on the top.
             auto parentWindow{ GetHandle() };
             return SendMessage(parentWindow, message, wparam, lparam);
         }
@@ -223,7 +225,8 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         // should change its visual state.
         //
         // If it's not in a caption button, then just forward the message along
-        // to the root HWND.
+        // to the root HWND. Make sure to do this for the HTTOP, which is the
+        // top resize border.
         switch (wparam)
         {
         case HTTOP:
