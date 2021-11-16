@@ -79,4 +79,14 @@
         <!-- This feature will not ship to Stable until it is complete. -->
         <alwaysDisabledReleaseTokens />
     </feature>
+
+    <feature>
+        <name>Feature_AtlasEngine</name>
+        <description>If enabled, AtlasEngine and the experimental.useAtlasEngine setting are compiled into the project</description>
+        <stage>AlwaysEnabled</stage>
+        <alwaysDisabledBrandingTokens>
+            <brandingToken>Release</brandingToken>
+            <brandingToken>WindowsInbox</brandingToken>
+        </alwaysDisabledBrandingTokens>
+    </feature>
 </featureStaging>

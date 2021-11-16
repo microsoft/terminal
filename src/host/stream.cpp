@@ -471,7 +471,6 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
     RETURN_HR_IF(E_FAIL, !gci.HasActiveOutputBuffer());
 
     SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-    CommandHistory* const pCommandHistory = CommandHistory::s_Find(processData);
 
     try
     {
@@ -481,9 +480,9 @@ size_t RetrieveNumberOfSpaces(_In_ SHORT sOriginalCursorPositionX,
                                                                  buffer.size_bytes(), // UserBufferSize
                                                                  reinterpret_cast<wchar_t*>(buffer.data()), // UserBuffer
                                                                  ctrlWakeupMask, // CtrlWakeupMask
-                                                                 pCommandHistory, // CommandHistory
                                                                  exeName, // exe name
-                                                                 initialData);
+                                                                 initialData,
+                                                                 reinterpret_cast<ConsoleProcessHandle*>(processData)); //pClientProcess
 
         gci.SetCookedReadData(cookedReadData.get());
         bytesRead = buffer.size_bytes(); // This parameter on the way in is the size to read, on the way out, it will be updated to what is actually read.

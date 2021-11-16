@@ -199,13 +199,14 @@ using namespace Microsoft::Console::Render;
 }
 
 // Method Description:
-// - Formats and writes a sequence to change the current text attributes.
+// - Formats and writes a sequence to change the current text attributes to an
+//      indexed color from the 16-color table.
 // Arguments:
-// - wAttr: Windows color table index to emit as a VT sequence
+// - index: color table index to emit as a VT sequence
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition16Color(const WORD wAttr,
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition16Color(const BYTE index,
                                                              const bool fIsForeground) noexcept
 {
     // Always check using the foreground flags, because the bg flags constants
@@ -220,28 +221,22 @@ using namespace Microsoft::Console::Render;
     //      terminals display the bright color when displaying bolded text.
     // By specifying the boldness and brightness separately, we'll make sure the
     //      terminal has an accurate representation of our buffer.
-    const int vtIndex = 30 +
-                        (fIsForeground ? 0 : 10) +
-                        ((WI_IsFlagSet(wAttr, FOREGROUND_INTENSITY)) ? 60 : 0) +
-                        (WI_IsFlagSet(wAttr, FOREGROUND_RED) ? 1 : 0) +
-                        (WI_IsFlagSet(wAttr, FOREGROUND_GREEN) ? 2 : 0) +
-                        (WI_IsFlagSet(wAttr, FOREGROUND_BLUE) ? 4 : 0);
-
-    return _WriteFormatted(FMT_COMPILE("\x1b[{}m"), vtIndex);
+    const auto prefix = WI_IsFlagSet(index, FOREGROUND_INTENSITY) ? (fIsForeground ? 90 : 100) : (fIsForeground ? 30 : 40);
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}m"), prefix + (index & 7));
 }
 
 // Method Description:
 // - Formats and writes a sequence to change the current text attributes to an
 //      indexed color from the 256-color table.
 // Arguments:
-// - wAttr: Windows color table index to emit as a VT sequence
+// - index: color table index to emit as a VT sequence
 // - fIsForeground: true if we should emit the foreground sequence, false for background
 // Return Value:
 // - S_OK if we succeeded, else an appropriate HRESULT for failing to allocate or write.
-[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const WORD index,
+[[nodiscard]] HRESULT VtEngine::_SetGraphicsRendition256Color(const BYTE index,
                                                               const bool fIsForeground) noexcept
 {
-    return _WriteFormatted(FMT_COMPILE("\x1b[{}8;5;{}m"), fIsForeground ? '3' : '4', ::Xterm256ToWindowsIndex(index));
+    return _WriteFormatted(FMT_COMPILE("\x1b[{}8;5;{}m"), fIsForeground ? '3' : '4', index);
 }
 
 // Method Description:

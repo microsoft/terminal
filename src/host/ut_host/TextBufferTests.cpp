@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -779,8 +779,8 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     //      '\E[m\E[32mX\E[1mX'
     //      Make sure that the second X is a BRIGHT green, not white.
     Log::Comment(L"Case 4 ;\"\\E[m\\E[32mX\\E[1mX\"");
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
     wchar_t* sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
@@ -887,8 +887,8 @@ void TextBufferTests::TestUnBold()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -938,8 +938,8 @@ void TextBufferTests::TestUnBoldRgb()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -997,8 +997,8 @@ void TextBufferTests::TestComplexUnBold()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1079,8 +1079,8 @@ void TextBufferTests::CopyAttrs()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_blue = gci.GetColorTableEntry(1);
-    const auto dark_magenta = gci.GetColorTableEntry(5);
+    const auto dark_blue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
+    const auto dark_magenta = gci.GetColorTableEntry(TextColor::DARK_MAGENTA);
 
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
@@ -1133,7 +1133,7 @@ void TextBufferTests::EmptySgrTest()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const COLORREF darkRed = gci.GetColorTableEntry(4);
+    const COLORREF darkRed = gci.GetColorTableEntry(TextColor::DARK_RED);
     Log::Comment(NoThrowString().Format(
         L"cursor={X:%d,Y:%d}",
         x,
@@ -1192,7 +1192,7 @@ void TextBufferTests::TestReverseReset()
 
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
-    const auto dark_green = gci.GetColorTableEntry(2);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
     const COLORREF rgbColor = RGB(128, 5, 255);
 
     Log::Comment(NoThrowString().Format(
@@ -1258,9 +1258,9 @@ void TextBufferTests::CopyLastAttr()
     const COLORREF defaultBrightYellow = RGB(249, 241, 165);
     const COLORREF defaultBrightCyan = RGB(97, 214, 214);
 
-    gci.SetColorTableEntry(8, defaultBrightBlack);
-    gci.SetColorTableEntry(14, defaultBrightYellow);
-    gci.SetColorTableEntry(11, defaultBrightCyan);
+    gci.SetColorTableEntry(TextColor::BRIGHT_BLACK, defaultBrightBlack);
+    gci.SetColorTableEntry(TextColor::BRIGHT_YELLOW, defaultBrightYellow);
+    gci.SetColorTableEntry(TextColor::BRIGHT_CYAN, defaultBrightCyan);
 
     // Write (solFg, solBG) X \n
     //       (solFg, solBG) X (solCyan, solBG) X \n
@@ -1405,8 +1405,8 @@ void TextBufferTests::TestResetClearsBoldness()
     si.SetAttributes(defaultAttribute);
 
     const auto [defaultFg, defaultBg] = gci.LookupAttributeColors(si.GetAttributes());
-    const auto dark_green = gci.GetColorTableEntry(2);
-    const auto bright_green = gci.GetColorTableEntry(10);
+    const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
+    const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
     wchar_t* sequence = L"\x1b[32mA\x1b[1mB\x1b[0mC\x1b[32mD";
     Log::Comment(NoThrowString().Format(sequence));
