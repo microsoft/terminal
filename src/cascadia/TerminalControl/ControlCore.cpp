@@ -3,16 +3,18 @@
 
 #include "pch.h"
 #include "ControlCore.h"
-#include <argb.h>
+
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
-#include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
+
+#include "EventArgs.h"
 #include "../../types/inc/GlyphWidth.hpp"
-#include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
+#include "../../renderer/atlas/AtlasEngine.h"
+#include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 
@@ -204,6 +206,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  const double actualHeight,
                                  const double compositionScale)
     {
+        assert(_settings);
+
         _panelWidth = actualWidth;
         _panelHeight = actualHeight;
         _compositionScale = compositionScale;
@@ -224,10 +228,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            // Set up the DX Engine
-            auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            _renderer->AddRenderEngine(dxEngine.get());
-            _renderEngine = std::move(dxEngine);
+            if (Feature_AtlasEngine::IsEnabled() && _settings->UseAtlasEngine())
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+            }
+            else
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            }
+
+            _renderer->AddRenderEngine(_renderEngine.get());
 
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
@@ -273,7 +283,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
             _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
 
-            _updateAntiAliasingMode(_renderEngine.get());
+            _updateAntiAliasingMode();
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
@@ -629,7 +639,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Inform the renderer of our opacity
         _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
 
-        _updateAntiAliasingMode(_renderEngine.get());
+        _updateAntiAliasingMode();
 
         // Refresh our font with the renderer
         const auto actualFontOldSize = _actualFont.GetSize();
@@ -663,22 +673,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)
+    void ControlCore::_updateAntiAliasingMode()
     {
+        D2D1_TEXT_ANTIALIAS_MODE mode;
         // Update DxEngine's AntialiasingMode
         switch (_settings->AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
             break;
         case TextAntialiasingMode::Aliased:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
             break;
-        case TextAntialiasingMode::Grayscale:
         default:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
             break;
         }
+
+        _renderEngine->SetAntialiasingMode(mode);
     }
 
     // Method Description:
@@ -1703,6 +1715,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool ControlCore::_isBackgroundTransparent()
     {
+        // TODO! I had:
         return Opacity() < 1.0f || UseAcrylic();
+
+        // But the Atlas Renderer PR changed this to:
+        //
+        // const auto backgroundIsOpaque = _settings.Opacity() == 1.0 && _settings.BackgroundImage().empty();\
+        //
+        // Only one of these is right, right?
+        // The background image thing might be a
     }
 }

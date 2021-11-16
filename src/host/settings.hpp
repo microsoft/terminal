@@ -26,6 +26,13 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 #include "ConsoleArguments.hpp"
 #include "../inc/conattrs.hpp"
 
+enum class UseDx : DWORD
+{
+    Disabled = 0,
+    DxEngine,
+    AtlasEngine,
+};
+
 class Settings
 {
 public:
@@ -188,7 +195,7 @@ public:
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    bool GetUseDx() const noexcept;
+    UseDx GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
 private:
@@ -232,7 +239,7 @@ private:
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
     bool _fScreenReversed;
-    bool _fUseDx;
+    UseDx _fUseDx;
     bool _fCopyColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;

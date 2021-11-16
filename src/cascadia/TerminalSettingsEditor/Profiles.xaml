@@ -319,7 +319,7 @@
                         </StackPanel>
                         <StackPanel>
                             <StackPanel Orientation="Horizontal"
-                                        Visibility="{x:Bind State.Profile.EditableUnfocusedAppearance, Mode=OneWay}">
+                                        Visibility="{x:Bind State.Profile.EditableUnfocusedAppearance}">
                                 <TextBlock x:Uid="Profile_UnfocusedAppearanceTextBlock"
                                            Style="{StaticResource TitleTextBlockStyle}" />
                                 <Button x:Uid="Profile_CreateUnfocusedAppearanceButton"
@@ -476,6 +476,15 @@
                                 <CheckBox x:Uid="Profile_BellStyleTaskbar"
                                           IsChecked="{x:Bind IsBellStyleFlagSet(4), BindBack=SetBellStyleTaskbar, Mode=TwoWay}" />
                             </StackPanel>
+                        </local:SettingContainer>
+
+                        <!--  AtlasEngine  -->
+                        <local:SettingContainer x:Uid="Profile_UseAtlasEngine"
+                                                ClearSettingValue="{x:Bind State.Profile.ClearUseAtlasEngine}"
+                                                HasSettingValue="{x:Bind State.Profile.HasUseAtlasEngine, Mode=OneWay}"
+                                                SettingOverrideSource="{x:Bind State.Profile.UseAtlasEngineOverrideSource, Mode=OneWay}"
+                                                Visibility="{x:Bind State.Profile.AtlasEngineAvailable}">
+                            <ToggleSwitch IsOn="{x:Bind State.Profile.UseAtlasEngine, Mode=TwoWay}" />
                         </local:SettingContainer>
                     </StackPanel>
                 </ScrollViewer>

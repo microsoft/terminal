@@ -22,6 +22,9 @@
     <ProjectReference Include="..\..\..\internal\internal.vcxproj">
       <Project>{ef3e32a7-5ff6-42b4-b6e2-96cd7d033f00}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\renderer\atlas\atlas.vcxproj">
+      <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\renderer\dx\lib\dx.vcxproj">
       <Project>{48d21369-3d7b-4431-9967-24e81292cf62}</Project>
     </ProjectReference>

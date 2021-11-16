@@ -33,6 +33,8 @@ namespace Microsoft.Terminal.Control
         Boolean UseAcrylic { get; };
         ScrollbarState ScrollState { get; };
 
+        Boolean UseAtlasEngine { get; };
+
         String FontFace { get; };
         Int32 FontSize { get; };
         Windows.UI.Text.FontWeight FontWeight { get; };

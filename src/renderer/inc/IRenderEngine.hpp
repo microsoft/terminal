@@ -14,12 +14,16 @@ Author(s):
 
 #pragma once
 
+#include <d2d1.h>
+
 #include "CursorOptions.h"
 #include "Cluster.hpp"
 #include "FontInfoDesired.hpp"
 #include "IRenderData.hpp"
 #include "../../buffer/out/LineRendition.hpp"
 
+#pragma warning(push)
+#pragma warning(disable : 4100) // '...': unreferenced formal parameter
 namespace Microsoft::Console::Render
 {
     struct RenderFrameInfo
@@ -44,78 +48,75 @@ namespace Microsoft::Console::Render
         };
         using GridLineSet = til::enumset<GridLines>;
 
-        virtual ~IRenderEngine() = 0;
+#pragma warning(suppress : 26432) // If you define or delete any default operation in the type '...', define or delete them all (c.21).
+        virtual ~IRenderEngine()
+        {
+        }
 
-    protected:
-        IRenderEngine() = default;
-        IRenderEngine(const IRenderEngine&) = default;
-        IRenderEngine(IRenderEngine&&) = default;
-        IRenderEngine& operator=(const IRenderEngine&) = default;
-        IRenderEngine& operator=(IRenderEngine&&) = default;
-
-    public:
         [[nodiscard]] virtual HRESULT StartPaint() noexcept = 0;
         [[nodiscard]] virtual HRESULT EndPaint() noexcept = 0;
-
         [[nodiscard]] virtual bool RequiresContinuousRedraw() noexcept = 0;
         virtual void WaitUntilCanRender() noexcept = 0;
         [[nodiscard]] virtual HRESULT Present() noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* const pForcePaint) noexcept = 0;
-
+        [[nodiscard]] virtual HRESULT PrepareForTeardown(_Out_ bool* pForcePaint) noexcept = 0;
         [[nodiscard]] virtual HRESULT ScrollFrame() noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateCursor(const SMALL_RECT* const psrRegion) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateSystem(const RECT* const prcDirtyClient) noexcept = 0;
+        [[nodiscard]] virtual HRESULT Invalidate(const SMALL_RECT* psrRegion) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateCursor(const SMALL_RECT* psrRegion) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateSystem(const RECT* prcDirtyClient) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateSelection(const std::vector<SMALL_RECT>& rectangles) noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* const pcoordDelta) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateScroll(const COORD* pcoordDelta) noexcept = 0;
         [[nodiscard]] virtual HRESULT InvalidateAll() noexcept = 0;
-        [[nodiscard]] virtual HRESULT InvalidateCircling(_Out_ bool* const pForcePaint) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT InvalidateTitle(const std::wstring_view proposedTitle) noexcept = 0;
-
+        [[nodiscard]] virtual HRESULT InvalidateCircling(_Out_ bool* pForcePaint) noexcept = 0;
+        [[nodiscard]] virtual HRESULT InvalidateTitle(std::wstring_view proposedTitle) noexcept = 0;
         [[nodiscard]] virtual HRESULT PrepareRenderInfo(const RenderFrameInfo& info) noexcept = 0;
-
         [[nodiscard]] virtual HRESULT ResetLineTransform() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PrepareLineTransform(const LineRendition lineRendition,
-                                                           const size_t targetRow,
-                                                           const size_t viewportLeft) noexcept = 0;
-
+        [[nodiscard]] virtual HRESULT PrepareLineTransform(LineRendition lineRendition, size_t targetRow, size_t viewportLeft) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintBackground() noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                                      const COORD coord,
-                                                      const bool fTrimLeft,
-                                                      const bool lineWrapped) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintBufferGridLines(const GridLineSet lines,
-                                                           const COLORREF color,
-                                                           const size_t cchLine,
-                                                           const COORD coordTarget) noexcept = 0;
-        [[nodiscard]] virtual HRESULT PaintSelection(const SMALL_RECT rect) noexcept = 0;
-
+        [[nodiscard]] virtual HRESULT PaintBufferLine(gsl::span<const Cluster> clusters, COORD coord, bool fTrimLeft, bool lineWrapped) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintBufferGridLines(GridLineSet lines, COLORREF color, size_t cchLine, COORD coordTarget) noexcept = 0;
+        [[nodiscard]] virtual HRESULT PaintSelection(SMALL_RECT rect) noexcept = 0;
         [[nodiscard]] virtual HRESULT PaintCursor(const CursorOptions& options) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                           const gsl::not_null<IRenderData*> pData,
-                                                           const bool usingSoftFont,
-                                                           const bool isSettingDefaultBrushes) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired,
-                                                 _Out_ FontInfo& FontInfo) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                                     const SIZE cellSize,
-                                                     const size_t centeringHint) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateDpi(const int iDpi) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept = 0;
-
-        [[nodiscard]] virtual HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired,
-                                                      _Out_ FontInfo& FontInfo,
-                                                      const int iDpi) noexcept = 0;
-
+        [[nodiscard]] virtual HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes, gsl::not_null<IRenderData*> pData, bool usingSoftFont, bool isSettingDefaultBrushes) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateSoftFont(gsl::span<const uint16_t> bitPattern, SIZE cellSize, size_t centeringHint) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateDpi(int iDpi) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateViewport(SMALL_RECT srNewViewport) noexcept = 0;
+        [[nodiscard]] virtual HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept = 0;
         [[nodiscard]] virtual HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept = 0;
-        [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept = 0;
-        [[nodiscard]] virtual HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept = 0;
-        [[nodiscard]] virtual HRESULT UpdateTitle(const std::wstring_view newTitle) noexcept = 0;
-    };
+        [[nodiscard]] virtual HRESULT GetFontSize(_Out_ COORD* pFontSize) noexcept = 0;
+        [[nodiscard]] virtual HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept = 0;
+        [[nodiscard]] virtual HRESULT UpdateTitle(std::wstring_view newTitle) noexcept = 0;
 
-    inline Microsoft::Console::Render::IRenderEngine::~IRenderEngine() {}
+        // The following functions used to be specific to the DxRenderer and they should
+        // be abstracted away and integrated into the above or simply get removed.
+
+        // DxRenderer - getter
+        virtual HRESULT Enable() noexcept { return S_OK; }
+        virtual [[nodiscard]] bool GetRetroTerminalEffect() const noexcept { return false; }
+        virtual [[nodiscard]] float GetScaling() const noexcept { return 1; }
+#pragma warning(suppress : 26440) // Function '...' can be declared 'noexcept' (f.6).
+        virtual [[nodiscard]] HANDLE GetSwapChainHandle()
+        {
+            return nullptr;
+        }
+        virtual [[nodiscard]] Types::Viewport GetViewportInCharacters(const Types::Viewport& viewInPixels) const noexcept { return Types::Viewport::Empty(); }
+        virtual [[nodiscard]] Types::Viewport GetViewportInPixels(const Types::Viewport& viewInCharacters) const noexcept { return Types::Viewport::Empty(); }
+        // DxRenderer - setter
+        virtual void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept {}
+        virtual void SetCallback(std::function<void()> pfn) noexcept {}
+        virtual void EnableTransparentBackground(const bool isTransparent) noexcept {}
+        virtual void SetForceFullRepaintRendering(bool enable) noexcept {}
+        virtual [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept { return E_NOTIMPL; }
+        virtual void SetPixelShaderPath(std::wstring_view value) noexcept {}
+        virtual void SetRetroTerminalEffect(bool enable) noexcept {}
+        virtual void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept {}
+        virtual void SetSoftwareRendering(bool enable) noexcept {}
+        virtual void SetIntenseIsBold(bool enable) noexcept {}
+        virtual void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept {}
+        virtual [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept { return E_NOTIMPL; }
+        virtual void ToggleShaderEffects() noexcept {}
+        virtual [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept { return E_NOTIMPL; }
+        virtual void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept {}
+    };
 }
+#pragma warning(pop)

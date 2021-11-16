@@ -246,13 +246,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return _profile.HasUnfocusedAppearance();
     }
 
-    bool ProfileViewModel::EditableUnfocusedAppearance()
+    bool ProfileViewModel::EditableUnfocusedAppearance() const noexcept
     {
-        if constexpr (Feature_EditableUnfocusedAppearance::IsEnabled())
-        {
-            return true;
-        }
-        return false;
+        return Feature_EditableUnfocusedAppearance::IsEnabled();
     }
 
     bool ProfileViewModel::ShowUnfocusedAppearance()
@@ -284,6 +280,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     Editor::AppearanceViewModel ProfileViewModel::UnfocusedAppearance()
     {
         return _unfocusedAppearanceViewModel;
+    }
+
+    bool ProfileViewModel::AtlasEngineAvailable() const noexcept
+    {
+        return Feature_AtlasEngine::IsEnabled();
     }
 
     bool ProfileViewModel::UseParentProcessDirectory()

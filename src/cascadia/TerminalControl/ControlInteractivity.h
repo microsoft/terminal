@@ -22,6 +22,7 @@
 #include "cppwinrt_utils.h"
 
 #include "ControlCore.h"
+#include "../../renderer/uia/UiaRenderer.hpp"
 
 namespace ControlUnitTests
 {

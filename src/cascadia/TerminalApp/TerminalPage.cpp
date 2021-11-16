@@ -300,10 +300,7 @@ namespace winrt::TerminalApp::implementation
     // - true if the ApplicationState should be used.
     bool TerminalPage::ShouldUsePersistedLayout(CascadiaSettings& settings) const
     {
-        // GH#5000 Until there is a separate state file for elevated sessions we should just not
-        // save at all while in an elevated window.
         return Feature_PersistedWindowLayout::IsEnabled() &&
-               !IsElevated() &&
                settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
     }
 
