@@ -271,6 +271,14 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
             break;
         }
         return 0;
+
+    // Make sure to pass along right-clicks in this region to our parent window
+    // - we don't need to handle these.
+    case WM_NCRBUTTONDOWN:
+    case WM_NCRBUTTONDBLCLK:
+    case WM_NCRBUTTONUP:
+        auto parentWindow{ GetHandle() };
+        return SendMessage(parentWindow, message, wparam, lparam);
     }
 
     return DefWindowProc(_dragBarWindow.get(), message, wparam, lparam);
