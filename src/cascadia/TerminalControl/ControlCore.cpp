@@ -1715,14 +1715,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     bool ControlCore::_isBackgroundTransparent()
     {
-        // TODO! I had:
-        return Opacity() < 1.0f || UseAcrylic();
-
-        // But the Atlas Renderer PR changed this to:
+        // If we're:
+        // * Not fully opaque
+        // * On an acrylic background (of any opacity)
+        // * rendering on top of an image
         //
-        // const auto backgroundIsOpaque = _settings.Opacity() == 1.0 && _settings.BackgroundImage().empty();\
-        //
-        // Only one of these is right, right?
-        // The background image thing might be a
+        // then the renderer should not render "default background" text with a
+        // fully opaque background. Doing that would cover up our nice
+        // transparency, or our acrylic, or our image.
+        return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
     }
 }
