@@ -1,5 +1,10 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+//
+// A series of tests for the TerminalPage::_isTrustedCommandline function.
+// That's a heuristac function for deciding if we should automatically trust
+// certain commandlines by default. The logic in there is weird and there are
+// lots of edge cases, so it's easier to just write a unit test.
 
 #include "pch.h"
 
@@ -57,19 +62,24 @@ namespace TerminalAppLocalTests
         VERIFY_IS_TRUE(trust(L"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"));
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\i-definitely-don't-exist.exe"));
 
+        Log::Comment(L"These are not fully qualified, and _shouldn't_ be trusted");
         VERIFY_IS_FALSE(trust(L"cmd.exe"));
         VERIFY_IS_FALSE(trust(L"powershell.exe"));
     }
 
     void TrustCommandlineTests::TestCommandlineWithArgs()
     {
+        Log::Comment(L"These are sneaky things that _shouldn't_ be trusted");
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\cmd.exe /k echo Boo!"));
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\cmd.exe /k echo Boo! & cmd.exe"));
     }
 
     void TrustCommandlineTests::TestCommandlineWithSpaces()
     {
+        Log::Comment(L"This is a valid place for powershell to live, and the space can be tricky");
         VERIFY_IS_TRUE(trust(L"C:\\Program Files\\PowerShell\\7\\pwsh.exe"));
+
+        Log::Comment(L"These are sneaky things that _shouldn't_ be trusted");
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System 32\\cmd.exe"));
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\ cmd.exe"));
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\cmd.exe /c cmd.exe"));
@@ -77,6 +87,8 @@ namespace TerminalAppLocalTests
 
     void TrustCommandlineTests::TestCommandlineWithEnvVars()
     {
+        Log::Comment(L"Make sure we auto-expand environment variables");
+
         VERIFY_IS_TRUE(trust(L"%WINDIR%\\system32\\cmd.exe"));
         VERIFY_IS_TRUE(trust(L"%WINDIR%\\system32\\WindowsPowerShell\\v1.0\\powershell.exe"));
         VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe"));
@@ -96,10 +108,16 @@ namespace TerminalAppLocalTests
 
     void TrustCommandlineTests::TestPwshLocation()
     {
+        Log::Comment(L"Test various locations that pwsh.exe can be in");
+
         VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe"));
         VERIFY_IS_TRUE(trust(L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\pwsh.exe"));
         VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\10\\pwsh.exe"));
         VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\7.1.5\\pwsh.exe"));
+
+        Log::Comment(L"These are sneaky things that _shouldn't_ be trusted");
         VERIFY_IS_FALSE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe bad-stuff pwsh.exe"));
+        VERIFY_IS_FALSE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe bad-stuff c:\\pwsh.exe"));
+        VERIFY_IS_FALSE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe bad-stuff c:\\ %ProgramFiles%\\PowerShell\\7\\pwsh.exe"));
     }
 }

@@ -1544,11 +1544,12 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        // TODO! Remove the WSL allowing. it's trivial to insert some malicious
-        // stuff into WSL, via .bash_profile, so we're not giving them the (y)
+        // We're explicitly not auto-allowing wsl.exe -d <distroname>. It's
+        // trivial to insert some malicious stuff into WSL, via .bash_profile,
+        // so we're not giving them the (y)
 
-        // is does executablePath start with %ProgramFiles%\\PowerShell, and end
-        // with `pwsh.exe`?
+        // But we do want to allow `pwsh.exe` profiles in the expected place to
+        // work.
         const std::vector<std::filesystem::path> powershellCoreRoots
         {
             // Always look in "%LOCALAPPDATA%\Microsoft\WindowsApps", which is
@@ -1569,52 +1570,32 @@ namespace winrt::TerminalApp::implementation
 #endif
         };
 
-        // TODO! CommandlineToArgv to get the executable from the commandline.
-        // If there's one argc, and it's parent path is %ProgramFiles%, and it
-        // ends in pwsh.exe, then it's fine.
-
-        // const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
-        // const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
-        // const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
-        // const auto executableFilename{ executablePath.filename().wstring() };
-
+        // Is the filename for this commandline `pwsh.exe`?
         const std::filesystem::path exePath{ fullCommandline };
-        exePath;
+        const auto endsWithPwsh{ exePath.filename() == L"pwsh.exe" };
+        // We'll also need to check the parent path, so make sure it has one here.
 
-        for (const auto& pwshRoot : powershellCoreRoots)
+        if (endsWithPwsh && exePath.has_parent_path())
         {
-            // Is the commandline's length (root.length + 8 + 3) characters long?
-            // * root.length: Length of the parent directory
-            // * 8: pwsh.exe
-            // * 3: `/7/` (or some other version number)
-            //
-            // NO
-
-            // Does the commandline start with this root, and end with pwsh.exe?
-            const auto startsWithRoot{ til::starts_with(fullCommandline, pwshRoot.c_str()) };
-            // const auto endsWithPwsh{ til::ends_with(fullCommandline, L"pwsh.exe") };
-            const auto endsWithPwsh{ exePath.filename() == L"pwsh.exe" };
-            // Is the filename of the exe `pwsh.exe`
-            if (startsWithRoot && endsWithPwsh)
+            const auto parentPath{ exePath.parent_path() };
+            for (const auto& pwshRoot : powershellCoreRoots)
             {
-                return true;
+                // Does the commandline start with this root, and end with pwsh.exe?
+                const auto startsWithRoot{ til::starts_with(fullCommandline, pwshRoot.c_str()) };
+
+                // Is either the immediate parent, or the grandparent, this root exactly?
+                //
+                // We need to check the grandparent for the
+                // `%ProgramFiles%\\PowerShell\\7\\pwsh.exe` case.
+                const auto parentIsCorrect = (parentPath == pwshRoot) ||
+                                             (parentPath.has_parent_path() && parentPath.parent_path() == pwshRoot);
+
+                if (startsWithRoot && parentIsCorrect)
+                {
+                    return true;
+                }
             }
         }
-
-        // if (executableFilename == L"pwsh" || executableFilename == L"pwsh.exe")
-        // {
-        //     // Is the path to the commandline actually exactly one of the
-        //     // versions that exists in this directory?
-        //     for (const auto& versionedDir : std::filesystem::directory_iterator(pwshRoot))
-        //     {
-        //         const auto versionedPath = versionedDir.path();
-        //         if (executablePath.parent_path() == versionedPath)
-        //         {
-        //             return true;
-        //         }
-        //     }
-        // }
-
         return false;
     }
 
