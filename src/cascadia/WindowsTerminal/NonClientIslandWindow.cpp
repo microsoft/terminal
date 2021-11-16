@@ -168,6 +168,13 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         // - If we're over _anything else_, stop hovering the buttons.
         switch (wparam)
         {
+        case HTTOP:
+        case HTCAPTION:
+        {
+            // Pass caption-related nonclient messages to the parent window.
+            auto parentWindow{ GetHandle() };
+            return SendMessage(parentWindow, message, wparam, lparam);
+        }
         case HTMINBUTTON:
         case HTMAXBUTTON:
         case HTCLOSE:
@@ -219,6 +226,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         // to the root HWND.
         switch (wparam)
         {
+        case HTTOP:
         case HTCAPTION:
         {
             // Pass caption-related nonclient messages to the parent window.
@@ -243,6 +251,7 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         // to the root HWND.
         switch (wparam)
         {
+        case HTTOP:
         case HTCAPTION:
         {
             // Pass caption-related nonclient messages to the parent window.
