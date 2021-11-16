@@ -84,8 +84,12 @@ namespace TerminalAppLocalTests
 
     void TrustCommandlineTests::WslTests()
     {
+        Log::Comment(L"We are explicitly deciding to not auto-approve "
+                     L"`wsl.exe -d distro`-like commandlines. If we change this"
+                     L" policy, remove this test.");
+
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\wsl"));
-        VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\wsl.exe"));
+        VERIFY_IS_TRUE(trust(L"C:\\Windows\\System32\\wsl.exe"), L"This we will trust though, since it's an exe in system32");
         VERIFY_IS_FALSE(trust(L"C:\\Windows\\System32\\wsl.exe -d Ubuntu"));
         VERIFY_IS_FALSE(trust(L"wsl.exe"));
     }
@@ -94,5 +98,8 @@ namespace TerminalAppLocalTests
     {
         VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe"));
         VERIFY_IS_TRUE(trust(L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\pwsh.exe"));
+        VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\10\\pwsh.exe"));
+        VERIFY_IS_TRUE(trust(L"%ProgramFiles%\\PowerShell\\7.1.5\\pwsh.exe"));
+        VERIFY_IS_FALSE(trust(L"%ProgramFiles%\\PowerShell\\7\\pwsh.exe bad-stuff pwsh.exe"));
     }
 }

@@ -1526,19 +1526,19 @@ namespace winrt::TerminalApp::implementation
             return false;
         }
 
-        const std::filesystem::path fullCommandlinePath{
+        const std::wstring fullCommandline{
             wil::ExpandEnvironmentStringsW<std::wstring>(commandLine.data())
         };
 
-        if (fullCommandlinePath.wstring().size() > systemDirectory.size())
+        if (fullCommandline.size() > systemDirectory.size())
         {
             // Get the first part of the executable path
-            const auto start = fullCommandlinePath.wstring().substr(0, systemDirectory.size());
+            const auto start = fullCommandline.substr(0, systemDirectory.size());
             // Doing this as an ASCII only check might be wrong, but I'm
             // guessing if system32 isn't at X:\windows\system32... this isn't
             // the only thing that is going to be sad in Windows.
             const auto pathEquals = til::equals_insensitive_ascii(start, systemDirectory);
-            if (pathEquals && std::filesystem::exists(fullCommandlinePath))
+            if (pathEquals && std::filesystem::exists(std::filesystem::path{ fullCommandline }))
             {
                 return true;
             }
@@ -1547,97 +1547,73 @@ namespace winrt::TerminalApp::implementation
         // TODO! Remove the WSL allowing. it's trivial to insert some malicious
         // stuff into WSL, via .bash_profile, so we're not giving them the (y)
 
+        // is does executablePath start with %ProgramFiles%\\PowerShell, and end
+        // with `pwsh.exe`?
+        const std::vector<std::filesystem::path> powershellCoreRoots
+        {
+            // Always look in "%LOCALAPPDATA%\Microsoft\WindowsApps", which is
+            // where the pwsh.exe execution alias lives.
+            { wil::ExpandEnvironmentStringsW<std::wstring>(L"%LOCALAPPDATA%\\Microsoft\\WindowsApps") },
+
+                // Always look in "%ProgramFiles%\PowerShell"
+                { wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles%\\PowerShell") },
+
+#if defined(_M_AMD64) || defined(_M_ARM64) // No point in looking for WOW if we're not somewhere it exists
+                { wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles(x86)%\\PowerShell") },
+#endif
+
+#if defined(_M_ARM64) // same with ARM
+            {
+                wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles(Arm)%\\PowerShell")
+            }
+#endif
+        };
+
         // TODO! CommandlineToArgv to get the executable from the commandline.
         // If there's one argc, and it's parent path is %ProgramFiles%, and it
         // ends in pwsh.exe, then it's fine.
 
-        // Also, if the path is literally
-        //   %SystemRoot%\System32\wsl.exe -d <distro name>
-        // then allow it.
+        // const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
+        // const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+        // const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
+        // const auto executableFilename{ executablePath.filename().wstring() };
 
-        // Largely stolen from _tryMangleStartingDirectoryForWSL in ConptyConnection.
-        // Find the first space, quote or the end of the string -- we'll look
-        // for wsl before that.
-        const auto terminator{ commandLine.find_first_of(LR"(" )", 1) }; // look past the first character in case it starts with "
-        const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
-        const std::filesystem::path executablePath{ commandLine.substr(start, terminator - start) };
-        const auto executableFilename{ executablePath.filename().wstring() };
+        const std::filesystem::path exePath{ fullCommandline };
+        exePath;
 
-        if (executableFilename == L"wsl" || executableFilename == L"wsl.exe")
+        for (const auto& pwshRoot : powershellCoreRoots)
         {
-            // We've got a WSL -- let's just make sure it's the right one.
-            if (executablePath.has_parent_path())
-            {
-                if (executablePath.parent_path().wstring() != systemDirectory)
-                {
-                    return false; // it wasn't in system32!
-                }
-            }
-            else
-            {
-                // Unqualified WSL, this is dangerous, so return false.
-                return false;
-            }
+            // Is the commandline's length (root.length + 8 + 3) characters long?
+            // * root.length: Length of the parent directory
+            // * 8: pwsh.exe
+            // * 3: `/7/` (or some other version number)
+            //
+            // NO
 
-            // Get everything after the wsl.exe
-            const auto arguments{ terminator == std::wstring_view::npos ?
-                                      std::wstring_view{} :
-                                      commandLine.substr(terminator + 1) };
-            const auto dashD{ arguments.find(L"-d ") };
-
-            // If we found a "-d " IMMEDIATELY AFTER wsl.exe. If it wasn't
-            // immediately after, it could have been `wsl.exe --doSomethingEvil`
-            if (dashD == 0)
+            // Does the commandline start with this root, and end with pwsh.exe?
+            const auto startsWithRoot{ til::starts_with(fullCommandline, pwshRoot.c_str()) };
+            // const auto endsWithPwsh{ til::ends_with(fullCommandline, L"pwsh.exe") };
+            const auto endsWithPwsh{ exePath.filename() == L"pwsh.exe" };
+            // Is the filename of the exe `pwsh.exe`
+            if (startsWithRoot && endsWithPwsh)
             {
-                // Using the string following "-d "...
-                const auto afterDashD{ arguments.substr(dashD + 3) };
-                // Find the next space
-                const auto afterFirstWord = afterDashD.find(L" ");
-                // if that space _wasn't_ at the end of the commandline, then
-                // there were some other args. That means it was `wsl -d distro
-                // anything`, and we should ask the user.
-                //
-                // So if it was at the end of the commandline, then there were
-                // no other args besides the distro name.
-                if (afterFirstWord == std::wstring::npos)
-                {
-                    return true;
-                }
+                return true;
             }
         }
-        else if (executableFilename == L"pwsh" || executableFilename == L"pwsh.exe")
-        {
-            // is does executablePath start with %ProgramFiles%\\PowerShell?
-            const std::vector<std::filesystem::path> powershellCoreRoots
-            {
-                // Always look in "%ProgramFiles%
-                { wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles%\\PowerShell") },
 
-#if defined(_M_AMD64) || defined(_M_ARM64) // No point in looking for WOW if we're not somewhere it exists
-                    { wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles(x86)%\\PowerShell") },
-#endif
-
-#if defined(_M_ARM64) // same with ARM
-                {
-                    wil::ExpandEnvironmentStringsW<std::wstring>(L"%ProgramFiles(Arm)%\\PowerShell")
-                }
-#endif
-            };
-
-            for (const auto& pwshRoot : powershellCoreRoots)
-            {
-                // Is the path to the commandline actually exactly one of the
-                // versions that exists in this directory?
-                for (const auto& versionedDir : std::filesystem::directory_iterator(pwshRoot))
-                {
-                    const auto versionedPath = versionedDir.path();
-                    if (executablePath.parent_path() == versionedPath)
-                    {
-                        return true;
-                    }
-                }
-            }
-        }
+        // if (executableFilename == L"pwsh" || executableFilename == L"pwsh.exe")
+        // {
+        //     // Is the path to the commandline actually exactly one of the
+        //     // versions that exists in this directory?
+        //     for (const auto& versionedDir : std::filesystem::directory_iterator(pwshRoot))
+        //     {
+        //         const auto versionedPath = versionedDir.path();
+        //         if (executablePath.parent_path() == versionedPath)
+        //         {
+        //             return true;
+        //         }
+        //     }
+        // }
 
         return false;
     }
