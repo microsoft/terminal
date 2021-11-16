@@ -11,7 +11,7 @@ using namespace winrt::Windows::UI::Xaml;
 
 namespace winrt::TerminalApp::implementation
 {
-    void _closeToolTipForButton(const Controls::Button& button)
+    static void closeToolTipForButton(const Controls::Button& button)
     {
         if (auto tt{ Controls::ToolTipService::GetToolTip(button) })
         {
@@ -167,25 +167,25 @@ namespace winrt::TerminalApp::implementation
             VisualStateManager::GoToState(CloseButton(), L"Normal", true);
 
             _displayToolTip->Run(MinimizeButton());
-            _closeToolTipForButton(MaximizeButton());
-            _closeToolTipForButton(CloseButton());
+            closeToolTipForButton(MaximizeButton());
+            closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Maximize:
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
             VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", true);
             VisualStateManager::GoToState(CloseButton(), L"Normal", true);
 
-            _closeToolTipForButton(MinimizeButton());
+            closeToolTipForButton(MinimizeButton());
             _displayToolTip->Run(MaximizeButton());
-            _closeToolTipForButton(CloseButton());
+            closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Close:
             VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
             VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
             VisualStateManager::GoToState(CloseButton(), L"PointerOver", true);
 
-            _closeToolTipForButton(MinimizeButton());
-            _closeToolTipForButton(MaximizeButton());
+            closeToolTipForButton(MinimizeButton());
+            closeToolTipForButton(MaximizeButton());
             _displayToolTip->Run(CloseButton());
             break;
         }
@@ -231,9 +231,9 @@ namespace winrt::TerminalApp::implementation
         VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
         VisualStateManager::GoToState(CloseButton(), L"Normal", true);
 
-        _closeToolTipForButton(MinimizeButton());
-        _closeToolTipForButton(MaximizeButton());
-        _closeToolTipForButton(CloseButton());
+        closeToolTipForButton(MinimizeButton());
+        closeToolTipForButton(MaximizeButton());
+        closeToolTipForButton(CloseButton());
 
         _lastPressedButton = std::nullopt;
     }
