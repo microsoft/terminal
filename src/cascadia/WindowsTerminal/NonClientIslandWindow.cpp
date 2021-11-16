@@ -91,26 +91,29 @@ LRESULT NonClientIslandWindow::_dragBarNcHitTest(const til::point& pointer)
 {
     RECT rcParent = GetWindowRect();
     // The size of the buttons doesn't change over the life of the application.
-    static const auto buttonWidthInDips{ _titlebar.CaptionButtonWidth() };
+    const auto buttonWidthInDips{ _titlebar.CaptionButtonWidth() };
 
-    // However, the dPI scaling might, so get the updated size of the buttons in pixels
+    // However, the DPI scaling might, so get the updated size of the buttons in pixels
     const auto buttonWidthInPixels{ buttonWidthInDips * GetCurrentDpiScale() };
 
+    // make sure to account for the width of the window frame!
+    const til::rectangle nonClientFrame{ GetNonClientFrame(_currentDpi) };
+    const auto rightBorder{ rcParent.right - nonClientFrame.right<int>() };
     // From the right to the left,
     // * are we in the close button?
     // * the maximize button?
     // * the minimize button?
     // If we're not, then we're in either the top resize border, or just
     // generally in the titlebar.
-    if ((rcParent.right - pointer.x()) < (buttonWidthInPixels))
+    if ((rightBorder - pointer.x()) < (buttonWidthInPixels))
     {
         return HTCLOSE;
     }
-    else if ((rcParent.right - pointer.x()) < (buttonWidthInPixels * 2))
+    else if ((rightBorder - pointer.x()) < (buttonWidthInPixels * 2))
     {
         return HTMAXBUTTON;
     }
-    else if ((rcParent.right - pointer.x()) < (buttonWidthInPixels * 3))
+    else if ((rightBorder - pointer.x()) < (buttonWidthInPixels * 3))
     {
         return HTMINBUTTON;
     }
