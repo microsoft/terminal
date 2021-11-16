@@ -3,7 +3,7 @@
 
 #include "precomp.h"
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 HANDLE Common::_hConsole = INVALID_HANDLE_VALUE;

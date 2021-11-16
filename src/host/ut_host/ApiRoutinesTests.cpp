@@ -27,6 +27,7 @@ class ApiRoutinesTests
 
     ApiRoutines _Routines;
     IApiRoutines* _pApiRoutines = &_Routines;
+    CommandHistory* m_pHistory;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
@@ -37,11 +38,20 @@ class ApiRoutinesTests
 
         m_state->PrepareGlobalInputBuffer();
 
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
+        if (!m_pHistory)
+        {
+            return false;
+        }
+        // History must be prepared before COOKED_READ
         return true;
     }
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        CommandHistory::s_Free(nullptr);
+        m_pHistory = nullptr;
+
         m_state->CleanupGlobalInputBuffer();
 
         m_state->CleanupGlobalScreenBuffer();

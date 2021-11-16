@@ -12,6 +12,8 @@
 #include <WtExeUtils.h>
 #include <wil/token_helpers.h >
 
+#include "../../types/inc/utils.hpp"
+
 using namespace winrt::Windows::ApplicationModel;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
 using namespace winrt::Windows::UI::Xaml;
@@ -131,38 +133,6 @@ static Documents::Run _BuildErrorRun(const winrt::hstring& text, const ResourceD
     return textRun;
 }
 
-// Method Description:
-// - Returns whether the user is either a member of the Administrators group or
-//   is currently elevated.
-// - This will return **FALSE** if the user has UAC disabled entirely, because
-//   there's no separation of power between the user and an admin in that case.
-// Return Value:
-// - true if the user is an administrator
-static bool _isUserAdmin() noexcept
-try
-{
-    wil::unique_handle processToken{ GetCurrentProcessToken() };
-    const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
-    const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
-    if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
-    {
-        // In this case, the user has UAC entirely disabled. This is sort of
-        // weird, we treat this like the user isn't an admin at all. There's no
-        // separation of powers, so the things we normally want to gate on
-        // "having special powers" doesn't apply.
-        //
-        // See GH#7754, GH#11096
-        return false;
-    }
-
-    return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
-}
-catch (...)
-{
-    LOG_CAUGHT_EXCEPTION();
-    return false;
-}
-
 namespace winrt::TerminalApp::implementation
 {
     // Function Description:
@@ -214,7 +184,7 @@ namespace winrt::TerminalApp::implementation
         // The TerminalPage has to be constructed during our construction, to
         // make sure that there's a terminal page for callers of
         // SetTitleBarContent
-        _isElevated = _isUserAdmin();
+        _isElevated = ::Microsoft::Console::Utils::IsElevated();
         _root = winrt::make_self<TerminalPage>();
 
         _reloadSettings = std::make_shared<ThrottledFuncTrailing<>>(winrt::Windows::System::DispatcherQueue::GetForCurrentThread(), std::chrono::milliseconds(100), [weakSelf = get_weak()]() {
@@ -333,6 +303,9 @@ namespace winrt::TerminalApp::implementation
         _ApplyLanguageSettingChange();
         _RefreshThemeRoutine();
         _ApplyStartupTaskStateChange();
+
+        auto args = winrt::make_self<SystemMenuChangeArgs>(RS_(L"SettingsMenuItem"), SystemMenuChangeAction::Add, SystemMenuItemHandler(this, &AppLogic::_OpenSettingsUI));
+        _SystemMenuChangeRequestedHandlers(*this, *args);
 
         TraceLoggingWrite(
             g_hTerminalAppProvider,
@@ -907,8 +880,6 @@ namespace winrt::TerminalApp::implementation
     void AppLogic::_RegisterSettingsChange()
     {
         const std::filesystem::path settingsPath{ std::wstring_view{ CascadiaSettings::SettingsPath() } };
-        const std::filesystem::path statePath{ std::wstring_view{ ApplicationState::SharedInstance().FilePath() } };
-
         _reader.create(
             settingsPath.parent_path().c_str(),
             false,
@@ -917,14 +888,29 @@ namespace winrt::TerminalApp::implementation
             // editors, who will write a temp file, then rename it to be the
             // actual file you wrote. So listen for that too.
             wil::FolderChangeEvents::FileName | wil::FolderChangeEvents::LastWriteTime,
-            [this, settingsBasename = settingsPath.filename(), stateBasename = statePath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
-                const auto modifiedBasename = std::filesystem::path{ fileModified }.filename();
+            [this, settingsBasename = settingsPath.filename()](wil::FolderChangeEvent, PCWSTR fileModified) {
+                // DO NOT create a static reference to ApplicationState::SharedInstance here.
+                //
+                // ApplicationState::SharedInstance already caches its own
+                // static ref. If _we_ keep a static ref to the member in
+                // AppState, then our reference will keep ApplicationState alive
+                // after the `ActionToStringMap` gets cleaned up. Then, when we
+                // try to persist the actions in the window state, we won't be
+                // able to. We'll try to look up the action and the map just
+                // won't exist. We'll explode, even though the Terminal is
+                // tearing down anyways. So we'll just die, but still invoke
+                // WinDBG's post-mortem debugger, who won't be able to attach to
+                // the process that's already exiting.
+                //
+                // So DON'T ~give a mouse a cookie~ take a static ref here.
+
+                const winrt::hstring modifiedBasename{ std::filesystem::path{ fileModified }.filename().c_str() };
 
                 if (modifiedBasename == settingsBasename)
                 {
                     _reloadSettings->Run();
                 }
-                else if (modifiedBasename == stateBasename)
+                else if (ApplicationState::SharedInstance().IsStatePath(modifiedBasename))
                 {
                     _reloadState();
                 }
@@ -1049,6 +1035,11 @@ namespace winrt::TerminalApp::implementation
         Jumplist::UpdateJumplist(_settings);
 
         _SettingsChangedHandlers(*this, nullptr);
+    }
+
+    void AppLogic::_OpenSettingsUI()
+    {
+        _root->OpenSettingsUI();
     }
 
     // Method Description:
@@ -1555,6 +1546,11 @@ namespace winrt::TerminalApp::implementation
     bool AppLogic::IsQuakeWindow() const noexcept
     {
         return _root->IsQuakeWindow();
+    }
+
+    void AppLogic::RequestExitFullscreen()
+    {
+        _root->SetFullscreen(false);
     }
 
     bool AppLogic::GetMinimizeToNotificationArea()

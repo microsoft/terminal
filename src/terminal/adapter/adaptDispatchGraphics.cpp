@@ -13,29 +13,6 @@
 using namespace Microsoft::Console::VirtualTerminal;
 using namespace Microsoft::Console::VirtualTerminal::DispatchTypes;
 
-// clang-format off
-constexpr BYTE BLUE_ATTR      = 0x01;
-constexpr BYTE GREEN_ATTR     = 0x02;
-constexpr BYTE RED_ATTR       = 0x04;
-constexpr BYTE BRIGHT_ATTR    = 0x08;
-constexpr BYTE DARK_BLACK     = 0;
-constexpr BYTE DARK_RED       = RED_ATTR;
-constexpr BYTE DARK_GREEN     = GREEN_ATTR;
-constexpr BYTE DARK_YELLOW    = RED_ATTR | GREEN_ATTR;
-constexpr BYTE DARK_BLUE      = BLUE_ATTR;
-constexpr BYTE DARK_MAGENTA   = RED_ATTR | BLUE_ATTR;
-constexpr BYTE DARK_CYAN      = GREEN_ATTR | BLUE_ATTR;
-constexpr BYTE DARK_WHITE     = RED_ATTR | GREEN_ATTR | BLUE_ATTR;
-constexpr BYTE BRIGHT_BLACK   = BRIGHT_ATTR;
-constexpr BYTE BRIGHT_RED     = BRIGHT_ATTR | RED_ATTR;
-constexpr BYTE BRIGHT_GREEN   = BRIGHT_ATTR | GREEN_ATTR;
-constexpr BYTE BRIGHT_YELLOW  = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR;
-constexpr BYTE BRIGHT_BLUE    = BRIGHT_ATTR | BLUE_ATTR;
-constexpr BYTE BRIGHT_MAGENTA = BRIGHT_ATTR | RED_ATTR | BLUE_ATTR;
-constexpr BYTE BRIGHT_CYAN    = BRIGHT_ATTR | GREEN_ATTR | BLUE_ATTR;
-constexpr BYTE BRIGHT_WHITE   = BRIGHT_ATTR | RED_ATTR | GREEN_ATTR | BLUE_ATTR;
-// clang-format on
-
 // Routine Description:
 // - Helper to parse extended graphics options, which start with 38 (FG) or 48 (BG)
 //     These options are followed by either a 2 (RGB) or 5 (xterm index)
@@ -72,7 +49,7 @@ size_t AdaptDispatch::_SetRgbColorsHelper(const VTParameters options,
         const size_t tableIndex = options.at(1).value_or(0);
         if (tableIndex <= 255)
         {
-            const auto adjustedIndex = gsl::narrow_cast<BYTE>(::Xterm256ToWindowsIndex(tableIndex));
+            const auto adjustedIndex = gsl::narrow_cast<BYTE>(tableIndex);
             if (isForeground)
             {
                 attr.SetIndexedForeground256(adjustedIndex);
@@ -178,100 +155,100 @@ bool AdaptDispatch::SetGraphicsRendition(const VTParameters options)
                 attr.SetOverlined(false);
                 break;
             case ForegroundBlack:
-                attr.SetIndexedForeground(DARK_BLACK);
+                attr.SetIndexedForeground(TextColor::DARK_BLACK);
                 break;
             case ForegroundBlue:
-                attr.SetIndexedForeground(DARK_BLUE);
+                attr.SetIndexedForeground(TextColor::DARK_BLUE);
                 break;
             case ForegroundGreen:
-                attr.SetIndexedForeground(DARK_GREEN);
+                attr.SetIndexedForeground(TextColor::DARK_GREEN);
                 break;
             case ForegroundCyan:
-                attr.SetIndexedForeground(DARK_CYAN);
+                attr.SetIndexedForeground(TextColor::DARK_CYAN);
                 break;
             case ForegroundRed:
-                attr.SetIndexedForeground(DARK_RED);
+                attr.SetIndexedForeground(TextColor::DARK_RED);
                 break;
             case ForegroundMagenta:
-                attr.SetIndexedForeground(DARK_MAGENTA);
+                attr.SetIndexedForeground(TextColor::DARK_MAGENTA);
                 break;
             case ForegroundYellow:
-                attr.SetIndexedForeground(DARK_YELLOW);
+                attr.SetIndexedForeground(TextColor::DARK_YELLOW);
                 break;
             case ForegroundWhite:
-                attr.SetIndexedForeground(DARK_WHITE);
+                attr.SetIndexedForeground(TextColor::DARK_WHITE);
                 break;
             case BackgroundBlack:
-                attr.SetIndexedBackground(DARK_BLACK);
+                attr.SetIndexedBackground(TextColor::DARK_BLACK);
                 break;
             case BackgroundBlue:
-                attr.SetIndexedBackground(DARK_BLUE);
+                attr.SetIndexedBackground(TextColor::DARK_BLUE);
                 break;
             case BackgroundGreen:
-                attr.SetIndexedBackground(DARK_GREEN);
+                attr.SetIndexedBackground(TextColor::DARK_GREEN);
                 break;
             case BackgroundCyan:
-                attr.SetIndexedBackground(DARK_CYAN);
+                attr.SetIndexedBackground(TextColor::DARK_CYAN);
                 break;
             case BackgroundRed:
-                attr.SetIndexedBackground(DARK_RED);
+                attr.SetIndexedBackground(TextColor::DARK_RED);
                 break;
             case BackgroundMagenta:
-                attr.SetIndexedBackground(DARK_MAGENTA);
+                attr.SetIndexedBackground(TextColor::DARK_MAGENTA);
                 break;
             case BackgroundYellow:
-                attr.SetIndexedBackground(DARK_YELLOW);
+                attr.SetIndexedBackground(TextColor::DARK_YELLOW);
                 break;
             case BackgroundWhite:
-                attr.SetIndexedBackground(DARK_WHITE);
+                attr.SetIndexedBackground(TextColor::DARK_WHITE);
                 break;
             case BrightForegroundBlack:
-                attr.SetIndexedForeground(BRIGHT_BLACK);
+                attr.SetIndexedForeground(TextColor::BRIGHT_BLACK);
                 break;
             case BrightForegroundBlue:
-                attr.SetIndexedForeground(BRIGHT_BLUE);
+                attr.SetIndexedForeground(TextColor::BRIGHT_BLUE);
                 break;
             case BrightForegroundGreen:
-                attr.SetIndexedForeground(BRIGHT_GREEN);
+                attr.SetIndexedForeground(TextColor::BRIGHT_GREEN);
                 break;
             case BrightForegroundCyan:
-                attr.SetIndexedForeground(BRIGHT_CYAN);
+                attr.SetIndexedForeground(TextColor::BRIGHT_CYAN);
                 break;
             case BrightForegroundRed:
-                attr.SetIndexedForeground(BRIGHT_RED);
+                attr.SetIndexedForeground(TextColor::BRIGHT_RED);
                 break;
             case BrightForegroundMagenta:
-                attr.SetIndexedForeground(BRIGHT_MAGENTA);
+                attr.SetIndexedForeground(TextColor::BRIGHT_MAGENTA);
                 break;
             case BrightForegroundYellow:
-                attr.SetIndexedForeground(BRIGHT_YELLOW);
+                attr.SetIndexedForeground(TextColor::BRIGHT_YELLOW);
                 break;
             case BrightForegroundWhite:
-                attr.SetIndexedForeground(BRIGHT_WHITE);
+                attr.SetIndexedForeground(TextColor::BRIGHT_WHITE);
                 break;
             case BrightBackgroundBlack:
-                attr.SetIndexedBackground(BRIGHT_BLACK);
+                attr.SetIndexedBackground(TextColor::BRIGHT_BLACK);
                 break;
             case BrightBackgroundBlue:
-                attr.SetIndexedBackground(BRIGHT_BLUE);
+                attr.SetIndexedBackground(TextColor::BRIGHT_BLUE);
                 break;
             case BrightBackgroundGreen:
-                attr.SetIndexedBackground(BRIGHT_GREEN);
+                attr.SetIndexedBackground(TextColor::BRIGHT_GREEN);
                 break;
             case BrightBackgroundCyan:
-                attr.SetIndexedBackground(BRIGHT_CYAN);
+                attr.SetIndexedBackground(TextColor::BRIGHT_CYAN);
                 break;
             case BrightBackgroundRed:
-                attr.SetIndexedBackground(BRIGHT_RED);
+                attr.SetIndexedBackground(TextColor::BRIGHT_RED);
                 break;
             case BrightBackgroundMagenta:
-                attr.SetIndexedBackground(BRIGHT_MAGENTA);
+                attr.SetIndexedBackground(TextColor::BRIGHT_MAGENTA);
                 break;
             case BrightBackgroundYellow:
-                attr.SetIndexedBackground(BRIGHT_YELLOW);
+                attr.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
                 break;
             case BrightBackgroundWhite:
-                attr.SetIndexedBackground(BRIGHT_WHITE);
+                attr.SetIndexedBackground(TextColor::BRIGHT_WHITE);
                 break;
             case ForegroundExtended:
                 i += _SetRgbColorsHelper(options.subspan(i + 1), attr, true);

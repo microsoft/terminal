@@ -231,7 +231,7 @@ InputBuffer* const CONSOLE_INFORMATION::GetActiveInputBuffer() const
 COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 {
     const auto fg = GetDefaultForegroundColor();
-    return fg != INVALID_COLOR ? fg : GetColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
+    return fg != INVALID_COLOR ? fg : GetLegacyColorTableEntry(LOBYTE(GetFillAttribute()) & FG_ATTRS);
 }
 
 // Method Description:
@@ -246,23 +246,37 @@ COLORREF CONSOLE_INFORMATION::GetDefaultForeground() const noexcept
 COLORREF CONSOLE_INFORMATION::GetDefaultBackground() const noexcept
 {
     const auto bg = GetDefaultBackgroundColor();
-    return bg != INVALID_COLOR ? bg : GetColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
+    return bg != INVALID_COLOR ? bg : GetLegacyColorTableEntry((LOBYTE(GetFillAttribute()) & BG_ATTRS) >> 4);
 }
 
 // Method Description:
 // - Get the colors of a particular text attribute, using our color table,
 //      and our configured default attributes.
 // Arguments:
-// - attr: the TextAttribute to retrieve the foreground color of.
+// - attr: the TextAttribute to retrieve the foreground and background color of.
 // Return Value:
 // - The color values of the attribute's foreground and background.
 std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr) const noexcept
 {
+    return LookupAttributeColors(attr, GetDefaultForeground(), GetDefaultBackground());
+}
+
+// Method Description:
+// - Get the colors of a particular text attribute, using our color table,
+//      and the given default color values.
+// Arguments:
+// - attr: the TextAttribute to retrieve the foreground and background color of.
+// - defaultFg: the COLORREF to use for a default foreground color.
+// - defaultBg: the COLORREF to use for a default background color.
+// Return Value:
+// - The color values of the attribute's foreground and background.
+std::pair<COLORREF, COLORREF> CONSOLE_INFORMATION::LookupAttributeColors(const TextAttribute& attr, const COLORREF defaultFg, const COLORREF defaultBg) const noexcept
+{
     _blinkingState.RecordBlinkingUsage(attr);
     return attr.CalculateRgbColors(
         GetColorTable(),
-        GetDefaultForeground(),
-        GetDefaultBackground(),
+        defaultFg,
+        defaultBg,
         IsScreenReversed(),
         _blinkingState.IsBlinkingFaint());
 }

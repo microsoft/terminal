@@ -312,7 +312,7 @@
     }
     CATCH_RETURN();
 
-    // ReadConsole needs this to get the command history list associated with an attached process, but it can be an opaque value.
+    // ReadConsole needs this to get details associated with an attached process (such as the command history list, telemetry metadata).
     HANDLE const hConsoleClient = (HANDLE)m->GetProcessHandle();
 
     // ReadConsole needs this to store context information across "processed reads" e.g. reads on the same handle

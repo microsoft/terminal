@@ -61,6 +61,7 @@ SUMS$
 ^src/host/runft\.bat$
 ^src/host/runut\.bat$
 ^src/interactivity/onecore/BgfxEngine\.
+^src/renderer/atlas/
 ^src/renderer/wddmcon/WddmConRenderer\.
 ^src/terminal/adapter/ut_adapter/run\.bat$
 ^src/terminal/parser/delfuzzpayload\.bat$

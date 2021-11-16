@@ -237,7 +237,7 @@ void TextAttributeTests::TestRoundtripDefaultColors()
     Log::Comment(L"Foreground legacy default index should map to default text color.");
     legacyAttribute = fgLegacyDefault | BACKGROUND_GREEN;
     textAttribute.SetDefaultForeground();
-    textAttribute.SetIndexedBackground256(BACKGROUND_GREEN >> 4);
+    textAttribute.SetIndexedBackground256(TextColor::DARK_GREEN);
     VERIFY_ARE_EQUAL(textAttribute, TextAttribute{ legacyAttribute });
 
     Log::Comment(L"Default foreground text color should map back to legacy default index.");
@@ -245,7 +245,7 @@ void TextAttributeTests::TestRoundtripDefaultColors()
 
     Log::Comment(L"Background legacy default index should map to default text color.");
     legacyAttribute = FOREGROUND_GREEN | bgLegacyDefault;
-    textAttribute.SetIndexedForeground256(FOREGROUND_GREEN);
+    textAttribute.SetIndexedForeground256(TextColor::DARK_GREEN);
     textAttribute.SetDefaultBackground();
     VERIFY_ARE_EQUAL(textAttribute, TextAttribute{ legacyAttribute });
 
@@ -288,7 +288,7 @@ void TextAttributeTests::TestBoldAsBright()
     VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
     VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
 
-    attr.SetIndexedForeground(0);
+    attr.SetIndexedForeground(TextColor::DARK_BLACK);
     VERIFY_IS_TRUE(attr.IsBold());
 
     Log::Comment(L"Foreground should be bright black when bold is bright is enabled");
@@ -297,7 +297,7 @@ void TextAttributeTests::TestBoldAsBright()
     Log::Comment(L"Foreground should be dark black when bold is bright is disabled");
     VERIFY_ARE_EQUAL(std::make_pair(darkBlack, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
 
-    attr.SetIndexedBackground(2);
+    attr.SetIndexedBackground(TextColor::DARK_GREEN);
     VERIFY_IS_TRUE(attr.IsBold());
 
     Log::Comment(L"background should be unaffected by 'bold is bright'");
@@ -312,7 +312,7 @@ void TextAttributeTests::TestBoldAsBright()
 
     Log::Comment(L"When set to a bright color, and bold, 'bold is bright' changes nothing");
     attr.SetBold(true);
-    attr.SetIndexedForeground(8);
+    attr.SetIndexedForeground(TextColor::BRIGHT_BLACK);
     VERIFY_IS_TRUE(attr.IsBold());
     VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
     VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));

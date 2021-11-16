@@ -470,7 +470,7 @@ void VtRendererTest::Xterm256TestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetIndexedBackground(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -479,7 +479,7 @@ void VtRendererTest::Xterm256TestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -515,7 +515,7 @@ void VtRendererTest::Xterm256TestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG to a 256-color index----"));
-        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground256(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[38;5;7m"); // Foreground DARK_WHITE (256-Color Index)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -524,7 +524,7 @@ void VtRendererTest::Xterm256TestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to a 256-color index----"));
-        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground256(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[48;5;1m"); // Background DARK_RED (256-Color Index)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -859,7 +859,7 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Foreground----");
-    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedForeground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[32m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
@@ -870,7 +870,7 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Background----");
-    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedBackground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[42m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
@@ -1104,7 +1104,7 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetIndexedBackground(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -1113,7 +1113,7 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -1150,7 +1150,7 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG to a 256-color index----"));
-        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground256(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -1159,7 +1159,7 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to a 256-color index----"));
-        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground256(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
@@ -1351,7 +1351,7 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Foreground----");
-    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedForeground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[32m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
@@ -1362,7 +1362,7 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Background----");
-    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedBackground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[42m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
