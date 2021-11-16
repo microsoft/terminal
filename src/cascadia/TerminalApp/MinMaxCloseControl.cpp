@@ -159,28 +159,30 @@ namespace winrt::TerminalApp::implementation
 
         switch (button)
         {
+            // Make sure to use true for the useTransitions parameter, to
+            // animate the fade in/out transition between colors.
         case CaptionButton::Minimize:
-            VisualStateManager::GoToState(MinimizeButton(), L"PointerOver", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            VisualStateManager::GoToState(MinimizeButton(), L"PointerOver", true);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
 
             _displayToolTip->Run(MinimizeButton());
             _closeToolTipForButton(MaximizeButton());
             _closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Maximize:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", false);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MaximizeButton(), L"PointerOver", true);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
 
             _closeToolTipForButton(MinimizeButton());
             _displayToolTip->Run(MaximizeButton());
             _closeToolTipForButton(CloseButton());
             break;
         case CaptionButton::Close:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(CloseButton(), L"PointerOver", false);
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(CloseButton(), L"PointerOver", true);
 
             _closeToolTipForButton(MinimizeButton());
             _closeToolTipForButton(MaximizeButton());
@@ -201,19 +203,19 @@ namespace winrt::TerminalApp::implementation
         switch (button)
         {
         case CaptionButton::Minimize:
-            VisualStateManager::GoToState(MinimizeButton(), L"Pressed", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            VisualStateManager::GoToState(MinimizeButton(), L"Pressed", true);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
             break;
         case CaptionButton::Maximize:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"Pressed", false);
-            VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MaximizeButton(), L"Pressed", true);
+            VisualStateManager::GoToState(CloseButton(), L"Normal", true);
             break;
         case CaptionButton::Close:
-            VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
-            VisualStateManager::GoToState(CloseButton(), L"Pressed", false);
+            VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
+            VisualStateManager::GoToState(CloseButton(), L"Pressed", true);
             break;
         }
         _lastPressedButton = button;
@@ -225,9 +227,9 @@ namespace winrt::TerminalApp::implementation
     void MinMaxCloseControl::ReleaseButtons()
     {
         _displayToolTip->Run(nullptr);
-        VisualStateManager::GoToState(MinimizeButton(), L"Normal", false);
-        VisualStateManager::GoToState(MaximizeButton(), L"Normal", false);
-        VisualStateManager::GoToState(CloseButton(), L"Normal", false);
+        VisualStateManager::GoToState(MinimizeButton(), L"Normal", true);
+        VisualStateManager::GoToState(MaximizeButton(), L"Normal", true);
+        VisualStateManager::GoToState(CloseButton(), L"Normal", true);
 
         _closeToolTipForButton(MinimizeButton());
         _closeToolTipForButton(MaximizeButton());

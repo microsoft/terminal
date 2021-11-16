@@ -171,6 +171,8 @@ LRESULT NonClientIslandWindow::_InputSinkMessageHandler(UINT const message,
         case HTTOP:
         case HTCAPTION:
         {
+            _titlebar.ReleaseButtons();
+
             // Pass caption-related nonclient messages to the parent window.
             // Make sure to do this for the HTTOP, which is the top resize
             // border, so we can resize the window on the top.
