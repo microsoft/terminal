@@ -1416,21 +1416,24 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto terminalTab{ _GetFocusedTabImpl() })
         {
-            uint32_t realRowsToScroll;
-            if (rowsToScroll == nullptr)
+            if (const auto& termControl{ terminalTab->GetActiveTerminalControl() })
             {
-                // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
-                realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
-                                       terminalTab->GetActiveTerminalControl().ViewHeight() :
-                                       _systemRowsToScroll;
+                uint32_t realRowsToScroll;
+                if (rowsToScroll == nullptr)
+                {
+                    // The magic value of WHEEL_PAGESCROLL indicates that we need to scroll the entire page
+                    realRowsToScroll = _systemRowsToScroll == WHEEL_PAGESCROLL ?
+                                           termControl.ViewHeight() :
+                                           _systemRowsToScroll;
+                }
+                else
+                {
+                    // use the custom value specified in the command
+                    realRowsToScroll = rowsToScroll.Value();
+                }
+                auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
+                terminalTab->Scroll(scrollDelta);
             }
-            else
-            {
-                // use the custom value specified in the command
-                realRowsToScroll = rowsToScroll.Value();
-            }
-            auto scrollDelta = _ComputeScrollDelta(scrollDirection, realRowsToScroll);
-            terminalTab->Scroll(scrollDelta);
         }
     }
 
@@ -2093,8 +2096,10 @@ namespace winrt::TerminalApp::implementation
                 if (warnMultiLine)
                 {
                     const auto focusedTab = _GetFocusedTabImpl();
+                    const auto& termControl{ focusedTab->GetActiveTerminalControl() };
                     // Do not warn about multi line pasting if the current tab has bracketed paste enabled.
-                    warnMultiLine = warnMultiLine && !focusedTab->GetActiveTerminalControl().BracketedPasteEnabled();
+                    warnMultiLine = warnMultiLine &&
+                                    (termControl && !termControl.BracketedPasteEnabled());
                 }
 
                 // We have to initialize the dialog here to be able to change the text of the text block within it
@@ -2402,11 +2407,14 @@ namespace winrt::TerminalApp::implementation
                     // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
                     profile = GetClosestProfileForDuplicationOfProfile(profile);
                     controlSettings = TerminalSettings::CreateWithProfile(_settings, profile, *_bindings);
-                    const auto workingDirectory = focusedTab->GetActiveTerminalControl().WorkingDirectory();
-                    const auto validWorkingDirectory = !workingDirectory.empty();
-                    if (validWorkingDirectory)
+                    if (const auto& control{ focusedTab->GetActiveTerminalControl() })
                     {
-                        controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                        const auto workingDirectory = control.WorkingDirectory();
+                        const auto validWorkingDirectory = !workingDirectory.empty();
+                        if (validWorkingDirectory)
+                        {
+                            controlSettings.DefaultSettings().StartingDirectory(workingDirectory);
+                        }
                     }
                 }
             }
