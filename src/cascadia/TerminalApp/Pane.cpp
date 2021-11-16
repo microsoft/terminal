@@ -76,6 +76,27 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
         try
         {
             s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+            if (s_bellPlayer)
+            {
+                // BODGY
+                //
+                // Manually leak a ref to the MediaPlayer we just instantiated.
+                // We're doing this just like the way we do in AppHost with the
+                // App itself.
+                //
+                // We have to do this because there's some bug in the OS with
+                // the way a MediaPlayer gets torn down. At time fo writing (Nov
+                // 2021), if you search for `remove_SoundLevelChanged` in the OS
+                // repo, you'll find a pile of bugs.
+                //
+                // We tried moving the MediaPlayer singleton up to the
+                // TerminalPage, but alas, that teardown had the same problem.
+                // So _whatever_. We'll leak it here. It needs to last the
+                // lifetim of the app anyways, and it'll get cleaned up when the
+                // Termnial is closed, so whatever.
+                winrt::Windows::Media::Playback::MediaPlayer p{ s_bellPlayer };
+                ::winrt::detach_abi(p);
+            }
         }
         CATCH_LOG();
     }
