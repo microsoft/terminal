@@ -56,6 +56,12 @@ namespace winrt::TerminalApp::implementation
         _hostingHwnd{}
     {
         InitializeComponent();
+
+        try
+        {
+            _bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+        }
+        CATCH_LOG();
     }
 
     // Method Description:
