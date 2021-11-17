@@ -16,6 +16,7 @@ Author(s):
 #pragma once
 
 #include "../input/terminalInput.hpp"
+#include "../parser/stateMachine.hpp"
 #include "../../types/inc/IInputEvent.hpp"
 #include "../../buffer/out/LineRendition.hpp"
 #include "../../buffer/out/TextAttribute.hpp"
@@ -49,8 +50,9 @@ namespace Microsoft::Console::VirtualTerminal
                                           const SMALL_RECT& window) = 0;
 
         virtual bool SetInputMode(const TerminalInput::Mode mode, const bool enabled) = 0;
+        virtual bool SetParserMode(const StateMachine::Mode mode, const bool enabled) = 0;
+        virtual bool GetParserMode(const StateMachine::Mode mode) const = 0;
 
-        virtual bool PrivateSetAnsiMode(const bool ansiMode) = 0;
         virtual bool PrivateSetScreenMode(const bool reverseMode) = 0;
         virtual bool PrivateSetAutoWrapMode(const bool wrapAtEOL) = 0;
 

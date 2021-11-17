@@ -125,16 +125,24 @@ public:
         return _setInputModeResult;
     }
 
-    bool PrivateSetAnsiMode(const bool ansiMode) override
+    bool SetParserMode(const StateMachine::Mode mode, const bool enabled) override
     {
-        Log::Comment(L"PrivateSetAnsiMode MOCK called...");
+        Log::Comment(L"SetParserMode MOCK called...");
 
-        if (_privateSetAnsiModeResult)
+        if (_setParserModeResult)
         {
-            VERIFY_ARE_EQUAL(_expectedAnsiMode, ansiMode);
+            VERIFY_ARE_EQUAL(_expectedParserMode, mode);
+            VERIFY_ARE_EQUAL(_expectedParserModeEnabled, enabled);
         }
 
-        return _privateSetAnsiModeResult;
+        return _setParserModeResult;
+    }
+
+    bool GetParserMode(const StateMachine::Mode /*mode*/) const override
+    {
+        Log::Comment(L"GetParserMode MOCK called...");
+
+        return false;
     }
 
     bool PrivateSetScreenMode(const bool /*reverseMode*/) override
@@ -386,10 +394,14 @@ public:
         return FALSE;
     }
 
-    bool SetConsoleOutputCP(const unsigned int /*codepage*/) override
+    bool SetConsoleOutputCP(const unsigned int codepage) override
     {
         Log::Comment(L"SetConsoleOutputCP MOCK called...");
-        return TRUE;
+        if (_setConsoleOutputCPResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedOutputCP, codepage);
+        }
+        return _setConsoleOutputCPResult;
     }
 
     bool GetConsoleOutputCP(unsigned int& codepage) override
@@ -712,8 +724,9 @@ public:
     bool _setInputModeResult = false;
     TerminalInput::Mode _expectedInputMode;
     bool _expectedInputModeEnabled = false;
-    bool _privateSetAnsiModeResult = false;
-    bool _expectedAnsiMode = false;
+    bool _setParserModeResult = false;
+    StateMachine::Mode _expectedParserMode;
+    bool _expectedParserModeEnabled = false;
     bool _privateAllowCursorBlinkingResult = false;
     bool _enable = false; // for cursor blinking
     bool _privateSetScrollingRegionResult = false;
@@ -728,6 +741,7 @@ public:
     CursorType _expectedCursorStyle;
     bool _setCursorColorResult = false;
     COLORREF _expectedCursorColor = 0;
+    bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _moveToBottomResult = false;
 
@@ -2057,15 +2071,17 @@ public:
         // success cases
         // set ansi mode = true
         Log::Comment(L"Test 1: ansi mode = true");
-        _testGetSet->_privateSetAnsiModeResult = true;
-        _testGetSet->_expectedAnsiMode = true;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
+        _testGetSet->_expectedParserModeEnabled = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(true));
 
         // set ansi mode = false
         Log::Comment(L"Test 2: ansi mode = false.");
-        _testGetSet->_privateSetAnsiModeResult = true;
-        _testGetSet->_expectedAnsiMode = false;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
+        _testGetSet->_expectedParserModeEnabled = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(false));
     }
@@ -2621,6 +2637,39 @@ public:
         _testGetSet->_expectedCellSize = { 6, 16 };
         const auto bitmapOf6x18 = L"??????/??????/??????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x18));
+    }
+
+    TEST_METHOD(TogglingC1ParserMode)
+    {
+        Log::Comment(L"1. Accept C1 controls");
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(true));
+
+        Log::Comment(L"2. Don't accept C1 controls");
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(false));
+
+        Log::Comment(L"3. Designate ISO-2022 coding system");
+        // Code page should be set to ISO-8859-1 and C1 parsing enabled
+        _testGetSet->_setConsoleOutputCPResult = true;
+        _testGetSet->_expectedOutputCP = 28591;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::ISO2022));
+
+        Log::Comment(L"4. Designate UTF-8 coding system");
+        // Code page should be set to UTF-8 and C1 parsing disabled
+        _testGetSet->_setConsoleOutputCPResult = true;
+        _testGetSet->_expectedOutputCP = CP_UTF8;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8));
     }
 
 private:

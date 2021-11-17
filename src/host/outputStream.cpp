@@ -15,6 +15,7 @@
 
 using namespace Microsoft::Console;
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::StateMachine;
 using Microsoft::Console::VirtualTerminal::TerminalInput;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
@@ -263,20 +264,33 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
 }
 
 // Routine Description:
-// - Sets the terminal emulation mode to either ANSI-compatible or VT52.
-//   PrivateSetAnsiMode is an internal-only "API" call that the vt commands can execute,
+// - Sets the various StateMachine parser modes.
+//   SetParserMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
 // Arguments:
-// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// - mode - the parser mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
+bool ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
 {
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
-    stateMachine.SetAnsiMode(ansiMode);
-    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+    stateMachine.SetParserMode(mode, enabled);
     return true;
+}
+
+// Routine Description:
+// - Retrieves the various StateMachine parser modes.
+//   GetParserMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - mode - the parser mode to query.
+// Return Value:
+// - true if the mode is enabled. false if disabled.
+bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const
+{
+    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
+    return stateMachine.GetParserMode(mode);
 }
 
 // Routine Description:

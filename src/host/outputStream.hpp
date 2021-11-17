@@ -73,8 +73,9 @@ public:
                               const SMALL_RECT& window) override;
 
     bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
+    bool SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
+    bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
 
-    bool PrivateSetAnsiMode(const bool ansiMode) override;
     bool PrivateSetScreenMode(const bool reverseMode) override;
     bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 

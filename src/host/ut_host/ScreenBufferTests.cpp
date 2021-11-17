@@ -5978,7 +5978,7 @@ void ScreenBufferTests::TestAddHyperlink()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with no custom id
-    stateMachine.ProcessString(L"\x1b]8;;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
@@ -5988,7 +5988,7 @@ void ScreenBufferTests::TestAddHyperlink()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -6001,7 +6001,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomId()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with a custom id
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -6013,7 +6013,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomId()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -6026,7 +6026,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with a custom id
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -6034,7 +6034,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
     const auto oldAttributes{ tbi.GetCurrentAttributes() };
 
     // Send any other text
-    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"other.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"other.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
