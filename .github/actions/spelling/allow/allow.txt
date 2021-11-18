@@ -38,10 +38,10 @@ kje
 libfuzzer
 liga
 lje
-locl
-lorem
 Llast
 Lmid
+locl
+lorem
 Lorigin
 maxed
 mkmk

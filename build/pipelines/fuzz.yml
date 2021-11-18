@@ -1,13 +1,13 @@
-trigger: none
-#  batch: true
-#  branches:
-#    include:
-#      - main
-#  paths:
-#    exclude:
-#      - docs/*
-#      - samples/*
-#      - tools/*
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+  paths:
+    exclude:
+      - docs/*
+      - samples/*
+      - tools/*
 
 pr: none
 

@@ -15,13 +15,13 @@ jobs:
 
   steps:
   - task: PowerShell@2
-  displayName: 'Rationalize build platform'
-  inputs:
-    targetType: inline
-    script: |
-      $Arch = "$(BuildPlatform)"
-      If ($Arch -Eq "x86") { $Arch = "Win32" }
-      Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
+    displayName: 'Rationalize build platform'
+    inputs:
+      targetType: inline
+      script: |
+        $Arch = "$(BuildPlatform)"
+        If ($Arch -Eq "x86") { $Arch = "Win32" }
+        Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
 
   - task: PowerShell@2
     displayName: 'Validate binaries are optimized'
@@ -36,15 +36,15 @@ jobs:
         }
 
   - task: CopyFiles@2
-  displayName: 'Copy result logs to Artifacts'
-  inputs:
-    Contents: |
-     **/*.wtl
-     **/*onBuildMachineResults.xml
-     ${{ parameters.testLogPath }}
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
-    OverWrite: true
-    flattenFolders: true
+    displayName: 'Copy result logs to Artifacts'
+    inputs:
+      Contents: |
+       **/*.wtl
+       **/*onBuildMachineResults.xml
+       ${{ parameters.testLogPath }}
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+      OverWrite: true
+      flattenFolders: true
 
   - task: CopyFiles@2
     displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
@@ -60,24 +60,24 @@ jobs:
     condition: succeeded()
 
   - task: CopyFiles@2
-  displayName: 'Copy outputs needed for test runs to Artifacts'
-  inputs:
-    Contents: |
-     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
-     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
-     $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
-     **/Microsoft.VCLibs.*.appx
-     **/TestHostApp/*.exe
-     **/TestHostApp/*.dll
-     **/TestHostApp/*.xml
-     !**/*.pdb
-     !**/*.ipdb
-     !**/*.obj
-     !**/*.pch
-    TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
-    OverWrite: true
-    flattenFolders: true
-  condition: succeeded()
+    displayName: 'Copy outputs needed for test runs to Artifacts'
+    inputs:
+      Contents: |
+       $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.exe
+       $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.dll
+       $(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/*.xml
+       **/Microsoft.VCLibs.*.appx
+       **/TestHostApp/*.exe
+       **/TestHostApp/*.dll
+       **/TestHostApp/*.xml
+       !**/*.pdb
+       !**/*.ipdb
+       !**/*.obj
+       !**/*.pch
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/$(BuildPlatform)/test'
+      OverWrite: true
+      flattenFolders: true
+    condition: succeeded()
 
   - task: PublishBuildArtifacts@1
     displayName: 'Publish All Build Artifacts'
