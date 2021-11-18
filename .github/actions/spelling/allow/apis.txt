@@ -30,6 +30,7 @@ DERR
 dlldata
 DONTADDTORECENT
 DWORDLONG
+endfor
 enumset
 environstrings
 EXPCMDFLAGS
@@ -115,6 +116,7 @@ oaidl
 ocidl
 ODR
 offsetof
+onefuzz
 osver
 OSVERSIONINFOEXW
 otms

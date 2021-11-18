@@ -26,7 +26,7 @@ To run OneFuzz locally, you'll need to configure its endpoint, client ID, and cl
 
 `onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)`
 
-**NOTE**: Our pipelilne is already set up with these variables, so you don't need to worry about this when running this on Azure DevOps.
+**NOTE**: Our pipeline is already set up with these variables, so you don't need to worry about this when running this on Azure DevOps.
 
 ### Running a job on OneFuzz
 
