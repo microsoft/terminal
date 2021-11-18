@@ -97,4 +97,47 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+
+  <Target
+      Name="_Post_CopyFilesMarkedCopyLocal"
+      AfterTargets="_CopyFilesMarkedCopyLocal"
+      Condition="'@(ReferenceCopyLocalPaths)' != ''">
+
+<!--     <PropertyGroup>
+      <CreateHardLinksForCopyLocalIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateHardLinksForCopyLocalIfPossible)' == ''">false</CreateHardLinksForCopyLocalIfPossible>
+      <CreateSymbolicLinksForCopyLocalIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateSymbolicLinksForCopyLocalIfPossible)' == ''">false</CreateSymbolicLinksForCopyLocalIfPossible>
+    </PropertyGroup>
+
+    <Copy
+        SourceFiles="@(ReferenceCopyLocalPaths)"
+        DestinationFiles="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')"
+        SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
+        OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
+        Retries="$(CopyRetryCount)"
+        RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
+        UseHardlinksIfPossible="$(CreateHardLinksForCopyLocalIfPossible)"
+        UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyLocalIfPossible)"
+        Condition="'$(UseCommonOutputDirectory)' != 'true'"
+            >
+
+      <Output TaskParameter="DestinationFiles" ItemName="FileWritesShareable"/>
+      <Output TaskParameter="CopiedFiles" ItemName="ReferencesCopiedInThisBuild"/>
+      <Output TaskParameter="WroteAtLeastOneFile" PropertyName="WroteAtLeastOneFile"/>
+
+    </Copy> -->
+
+    <!-- If this project produces reference assemblies *and* copied (possibly transitive)
+         references on this build, subsequent builds of projects that depend on it must
+         not be considered up to date, so touch this marker file that is considered an
+         input to projects that reference this one. -->
+    <Touch Files="@(CopyUpToDateMarker)"
+      AlwaysCreate="true" />
+
+    <!-- <ItemGroup>
+      <FileWrites Include="@(CopyUpToDateMarker)" />
+    </ItemGroup> -->
+
+  </Target>
+
+
 </Project>
