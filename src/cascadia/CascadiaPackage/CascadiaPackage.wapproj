@@ -50,7 +50,6 @@
     <PRIResource Include="Resources\Resources.resw" />
     <OCResourceDirectory Include="Resources" />
   </ItemGroup>
-
   <!-- This is picked up by CascadiaResources.build.items. -->
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'==''">
     <WindowsTerminalAssetSuffix>-Dev</WindowsTerminalAssetSuffix>
@@ -58,30 +57,46 @@
   <PropertyGroup Condition="'$(WindowsTerminalBranding)'=='Preview'">
     <WindowsTerminalAssetSuffix>-Pre</WindowsTerminalAssetSuffix>
   </PropertyGroup>
-
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
+
+  <!--
+    BODGY:
+
+    For our ProjectReference's, make sure to mark them
+    ReferenceOutputAssembly=False. If you fail to do this, VS's "Fast Up-to-date
+    check" will look for a .winmd produced by each of these executables. These
+    exe's _don't_ produce a winmd, so the fast up-to-date check will _always_
+    think that the package needs rebuilding, which is quite costly. Simply don't
+    do this.
+
+  -->
   <ItemGroup>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj">
       <Project>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</Project>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalAzBridge\TerminalAzBridge.vcxproj">
       <Project>{067F0A06-FCB7-472C-96E9-B03B54E8E18D}</Project>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ShellExtension\WindowsTerminalShellExt.vcxproj">
       <Project>{f2ed628a-db22-446f-a081-4cc845b51a2b}</Project>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\wt\wt.vcxproj">
       <Project>{506fd703-baa7-4f6e-9361-64f550ec8fca}</Project>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\host\exe\Host.EXE.vcxproj">
       <Project>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</Project>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="$(OpenConsoleDir)src\host\proxy\Host.Proxy.vcxproj">
       <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
+      <ReferenceOutputAssembly>False</ReferenceOutputAssembly>
     </ProjectReference>
   </ItemGroup>
-
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">
     <ItemGroup>
       <!-- Stomp all "SourceProject" values for all incoming dependencies to flatten the package. -->
@@ -133,7 +148,6 @@
       <AppxUploadPackagePayload Remove="@(AppxUploadPackagePayload)" Condition="'%(Extension)' == '.pri' and '%(Filename)' != 'resources'" />
     </ItemGroup>
   </Target>
-
   <!-- **BEGIN VC LIBS HACK** -->
   <!--
     For our release builds, we're just going to integrate the UWPDesktop CRT into our package and delete the package dependencies.
@@ -148,7 +162,6 @@
       <FrameworkSdkReference Remove="@(FrameworkSdkReference)" />
     </ItemGroup>
   </Target>
-
   <!-- This target removes the FrameworkSdkPackages from before the *desktop bridge* manifest generation happens. -->
   <Target Name="_OpenConsoleStripAllDependenciesFromPackageSecondManifest" BeforeTargets="_GenerateDesktopBridgeAppxManifest" DependsOnTargets="_ResolveVCLibDependencies">
     <ItemGroup Condition="'$(WindowsTerminalOfficialBuild)'=='true'">
@@ -156,7 +169,6 @@
     </ItemGroup>
   </Target>
   <!-- **END VC LIBS HACK** -->
-
   <!-- This is required to get the package dependency in the AppXManifest. -->
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
@@ -165,6 +177,5 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets'))" />
   </Target>
-
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 </Project>
