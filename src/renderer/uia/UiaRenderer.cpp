@@ -261,6 +261,13 @@ CATCH_RETURN();
     return S_OK;
 }
 
+// RenderEngineBase defines a WaitUntilCanRender() that sleeps for 8ms to throttle rendering.
+// But UiaEngine is never the only engine running. Overriding this function prevents
+// us from sleeping 16ms per frame, when the other engine also sleeps for 8ms.
+void UiaEngine::WaitUntilCanRender() noexcept
+{
+}
+
 // Routine Description:
 // - Used to perform longer running presentation steps outside the lock so the
 //      other threads can continue.
@@ -324,7 +331,7 @@ CATCH_RETURN();
 // - coordTarget - <unused>
 // Return Value:
 // - S_FALSE
-[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLines const /*lines*/,
+[[nodiscard]] HRESULT UiaEngine::PaintBufferGridLines(GridLineSet const /*lines*/,
                                                       COLORREF const /*color*/,
                                                       size_t const /*cchLine*/,
                                                       COORD const /*coordTarget*/) noexcept
@@ -364,11 +371,13 @@ CATCH_RETURN();
 // Arguments:
 // - textAttributes - <unused>
 // - pData - <unused>
+// - usingSoftFont - <unused>
 // - isSettingDefaultBrushes - <unused>
 // Return Value:
 // - S_FALSE since we do nothing
 [[nodiscard]] HRESULT UiaEngine::UpdateDrawingBrushes(const TextAttribute& /*textAttributes*/,
                                                       const gsl::not_null<IRenderData*> /*pData*/,
+                                                      const bool /*usingSoftFont*/,
                                                       const bool /*isSettingDefaultBrushes*/) noexcept
 {
     return S_FALSE;

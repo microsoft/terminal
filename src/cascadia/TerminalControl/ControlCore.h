@@ -15,11 +15,8 @@
 
 #pragma once
 
-#include "EventArgs.h"
 #include "ControlCore.g.h"
 #include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
-#include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
 #include "cppwinrt_utils.h"
@@ -48,15 +45,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void UpdateAppearance(const IControlAppearance& newAppearance);
         void SizeChanged(const double width, const double height);
         void ScaleChanged(const double scale);
-        HANDLE GetSwapChainHandle() const;
+        uint64_t SwapChainHandle() const;
 
         void AdjustFontSize(int fontSizeDelta);
         void ResetFontSize();
         FontInfo GetFont() const;
         til::size FontSizeInDips() const;
 
+        winrt::Windows::Foundation::Size FontSize() const noexcept;
+        winrt::hstring FontFaceName() const noexcept;
+        uint16_t FontWeight() const noexcept;
+
         til::color BackgroundColor() const;
-        void SetBackgroundOpacity(const float opacity);
+        void SetBackgroundOpacity(const double opacity);
 
         void SendInput(const winrt::hstring& wstr);
         void PasteText(const winrt::hstring& hstr);
@@ -67,10 +68,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void ResumeRendering();
 
         void UpdatePatternLocations();
-        void UpdateHoveredCell(const std::optional<til::point>& terminalPosition);
+        void SetHoveredCell(Core::Point terminalPosition);
+        void ClearHoveredCell();
         winrt::hstring GetHyperlink(const til::point position) const;
-        winrt::hstring GetHoveredUriText() const;
-        std::optional<til::point> GetHoveredCell() const;
+        winrt::hstring HoveredUriText() const;
+        Windows::Foundation::IReference<Core::Point> HoveredCell() const;
 
         ::Microsoft::Console::Types::IUiaData* GetUiaData() const;
 
@@ -107,6 +109,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                             const short wheelDelta,
                             const ::Microsoft::Console::VirtualTerminal::TerminalInput::MouseButtonState state);
         void UserScrollViewport(const int viewTop);
+
+        void ClearBuffer(Control::ClearBufferType clearType);
+
 #pragma endregion
 
         void BlinkAttributeTick();
@@ -119,7 +124,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool HasSelection() const;
         bool CopyOnSelect() const;
-        std::vector<std::wstring> SelectedText(bool trimTrailingWhitespace) const;
+        Windows::Foundation::Collections::IVector<winrt::hstring> SelectedText(bool trimTrailingWhitespace) const;
         void SetSelectionAnchor(til::point const& position);
         void SetEndSelectionPoint(til::point const& position);
 
@@ -138,6 +143,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         bool IsInReadOnlyMode() const;
         void ToggleReadOnlyMode();
+
+        hstring ReadEntireBuffer() const;
+
+        static bool IsVintageOpacityAvailable() noexcept;
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -163,7 +172,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     private:
         bool _initializedTerminal{ false };
-        std::atomic<bool> _closing{ false };
+        bool _closing{ false };
 
         TerminalConnection::ITerminalConnection _connection{ nullptr };
         event_token _connectionOutputEventToken;
@@ -176,13 +185,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // As _renderer has a dependency on _renderEngine (through a raw pointer)
         // we must ensure the _renderer is deallocated first.
         // (C++ class members are destroyed in reverse order.)
-        std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine{ nullptr };
+        std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         IControlSettings _settings{ nullptr };
 
         FontInfoDesired _desiredFont;
         FontInfo _actualFont;
+        winrt::hstring _actualFontFaceName;
 
         // storage location for the leading surrogate of a utf-16 surrogate pair
         std::optional<wchar_t> _leadingSurrogate{ std::nullopt };
@@ -200,6 +210,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         double _panelWidth{ 0 };
         double _panelHeight{ 0 };
         double _compositionScale{ 0 };
+
+        winrt::Windows::System::DispatcherQueue _dispatcher{ nullptr };
+        std::shared_ptr<ThrottledFuncTrailing<>> _tsfTryRedrawCanvas;
+        std::shared_ptr<ThrottledFuncTrailing<>> _updatePatternLocations;
+        std::shared_ptr<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>> _updateScrollBar;
 
         winrt::fire_and_forget _asyncCloseConnection();
 
@@ -230,11 +245,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
         void _raiseReadOnlyWarning();
-        void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
+        void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
+        void _updateHoveredCell(const std::optional<til::point> terminalPosition);
+
+        inline bool _IsClosing() const noexcept
+        {
+#ifndef NDEBUG
+            if (_dispatcher)
+            {
+                // _closing isn't atomic and may only be accessed from the main thread.
+                //
+                // Though, the unit tests don't actually run in TAEF's main
+                // thread, so we don't care when we're running in tests.
+                assert(_inUnitTests || _dispatcher.HasThreadAccess());
+            }
+#endif
+            return _closing;
+        }
 
         friend class ControlUnitTests::ControlCoreTests;
         friend class ControlUnitTests::ControlInteractivityTests;
+        bool _inUnitTests{ false };
     };
 }
 

@@ -70,7 +70,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator COLORREF() const noexcept
+        constexpr operator COLORREF() const noexcept
         {
             return static_cast<COLORREF>(abgr & 0x00FFFFFFu);
         }
@@ -147,14 +147,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Windows::UI::Color() const
+        constexpr operator winrt::Windows::UI::Color() const
         {
-            winrt::Windows::UI::Color ret;
-            ret.R = r;
-            ret.G = g;
-            ret.B = b;
-            ret.A = a;
-            return ret;
+            return { a, r, g, b };
         }
 #endif
 
@@ -164,14 +159,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        operator winrt::Microsoft::Terminal::Core::Color() const noexcept
+        constexpr operator winrt::Microsoft::Terminal::Core::Color() const noexcept
         {
-            winrt::Microsoft::Terminal::Core::Color ret;
-            ret.R = r;
-            ret.G = g;
-            ret.B = b;
-            ret.A = a;
-            return ret;
+            return { r, g, b, a };
         }
 #endif
 

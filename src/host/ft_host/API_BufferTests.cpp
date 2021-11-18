@@ -5,7 +5,7 @@
 
 extern "C" IMAGE_DOS_HEADER __ImageBase;
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 // This class is intended to test boundary conditions for:

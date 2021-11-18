@@ -42,7 +42,14 @@ namespace Microsoft::Console::VirtualTerminal
     public:
         StateMachine(std::unique_ptr<IStateMachineEngine> engine);
 
-        void SetAnsiMode(bool ansiMode) noexcept;
+        enum class Mode : size_t
+        {
+            AcceptC1,
+            Ansi,
+        };
+
+        void SetParserMode(const Mode mode, const bool enabled);
+        bool GetParserMode(const Mode mode) const;
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
@@ -144,9 +151,20 @@ namespace Microsoft::Console::VirtualTerminal
 
         VTStates _state;
 
-        bool _isInAnsiMode;
+        til::enumset<Mode> _parserMode{ Mode::Ansi };
 
-        std::wstring_view _run;
+        std::wstring_view _currentString;
+        size_t _runOffset;
+        size_t _runSize;
+
+        // Construct current run.
+        //
+        // Note: We intentionally use this method to create the run lazily for better performance.
+        //       You may find the usage of offset & size unsafe, but under heavy load it shows noticeable performance benefit.
+        std::wstring_view _CurrentRun() const
+        {
+            return _currentString.substr(_runOffset, _runSize);
+        }
 
         VTIDBuilder _identifier;
         std::vector<VTParameter> _parameters;

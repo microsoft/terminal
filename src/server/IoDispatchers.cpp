@@ -365,7 +365,11 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         LOG_IF_FAILED(ServiceLocator::LocateConsoleControl()->NotifyConsoleApplication(dwProcessId));
     }
 
-    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleStartApplicationEvent(dwProcessId);
+    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    if (pNotifier)
+    {
+        pNotifier->NotifyConsoleStartApplicationEvent(dwProcessId);
+    }
 
     if (WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED))
     {
@@ -428,6 +432,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 
+    Tracing::s_TraceConsoleAttachDetach(ProcessData, true);
+
     UnlockConsole();
 
     return nullptr;
@@ -460,7 +466,13 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
 
     ConsoleProcessHandle* const pProcessData = pMessage->GetProcessHandle();
 
-    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleEndApplicationEvent(pProcessData->dwProcessId);
+    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    if (pNotifier)
+    {
+        pNotifier->NotifyConsoleEndApplicationEvent(pProcessData->dwProcessId);
+    }
+
+    Tracing::s_TraceConsoleAttachDetach(pProcessData, false);
 
     LOG_IF_FAILED(RemoveConsole(pProcessData));
 

@@ -8,7 +8,7 @@
 
   <Import Project="..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210309.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210309.3\build\native\Microsoft.Windows.CppWinRT.props')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.Windows.CppWinRT.2.0.210825.3\build\native\Microsoft.Windows.CppWinRT.props')" />
 
   <PropertyGroup Label="Globals">
     <CppWinRTHeapEnforcement>AnyValueHereWillDisableTheOptOut</CppWinRTHeapEnforcement>
@@ -72,8 +72,10 @@
       <PrecompiledHeaderOutputFile>$(IntDir)pch.pch</PrecompiledHeaderOutputFile>
 
       <!-- All new code should be in non-permissive mode. Big objects for C++/WinRT. -->
-      <AdditionalOptions>%(AdditionalOptions) /permissive- /bigobj /Zc:twoPhase-</AdditionalOptions>
-      <DisableSpecificWarnings>28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ConformanceMode>true</ConformanceMode>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
+      <AdditionalOptions>%(AdditionalOptions) /bigobj /Zc:twoPhase-</AdditionalOptions>
+      <DisableSpecificWarnings>5104;28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
 
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
     </ClCompile>

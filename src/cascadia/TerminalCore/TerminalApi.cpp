@@ -16,7 +16,7 @@ try
     _WriteBuffer(stringView);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::ExecuteChar(wchar_t wch) noexcept
 try
@@ -24,7 +24,7 @@ try
     _WriteBuffer({ &wch, 1 });
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 TextAttribute Terminal::GetTextAttributes() const noexcept
 {
@@ -54,7 +54,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 COORD Terminal::GetCursorPosition() noexcept
 {
@@ -75,7 +75,7 @@ try
     _buffer->GetCursor().SetColor(color);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
@@ -101,7 +101,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - deletes count characters starting from the cursor's current position
@@ -150,7 +150,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Inserts count spaces starting from the cursor's current position, moving over the existing text
@@ -205,7 +205,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::EraseCharacters(const size_t numChars) noexcept
 try
@@ -218,7 +218,7 @@ try
     _buffer->Write(eraseIter, absoluteCursorPos);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method description:
 // - erases a line of text, either from
@@ -264,7 +264,7 @@ try
     _buffer->Write(eraseIter, startPos, false);
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method description:
 // - erases text in the buffer in two ways depending on erase type
@@ -348,7 +348,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::WarningBell() noexcept
 try
@@ -356,7 +356,7 @@ try
     _pfnWarningBell();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 bool Terminal::SetWindowTitle(std::wstring_view title) noexcept
 try
@@ -368,7 +368,7 @@ try
     }
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
@@ -387,7 +387,7 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Sets the cursor style to the given style.
@@ -457,7 +457,7 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Updates the default background color from a COLORREF, format 0x00BBGGRR.
@@ -475,30 +475,20 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 til::color Terminal::GetDefaultBackground() const noexcept
 {
     return _defaultBg;
 }
 
-bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
+bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept
+try
 {
-    _terminalInput->ChangeWin32InputMode(win32InputMode);
+    _terminalInput->SetInputMode(mode, enabled);
     return true;
 }
-
-bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
-{
-    _terminalInput->ChangeCursorKeysMode(applicationMode);
-    return true;
-}
-
-bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
-{
-    _terminalInput->ChangeKeypadMode(applicationMode);
-    return true;
-}
+CATCH_RETURN_FALSE()
 
 bool Terminal::SetScreenMode(const bool reverseMode) noexcept
 try
@@ -509,43 +499,7 @@ try
     _buffer->GetRenderTarget().TriggerRedrawAll();
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
-
-bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableDefaultTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->SetUtf8ExtendedMode(enabled);
-    return true;
-}
-
-bool Terminal::EnableSGRExtendedMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->SetSGRExtendedMode(enabled);
-    return true;
-}
-
-bool Terminal::EnableButtonEventMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableButtonEventTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableAnyEventMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableAnyEventTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableAlternateScroll(enabled);
-    return true;
-}
+CATCH_RETURN_FALSE()
 
 bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {
@@ -591,7 +545,7 @@ try
 
     return true;
 }
-CATCH_LOG_RETURN_FALSE()
+CATCH_RETURN_FALSE()
 
 // Method Description:
 // - Updates the buffer's current text attributes to start a hyperlink

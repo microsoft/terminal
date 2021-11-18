@@ -214,7 +214,7 @@ resources useful and interesting:
 * Windows Terminal Launch: [Build 2019
   Session](https://www.youtube.com/watch?v=KMudkRcwjCw)
 * Run As Radio: [Show 645 - Windows Terminal with Richard
-  Turner](http://www.runasradio.com/Shows/Show/645)
+  Turner](https://www.runasradio.com/Shows/Show/645)
 * Azure Devops Podcast: [Episode 54 - Kayla Cinnamon and Rich Turner on DevOps
   on the Windows
   Terminal](http://azuredevopspodcast.clear-measure.com/kayla-cinnamon-and-rich-turner-on-devops-on-the-windows-terminal-team-episode-54)
@@ -289,6 +289,7 @@ If you would like to ask a question that you feel doesn't warrant an issue
 * You must [enable Developer Mode in the Windows Settings
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
+* You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
 * You must have the [Windows 10 1903
   SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
   installed

@@ -187,11 +187,17 @@ void AppCommandlineArgs::_buildParser()
                     _windowTarget,
                     RS_A(L"CmdWindowTargetArgDesc"));
 
+    _app.add_option("-s,--saved",
+                    _loadPersistedLayoutIdx,
+                    RS_A(L"CmdSavedLayoutArgDesc"));
+
     // Subcommands
     _buildNewTabParser();
     _buildSplitPaneParser();
     _buildFocusTabParser();
     _buildMoveFocusParser();
+    _buildMovePaneParser();
+    _buildSwapPaneParser();
     _buildFocusPaneParser();
 }
 
@@ -272,18 +278,18 @@ void AppCommandlineArgs::_buildSplitPaneParser()
             // _getNewTerminalArgs MUST be called before parsing any other options,
             // as it might clear those options while finding the commandline
             auto terminalArgs{ _getNewTerminalArgs(subcommand) };
-            auto style{ SplitState::Automatic };
+            auto style{ SplitDirection::Automatic };
             // Make sure to use the `Option`s here to check if they were set -
             // _getNewTerminalArgs might reset them while parsing a commandline
             if ((*subcommand._horizontalOption || *subcommand._verticalOption))
             {
                 if (_splitHorizontal)
                 {
-                    style = SplitState::Horizontal;
+                    style = SplitDirection::Down;
                 }
                 else if (_splitVertical)
                 {
-                    style = SplitState::Vertical;
+                    style = SplitDirection::Right;
                 }
             }
             const auto splitMode{ subcommand._duplicateOption && _splitDuplicate ? SplitType::Duplicate : SplitType::Manual };
@@ -295,6 +301,43 @@ void AppCommandlineArgs::_buildSplitPaneParser()
 
     setupSubcommand(_newPaneCommand);
     setupSubcommand(_newPaneShort);
+}
+// Method Description:
+// - Adds the `move-pane` subcommand and related options to the commandline parser.
+// - Additionally adds the `mp` subcommand, which is just a shortened version of `move-pane`
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildMovePaneParser()
+{
+    _movePaneCommand = _app.add_subcommand("move-pane", RS_A(L"CmdMovePaneDesc"));
+    _movePaneShort = _app.add_subcommand("mp", RS_A(L"CmdMPDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        subcommand->add_option("-t,--tab",
+                               _movePaneTabIndex,
+                               RS_A(L"CmdMovePaneTabArgDesc"));
+
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            // Build the action from the values we've parsed on the commandline.
+            ActionAndArgs movePaneAction{};
+
+            if (_movePaneTabIndex >= 0)
+            {
+                movePaneAction.Action(ShortcutAction::MovePane);
+                MovePaneArgs args{ static_cast<unsigned int>(_movePaneTabIndex) };
+                movePaneAction.Args(args);
+                _startupActions.push_back(movePaneAction);
+            }
+        });
+    };
+    setupSubcommand(_movePaneCommand);
+    setupSubcommand(_movePaneShort);
 }
 
 // Method Description:
@@ -341,6 +384,11 @@ void AppCommandlineArgs::_buildFocusTabParser()
             else if (_focusNextTab || _focusPrevTab)
             {
                 focusTabAction.Action(_focusNextTab ? ShortcutAction::NextTab : ShortcutAction::PrevTab);
+                // GH#10070 - make sure to not use the MRU order when switching
+                // tabs on the commandline. That wouldn't make any sense!
+                focusTabAction.Args(_focusNextTab ?
+                                        static_cast<IActionArgs>(NextTabArgs(TabSwitcherMode::Disabled)) :
+                                        static_cast<IActionArgs>(PrevTabArgs(TabSwitcherMode::Disabled)));
                 _startupActions.push_back(std::move(focusTabAction));
             }
         });
@@ -349,6 +397,17 @@ void AppCommandlineArgs::_buildFocusTabParser()
     setupSubcommand(_focusTabCommand);
     setupSubcommand(_focusTabShort);
 }
+
+static const std::map<std::string, FocusDirection> focusDirectionMap = {
+    { "left", FocusDirection::Left },
+    { "right", FocusDirection::Right },
+    { "up", FocusDirection::Up },
+    { "down", FocusDirection::Down },
+    { "previous", FocusDirection::Previous },
+    { "nextInOrder", FocusDirection::NextInOrder },
+    { "previousInOrder", FocusDirection::PreviousInOrder },
+    { "first", FocusDirection::First },
+};
 
 // Method Description:
 // - Adds the `move-focus` subcommand and related options to the commandline parser.
@@ -363,18 +422,11 @@ void AppCommandlineArgs::_buildMoveFocusParser()
     _moveFocusShort = _app.add_subcommand("mf", RS_A(L"CmdMFDesc"));
 
     auto setupSubcommand = [this](auto* subcommand) {
-        std::map<std::string, FocusDirection> map = {
-            { "left", FocusDirection::Left },
-            { "right", FocusDirection::Right },
-            { "up", FocusDirection::Up },
-            { "down", FocusDirection::Down }
-        };
-
         auto* directionOpt = subcommand->add_option("direction",
                                                     _moveFocusDirection,
                                                     RS_A(L"CmdMoveFocusDirectionArgDesc"));
 
-        directionOpt->transform(CLI::CheckedTransformer(map, CLI::ignore_case));
+        directionOpt->transform(CLI::CheckedTransformer(focusDirectionMap, CLI::ignore_case));
         directionOpt->required();
         // When ParseCommand is called, if this subcommand was provided, this
         // callback function will be triggered on the same thread. We can be sure
@@ -396,6 +448,44 @@ void AppCommandlineArgs::_buildMoveFocusParser()
 
     setupSubcommand(_moveFocusCommand);
     setupSubcommand(_moveFocusShort);
+}
+
+// Method Description:
+// - Adds the `swap-pane` subcommand and related options to the commandline parser.
+// Arguments:
+// - <none>
+// Return Value:
+// - <none>
+void AppCommandlineArgs::_buildSwapPaneParser()
+{
+    _swapPaneCommand = _app.add_subcommand("swap-pane", RS_A(L"CmdSwapPaneDesc"));
+
+    auto setupSubcommand = [this](auto* subcommand) {
+        auto* directionOpt = subcommand->add_option("direction",
+                                                    _swapPaneDirection,
+                                                    RS_A(L"CmdSwapPaneDirectionArgDesc"));
+
+        directionOpt->transform(CLI::CheckedTransformer(focusDirectionMap, CLI::ignore_case));
+        directionOpt->required();
+        // When ParseCommand is called, if this subcommand was provided, this
+        // callback function will be triggered on the same thread. We can be sure
+        // that `this` will still be safe - this function just lets us know this
+        // command was parsed.
+        subcommand->callback([&, this]() {
+            if (_swapPaneDirection != FocusDirection::None)
+            {
+                SwapPaneArgs args{ _swapPaneDirection };
+
+                ActionAndArgs actionAndArgs{};
+                actionAndArgs.Action(ShortcutAction::SwapPane);
+                actionAndArgs.Args(args);
+
+                _startupActions.push_back(std::move(actionAndArgs));
+            }
+        });
+    };
+
+    setupSubcommand(_swapPaneCommand);
 }
 
 // Method Description:
@@ -574,6 +664,9 @@ bool AppCommandlineArgs::_noCommandsProvided()
              *_focusTabShort ||
              *_moveFocusCommand ||
              *_moveFocusShort ||
+             *_movePaneCommand ||
+             *_movePaneShort ||
+             *_swapPaneCommand ||
              *_focusPaneCommand ||
              *_focusPaneShort ||
              *_newPaneShort.subcommand ||
@@ -602,13 +695,16 @@ void AppCommandlineArgs::_resetStateToDefault()
     _splitPaneSize = 0.5f;
     _splitDuplicate = false;
 
+    _movePaneTabIndex = -1;
     _focusTabIndex = -1;
     _focusNextTab = false;
     _focusPrevTab = false;
 
     _moveFocusDirection = FocusDirection::None;
+    _swapPaneDirection = FocusDirection::None;
 
     _focusPaneTarget = -1;
+    _loadPersistedLayoutIdx = -1;
 
     // DON'T clear _launchMode here! This will get called once for every
     // subcommand, so we don't want `wt -F new-tab ; split-pane` clearing out
@@ -823,6 +919,12 @@ void AppCommandlineArgs::ValidateStartupCommands()
             _startupActions.insert(_startupActions.begin(), 1, newTabAction);
         }
     }
+}
+std::optional<uint32_t> AppCommandlineArgs::GetPersistedLayoutIdx() const noexcept
+{
+    return _loadPersistedLayoutIdx >= 0 ?
+               std::optional{ static_cast<uint32_t>(_loadPersistedLayoutIdx) } :
+               std::nullopt;
 }
 
 std::optional<winrt::Microsoft::Terminal::Settings::Model::LaunchMode> AppCommandlineArgs::GetLaunchMode() const noexcept

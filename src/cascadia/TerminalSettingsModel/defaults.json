@@ -12,6 +12,7 @@
     "copyOnSelect": false,
     "copyFormatting": true,
     "trimBlockSelection": false,
+    "trimPaste": true,
     "wordDelimiters": " /\\()\"'-.,:;<>~!@#$%^&*|+=[]{}~?\u2502",
 
     // Tab UI
@@ -20,15 +21,18 @@
     "showTerminalTitleInTitlebar": true,
     "tabWidthMode": "equal",
     "tabSwitcherMode": "inOrder",
+    "showAdminShield": true,
 
     // Miscellaneous
     "confirmCloseAllTabs": true,
-    "startOnUserLogin":  false,
+    "startOnUserLogin": false,
     "theme": "system",
     "snapToGridOnResize": true,
     "disableAnimations": false,
     "startupActions": "",
     "focusFollowMouse": false,
+    "minimizeToNotificationArea": false,
+    "alwaysShowNotificationIcon": false,
 
     "profiles":
     [
@@ -298,7 +302,9 @@
         { "command": "commandPalette", "keys":"ctrl+shift+p" },
         { "command": "identifyWindow" },
         { "command": "openWindowRenamer" },
-        { "command": "quakeMode", "keys":"win+`" },
+        { "command": "quakeMode", "keys":"win+sc(41)" },
+        { "command": "openSystemMenu", "keys": "alt+space" },
+        { "command": "quit" },
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -329,12 +335,14 @@
         { "command": { "action": "switchToTab", "index": 5 }, "keys": "ctrl+alt+6" },
         { "command": { "action": "switchToTab", "index": 6 }, "keys": "ctrl+alt+7" },
         { "command": { "action": "switchToTab", "index": 7 }, "keys": "ctrl+alt+8" },
-        { "command": { "action": "switchToTab", "index": 8 }, "keys": "ctrl+alt+9" },
+        { "command": { "action": "switchToTab", "index": 4294967295 }, "keys": "ctrl+alt+9" },
 
         // Pane Management
         { "command": "closePane", "keys": "ctrl+shift+w" },
-        { "command": { "action": "splitPane", "split": "horizontal" }, "keys": "alt+shift+-" },
-        { "command": { "action": "splitPane", "split": "vertical" }, "keys": "alt+shift+plus" },
+        { "command": { "action": "splitPane", "split": "up" } },
+        { "command": { "action": "splitPane", "split": "down" }, "keys": "alt+shift+-" },
+        { "command": { "action": "splitPane", "split": "left" } },
+        { "command": { "action": "splitPane", "split": "right" }, "keys": "alt+shift+plus" },
         { "command": { "action": "resizePane", "direction": "down" }, "keys": "alt+shift+down" },
         { "command": { "action": "resizePane", "direction": "left" }, "keys": "alt+shift+left" },
         { "command": { "action": "resizePane", "direction": "right" }, "keys": "alt+shift+right" },
@@ -343,9 +351,32 @@
         { "command": { "action": "moveFocus", "direction": "left" }, "keys": "alt+left" },
         { "command": { "action": "moveFocus", "direction": "right" }, "keys": "alt+right" },
         { "command": { "action": "moveFocus", "direction": "up" }, "keys": "alt+up" },
-        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left" },
+        { "command": { "action": "moveFocus", "direction": "previous" }, "keys": "ctrl+alt+left"},
+        { "command": { "action": "moveFocus", "direction": "previousInOrder" } },
+        { "command": { "action": "moveFocus", "direction": "nextInOrder" } },
+        { "command": { "action": "moveFocus", "direction": "first" } },
+        { "command": { "action": "moveFocus", "direction": "parent" } },
+        { "command": { "action": "moveFocus", "direction": "child" } },
+        { "command": { "action": "swapPane", "direction": "down" } },
+        { "command": { "action": "swapPane", "direction": "left" } },
+        { "command": { "action": "swapPane", "direction": "right" } },
+        { "command": { "action": "swapPane", "direction": "up" } },
+        { "command": { "action": "swapPane", "direction": "previous"} },
+        { "command": { "action": "swapPane", "direction": "previousInOrder"} },
+        { "command": { "action": "swapPane", "direction": "nextInOrder"} },
+        { "command": { "action": "swapPane", "direction": "first" } },
         { "command": "togglePaneZoom" },
+        { "command": "toggleSplitOrientation" },
         { "command": "toggleReadOnlyMode" },
+        { "command": { "action": "movePane", "index": 0 } },
+        { "command": { "action": "movePane", "index": 1 } },
+        { "command": { "action": "movePane", "index": 2 } },
+        { "command": { "action": "movePane", "index": 3 } },
+        { "command": { "action": "movePane", "index": 4 } },
+        { "command": { "action": "movePane", "index": 5 } },
+        { "command": { "action": "movePane", "index": 6 } },
+        { "command": { "action": "movePane", "index": 7 } },
+        { "command": { "action": "movePane", "index": 8 } },
 
         // Clipboard Integration
         { "command": { "action": "copy", "singleLine": false }, "keys": "ctrl+shift+c" },
@@ -360,13 +391,15 @@
         { "command": "scrollUpPage", "keys": "ctrl+shift+pgup" },
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
+        { "command": { "action": "clearBuffer", "clear": "all" } },
 
         // Visual Adjustments
-        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+=" },
-        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+-" },
+        { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },
+        { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+minus" },
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+numpad_plus" },
         { "command": { "action": "adjustFontSize", "delta": -1 }, "keys": "ctrl+numpad_minus" },
         { "command": "resetFontSize", "keys": "ctrl+0" },
+        { "command": "resetFontSize", "keys": "ctrl+numpad_0" },
 
         // Other commands
         {
@@ -405,10 +438,16 @@
                             "command": { "action": "splitPane", "profile": "${profile.name}", "split": "auto" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "vertical" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "up" }
                         },
                         {
-                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "horizontal" }
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "down" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "left" }
+                        },
+                        {
+                            "command": { "action": "splitPane", "profile": "${profile.name}", "split": "right" }
                         }
                     ]
                 }

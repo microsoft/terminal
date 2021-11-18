@@ -21,6 +21,9 @@ Author(s):
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+
 // fwdecl unittest classes
 namespace SettingsModelLocalTests
 {
@@ -53,9 +56,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     {
         TerminalSettings() = default;
 
-        static Model::TerminalSettingsCreateResult CreateWithProfileByID(const Model::CascadiaSettings& appSettings,
-                                                                         guid profileGuid,
-                                                                         const Control::IKeyBindings& keybindings);
+        static Model::TerminalSettingsCreateResult CreateWithProfile(const Model::CascadiaSettings& appSettings,
+                                                                     const Model::Profile& profile,
+                                                                     const Control::IKeyBindings& keybindings);
 
         static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
                                                                              const Model::NewTerminalArgs& newTerminalArgs,
@@ -109,17 +112,26 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // passed to the terminal only upon creation.
         INHERITABLE_SETTING(Model::TerminalSettings, Windows::Foundation::IReference<Microsoft::Terminal::Core::Color>, StartingTabColor, nullptr);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBright);
+
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, AdjustIndistinguishableColors);
+
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
+
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, double, TintOpacity, 0.5);
+        INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, FontFace, DEFAULT_FONT_FACE);
         INHERITABLE_SETTING(Model::TerminalSettings, int32_t, FontSize, DEFAULT_FONT_SIZE);
 
         INHERITABLE_SETTING(Model::TerminalSettings, winrt::Windows::UI::Text::FontWeight, FontWeight);
+        INHERITABLE_SETTING(Model::TerminalSettings, IFontAxesMap, FontAxes);
+        INHERITABLE_SETTING(Model::TerminalSettings, IFontFeatureMap, FontFeatures);
 
+        INHERITABLE_SETTING(Model::TerminalSettings, Model::ColorScheme, AppliedColorScheme);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, BackgroundImage);
         INHERITABLE_SETTING(Model::TerminalSettings, double, BackgroundImageOpacity, 1.0);
 
@@ -136,6 +148,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 
@@ -145,6 +158,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, bool, ForceVTInput, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, PixelShaderPath);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, IntenseIsBold);
 
     private:
         std::optional<std::array<Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE>> _ColorTable;

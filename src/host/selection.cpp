@@ -160,7 +160,11 @@ void Selection::InitializeMouseSelection(const COORD coordBufferPos)
     }
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    if (pNotifier)
+    {
+        pNotifier->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    }
 }
 
 // Routine Description:
@@ -251,6 +255,14 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
         srNewSelection.Top = _coordSelectionAnchor.Y;
     }
 
+    // This function is called on WM_MOUSEMOVE.
+    // Prevent triggering an invalidation just because the mouse moved
+    // in the same cell without changing the actual (visible) selection.
+    if (_srSelectionRect == srNewSelection)
+    {
+        return;
+    }
+
     // call special update method to modify the displayed selection in-place
     // NOTE: Using HideSelection, editing the rectangle, then ShowSelection will cause flicker.
     //_PaintUpdateSelection(&srNewSelection);
@@ -258,7 +270,11 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     _PaintSelection();
 
     // Fire off an event to let accessibility apps know the selection has changed.
-    ServiceLocator::LocateAccessibilityNotifier()->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    auto pNotifier = ServiceLocator::LocateAccessibilityNotifier();
+    if (pNotifier)
+    {
+        pNotifier->NotifyConsoleCaretEvent(IAccessibilityNotifier::ConsoleCaretEventFlags::CaretSelection, PACKCOORD(coordBufferPos));
+    }
     LOG_IF_FAILED(ServiceLocator::LocateConsoleWindow()->SignalUia(UIA_Text_TextSelectionChangedEventId));
 }
 

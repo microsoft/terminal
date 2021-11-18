@@ -344,6 +344,7 @@ bool AdaptDispatch::CursorSaveState()
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
+        savedCursorState.C1ControlsAccepted = _pConApi->GetParserMode(StateMachine::Mode::AcceptC1);
         _pConApi->GetConsoleOutputCP(savedCursorState.CodePage);
     }
 
@@ -385,6 +386,9 @@ bool AdaptDispatch::CursorRestoreState()
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
+
+    // Restore the parsing state of C1 control codes.
+    AcceptC1Controls(savedCursorState.C1ControlsAccepted);
 
     // Restore the code page if it was previously saved.
     if (savedCursorState.CodePage != 0)
@@ -1167,15 +1171,7 @@ bool AdaptDispatch::ResetMode(const DispatchTypes::ModeParams param)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetKeypadMode(fApplicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Keypad, fApplicationMode);
 }
 
 // Method Description:
@@ -1187,15 +1183,7 @@ bool AdaptDispatch::SetKeypadMode(const bool fApplicationMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableWin32InputMode(win32InputMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Win32, win32InputMode);
 }
 
 // - DECCKM - Sets the cursor keys input mode to either Application mode or Normal mode (true, false respectively)
@@ -1205,15 +1193,7 @@ bool AdaptDispatch::EnableWin32InputMode(const bool win32InputMode)
 // - True if handled successfully. False otherwise.
 bool AdaptDispatch::SetCursorKeysMode(const bool applicationMode)
 {
-    bool success = true;
-    success = _pConApi->PrivateSetCursorKeysMode(applicationMode);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::CursorKey, applicationMode);
 }
 
 // - att610 - Enables or disables the cursor blinking.
@@ -1267,7 +1247,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    return _pConApi->PrivateSetAnsiMode(ansiMode);
+    _pConApi->SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _pConApi->SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+
+    // We don't check the SetInputMode return value, because we'll never want
+    // to forward a DECANM mode change over conpty.
+    return true;
 }
 
 // Routine Description:
@@ -1711,9 +1696,10 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 
 //Routine Description:
 // DOCS - Selects the coding system through which character sets are activated.
-//     When ISO2022 is selected, the code page is set to ISO-8859-1, and both
-//     GL and GR areas of the code table can be remapped. When UTF8 is selected,
-//     the code page is set to UTF-8, and only the GL area can be remapped.
+//     When ISO2022 is selected, the code page is set to ISO-8859-1, C1 control
+//     codes are accepted, and both GL and GR areas of the code table can be
+//     remapped. When UTF8 is selected, the code page is set to UTF-8, the C1
+//     control codes are disabled, and only the GL area can be remapped.
 //Arguments:
 // - codingSystem - The coding system that will be selected.
 // Return value:
@@ -1736,6 +1722,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(28591);
         if (success)
         {
+            AcceptC1Controls(true);
             _termOutput.EnableGrTranslation(true);
         }
         break;
@@ -1743,6 +1730,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(CP_UTF8);
         if (success)
         {
+            AcceptC1Controls(false);
             _termOutput.EnableGrTranslation(false);
         }
         break;
@@ -1817,6 +1805,17 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 }
 
 //Routine Description:
+// DECAC1 - Enable or disable the reception of C1 control codes in the parser.
+//Arguments:
+// - enabled - true to allow C1 controls to be used, false to disallow.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::AcceptC1Controls(const bool enabled)
+{
+    return _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
@@ -1864,6 +1863,8 @@ bool AdaptDispatch::SoftReset()
         // Restore initial code page if previously changed by a DOCS sequence.
         success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     }
+    // Disable parsing of C1 control codes.
+    success = AcceptC1Controls(false) && success;
 
     success = SetGraphicsRendition({}) && success; // Normal rendition.
 
@@ -1884,6 +1885,7 @@ bool AdaptDispatch::SoftReset()
 //   - Performs a communications line disconnect.
 //   - Clears UDKs.
 //   - Clears a down-line-loaded character set.
+//      * The soft font is reset in the renderer and the font buffer is deleted.
 //   - Clears the screen.
 //      * This is like Erase in Display (3), also clearing scrollback, as well as ED(2)
 //   - Returns the cursor to the upper-left corner of the screen.
@@ -1922,8 +1924,16 @@ bool AdaptDispatch::HardReset()
     // Cursor to 1,1 - the Soft Reset guarantees this is absolute
     success = CursorPosition(1, 1) && success;
 
+    // Reset the mouse mode
+    success = EnableSGRExtendedMouseMode(false) && success;
+    success = EnableAnyEventMouseMode(false) && success;
+
     // Delete all current tab stops and reapply
     _ResetTabStops();
+
+    // Clear the soft font in the renderer and delete the font buffer.
+    success = _pConApi->PrivateUpdateSoftFont({}, {}, false) && success;
+    _fontBuffer = nullptr;
 
     // GH#2715 - If all this succeeded, but we're in a conpty, return `false` to
     // make the state machine propagate this RIS sequence to the connected
@@ -2087,15 +2097,7 @@ bool AdaptDispatch::EnableDECCOLMSupport(const bool enabled) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableVT200MouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::DefaultMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2107,15 +2109,7 @@ bool AdaptDispatch::EnableVT200MouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableUTF8ExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::Utf8MouseEncoding, enabled);
 }
 
 //Routine Description:
@@ -2127,15 +2121,7 @@ bool AdaptDispatch::EnableUTF8ExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableSGRExtendedMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::SgrMouseEncoding, enabled);
 }
 
 //Routine Description:
@@ -2146,15 +2132,7 @@ bool AdaptDispatch::EnableSGRExtendedMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableButtonEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::ButtonEventMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2166,15 +2144,7 @@ bool AdaptDispatch::EnableButtonEventMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableAnyEventMouseMode(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::AnyEventMouseTracking, enabled);
 }
 
 //Routine Description:
@@ -2186,15 +2156,7 @@ bool AdaptDispatch::EnableAnyEventMouseMode(const bool enabled)
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::EnableAlternateScroll(const bool enabled)
 {
-    bool success = true;
-    success = _pConApi->PrivateEnableAlternateScroll(enabled);
-
-    if (_ShouldPassThroughInputModeChange())
-    {
-        return false;
-    }
-
-    return success;
+    return _pConApi->SetInputMode(TerminalInput::Mode::AlternateScroll, enabled);
 }
 
 //Routine Description:
@@ -2436,21 +2398,234 @@ bool AdaptDispatch::DoConEmuAction(const std::wstring_view /*string*/) noexcept
     return false;
 }
 
-// Routine Description:
-// - Determines whether we should pass any sequence that manipulates
-//   TerminalInput's input generator through the PTY. It encapsulates
-//   a check for whether the PTY is in use.
-// Return value:
-// True if the request should be passed.
-bool AdaptDispatch::_ShouldPassThroughInputModeChange() const
+// Method Description:
+// - DECDLD - Downloads one or more characters of a dynamically redefinable
+//   character set (DRCS) with a specified pixel pattern. The pixel array is
+//   transmitted in sixel format via the returned StringHandler function.
+// Arguments:
+// - fontNumber - The buffer number into which the font will be loaded.
+// - startChar - The first character in the set that will be replaced.
+// - eraseControl - Which characters to erase before loading the new data.
+// - cellMatrix - The character cell width (sometimes also height in legacy formats).
+// - fontSet - The screen size for which the font is designed.
+// - fontUsage - Whether it is a text font or a full-cell font.
+// - cellHeight - The character cell height (if not defined by cellMatrix).
+// - charsetSize - Whether the character set is 94 or 96 characters.
+// Return Value:
+// - a function to receive the pixel data or nullptr if parameters are invalid
+ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber,
+                                                         const VTParameter startChar,
+                                                         const DispatchTypes::DrcsEraseControl eraseControl,
+                                                         const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                                         const DispatchTypes::DrcsFontSet fontSet,
+                                                         const DispatchTypes::DrcsFontUsage fontUsage,
+                                                         const VTParameter cellHeight,
+                                                         const DispatchTypes::DrcsCharsetSize charsetSize)
 {
-    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
-    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
-    // output, but not Input.
-    // The original comment said, "Once the conpty supports these types of input,
-    // this check can be removed. See GH#4911". Unfortunately, time has shown
-    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
-    // impact on the actual connected terminal. We can't remove this check,
-    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
-    return _pConApi->IsConsolePty() && _pConApi->PrivateIsVtInputEnabled();
+    // If we're a conpty, we're just going to ignore the operation for now.
+    // There's no point in trying to pass it through without also being able
+    // to pass through the character set designations.
+    if (_pConApi->IsConsolePty())
+    {
+        return nullptr;
+    }
+
+    // The font buffer is created on demand.
+    if (!_fontBuffer)
+    {
+        _fontBuffer = std::make_unique<FontBuffer>();
+    }
+
+    // Only one font buffer is supported, so only 0 (default) and 1 are valid.
+    auto success = fontNumber <= 1;
+    success = success && _fontBuffer->SetEraseControl(eraseControl);
+    success = success && _fontBuffer->SetAttributes(cellMatrix, cellHeight, fontSet, fontUsage);
+    success = success && _fontBuffer->SetStartChar(startChar, charsetSize);
+
+    // If any of the parameters are invalid, we return a null handler to let
+    // the state machine know we want to ignore the subsequent data string.
+    if (!success)
+    {
+        return nullptr;
+    }
+
+    return [=](const auto ch) {
+        // We pass the data string straight through to the font buffer class
+        // until we receive an ESC, indicating the end of the string. At that
+        // point we can finalize the buffer, and if valid, update the renderer
+        // with the constructed bit pattern.
+        if (ch != AsciiChars::ESC)
+        {
+            _fontBuffer->AddSixelData(ch);
+        }
+        else if (_fontBuffer->FinalizeSixelData())
+        {
+            // We also need to inform the character set mapper of the ID that
+            // will map to this font (we only support one font buffer so there
+            // will only ever be one active dynamic character set).
+            if (charsetSize == DispatchTypes::DrcsCharsetSize::Size96)
+            {
+                _termOutput.SetDrcs96Designation(_fontBuffer->GetDesignation());
+            }
+            else
+            {
+                _termOutput.SetDrcs94Designation(_fontBuffer->GetDesignation());
+            }
+            const auto bitPattern = _fontBuffer->GetBitPattern();
+            const auto cellSize = _fontBuffer->GetCellSize();
+            const auto centeringHint = _fontBuffer->GetTextCenteringHint();
+            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return true;
+    };
+}
+
+// Method Description:
+// - DECRQSS - Requests the state of a VT setting. The value being queried is
+//   identified by the intermediate and final characters of its control
+//   sequence, which are passed to the string handler.
+// Arguments:
+// - None
+// Return Value:
+// - a function to receive the VTID of the setting being queried
+ITermDispatch::StringHandler AdaptDispatch::RequestSetting()
+{
+    // We use a VTIDBuilder to parse the characters in the control string into
+    // an ID which represents the setting being queried. If the given ID isn't
+    // supported, we respond with an error sequence: DCS 0 $ r ST. Note that
+    // this is the opposite of what is documented in most DEC manuals, which
+    // say that 0 is for a valid response, and 1 is for an error. The correct
+    // interpretation is documented in the DEC STD 070 reference.
+    const auto idBuilder = std::make_shared<VTIDBuilder>();
+    return [=](const auto ch) {
+        if (ch >= '\x40' && ch <= '\x7e')
+        {
+            const auto id = idBuilder->Finalize(ch);
+            switch (id)
+            {
+            case VTID('m'):
+                _ReportSGRSetting();
+                break;
+            case VTID('r'):
+                _ReportDECSTBMSetting();
+                break;
+            default:
+                _WriteResponse(L"\033P0$r\033\\");
+                break;
+            }
+            return false;
+        }
+        else
+        {
+            if (ch >= '\x20' && ch <= '\x2f')
+            {
+                idBuilder->AddIntermediate(ch);
+            }
+            return true;
+        }
+    };
+}
+
+// Method Description:
+// - Reports the current SGR attributes in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportSGRSetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    // Then the '0' parameter is to reset the SGR attributes to the defaults.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r0"sv);
+
+    TextAttribute attr;
+    if (_pConApi->PrivateGetTextAttributes(attr))
+    {
+        // For each boolean attribute that is set, we add the appropriate
+        // parameter value to the response string.
+        const auto addAttribute = [&](const auto& parameter, const auto enabled) {
+            if (enabled)
+            {
+                response.append(parameter);
+            }
+        };
+        addAttribute(L";1"sv, attr.IsBold());
+        addAttribute(L";2"sv, attr.IsFaint());
+        addAttribute(L";3"sv, attr.IsItalic());
+        addAttribute(L";4"sv, attr.IsUnderlined());
+        addAttribute(L";5"sv, attr.IsBlinking());
+        addAttribute(L";7"sv, attr.IsReverseVideo());
+        addAttribute(L";8"sv, attr.IsInvisible());
+        addAttribute(L";9"sv, attr.IsCrossedOut());
+        addAttribute(L";21"sv, attr.IsDoublyUnderlined());
+        addAttribute(L";53"sv, attr.IsOverlined());
+
+        // We also need to add the appropriate color encoding parameters for
+        // both the foreground and background colors.
+        const auto addColor = [&](const auto base, const auto color) {
+            if (color.IsIndex16())
+            {
+                const auto index = color.GetIndex();
+                const auto colorParameter = base + (index >= 8 ? 60 : 0) + (index % 8);
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{}"), colorParameter);
+            }
+            else if (color.IsIndex256())
+            {
+                const auto index = color.GetIndex();
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};5;{}"), base + 8, index);
+            }
+            else if (color.IsRgb())
+            {
+                const auto r = GetRValue(color.GetRGB());
+                const auto g = GetGValue(color.GetRGB());
+                const auto b = GetBValue(color.GetRGB());
+                fmt::format_to(std::back_inserter(response), FMT_COMPILE(L";{};2;{};{};{}"), base + 8, r, g, b);
+            }
+        };
+        addColor(30, attr.GetForeground());
+        addColor(40, attr.GetBackground());
+    }
+
+    // The 'm' indicates this is an SGR response, and ST ends the sequence.
+    response.append(L"m\033\\"sv);
+    _WriteResponse({ response.data(), response.size() });
+}
+
+// Method Description:
+// - Reports the DECSTBM margin range in response to a DECRQSS query.
+// Arguments:
+// - None
+// Return Value:
+// - None
+void AdaptDispatch::_ReportDECSTBMSetting() const
+{
+    using namespace std::string_view_literals;
+
+    // A valid response always starts with DCS 1 $ r.
+    fmt::basic_memory_buffer<wchar_t, 64> response;
+    response.append(L"\033P1$r"sv);
+
+    CONSOLE_SCREEN_BUFFER_INFOEX csbiex = { 0 };
+    csbiex.cbSize = sizeof(CONSOLE_SCREEN_BUFFER_INFOEX);
+    if (_pConApi->GetConsoleScreenBufferInfoEx(csbiex))
+    {
+        auto marginTop = _scrollMargins.Top + 1;
+        auto marginBottom = _scrollMargins.Bottom + 1;
+        // If the margin top is greater than or equal to the bottom, then the
+        // margins aren't actually set, so we need to return the full height
+        // of the window for the margin range.
+        if (marginTop >= marginBottom)
+        {
+            marginTop = 1;
+            marginBottom = csbiex.srWindow.Bottom - csbiex.srWindow.Top;
+        }
+        fmt::format_to(std::back_inserter(response), FMT_COMPILE(L"{};{}"), marginTop, marginBottom);
+    }
+
+    // The 'r' indicates this is an DECSTBM response, and ST ends the sequence.
+    response.append(L"r\033\\"sv);
+    _WriteResponse({ response.data(), response.size() });
 }

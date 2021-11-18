@@ -24,7 +24,7 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel Style="{StaticResource SettingsStackStyle}">
             <!--  Copy On Select  -->
             <local:SettingContainer x:Uid="Globals_CopyOnSelect"
@@ -34,7 +34,8 @@
 
             <!--  Copy Format  -->
             <local:SettingContainer x:Uid="Globals_CopyFormat">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
                                    SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}" />
             </local:SettingContainer>
@@ -44,9 +45,15 @@
                 <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}" />
             </local:SettingContainer>
 
+            <!--  Trim Paste  -->
+            <local:SettingContainer x:Uid="Globals_TrimPaste">
+                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimPaste, Mode=TwoWay}" />
+            </local:SettingContainer>
+
             <!--  Word Delimiters  -->
             <local:SettingContainer x:Uid="Globals_WordDelimiters">
-                <TextBox Style="{StaticResource TextBoxSettingStyle}"
+                <TextBox IsSpellCheckEnabled="False"
+                         Style="{StaticResource TextBoxSettingStyle}"
                          Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" />
             </local:SettingContainer>
 
@@ -57,7 +64,8 @@
 
             <!--  Tab Switcher Mode  -->
             <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
-                <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                   ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                    ItemsSource="{x:Bind TabSwitcherModeList}"
                                    SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}" />
             </local:SettingContainer>

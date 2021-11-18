@@ -9,6 +9,7 @@ Diviness
 dsafa
 duhowett
 ekg
+eryksun
 ethanschoonover
 Firefox
 Gatta
@@ -31,6 +32,7 @@ Kourosh
 kowalczyk
 leonmsft
 Lepilleur
+lhecker
 lukesampson
 Manandhar
 mbadolato
@@ -52,6 +54,7 @@ oldnewthing
 opengl
 osgwiki
 pabhojwa
+panos
 paulcam
 pauldotknopf
 PGP
@@ -66,6 +69,7 @@ sonpham
 stakx
 thereses
 Walisch
+Wellons
 Wirt
 Wojciech
 zadjii

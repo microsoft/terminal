@@ -37,8 +37,6 @@ namespace Microsoft::Console::Render
         static DWORD WINAPI s_ThreadProc(_In_ LPVOID lpParameter);
         DWORD WINAPI _ThreadProc();
 
-        static DWORD const s_FrameLimitMilliseconds = 8;
-
         HANDLE _hThread;
         HANDLE _hEvent;
 

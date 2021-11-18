@@ -25,5 +25,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         IInspectable CurrentTabWidthMode;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> TabWidthModeList { get; };
+
+        Boolean FeatureNotificationIconEnabled { get; };
     }
 }

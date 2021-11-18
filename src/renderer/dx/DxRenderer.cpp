@@ -61,7 +61,6 @@ using namespace Microsoft::Console::Types;
 // TODO GH 2683: The default constructor should not throw.
 DxEngine::DxEngine() :
     RenderEngineBase(),
-    _invalidateFullRows{ true },
     _pool{ til::pmr::get_default_resource() },
     _invalidMap{ &_pool },
     _invalidScroll{},
@@ -95,6 +94,7 @@ DxEngine::DxEngine() :
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _prevScale{ 1.0f },
+    _intenseIsBold{ true },
     _chainMode{ SwapChainMode::ForComposition },
     _customLayout{},
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
@@ -244,9 +244,11 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 // Arguments:
 // Return Value:
 // - Void
-void DxEngine::ToggleShaderEffects()
+void DxEngine::ToggleShaderEffects() noexcept
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
+    _recreateDeviceRequested = true;
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
     LOG_IF_FAILED(InvalidateAll());
 }
 
@@ -493,6 +495,7 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
 //   actual failure from the API itself.
 [[nodiscard]] HRESULT DxEngine::_CreateSurfaceHandle() noexcept
 {
+#pragma warning(suppress : 26447)
     wil::unique_hmodule hDComp{ LoadLibraryEx(L"Dcomp.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32) };
     RETURN_LAST_ERROR_IF(hDComp.get() == nullptr);
 
@@ -963,20 +966,18 @@ CATCH_RETURN()
 try
 {
     _sizeTarget = Pixels;
-
-    _invalidMap.resize(_sizeTarget / _fontRenderData->GlyphCell(), true);
     return S_OK;
 }
 CATCH_RETURN();
 
-void DxEngine::SetCallback(std::function<void()> pfn)
+void DxEngine::SetCallback(std::function<void()> pfn) noexcept
 {
-    _pfn = pfn;
+    _pfn = std::move(pfn);
 }
 
-void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn)
+void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept
 {
-    _pfnWarningCallback = pfn;
+    _pfnWarningCallback = std::move(pfn);
 }
 
 bool DxEngine::GetRetroTerminalEffect() const noexcept
@@ -1035,11 +1036,23 @@ try
 }
 CATCH_LOG()
 
-HANDLE DxEngine::GetSwapChainHandle()
+void DxEngine::SetIntenseIsBold(bool enable) noexcept
+try
+{
+    if (_intenseIsBold != enable)
+    {
+        _intenseIsBold = enable;
+        LOG_IF_FAILED(InvalidateAll());
+    }
+}
+CATCH_LOG()
+
+HANDLE DxEngine::GetSwapChainHandle() noexcept
 {
     if (!_swapChainHandle)
     {
-        THROW_IF_FAILED(_CreateDeviceResources(true));
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
+        LOG_IF_FAILED(_CreateDeviceResources(true));
     }
 
     return _swapChainHandle.get();
@@ -1047,14 +1060,10 @@ HANDLE DxEngine::GetSwapChainHandle()
 
 void DxEngine::_InvalidateRectangle(const til::rectangle& rc)
 {
-    auto invalidate = rc;
-
-    if (_invalidateFullRows)
-    {
-        invalidate = til::rectangle{ til::point{ static_cast<ptrdiff_t>(0), rc.top() }, til::size{ _invalidMap.size().width(), rc.height() } };
-    }
-
-    _invalidMap.set(invalidate);
+    const auto size = _invalidMap.size();
+    const auto topLeft = til::point{ 0, std::min(size.height(), rc.top()) };
+    const auto bottomRight = til::point{ size.width(), std::min(size.height(), rc.bottom()) };
+    _invalidMap.set({ topLeft, bottomRight });
 }
 
 bool DxEngine::_IsAllInvalid() const noexcept
@@ -1273,7 +1282,7 @@ try
     // so the entire frame is repainted.
     if (_FullRepaintNeeded())
     {
-        _invalidMap.set_all();
+        RETURN_IF_FAILED(InvalidateAll());
     }
 
     if (TraceLoggingProviderEnabled(g_hDxRenderProvider, WINEVENT_LEVEL_VERBOSE, TIL_KEYWORD_TRACE))
@@ -1292,6 +1301,7 @@ try
     if (_isEnabled)
     {
         const auto clientSize = _GetClientSize();
+        const auto glyphCellSize = _fontRenderData->GlyphCell();
 
         // If we don't have device resources or if someone has requested that we
         // recreate the device... then make new resources. (Create will dump the old ones.)
@@ -1321,9 +1331,12 @@ try
 
             // And persist the new size.
             _displaySizePixels = clientSize;
+        }
 
-            // Mark this as the first frame on the new target. We can't use incremental drawing on the first frame.
-            _firstFrame = true;
+        if (const auto size = clientSize / glyphCellSize; size != _invalidMap.size())
+        {
+            _invalidMap.resize(size);
+            RETURN_IF_FAILED(InvalidateAll());
         }
 
         _d2dDeviceContext->BeginDraw();
@@ -1341,7 +1354,7 @@ try
                                                                _ShouldForceGrayscaleAA(),
                                                                _dwriteFactory.Get(),
                                                                spacing,
-                                                               _fontRenderData->GlyphCell(),
+                                                               glyphCellSize,
                                                                _d2dDeviceContext->GetSize(),
                                                                std::nullopt,
                                                                D2D1_DRAW_TEXT_OPTIONS_ENABLE_COLOR_FONT);
@@ -1487,18 +1500,13 @@ CATCH_RETURN()
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
 {
-    if (!_swapChainFrameLatencyWaitableObject)
-    {
-        return;
-    }
+    // Throttle the DxEngine a bit down to ~60 FPS.
+    // This improves throughput for rendering complex or colored text.
+    Sleep(8);
 
-    const auto ret = WaitForSingleObjectEx(
-        _swapChainFrameLatencyWaitableObject.get(),
-        1000, // 1 second timeout (shouldn't ever occur)
-        true);
-    if (ret != WAIT_OBJECT_0)
+    if (_swapChainFrameLatencyWaitableObject)
     {
-        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
+        WaitForSingleObjectEx(_swapChainFrameLatencyWaitableObject.get(), 100, true);
     }
 }
 
@@ -1695,7 +1703,7 @@ CATCH_RETURN()
 //               - We will draw rightward (+X) from here
 // Return Value:
 // - S_OK or relevant DirectX error
-[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLines const lines,
+[[nodiscard]] HRESULT DxEngine::PaintBufferGridLines(GridLineSet const lines,
                                                      COLORREF const color,
                                                      size_t const cchLine,
                                                      COORD const coordTarget) noexcept
@@ -1722,13 +1730,13 @@ try
     // offset by half the stroke width. For the start coordinate we add half
     // the stroke width, and for the end coordinate we subtract half the width.
     const DxFontRenderData::LineMetrics lineMetrics = _fontRenderData->GetLineMetrics();
-    if (WI_IsAnyFlagSet(lines, (GridLines::Left | GridLines::Right)))
+    if (lines.any(GridLines::Left, GridLines::Right))
     {
         const auto halfGridlineWidth = lineMetrics.gridlineWidth / 2.0f;
         const auto startY = target.y + halfGridlineWidth;
         const auto endY = target.y + font.height - halfGridlineWidth;
 
-        if (WI_IsFlagSet(lines, GridLines::Left))
+        if (lines.test(GridLines::Left))
         {
             auto x = target.x + halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1737,7 +1745,7 @@ try
             }
         }
 
-        if (WI_IsFlagSet(lines, GridLines::Right))
+        if (lines.test(GridLines::Right))
         {
             auto x = target.x + font.width - halfGridlineWidth;
             for (size_t i = 0; i < cchLine; i++, x += font.width)
@@ -1747,19 +1755,19 @@ try
         }
     }
 
-    if (WI_IsAnyFlagSet(lines, GridLines::Top | GridLines::Bottom))
+    if (lines.any(GridLines::Top, GridLines::Bottom))
     {
         const auto halfGridlineWidth = lineMetrics.gridlineWidth / 2.0f;
         const auto startX = target.x + halfGridlineWidth;
         const auto endX = target.x + fullRunWidth - halfGridlineWidth;
 
-        if (WI_IsFlagSet(lines, GridLines::Top))
+        if (lines.test(GridLines::Top))
         {
             const auto y = target.y + halfGridlineWidth;
             DrawLine(startX, y, endX, y, lineMetrics.gridlineWidth);
         }
 
-        if (WI_IsFlagSet(lines, GridLines::Bottom))
+        if (lines.test(GridLines::Bottom))
         {
             const auto y = target.y + font.height - halfGridlineWidth;
             DrawLine(startX, y, endX, y, lineMetrics.gridlineWidth);
@@ -1769,24 +1777,24 @@ try
     // In the case of the underline and strikethrough offsets, the stroke width
     // is already accounted for, so they don't require further adjustments.
 
-    if (WI_IsAnyFlagSet(lines, GridLines::Underline | GridLines::DoubleUnderline | GridLines::HyperlinkUnderline))
+    if (lines.any(GridLines::Underline, GridLines::DoubleUnderline, GridLines::HyperlinkUnderline))
     {
         const auto halfUnderlineWidth = lineMetrics.underlineWidth / 2.0f;
         const auto startX = target.x + halfUnderlineWidth;
         const auto endX = target.x + fullRunWidth - halfUnderlineWidth;
         const auto y = target.y + lineMetrics.underlineOffset;
 
-        if (WI_IsFlagSet(lines, GridLines::Underline))
+        if (lines.test(GridLines::Underline))
         {
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (WI_IsFlagSet(lines, GridLines::HyperlinkUnderline))
+        if (lines.test(GridLines::HyperlinkUnderline))
         {
             DrawHyperlinkLine(startX, y, endX, y, lineMetrics.underlineWidth);
         }
 
-        if (WI_IsFlagSet(lines, GridLines::DoubleUnderline))
+        if (lines.test(GridLines::DoubleUnderline))
         {
             DrawLine(startX, y, endX, y, lineMetrics.underlineWidth);
             const auto y2 = target.y + lineMetrics.underlineOffset2;
@@ -1794,7 +1802,7 @@ try
         }
     }
 
-    if (WI_IsFlagSet(lines, GridLines::Strikethrough))
+    if (lines.test(GridLines::Strikethrough))
     {
         const auto halfStrikethroughWidth = lineMetrics.strikethroughWidth / 2.0f;
         const auto startX = target.x + halfStrikethroughWidth;
@@ -1910,11 +1918,13 @@ CATCH_RETURN()
 // Arguments:
 // - textAttributes - Text attributes to use for the brush color
 // - pData - The interface to console data structures required for rendering
+// - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                      const gsl::not_null<IRenderData*> pData,
+                                                     const bool /*usingSoftFont*/,
                                                      const bool isSettingDefaultBrushes) noexcept
 {
     // GH#5098: If we're rendering with cleartype text, we need to always render
@@ -1961,6 +1971,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
+        _drawingContext->useBoldFont = _intenseIsBold && textAttributes.IsBold();
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 
@@ -1977,15 +1988,30 @@ CATCH_RETURN()
 
 // Routine Description:
 // - Updates the font used for drawing
+// - This is the version that complies with the IRenderEngine interface
 // Arguments:
 // - pfiFontInfoDesired - Information specifying the font that is requested
 // - fiFontInfo - Filled with the nearest font actually chosen for drawing
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo) noexcept
+{
+    return UpdateFont(pfiFontInfoDesired, fiFontInfo, {}, {});
+}
+
+// Routine Description:
+// - Updates the font used for drawing
+// Arguments:
+// - pfiFontInfoDesired - Information specifying the font that is requested
+// - fiFontInfo - Filled with the nearest font actually chosen for drawing
+// - features - The map of font features to use
+// - axes - The map of font axes to use
+// Return Value:
+// - S_OK or relevant DirectX error
+[[nodiscard]] HRESULT DxEngine::UpdateFont(const FontInfoDesired& pfiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept
 try
 {
-    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi));
+    RETURN_IF_FAILED(_fontRenderData->UpdateFont(pfiFontInfoDesired, fiFontInfo, _dpi, features, axes));
 
     // Prepare the text layout.
     _customLayout = WRL::Make<CustomTextLayout>(_fontRenderData.get());
@@ -1994,7 +2020,7 @@ try
 }
 CATCH_RETURN();
 
-[[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
+[[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) const noexcept
 {
     const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _fontRenderData->GlyphCell().width());
     const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _fontRenderData->GlyphCell().height());
@@ -2002,7 +2028,7 @@ CATCH_RETURN();
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
-[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) noexcept
+[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) const noexcept
 {
     const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _fontRenderData->GlyphCell().width());
     const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _fontRenderData->GlyphCell().height());

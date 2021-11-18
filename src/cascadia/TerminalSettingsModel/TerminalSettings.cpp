@@ -62,13 +62,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     // Return Value:
     // - A TerminalSettingsCreateResult, which contains a pair of TerminalSettings objects,
     //   one for when the terminal is focused and the other for when the terminal is unfocused
-    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfileByID(const Model::CascadiaSettings& appSettings, winrt::guid profileGuid, const IKeyBindings& keybindings)
+    Model::TerminalSettingsCreateResult TerminalSettings::CreateWithProfile(const Model::CascadiaSettings& appSettings, const Model::Profile& profile, const IKeyBindings& keybindings)
     {
         auto settings{ winrt::make_self<TerminalSettings>() };
         settings->_KeyBindings = keybindings;
-
-        const auto profile = appSettings.FindProfile(profileGuid);
-        THROW_HR_IF_NULL(E_INVALIDARG, profile);
 
         const auto globals = appSettings.GlobalSettings();
         settings->_ApplyProfileSettings(profile);
@@ -108,8 +105,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                                     const NewTerminalArgs& newTerminalArgs,
                                                                                     const IKeyBindings& keybindings)
     {
-        const guid profileGuid = appSettings.GetProfileForArgs(newTerminalArgs);
-        auto settingsPair{ CreateWithProfileByID(appSettings, profileGuid, keybindings) };
+        const auto profile = appSettings.GetProfileForArgs(newTerminalArgs);
+        auto settingsPair{ CreateWithProfile(appSettings, profile, keybindings) };
         auto defaultSettings = settingsPair.DefaultSettings();
 
         if (newTerminalArgs)
@@ -126,6 +123,21 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             if (!newTerminalArgs.TabTitle().empty())
             {
                 defaultSettings.StartingTitle(newTerminalArgs.TabTitle());
+            }
+            else
+            {
+                // There was no title, and no profile from which to infer the title.
+                // Per GH#6776, promote the first component of the command line to the title.
+                // This will ensure that the tab we spawn has a name (since it didn't get one from its profile!)
+                if (newTerminalArgs.Profile().empty() && !newTerminalArgs.Commandline().empty())
+                {
+                    const std::wstring_view commandLine{ newTerminalArgs.Commandline() };
+                    const auto start{ til::at(commandLine, 0) == L'"' ? 1 : 0 };
+                    const auto terminator{ commandLine.find_first_of(start ? L'"' : L' ', start) }; // look past the first character if it starts with "
+                    // We have to take a copy here; winrt::param::hstring requires a null-terminated string
+                    const std::wstring firstComponent{ commandLine.substr(start, terminator - start) };
+                    defaultSettings.StartingTitle(firstComponent);
+                }
             }
             if (newTerminalArgs.TabColor())
             {
@@ -186,6 +198,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         _RetroTerminalEffect = appearance.RetroTerminalEffect();
         _PixelShaderPath = winrt::hstring{ wil::ExpandEnvironmentStringsW<std::wstring>(appearance.PixelShaderPath().c_str()) };
+
+        _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
+        _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
+
+        _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
+        _Opacity = appearance.Opacity();
     }
 
     // Method Description:
@@ -257,12 +275,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
+        _ProfileSource = profile.Source();
         _UseAcrylic = profile.UseAcrylic();
-        _TintOpacity = profile.AcrylicOpacity();
 
-        _FontFace = profile.FontFace();
-        _FontSize = profile.FontSize();
-        _FontWeight = profile.FontWeight();
+        _FontFace = profile.FontInfo().FontFace();
+        _FontSize = profile.FontInfo().FontSize();
+        _FontWeight = profile.FontInfo().FontWeight();
+        _FontFeatures = profile.FontInfo().FontFeatures();
+        _FontAxes = profile.FontInfo().FontAxes();
         _Padding = profile.Padding();
 
         _Commandline = profile.Commandline();
@@ -278,6 +298,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
+        _UseAtlasEngine = profile.UseAtlasEngine();
         _ScrollState = profile.ScrollState();
 
         _AntialiasingMode = profile.AntialiasingMode();
@@ -323,6 +344,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // settings.
         if (scheme == nullptr)
         {
+            ClearAppliedColorScheme();
             ClearDefaultForeground();
             ClearDefaultBackground();
             ClearSelectionBackground();
@@ -331,6 +353,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         else
         {
+            AppliedColorScheme(scheme);
             _DefaultForeground = til::color{ scheme.Foreground() };
             _DefaultBackground = til::color{ scheme.Background() };
             _SelectionBackground = til::color{ scheme.SelectionBackground() };

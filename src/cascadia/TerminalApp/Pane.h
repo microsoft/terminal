@@ -21,6 +21,18 @@
 #pragma once
 
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include "TaskbarState.h"
+
+// fwdecl unittest classes
+namespace TerminalAppLocalTests
+{
+    class TabTests;
+};
+
+namespace winrt::TerminalApp::implementation
+{
+    struct TerminalTab;
+}
 
 enum class Borders : int
 {
@@ -28,20 +40,43 @@ enum class Borders : int
     Top = 0x1,
     Bottom = 0x2,
     Left = 0x4,
-    Right = 0x8
+    Right = 0x8,
+    All = 0xF
 };
 DEFINE_ENUM_FLAG_OPERATORS(Borders);
+
+enum class SplitState : int
+{
+    None = 0,
+    Horizontal = 1,
+    Vertical = 2
+};
 
 class Pane : public std::enable_shared_from_this<Pane>
 {
 public:
-    Pane(const GUID& profile,
+    Pane(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
          const winrt::Microsoft::Terminal::Control::TermControl& control,
          const bool lastFocused = false);
 
+    Pane(std::shared_ptr<Pane> first,
+         std::shared_ptr<Pane> second,
+         const SplitState splitType,
+         const float splitPosition,
+         const bool lastFocused = false);
+
     std::shared_ptr<Pane> GetActivePane();
+    winrt::Microsoft::Terminal::Control::TermControl GetLastFocusedTerminalControl();
     winrt::Microsoft::Terminal::Control::TermControl GetTerminalControl();
-    std::optional<GUID> GetFocusedProfile();
+    winrt::Microsoft::Terminal::Settings::Model::Profile GetFocusedProfile();
+
+    // Method Description:
+    // - If this is a leaf pane, return its profile.
+    // - If this is a branch/root pane, return nullptr.
+    winrt::Microsoft::Terminal::Settings::Model::Profile GetProfile() const
+    {
+        return _profile;
+    }
 
     winrt::Windows::UI::Xaml::Controls::Grid GetRootElement();
 
@@ -50,26 +85,46 @@ public:
     void ClearActive();
     void SetActive();
 
+    struct BuildStartupState
+    {
+        std::vector<winrt::Microsoft::Terminal::Settings::Model::ActionAndArgs> args;
+        std::shared_ptr<Pane> firstPane;
+        std::optional<uint32_t> focusedPaneId;
+        uint32_t panesCreated;
+    };
+    BuildStartupState BuildStartupActions(uint32_t currentId, uint32_t nextId);
+    winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs GetTerminalArgsForPane() const;
+
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
-                        const GUID& profile);
+                        const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
     void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
     void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
-    bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
+    std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
+                                            const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                            const std::vector<uint32_t>& mruPanes);
+    bool SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second);
 
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+    std::shared_ptr<Pane> NextPane(const std::shared_ptr<Pane> pane);
+    std::shared_ptr<Pane> PreviousPane(const std::shared_ptr<Pane> pane);
+
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                   const float splitSize,
-                                                                  const GUID& profile,
-                                                                  const winrt::Microsoft::Terminal::Control::TermControl& control);
+                                                                  std::shared_ptr<Pane> pane);
+    bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                                                                 const winrt::Windows::Foundation::Size parentSize) const;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
+                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
     std::optional<bool> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                             winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+                                             winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                              const float splitSize,
                                              const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
+
+    std::shared_ptr<Pane> AttachPane(std::shared_ptr<Pane> pane,
+                                     winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType);
+    std::shared_ptr<Pane> DetachPane(std::shared_ptr<Pane> pane);
 
     int GetLeafPaneCount() const noexcept;
 
@@ -79,21 +134,72 @@ public:
     std::optional<uint32_t> Id() noexcept;
     void Id(uint32_t id) noexcept;
     bool FocusPane(const uint32_t id);
+    bool FocusPane(const std::shared_ptr<Pane> pane);
+    std::shared_ptr<Pane> FindPane(const uint32_t id);
 
     bool ContainsReadOnly() const;
 
+    // Method Description:
+    // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
+    //   tree, calling a predicate on each pane in a depth-first pattern.
+    // - If the predicate returns true, recursion is stopped early.
+    // Arguments:
+    // - f: The function to be applied to each pane.
+    // Return Value:
+    // - true if the predicate returned true on any pane.
+    template<typename F>
+    //requires std::predicate<F, std::shared_ptr<Pane>>
+    auto WalkTree(F f) -> decltype(f(shared_from_this()))
+    {
+        using R = std::invoke_result_t<F, std::shared_ptr<Pane>>;
+        static constexpr auto IsVoid = std::is_void_v<R>;
+
+        if constexpr (IsVoid)
+        {
+            f(shared_from_this());
+            if (!_IsLeaf())
+            {
+                _firstChild->WalkTree(f);
+                _secondChild->WalkTree(f);
+            }
+        }
+        else
+        {
+            if (f(shared_from_this()))
+            {
+                return true;
+            }
+
+            if (!_IsLeaf())
+            {
+                return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+            }
+
+            return false;
+        }
+    }
+
+    void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
+
     WINRT_CALLBACK(Closed, winrt::Windows::Foundation::EventHandler<winrt::Windows::Foundation::IInspectable>);
-    DECLARE_EVENT(GotFocus, _GotFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+
+    using gotFocusArgs = winrt::delegate<std::shared_ptr<Pane>, winrt::Windows::UI::Xaml::FocusState>;
+
+    DECLARE_EVENT(GotFocus, _GotFocusHandlers, gotFocusArgs);
     DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
     DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
+    DECLARE_EVENT(Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
+    struct PanePoint;
+    struct PaneNeighborSearch;
     struct SnapSizeResult;
     struct SnapChildrenSizeResult;
     struct LayoutSizeNode;
 
     winrt::Windows::UI::Xaml::Controls::Grid _root{};
-    winrt::Windows::UI::Xaml::Controls::Border _border{};
+    winrt::Windows::UI::Xaml::Controls::Border _borderFirst{};
+    winrt::Windows::UI::Xaml::Controls::Border _borderSecond{};
     winrt::Microsoft::Terminal::Control::TermControl _control{ nullptr };
     winrt::Microsoft::Terminal::TerminalConnection::ConnectionState _connectionState{ winrt::Microsoft::Terminal::TerminalConnection::ConnectionState::NotConnected };
     static winrt::Windows::UI::Xaml::Media::SolidColorBrush s_focusedBorderBrush;
@@ -101,13 +207,14 @@ private:
 
     std::shared_ptr<Pane> _firstChild{ nullptr };
     std::shared_ptr<Pane> _secondChild{ nullptr };
-    winrt::Microsoft::Terminal::Settings::Model::SplitState _splitState{ winrt::Microsoft::Terminal::Settings::Model::SplitState::None };
+    SplitState _splitState{ SplitState::None };
     float _desiredSplitPosition;
 
     std::optional<uint32_t> _id;
+    std::weak_ptr<Pane> _parentChildPath{};
 
     bool _lastActive{ false };
-    std::optional<GUID> _profile{ std::nullopt };
+    winrt::Microsoft::Terminal::Settings::Model::Profile _profile{ nullptr };
     winrt::event_token _connectionStateChangedToken{ 0 };
     winrt::event_token _firstClosedToken{ 0 };
     winrt::event_token _secondClosedToken{ 0 };
@@ -125,23 +232,35 @@ private:
     bool _IsLeaf() const noexcept;
     bool _HasFocusedChild() const noexcept;
     void _SetupChildCloseHandlers();
+    bool _HasChild(const std::shared_ptr<Pane> child);
 
-    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitState splitType,
+    std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> _Split(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                                                                    const float splitSize,
-                                                                   const GUID& profile,
-                                                                   const winrt::Microsoft::Terminal::Control::TermControl& control);
+                                                                   std::shared_ptr<Pane> newPane);
 
     void _CreateRowColDefinitions();
     void _ApplySplitDefinitions();
     void _SetupEntranceAnimation();
     void _UpdateBorders();
+    Borders _GetCommonBorders();
 
     bool _Resize(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
-    bool _NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
 
-    void _CloseChild(const bool closeFirst);
+    std::shared_ptr<Pane> _FindParentOfPane(const std::shared_ptr<Pane> pane);
+    std::pair<PanePoint, PanePoint> _GetOffsetsForPane(const PanePoint parentOffset) const;
+    bool _IsAdjacent(const PanePoint firstOffset, const PanePoint secondOffset, const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction) const;
+    PaneNeighborSearch _FindNeighborForPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                            PaneNeighborSearch searchResult,
+                                            const bool focusIsSecondSide,
+                                            const PanePoint offset);
+    PaneNeighborSearch _FindPaneAndNeighbor(const std::shared_ptr<Pane> sourcePane,
+                                            const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
+                                            const PanePoint offset);
+
+    void _CloseChild(const bool closeFirst, const bool isDetaching);
     winrt::fire_and_forget _CloseChildRoutine(const bool closeFirst);
 
+    void _Focus();
     void _FocusFirstChild();
     void _ControlConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& /*args*/);
     void _ControlWarningBellHandler(winrt::Windows::Foundation::IInspectable const& sender,
@@ -155,14 +274,13 @@ private:
     SnapChildrenSizeResult _CalcSnappedChildrenSizes(const bool widthOrHeight, const float fullSize) const;
     SnapSizeResult _CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
     void _AdvanceSnappedDimension(const bool widthOrHeight, LayoutSizeNode& sizeNode) const;
-
     winrt::Windows::Foundation::Size _GetMinSize() const;
     LayoutSizeNode _CreateMinSizeTree(const bool widthOrHeight) const;
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
-    winrt::Microsoft::Terminal::Settings::Model::SplitState _convertAutomaticSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType) const;
+    SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
 
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitState> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
+    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split
@@ -173,24 +291,24 @@ private:
     // - Also used for moving focus between panes, which again happens _across_ a separator.
     // Arguments:
     // - direction: The Direction to compare
-    // - splitType: The winrt::TerminalApp::SplitState to compare
+    // - splitType: The SplitState to compare
     // Return Value:
     // - true iff the direction is perpendicular to the splitType. False for
-    //   winrt::TerminalApp::SplitState::None.
+    //   SplitState::None.
     template<typename T>
     static constexpr bool DirectionMatchesSplit(const T& direction,
-                                                const winrt::Microsoft::Terminal::Settings::Model::SplitState& splitType)
+                                                const SplitState& splitType)
     {
-        if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::None)
+        if (splitType == SplitState::None)
         {
             return false;
         }
-        else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Horizontal)
+        else if (splitType == SplitState::Horizontal)
         {
             return direction == T::Up ||
                    direction == T::Down;
         }
-        else if (splitType == winrt::Microsoft::Terminal::Settings::Model::SplitState::Vertical)
+        else if (splitType == SplitState::Vertical)
         {
             return direction == T::Left ||
                    direction == T::Right;
@@ -199,6 +317,21 @@ private:
     }
 
     static void _SetupResources();
+
+    struct PanePoint
+    {
+        float x;
+        float y;
+        float scaleX;
+        float scaleY;
+    };
+
+    struct PaneNeighborSearch
+    {
+        std::shared_ptr<Pane> source;
+        std::shared_ptr<Pane> neighbor;
+        PanePoint sourceOffset;
+    };
 
     struct SnapSizeResult
     {
@@ -236,4 +369,7 @@ private:
     private:
         void _AssignChildNode(std::unique_ptr<LayoutSizeNode>& nodeField, const LayoutSizeNode* const newNode);
     };
+
+    friend struct winrt::TerminalApp::implementation::TerminalTab;
+    friend class ::TerminalAppLocalTests::TabTests;
 };

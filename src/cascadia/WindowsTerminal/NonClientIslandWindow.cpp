@@ -310,6 +310,12 @@ void NonClientIslandWindow::OnSize(const UINT width, const UINT height)
     {
         _UpdateIslandPosition(width, height);
     }
+
+    // GH#11367: We need to do this,
+    // otherwise the titlebar may still be partially visible
+    // when we move between different DPI monitors.
+    RefreshCurrentDPI();
+    _UpdateFrameMargins();
 }
 
 // Method Description:
@@ -360,7 +366,21 @@ void NonClientIslandWindow::_OnMaximizeChange() noexcept
 //   sizes of our child XAML Islands to match our new sizing.
 void NonClientIslandWindow::_UpdateIslandPosition(const UINT windowWidth, const UINT windowHeight)
 {
-    const auto topBorderHeight = Utils::ClampToShortMax(_GetTopBorderHeight(), 0);
+    const auto originalTopHeight = _GetTopBorderHeight();
+    // GH#7422
+    // !! BODGY !!
+    //
+    // For inexplicable reasons, the top row of pixels on our tabs, new tab
+    // button, and caption buttons is totally un-clickable. The mouse simply
+    // refuses to interact with them. So when we're maximized, on certain
+    // monitor configurations, this results in the top row of pixels not
+    // reacting to clicks at all. To obey Fitt's Law, we're gonna shift
+    // the entire island up one pixel. That will result in the top row of pixels
+    // in the window actually being the _second_ row of pixels for those
+    // buttons, which will make them clickable. It's perhaps not the right fix,
+    // but it works.
+    // _GetTopBorderHeight() returns 0 when we're maximized.
+    const short topBorderHeight = ::base::saturated_cast<short>((originalTopHeight == 0) ? -1 : originalTopHeight);
 
     const COORD newIslandPos = { 0, topBorderHeight };
 
@@ -615,14 +635,21 @@ int NonClientIslandWindow::_GetResizeHandleHeight() const noexcept
 
     return DefWindowProc(GetHandle(), WM_SETCURSOR, wParam, lParam);
 }
-
 // Method Description:
-// - Gets the difference between window and client area size.
+// - Get the dimensions of our non-client area, as a rect where each component
+//   represents that side.
+// - The .left will be a negative number, to represent that the actual side of
+//   the non-client area is outside the border of our window. It's roughly 8px (
+//   * DPI scaling) to the left of the visible border.
+// - The .right component will be positive, indicating that the nonclient border
+//   is in the positive-x direction from the edge of our client area.
+// - This DOES NOT include our titlebar! It's in the client area for us.
 // Arguments:
-// - dpi: dpi of a monitor on which the window is placed
-// Return Value
-// - The size difference
-SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+// - dpi: the scaling that we should use to calculate the border sizes.
+// Return Value:
+// - a RECT whose components represent the margins of the nonclient area,
+//   relative to the client area.
+RECT NonClientIslandWindow::GetNonClientFrame(UINT dpi) const noexcept
 {
     const auto windowStyle = static_cast<DWORD>(GetWindowLong(_window.get(), GWL_STYLE));
     RECT islandFrame{};
@@ -633,6 +660,18 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
     LOG_IF_WIN32_BOOL_FALSE(AdjustWindowRectExForDpi(&islandFrame, windowStyle, false, 0, dpi));
 
     islandFrame.top = -topBorderVisibleHeight;
+    return islandFrame;
+}
+
+// Method Description:
+// - Gets the difference between window and client area size.
+// Arguments:
+// - dpi: dpi of a monitor on which the window is placed
+// Return Value
+// - The size difference
+SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexcept
+{
+    const auto islandFrame{ GetNonClientFrame(dpi) };
 
     // If we have a titlebar, this is being called after we've initialized, and
     // we can just ask that titlebar how big it wants to be.
@@ -652,9 +691,18 @@ SIZE NonClientIslandWindow::GetTotalNonClientExclusiveSize(UINT dpi) const noexc
 // - the HRESULT returned by DwmExtendFrameIntoClientArea.
 void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
 {
-    MARGINS margins = {};
+    MARGINS margins = { 0, 0, 0, 0 };
 
-    if (_GetTopBorderHeight() != 0)
+    // GH#603: When we're in Focus Mode, hide the titlebar, by setting it to a single
+    // pixel tall. Otherwise, the titlebar will be visible underneath controls with
+    // vintage opacity set.
+    //
+    // We can't set it to all 0's unfortunately.
+    if (_borderless)
+    {
+        margins.cyTopHeight = 1;
+    }
+    else if (_GetTopBorderHeight() != 0)
     {
         RECT frame = {};
         winrt::check_bool(::AdjustWindowRectExForDpi(&frame, GetWindowStyle(_window.get()), FALSE, 0, _currentDpi));
@@ -717,7 +765,7 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         // reason so we have to do it ourselves.
         if (wParam == HTCAPTION)
         {
-            _OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+            OpenSystemMenu(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
         }
         break;
     }
@@ -768,8 +816,18 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         rcRest.top = topBorderHeight;
 
         const auto backgroundBrush = _titlebar.Background();
-        const auto backgroundSolidBrush = backgroundBrush.as<Media::SolidColorBrush>();
-        const til::color backgroundColor = backgroundSolidBrush.Color();
+        const auto backgroundSolidBrush = backgroundBrush.try_as<Media::SolidColorBrush>();
+        const auto backgroundAcrylicBrush = backgroundBrush.try_as<Media::AcrylicBrush>();
+
+        til::color backgroundColor = Colors::Black();
+        if (backgroundSolidBrush)
+        {
+            backgroundColor = backgroundSolidBrush.Color();
+        }
+        else if (backgroundAcrylicBrush)
+        {
+            backgroundColor = backgroundAcrylicBrush.FallbackColor();
+        }
 
         if (!_backgroundBrush || backgroundColor != _backgroundBrushColor)
         {
@@ -785,7 +843,11 @@ void NonClientIslandWindow::_UpdateFrameMargins() const noexcept
         HPAINTBUFFER buf = BeginBufferedPaint(hdc.get(), &rcRest, BPBF_TOPDOWNDIB, &params, &opaqueDc);
         if (!buf || !opaqueDc)
         {
-            winrt::throw_last_error();
+            // MSFT:34673647 - BeginBufferedPaint can fail, but it probably
+            // shouldn't bring the whole Terminal down with it. So don't
+            // throw_last_error here.
+            LOG_LAST_ERROR();
+            return 0;
         }
 
         ::FillRect(opaqueDc, &rcRest, _backgroundBrush.get());
@@ -853,6 +915,10 @@ void NonClientIslandWindow::_SetIsBorderless(const bool borderlessEnabled)
         _titlebar.Visibility(_IsTitlebarVisible() ? Visibility::Visible : Visibility::Collapsed);
     }
 
+    // Update the margins when entering/leaving focus mode, so we can prevent
+    // the titlebar from showing through transparent terminal controls
+    _UpdateFrameMargins();
+
     // GH#4224 - When the auto-hide taskbar setting is enabled, then we don't
     // always get another window message to trigger us to remove the drag bar.
     // So, make sure to update the size of the drag region here, so that it
@@ -903,48 +969,4 @@ void NonClientIslandWindow::_SetIsFullscreen(const bool fullscreenEnabled)
 bool NonClientIslandWindow::_IsTitlebarVisible() const
 {
     return !(_fullscreen || _borderless);
-}
-
-// Method Description:
-// - Opens the window's system menu.
-// - The system menu is the menu that opens when the user presses Alt+Space or
-//   right clicks on the title bar.
-// - Before updating the menu, we update the buttons like "Maximize" and
-//   "Restore" so that they are grayed out depending on the window's state.
-// Arguments:
-// - cursorX: the cursor's X position in screen coordinates
-// - cursorY: the cursor's Y position in screen coordinates
-void NonClientIslandWindow::_OpenSystemMenu(const int cursorX, const int cursorY) const noexcept
-{
-    const auto systemMenu = GetSystemMenu(_window.get(), FALSE);
-
-    WINDOWPLACEMENT placement;
-    if (!GetWindowPlacement(_window.get(), &placement))
-    {
-        return;
-    }
-    const bool isMaximized = placement.showCmd == SW_SHOWMAXIMIZED;
-
-    // Update the options based on window state.
-    MENUITEMINFO mii;
-    mii.cbSize = sizeof(MENUITEMINFO);
-    mii.fMask = MIIM_STATE;
-    mii.fType = MFT_STRING;
-    auto setState = [&](UINT item, bool enabled) {
-        mii.fState = enabled ? MF_ENABLED : MF_DISABLED;
-        SetMenuItemInfo(systemMenu, item, FALSE, &mii);
-    };
-    setState(SC_RESTORE, isMaximized);
-    setState(SC_MOVE, !isMaximized);
-    setState(SC_SIZE, !isMaximized);
-    setState(SC_MINIMIZE, true);
-    setState(SC_MAXIMIZE, !isMaximized);
-    setState(SC_CLOSE, true);
-    SetMenuDefaultItem(systemMenu, UINT_MAX, FALSE);
-
-    const auto ret = TrackPopupMenu(systemMenu, TPM_RETURNCMD, cursorX, cursorY, 0, _window.get(), nullptr);
-    if (ret != 0)
-    {
-        PostMessage(_window.get(), WM_SYSCOMMAND, ret, 0);
-    }
 }

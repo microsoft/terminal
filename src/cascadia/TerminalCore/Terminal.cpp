@@ -6,7 +6,6 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/DefaultSettings.h"
 #include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
@@ -53,12 +52,22 @@ Terminal::Terminal() :
     _selection{ std::nullopt },
     _taskbarState{ 0 },
     _taskbarProgress{ 0 },
-    _trimBlockSelection{ false }
+    _trimBlockSelection{ false },
+    _intenseIsBright{ true },
+    _adjustIndistinguishableColors{ true }
 {
     auto dispatch = std::make_unique<TerminalDispatch>(*this);
     auto engine = std::make_unique<OutputStateMachineEngine>(std::move(dispatch));
 
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
+
+    // Until we have a true pass-through mode (GH#1173), the decision as to
+    // whether C1 controls are interpreted or not is made at the conhost level.
+    // If they are being filtered out, then we will simply never receive them.
+    // But if they are being accepted by conhost, there's a chance they may get
+    // passed through in some situations, so it's important that our state
+    // machine is always prepared to accept them.
+    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
 
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
@@ -174,10 +183,16 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     til::color newBackgroundColor{ appearance.DefaultBackground() };
     _defaultBg = newBackgroundColor.with_alpha(0);
     _defaultFg = appearance.DefaultForeground();
+    _intenseIsBright = appearance.IntenseIsBright();
+    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
 
     for (int i = 0; i < 16; i++)
     {
         _colorTable.at(i) = til::color{ appearance.GetColorTableEntry(i) };
+    }
+    if (_adjustIndistinguishableColors)
+    {
+        _MakeAdjustedColorArray();
     }
 
     CursorType cursorShape = CursorType::VerticalBar;
@@ -231,15 +246,9 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     }
 
     const auto dx = ::base::ClampSub(viewportSize.X, oldDimensions.X);
-
-    const auto oldTop = _mutableViewport.Top();
-
     const short newBufferHeight = ::base::ClampAdd(viewportSize.Y, _scrollbackLines);
 
     COORD bufferSize{ viewportSize.X, newBufferHeight };
-
-    // Save cursor's relative height versus the viewport
-    const short sCursorHeightInViewportBefore = ::base::ClampSub(_buffer->GetCursor().GetPosition().Y, _mutableViewport.Top());
 
     // This will be used to determine where the viewport should be in the new buffer.
     const short oldViewportTop = _mutableViewport.Top();
@@ -601,14 +610,6 @@ bool Terminal::SendKeyEvent(const WORD vkey,
 
     const auto isAltOnlyPressed = states.IsAltPressed() && !states.IsCtrlPressed();
 
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    // (This doesn't apply to Ctrl+Alt+Space.)
-    if (isAltOnlyPressed && vkey == VK_SPACE)
-    {
-        return false;
-    }
-
     // By default Windows treats Ctrl+Alt as an alias for AltGr.
     // When the altGrAliasing setting is set to false, this behaviour should be disabled.
     //
@@ -679,13 +680,6 @@ bool Terminal::SendMouseEvent(const COORD viewportPos, const unsigned int uiButt
 // - false otherwise.
 bool Terminal::SendCharEvent(const wchar_t ch, const WORD scanCode, const ControlKeyStates states)
 {
-    // DON'T manually handle Alt+Space - the system will use this to bring up
-    // the system menu for restore, min/maximize, size, move, close.
-    if (ch == L' ' && states.IsAltPressed() && !states.IsCtrlPressed())
-    {
-        return false;
-    }
-
     auto vkey = _TakeVirtualKeyFromLastKeyEvent(scanCode);
     if (vkey == 0 && scanCode != 0)
     {
@@ -867,9 +861,15 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a shared_lock which can be used to unlock the terminal. The shared_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::shared_lock<std::shared_mutex> Terminal::LockForReading()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForReading()
 {
-    return std::shared_lock<std::shared_mutex>(_readWriteLock);
+#ifdef NDEBUG
+    return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 // Method Description:
@@ -877,9 +877,15 @@ WORD Terminal::_TakeVirtualKeyFromLastKeyEvent(const WORD scanCode) noexcept
 // Return Value:
 // - a unique_lock which can be used to unlock the terminal. The unique_lock
 //      will release this lock when it's destructed.
-[[nodiscard]] std::unique_lock<std::shared_mutex> Terminal::LockForWriting()
+[[nodiscard]] std::unique_lock<til::ticket_lock> Terminal::LockForWriting()
 {
-    return std::unique_lock<std::shared_mutex>(_readWriteLock);
+#ifdef NDEBUG
+    return std::unique_lock{ _readWriteLock };
+#else
+    auto lock = std::unique_lock{ _readWriteLock };
+    _lastLocker = GetCurrentThreadId();
+    return lock;
+#endif
 }
 
 Viewport Terminal::_GetMutableViewport() const noexcept
@@ -1011,6 +1017,31 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
             _buffer->IncrementCircularBuffer();
             proposedCursorPosition.Y--;
             rowsPushedOffTopOfBuffer++;
+
+            // Update our selection too, so it doesn't move as the buffer is cycled
+            if (_selection)
+            {
+                // If the start of the selection is above 0, we can reduce both the start and end by 1
+                if (_selection->start.Y > 0)
+                {
+                    _selection->start.Y -= 1;
+                    _selection->end.Y -= 1;
+                }
+                else
+                {
+                    // The start of the selection is at 0, if the end is greater than 0, then only reduce the end
+                    if (_selection->end.Y > 0)
+                    {
+                        _selection->start.X = 0;
+                        _selection->end.Y -= 1;
+                    }
+                    else
+                    {
+                        // Both the start and end of the selection are at 0, clear the selection
+                        _selection.reset();
+                    }
+                }
+            }
         }
 
         // manually erase our pattern intervals since the locations have changed now
@@ -1071,7 +1102,12 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 
-    _NotifyTerminalCursorPositionChanged();
+    // Firing the CursorPositionChanged event is very expensive so we try not to do that when
+    // the cursor does not need to be redrawn.
+    if (!cursor.IsDeferDrawing())
+    {
+        _NotifyTerminalCursorPositionChanged();
+    }
 }
 
 void Terminal::UserScrollViewport(const int viewTop)
@@ -1182,9 +1218,7 @@ try
 {
     const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     // First set up the basic 256 colors
-    Utils::Initialize256ColorTable(tableView);
-    // Then use fill the first 16 values with the Campbell scheme
-    Utils::InitializeCampbellColorTable(tableView);
+    Utils::InitializeColorTable(tableView);
     // Then make sure all the values have an alpha of 255
     Utils::SetColorTableAlpha(tableView, 0xff);
 }

@@ -420,6 +420,7 @@ void VtRendererTest::Xterm256TestColors()
     qExpectedInput.push_back("\x1b[48;2;5;6;7m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x00030201, 0x00070605 },
                                                   &renderData,
+                                                  false,
                                                   false));
 
     TestPaint(*engine, [&]() {
@@ -428,6 +429,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back("\x1b[48;2;7;8;9m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x00030201, 0x00090807 },
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -435,6 +437,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back("\x1b[38;2;10;11;12m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x000c0b0a, 0x00090807 },
                                                       &renderData,
+                                                      false,
                                                       false));
     });
 
@@ -444,6 +447,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({ 0x000c0b0a, 0x00090807 },
                                                       &renderData,
+                                                      false,
                                                       false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
@@ -458,6 +462,7 @@ void VtRendererTest::Xterm256TestColors()
     qExpectedInput.push_back("\x1b[m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                   &renderData,
+                                                  false,
                                                   false));
 
     TestPaint(*engine, [&]() {
@@ -465,18 +470,20 @@ void VtRendererTest::Xterm256TestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetIndexedBackground(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -485,6 +492,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back("\x1b[48;2;19;161;14m"); // Background RGB(19,161,14)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -493,6 +501,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back("\x1b[38;2;193;156;0m"); // Foreground RGB(193,156,0)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -501,22 +510,25 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back("\x1b[49m"); // Background default
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG to a 256-color index----"));
-        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground256(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[38;5;7m"); // Foreground DARK_WHITE (256-Color Index)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to a 256-color index----"));
-        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground256(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[48;5;1m"); // Background DARK_RED (256-Color Index)
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -525,6 +537,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back("\x1b[39m"); // Background default
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -533,6 +546,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back("\x1b[m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
     });
 
@@ -542,6 +556,7 @@ void VtRendererTest::Xterm256TestColors()
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                       &renderData,
+                                                      false,
                                                       false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
@@ -795,7 +810,7 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
     Log::Comment(L"----Start With All Attributes Reset----");
     TextAttribute textAttributes = {};
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     switch (renditionAttribute)
     {
@@ -841,29 +856,29 @@ void VtRendererTest::Xterm256TestAttributesAcrossReset()
         break;
     }
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Foreground----");
-    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedForeground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[32m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Foreground and Retain Rendition----");
     textAttributes.SetDefaultForeground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Background----");
-    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedBackground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[42m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Background and Retain Rendition----");
     textAttributes.SetDefaultBackground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     VerifyExpectedInputsDrained();
 }
@@ -1081,6 +1096,7 @@ void VtRendererTest::XtermTestColors()
     qExpectedInput.push_back("\x1b[m");
     VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                   &renderData,
+                                                  false,
                                                   false));
 
     TestPaint(*engine, [&]() {
@@ -1088,18 +1104,20 @@ void VtRendererTest::XtermTestColors()
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG----"));
-        textAttributes.SetIndexedBackground(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG----"));
-        textAttributes.SetIndexedForeground(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -1108,6 +1126,7 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back("\x1b[42m"); // Background DARK_GREEN
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -1116,6 +1135,7 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back("\x1b[33m"); // Foreground DARK_YELLOW
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -1125,22 +1145,25 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back("\x1b[33m"); // Reapply foreground DARK_YELLOW
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the FG to a 256-color index----"));
-        textAttributes.SetIndexedForeground256(FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
+        textAttributes.SetIndexedForeground256(TextColor::DARK_WHITE);
         qExpectedInput.push_back("\x1b[37m"); // Foreground DARK_WHITE
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
             L"----Change only the BG to a 256-color index----"));
-        textAttributes.SetIndexedBackground256(FOREGROUND_RED);
+        textAttributes.SetIndexedBackground256(TextColor::DARK_RED);
         qExpectedInput.push_back("\x1b[41m"); // Background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -1150,6 +1173,7 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back("\x1b[41m"); // Reapply background DARK_RED
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
 
         Log::Comment(NoThrowString().Format(
@@ -1158,6 +1182,7 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back("\x1b[m");
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes,
                                                       &renderData,
+                                                      false,
                                                       false));
     });
 
@@ -1167,6 +1192,7 @@ void VtRendererTest::XtermTestColors()
         qExpectedInput.push_back(EMPTY_CALLBACK_SENTINEL);
         VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes({},
                                                       &renderData,
+                                                      false,
                                                       false));
         WriteCallback(EMPTY_CALLBACK_SENTINEL, 1); // This will make sure nothing was written to the callback
     });
@@ -1304,7 +1330,7 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
     Log::Comment(L"----Start With All Attributes Reset----");
     TextAttribute textAttributes = {};
     qExpectedInput.push_back("\x1b[m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     switch (renditionAttribute)
     {
@@ -1322,29 +1348,29 @@ void VtRendererTest::XtermTestAttributesAcrossReset()
         break;
     }
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Foreground----");
-    textAttributes.SetIndexedForeground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedForeground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[32m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Foreground and Retain Rendition----");
     textAttributes.SetDefaultForeground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Set Green Background----");
-    textAttributes.SetIndexedBackground(FOREGROUND_GREEN);
+    textAttributes.SetIndexedBackground(TextColor::DARK_GREEN);
     qExpectedInput.push_back("\x1b[42m");
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     Log::Comment(L"----Reset Default Background and Retain Rendition----");
     textAttributes.SetDefaultBackground();
     qExpectedInput.push_back("\x1b[m");
     qExpectedInput.push_back(renditionSequence.str());
-    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false));
+    VERIFY_SUCCEEDED(engine->UpdateDrawingBrushes(textAttributes, &renderData, false, false));
 
     VerifyExpectedInputsDrained();
 }

@@ -3,10 +3,15 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
+#include "ColorFix.hpp"
 #include <DefaultSettings.h>
+
 using namespace Microsoft::Terminal::Core;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Render;
+
+static constexpr size_t DefaultBgIndex{ 16 };
+static constexpr size_t DefaultFgIndex{ 17 };
 
 Viewport Terminal::GetViewport() noexcept
 {
@@ -27,23 +32,15 @@ const TextBuffer& Terminal::GetTextBuffer() noexcept
     return *_buffer;
 }
 
-// Creating a FontInfo can technically throw (on string allocation) and this is noexcept.
-// That means this will std::terminate. We could come back and make there be a default constructor
-// backup to FontInfo that throws no exceptions and allocates a default FontInfo structure.
-#pragma warning(push)
-#pragma warning(disable : 26447)
 const FontInfo& Terminal::GetFontInfo() noexcept
 {
-    // TODO: This font value is only used to check if the font is a raster font.
-    // Otherwise, the font is changed with the renderer via TriggerFontChange.
-    // The renderer never uses any of the other members from the value returned
-    //      by this method.
-    // We could very likely replace this with just an IsRasterFont method
-    //      (which would return false)
-    static const FontInfo _fakeFontInfo(DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false);
-    return _fakeFontInfo;
+    return _fontInfo;
 }
-#pragma warning(pop)
+
+void Terminal::SetFontInfo(const FontInfo& fontInfo)
+{
+    _fontInfo = fontInfo;
+}
 
 const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 {
@@ -52,12 +49,47 @@ const TextAttribute Terminal::GetDefaultBrushColors() noexcept
 
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
+    std::pair<COLORREF, COLORREF> colors;
     _blinkingState.RecordBlinkingUsage(attr);
-    auto colors = attr.CalculateRgbColors({ _colorTable.data(), _colorTable.size() },
-                                          _defaultFg,
-                                          _defaultBg,
-                                          _screenReversed,
-                                          _blinkingState.IsBlinkingFaint());
+    const auto fgTextColor = attr.GetForeground();
+    const auto bgTextColor = attr.GetBackground();
+
+    // We want to nudge the foreground color to make it more perceivable only for the
+    // default color pairs within the color table
+    if (_adjustIndistinguishableColors &&
+        !(attr.IsFaint() || (attr.IsBlinking() && _blinkingState.IsBlinkingFaint())) &&
+        (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
+        (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
+    {
+        const auto bgIndex = bgTextColor.IsDefault() ? DefaultBgIndex : bgTextColor.GetIndex();
+        auto fgIndex = fgTextColor.IsDefault() ? DefaultFgIndex : fgTextColor.GetIndex();
+
+        if (fgTextColor.IsIndex16() && (fgIndex < 8) && attr.IsBold() && _intenseIsBright)
+        {
+            // There is a special case for bold here - we need to get the bright version of the foreground color
+            fgIndex += 8;
+        }
+
+        if (attr.IsReverseVideo() ^ _screenReversed)
+        {
+            colors.first = _adjustedForegroundColors[fgIndex][bgIndex];
+            colors.second = fgTextColor.GetColor(_colorTable, _defaultFg);
+        }
+        else
+        {
+            colors.first = _adjustedForegroundColors[bgIndex][fgIndex];
+            colors.second = bgTextColor.GetColor(_colorTable, _defaultBg);
+        }
+    }
+    else
+    {
+        colors = attr.CalculateRgbColors(_colorTable,
+                                         _defaultFg,
+                                         _defaultBg,
+                                         _screenReversed,
+                                         _blinkingState.IsBlinkingFaint(),
+                                         _intenseIsBright);
+    }
     colors.first |= 0xff000000;
     // We only care about alpha for the default BG (which enables acrylic)
     // If the bg isn't the default bg color, or reverse video is enabled, make it fully opaque.
@@ -212,7 +244,7 @@ void Terminal::SelectNewRegion(const COORD coordStart, const COORD coordEnd)
     realCoordEnd.Y -= gsl::narrow<short>(_VisibleStartIndex());
 
     SetSelectionAnchor(realCoordStart);
-    SetSelectionEnd(realCoordEnd, SelectionExpansionMode::Cell);
+    SetSelectionEnd(realCoordEnd, SelectionExpansion::Char);
 }
 
 const std::wstring_view Terminal::GetConsoleTitle() const noexcept
@@ -238,14 +270,17 @@ catch (...)
 //      they're done with any querying they need to do.
 void Terminal::LockConsole() noexcept
 {
-    _readWriteLock.lock_shared();
+    _readWriteLock.lock();
+#ifndef NDEBUG
+    _lastLocker = GetCurrentThreadId();
+#endif
 }
 
 // Method Description:
 // - Unlocks the terminal after a call to Terminal::LockConsole.
 void Terminal::UnlockConsole() noexcept
 {
-    _readWriteLock.unlock_shared();
+    _readWriteLock.unlock();
 }
 
 // Method Description:
@@ -255,4 +290,44 @@ void Terminal::UnlockConsole() noexcept
 bool Terminal::IsScreenReversed() const noexcept
 {
     return _screenReversed;
+}
+
+const bool Terminal::IsUiaDataInitialized() const noexcept
+{
+    // GH#11135: Windows Terminal needs to create and return an automation peer
+    // when a screen reader requests it. However, the terminal might not be fully
+    // initialized yet. So we use this to check if any crucial components of
+    // UiaData are not yet initialized.
+    return !!_buffer;
+}
+
+// Method Description:
+// - Creates the adjusted color array, which contains the possible foreground colors,
+//   adjusted for perceivability
+// - The adjusted color array is 2-d, and effectively maps a background and foreground
+//   color pair to the adjusted foreground for that color pair
+void Terminal::_MakeAdjustedColorArray()
+{
+    // The color table has 16 colors, but the adjusted color table needs to be 18
+    // to include the default background and default foreground colors
+    std::array<COLORREF, 18> colorTableWithDefaults;
+    std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
+    colorTableWithDefaults[DefaultBgIndex] = _defaultBg;
+    colorTableWithDefaults[DefaultFgIndex] = _defaultFg;
+    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
+    {
+        const auto fg = til::at(colorTableWithDefaults, fgIndex);
+        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
+        {
+            if (fgIndex == bgIndex)
+            {
+                _adjustedForegroundColors[bgIndex][fgIndex] = fg;
+            }
+            else
+            {
+                const auto bg = til::at(colorTableWithDefaults, bgIndex);
+                _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
+            }
+        }
+    }
 }

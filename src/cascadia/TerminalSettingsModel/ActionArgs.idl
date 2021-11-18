@@ -1,6 +1,8 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
+import "Command.idl";
+
 namespace Microsoft.Terminal.Settings.Model
 {
     interface IActionArgs
@@ -33,15 +35,21 @@ namespace Microsoft.Terminal.Settings.Model
         Right,
         Up,
         Down,
-        Previous
+        Previous,
+        PreviousInOrder,
+        NextInOrder,
+        First,
+        Parent,
+        Child
     };
 
-    enum SplitState
+    enum SplitDirection
     {
-        Automatic = -1,
-        None = 0,
-        Vertical = 1,
-        Horizontal = 2
+        Automatic = 0,
+        Up,
+        Right,
+        Down,
+        Left
     };
 
     enum SplitType
@@ -141,6 +149,12 @@ namespace Microsoft.Terminal.Settings.Model
         NewTerminalArgs TerminalArgs { get; };
     };
 
+    [default_interface] runtimeclass MovePaneArgs : IActionArgs
+    {
+        MovePaneArgs(UInt32 tabIndex);
+        UInt32 TabIndex;
+    };
+
     [default_interface] runtimeclass SwitchToTabArgs : IActionArgs
     {
         SwitchToTabArgs(UInt32 tabIndex);
@@ -158,6 +172,12 @@ namespace Microsoft.Terminal.Settings.Model
         FocusDirection FocusDirection { get; };
     };
 
+    [default_interface] runtimeclass SwapPaneArgs : IActionArgs
+    {
+        SwapPaneArgs(FocusDirection direction);
+        FocusDirection Direction { get; };
+    };
+
     [default_interface] runtimeclass AdjustFontSizeArgs : IActionArgs
     {
         Int32 Delta { get; };
@@ -170,12 +190,12 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SplitPaneArgs : IActionArgs
     {
-        SplitPaneArgs(SplitType splitMode, SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, Double size, NewTerminalArgs terminalArgs);
-        SplitPaneArgs(SplitState split, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitType splitMode, SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, Double size, NewTerminalArgs terminalArgs);
+        SplitPaneArgs(SplitDirection split, NewTerminalArgs terminalArgs);
         SplitPaneArgs(SplitType splitMode);
 
-        SplitState SplitStyle { get; };
+        SplitDirection SplitDirection { get; };
         NewTerminalArgs TerminalArgs { get; };
         SplitType SplitMode { get; };
         Double SplitSize { get; };
@@ -195,6 +215,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass SetTabColorArgs : IActionArgs
     {
+        SetTabColorArgs(Windows.UI.Color tabColor);
         Windows.Foundation.IReference<Windows.UI.Color> TabColor { get; };
     };
 
@@ -218,6 +239,12 @@ namespace Microsoft.Terminal.Settings.Model
     [default_interface] runtimeclass CloseTabsAfterArgs : IActionArgs
     {
         CloseTabsAfterArgs(UInt32 tabIndex);
+        Windows.Foundation.IReference<UInt32> Index { get; };
+    };
+
+    [default_interface] runtimeclass CloseTabArgs : IActionArgs
+    {
+        CloseTabArgs(UInt32 tabIndex);
         Windows.Foundation.IReference<UInt32> Index { get; };
     };
 
@@ -256,16 +283,21 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass PrevTabArgs : IActionArgs
     {
+        PrevTabArgs();
+        PrevTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
     [default_interface] runtimeclass NextTabArgs : IActionArgs
     {
+        NextTabArgs();
+        NextTabArgs(TabSwitcherMode SwitcherMode);
         Windows.Foundation.IReference<TabSwitcherMode> SwitcherMode;
     };
 
     [default_interface] runtimeclass RenameWindowArgs : IActionArgs
     {
+        RenameWindowArgs(String name);
         String Name { get; };
     };
 
@@ -282,5 +314,17 @@ namespace Microsoft.Terminal.Settings.Model
     {
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
+    };
+
+    [default_interface] runtimeclass ClearBufferArgs : IActionArgs
+    {
+        ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
+        Microsoft.Terminal.Control.ClearBufferType Clear { get; };
+    };
+
+    [default_interface] runtimeclass MultipleActionsArgs : IActionArgs
+    {
+        MultipleActionsArgs();
+        Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     };
 }

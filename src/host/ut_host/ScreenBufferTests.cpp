@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -88,6 +88,8 @@ class ScreenBufferTests
     TEST_METHOD(MultipleAlternateBufferCreationTest);
 
     TEST_METHOD(MultipleAlternateBuffersFromMainCreationTest);
+
+    TEST_METHOD(AlternateBufferCursorInheritanceTest);
 
     TEST_METHOD(TestReverseLineFeed);
 
@@ -342,6 +344,71 @@ void ScreenBufferTests::MultipleAlternateBuffersFromMainCreationTest()
             VERIFY_IS_NULL(psiFinal->_psiAlternateBuffer);
         }
     }
+}
+
+void ScreenBufferTests::AlternateBufferCursorInheritanceTest()
+{
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    gci.LockConsole(); // Lock must be taken to manipulate buffer.
+    auto unlock = wil::scope_exit([&] { gci.UnlockConsole(); });
+
+    auto& mainBuffer = gci.GetActiveOutputBuffer();
+    auto& mainCursor = mainBuffer.GetTextBuffer().GetCursor();
+
+    Log::Comment(L"Set the cursor attributes in the main buffer.");
+    auto mainCursorPos = COORD{ 3, 5 };
+    auto mainCursorVisible = false;
+    auto mainCursorSize = 33u;
+    auto mainCursorColor = RGB(1, 2, 3);
+    auto mainCursorType = CursorType::DoubleUnderscore;
+    auto mainCursorBlinking = false;
+    mainCursor.SetPosition(mainCursorPos);
+    mainCursor.SetIsVisible(mainCursorVisible);
+    mainCursor.SetStyle(mainCursorSize, mainCursorColor, mainCursorType);
+    mainCursor.SetBlinkingAllowed(mainCursorBlinking);
+
+    Log::Comment(L"Switch to the alternate buffer.");
+    VERIFY_SUCCEEDED(mainBuffer.UseAlternateScreenBuffer());
+    auto& altBuffer = gci.GetActiveOutputBuffer();
+    auto& altCursor = altBuffer.GetTextBuffer().GetCursor();
+    auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
+
+    Log::Comment(L"Confirm the cursor position is inherited from the main buffer.");
+    VERIFY_ARE_EQUAL(mainCursorPos, altCursor.GetPosition());
+    Log::Comment(L"Confirm the cursor visibility is inherited from the main buffer.");
+    VERIFY_ARE_EQUAL(mainCursorVisible, altCursor.IsVisible());
+    Log::Comment(L"Confirm the cursor style is inherited from the main buffer.");
+    VERIFY_ARE_EQUAL(mainCursorSize, altCursor.GetSize());
+    VERIFY_ARE_EQUAL(mainCursorColor, altCursor.GetColor());
+    VERIFY_ARE_EQUAL(mainCursorType, altCursor.GetType());
+    VERIFY_ARE_EQUAL(mainCursorBlinking, altCursor.IsBlinkingAllowed());
+
+    Log::Comment(L"Set the cursor attributes in the alt buffer.");
+    auto altCursorPos = COORD{ 5, 3 };
+    auto altCursorVisible = true;
+    auto altCursorSize = 66u;
+    auto altCursorColor = RGB(3, 2, 1);
+    auto altCursorType = CursorType::EmptyBox;
+    auto altCursorBlinking = true;
+    altCursor.SetPosition(altCursorPos);
+    altCursor.SetIsVisible(altCursorVisible);
+    altCursor.SetStyle(altCursorSize, altCursorColor, altCursorType);
+    altCursor.SetBlinkingAllowed(altCursorBlinking);
+
+    Log::Comment(L"Switch back to the main buffer.");
+    useMain.release();
+    altBuffer.UseMainScreenBuffer();
+    VERIFY_ARE_EQUAL(&mainBuffer, &gci.GetActiveOutputBuffer());
+
+    Log::Comment(L"Confirm the cursor position is restored to what it was.");
+    VERIFY_ARE_EQUAL(mainCursorPos, mainCursor.GetPosition());
+    Log::Comment(L"Confirm the cursor visibility is inherited from the alt buffer.");
+    VERIFY_ARE_EQUAL(altCursorVisible, mainCursor.IsVisible());
+    Log::Comment(L"Confirm the cursor style is inherited from the alt buffer.");
+    VERIFY_ARE_EQUAL(altCursorSize, mainCursor.GetSize());
+    VERIFY_ARE_EQUAL(altCursorColor, mainCursor.GetColor());
+    VERIFY_ARE_EQUAL(altCursorType, mainCursor.GetType());
+    VERIFY_ARE_EQUAL(altCursorBlinking, mainCursor.IsBlinkingAllowed());
 }
 
 void ScreenBufferTests::TestReverseLineFeed()
@@ -1567,74 +1634,74 @@ void ScreenBufferTests::VtSetColorTable()
         L"Process some valid sequences for setting the table"));
 
     stateMachine.ProcessString(L"\x1b]4;0;rgb:1/1/1\x7");
-    VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(0)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x11, 0x11), gci.GetColorTableEntry(0));
 
     stateMachine.ProcessString(L"\x1b]4;1;rgb:1/23/1\x7");
-    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x11), gci.GetColorTableEntry(::XtermToWindowsIndex(1)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x11), gci.GetColorTableEntry(1));
 
     stateMachine.ProcessString(L"\x1b]4;2;rgb:1/23/12\x7");
-    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(2)));
+    VERIFY_ARE_EQUAL(RGB(0x11, 0x23, 0x12), gci.GetColorTableEntry(2));
 
     stateMachine.ProcessString(L"\x1b]4;3;rgb:12/23/12\x7");
-    VERIFY_ARE_EQUAL(RGB(0x12, 0x23, 0x12), gci.GetColorTableEntry(::XtermToWindowsIndex(3)));
+    VERIFY_ARE_EQUAL(RGB(0x12, 0x23, 0x12), gci.GetColorTableEntry(3));
 
     stateMachine.ProcessString(L"\x1b]4;4;rgb:ff/a1/1b\x7");
-    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(4)));
+    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(4));
 
     stateMachine.ProcessString(L"\x1b]4;5;rgb:ff/a1/1b\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(0xff, 0xa1, 0x1b), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"Try a bunch of invalid sequences."));
     Log::Comment(NoThrowString().Format(
         L"First start by setting an entry to a known value to compare to."));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:09/09/09\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: Missing the first component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: too many components"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:1/1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no second component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:1//1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no components"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb://\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no third component"));
     stateMachine.ProcessString(L"\x1b]4;5;rgb:1/11/\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: rgbi is not a supported color space"));
     stateMachine.ProcessString(L"\x1b]4;5;rgbi:1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: cmyk is not a supported color space"));
     stateMachine.ProcessString(L"\x1b]4;5;cmyk:1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: no table index should do nothing"));
     stateMachine.ProcessString(L"\x1b]4;;rgb:1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 
     Log::Comment(NoThrowString().Format(
         L"invalid: need to specify a color space"));
     stateMachine.ProcessString(L"\x1b]4;5;1/1/1\x1b\\");
-    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(::XtermToWindowsIndex(5)));
+    VERIFY_ARE_EQUAL(RGB(9, 9, 9), gci.GetColorTableEntry(5));
 }
 
 void ScreenBufferTests::ResizeTraditionalDoesNotDoubleFreeAttrRows()
@@ -1845,8 +1912,8 @@ void ScreenBufferTests::VtEraseAllPersistCursorFillColor()
         L"The viewport should be full of dark_red on bright_blue"));
 
     auto expectedAttr = TextAttribute{};
-    expectedAttr.SetIndexedForeground((BYTE)XtermToWindowsIndex(1));
-    expectedAttr.SetIndexedBackground((BYTE)XtermToWindowsIndex(12));
+    expectedAttr.SetIndexedForeground(TextColor::DARK_RED);
+    expectedAttr.SetIndexedBackground(TextColor::BRIGHT_BLUE);
     stateMachine.ProcessString(L"\x1b[31;104m");
 
     VERIFY_ARE_EQUAL(expectedAttr, si.GetAttributes());
@@ -2189,8 +2256,8 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
 
     COLORREF magenta = RGB(255, 0, 255);
     COLORREF yellow = RGB(255, 255, 0);
-    COLORREF brightGreen = gci.GetColorTableEntry(::XtermToWindowsIndex(10));
-    COLORREF darkBlue = gci.GetColorTableEntry(::XtermToWindowsIndex(4));
+    COLORREF brightGreen = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
+    COLORREF darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
 
     gci.SetDefaultForegroundColor(yellow);
     gci.SetDefaultBackgroundColor(magenta);
@@ -2225,8 +2292,8 @@ void ScreenBufferTests::SetDefaultsIndividuallyBothDefault()
     // See the log comment above for description of these values.
     TextAttribute expectedDefaults{};
     TextAttribute expectedTwo;
-    expectedTwo.SetIndexedForeground((BYTE)XtermToWindowsIndex(10));
-    expectedTwo.SetIndexedBackground((BYTE)XtermToWindowsIndex(4));
+    expectedTwo.SetIndexedForeground(TextColor::BRIGHT_GREEN);
+    expectedTwo.SetIndexedBackground(TextColor::DARK_BLUE);
     TextAttribute expectedThree = expectedTwo;
     expectedThree.SetDefaultForeground();
     // Four is the same as Defaults
@@ -2638,7 +2705,7 @@ void ScreenBufferTests::SetGlobalColorTable()
     VERIFY_SUCCEEDED(mainBuffer.SetViewportOrigin(true, COORD({ 0, 0 }), true));
     mainCursor.SetPosition({ 0, 0 });
 
-    const COLORREF originalRed = gci.GetColorTableEntry(4);
+    const COLORREF originalRed = gci.GetColorTableEntry(TextColor::DARK_RED);
     const COLORREF testColor = RGB(0x11, 0x22, 0x33);
     VERIFY_ARE_NOT_EQUAL(originalRed, testColor);
 
@@ -3142,10 +3209,10 @@ void ScreenBufferTests::DontResetColorsAboveVirtualBottom()
         L"cursor=%s", VerifyOutputTraits<COORD>::ToString(cursor.GetPosition()).GetBuffer()));
     Log::Comment(NoThrowString().Format(
         L"viewport=%s", VerifyOutputTraits<SMALL_RECT>::ToString(si.GetViewport().ToInclusive()).GetBuffer()));
-    const auto darkRed = gci.GetColorTableEntry(::XtermToWindowsIndex(1));
-    const auto darkBlue = gci.GetColorTableEntry(::XtermToWindowsIndex(4));
-    const auto darkBlack = gci.GetColorTableEntry(::XtermToWindowsIndex(0));
-    const auto darkWhite = gci.GetColorTableEntry(::XtermToWindowsIndex(7));
+    const auto darkRed = gci.GetColorTableEntry(TextColor::DARK_RED);
+    const auto darkBlue = gci.GetColorTableEntry(TextColor::DARK_BLUE);
+    const auto darkBlack = gci.GetColorTableEntry(TextColor::DARK_BLACK);
+    const auto darkWhite = gci.GetColorTableEntry(TextColor::DARK_WHITE);
     stateMachine.ProcessString(L"\x1b[31;44m");
     stateMachine.ProcessString(L"X");
     stateMachine.ProcessString(L"\x1b[m");
@@ -4948,6 +5015,9 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
         auto useMain = wil::scope_exit([&] { altBuffer.UseMainScreenBuffer(); });
 
+        // Set the position to home, otherwise it's inherited from the main buffer.
+        VERIFY_SUCCEEDED(altBuffer.SetCursorPosition({ 0, 0 }, true));
+
         WriteText(altBuffer.GetTextBuffer());
         VerifyText(altBuffer.GetTextBuffer());
 
@@ -5908,7 +5978,7 @@ void ScreenBufferTests::TestAddHyperlink()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with no custom id
-    stateMachine.ProcessString(L"\x1b]8;;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
@@ -5918,7 +5988,7 @@ void ScreenBufferTests::TestAddHyperlink()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -5931,7 +6001,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomId()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with a custom id
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -5943,7 +6013,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomId()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -5956,7 +6026,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
     auto& stateMachine = si.GetStateMachine();
 
     // Process the opening osc 8 sequence with a custom id
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -5964,7 +6034,7 @@ void ScreenBufferTests::TestAddHyperlinkCustomIdDifferentUri()
     const auto oldAttributes{ tbi.GetCurrentAttributes() };
 
     // Send any other text
-    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"other.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"other.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -6098,8 +6168,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write red on blue, verify that it comes through */
     {
         TextAttribute vtRedOnBlueAttribute{};
-        vtRedOnBlueAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(1)), false });
-        vtRedOnBlueAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(4)), false });
+        vtRedOnBlueAttribute.SetForeground(TextColor{ TextColor::DARK_RED, false });
+        vtRedOnBlueAttribute.SetBackground(TextColor{ TextColor::DARK_BLUE, false });
 
         seq = L"\x1b[31;44m";
         seqCb = 2 * seq.size();
@@ -6117,8 +6187,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write white on black, verify that it acts as expected for the quirk mode */
     {
         TextAttribute vtWhiteOnBlackAttribute{};
-        vtWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
-        vtWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
+        vtWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
+        vtWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
 
         const TextAttribute quirkExpectedAttribute{ useQuirk ? defaultAttribute : vtWhiteOnBlackAttribute };
 
@@ -6138,8 +6208,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write bright white on black, verify that it acts as expected for the quirk mode */
     {
         TextAttribute vtBrightWhiteOnBlackAttribute{};
-        vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), false });
-        vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), false });
+        vtBrightWhiteOnBlackAttribute.SetForeground(TextColor{ TextColor::DARK_WHITE, false });
+        vtBrightWhiteOnBlackAttribute.SetBackground(TextColor{ TextColor::DARK_BLACK, false });
         vtBrightWhiteOnBlackAttribute.SetBold(true);
 
         TextAttribute vtBrightWhiteOnDefaultAttribute{ vtBrightWhiteOnBlackAttribute }; // copy the above attribute
@@ -6163,8 +6233,8 @@ void ScreenBufferTests::TestWriteConsoleVTQuirkMode()
     /* Write a 256-color white on a 256-color black, make sure the quirk does not suppress it */
     {
         TextAttribute vtWhiteOnBlack256Attribute{};
-        vtWhiteOnBlack256Attribute.SetForeground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(7)), true });
-        vtWhiteOnBlack256Attribute.SetBackground(TextColor{ gsl::narrow_cast<BYTE>(XtermToWindowsIndex(0)), true });
+        vtWhiteOnBlack256Attribute.SetForeground(TextColor{ TextColor::DARK_WHITE, true });
+        vtWhiteOnBlack256Attribute.SetBackground(TextColor{ TextColor::DARK_BLACK, true });
 
         // reset (disable bold from the last test) before setting both colors
         seq = L"\x1b[m\x1b[38;5;7;48;5;0m"; // the quirk should *not* suppress this (!)

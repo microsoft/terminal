@@ -337,7 +337,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
     {
-        pStateInfo->ColorTable[i] = gci.GetColorTableEntry(i);
+        pStateInfo->ColorTable[i] = gci.GetLegacyColorTableEntry(i);
     }
 
     // Create mutable copies of the titles so the propsheet can do something with them.
@@ -566,7 +566,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
     {
-        gci.SetColorTableEntry(i, pStateInfo->ColorTable[i]);
+        gci.SetLegacyColorTableEntry(i, pStateInfo->ColorTable[i]);
     }
 
     // Ensure that attributes only contain color specification.

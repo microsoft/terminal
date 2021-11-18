@@ -72,11 +72,10 @@ public:
     bool SetConsoleWindowInfo(bool const absolute,
                               const SMALL_RECT& window) override;
 
-    bool PrivateSetCursorKeysMode(const bool applicationMode) override;
-    bool PrivateSetKeypadMode(const bool applicationMode) override;
-    bool PrivateEnableWin32InputMode(const bool win32InputMode) override;
+    bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
+    bool SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
+    bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
 
-    bool PrivateSetAnsiMode(const bool ansiMode) override;
     bool PrivateSetScreenMode(const bool reverseMode) override;
     bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 
@@ -97,13 +96,8 @@ public:
 
     bool PrivateUseMainScreenBuffer() override;
 
-    bool PrivateEnableVT200MouseMode(const bool enabled) override;
-    bool PrivateEnableUTF8ExtendedMouseMode(const bool enabled) override;
-    bool PrivateEnableSGRExtendedMouseMode(const bool enabled) override;
-    bool PrivateEnableButtonEventMouseMode(const bool enabled) override;
-    bool PrivateEnableAnyEventMouseMode(const bool enabled) override;
-    bool PrivateEnableAlternateScroll(const bool enabled) override;
     bool PrivateEraseAll() override;
+    bool PrivateClearBuffer() override;
 
     bool GetUserDefaultCursorStyle(CursorType& style) override;
     bool SetCursorStyle(CursorType const style) override;
@@ -146,6 +140,10 @@ public:
 
     bool PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const override;
     bool PrivateEndHyperlink() const override;
+
+    bool PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                               const SIZE cellSize,
+                               const size_t centeringHint) noexcept override;
 
 private:
     Microsoft::Console::IIoProvider& _io;

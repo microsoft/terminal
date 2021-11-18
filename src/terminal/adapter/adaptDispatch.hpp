@@ -18,6 +18,7 @@ Author(s):
 #include "DispatchCommon.hpp"
 #include "conGetSet.hpp"
 #include "adaptDefaults.hpp"
+#include "FontBuffer.hpp"
 #include "terminalOutput.hpp"
 #include "..\..\types\inc\sgrStack.hpp"
 
@@ -100,6 +101,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool LockingShift(const size_t gsetNumber) override; // LS0, LS1, LS2, LS3
         bool LockingShiftRight(const size_t gsetNumber) override; // LS1R, LS2R, LS3R
         bool SingleShift(const size_t gsetNumber) override; // SS2, SS3
+        bool AcceptC1Controls(const bool enabled) override; // DECAC1
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
@@ -130,6 +132,17 @@ namespace Microsoft::Console::VirtualTerminal
 
         bool DoConEmuAction(const std::wstring_view string) noexcept override;
 
+        StringHandler DownloadDRCS(const size_t fontNumber,
+                                   const VTParameter startChar,
+                                   const DispatchTypes::DrcsEraseControl eraseControl,
+                                   const DispatchTypes::DrcsCellMatrix cellMatrix,
+                                   const DispatchTypes::DrcsFontSet fontSet,
+                                   const DispatchTypes::DrcsFontUsage fontUsage,
+                                   const VTParameter cellHeight,
+                                   const DispatchTypes::DrcsCharsetSize charsetSize) override; // DECDLD
+
+        StringHandler RequestSetting() override; // DECRQSS
+
     private:
         enum class ScrollDirection
         {
@@ -143,6 +156,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
+            bool C1ControlsAccepted = false;
             unsigned int CodePage = 0;
         };
         struct Offset
@@ -179,7 +193,8 @@ namespace Microsoft::Console::VirtualTerminal
         void _ResetTabStops() noexcept;
         void _InitTabStopsForWidth(const size_t width);
 
-        bool _ShouldPassThroughInputModeChange() const;
+        void _ReportSGRSetting() const;
+        void _ReportDECSTBMSetting() const;
 
         std::vector<bool> _tabStopColumns;
         bool _initDefaultTabStops = true;
@@ -187,6 +202,7 @@ namespace Microsoft::Console::VirtualTerminal
         std::unique_ptr<ConGetSet> _pConApi;
         std::unique_ptr<AdaptDefaults> _pDefaults;
         TerminalOutput _termOutput;
+        std::unique_ptr<FontBuffer> _fontBuffer;
         std::optional<unsigned int> _initialCodePage;
 
         // We have two instances of the saved cursor state, because we need

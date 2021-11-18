@@ -19,7 +19,7 @@ namespace Microsoft::Console::Render
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX
         // application may control the screen at a time.)
-        [[nodiscard]] HRESULT Enable() noexcept;
+        [[nodiscard]] HRESULT Enable() noexcept override;
         [[nodiscard]] HRESULT Disable() noexcept;
 
         RECT GetDisplaySize();
@@ -45,13 +45,14 @@ namespace Microsoft::Console::Render
                                               const COORD coord,
                                               const bool trimLeft,
                                               const bool lineWrapped) noexcept override;
-        [[nodiscard]] HRESULT PaintBufferGridLines(GridLines const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
+        [[nodiscard]] HRESULT PaintBufferGridLines(GridLineSet const lines, COLORREF const color, size_t const cchLine, COORD const coordTarget) noexcept override;
         [[nodiscard]] HRESULT PaintSelection(const SMALL_RECT rect) noexcept override;
 
         [[nodiscard]] HRESULT PaintCursor(const CursorOptions& options) noexcept override;
 
         [[nodiscard]] HRESULT UpdateDrawingBrushes(const TextAttribute& textAttributes,
                                                    const gsl::not_null<IRenderData*> pData,
+                                                   const bool usingSoftFont,
                                                    bool const isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;

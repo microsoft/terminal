@@ -40,7 +40,7 @@ namespace Microsoft::Console::Utils
     }
 
     std::wstring GuidToString(const GUID guid);
-    GUID GuidFromString(const std::wstring wstr);
+    GUID GuidFromString(_Null_terminated_ const wchar_t* str);
     GUID CreateGuid();
 
     std::string ColorToHexString(const til::color color);
@@ -94,4 +94,5 @@ namespace Microsoft::Console::Utils
 
     GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
 
+    bool IsElevated();
 }

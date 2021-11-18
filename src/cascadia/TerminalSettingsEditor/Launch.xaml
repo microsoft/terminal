@@ -33,14 +33,14 @@
         </ResourceDictionary>
     </Page.Resources>
 
-    <ScrollViewer>
+    <ScrollViewer ViewChanging="ViewChanging">
         <StackPanel>
             <StackPanel Style="{StaticResource SettingsStackStyle}">
                 <!--  Default Profile  -->
                 <local:SettingContainer x:Uid="Globals_DefaultProfile"
                                         Margin="0">
                     <ComboBox x:Name="DefaultProfile"
-                              ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}"
+                              ItemsSource="{x:Bind DefaultProfiles}"
                               SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
@@ -74,7 +74,7 @@
                                         x:Uid="Globals_DefaultTerminal"
                                         x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
-                              ItemsSource="{x:Bind State.Settings.DefaultTerminals, Mode=OneWay}"
+                              ItemsSource="{x:Bind State.Settings.DefaultTerminals}"
                               SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
@@ -133,16 +133,29 @@
                     <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
                 </local:SettingContainer>
 
+                <!--  First Window Behavior  -->
+                <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
+                                        Visibility="{x:Bind ShowFirstWindowPreference}">
+                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                                       ItemsSource="{x:Bind FirstWindowPreferenceList}"
+                                       SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />
+                </local:SettingContainer>
+
+
                 <!--  Launch Mode  -->
-                <local:SettingContainer x:Uid="Globals_LaunchMode">
-                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                <local:SettingContainer x:Name="Globals_LaunchMode"
+                                        x:Uid="Globals_LaunchMode">
+                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind LaunchModeList}"
                                        SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_WindowingBehavior">
-                    <muxc:RadioButtons ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
+                    <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
+                                       ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
                                        ItemsSource="{x:Bind WindowingBehaviorList}"
                                        SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}" />
                 </local:SettingContainer>
@@ -157,12 +170,14 @@
                 <!--  Columns  -->
                 <local:SettingContainer x:Uid="Globals_InitialCols"
                                         Margin="0">
-                    <muxc:NumberBox Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                    <muxc:NumberBox x:Uid="Globals_InitialColsBox"
+                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
                 </local:SettingContainer>
                 <!--  Rows  -->
                 <local:SettingContainer x:Uid="Globals_InitialRows">
-                    <muxc:NumberBox Style="{StaticResource LaunchSizeNumberBoxStyle}"
+                    <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
+                                    Style="{StaticResource LaunchSizeNumberBoxStyle}"
                                     Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
                 </local:SettingContainer>
             </StackPanel>

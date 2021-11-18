@@ -3,16 +3,18 @@
 
 #include "pch.h"
 #include "ControlCore.h"
-#include <argb.h>
+
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
-#include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
+
+#include "EventArgs.h"
 #include "../../types/inc/GlyphWidth.hpp"
-#include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
+#include "../../renderer/atlas/AtlasEngine.h"
+#include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 
@@ -22,6 +24,16 @@ using namespace ::Microsoft::Terminal::Core;
 using namespace winrt::Windows::Graphics::Display;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::ApplicationModel::DataTransfer;
+
+// The minimum delay between updates to the scroll bar's values.
+// The updates are throttled to limit power usage.
+constexpr const auto ScrollBarUpdateInterval = std::chrono::milliseconds(8);
+
+// The minimum delay between updating the TSF input control.
+constexpr const auto TsfRedrawInterval = std::chrono::milliseconds(100);
+
+// The minimum delay between updating the locations of regex patterns
+constexpr const auto UpdatePatternLocationsInterval = std::chrono::milliseconds(500);
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -94,6 +106,87 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto pfnTerminalTaskbarProgressChanged = std::bind(&ControlCore::_terminalTaskbarProgressChanged, this);
         _terminal->TaskbarProgressChangedCallback(pfnTerminalTaskbarProgressChanged);
 
+        // MSFT 33353327: Initialize the renderer in the ctor instead of Initialize().
+        // We need the renderer to be ready to accept new engines before the SwapChainPanel is ready to go.
+        // If we wait, a screen reader may try to get the AutomationPeer (aka the UIA Engine), and we won't be able to attach
+        // the UIA Engine to the renderer. This prevents us from signaling changes to the cursor or buffer.
+        {
+            // First create the render thread.
+            // Then stash a local pointer to the render thread so we can initialize it and enable it
+            // to paint itself *after* we hand off its ownership to the renderer.
+            // We split up construction and initialization of the render thread object this way
+            // because the renderer and render thread have circular references to each other.
+            auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
+            auto* const localPointerToThread = renderThread.get();
+
+            // Now create the renderer and initialize the render thread.
+            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
+
+            _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
+                if (auto strongThis{ weakThis.get() })
+                {
+                    strongThis->_RendererEnteredErrorStateHandlers(*strongThis, nullptr);
+                }
+            });
+
+            THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
+        }
+
+        // Get our dispatcher. If we're hosted in-proc with XAML, this will get
+        // us the same dispatcher as TermControl::Dispatcher(). If we're out of
+        // proc, this'll return null. We'll need to instead make a new
+        // DispatcherQueue (on a new thread), so we can use that for throttled
+        // functions.
+        _dispatcher = winrt::Windows::System::DispatcherQueue::GetForCurrentThread();
+        if (!_dispatcher)
+        {
+            auto controller{ winrt::Windows::System::DispatcherQueueController::CreateOnDedicatedThread() };
+            _dispatcher = controller.DispatcherQueue();
+        }
+
+        // A few different events should be throttled, so they don't fire absolutely all the time:
+        // * _tsfTryRedrawCanvas: When the cursor position moves, we need to
+        //   inform TSF, so it can move the canvas for the composition. We
+        //   throttle this so that we're not hopping across the process boundary
+        //   every time that the cursor moves.
+        // * _updatePatternLocations: When there's new output, or we scroll the
+        //   viewport, we should re-check if there are any visible hyperlinks.
+        //   But we don't really need to do this every single time text is
+        //   output, we can limit this update to once every 500ms.
+        // * _updateScrollBar: Same idea as the TSF update - we don't _really_
+        //   need to hop across the process boundary every time text is output.
+        //   We can throttle this to once every 8ms, which will get us out of
+        //   the way of the main output & rendering threads.
+        _tsfTryRedrawCanvas = std::make_shared<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            TsfRedrawInterval,
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->_CursorPositionChangedHandlers(*core, nullptr);
+                }
+            });
+
+        _updatePatternLocations = std::make_shared<ThrottledFuncTrailing<>>(
+            _dispatcher,
+            UpdatePatternLocationsInterval,
+            [weakThis = get_weak()]() {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->UpdatePatternLocations();
+                }
+            });
+
+        _updateScrollBar = std::make_shared<ThrottledFuncTrailing<Control::ScrollPositionChangedArgs>>(
+            _dispatcher,
+            ScrollBarUpdateInterval,
+            [weakThis = get_weak()](const auto& update) {
+                if (auto core{ weakThis.get() }; !core->_IsClosing())
+                {
+                    core->_ScrollPositionChangedHandlers(*core, update);
+                }
+            });
+
         UpdateSettings(settings);
     }
 
@@ -111,6 +204,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  const double actualHeight,
                                  const double compositionScale)
     {
+        assert(_settings);
+
         _panelWidth = actualWidth;
         _panelHeight = actualHeight;
         _compositionScale = compositionScale;
@@ -131,30 +226,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            // First create the render thread.
-            // Then stash a local pointer to the render thread so we can initialize it and enable it
-            // to paint itself *after* we hand off its ownership to the renderer.
-            // We split up construction and initialization of the render thread object this way
-            // because the renderer and render thread have circular references to each other.
-            auto renderThread = std::make_unique<::Microsoft::Console::Render::RenderThread>();
-            auto* const localPointerToThread = renderThread.get();
+            if (Feature_AtlasEngine::IsEnabled() && _settings.UseAtlasEngine())
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+            }
+            else
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            }
 
-            // Now create the renderer and initialize the render thread.
-            _renderer = std::make_unique<::Microsoft::Console::Render::Renderer>(_terminal.get(), nullptr, 0, std::move(renderThread));
-            ::Microsoft::Console::Render::IRenderTarget& renderTarget = *_renderer;
-
-            _renderer->SetRendererEnteredErrorStateCallback([weakThis = get_weak()]() {
-                if (auto strongThis{ weakThis.get() })
-                {
-                    strongThis->_RendererEnteredErrorStateHandlers(*strongThis, nullptr);
-                }
-            });
-
-            THROW_IF_FAILED(localPointerToThread->Initialize(_renderer.get()));
-
-            // Set up the DX Engine
-            auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            _renderer->AddRenderEngine(dxEngine.get());
+            _renderer->AddRenderEngine(_renderEngine.get());
 
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
@@ -168,12 +249,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // Then, using the font, get the number of characters that can fit.
             // Resize our terminal connection to match that size, and initialize the terminal with that size.
             const auto viewInPixels = Viewport::FromDimensions({ 0, 0 }, windowSize);
-            LOG_IF_FAILED(dxEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
+            LOG_IF_FAILED(_renderEngine->SetWindowSize({ viewInPixels.Width(), viewInPixels.Height() }));
 
             // Update DxEngine's SelectionBackground
-            dxEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
+            _renderEngine->SetSelectionBackground(til::color{ _settings.SelectionBackground() });
 
-            const auto vp = dxEngine->GetViewportInCharacters(viewInPixels);
+            const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
             const auto width = vp.Width();
             const auto height = vp.Height();
             _connection.Resize(height, width);
@@ -182,33 +263,32 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _settings.InitialCols(width);
             _settings.InitialRows(height);
 
-            _terminal->CreateFromSettings(_settings, renderTarget);
+            _terminal->CreateFromSettings(_settings, *_renderer);
 
             // IMPORTANT! Set this callback up sooner than later. If we do it
             // after Enable, then it'll be possible to paint the frame once
             // _before_ the warning handler is set up, and then warnings from
             // the first paint will be ignored!
-            dxEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
+            _renderEngine->SetWarningCallback(std::bind(&ControlCore::_rendererWarning, this, std::placeholders::_1));
 
             // Tell the DX Engine to notify us when the swap chain changes.
             // We do this after we initially set the swapchain so as to avoid unnecessary callbacks (and locking problems)
-            dxEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
+            _renderEngine->SetCallback(std::bind(&ControlCore::_renderEngineSwapChainChanged, this));
 
-            dxEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
-            dxEngine->SetPixelShaderPath(_settings.PixelShaderPath());
-            dxEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
-            dxEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            _renderEngine->SetRetroTerminalEffect(_settings.RetroTerminalEffect());
+            _renderEngine->SetPixelShaderPath(_settings.PixelShaderPath());
+            _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
+            _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
+            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
 
-            _updateAntiAliasingMode(dxEngine.get());
+            _updateAntiAliasingMode();
 
             // GH#5098: Inform the engine of the opacity of the default text background.
-            if (_settings.UseAcrylic())
-            {
-                dxEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.TintOpacity()));
-            }
+            // GH#11315: Always do this, even if they don't have acrylic on.
+            const auto backgroundIsOpaque = _settings.Opacity() == 1.0 && _settings.BackgroundImage().empty();
+            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(backgroundIsOpaque));
 
-            THROW_IF_FAILED(dxEngine->Enable());
-            _renderEngine = std::move(dxEngine);
+            THROW_IF_FAILED(_renderEngine->Enable());
 
             _initializedTerminal = true;
         } // scope for TerminalLock
@@ -288,21 +368,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const ControlKeyStates modifiers,
                                       const bool keyDown)
     {
-        // When there is a selection active, escape should clear it and NOT flow through
-        // to the terminal. With any other keypress, it should clear the selection AND
-        // flow through to the terminal.
+        // Update the selection, if it's present
         // GH#6423 - don't dismiss selection if the key that was pressed was a
         // modifier key. We'll wait for a real keystroke to dismiss the
         // GH #7395 - don't dismiss selection when taking PrintScreen
         // selection.
-        // GH#8522, GH#3758 - Only dismiss the selection on key _down_. If we
-        // dismiss on key up, then there's chance that we'll immediately dismiss
+        // GH#8522, GH#3758 - Only modify the selection on key _down_. If we
+        // modify on key up, then there's chance that we'll immediately dismiss
         // a selection created by an action bound to a keydown.
         if (HasSelection() &&
             !KeyEvent::IsModifierKey(vkey) &&
             vkey != VK_SNAPSHOT &&
             keyDown)
         {
+            // try to update the selection
+            if (const auto updateSlnParams{ ::Terminal::ConvertKeyEventToUpdateSelectionParams(modifiers, vkey) })
+            {
+                auto lock = _terminal->LockForWriting();
+                _terminal->UpdateSelection(updateSlnParams->first, updateSlnParams->second);
+                _renderer->TriggerSelection();
+                return true;
+            }
+
             // GH#8791 - don't dismiss selection if Windows key was also pressed as a key-combination.
             if (!modifiers.IsWinPressed())
             {
@@ -310,6 +397,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 _renderer->TriggerSelection();
             }
 
+            // When there is a selection active, escape should clear it and NOT flow through
+            // to the terminal. With any other keypress, it should clear the selection AND
+            // flow through to the terminal.
             if (vkey == VK_ESCAPE)
             {
                 return true;
@@ -343,6 +433,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // This is a scroll event that wasn't initiated by the terminal
         //      itself - it was initiated by the mouse wheel, or the scrollbar.
         _terminal->UserScrollViewport(viewTop);
+
+        _updatePatternLocations->Run();
     }
 
     void ControlCore::AdjustOpacity(const double adjustment)
@@ -352,41 +444,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto newOpacity = std::clamp(_settings.TintOpacity() + adjustment,
+        auto newOpacity = std::clamp(_settings.Opacity() + adjustment,
                                      0.0,
                                      1.0);
-        if (_settings.UseAcrylic())
+
+        // GH#5098: Inform the engine of the new opacity of the default text background.
+        SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
+
+        _settings.Opacity(newOpacity);
+
+        // GH#11285 - If the user is on Windows 10, and they changed the
+        // transparency of the control s.t. it should be partially opaque, then
+        // opt them in to acrylic. It's the only way to have transparency on
+        // Windows 10.
+        // We'll also turn the acrylic back off when they're fully opaque, which
+        // is what the Terminal did prior to 1.12.
+        if (!IsVintageOpacityAvailable())
         {
-            try
-            {
-                _settings.TintOpacity(newOpacity);
-
-                if (newOpacity >= 1.0)
-                {
-                    _settings.UseAcrylic(false);
-                }
-                else
-                {
-                    // GH#5098: Inform the engine of the new opacity of the default text background.
-                    SetBackgroundOpacity(::base::saturated_cast<float>(newOpacity));
-                }
-
-                auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-                _TransparencyChangedHandlers(*this, *eventArgs);
-            }
-            CATCH_LOG();
+            _settings.UseAcrylic(newOpacity < 1.0);
         }
-        else if (adjustment < 0)
-        {
-            _settings.UseAcrylic(true);
 
-            //Setting initial opacity set to 1 to ensure smooth transition to acrylic during mouse scroll
-            newOpacity = std::clamp(1.0 + adjustment, 0.0, 1.0);
-            _settings.TintOpacity(newOpacity);
-
-            auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
-            _TransparencyChangedHandlers(*this, *eventArgs);
-        }
+        auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
+        _TransparencyChangedHandlers(*this, *eventArgs);
     }
 
     void ControlCore::ToggleShaderEffects()
@@ -410,6 +489,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _renderEngine->ToggleShaderEffects();
         }
+        // Always redraw after toggling effects. This way even if the control
+        // does not have focus it will update immediately.
+        _renderer->TriggerRedrawAll();
     }
 
     // Method Description:
@@ -426,7 +508,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Updates last hovered cell, renders / removes rendering of hyper-link if required
     // Arguments:
     // - terminalPosition: The terminal position of the pointer
-    void ControlCore::UpdateHoveredCell(const std::optional<til::point>& terminalPosition)
+    void ControlCore::SetHoveredCell(Core::Point pos)
+    {
+        _updateHoveredCell(std::optional<til::point>{ pos });
+    }
+    void ControlCore::ClearHoveredCell()
+    {
+        _updateHoveredCell(std::nullopt);
+    }
+
+    void ControlCore::_updateHoveredCell(const std::optional<til::point> terminalPosition)
     {
         if (terminalPosition == _lastHoveredCell)
         {
@@ -477,7 +568,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return winrt::hstring{ _terminal->GetHyperlinkAtPosition(pos) };
     }
 
-    winrt::hstring ControlCore::GetHoveredUriText() const
+    winrt::hstring ControlCore::HoveredUriText() const
     {
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
@@ -487,9 +578,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return {};
     }
 
-    std::optional<til::point> ControlCore::GetHoveredCell() const
+    Windows::Foundation::IReference<Core::Point> ControlCore::HoveredCell() const
     {
-        return _lastHoveredCell;
+        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value() } : nullptr;
     }
 
     // Method Description:
@@ -500,6 +591,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         _settings = settings;
+
+        // GH#11285 - If the user is on Windows 10, and they wanted opacity, but
+        // didn't explicitly request acrylic, then opt them in to acrylic.
+        // On Windows 11+, this isn't needed, because we can have vintage opacity.
+        if (!IsVintageOpacityAvailable() && _settings.Opacity() < 1.0 && !_settings.UseAcrylic())
+        {
+            _settings.UseAcrylic(true);
+        }
 
         // Initialize our font information.
         const auto fontFace = _settings.FontFace();
@@ -512,6 +611,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
+        _actualFontFaceName = { fontFace };
         _desiredFont = { _actualFont };
 
         // Update the terminal core with its new Core settings
@@ -526,7 +626,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
-        _updateAntiAliasingMode(_renderEngine.get());
+
+        _updateAntiAliasingMode();
 
         // Refresh our font with the renderer
         const auto actualFontOldSize = _actualFont.GetSize();
@@ -555,26 +656,29 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSelectionBackground(til::color{ newAppearance.SelectionBackground() });
             _renderEngine->SetRetroTerminalEffect(newAppearance.RetroTerminalEffect());
             _renderEngine->SetPixelShaderPath(newAppearance.PixelShaderPath());
+            _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
             _renderer->TriggerRedrawAll();
         }
     }
 
-    void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)
+    void ControlCore::_updateAntiAliasingMode()
     {
-        // Update DxEngine's AntialiasingMode
+        D2D1_TEXT_ANTIALIAS_MODE mode;
+
         switch (_settings.AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
             break;
         case TextAntialiasingMode::Aliased:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
             break;
-        case TextAntialiasingMode::Grayscale:
         default:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
             break;
         }
+
+        _renderEngine->SetAntialiasingMode(mode);
     }
 
     // Method Description:
@@ -592,9 +696,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const int newDpi = static_cast<int>(static_cast<double>(USER_DEFAULT_SCREEN_DPI) *
                                             _compositionScale);
 
-        // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
-        //      actually fail. We need a way to gracefully fallback.
-        _renderer->TriggerFontChange(newDpi, _desiredFont, _actualFont);
+        _terminal->SetFontInfo(_actualFont);
+
+        if (_renderEngine)
+        {
+            std::unordered_map<std::wstring_view, uint32_t> featureMap;
+            if (const auto fontFeatures = _settings.FontFeatures())
+            {
+                featureMap.reserve(fontFeatures.Size());
+
+                for (const auto& [tag, param] : fontFeatures)
+                {
+                    featureMap.emplace(tag, param);
+                }
+            }
+            std::unordered_map<std::wstring_view, float> axesMap;
+            if (const auto fontAxes = _settings.FontAxes())
+            {
+                axesMap.reserve(fontAxes.Size());
+
+                for (const auto& [axis, value] : fontAxes)
+                {
+                    axesMap.emplace(axis, value);
+                }
+            }
+
+            // TODO: MSFT:20895307 If the font doesn't exist, this doesn't
+            //      actually fail. We need a way to gracefully fallback.
+            LOG_IF_FAILED(_renderEngine->UpdateDpi(newDpi));
+            LOG_IF_FAILED(_renderEngine->UpdateFont(_desiredFont, _actualFont, featureMap, axesMap));
+        }
 
         // If the actual font isn't what was requested...
         if (_actualFont.GetFaceName() != _desiredFont.GetFaceName())
@@ -625,6 +756,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fontFace = _settings.FontFace();
             const auto fontWeight = _settings.FontWeight();
             _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+            _actualFontFaceName = { fontFace };
             _desiredFont = { _actualFont };
 
             auto lock = _terminal->LockForWriting();
@@ -703,6 +835,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
+        // Convert our new dimensions to characters
+        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
+                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
+        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
+        const auto currentVP = _terminal->GetViewport();
+
+        // Don't actually resize if viewport dimensions didn't change
+        if (vp.Height() == currentVP.Height() && vp.Width() == currentVP.Width())
+        {
+            return;
+        }
+
         _terminal->ClearSelection();
 
         // Tell the dx engine that our window is now the new size.
@@ -710,11 +854,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Invalidate everything
         _renderer->TriggerRedrawAll();
-
-        // Convert our new dimensions to characters
-        const auto viewInPixels = Viewport::FromDimensions({ 0, 0 },
-                                                           { static_cast<short>(size.cx), static_cast<short>(size.cy) });
-        const auto vp = _renderEngine->GetViewportInCharacters(viewInPixels);
 
         // If this function succeeds with S_FALSE, then the terminal didn't
         // actually change size. No need to notify the connection of this no-op.
@@ -885,6 +1024,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->WritePastedText(hstr);
         _terminal->ClearSelection();
+        _renderer->TriggerSelection();
         _terminal->TrySnapOnInput();
     }
 
@@ -893,15 +1033,36 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _actualFont;
     }
 
+    winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
+    {
+        const auto fontSize = _actualFont.GetSize();
+        return {
+            ::base::saturated_cast<float>(fontSize.X),
+            ::base::saturated_cast<float>(fontSize.Y)
+        };
+    }
+    winrt::hstring ControlCore::FontFaceName() const noexcept
+    {
+        // This getter used to return _actualFont.GetFaceName(), however GetFaceName() returns a STL
+        // string and we need to return a WinRT string. This would require an additional allocation.
+        // This method is called 10/s by TSFInputControl at the time of writing.
+        return _actualFontFaceName;
+    }
+
+    uint16_t ControlCore::FontWeight() const noexcept
+    {
+        return static_cast<uint16_t>(_actualFont.GetWeight());
+    }
+
     til::size ControlCore::FontSizeInDips() const
     {
-        const til::size fontSize{ GetFont().GetSize() };
+        const til::size fontSize{ _actualFont.GetSize() };
         return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
     }
 
     TerminalConnection::ConnectionState ControlCore::ConnectionState() const
     {
-        return _connection.State();
+        return _connection ? _connection.State() : TerminalConnection::ConnectionState::Closed;
     }
 
     hstring ControlCore::Title()
@@ -1049,15 +1210,28 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // TODO GH#9617: refine locking around pattern tree
         _terminal->ClearPatternTree();
 
-        _ScrollPositionChangedHandlers(*this,
-                                       winrt::make<ScrollPositionChangedArgs>(viewTop,
-                                                                              viewHeight,
-                                                                              bufferSize));
+        // Start the throttled update of our scrollbar.
+        auto update{ winrt::make<ScrollPositionChangedArgs>(viewTop,
+                                                            viewHeight,
+                                                            bufferSize) };
+        if (!_inUnitTests)
+        {
+            _updateScrollBar->Run(update);
+        }
+        else
+        {
+            _ScrollPositionChangedHandlers(*this, update);
+        }
+
+        // Additionally, start the throttled update of where our links are.
+        _updatePatternLocations->Run();
     }
 
     void ControlCore::_terminalCursorPositionChanged()
     {
-        _CursorPositionChangedHandlers(*this, nullptr);
+        // When the buffer's cursor moves, start the throttled func to
+        // eventually dispatch a CursorPositionChanged event.
+        _tsfTryRedrawCanvas->Run();
     }
 
     void ControlCore::_terminalTaskbarProgressChanged()
@@ -1075,10 +1249,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _settings.CopyOnSelect();
     }
 
-    std::vector<std::wstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
+    Windows::Foundation::Collections::IVector<winrt::hstring> ControlCore::SelectedText(bool trimTrailingWhitespace) const
     {
         // RetrieveSelectedTextFromBuffer will lock while it's reading
-        return _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text;
+        const auto internalResult{ _terminal->RetrieveSelectedTextFromBuffer(trimTrailingWhitespace).text };
+
+        auto result = winrt::single_threaded_vector<winrt::hstring>();
+
+        for (const auto& row : internalResult)
+        {
+            result.Append(winrt::hstring{ row });
+        }
+        return result;
     }
 
     ::Microsoft::Console::Types::IUiaData* ControlCore::GetUiaData() const
@@ -1122,12 +1304,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::SetBackgroundOpacity(const float opacity)
+    void ControlCore::SetBackgroundOpacity(const double opacity)
     {
         if (_renderEngine)
         {
             auto lock = _terminal->LockForWriting();
-            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
+            const auto backgroundIsOpaque = opacity == 1.0 && _settings.BackgroundImage().empty();
+            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(backgroundIsOpaque));
         }
     }
 
@@ -1159,8 +1342,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::Close()
     {
-        if (!_closing.exchange(true))
+        if (!_IsClosing())
         {
+            _closing = true;
+
             // Stop accepting new output and state changes before we disconnect everything.
             _connection.TerminalOutput(_connectionOutputEventToken);
             _connectionStateChangedRevoker.revoke();
@@ -1174,7 +1359,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    HANDLE ControlCore::GetSwapChainHandle() const
+    uint64_t ControlCore::SwapChainHandle() const
     {
         // This is called by:
         // * TermControl::RenderEngineSwapChainChanged, who is only registered
@@ -1182,7 +1367,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // * TermControl::_InitializeTerminal, after the call to Initialize, for
         //   _AttachDxgiSwapChainToXaml.
         // In both cases, we'll have a _renderEngine by then.
-        return _renderEngine->GetSwapChainHandle();
+        return reinterpret_cast<uint64_t>(_renderEngine->GetSwapChainHandle());
     }
 
     void ControlCore::_rendererWarning(const HRESULT hr)
@@ -1263,18 +1448,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // handle ALT key
         _terminal->SetBlockSelection(altEnabled);
 
-        ::Terminal::SelectionExpansionMode mode = ::Terminal::SelectionExpansionMode::Cell;
+        ::Terminal::SelectionExpansion mode = ::Terminal::SelectionExpansion::Char;
         if (numberOfClicks == 1)
         {
-            mode = ::Terminal::SelectionExpansionMode::Cell;
+            mode = ::Terminal::SelectionExpansion::Char;
         }
         else if (numberOfClicks == 2)
         {
-            mode = ::Terminal::SelectionExpansionMode::Word;
+            mode = ::Terminal::SelectionExpansion::Word;
         }
         else if (numberOfClicks == 3)
         {
-            mode = ::Terminal::SelectionExpansionMode::Line;
+            mode = ::Terminal::SelectionExpansion::Line;
         }
 
         // Update the selection appropriately
@@ -1299,7 +1484,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _terminal->SetSelectionEnd(terminalPosition, mode);
             selectionNeedsToBeCopied = true;
         }
-        else if (mode != ::Terminal::SelectionExpansionMode::Cell || shiftEnabled)
+        else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
         {
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
@@ -1313,10 +1498,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     void ControlCore::AttachUiaEngine(::Microsoft::Console::Render::IRenderEngine* const pEngine)
     {
-        if (_renderer)
-        {
-            _renderer->AddRenderEngine(pEngine);
-        }
+        // _renderer will always exist since it's introduced in the ctor
+        _renderer->AddRenderEngine(pEngine);
     }
 
     bool ControlCore::IsInReadOnlyMode() const
@@ -1338,18 +1521,82 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         _terminal->Write(hstr);
 
-        // NOTE: We're raising an event here to inform the TermControl that
-        // output has been received, so it can queue up a throttled
-        // UpdatePatternLocations call. In the future, we should have the
-        // _updatePatternLocations ThrottledFunc internal to this class, and
-        // run on this object's dispatcher queue.
-        //
-        // We're not doing that quite yet, because the Core will eventually
-        // be out-of-proc from the UI thread, and won't be able to just use
-        // the UI thread as the dispatcher queue thread.
-        //
-        // See TODO: https://github.com/microsoft/terminal/projects/5#card-50760282
-        _ReceivedOutputHandlers(*this, nullptr);
+        // Start the throttled update of where our hyperlinks are.
+        _updatePatternLocations->Run();
     }
 
+    // Method Description:
+    // - Clear the contents of the buffer. The region cleared is given by
+    //   clearType:
+    //   * Screen: Clear only the contents of the visible viewport, leaving the
+    //     cursor row at the top of the viewport.
+    //   * Scrollback: Clear the contents of the scrollback.
+    //   * All: Do both - clear the visible viewport and the scrollback, leaving
+    //     only the cursor row at the top of the viewport.
+    // Arguments:
+    // - clearType: The type of clear to perform.
+    // Return Value:
+    // - <none>
+    void ControlCore::ClearBuffer(Control::ClearBufferType clearType)
+    {
+        if (clearType == Control::ClearBufferType::Scrollback || clearType == Control::ClearBufferType::All)
+        {
+            _terminal->EraseInDisplay(::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType::Scrollback);
+        }
+
+        if (clearType == Control::ClearBufferType::Screen || clearType == Control::ClearBufferType::All)
+        {
+            // Send a signal to conpty to clear the buffer.
+            if (auto conpty{ _connection.try_as<TerminalConnection::ConptyConnection>() })
+            {
+                // ConPTY will emit sequences to sync up our buffer with its new
+                // contents.
+                conpty.ClearBuffer();
+            }
+        }
+    }
+
+    hstring ControlCore::ReadEntireBuffer() const
+    {
+        auto terminalLock = _terminal->LockForWriting();
+
+        const auto& textBuffer = _terminal->GetTextBuffer();
+
+        std::wstringstream ss;
+        const auto lastRow = textBuffer.GetLastNonSpaceCharacter().Y;
+        for (auto rowIndex = 0; rowIndex <= lastRow; rowIndex++)
+        {
+            const auto& row = textBuffer.GetRowByOffset(rowIndex);
+            auto rowText = row.GetText();
+            const auto strEnd = rowText.find_last_not_of(UNICODE_SPACE);
+            if (strEnd != std::string::npos)
+            {
+                rowText.erase(strEnd + 1);
+                ss << rowText;
+            }
+
+            if (!row.WasWrapForced())
+            {
+                ss << UNICODE_CARRIAGERETURN << UNICODE_LINEFEED;
+            }
+        }
+
+        return hstring(ss.str());
+    }
+
+    // Helper to check if we're on Windows 11 or not. This is used to check if
+    // we need to use acrylic to achieve transparency, because vintage opacity
+    // doesn't work in islands on win10.
+    // Remove when we can remove the rest of GH#11285
+    bool ControlCore::IsVintageOpacityAvailable() noexcept
+    {
+        OSVERSIONINFOEXW osver{};
+        osver.dwOSVersionInfoSize = sizeof(osver);
+        osver.dwBuildNumber = 22000;
+
+        DWORDLONG dwlConditionMask = 0;
+        VER_SET_CONDITION(dwlConditionMask, VER_BUILDNUMBER, VER_GREATER_EQUAL);
+
+        return VerifyVersionInfoW(&osver, VER_BUILDNUMBER, dwlConditionMask) != FALSE;
+    }
 }

@@ -27,6 +27,7 @@ class ApiRoutinesTests
 
     ApiRoutines _Routines;
     IApiRoutines* _pApiRoutines = &_Routines;
+    CommandHistory* m_pHistory;
 
     TEST_METHOD_SETUP(MethodSetup)
     {
@@ -37,11 +38,20 @@ class ApiRoutinesTests
 
         m_state->PrepareGlobalInputBuffer();
 
+        m_pHistory = CommandHistory::s_Allocate(L"cmd.exe", nullptr);
+        if (!m_pHistory)
+        {
+            return false;
+        }
+        // History must be prepared before COOKED_READ
         return true;
     }
 
     TEST_METHOD_CLEANUP(MethodCleanup)
     {
+        CommandHistory::s_Free(nullptr);
+        m_pHistory = nullptr;
+
         m_state->CleanupGlobalInputBuffer();
 
         m_state->CleanupGlobalScreenBuffer();
@@ -278,7 +288,7 @@ class ApiRoutinesTests
                                                      nullptr,
                                                      nullptr);
 
-        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded);
+        wistd::unique_ptr<char[]> pszExpected = wil::make_unique_nothrow<char[]>(iBytesNeeded + 1);
         VERIFY_IS_NOT_NULL(pszExpected);
 
         VERIFY_WIN32_BOOL_SUCCEEDED(WideCharToMultiByte(gci.OutputCP,
@@ -289,6 +299,9 @@ class ApiRoutinesTests
                                                         iBytesNeeded,
                                                         nullptr,
                                                         nullptr));
+
+        // Make sure we terminate the expected title -- WC2MB does not add the \0 if we use the size variant
+        pszExpected[iBytesNeeded] = '\0';
 
         char pszTitle[MAX_PATH]; // most applications use MAX_PATH
         size_t cchWritten = 0;

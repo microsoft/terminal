@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "precomp.h"
@@ -137,11 +137,24 @@ try
 {
     const auto drawingContext = static_cast<const DrawingContext*>(clientDrawingContext);
 
-    const DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
+    DWRITE_FONT_WEIGHT weight = _fontRenderData->DefaultFontWeight();
     DWRITE_FONT_STYLE style = _fontRenderData->DefaultFontStyle();
     const DWRITE_FONT_STRETCH stretch = _fontRenderData->DefaultFontStretch();
 
-    if (drawingContext->useItalicFont)
+    if (drawingContext->useBoldFont)
+    {
+        // TODO: "relative" bold?
+        weight = DWRITE_FONT_WEIGHT_BOLD;
+        // Since we are setting the font weight according to the text attribute,
+        // make sure to tell the text format to ignore the user set font weight
+        _fontRenderData->InhibitUserWeight(true);
+    }
+    else
+    {
+        _fontRenderData->InhibitUserWeight(false);
+    }
+
+    if (drawingContext->useItalicFont || _fontRenderData->DidUserSetItalic())
     {
         style = DWRITE_FONT_STYLE_ITALIC;
     }
@@ -230,7 +243,7 @@ CATCH_RETURN()
         // Allocate enough room to have one breakpoint per code unit.
         _breakpoints.resize(_text.size());
 
-        if (!_isEntireTextSimple)
+        if (!_isEntireTextSimple || _fontRenderData->DidUserSetAxes())
         {
             // Call each of the analyzers in sequence, recording their results.
             RETURN_IF_FAILED(_fontRenderData->Analyzer()->AnalyzeLineBreakpoints(this, 0, textLength, this));
@@ -351,7 +364,7 @@ CATCH_RETURN()
             _glyphIndices.resize(totalGlyphsArrayCount);
         }
 
-        if (_isEntireTextSimple)
+        if (_isEntireTextSimple && !_fontRenderData->DidUserSetFeatures())
         {
             // When the entire text is simple, we can skip GetGlyphs and directly retrieve glyph indices and
             // advances(in font design unit). With the help of font metrics, we can calculate the actual glyph
@@ -390,10 +403,18 @@ CATCH_RETURN()
         std::vector<DWRITE_SHAPING_TEXT_PROPERTIES> textProps(textLength);
         std::vector<DWRITE_SHAPING_GLYPH_PROPERTIES> glyphProps(maxGlyphCount);
 
+        // Get the features to apply to the font
+        const auto& features = _fontRenderData->DefaultFontFeatures();
+#pragma warning(suppress : 26492) // Don't use const_cast to cast away const or volatile (type.3).
+        DWRITE_TYPOGRAPHIC_FEATURES typographicFeatures = { const_cast<DWRITE_FONT_FEATURE*>(features.data()), gsl::narrow<uint32_t>(features.size()) };
+        DWRITE_TYPOGRAPHIC_FEATURES const* typographicFeaturesPointer = &typographicFeatures;
+        const uint32_t fontFeatureLengths[] = { textLength };
+
         // Get the glyphs from the text, retrying if needed.
 
         int tries = 0;
 
+#pragma warning(suppress : 26485) // so we can pass in the fontFeatureLengths to GetGlyphs without the analyzer complaining
         HRESULT hr = S_OK;
         do
         {
@@ -406,9 +427,9 @@ CATCH_RETURN()
                 &run.script,
                 _localeName.data(),
                 (run.isNumberSubstituted) ? _numberSubstitution.Get() : nullptr,
-                nullptr, // features
-                nullptr, // featureLengths
-                0, // featureCount
+                &typographicFeaturesPointer, // features
+                &fontFeatureLengths[0], // featureLengths
+                1, // featureCount
                 maxGlyphCount, // maxGlyphCount
                 &_glyphClusters.at(textStart),
                 &textProps.at(0),
@@ -456,9 +477,9 @@ CATCH_RETURN()
             (run.bidiLevel & 1), // isRightToLeft
             &run.script,
             _localeName.data(),
-            nullptr, // features
-            nullptr, // featureRangeLengths
-            0, // featureRanges
+            &typographicFeaturesPointer, // features
+            &fontFeatureLengths[0], // featureLengths
+            1, // featureCount
             &_glyphAdvances.at(glyphStart),
             &_glyphOffsets.at(glyphStart));
 
@@ -1258,29 +1279,71 @@ CATCH_RETURN();
             fallback = _fontRenderData->SystemFontFallback();
         }
 
-        // Walk through and analyze the entire string
-        while (textLength > 0)
+        ::Microsoft::WRL::ComPtr<IDWriteFontFallback1> fallback1;
+        ::Microsoft::WRL::ComPtr<IDWriteTextFormat3> format3;
+
+        // If the OS supports IDWriteFontFallback1 and IDWriteTextFormat3, we can use the
+        // newer MapCharacters to apply axes of variation to the font
+        if (!FAILED(_formatInUse->QueryInterface(IID_PPV_ARGS(&format3))) && !FAILED(fallback->QueryInterface(IID_PPV_ARGS(&fallback1))))
         {
-            UINT32 mappedLength = 0;
-            ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
-            FLOAT scale = 0.0f;
+            const auto axesVector = _fontRenderData->GetAxisVector(weight, stretch, style, format3.Get());
+            // Walk through and analyze the entire string
+            while (textLength > 0)
+            {
+                UINT32 mappedLength = 0;
+                ::Microsoft::WRL::ComPtr<IDWriteFontFace5> mappedFont;
+                FLOAT scale = 0.0f;
 
-            fallback->MapCharacters(source,
-                                    textPosition,
-                                    textLength,
-                                    collection.Get(),
-                                    familyName.data(),
-                                    weight,
-                                    style,
-                                    stretch,
-                                    &mappedLength,
-                                    &mappedFont,
-                                    &scale);
+                fallback1->MapCharacters(source,
+                                         textPosition,
+                                         textLength,
+                                         collection.Get(),
+                                         familyName.data(),
+                                         axesVector.data(),
+                                         gsl::narrow<uint32_t>(axesVector.size()),
+                                         &mappedLength,
+                                         &scale,
+                                         &mappedFont);
 
-            RETURN_IF_FAILED(_SetMappedFont(textPosition, mappedLength, mappedFont.Get(), scale));
+                RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, mappedFont, scale));
 
-            textPosition += mappedLength;
-            textLength -= mappedLength;
+                textPosition += mappedLength;
+                textLength -= mappedLength;
+            }
+        }
+        else
+        {
+            // The chunk of code below is very similar to the one above, unfortunately this needs
+            // to stay for Win7 compatibility reasons. It is also not possible to combine the two
+            // because they call different versions of MapCharacters
+
+            // Walk through and analyze the entire string
+            while (textLength > 0)
+            {
+                UINT32 mappedLength = 0;
+                ::Microsoft::WRL::ComPtr<IDWriteFont> mappedFont;
+                FLOAT scale = 0.0f;
+
+                fallback->MapCharacters(source,
+                                        textPosition,
+                                        textLength,
+                                        collection.Get(),
+                                        familyName.data(),
+                                        weight,
+                                        style,
+                                        stretch,
+                                        &mappedLength,
+                                        &mappedFont,
+                                        &scale);
+
+                RETURN_LAST_ERROR_IF(!mappedFont);
+                ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
+                RETURN_IF_FAILED(mappedFont->CreateFontFace(&face));
+                RETURN_IF_FAILED(_SetMappedFontFace(textPosition, mappedLength, face, scale));
+
+                textPosition += mappedLength;
+                textLength -= mappedLength;
+            }
         }
     }
     CATCH_RETURN();
@@ -1294,14 +1357,14 @@ CATCH_RETURN();
 // Arguments:
 // - textPosition - the index to start the substring operation
 // - textLength - the length of the substring operation
-// - font - the font that applies to the substring range
+// - fontFace - the fontFace that applies to the substring range
 // - scale - the scale of the font to apply
 // Return Value:
 // - S_OK or appropriate STL/GSL failure code.
-[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFont(UINT32 textPosition,
-                                                                         UINT32 textLength,
-                                                                         _In_ IDWriteFont* const font,
-                                                                         FLOAT const scale)
+[[nodiscard]] HRESULT STDMETHODCALLTYPE CustomTextLayout::_SetMappedFontFace(UINT32 textPosition,
+                                                                             UINT32 textLength,
+                                                                             const ::Microsoft::WRL::ComPtr<IDWriteFontFace>& fontFace,
+                                                                             FLOAT const scale)
 {
     try
     {
@@ -1311,14 +1374,9 @@ CATCH_RETURN();
         {
             auto& run = _FetchNextRun(textLength);
 
-            if (font != nullptr)
+            if (fontFace != nullptr)
             {
-                // Get font face from font metadata
-                ::Microsoft::WRL::ComPtr<IDWriteFontFace> face;
-                RETURN_IF_FAILED(font->CreateFontFace(&face));
-
-                // QI for Face5 interface from base face interface, store into run
-                RETURN_IF_FAILED(face.As(&run.fontFace));
+                RETURN_IF_FAILED(fontFace.As(&run.fontFace));
             }
             else
             {

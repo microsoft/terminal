@@ -18,6 +18,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Json::Value ToJson(const Model::ActionAndArgs& val);
 
         ActionAndArgs() = default;
+        ActionAndArgs(ShortcutAction action);
         ActionAndArgs(ShortcutAction action, IActionArgs args) :
             _Action{ action },
             _Args{ args } {};
@@ -33,4 +34,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
 {
     BASIC_FACTORY(ActionAndArgs);
+}
+
+namespace Microsoft::Terminal::Settings::Model::JsonUtils
+{
+    using namespace winrt::Microsoft::Terminal::Settings::Model;
+
+    template<>
+    struct ConversionTrait<ActionAndArgs>
+    {
+        ActionAndArgs FromJson(const Json::Value& json)
+        {
+            std::vector<SettingsLoadWarnings> v;
+            return *implementation::ActionAndArgs::FromJson(json, v);
+        }
+
+        bool CanConvert(const Json::Value& json) const
+        {
+            // commands without args might just be a string
+            return json.isString() || json.isObject();
+        }
+
+        Json::Value ToJson(const ActionAndArgs& val)
+        {
+            return implementation::ActionAndArgs::ToJson(val);
+        }
+
+        std::string TypeDescription() const
+        {
+            return "ActionAndArgs";
+        }
+    };
 }

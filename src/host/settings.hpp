@@ -26,6 +26,13 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 #include "ConsoleArguments.hpp"
 #include "../inc/conattrs.hpp"
 
+enum class UseDx : DWORD
+{
+    Disabled = 0,
+    DxEngine,
+    AtlasEngine,
+};
+
 class Settings
 {
 public:
@@ -159,10 +166,16 @@ public:
     bool GetHistoryNoDup() const;
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
-    gsl::span<const COLORREF> Get16ColorTable() const;
-    gsl::span<const COLORREF> Get256ColorTable() const;
+    // The first 16 items of the color table are the same as the 16-color palette.
+    inline const std::array<COLORREF, XTERM_COLOR_TABLE_SIZE>& GetColorTable() const noexcept
+    {
+        return _colorTable;
+    }
+
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
+    void SetLegacyColorTableEntry(const size_t index, const COLORREF ColorValue);
+    COLORREF GetLegacyColorTableEntry(const size_t index) const;
 
     COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;
@@ -182,7 +195,7 @@ public:
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    bool GetUseDx() const noexcept;
+    UseDx GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
 private:
@@ -226,7 +239,7 @@ private:
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
     bool _fScreenReversed;
-    bool _fUseDx;
+    UseDx _fUseDx;
     bool _fCopyColor;
 
     std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;

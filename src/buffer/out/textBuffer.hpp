@@ -141,15 +141,15 @@ public:
 
     Microsoft::Console::Render::IRenderTarget& GetRenderTarget() noexcept;
 
-    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
-    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false) const;
-    bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, COORD lastCharPos) const;
+    const COORD GetWordStart(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
+    const COORD GetWordEnd(const COORD target, const std::wstring_view wordDelimiters, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
+    bool MoveToNextWord(COORD& pos, const std::wstring_view wordDelimiters, std::optional<til::point> limitOptional = std::nullopt) const;
     bool MoveToPreviousWord(COORD& pos, const std::wstring_view wordDelimiters) const;
 
-    const til::point GetGlyphStart(const til::point pos) const;
-    const til::point GetGlyphEnd(const til::point pos) const;
-    bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false) const;
-    bool MoveToPreviousGlyph(til::point& pos) const;
+    const til::point GetGlyphStart(const til::point pos, std::optional<til::point> limitOptional = std::nullopt) const;
+    const til::point GetGlyphEnd(const til::point pos, bool accessibilityMode = false, std::optional<til::point> limitOptional = std::nullopt) const;
+    bool MoveToNextGlyph(til::point& pos, bool allowBottomExclusive = false, std::optional<til::point> limitOptional = std::nullopt) const;
+    bool MoveToPreviousGlyph(til::point& pos, std::optional<til::point> limitOptional = std::nullopt) const;
 
     const std::vector<SMALL_RECT> GetTextRects(COORD start, COORD end, bool blockSelection, bool bufferCoordinates) const;
 
@@ -242,7 +242,7 @@ private:
     const DelimiterClass _GetDelimiterClassAt(const COORD pos, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordStartForAccessibility(const COORD target, const std::wstring_view wordDelimiters) const;
     const COORD _GetWordStartForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
-    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD lastCharPos) const;
+    const COORD _GetWordEndForAccessibility(const COORD target, const std::wstring_view wordDelimiters, const COORD limit) const;
     const COORD _GetWordEndForSelection(const COORD target, const std::wstring_view wordDelimiters) const;
 
     void _PruneHyperlinks();

@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../renderer/inc/IRenderData.hpp"
+#include "../types/inc/colorTable.hpp"
 #include "../types/IUiaData.h"
 
 class RenderData final :
@@ -27,6 +28,7 @@ public:
     COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
 
     std::vector<Microsoft::Console::Types::Viewport> GetSelectionRects() noexcept override;
 
@@ -36,8 +38,6 @@ public:
 
 #pragma region IRenderData
     const TextAttribute GetDefaultBrushColors() noexcept override;
-
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
 
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
@@ -70,5 +70,10 @@ public:
     const COORD GetSelectionAnchor() const noexcept;
     const COORD GetSelectionEnd() const noexcept;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
+    const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
+
+private:
+    COLORREF _defaultForeground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 7);
+    COLORREF _defaultBackground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 0);
 };

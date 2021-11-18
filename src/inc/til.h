@@ -21,6 +21,7 @@
 #include "til/replace.h"
 #include "til/string.h"
 #include "til/pmr.h"
+#include "til/enumset.h"
 
 // Use keywords on TraceLogging providers to specify the category
 // of event that we are emitting for filtering purposes.
@@ -89,13 +90,22 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         }                                           \
     } while (0, 0)
 
-// Due to a bug (DevDiv 441931), Warning 4297 (function marked noexcept throws exception) is detected even when the throwing code is unreachable, such as the end of scope after a return, in function-level catch.
+// Due to a bug (DevDiv 441931), Warning 4297 (function marked noexcept throws
+// exception) is detected even when the throwing code is unreachable, such as
+// the end of scope after a return, in function-level catch.
 #define CATCH_LOG_RETURN_FALSE()            \
     catch (...)                             \
     {                                       \
         __pragma(warning(suppress : 4297)); \
         LOG_CAUGHT_EXCEPTION();             \
         return false;                       \
+    }
+
+// This is like the above, but doesn't log any messages. This is for GH#10882.
+#define CATCH_RETURN_FALSE() \
+    catch (...)              \
+    {                        \
+        return false;        \
     }
 
 // MultiByteToWideChar has a bug in it where it can return 0 and then not set last error.

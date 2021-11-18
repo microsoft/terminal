@@ -115,7 +115,7 @@
 
   <ItemGroup>
     <Reference Include="Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore">
-      <HintPath>$(OpenConsoleDir)\packages\Microsoft.Taef.10.58.210305002\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
+      <HintPath>$(OpenConsoleDir)\packages\Microsoft.Taef.10.60.210621002\lib\Microsoft.VisualStudio.TestPlatform.TestExecutor.WinRTCore.winmd</HintPath>
       <IsWinMDFile>true</IsWinMDFile>
 
       <!-- This path is _relative to the .winmd_ -->
@@ -123,7 +123,7 @@
     </Reference>
   </ItemGroup>
 
-  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.5.0-prerelease.201202003\build\native\Microsoft.UI.Xaml.targets')" />
+  <Import Project="$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('$(OpenConsoleDir)\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets')" />
 
   <Import Project="$(OpenConsoleDir)\src\common.build.post.props" />
 

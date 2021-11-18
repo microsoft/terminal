@@ -104,6 +104,7 @@ public:
     bool LockingShift(const size_t /*gsetNumber*/) noexcept override { return false; } // LS0, LS1, LS2, LS3
     bool LockingShiftRight(const size_t /*gsetNumber*/) noexcept override { return false; } // LS1R, LS2R, LS3R
     bool SingleShift(const size_t /*gsetNumber*/) noexcept override { return false; } // SS2, SS3
+    bool AcceptC1Controls(const bool /*enabled*/) noexcept override { return false; } // DECAC1
 
     bool SoftReset() noexcept override { return false; } // DECSTR
     bool HardReset() noexcept override { return false; } // RIS
@@ -123,4 +124,15 @@ public:
     bool EndHyperlink() noexcept override { return false; }
 
     bool DoConEmuAction(const std::wstring_view /*string*/) noexcept override { return false; }
+
+    StringHandler DownloadDRCS(const size_t /*fontNumber*/,
+                               const VTParameter /*startChar*/,
+                               const DispatchTypes::DrcsEraseControl /*eraseControl*/,
+                               const DispatchTypes::DrcsCellMatrix /*cellMatrix*/,
+                               const DispatchTypes::DrcsFontSet /*fontSet*/,
+                               const DispatchTypes::DrcsFontUsage /*fontUsage*/,
+                               const VTParameter /*cellHeight*/,
+                               const DispatchTypes::DrcsCharsetSize /*charsetSize*/) noexcept override { return nullptr; }
+
+    StringHandler RequestSetting() noexcept override { return nullptr; }; // DECRQSS
 };

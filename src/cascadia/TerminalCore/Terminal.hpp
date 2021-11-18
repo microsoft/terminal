@@ -5,6 +5,7 @@
 
 #include <conattrs.hpp>
 
+#include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../types/inc/sgrStack.hpp"
 #include "../../renderer/inc/BlinkingState.hpp"
@@ -16,6 +17,8 @@
 #include "../../types/IUiaData.h"
 #include "../../cascadia/terminalcore/ITerminalApi.hpp"
 #include "../../cascadia/terminalcore/ITerminalInput.hpp"
+
+#include <til/ticket_lock.h>
 
 static constexpr std::wstring_view linkPattern{ LR"(\b(https?|ftp|file)://[-A-Za-z0-9+&@#/%?=~_|$!:,.;]*[A-Za-z0-9+&@#/%=~_|$])" };
 static constexpr size_t TaskbarMinProgress{ 10 };
@@ -68,6 +71,7 @@ public:
 
     void UpdateSettings(winrt::Microsoft::Terminal::Core::ICoreSettings settings);
     void UpdateAppearance(const winrt::Microsoft::Terminal::Core::ICoreAppearance& appearance);
+    void SetFontInfo(const FontInfo& fontInfo);
 
     // Write goes through the parser
     void Write(std::wstring_view stringView);
@@ -75,8 +79,8 @@ public:
     // WritePastedText goes directly to the connection
     void WritePastedText(std::wstring_view stringView);
 
-    [[nodiscard]] std::shared_lock<std::shared_mutex> LockForReading();
-    [[nodiscard]] std::unique_lock<std::shared_mutex> LockForWriting();
+    [[nodiscard]] std::unique_lock<til::ticket_lock> LockForReading();
+    [[nodiscard]] std::unique_lock<til::ticket_lock> LockForWriting();
 
     short GetBufferHeight() const noexcept;
 
@@ -108,16 +112,9 @@ public:
     bool SetDefaultForeground(const COLORREF color) noexcept override;
     bool SetDefaultBackground(const COLORREF color) noexcept override;
 
-    bool EnableWin32InputMode(const bool win32InputMode) noexcept override;
-    bool SetCursorKeysMode(const bool applicationMode) noexcept override;
-    bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;
+
     bool SetScreenMode(const bool reverseMode) noexcept override;
-    bool EnableVT200MouseMode(const bool enabled) noexcept override;
-    bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
-    bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
-    bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
-    bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
-    bool EnableAlternateScrollMode(const bool enabled) noexcept override;
     bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
     bool IsXtermBracketedPasteModeEnabled() const noexcept override;
 
@@ -160,6 +157,7 @@ public:
     COORD GetTextBufferEndPosition() const noexcept override;
     const TextBuffer& GetTextBuffer() noexcept override;
     const FontInfo& GetFontInfo() noexcept override;
+    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
 
     void LockConsole() noexcept override;
     void UnlockConsole() noexcept override;
@@ -168,7 +166,6 @@ public:
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
     const TextAttribute GetDefaultBrushColors() noexcept override;
-    std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& attr) const noexcept override;
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
@@ -195,6 +192,7 @@ public:
     const COORD GetSelectionEnd() const noexcept override;
     const std::wstring_view GetConsoleTitle() const noexcept override;
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute) override;
+    const bool IsUiaDataInitialized() const noexcept override;
 #pragma endregion
 
     void SetWriteInputCallback(std::function<void(std::wstring&)> pfn) noexcept;
@@ -223,16 +221,30 @@ public:
 
 #pragma region TextSelection
     // These methods are defined in TerminalSelection.cpp
-    enum class SelectionExpansionMode
+    enum class SelectionDirection
     {
-        Cell,
-        Word,
-        Line
+        Left,
+        Right,
+        Up,
+        Down
     };
-    void MultiClickSelection(const COORD viewportPos, SelectionExpansionMode expansionMode);
+
+    enum class SelectionExpansion
+    {
+        Char,
+        Word,
+        Line, // Mouse selection only!
+        Viewport,
+        Buffer
+    };
+    void MultiClickSelection(const COORD viewportPos, SelectionExpansion expansionMode);
     void SetSelectionAnchor(const COORD position);
-    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansionMode> newExpansionMode = std::nullopt);
+    void SetSelectionEnd(const COORD position, std::optional<SelectionExpansion> newExpansionMode = std::nullopt);
     void SetBlockSelection(const bool isEnabled) noexcept;
+    void UpdateSelection(SelectionDirection direction, SelectionExpansion mode);
+
+    using UpdateSelectionParams = std::optional<std::pair<SelectionDirection, SelectionExpansion>>;
+    static UpdateSelectionParams ConvertKeyEventToUpdateSelectionParams(const ControlKeyStates mods, const WORD vkey);
 
     const TextBuffer::TextAndColor RetrieveSelectedTextFromBuffer(bool trimTrailingWhitespace);
 #pragma endregion
@@ -242,6 +254,18 @@ private:
     std::function<void()> _pfnWarningBell;
     std::function<void(std::wstring_view)> _pfnTitleChanged;
     std::function<void(std::wstring_view)> _pfnCopyToClipboard;
+
+    // I've specifically put this instance here as it requires
+    //   alignas(std::hardware_destructive_interference_size)
+    // for best performance.
+    //
+    // But we can abuse the fact that the surrounding members rarely change and are huge
+    // (std::function is like 64 bytes) to create some natural padding without wasting space.
+    til::ticket_lock _readWriteLock;
+#ifndef NDEBUG
+    DWORD _lastLocker;
+#endif
+
     std::function<void(const int, const int, const int)> _pfnScrollPositionChanged;
     std::function<void(const til::color)> _pfnBackgroundColorChanged;
     std::function<void()> _pfnCursorPositionChanged;
@@ -269,6 +293,8 @@ private:
     bool _suppressApplicationTitle;
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
+    bool _intenseIsBright;
+    bool _adjustIndistinguishableColors;
 
     size_t _taskbarState;
     size_t _taskbarProgress;
@@ -276,6 +302,10 @@ private:
     size_t _hyperlinkPatternId;
 
     std::wstring _workingDirectory;
+
+    // This default fake font value is only used to check if the font is a raster font.
+    // Otherwise, the font is changed to a real value with the renderer via TriggerFontChange.
+    FontInfo _fontInfo{ DEFAULT_FONT_FACE, TMPF_TRUETYPE, 10, { 0, DEFAULT_FONT_SIZE }, CP_UTF8, false };
 #pragma region Text Selection
     // a selection is represented as a range between two COORDs (start and end)
     // the pivot is the COORD that remains selected when you extend a selection in any direction
@@ -290,10 +320,8 @@ private:
     std::optional<SelectionAnchors> _selection;
     bool _blockSelection;
     std::wstring _wordDelimiters;
-    SelectionExpansionMode _multiClickSelectionMode;
+    SelectionExpansion _multiClickSelectionMode;
 #pragma endregion
-
-    std::shared_mutex _readWriteLock;
 
     // TODO: These members are not shared by an alt-buffer. They should be
     //      encapsulated, such that a Terminal can have both a main and alt buffer.
@@ -359,9 +387,16 @@ private:
     std::pair<COORD, COORD> _PivotSelection(const COORD targetPos, bool& targetStart) const;
     std::pair<COORD, COORD> _ExpandSelectionAnchors(std::pair<COORD, COORD> anchors) const;
     COORD _ConvertToBufferCell(const COORD viewportPos) const;
+    void _MoveByChar(SelectionDirection direction, COORD& pos);
+    void _MoveByWord(SelectionDirection direction, COORD& pos);
+    void _MoveByViewport(SelectionDirection direction, COORD& pos);
+    void _MoveByBuffer(SelectionDirection direction, COORD& pos);
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
+
+    void _MakeAdjustedColorArray();
+    std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

@@ -274,8 +274,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
         const FontInfo& fontInfo = activeScreenInfo.GetCurrentFont();
         consoleFontInfoEx.FontFamily = fontInfo.GetFamily();
         consoleFontInfoEx.FontWeight = fontInfo.GetWeight();
-
-        RETURN_IF_FAILED(fontInfo.FillLegacyNameBuffer(gsl::make_span(consoleFontInfoEx.FaceName)));
+        fontInfo.FillLegacyNameBuffer(consoleFontInfoEx.FaceName);
 
         return S_OK;
     }
@@ -387,7 +386,7 @@ void ApiRoutines::GetNumberOfConsoleMouseButtonsImpl(ULONG& buttons) noexcept
             RETURN_HR_IF(E_INVALIDARG, WI_IsAnyFlagSet(mode, ~(INPUT_MODES | PRIVATE_MODES)));
 
             // ECHO on with LINE off is invalid.
-            RETURN_HR_IF(E_INVALIDARG, WI_IsFlagSet(mode, ENABLE_ECHO_INPUT) && WI_IsFlagClear(mode, ENABLE_LINE_INPUT));
+            RETURN_HR_IF_EXPECTED(E_INVALIDARG, WI_IsFlagSet(mode, ENABLE_ECHO_INPUT) && WI_IsFlagClear(mode, ENABLE_LINE_INPUT));
         }
 
         return S_OK;
@@ -606,7 +605,7 @@ void ApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& cont
 
         for (size_t i = 0; i < std::size(data.ColorTable); i++)
         {
-            gci.SetColorTableEntry(i, data.ColorTable[i]);
+            gci.SetLegacyColorTableEntry(i, data.ColorTable[i]);
         }
 
         context.SetDefaultAttributes(TextAttribute{ data.wAttributes }, TextAttribute{ data.wPopupAttributes });
@@ -1249,55 +1248,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for changing the cursor keys input mode between normal and application mode.
-//     The cursor keys are the arrows, plus Home and End.
-// Parameters:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
-// Return value:
-// - True if handled successfully. False otherwise.
-[[nodiscard]] NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.pInputBuffer == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-    gci.pInputBuffer->GetTerminalInput().ChangeCursorKeysMode(fApplicationMode);
-    return STATUS_SUCCESS;
-}
-
-// Routine Description:
-// - A private API call for changing the keypad input mode between numeric and application mode.
-//     This controls what the keys on the numpad translate to.
-// Parameters:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode Input.
-// Return value:
-// - True if handled successfully. False otherwise.
-[[nodiscard]] NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    if (gci.pInputBuffer == nullptr)
-    {
-        return STATUS_UNSUCCESSFUL;
-    }
-    gci.pInputBuffer->GetTerminalInput().ChangeKeypadMode(fApplicationMode);
-    return STATUS_SUCCESS;
-}
-
-// Function Description:
-// - A private API call which enables/disables sending full input records
-//   encoded as a string of characters to the client application.
-// Parameters:
-// - win32InputMode - set to true to enable win32-input-mode, false to disable.
-// Return value:
-// - <none>
-void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.pInputBuffer->GetTerminalInput().ChangeWin32InputMode(win32InputMode);
-}
-
-// Routine Description:
 // - A private API call for changing the screen mode between normal and reverse.
 //    When in reverse screen mode, the background and foreground colors are switched.
 // Parameters:
@@ -1526,78 +1476,6 @@ void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for enabling VT200 style mouse mode.
-// Parameters:
-// - fEnable - true to enable default tracking mode, false to disable mouse mode.
-// Return value:
-// - None
-void DoSrvPrivateEnableVT200MouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableDefaultTracking(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling utf8 style mouse mode.
-// Parameters:
-// - fEnable - true to enable, false to disable.
-// Return value:
-// - None
-void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().SetUtf8ExtendedMode(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling SGR style mouse mode.
-// Parameters:
-// - fEnable - true to enable, false to disable.
-// Return value:
-// - None
-void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().SetSGRExtendedMode(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling button-event mouse mode.
-// Parameters:
-// - fEnable - true to enable button-event mode, false to disable mouse mode.
-// Return value:
-// - None
-void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableButtonEventTracking(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling any-event mouse mode.
-// Parameters:
-// - fEnable - true to enable any-event mode, false to disable mouse mode.
-// Return value:
-// - None
-void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAnyEventTracking(fEnable);
-}
-
-// Routine Description:
-// - A private API call for enabling alternate scroll mode
-// Parameters:
-// - fEnable - true to enable alternate scroll mode, false to disable.
-// Return value:
-// None
-void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.GetActiveInputBuffer()->GetTerminalInput().EnableAlternateScroll(fEnable);
-}
-
-// Routine Description:
 // - A private API call for performing a VT-style erase all operation on the buffer.
 //      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Parameters:
@@ -1607,6 +1485,12 @@ void DoSrvPrivateEnableAlternateScroll(const bool fEnable)
 [[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
 {
     return screenInfo.GetActiveBuffer().VtEraseAll();
+}
+
+// See SCREEN_INFORMATION::ClearBuffer's description for details.
+[[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo)
+{
+    return screenInfo.GetActiveBuffer().ClearBuffer();
 }
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
@@ -1637,6 +1521,30 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
     auto attr = screenInfo.GetAttributes();
     attr.SetHyperlinkId(0);
     screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
+}
+
+// Routine Description:
+// - A private API call for updating the active soft font.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - S_OK if we succeeded, otherwise the HRESULT of the failure.
+[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                          const SIZE cellSize,
+                                          const size_t centeringHint) noexcept
+{
+    try
+    {
+        auto* pRender = ServiceLocator::LocateGlobals().pRender;
+        if (pRender)
+        {
+            pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+        }
+        return S_OK;
+    }
+    CATCH_RETURN();
 }
 
 // Routine Description:
@@ -1931,15 +1839,11 @@ void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
     //      to embed control characters in that string.
     if (gci.IsInVtIoMode())
     {
-        std::wstring sanitized;
-        sanitized.reserve(title.size());
-        for (size_t i = 0; i < title.size(); i++)
-        {
-            if (title.at(i) >= UNICODE_SPACE)
-            {
-                sanitized.push_back(title.at(i));
-            }
-        }
+        std::wstring sanitized{ title };
+        sanitized.erase(std::remove_if(sanitized.begin(), sanitized.end(), [](auto ch) {
+                            return ch < UNICODE_SPACE || (ch > UNICODE_DEL && ch < UNICODE_NBSP);
+                        }),
+                        sanitized.end());
 
         gci.SetTitle({ sanitized });
     }
@@ -2074,7 +1978,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        value = gci.GetColorTableEntry(::Xterm256ToWindowsIndex(index));
+        value = gci.GetColorTableEntry(index);
 
         return S_OK;
     }
@@ -2100,7 +2004,7 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         Globals& g = ServiceLocator::LocateGlobals();
         CONSOLE_INFORMATION& gci = g.getConsoleInformation();
 
-        gci.SetColorTableEntry(::Xterm256ToWindowsIndex(index), value);
+        gci.SetColorTableEntry(index, value);
 
         // Update the screen colors if we're not a pty
         // No need to force a redraw in pty mode.
@@ -2210,10 +2114,14 @@ void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo)
         screenInfo.Write(fillData, startPosition, false);
 
         // Notify accessibility
-        auto endPosition = startPosition;
-        const auto bufferSize = screenInfo.GetBufferSize();
-        bufferSize.MoveInBounds(fillLength - 1, endPosition);
-        screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+        if (screenInfo.HasAccessibilityEventing())
+        {
+            auto endPosition = startPosition;
+            const auto bufferSize = screenInfo.GetBufferSize();
+            bufferSize.MoveInBounds(fillLength - 1, endPosition);
+            screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+        }
+
         return S_OK;
     }
     CATCH_RETURN();

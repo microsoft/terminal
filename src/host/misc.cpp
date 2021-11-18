@@ -34,27 +34,6 @@ void SetConsoleCPInfo(const BOOL fOutput)
     CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     if (fOutput)
     {
-        // If we're changing the output codepage, we want to update the font as well to give the engine an opportunity
-        // to pick a more appropriate font should the current one be unable to render in the new codepage.
-        // To do this, we create a copy of the existing font but we change the codepage value to be the new one that was just set in the global structures.
-        // NOTE: We need to do this only if everything is set up. This can get called while we're still initializing, so carefully check things for nullptr.
-        if (gci.HasActiveOutputBuffer())
-        {
-            SCREEN_INFORMATION& screenInfo = gci.GetActiveOutputBuffer();
-            const FontInfo& fiOld = screenInfo.GetCurrentFont();
-
-            // Use the desired face name when updating the font.
-            // This ensures that if we had a fall back operation last time (the desired
-            // face name didn't support the code page and we have a different less-desirable font currently)
-            // that we'll now give it another shot to use the desired face name in the new code page.
-            FontInfo fiNew(screenInfo.GetDesiredFont().GetFaceName(),
-                           fiOld.GetFamily(),
-                           fiOld.GetWeight(),
-                           fiOld.GetUnscaledSize(),
-                           gci.OutputCP);
-            screenInfo.UpdateFont(&fiNew);
-        }
-
         if (!GetCPInfo(gci.OutputCP, &gci.OutputCPInfo))
         {
             gci.OutputCPInfo.LeadByte[0] = 0;

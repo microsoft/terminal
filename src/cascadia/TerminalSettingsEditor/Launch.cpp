@@ -17,6 +17,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         InitializeComponent();
 
+        INITIALIZE_BINDABLE_ENUM_SETTING(FirstWindowPreference, FirstWindowPreference, FirstWindowPreference, L"Globals_FirstWindowPreference", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(LaunchMode, LaunchMode, LaunchMode, L"Globals_LaunchMode", L"Content");
         INITIALIZE_BINDABLE_ENUM_SETTING(WindowingBehavior, WindowingMode, WindowingMode, L"Globals_WindowingBehavior", L"Content");
 
@@ -33,7 +34,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Launch::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::LaunchPageNavigationState>();
-        _State.Settings().RefreshDefaultTerminals();
     }
 
     IInspectable Launch::CurrentDefaultProfile()
@@ -46,5 +46,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
         _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
+    }
+
+    winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultProfiles() const
+    {
+        const auto allProfiles = _State.Settings().AllProfiles();
+
+        std::vector<IInspectable> profiles;
+        profiles.reserve(allProfiles.Size());
+
+        // Remove profiles from the selection which have been explicitly deleted.
+        // We do want to show hidden profiles though, as they are just hidden
+        // from menus, but still work as the startup profile for instance.
+        for (const auto& profile : allProfiles)
+        {
+            if (!profile.Deleted())
+            {
+                profiles.emplace_back(profile);
+            }
+        }
+
+        return winrt::single_threaded_observable_vector(std::move(profiles));
+    }
+
+    bool Launch::ShowFirstWindowPreference() const noexcept
+    {
+        return Feature_PersistedWindowLayout::IsEnabled();
     }
 }

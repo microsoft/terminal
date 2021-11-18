@@ -28,7 +28,6 @@ MSC_WARNING_LEVEL       = $(MSC_WARNING_LEVEL) /wd4201
 # Code in the OneCore depot automatically excludes default Win32 libraries.
 
 # Defines IME and Codepage support
-W32_SB                  = 1
 
 # -------------------------------------
 # Sources, Headers, and Libraries

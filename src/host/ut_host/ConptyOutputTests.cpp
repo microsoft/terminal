@@ -119,6 +119,7 @@ class ConptyOutputTests
     TEST_METHOD(WriteTwoLinesUsesNewline);
     TEST_METHOD(WriteAFewSimpleLines);
     TEST_METHOD(InvalidateUntilOneBeforeEnd);
+    TEST_METHOD(SetConsoleTitleWithControlChars);
 
 private:
     bool _writeCallback(const char* const pch, size_t const cch);
@@ -361,6 +362,40 @@ void ConptyOutputTests::InvalidateUntilOneBeforeEnd()
     expectedOutput.push_back("X"); // sequence optimizer should choose ECH here
     expectedOutput.push_back("\x1b[13X");
     expectedOutput.push_back("\x1b[13C");
+
+    VERIFY_SUCCEEDED(renderer.PaintFrame());
+}
+
+void ConptyOutputTests::SetConsoleTitleWithControlChars()
+{
+    BEGIN_TEST_METHOD_PROPERTIES()
+        TEST_METHOD_PROPERTY(L"Data:control", L"{0x00, 0x0A, 0x1B, 0x80, 0x9B, 0x9C}")
+    END_TEST_METHOD_PROPERTIES()
+
+    int control;
+    VERIFY_SUCCEEDED(TestData::TryGetValue(L"control", control));
+
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderer = *g.pRender;
+
+    Log::Comment(NoThrowString().Format(
+        L"SetConsoleTitle with a control character (0x%02X) embedded in the text", control));
+
+    std::wstringstream titleText;
+    titleText << L"Hello " << wchar_t(control) << L"World!";
+    VERIFY_SUCCEEDED(DoSrvSetConsoleTitleW(titleText.str()));
+
+    // This is the standard init sequences for the first frame.
+    expectedOutput.push_back("\x1b[2J");
+    expectedOutput.push_back("\x1b[m");
+    expectedOutput.push_back("\x1b[H");
+
+    // The title change is propagated as an OSC 0 sequence.
+    // Control characters are stripped, so it's always "Hello World".
+    expectedOutput.push_back("\x1b]0;Hello World!\a");
+
+    // This is also part of the standard init sequence.
+    expectedOutput.push_back("\x1b[?25h");
 
     VERIFY_SUCCEEDED(renderer.PaintFrame());
 }

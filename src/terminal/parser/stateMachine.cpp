@@ -14,7 +14,6 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _engine(std::move(engine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
-    _isInAnsiMode(true),
     _parameters{},
     _parameterLimitReached(false),
     _oscString{},
@@ -24,9 +23,14 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _ActionClear();
 }
 
-void StateMachine::SetAnsiMode(bool ansiMode) noexcept
+void StateMachine::SetParserMode(const Mode mode, const bool enabled)
 {
-    _isInAnsiMode = ansiMode;
+    _parserMode.set(mode, enabled);
+}
+
+bool StateMachine::GetParserMode(const Mode mode) const
+{
+    return _parserMode.test(mode);
 }
 
 const IStateMachineEngine& StateMachine::Engine() const noexcept
@@ -1064,7 +1068,7 @@ void StateMachine::_EventEscape(const wchar_t wch)
             _EnterEscapeIntermediate();
         }
     }
-    else if (_isInAnsiMode)
+    else if (_parserMode.test(Mode::Ansi))
     {
         if (_isCsiIndicator(wch))
         {
@@ -1129,7 +1133,7 @@ void StateMachine::_EventEscapeIntermediate(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isInAnsiMode)
+    else if (_parserMode.test(Mode::Ansi))
     {
         _ActionEscDispatch(wch);
         _EnterGround();
@@ -1729,8 +1733,16 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     // Preprocess C1 control characters and treat them as ESC + their 7-bit equivalent.
     else if (_isC1ControlCharacter(wch))
     {
-        ProcessCharacter(AsciiChars::ESC);
-        ProcessCharacter(_c1To7Bit(wch));
+        // But note that we only do this if C1 control code parsing has been
+        // explicitly requested, since there are some code pages with "unmapped"
+        // code points that get translated as C1 controls when that is not their
+        // intended use. In order to avoid them triggering unintentional escape
+        // sequences, we ignore these characters by default.
+        if (_parserMode.test(Mode::AcceptC1))
+        {
+            ProcessCharacter(AsciiChars::ESC);
+            ProcessCharacter(_c1To7Bit(wch));
+        }
     }
     // Don't go to escape from the OSC string state - ESC can be used to terminate OSC strings.
     else if (_isEscape(wch) && _state != VTStates::OscString)
@@ -1818,7 +1830,7 @@ bool StateMachine::FlushToTerminal()
         //      that pwchCurr was processed.
         // However, if we're here, then the processing of pwchChar triggered the
         //      engine to request the entire sequence get passed through, including pwchCurr.
-        success = _engine->ActionPassThroughString(_run);
+        success = _engine->ActionPassThroughString(_CurrentRun());
     }
 
     return success;
@@ -1838,17 +1850,22 @@ void StateMachine::ProcessString(const std::wstring_view string)
     size_t start = 0;
     size_t current = start;
 
+    _currentString = string;
+    _runOffset = 0;
+    _runSize = 0;
+
     while (current < string.size())
     {
         // The run will be everything from the start INCLUDING the current one
         // in case we process the current character and it turns into a passthrough
         // fallback that picks up this _run inside `FlushToTerminal` above.
-        _run = string.substr(start, current - start + 1);
+        _runOffset = start;
+        _runSize = current - start + 1;
 
         if (_processingIndividually)
         {
             // If we're processing characters individually, send it to the state machine.
-            ProcessCharacter(string.at(current));
+            ProcessCharacter(til::at(string, current));
             ++current;
             if (_state == VTStates::Ground) // Then check if we're back at ground. If we are, the next character (pwchCurr)
             { //   is the start of the next run of characters that might be printable.
@@ -1858,14 +1875,15 @@ void StateMachine::ProcessString(const std::wstring_view string)
         }
         else
         {
-            if (_isActionableFromGround(string.at(current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
+            if (_isActionableFromGround(til::at(string, current))) // If the current char is the start of an escape sequence, or should be executed in ground state...
             {
-                if (!_run.empty())
+                if (_runSize > 0)
                 {
-                    // Because the _run above is composed INCLUDING current, we must
+                    // Because the run above is composed INCLUDING current, we must
                     // trim it off here since we just determined it's actionable
                     // and only pass through everything before it.
-                    const auto allLeadingUpTo = _run.substr(0, _run.size() - 1);
+                    _runSize -= 1;
+                    const auto allLeadingUpTo = _CurrentRun();
 
                     _engine->ActionPrintString(allLeadingUpTo); // ... print all the chars leading up to it as part of the run...
                     _trace.DispatchPrintRunTrace(allLeadingUpTo);
@@ -1885,14 +1903,23 @@ void StateMachine::ProcessString(const std::wstring_view string)
     // When we leave the loop, current has been advanced to the length of the string itself
     // (or one past the array index to the final char) so this `substr` operation doesn't +1
     // to include the final character (unlike the one inside the top of the loop above.)
-    _run = start < string.size() ? string.substr(start) : std::wstring_view{};
+    if (start < string.size())
+    {
+        _runOffset = start;
+        _runSize = std::string::npos;
+    }
+    else
+    {
+        _runSize = 0;
+    }
 
+    const auto run = _CurrentRun();
     // If we're at the end of the string and have remaining un-printed characters,
-    if (!_processingIndividually && !_run.empty())
+    if (!_processingIndividually && !run.empty())
     {
         // print the rest of the characters in the string
-        _engine->ActionPrintString(_run);
-        _trace.DispatchPrintRunTrace(_run);
+        _engine->ActionPrintString(run);
+        _trace.DispatchPrintRunTrace(run);
     }
     else if (_processingIndividually)
     {
@@ -1920,8 +1947,8 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // Reset our state, and put all but the last char in again.
             ResetState();
             // Chars to flush are [pwchSequenceStart, pwchCurr)
-            auto wchIter = _run.cbegin();
-            while (wchIter < _run.cend() - 1)
+            auto wchIter = run.cbegin();
+            while (wchIter < run.cend() - 1)
             {
                 ProcessCharacter(*wchIter);
                 wchIter++;
@@ -1961,7 +1988,13 @@ void StateMachine::ProcessString(const std::wstring_view string)
             // If the engine doesn't require flushing at the end of the string, we
             // want to cache the partial sequence in case we have to flush the whole
             // thing to the terminal later.
-            _cachedSequence = _cachedSequence.value_or(std::wstring{}) + std::wstring{ _run };
+            if (!_cachedSequence)
+            {
+                _cachedSequence.emplace(std::wstring{});
+            }
+
+            auto& cachedSequence = *_cachedSequence;
+            cachedSequence.append(run);
         }
     }
 }

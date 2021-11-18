@@ -63,20 +63,6 @@ IFACEMETHODIMP TermControlUiaTextRange::Clone(_Outptr_result_maybenull_ ITextRan
         return hr;
     }
 
-#if defined(_DEBUG) && defined(UiaTextRangeBase_DEBUG_MSGS)
-    OutputDebugString(L"Clone\n");
-    std::wstringstream ss;
-    ss << _id << L" cloned to " << (static_cast<UiaTextRangeBase*>(*ppRetVal))->_id;
-    std::wstring str = ss.str();
-    OutputDebugString(str.c_str());
-    OutputDebugString(L"\n");
-#endif
-    // TODO GitHub #1914: Re-attach Tracing to UIA Tree
-    // tracing
-    /*ApiMsgClone apiMsg;
-    apiMsg.CloneId = static_cast<UiaTextRangeBase*>(*ppRetVal)->GetId();
-    Tracing::s_TraceUia(this, ApiCall::Clone, &apiMsg);*/
-
     return S_OK;
 }
 
@@ -148,7 +134,7 @@ void TermControlUiaTextRange::_TranslatePointFromScreen(LPPOINT screenPoint) con
     screenPoint->y = includeOffsets(screenPoint->y, boundingRect.top, padding.top, scaleFactor);
 }
 
-const COORD TermControlUiaTextRange::_getScreenFontSize() const
+const COORD TermControlUiaTextRange::_getScreenFontSize() const noexcept
 {
     // Do NOT get the font info from IRenderData. It is a dummy font info.
     // Instead, the font info is saved in the TermControl. So we have to

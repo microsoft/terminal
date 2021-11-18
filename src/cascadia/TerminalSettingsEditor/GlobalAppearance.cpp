@@ -198,4 +198,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             globals.Language(currentLanguage);
         }
     }
+
+    bool GlobalAppearance::FeatureNotificationIconEnabled() const noexcept
+    {
+        return Feature_NotificationIcon::IsEnabled();
+    }
 }

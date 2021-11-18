@@ -18,10 +18,6 @@ Revision History:
 #include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
-[[nodiscard]] NTSTATUS DoSrvPrivateSetCursorKeysMode(_In_ bool fApplicationMode);
-[[nodiscard]] NTSTATUS DoSrvPrivateSetKeypadMode(_In_ bool fApplicationMode);
-void DoSrvPrivateEnableWin32InputMode(const bool win32InputMode);
-
 [[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode);
 [[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL);
 
@@ -35,14 +31,8 @@ void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool 
 [[nodiscard]] NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo);
 void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo);
 
-void DoSrvPrivateEnableVT200MouseMode(const bool fEnable);
-void DoSrvPrivateEnableUTF8ExtendedMouseMode(const bool fEnable);
-void DoSrvPrivateEnableSGRExtendedMouseMode(const bool fEnable);
-void DoSrvPrivateEnableButtonEventMouseMode(const bool fEnable);
-void DoSrvPrivateEnableAnyEventMouseMode(const bool fEnable);
-void DoSrvPrivateEnableAlternateScroll(const bool fEnable);
-
 [[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
+[[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo);
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType);
@@ -54,6 +44,10 @@ void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view params);
 
 void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
+
+[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                          const SIZE cellSize,
+                                          const size_t centeringHint) noexcept;
 
 void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
 

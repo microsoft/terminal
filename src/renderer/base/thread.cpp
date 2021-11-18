@@ -136,7 +136,14 @@ RenderThread::~RenderThread()
         else
         {
             _hThread = hThread;
-            LOG_IF_FAILED(SetThreadDescription(hThread, L"Rendering Output Thread"));
+
+            // SetThreadDescription only works on 1607 and higher. If we cannot find it,
+            // then it's no big deal. Just skip setting the description.
+            auto func = GetProcAddressByFunctionDeclaration(GetModuleHandleW(L"kernel32.dll"), SetThreadDescription);
+            if (func)
+            {
+                LOG_IF_FAILED(func(hThread, L"Rendering Output Thread"));
+            }
         }
     }
 
@@ -206,12 +213,6 @@ DWORD WINAPI RenderThread::_ThreadProc()
         LOG_IF_FAILED(_pRenderer->PaintFrame());
 
         SetEvent(_hPaintCompletedEvent);
-
-        // extra check before we sleep since it's a "long" activity, relatively speaking.
-        if (_fKeepRunning)
-        {
-            Sleep(s_FrameLimitMilliseconds);
-        }
     }
 
     return S_OK;

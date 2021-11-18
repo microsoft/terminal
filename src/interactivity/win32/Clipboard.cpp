@@ -208,7 +208,11 @@ void Clipboard::StoreSelectionToClipboard(bool const copyFormatting)
     const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
     const auto& buffer = gci.GetActiveOutputBuffer().GetTextBuffer();
 
-    const auto GetAttributeColors = std::bind(&CONSOLE_INFORMATION::LookupAttributeColors, &gci, std::placeholders::_1);
+    const auto defaultForeground = gci.GetDefaultForeground();
+    const auto defaultBackground = gci.GetDefaultBackground();
+    const auto GetAttributeColors = [=, &gci](const auto& attr) {
+        return gci.LookupAttributeColors(attr, defaultForeground, defaultBackground);
+    };
 
     bool includeCRLF, trimTrailingWhitespace;
     if (WI_IsFlagSet(GetKeyState(VK_SHIFT), KEY_PRESSED))

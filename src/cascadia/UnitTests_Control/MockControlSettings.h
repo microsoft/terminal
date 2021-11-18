@@ -8,6 +8,9 @@ Licensed under the MIT license.
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
+using IFontFeatureMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, uint32_t>;
+using IFontAxesMap = winrt::Windows::Foundation::Collections::IMap<winrt::hstring, float>;
+
 namespace ControlUnitTests
 {
     class MockControlSettings : public winrt::implements<MockControlSettings, winrt::Microsoft::Terminal::Core::ICoreSettings, winrt::Microsoft::Terminal::Control::IControlSettings, winrt::Microsoft::Terminal::Core::ICoreAppearance, winrt::Microsoft::Terminal::Control::IControlAppearance>
@@ -43,11 +46,14 @@ namespace ControlUnitTests
 
         WINRT_PROPERTY(bool, TrimBlockSelection, false);
         WINRT_PROPERTY(bool, DetectURLs, true);
+        WINRT_PROPERTY(bool, IntenseIsBright, true);
+        WINRT_PROPERTY(bool, AdjustIndistinguishableColors, true);
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);
+        WINRT_PROPERTY(winrt::hstring, ProfileSource);
         WINRT_PROPERTY(bool, UseAcrylic, false);
-        WINRT_PROPERTY(double, TintOpacity, 0.5);
+        WINRT_PROPERTY(double, Opacity, .5);
         WINRT_PROPERTY(winrt::hstring, Padding, DEFAULT_PADDING);
         WINRT_PROPERTY(winrt::hstring, FontFace, L"Consolas");
         WINRT_PROPERTY(int32_t, FontSize, DEFAULT_FONT_SIZE);
@@ -70,6 +76,7 @@ namespace ControlUnitTests
         WINRT_PROPERTY(winrt::hstring, EnvironmentVariables);
 
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible);
+        WINRT_PROPERTY(bool, UseAtlasEngine, false);
 
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 
@@ -79,6 +86,10 @@ namespace ControlUnitTests
         WINRT_PROPERTY(bool, ForceVTInput, false);
 
         WINRT_PROPERTY(winrt::hstring, PixelShaderPath);
+
+        WINRT_PROPERTY(IFontFeatureMap, FontFeatures);
+        WINRT_PROPERTY(IFontAxesMap, FontAxes);
+        WINRT_PROPERTY(bool, IntenseIsBold, true);
 
     private:
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;

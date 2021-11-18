@@ -28,6 +28,8 @@
 #include "../inc/conint.h"
 #include "../propslib/DelegationConfig.hpp"
 
+#include "tracing.hpp"
+
 #if TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
 #include "ITerminalHandoff.h"
 #endif // TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
@@ -69,11 +71,32 @@ try
         if (SUCCEEDED(DelegationConfig::s_GetDefaultConsoleId(delegationClsid)))
         {
             Globals.handoffConsoleClsid = delegationClsid;
+            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                              "SrvInit_FoundDelegationConsole",
+                              TraceLoggingGuid(Globals.handoffConsoleClsid.value(), "ConsoleClsid"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         }
         if (SUCCEEDED(DelegationConfig::s_GetDefaultTerminalId(delegationClsid)))
         {
             Globals.handoffTerminalClsid = delegationClsid;
+            TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                              "SrvInit_FoundDelegationTerminal",
+                              TraceLoggingGuid(Globals.handoffTerminalClsid.value(), "TerminalClsid"),
+                              TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                              TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         }
+    }
+
+    // Create the accessibility notifier early in the startup process.
+    // Only create if we're not in PTY mode.
+    // The notifiers use expensive legacy MSAA events and the PTY isn't even responsible
+    // for the terminal user interface, so we should set ourselves up to skip all
+    // those notifications and the mathematical calculations required to send those events
+    // for performance reasons.
+    if (!args->InConptyMode())
+    {
+        RETURN_IF_FAILED(ServiceLocator::CreateAccessibilityNotifier());
     }
 
     // Removed allocation of scroll buffer here.
@@ -325,8 +348,27 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
         RETURN_IF_FAILED(g.pDeviceComm->SetServerInformation(&ServerInformation));
     }
 
+    // Ensure that whatever we're giving to the new thread is on the heap so it cannot
+    // go out of scope by the time that thread starts.
+    // (e.g. if someone sent us a pointer to stack memory... that could happen
+    //  ask me how I know... :| )
+    std::unique_ptr<CONSOLE_API_MSG> heapConnectMessage;
+    if (connectMessage)
+    {
+        // Allocate and copy onto the heap
+        heapConnectMessage = std::make_unique<CONSOLE_API_MSG>(*connectMessage);
+
+        // Set the pointer that `CreateThread` uses to the heap space
+        connectMessage = heapConnectMessage.get();
+    }
+
     HANDLE const hThread = CreateThread(nullptr, 0, ConsoleIoThread, connectMessage, 0, nullptr);
     RETURN_HR_IF(E_HANDLE, hThread == nullptr);
+
+    // If we successfully started the other thread, it's that guy's problem to free the connect message.
+    // (If we didn't make one, it should be no problem to release the empty unique_ptr.)
+    heapConnectMessage.release();
+
     LOG_IF_FAILED(SetThreadDescription(hThread, L"Console Driver Message IO Thread"));
     LOG_IF_WIN32_BOOL_FALSE(CloseHandle(hThread)); // The thread will run on its own and close itself. Free the associated handle.
 
@@ -370,7 +412,16 @@ HRESULT ConsoleCreateIoThread(_In_ HANDLE Server,
                                               [[maybe_unused]] PCONSOLE_API_MSG connectMessage)
 try
 {
+    // Create a telemetry instance here - this singleton is responsible for
+    // setting up the g_hConhostV2EventTraceProvider, which is otherwise not
+    // initialized in the defterm handoff at this point.
+    (void)Telemetry::Instance();
+
 #if !TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_ReceiveHandoff_Disabled",
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
     return HRESULT_FROM_WIN32(ERROR_NOT_SUPPORTED);
 #else // TIL_FEATURE_RECEIVEINCOMINGHANDOFF_ENABLED
     auto& g = ServiceLocator::LocateGlobals();
@@ -388,8 +439,18 @@ try
 
     if (!g.handoffTerminalClsid)
     {
+        TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                          "SrvInit_ReceiveHandoff_NoTerminal",
+                          TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                          TraceLoggingKeyword(TIL_KEYWORD_TRACE));
         return E_NOT_SET;
     }
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_ReceiveHandoff",
+                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
     // Capture handle to the inbox process into a unique handle holder.
     g.handoffInboxConsoleHandle.reset(hostProcessHandle);
@@ -423,8 +484,18 @@ try
 
     RETURN_IF_WIN32_BOOL_FALSE(CreatePipe(outPipeTheirSide.addressof(), outPipeOurSide.addressof(), nullptr, 0));
 
-    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_ReceiveHandoff_OpenedPipes",
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
+    wil::unique_handle clientProcess{ OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ | SYNCHRONIZE, TRUE, static_cast<DWORD>(connectMessage->Descriptor.Process)) };
     RETURN_LAST_ERROR_IF_NULL(clientProcess.get());
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_ReceiveHandoff_OpenedClient",
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
     wil::unique_handle refHandle;
     RETURN_IF_NTSTATUS_FAILED(DeviceHandle::CreateClientHandle(refHandle.addressof(),
@@ -436,7 +507,18 @@ try
 
     ::Microsoft::WRL::ComPtr<ITerminalHandoff> handoff;
 
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_PrepareToCreateDelegationTerminal",
+                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
+
     RETURN_IF_FAILED(CoCreateInstance(g.handoffTerminalClsid.value(), nullptr, CLSCTX_LOCAL_SERVER, IID_PPV_ARGS(&handoff)));
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_CreatedDelegationTerminal",
+                      TraceLoggingGuid(g.handoffTerminalClsid.value(), "TerminalClsid"),
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
     RETURN_IF_FAILED(handoff->EstablishPtyHandoff(inPipeTheirSide.get(),
                                                   outPipeTheirSide.get(),
@@ -444,6 +526,11 @@ try
                                                   refHandle.get(),
                                                   serverProcess,
                                                   clientProcess.get()));
+
+    TraceLoggingWrite(g_hConhostV2EventTraceProvider,
+                      "SrvInit_DelegateToTerminalSucceeded",
+                      TraceLoggingLevel(WINEVENT_LEVEL_VERBOSE),
+                      TraceLoggingKeyword(TIL_KEYWORD_TRACE));
 
     inPipeTheirSide.reset();
     outPipeTheirSide.reset();
@@ -860,7 +947,11 @@ DWORD WINAPI ConsoleIoThread(LPVOID lpParameter)
     // If we were given a message on startup, process that in our context and then continue with the IO loop normally.
     if (lpParameter)
     {
-        ReceiveMsg = *(PCONSOLE_API_MSG)lpParameter;
+        // Capture the incoming lpParameter into a unique_ptr so we can appropriately
+        // free the heap memory when we're done getting the important bits out of it below.
+        std::unique_ptr<CONSOLE_API_MSG> capturedMessage{ static_cast<PCONSOLE_API_MSG>(lpParameter) };
+
+        ReceiveMsg = *capturedMessage.get();
         ReceiveMsg._pApiRoutines = &globals.api;
         ReceiveMsg._pDeviceComm = globals.pDeviceComm;
         IoSorter::ServiceIoOperation(&ReceiveMsg, &ReplyMsg);

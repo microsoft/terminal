@@ -15,6 +15,8 @@
 
 using namespace Microsoft::Console;
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::StateMachine;
+using Microsoft::Console::VirtualTerminal::TerminalInput;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
     _io{ io },
@@ -76,8 +78,15 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
 {
     size_t dwNumBytes = string.size() * sizeof(wchar_t);
 
-    _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
+    Cursor& cursor = _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
+    if (!cursor.IsOn())
+    {
+        cursor.SetIsOn(true);
+    }
 
+    // Defer the cursor drawing while we are iterating the string, for a better performance.
+    // We can not waste time displaying a cursor event when we know more text is coming right behind it.
+    cursor.StartDeferDrawing();
     _ntstatus = WriteCharsLegacy(_io.GetActiveOutputBuffer(),
                                  string.data(),
                                  string.data(),
@@ -87,6 +96,7 @@ void WriteBuffer::_DefaultStringCase(const std::wstring_view string)
                                  _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().GetPosition().X,
                                  WC_LIMIT_BACKSPACE | WC_DELAY_EOL_WRAP,
                                  nullptr);
+    cursor.EndDeferDrawing();
 }
 
 ConhostInternalGetSet::ConhostInternalGetSet(_In_ IIoProvider& io) :
@@ -229,60 +239,58 @@ bool ConhostInternalGetSet::SetConsoleWindowInfo(const bool absolute, const SMAL
 }
 
 // Routine Description:
-// - Connects the PrivateSetCursorKeysMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetCursorKeysMode is an internal-only "API" call that the vt commands can execute,
+// - Sets the various terminal input modes.
+//   SetInputMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
 // Arguments:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Normal Mode.
-// Return Value:
-// - true if successful (see DoSrvPrivateSetCursorKeysMode). false otherwise.
-bool ConhostInternalGetSet::PrivateSetCursorKeysMode(const bool fApplicationMode)
-{
-    return NT_SUCCESS(DoSrvPrivateSetCursorKeysMode(fApplicationMode));
-}
-
-// Routine Description:
-// - Connects the PrivateSetKeypadMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetKeypadMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - fApplicationMode - set to true to enable Application Mode Input, false for Numeric Mode.
-// Return Value:
-// - true if successful (see DoSrvPrivateSetKeypadMode). false otherwise.
-bool ConhostInternalGetSet::PrivateSetKeypadMode(const bool fApplicationMode)
-{
-    return NT_SUCCESS(DoSrvPrivateSetKeypadMode(fApplicationMode));
-}
-
-// Routine Description:
-// - Connects the PrivateEnableWin32InputMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableWin32InputMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - win32InputMode - set to true to enable win32-input-mode, false to disable.
-// Return Value:
-// - true always
-bool ConhostInternalGetSet::PrivateEnableWin32InputMode(const bool win32InputMode)
-{
-    DoSrvPrivateEnableWin32InputMode(win32InputMode);
-    return true;
-}
-
-// Routine Description:
-// - Sets the terminal emulation mode to either ANSI-compatible or VT52.
-//   PrivateSetAnsiMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// - mode - the input mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
+bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const bool enabled)
+{
+    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
+    terminalInput.SetInputMode(mode, enabled);
+
+    // If we're a conpty, AND WE'RE IN VT INPUT MODE, always pass input mode requests
+    // The VT Input mode check is to work around ssh.exe v7.7, which uses VT
+    // output, but not Input.
+    // The original comment said, "Once the conpty supports these types of input,
+    // this check can be removed. See GH#4911". Unfortunately, time has shown
+    // us that SSH 7.7 _also_ requests mouse input and that can have a user interface
+    // impact on the actual connected terminal. We can't remove this check,
+    // because SSH <=7.7 is out in the wild on all versions of Windows <=2004.
+    return !(IsConsolePty() && PrivateIsVtInputEnabled());
+}
+
+// Routine Description:
+// - Sets the various StateMachine parser modes.
+//   SetParserMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - mode - the parser mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
+// Return Value:
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
 {
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
-    stateMachine.SetAnsiMode(ansiMode);
-    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.ChangeAnsiMode(ansiMode);
+    stateMachine.SetParserMode(mode, enabled);
     return true;
+}
+
+// Routine Description:
+// - Retrieves the various StateMachine parser modes.
+//   GetParserMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - mode - the parser mode to query.
+// Return Value:
+// - true if the mode is enabled. false if disabled.
+bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const
+{
+    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
+    return stateMachine.GetParserMode(mode);
 }
 
 // Routine Description:
@@ -336,7 +344,16 @@ bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
 bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 {
     DoSrvPrivateAllowCursorBlinking(_io.GetActiveOutputBuffer(), fEnable);
-    return true;
+
+    bool isPty;
+    DoSrvIsConsolePty(isPty);
+    // If we are connected to a pty, return that we could not handle this
+    // so that the VT sequence gets flushed to terminal.
+    // Note: we technically don't need to handle it ourselves at all if
+    // we are connected to a pty (i.e. we could have just returned false
+    // immediately without needing to call DoSrvPrivateAllowCursorBlinking),
+    // but we call it anyway for consistency, just in case.
+    return !isPty;
 }
 
 // Routine Description:
@@ -432,90 +449,6 @@ bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
 }
 
 // Routine Description:
-// - Connects the PrivateEnableVT200MouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableVT200MouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable vt200 mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableVT200MouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableVT200MouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableVT200MouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableUTF8ExtendedMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableUTF8ExtendedMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable utf8 extended mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableUTF8ExtendedMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableUTF8ExtendedMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableUTF8ExtendedMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableSGRExtendedMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableSGRExtendedMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable SGR extended mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableSGRExtendedMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableSGRExtendedMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableSGRExtendedMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableButtonEventMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableButtonEventMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable button-event mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableButtonEventMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableButtonEventMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableButtonEventMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableAnyEventMouseMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableAnyEventMouseMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable any-event mouse mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableAnyEventMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableAnyEventMouseMode(const bool enabled)
-{
-    DoSrvPrivateEnableAnyEventMouseMode(enabled);
-    return true;
-}
-
-// Routine Description:
-// - Connects the PrivateEnableAlternateScroll call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEnableAlternateScroll is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
-// Arguments:
-// - enabled - set to true to enable alternate scroll mode, false to disable
-// Return Value:
-// - true if successful (see DoSrvPrivateEnableAnyEventMouseMode). false otherwise.
-bool ConhostInternalGetSet::PrivateEnableAlternateScroll(const bool enabled)
-{
-    DoSrvPrivateEnableAlternateScroll(enabled);
-    return true;
-}
-
-// Routine Description:
 // - Connects the PrivateEraseAll call directly into our Driver Message servicing call inside Conhost.exe
 //   PrivateEraseAll is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on our public API surface.
@@ -526,6 +459,11 @@ bool ConhostInternalGetSet::PrivateEnableAlternateScroll(const bool enabled)
 bool ConhostInternalGetSet::PrivateEraseAll()
 {
     return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
+}
+
+bool ConhostInternalGetSet::PrivateClearBuffer()
+{
+    return SUCCEEDED(DoSrvPrivateClearBuffer(_io.GetActiveOutputBuffer()));
 }
 
 // Method Description:
@@ -800,4 +738,19 @@ bool ConhostInternalGetSet::PrivateEndHyperlink() const
 {
     DoSrvEndHyperlink(_io.GetActiveOutputBuffer());
     return true;
+}
+
+// Routine Description:
+// - Replaces the active soft font with the given bit pattern.
+// Arguments:
+// - bitPattern - An array of scanlines representing all the glyphs in the font.
+// - cellSize - The cell size for an individual glyph.
+// - centeringHint - The horizontal extent that glyphs are offset from center.
+// Return Value:
+// - true if successful (see DoSrvUpdateSoftFont). false otherwise.
+bool ConhostInternalGetSet::PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
+                                                  const SIZE cellSize,
+                                                  const size_t centeringHint) noexcept
+{
+    return SUCCEEDED(DoSrvUpdateSoftFont(bitPattern, cellSize, centeringHint));
 }

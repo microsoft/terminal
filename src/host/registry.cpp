@@ -310,7 +310,7 @@ void Registry::LoadFromRegistry(_In_ PCWSTR const pwszConsoleTitle)
                                                      nullptr);
         if (NT_SUCCESS(Status))
         {
-            _pSettings->SetColorTableEntry(i, dwValue);
+            _pSettings->SetLegacyColorTableEntry(i, dwValue);
         }
     }
 
