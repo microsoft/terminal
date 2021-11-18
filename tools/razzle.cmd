@@ -36,17 +36,17 @@ if not defined VSWHERE (
     goto :EXIT
 )
 
-rem Add path to MSBuild Binaries
-for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
-    set MSBUILD=%%B
-)
+rem rem Add path to MSBuild Binaries
+rem for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+rem     set MSBUILD=%%B
+rem )
 
 rem Try to find MSBuild in prerelease versions of MSVS
-if not defined MSBUILD (
-    for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
-        set MSBUILD=%%B
-    )
+rem if not defined MSBUILD (
+for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+    set MSBUILD=%%B
 )
+rem )
 
 if not defined MSBUILD (
     echo Could not find MsBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
