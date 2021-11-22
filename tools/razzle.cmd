@@ -23,6 +23,16 @@ set PATH=%PATH%%OPENCON%\dep\nuget;
 rem Run nuget restore so you can use vswhere
 nuget restore %OPENCON%\OpenConsole.sln -Verbosity quiet
 
+:FIND_MSBUILD
+set MSBUILD=
+
+rem GH#1313: If msbuild is already on the path, we don't need to look for it.
+for %%X in (msbuild.exe) do (set MSBUILD=%%~$PATH:X)
+if defined MSBUILD (
+    echo Using MsBuild at %MSBUILD% which was already on the path.
+    goto :FOUND_MSBUILD
+)
+
 rem Find vswhere
 rem from https://github.com/microsoft/vs-setup-samples/blob/master/tools/vswhere.cmd
 for /f "usebackq delims=" %%I in (`dir /b /aD /o-N /s "%~dp0..\packages\vswhere*" 2^>nul`) do (
@@ -37,21 +47,22 @@ if not defined VSWHERE (
 )
 
 rem Add path to MSBuild Binaries
-for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
+rem
+rem We're going to always prefer prerelease version of VS. This lets people who
+rem are using VS 2022 use that from the commandline over the 2019 version. This
+rem will use whatever the newest version of VS is, regardless if it's stable or
+rem not.
+rem
+for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
     set MSBUILD=%%B
-)
-
-rem Try to find MSBuild in prerelease versions of MSVS
-if not defined MSBUILD (
-    for /f "usebackq tokens=*" %%B in (`%VSWHERE% -latest -prerelease -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe 2^>nul`) do (
-        set MSBUILD=%%B
-    )
 )
 
 if not defined MSBUILD (
     echo Could not find MsBuild on your machine. Please set the MSBUILD variable to the location of MSBuild.exe and run razzle again.
     goto :EXIT
 )
+
+:FOUND_MSBUILD
 
 set PATH=%PATH%%MSBUILD%\..;
 
