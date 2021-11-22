@@ -287,8 +287,4 @@
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
   <Import Project="..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets" Condition="Exists('..\..\..\packages\Microsoft.VisualStudio.Setup.Configuration.Native.2.3.2262\build\native\Microsoft.VisualStudio.Setup.Configuration.Native.targets')" />
 
-
-<!--   <ItemGroup>
-    <UpToDateCheckInput Remove="$(OpenConsoleCommonOutDir)\$(ProjectName)\microsoft.terminal.control\*.xaml" />
-  </ItemGroup> -->
 </Project>
