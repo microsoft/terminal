@@ -98,45 +98,37 @@
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
 
+  <!--
+  BODGY:
+
+  We depend on `cpprest142*.dll`, which comes from our vcpkg dependency. As a
+  part of the vcpkg dependency restore, msbuild will call the `deployBinary()`
+  function in
+  `packages\vcpkg-cpprestsdk.2.10.14\scripts\buildsystems\msbuild\applocal.ps1`.
+  That function does the actual job of copying the file. It copies it outside of
+  MsBuild. MsBuild then, in the `_CopyFilesMarkedCopyLocal` target, determines
+  that it needs to copy `cpprest142*.dll`, because that dll is a member of
+  `@(ReferencesCopiedInThisBuild)`. However, the file's already been copied, so
+  MsBuild never copies it. But that also prevents MsBuild from setting
+  `WroteAtLeastOneFile`, which then means that MsBuild will never create the
+  .copycomplete file for this project.
+
+  Because that file is missing, MsBuild will never thiqnk the project is up to
+  date, and the FastUpToDate check in VS will always force MsBuild to run a pass
+  on this project.
+
+  To mitigate this, we're adding this other target here, which runs after
+  _CopyFilesMarkedCopyLocal, and always creates the CopyUpToDateMarker. This
+  makes the FastUpTodate check succeed.
+  -->
+
   <Target
       Name="_Post_CopyFilesMarkedCopyLocal"
       AfterTargets="_CopyFilesMarkedCopyLocal"
       Condition="'@(ReferenceCopyLocalPaths)' != ''">
 
-<!--     <PropertyGroup>
-      <CreateHardLinksForCopyLocalIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateHardLinksForCopyLocalIfPossible)' == ''">false</CreateHardLinksForCopyLocalIfPossible>
-      <CreateSymbolicLinksForCopyLocalIfPossible Condition="'$(BuildingInsideVisualStudio)' == 'true' or '$(CreateSymbolicLinksForCopyLocalIfPossible)' == ''">false</CreateSymbolicLinksForCopyLocalIfPossible>
-    </PropertyGroup>
-
-    <Copy
-        SourceFiles="@(ReferenceCopyLocalPaths)"
-        DestinationFiles="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')"
-        SkipUnchangedFiles="$(SkipCopyUnchangedFiles)"
-        OverwriteReadOnlyFiles="$(OverwriteReadOnlyFiles)"
-        Retries="$(CopyRetryCount)"
-        RetryDelayMilliseconds="$(CopyRetryDelayMilliseconds)"
-        UseHardlinksIfPossible="$(CreateHardLinksForCopyLocalIfPossible)"
-        UseSymboliclinksIfPossible="$(CreateSymbolicLinksForCopyLocalIfPossible)"
-        Condition="'$(UseCommonOutputDirectory)' != 'true'"
-            >
-
-      <Output TaskParameter="DestinationFiles" ItemName="FileWritesShareable"/>
-      <Output TaskParameter="CopiedFiles" ItemName="ReferencesCopiedInThisBuild"/>
-      <Output TaskParameter="WroteAtLeastOneFile" PropertyName="WroteAtLeastOneFile"/>
-
-    </Copy> -->
-
-    <!-- If this project produces reference assemblies *and* copied (possibly transitive)
-         references on this build, subsequent builds of projects that depend on it must
-         not be considered up to date, so touch this marker file that is considered an
-         input to projects that reference this one. -->
     <Touch Files="@(CopyUpToDateMarker)"
       AlwaysCreate="true" />
-
-    <!-- <ItemGroup>
-      <FileWrites Include="@(CopyUpToDateMarker)" />
-    </ItemGroup> -->
-
   </Target>
 
 
