@@ -326,7 +326,7 @@
     Up-to-date Check will look for the .xaml files from that project in our
     output, which won't actually be there.
 
-    We do still need to seperately reference the winmds manually below, which is annoying.
+    We do still need to separately reference the winmds manually below, which is annoying.
     -->
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
       <!-- Private:false and ReferenceOutputAssembly:false, in combination with
