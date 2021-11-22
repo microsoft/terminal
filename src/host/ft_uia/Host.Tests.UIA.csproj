@@ -143,7 +143,7 @@
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy $(SolutionDir)\dep\WinAppDriver\* $(OutDir)\</PostBuildEvent>
+    <PostBuildEvent>copy &quot;$(SolutionDir)\dep\WinAppDriver\*&quot; &quot;$(OutDir)\&quot;</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\..\..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets" Condition="Exists('..\..\..\packages\Microsoft.Taef.10.60.210621002\build\Microsoft.Taef.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
