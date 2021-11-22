@@ -7,6 +7,7 @@
     <ProjectName>OpenConsoleProxy</ProjectName>
     <TargetName>OpenConsoleProxy</TargetName>
     <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType Condition="'$(Configuration)'=='Fuzzing'">StaticLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(SolutionDir)src\common.build.pre.props" />
   <ItemGroup>

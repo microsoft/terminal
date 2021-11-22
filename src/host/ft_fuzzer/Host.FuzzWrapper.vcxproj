@@ -83,6 +83,7 @@
     <!-- So, let's only add the fuzzer to the link line when we're building for Fuzzing. -->
     <Link>
       <AdditionalDependencies>WinMM.Lib;clang_rt.fuzzer-$(OCClangArchitectureName).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <!-- TODO GH#XXXX: change 'fuzzer-' to 'fuzzer_MT- above when build pools upgrade to VS 2022  -->
     </Link>
   </ItemDefinitionGroup>
   <!-- Careful reordering these. Some default props (contained in these files) are order sensitive. -->
