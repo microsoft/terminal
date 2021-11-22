@@ -325,9 +325,9 @@
     "Fast Up-to-date Check" will work with this project. If we don't, the Fast
     Up-to-date Check will look for the .xaml files from that project in our
     output, which won't actually be there.
+
+    We do still need to seperately reference the winmds manually below, which is annoying.
     -->
-
-
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
       <!-- Private:false and ReferenceOutputAssembly:false, in combination with
       the manual reference to TerminalControl.winmd below make sure that this
