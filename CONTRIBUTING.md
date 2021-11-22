@@ -110,7 +110,8 @@ Generally, we categorize issues in the following way, which is largely derived f
   - Don't require much design consideration, or we've already written the spec for the larger feature they belong to.
 * ["Features"](https://github.com/microsoft/terminal/issues?q=is%3Aopen+is%3Aissue+label%3A%22Issue-Feature%22+) are larger pieces of new functionality. These are usually things we believe would require larger discussion of how they should be implemented, or they'll require some complicated new settings. They might just be features that are composed of many individual tasks. Often times, with features, we like to have a spec written before development work is started, to make sure we're all on the same page (see below).
 
-Bugs and tasks are obviously the easiest to get started with, but don't feel afraid of features either! We;ve had some community members contribute some amazing "feature"-level work to the Terminal (albeit, with lots of discussion 😄).
+Bugs and tasks are obviously the easiest to get started with, but don't feel afraid of features either! We've had some community members contribute some amazing "feature"-level work to the Terminal (albeit, with lots of discussion 😄).
+
 
 Often, we like to assign issues that generally belong to somebody's area of expertise to the team member that owns that area. This doesn't mean the community can't jump in -- they should reach out and have a chat with the assignee to see if it'd okay to take. If an issue's been assigned more than a month ago, there's a good chance it's fair game to try yourself.
 
