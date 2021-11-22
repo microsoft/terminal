@@ -9,9 +9,12 @@ jobs:
   variables:
     BuildConfiguration: ${{ parameters.configuration }}
     BuildPlatform: ${{ parameters.platform }}
-  pool: "windevbuildagents"
-  # The public pool is also an option!
-  # pool: { vmImage: windows-2019 }
+  pool: 
+    ${{ if eq(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPoolOSS-L
+    ${{ if ne(variables['System.CollectionUri'], 'https://dev.azure.com/ms/') }}:
+      name: WinDevPool-L
+    demands: ImageOverride -equals WinDevVS16-latest
 
   steps:
   - task: PowerShell@2
@@ -22,18 +25,6 @@ jobs:
         $Arch = "$(BuildPlatform)"
         If ($Arch -Eq "x86") { $Arch = "Win32" }
         Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
-
-  - task: PowerShell@2
-    displayName: 'Validate binaries are optimized'
-    condition: eq(variables['pgoBuildMode'], 'Optimize')
-    inputs:
-      targetType: inline
-      script: |
-        $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
-        foreach ($BinFile in $Binaries)
-        {
-          & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/$BinFile"
-        }
 
   - task: CopyFiles@2
     displayName: 'Copy result logs to Artifacts'
@@ -84,20 +75,3 @@ jobs:
     inputs:
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
       ArtifactName: 'drop'
-
-  - task: CopyFiles@2
-    displayName: 'Copy PGO databases needed for PGO instrumentation run'
-    inputs:
-      Contents: |
-       **/*.pgd
-      TargetFolder: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO/$(BuildPlatform)'
-      OverWrite: true
-      flattenFolders: true
-    condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
-
-  - task: PublishBuildArtifacts@1
-    displayName: 'Publish All PGO Artifacts'
-    inputs:
-      PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO'
-      ArtifactName: 'PGO'
-    condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
