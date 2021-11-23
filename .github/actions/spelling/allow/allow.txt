@@ -3,6 +3,7 @@ apc
 Apc
 bsd
 calt
+CMMI
 ccmp
 changelog
 clickable
