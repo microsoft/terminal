@@ -47,7 +47,7 @@ stages:
       - bash: |
           set -ex
           pip -q install onefuzz
-          onefuzz config --endpoint $(endpoint) --client_id $(client_id) --authority $(authority) --tenant_domain $(tenant_domain)
+          onefuzz config --endpoint $(endpoint) --client_id $(client_id) --authority $(authority) --tenant_domain $(tenant_domain) --client_secret $(client_secret)
           sed -i s/INSERT_PAT_HERE/${ado_pat}/ build/Fuzz/notifications-ado.json
           sed -i s/INSERT_ASSIGNED_HERE/${ado_assigned_to}/ build/Fuzz/notifications-ado.json
         displayName: Configure OneFuzz
