@@ -79,7 +79,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <!-- If you don't include a '.' at the end of the $(IntermediateOutputPath),
-  mc.exe will get confused by the trailign slash. -->
+  mc.exe will get confused by the trailing slash. -->
   <Target Name="MessageCompile" Inputs="@(MessageCompile)" Outputs="$(IntermediateOutputPath)\%(MessageCompile.Filename).h" BeforeTargets="ClCompile">
     <Exec Command="mc.exe /h &quot;$(IntermediateOutputPath).&quot; /r &quot;$(IntermediateOutputPath).&quot; @(MessageCompile)" />
   </Target>
