@@ -15,7 +15,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     // in the array being identified by values from a given enumerated type.
     // Position N corresponds to bit 1<<N in the UnderlyingType integer.
     //
-    // If you only need 32 positions for your T(ype), UnderlyingType can be set uint32_t.
+    // If you only need 32 positions for your T, UnderlyingType can be set uint32_t.
     // It defaults to uintptr_t allowing you to set as many positions as a pointer has bits.
     // This class doesn't statically assert that your given position fits into UnderlyingType.
     template<typename T, typename UnderlyingType = uintptr_t>
