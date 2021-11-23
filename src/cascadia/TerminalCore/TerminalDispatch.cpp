@@ -227,7 +227,7 @@ CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::SetCursorColor(const DWORD color) noexcept
 try
 {
-    return _terminalApi.SetCursorColor(color);
+    return _terminalApi.SetColorTableEntry(TextColor::CURSOR_COLOR, color);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -247,7 +247,7 @@ CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::SetDefaultForeground(const DWORD color) noexcept
 try
 {
-    return _terminalApi.SetDefaultForeground(color);
+    return _terminalApi.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, color);
 }
 CATCH_LOG_RETURN_FALSE()
 
@@ -260,7 +260,7 @@ CATCH_LOG_RETURN_FALSE()
 bool TerminalDispatch::SetDefaultBackground(const DWORD color) noexcept
 try
 {
-    return _terminalApi.SetDefaultBackground(color);
+    return _terminalApi.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, color);
 }
 CATCH_LOG_RETURN_FALSE()
 

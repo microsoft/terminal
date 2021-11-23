@@ -110,8 +110,6 @@ void RenderData::UnlockConsole() noexcept
 const TextAttribute RenderData::GetDefaultBrushColors() noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    _defaultForeground = gci.GetDefaultForeground();
-    _defaultBackground = gci.GetDefaultBackground();
     return gci.GetActiveOutputBuffer().GetAttributes();
 }
 
@@ -226,8 +224,7 @@ ULONG RenderData::GetCursorPixelWidth() const noexcept
 COLORREF RenderData::GetCursorColor() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetColor();
+    return gci.GetColorTableEntry(TextColor::CURSOR_COLOR);
 }
 
 // Routine Description:
@@ -364,7 +361,7 @@ const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) con
 std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupAttributeColors(attr, _defaultForeground, _defaultBackground);
+    return gci.LookupAttributeColors(attr);
 }
 #pragma endregion
 

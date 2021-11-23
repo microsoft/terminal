@@ -101,7 +101,6 @@ public:
 
     bool GetUserDefaultCursorStyle(CursorType& style) override;
     bool SetCursorStyle(CursorType const style) override;
-    bool SetCursorColor(COLORREF const color) override;
 
     bool PrivateRefreshWindow() override;
 
@@ -119,12 +118,8 @@ public:
 
     bool MoveToBottom() const override;
 
-    bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept override;
-    bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept override;
-
-    bool PrivateSetDefaultForeground(const COLORREF value) const noexcept override;
-
-    bool PrivateSetDefaultBackground(const COLORREF value) const noexcept override;
+    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
 
     bool PrivateFillRegion(const COORD startPosition,
                            const size_t fillLength,

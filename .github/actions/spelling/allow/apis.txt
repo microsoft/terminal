@@ -169,6 +169,7 @@ toupper
 TTask
 TVal
 UChar
+UFIELD
 ULARGE
 UPDATEINIFILE
 userenv

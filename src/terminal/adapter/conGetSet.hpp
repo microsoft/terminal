@@ -72,7 +72,6 @@ namespace Microsoft::Console::VirtualTerminal
         virtual bool PrivateClearBuffer() = 0;
         virtual bool GetUserDefaultCursorStyle(CursorType& style) = 0;
         virtual bool SetCursorStyle(const CursorType style) = 0;
-        virtual bool SetCursorColor(const COLORREF color) = 0;
         virtual bool PrivateWriteConsoleControlInput(const KeyEvent key) = 0;
         virtual bool PrivateRefreshWindow() = 0;
 
@@ -87,10 +86,8 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual bool MoveToBottom() const = 0;
 
-        virtual bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const = 0;
-        virtual bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const = 0;
-        virtual bool PrivateSetDefaultForeground(const COLORREF value) const = 0;
-        virtual bool PrivateSetDefaultBackground(const COLORREF value) const = 0;
+        virtual COLORREF GetColorTableEntry(const size_t tableIndex) const = 0;
+        virtual bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) = 0;
 
         virtual bool PrivateFillRegion(const COORD startPosition,
                                        const size_t fillLength,

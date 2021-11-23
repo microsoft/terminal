@@ -2250,7 +2250,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
         return false;
     }
 
-    return _pConApi->SetCursorColor(cursorColor);
+    return _pConApi->SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
 }
 
 // Routine Description:
@@ -2273,7 +2273,7 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
+    const bool success = _pConApi->SetColorTableEntry(tableIndex, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2293,10 +2293,10 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetDefaultForeground(dwColor);
+    success = _pConApi->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2316,10 +2316,10 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(co
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetDefaultBackground(dwColor);
+    success = _pConApi->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
