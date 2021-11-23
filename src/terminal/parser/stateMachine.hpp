@@ -48,8 +48,8 @@ namespace Microsoft::Console::VirtualTerminal
             Ansi,
         };
 
-        void SetParserMode(const Mode mode, const bool enabled);
-        bool GetParserMode(const Mode mode) const;
+        void SetParserMode(const Mode mode, const bool enabled) noexcept;
+        bool GetParserMode(const Mode mode) const noexcept;
 
         void ProcessCharacter(const wchar_t wch);
         void ProcessString(const std::wstring_view string);
