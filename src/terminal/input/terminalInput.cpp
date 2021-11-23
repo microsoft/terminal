@@ -256,7 +256,7 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled)
     // We also clear out the last saved mouse position & button.
     if (mode == Mode::DefaultMouseTracking || mode == Mode::ButtonEventMouseTracking || mode == Mode::AnyEventMouseTracking)
     {
-        _inputMode.reset_all(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);
+        _inputMode.reset(Mode::DefaultMouseTracking, Mode::ButtonEventMouseTracking, Mode::AnyEventMouseTracking);
         _mouseInputState.lastPos = { -1, -1 };
         _mouseInputState.lastButton = 0;
     }
@@ -265,7 +265,7 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled)
     // when enabling a new encoding - not when disabling.
     if ((mode == Mode::Utf8MouseEncoding || mode == Mode::SgrMouseEncoding) && enabled)
     {
-        _inputMode.reset_all(Mode::Utf8MouseEncoding, Mode::SgrMouseEncoding);
+        _inputMode.reset(Mode::Utf8MouseEncoding, Mode::SgrMouseEncoding);
     }
 
     _inputMode.set(mode, enabled);
