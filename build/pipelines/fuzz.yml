@@ -47,11 +47,14 @@ stages:
       - bash: |
           set -ex
           pip -q install onefuzz
-          onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)
+          onefuzz config --endpoint $(endpoint) --client_id $(client_id) --authority $(authority) --tenant_domain $(tenant_domain)
           sed -i s/INSERT_PAT_HERE/${ado_pat}/ ../Fuzz/notifications-ado.json
+          sed -i s/INSERT_ASSIGNED_HERE/${ado_assigned_to}/ ../Fuzz/notifications-ado.json
         displayName: Configure OneFuzz
+      # replace the bash command below with this to run this with notifications
+      # onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $(target_exe_path) --notification_config ../Fuzz/notifications-ado.json OpenConsole $(test_name) $(Build.SourceVersion) windows
       - bash: |
-          onefuzz template libfuzzer basic OpenConsole $(test_name) $(Build.SourceVersion) windows --target_exe $(target_exe_path)
+          onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $(target_exe_path) OpenConsole $(test_name) $(Build.SourceVersion) windows
         displayName: Submit OneFuzz Job
         env:
           target_exe_path: $(Build.ArtifactStagingDirectory)/$(artifactName)/Fuzzing/x64/test/OpenConsoleFuzzer.exe

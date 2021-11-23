@@ -22,9 +22,11 @@ You can download the latest OneFuzz CLI on their [releases page](https://github.
 
 ### Configuring OneFuzz
 
-To run OneFuzz locally, you'll need to configure its endpoint, client ID, and client secret. MSR lets Microsoft employees use their endpoint at `https://onefuzz-playground.azurewebsites.net`. However, these configurations vary from project to project.
+To run OneFuzz locally, you'll need to configure its endpoint, client ID, and client secret. Windows has a preset configuration available; this can be found at [this tutorial](https://www.osgwiki.com/wiki/Fuzzing_Service_-_Azure_Edge_and_Platform#Configure_OneFuzz_CLI) on osgwiki. 
 
-`onefuzz config --endpoint $(endpoint) --client_id $(client_id) --client_secret $(client_secret)`
+
+
+`onefuzz config --endpoint $(endpoint) --client_id $(client_id) --authority $(authority) --tenant_domain $(tenant_domain)`
 
 **NOTE**: Our pipeline is already set up with these variables, so you don't need to worry about this when running this on Azure DevOps.
 
@@ -48,6 +50,8 @@ This should also output more information (i.e. job ID) about the newly created j
 
 OneFuzz supports multiple notification systems at once including MS Teams and Azure DevOps. See the resources below to learn more about setting these up.
 
+Our pipeline has been set up to create Azure DevOps work items.
+
 ### Resources
 - [OneFuzz GitHub](https://github.com/microsoft/onefuzz)
     - [Getting started using OneFuzz](https://github.com/microsoft/onefuzz/blob/main/docs/getting-started.md)
@@ -55,3 +59,4 @@ OneFuzz supports multiple notification systems at once including MS Teams and Az
 - [Notifications](https://github.com/microsoft/onefuzz/blob/main/docs/notifications.md)
     - [MS Teams](https://github.com/microsoft/onefuzz/blob/main/docs/notifications/teams.md)
     - [Azure DevOps](https://github.com/microsoft/onefuzz/blob/main/docs/notifications/ado.md)
+- [OSG Wiki - OneFuzz](https://www.osgwiki.com/wiki/Fuzzing_Service_-_Azure_Edge_and_Platform)
