@@ -64,7 +64,7 @@ class EnumSetTests
         VERIFY_ARE_EQUAL(0b10100u, flags.bits());
 
         Log::Comment(L"Set bit 0 to true");
-        flags.set(Flags::Zero);
+        flags.set(Flags::Zero, true);
         VERIFY_ARE_EQUAL(0b10101u, flags.bits());
 
         Log::Comment(L"Reset bit 2 to false, leaving 0 and 4 true");
@@ -72,7 +72,7 @@ class EnumSetTests
         VERIFY_ARE_EQUAL(0b10001u, flags.bits());
 
         Log::Comment(L"Set bit 0 to false, leaving 4 true");
-        flags.reset(Flags::Zero);
+        flags.set(Flags::Zero, false);
         VERIFY_ARE_EQUAL(0b10000u, flags.bits());
 
         Log::Comment(L"Flip bit 4, leaving all bits false ");
@@ -103,11 +103,11 @@ class EnumSetTests
         til::enumset<Flags> flags{ Flags::Zero, Flags::Two, Flags::Four };
         VERIFY_ARE_EQUAL(0b10101u, flags.bits());
 
-        Log::Comment(L"Test bits with the any method");
-        VERIFY_IS_FALSE(flags.any(Flags::One));
-        VERIFY_IS_TRUE(flags.any(Flags::Two));
-        VERIFY_IS_FALSE(flags.any(Flags::Three));
-        VERIFY_IS_TRUE(flags.any(Flags::Four));
+        Log::Comment(L"Test bits 1 through 4 with the test method");
+        VERIFY_IS_FALSE(flags.test(Flags::One));
+        VERIFY_IS_TRUE(flags.test(Flags::Two));
+        VERIFY_IS_FALSE(flags.test(Flags::Three));
+        VERIFY_IS_TRUE(flags.test(Flags::Four));
 
         Log::Comment(L"Test if any bits are set");
         VERIFY_IS_TRUE(flags.any());

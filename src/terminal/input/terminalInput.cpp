@@ -250,7 +250,7 @@ const wchar_t* const CTRL_QUESTIONMARK_SEQUENCE = L"\x7F";
 const wchar_t* const CTRL_ALT_SLASH_SEQUENCE = L"\x1b\x1f";
 const wchar_t* const CTRL_ALT_QUESTIONMARK_SEQUENCE = L"\x1b\x7F";
 
-void TerminalInput::SetInputMode(const Mode mode, const bool enabled)
+void TerminalInput::SetInputMode(const Mode mode, const bool enabled) noexcept
 {
     // If we're changing a tracking mode, we always clear other tracking modes first.
     // We also clear out the last saved mouse position & button.
@@ -271,7 +271,7 @@ void TerminalInput::SetInputMode(const Mode mode, const bool enabled)
     _inputMode.set(mode, enabled);
 }
 
-bool TerminalInput::GetInputMode(const Mode mode) const
+bool TerminalInput::GetInputMode(const Mode mode) const noexcept
 {
     return _inputMode.test(mode);
 }

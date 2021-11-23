@@ -11,14 +11,17 @@
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    // til::enumset is a subclass of std::bitset, storing a fixed size array of
-    // boolean elements, the positions in the array being identified by values
-    // from a given enumerated type. By default it holds the same number of
-    // bits as a size_t value.
-    template<typename T>
+    // til::enumset stores a fixed size array of boolean elements, the positions
+    // in the array being identified by values from a given enumerated type.
+    // Position N corresponds to bit 1<<N in the UnderlyingType integer.
+    //
+    // If you only need 32 positions for your T(ype), UnderlyingType can be set uint32_t.
+    // It defaults to uintptr_t allowing you to set as many positions as a pointer has bits.
+    // This class doesn't statically assert that your given position fits into UnderlyingType.
+    template<typename T, typename UnderlyingType = uintptr_t>
     class enumset
     {
-        using underlying_type = uintptr_t;
+        static_assert(std::is_unsigned_v<UnderlyingType>);
 
     public:
         // Method Description:
@@ -29,7 +32,9 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        underlying_type bits() const noexcept
+        // Method Description:
+        // - Returns the underlying bit positions as a copy.
+        constexpr UnderlyingType bits() const noexcept
         {
             return _data;
         }
@@ -38,7 +43,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // - Returns the value of the bit at the given position.
         //   Throws std::out_of_range if it is not a valid position
         //   in the bitset.
-        bool test(const T pos) const noexcept
+        constexpr bool test(const T pos) const noexcept
         {
             const auto mask = to_underlying(pos);
             return (_data & mask) != 0;
@@ -46,7 +51,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Method Description:
         // - Returns true if any of the bits are set to true.
-        bool any() const noexcept
+        constexpr bool any() const noexcept
         {
             return _data != 0;
         }
@@ -54,7 +59,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // Method Description:
         // - Returns true if any of the bits in the given positions are true.
         TIL_ENUMSET_VARARG
-        bool any(Args... positions) const noexcept
+        constexpr bool any(Args... positions) const noexcept
         {
             const auto mask = to_underlying(positions...);
             return (_data & mask) != 0;
@@ -62,15 +67,15 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         // Method Description:
         // - Returns true if all of the bits are set to true.
-        bool all() const noexcept
+        constexpr bool all() const noexcept
         {
-            return _data == ~underlying_type(0);
+            return _data == ~UnderlyingType{ 0 };
         }
 
         // Method Description:
         // - Returns true if all of the bits in the given positions are true.
         TIL_ENUMSET_VARARG
-        bool all(Args... positions) const noexcept
+        constexpr bool all(Args... positions) const noexcept
         {
             const auto mask = to_underlying(positions...);
             return (_data & mask) == mask;
@@ -89,14 +94,11 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         // - Sets the bit in the given position to the specified value.
         constexpr enumset& set(const T pos, const bool val) noexcept
         {
-            if (val)
-            {
-                set(pos);
-            }
-            else
-            {
-                reset(pos);
-            }
+            const auto mask = to_underlying(pos);
+            // false == 0 --> UnderlyingType(-0) == 0b0000...
+            // true == 1  --> UnderlyingType(-1) == 0b1111...
+#pragma warning(suppress : 4804) // '-': unsafe use of type 'bool' in operation
+            _data = (_data & ~mask) | (-val & mask);
             return *this;
         }
 
@@ -120,17 +122,17 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
     private:
         template<typename... Args>
-        static constexpr underlying_type to_underlying(Args... positions) noexcept
+        static constexpr UnderlyingType to_underlying(Args... positions) noexcept
         {
-            return ((underlying_type{ 1 } << static_cast<underlying_type>(positions)) | ...);
+            return ((UnderlyingType{ 1 } << static_cast<UnderlyingType>(positions)) | ...);
         }
 
         template<>
-        static constexpr underlying_type to_underlying() noexcept
+        static constexpr UnderlyingType to_underlying() noexcept
         {
             return 0;
         }
 
-        underlying_type _data{};
+        UnderlyingType _data{};
     };
 }
