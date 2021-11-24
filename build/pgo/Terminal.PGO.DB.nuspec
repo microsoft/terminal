@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>Terminal.PGO.DB</id>
+    <id>Microsoft.Internal.Windows.Terminal.PGODatabase</id>
     <version>0</version>
     <title>Windows Terminal PGO Database</title>
     <authors>Microsoft</authors>
