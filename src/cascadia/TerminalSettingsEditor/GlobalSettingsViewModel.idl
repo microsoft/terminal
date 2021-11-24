@@ -1,0 +1,55 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+#include "ViewModelHelpers.idl.h"
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    runtimeclass GlobalSettingsViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        // TODO CARLOS: we should replace this with a reference to an actual profile object
+        Guid DefaultProfile;
+
+        void SetInvertedDisableAnimationsValue(Boolean invertedDisableAnimationsValue);
+
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Int32, InitialRows);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Int32, InitialCols);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowTabs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTitleInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ConfirmCloseAllTabs);
+        OBSERVABLE_PROJECTED_SETTING(String, Language);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Windows.UI.Xaml.ElementTheme, Theme);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.UI.Xaml.Controls.TabViewWidthMode, TabWidthMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, UseAcrylicInTabRow);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowTabsInTitlebar);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, WordDelimiters);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CopyOnSelect);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, InputServiceWarning);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Control.CopyFormat, CopyFormatting);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutLargePaste);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, WarnAboutMultiLinePaste);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimPaste);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.LaunchPosition, InitialPosition);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, CenterOnLaunch);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.FirstWindowPreference, FirstWindowPreference);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.LaunchMode, LaunchMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SnapToGridOnResize);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceFullRepaintRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, SoftwareRendering);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ForceVTInput);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DebugFeaturesEnabled);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, StartOnUserLogin);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysOnTop);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.TabSwitcherMode, TabSwitcherMode);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DisableAnimations);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(String, StartupActions);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, FocusFollowMouse);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Microsoft.Terminal.Settings.Model.WindowingMode, WindowingBehavior);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, TrimBlockSelection);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, DetectURLs);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, MinimizeToNotificationArea);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, AlwaysShowNotificationIcon);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(IVector<String>, DisabledProfileSources);
+        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Boolean, ShowAdminShield);
+    }
+}

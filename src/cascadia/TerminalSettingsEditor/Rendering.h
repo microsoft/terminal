@@ -12,10 +12,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct RenderingPageNavigationState : RenderingPageNavigationStateT<RenderingPageNavigationState>
     {
     public:
-        RenderingPageNavigationState(const Model::GlobalAppSettings& settings) :
+        RenderingPageNavigationState(const Editor::GlobalSettingsViewModel& settings) :
             _Globals{ settings } {}
 
-        WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
+        WINRT_PROPERTY(Editor::GlobalSettingsViewModel, Globals, nullptr)
     };
 
     struct Rendering : public HasScrollViewer<Rendering>, RenderingT<Rendering>

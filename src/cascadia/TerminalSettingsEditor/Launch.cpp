@@ -38,14 +38,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     IInspectable Launch::CurrentDefaultProfile()
     {
-        const auto defaultProfileGuid{ _State.Settings().GlobalSettings().DefaultProfile() };
+        const auto defaultProfileGuid{ _State.Globals().DefaultProfile() };
         return winrt::box_value(_State.Settings().FindProfile(defaultProfileGuid));
     }
 
     void Launch::CurrentDefaultProfile(const IInspectable& value)
     {
         const auto profile{ winrt::unbox_value<Model::Profile>(value) };
-        _State.Settings().GlobalSettings().DefaultProfile(profile.Guid());
+        _State.Globals().DefaultProfile(profile.Guid());
     }
 
     winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> Launch::DefaultProfiles() const

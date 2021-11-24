@@ -22,6 +22,7 @@
       <Filter>Converters</Filter>
     </Midl>
     <Midl Include="SettingContainer.idl" />
+    <Midl Include="GlobalSettingsViewModel.idl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

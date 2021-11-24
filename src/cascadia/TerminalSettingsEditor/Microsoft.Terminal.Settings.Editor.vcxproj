@@ -52,6 +52,9 @@
     <ClInclude Include="GlobalAppearance.h">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClInclude>
+    <ClInclude Include="GlobalSettingsViewModel.h">
+      <DependentUpon>GlobalSettingsViewModel.idl</DependentUpon>
+    </ClInclude>
     <ClInclude Include="ColorSchemes.h">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -143,6 +146,10 @@
     <ClCompile Include="GlobalAppearance.cpp">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
     </ClCompile>
+    <ClCompile Include="GlobalSettingsViewModel.cpp">
+      <DependentUpon>GlobalSettingsViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="ColorSchemes.cpp">
       <DependentUpon>ColorSchemes.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -196,6 +203,9 @@
     <Midl Include="EnumEntry.idl" />
     <Midl Include="GlobalAppearance.idl">
       <DependentUpon>GlobalAppearance.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Midl>
+    <Midl Include="GlobalSettingsViewModel.idl">
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ColorSchemes.idl">

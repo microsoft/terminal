@@ -12,10 +12,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct GlobalAppearancePageNavigationState : GlobalAppearancePageNavigationStateT<GlobalAppearancePageNavigationState>
     {
     public:
-        GlobalAppearancePageNavigationState(const Model::GlobalAppSettings& settings) :
+        GlobalAppearancePageNavigationState(const Editor::GlobalSettingsViewModel& settings) :
             _Globals{ settings } {}
 
-        WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
+        WINRT_PROPERTY(Editor::GlobalSettingsViewModel, Globals, nullptr)
     };
 
     struct GlobalAppearance : public HasScrollViewer<GlobalAppearance>, GlobalAppearanceT<GlobalAppearance>

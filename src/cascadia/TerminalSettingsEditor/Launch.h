@@ -12,9 +12,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct LaunchPageNavigationState : LaunchPageNavigationStateT<LaunchPageNavigationState>
     {
     public:
-        LaunchPageNavigationState(const Model::CascadiaSettings& settings) :
+        LaunchPageNavigationState(const Editor::GlobalSettingsViewModel& globals, const Model::CascadiaSettings& settings) :
+            _Globals{ globals },
             _Settings{ settings } {}
 
+        WINRT_PROPERTY(Editor::GlobalSettingsViewModel, Globals, nullptr)
         WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
     };
 
@@ -33,9 +35,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
 
-        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, State().Settings().GlobalSettings, FirstWindowPreference);
-        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Settings().GlobalSettings, LaunchMode);
-        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Settings().GlobalSettings, WindowingBehavior);
+        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, State().Globals, FirstWindowPreference);
+        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Globals, LaunchMode);
+        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Globals, WindowingBehavior);
     };
 }
 

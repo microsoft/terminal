@@ -12,10 +12,10 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct InteractionPageNavigationState : InteractionPageNavigationStateT<InteractionPageNavigationState>
     {
     public:
-        InteractionPageNavigationState(const Model::GlobalAppSettings& settings) :
+        InteractionPageNavigationState(const Editor::GlobalSettingsViewModel& settings) :
             _Globals{ settings } {}
 
-        WINRT_PROPERTY(Model::GlobalAppSettings, Globals, nullptr)
+        WINRT_PROPERTY(Editor::GlobalSettingsViewModel, Globals, nullptr)
     };
 
     struct Interaction : public HasScrollViewer<Interaction>, InteractionT<Interaction>
