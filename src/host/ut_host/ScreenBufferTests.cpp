@@ -2572,7 +2572,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
 
     if (writeSingly)
     {
-        wchar_t* str = L"X";
+        auto str = L"X";
         size_t seqCb = 2;
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
@@ -2581,7 +2581,7 @@ void ScreenBufferTests::BackspaceDefaultAttrsWriteCharsLegacy()
     }
     else
     {
-        wchar_t* str = L"XX\x08";
+        const auto str = L"XX\x08";
         size_t seqCb = 6;
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, writeCharsLegacyMode, nullptr));
     }

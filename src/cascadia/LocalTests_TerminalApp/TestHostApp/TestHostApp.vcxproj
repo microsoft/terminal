@@ -51,10 +51,10 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
+      <!-- Disable two-phase name lookup for C++/CLI & C++/CX code. -->
+      <AdditionalOptions>%(AdditionalOptions) /Zc:twoPhase-</AdditionalOptions>
       <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)
-        ;$(IntermediateOutputPath)
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IntermediateOutputPath)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

@@ -12,8 +12,6 @@
 // - Ensures the SxS initialization for the process.
 void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range(MAX_PATH, MAX_PATH) DWORD ScratchBufferSize)
 {
-    ACTCTXW actctx = { 0 };
-
     // Account for the fact that sidebyside stuff happens in CreateProcess
     // but conhost is run with RtlCreateUserProcess.
 
@@ -30,38 +28,35 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
     // make references to DLLs in the system that are in the SxS cache (ex. a 3rd party IME is loaded and asks for
     // comctl32.dll. The load will fail if SxS wasn't initialized.) This was bug# WIN7:681280.
 
-    // We look at the first few chars without being careful about a terminal nul, so init them.
-    ScratchBuffer[0] = 0;
-    ScratchBuffer[1] = 0;
-    ScratchBuffer[2] = 0;
-    ScratchBuffer[3] = 0;
-    ScratchBuffer[4] = 0;
-    ScratchBuffer[5] = 0;
-    ScratchBuffer[6] = 0;
-
-    // GetModuleFileNameW truncates its result to fit in the buffer, so to detect if we fit, we have to do this.
-    ScratchBuffer[ScratchBufferSize - 2] = 0;
     DWORD const dwModuleFileNameLength = GetModuleFileNameW(nullptr, ScratchBuffer, ScratchBufferSize);
     if (dwModuleFileNameLength == 0)
     {
         RIPMSG1(RIP_ERROR, "GetModuleFileNameW failed %d.\n", GetLastError());
-        goto Exit;
+        return;
     }
-    if (ScratchBuffer[ScratchBufferSize - 2] != 0)
+    // GetModuleFileNameW truncates its result to fit in the buffer
+    // and returns the given buffer size in such cases.
+    if (dwModuleFileNameLength == ScratchBufferSize)
     {
         RIPMSG1(RIP_ERROR, "GetModuleFileNameW requires more than ScratchBufferSize(%d) - 1.\n", ScratchBufferSize);
-        goto Exit;
+        return;
     }
 
     // We get an NT path from the Win32 api. Fix it to be Win32.
+    // We can test for NT paths by checking whether the string starts with "\??\C:\", or any
+    // alternative letter other than C. We specifically don't test for the drive letter below.
     UINT NtToWin32PathOffset = 0;
-    if (ScratchBuffer[0] == '\\' && ScratchBuffer[1] == '?' && ScratchBuffer[2] == '?' && ScratchBuffer[3] == '\\'
-        //&& ScratchBuffer[4] == a drive letter
-        && ScratchBuffer[5] == ':' && ScratchBuffer[6] == '\\')
+    static constexpr wchar_t ntPathSpec1[]{ L'\\', L'?', L'?', L'\\' };
+    static constexpr wchar_t ntPathSpec2[]{ L':', L'\\' };
+    if (
+        dwModuleFileNameLength >= 7 &&
+        memcmp(&ScratchBuffer[0], &ntPathSpec1[0], sizeof(ntPathSpec1)) == 0 &&
+        memcmp(&ScratchBuffer[5], &ntPathSpec2[0], sizeof(ntPathSpec2)) == 0)
     {
         NtToWin32PathOffset = 4;
     }
 
+    ACTCTXW actctx{};
     actctx.cbSize = sizeof(actctx);
     actctx.dwFlags = (ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_SET_PROCESS_DEFAULT);
     actctx.lpResourceName = MAKEINTRESOURCE(IDR_SYSTEM_MANIFEST);
@@ -83,11 +78,7 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
         {
             RIPMSG1(RIP_WARNING, "InitSideBySide failed create an activation context. Error: %d\r\n", error);
         }
-        goto Exit;
     }
-
-Exit:
-    ScratchBuffer[0] = 0;
 }
 
 // Routine Description:
