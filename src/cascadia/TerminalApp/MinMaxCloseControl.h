@@ -6,11 +6,9 @@
 
 #pragma once
 
-#include "winrt/Windows.UI.Xaml.h"
-#include "winrt/Windows.UI.Xaml.Markup.h"
-#include "winrt/Windows.UI.Xaml.Interop.h"
 #include "MinMaxCloseControl.g.h"
 #include "../../cascadia/inc/cppwinrt_utils.h"
+#include <ThrottledFunc.h>
 
 namespace winrt::TerminalApp::implementation
 {
@@ -19,6 +17,10 @@ namespace winrt::TerminalApp::implementation
         MinMaxCloseControl();
 
         void SetWindowVisualState(WindowVisualState visualState);
+
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        void ReleaseButtons();
 
         void _MinimizeClick(winrt::Windows::Foundation::IInspectable const& sender,
                             winrt::Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -30,6 +32,9 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(MinimizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(MaximizeClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
         TYPED_EVENT(CloseClick, TerminalApp::MinMaxCloseControl, winrt::Windows::UI::Xaml::RoutedEventArgs);
+
+        std::shared_ptr<ThrottledFuncTrailing<winrt::Windows::UI::Xaml::Controls::Button>> _displayToolTip{ nullptr };
+        std::optional<CaptionButton> _lastPressedButton{ std::nullopt };
     };
 }
 
