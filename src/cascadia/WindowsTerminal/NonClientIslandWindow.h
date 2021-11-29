@@ -62,6 +62,7 @@ private:
     winrt::Windows::UI::Xaml::ElementTheme _theme;
 
     bool _isMaximized;
+    bool _trackingMouse{ false };
 
     [[nodiscard]] static LRESULT __stdcall _StaticInputSinkWndProc(HWND const window, UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
     [[nodiscard]] LRESULT _InputSinkMessageHandler(UINT const message, WPARAM const wparam, LPARAM const lparam) noexcept;
@@ -71,6 +72,7 @@ private:
     int _GetResizeHandleHeight() const noexcept;
     RECT _GetDragAreaRect() const noexcept;
     int _GetTopBorderHeight() const noexcept;
+    LRESULT _dragBarNcHitTest(const til::point& pointer);
 
     [[nodiscard]] LRESULT _OnNcCreate(WPARAM wParam, LPARAM lParam) noexcept override;
     [[nodiscard]] LRESULT _OnNcCalcSize(const WPARAM wParam, const LPARAM lParam) noexcept;
