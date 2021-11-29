@@ -247,7 +247,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ClearParents();
         com_ptr<TerminalSettings> parentImpl;
         parentImpl.copy_from(get_self<TerminalSettings>(parent));
-        InsertParent(parentImpl);
+        AddLeastImportantParent(parentImpl);
     }
 
     Model::TerminalSettings TerminalSettings::GetParent()
