@@ -54,7 +54,7 @@ stages:
       # replace the bash command below with this to run this with notifications
       # onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $target_exe_path --notification_config build/Fuzz/notifications-ado.json OpenConsole $test_name $(Build.SourceVersion) windows
       - bash: |
-          onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $target_exe_path OpenConsole $test_name $(Build.SourceVersion) windows
+          onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $target_exe_path OpenConsole $test_name $(Build.SourceVersion) default
         displayName: Submit OneFuzz Job
         env:
           target_exe_path: $(Build.ArtifactStagingDirectory)/$(artifactName)/Fuzzing/x64/test/OpenConsoleFuzzer.exe
