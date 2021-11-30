@@ -4,9 +4,7 @@ pr: none
 
 pool: 
   name: WinDevPool-L
-  demands: 
-   - ImageOverride -equals WinDevVS16-latest
-   - ImageVersionOverride -equals 2.0.0
+  demands: ImageOverride -equals WinDevVS16-latest
 
 parameters:
   - name: branding
@@ -310,7 +308,7 @@ jobs:
       project: $(System.TeamProjectId)
       pipeline: 70913
       buildVersionToDownload: 'specific'
-      buildId: 37520569
+      buildId: 41716590
   - task: ExtractFiles@1
     inputs:
       archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.msix'
