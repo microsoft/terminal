@@ -96,6 +96,11 @@ bool DxFontInfo::GetFallback() const noexcept
     return _didFallback;
 }
 
+IDWriteFontCollection* DxFontInfo::GetNearbyCollection() const noexcept
+{
+    return _nearbyCollection.Get();
+}
+
 void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
                                const DWRITE_FONT_WEIGHT weight,
                                const DWRITE_FONT_STYLE style,
@@ -223,13 +228,11 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     // If the system collection missed, try the files sitting next to our binary.
     if (withNearbyLookup && !familyExists)
     {
-        auto&& nearbyCollection = _NearbyCollection(dwriteFactory);
-
         // May be null on OS below Windows 10. If null, just skip the attempt.
-        if (nearbyCollection)
+        if (const auto nearbyCollection = _NearbyCollection(dwriteFactory))
         {
-            nearbyCollection.As(&fontCollection);
-            THROW_IF_FAILED(fontCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
+            THROW_IF_FAILED(nearbyCollection->FindFamilyName(_familyName.data(), &familyIndex, &familyExists));
+            fontCollection = nearbyCollection;
         }
     }
 
@@ -332,42 +335,48 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
 // - dwriteFactory - The DWrite factory to use
 // Return Value:
 // - DirectWrite font collection. May be null if one cannot be created.
-[[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& DxFontInfo::_NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const
+[[nodiscard]] IDWriteFontCollection* DxFontInfo::_NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory)
 {
-    // Magic static so we only attempt to grovel the hard disk once no matter how many instances
-    // of the font collection itself we require.
-    static const auto knownPaths = s_GetNearbyFonts();
+    if (_nearbyCollection)
+    {
+        return _nearbyCollection.Get();
+    }
 
     // The convenience interfaces for loading fonts from files
     // are only available on Windows 10+.
-    // Don't try to look up if below that OS version.
-    static const bool s_isWindows10OrGreater = IsWindows10OrGreater();
-
-    if (s_isWindows10OrGreater && !_nearbyCollection)
+    ::Microsoft::WRL::ComPtr<IDWriteFactory6> factory6;
+    if (FAILED(dwriteFactory->QueryInterface<IDWriteFactory6>(&factory6)))
     {
-        // Factory3 has a convenience to get us a font set builder.
-        ::Microsoft::WRL::ComPtr<IDWriteFactory3> factory3;
-        THROW_IF_FAILED(dwriteFactory->QueryInterface<IDWriteFactory3>(&factory3));
-
-        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder> fontSetBuilder;
-        THROW_IF_FAILED(factory3->CreateFontSetBuilder(&fontSetBuilder));
-
-        // Builder2 has a convenience to just feed in paths to font files.
-        ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder2> fontSetBuilder2;
-        THROW_IF_FAILED(fontSetBuilder.As(&fontSetBuilder2));
-
-        for (auto& p : knownPaths)
-        {
-            fontSetBuilder2->AddFontFile(p.c_str());
-        }
-
-        ::Microsoft::WRL::ComPtr<IDWriteFontSet> fontSet;
-        THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(&fontSet));
-
-        THROW_IF_FAILED(factory3->CreateFontCollectionFromFontSet(fontSet.Get(), &_nearbyCollection));
+        return nullptr;
     }
 
-    return _nearbyCollection;
+    ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> systemFontCollection;
+    THROW_IF_FAILED(factory6->GetSystemFontCollection(false, &systemFontCollection, 0));
+
+    ::Microsoft::WRL::ComPtr<IDWriteFontSet> systemFontSet;
+    THROW_IF_FAILED(systemFontCollection->GetFontSet(&systemFontSet));
+
+    ::Microsoft::WRL::ComPtr<IDWriteFontSetBuilder2> fontSetBuilder2;
+    THROW_IF_FAILED(factory6->CreateFontSetBuilder(&fontSetBuilder2));
+
+    THROW_IF_FAILED(fontSetBuilder2->AddFontSet(systemFontSet.Get()));
+
+    // Magic static so we only attempt to grovel the hard disk once no matter how many instances
+    // of the font collection itself we require.
+    static const auto knownPaths = s_GetNearbyFonts();
+    for (auto& p : knownPaths)
+    {
+        fontSetBuilder2->AddFontFile(p.c_str());
+    }
+
+    ::Microsoft::WRL::ComPtr<IDWriteFontSet> fontSet;
+    THROW_IF_FAILED(fontSetBuilder2->CreateFontSet(&fontSet));
+
+    ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> fontCollection;
+    THROW_IF_FAILED(factory6->CreateFontCollectionFromFontSet(fontSet.Get(), &fontCollection));
+
+    _nearbyCollection = fontCollection;
+    return _nearbyCollection.Get();
 }
 
 // Routine Description:
@@ -386,18 +395,11 @@ void DxFontInfo::SetFromEngine(const std::wstring_view familyName,
     const std::filesystem::path module{ wil::GetModuleFileNameW<std::wstring>(nullptr) };
     const auto folder{ module.parent_path() };
 
-    for (auto& p : std::filesystem::directory_iterator(folder))
+    for (const auto& p : std::filesystem::directory_iterator(folder))
     {
-        if (p.is_regular_file())
+        if (til::ends_with(p.path().native(), L".ttf"))
         {
-            auto extension = p.path().extension().wstring();
-            std::transform(extension.begin(), extension.end(), extension.begin(), std::towlower);
-
-            static constexpr std::wstring_view ttfExtension{ L".ttf" };
-            if (ttfExtension == extension)
-            {
-                paths.push_back(p);
-            }
+            paths.push_back(p.path());
         }
     }
 

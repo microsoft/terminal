@@ -1101,10 +1101,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        // The Terminal internally stores it's BG with 0 opacity, so as to allow
-        // DX to paint the BG color transparently. We however don't want to leak
-        // that implementation detail.
-        return _terminal->GetDefaultBackground().with_alpha(0xff);
+        return til::color{ _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
     }
 
     // Method Description:

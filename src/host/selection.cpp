@@ -16,7 +16,6 @@ Selection::Selection() :
     _fSelectionVisible(false),
     _ulSavedCursorSize(0),
     _fSavedCursorVisible(false),
-    _savedCursorColor(INVALID_COLOR),
     _savedCursorType(CursorType::Legacy),
     _dwSelectionFlags(0),
     _fLineSelection(true),

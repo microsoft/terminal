@@ -15,6 +15,7 @@
 
 using namespace Microsoft::Console;
 using Microsoft::Console::Interactivity::ServiceLocator;
+using Microsoft::Console::VirtualTerminal::StateMachine;
 using Microsoft::Console::VirtualTerminal::TerminalInput;
 
 WriteBuffer::WriteBuffer(_In_ Microsoft::Console::IIoProvider& io) :
@@ -263,20 +264,33 @@ bool ConhostInternalGetSet::SetInputMode(const TerminalInput::Mode mode, const b
 }
 
 // Routine Description:
-// - Sets the terminal emulation mode to either ANSI-compatible or VT52.
-//   PrivateSetAnsiMode is an internal-only "API" call that the vt commands can execute,
+// - Sets the various StateMachine parser modes.
+//   SetParserMode is an internal-only "API" call that the vt commands can execute,
 //     but it is not represented as a function call on out public API surface.
 // Arguments:
-// - ansiMode - set to true to enable the ANSI mode, false for VT52 mode.
+// - mode - the parser mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
 // - true if successful. false otherwise.
-bool ConhostInternalGetSet::PrivateSetAnsiMode(const bool ansiMode)
+bool ConhostInternalGetSet::SetParserMode(const StateMachine::Mode mode, const bool enabled)
 {
     auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
-    stateMachine.SetAnsiMode(ansiMode);
-    auto& terminalInput = _io.GetActiveInputBuffer()->GetTerminalInput();
-    terminalInput.SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+    stateMachine.SetParserMode(mode, enabled);
     return true;
+}
+
+// Routine Description:
+// - Retrieves the various StateMachine parser modes.
+//   GetParserMode is an internal-only "API" call that the vt commands can execute,
+//     but it is not represented as a function call on out public API surface.
+// Arguments:
+// - mode - the parser mode to query.
+// Return Value:
+// - true if the mode is enabled. false if disabled.
+bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const
+{
+    auto& stateMachine = _io.GetActiveOutputBuffer().GetStateMachine();
+    return stateMachine.GetParserMode(mode);
 }
 
 // Routine Description:
@@ -539,21 +553,6 @@ bool ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 }
 
 // Routine Description:
-// - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
-//   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
-// Arguments:
-// - cursorColor: The color to change the cursor to. INVALID_COLOR will revert
-//      it to the legacy inverting behavior.
-// Return Value:
-// - true if successful (see DoSrvSetCursorStyle). false otherwise.
-bool ConhostInternalGetSet::SetCursorColor(const COLORREF cursorColor)
-{
-    DoSrvSetCursorColor(_io.GetActiveOutputBuffer(), cursorColor);
-    return true;
-}
-
-// Routine Description:
 // - Connects the IsConsolePty call directly into our Driver Message servicing call inside Conhost.exe
 // - NOTE: This ONE method behaves differently! The rest of the methods on this
 //   interface return true if successful. This one just returns the result.
@@ -594,54 +593,61 @@ bool ConhostInternalGetSet::MoveToBottom() const
 }
 
 // Method Description:
-// - Connects the PrivateGetColorTableEntry call directly into our Driver Message servicing
-//      call inside Conhost.exe
+// - Retrieves the value in the colortable at the specified index.
 // Arguments:
-// - index: the index in the table to retrieve.
-// - value: receives the RGB value for the color at that index in the table.
+// - tableIndex: the index of the color table to retrieve.
 // Return Value:
-// - true if successful (see DoSrvPrivateGetColorTableEntry). false otherwise.
-bool ConhostInternalGetSet::PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept
+// - the COLORREF value for the color at that index in the table.
+COLORREF ConhostInternalGetSet::GetColorTableEntry(const size_t tableIndex) const noexcept
+try
 {
-    return SUCCEEDED(DoSrvPrivateGetColorTableEntry(index, value));
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
+
+    return gci.GetColorTableEntry(tableIndex);
+}
+catch (...)
+{
+    return INVALID_COLOR;
 }
 
 // Method Description:
-// - Connects the PrivateSetColorTableEntry call directly into our Driver Message servicing
-//      call inside Conhost.exe
+// - Updates the value in the colortable at index tableIndex to the new color
+//   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
-// - index: the index in the table to change.
-// - value: the new RGB value to use for that index in the color table.
+// - tableIndex: the index of the color table to update.
+// - color: the new COLORREF to use as that color table value.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetColorTableEntry). false otherwise.
-bool ConhostInternalGetSet::PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
+try
 {
-    return SUCCEEDED(DoSrvPrivateSetColorTableEntry(index, value));
-}
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& gci = g.getConsoleInformation();
 
-// Method Description:
-// - Connects the PrivateSetDefaultForeground call directly into our Driver Message servicing
-//      call inside Conhost.exe
-// Arguments:
-// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// - true if successful (see DoSrvPrivateSetDefaultForegroundColor). false otherwise.
-bool ConhostInternalGetSet::PrivateSetDefaultForeground(const COLORREF value) const noexcept
-{
-    return SUCCEEDED(DoSrvPrivateSetDefaultForegroundColor(value));
-}
+    gci.SetColorTableEntry(tableIndex, color);
 
-// Method Description:
-// - Connects the PrivateSetDefaultBackground call directly into our Driver Message servicing
-//      call inside Conhost.exe
-// Arguments:
-// - value: the new RGB value to use, as a COLORREF, format 0x00BBGGRR.
-// Return Value:
-// - true if successful (see DoSrvPrivateSetDefaultBackgroundColor). false otherwise.
-bool ConhostInternalGetSet::PrivateSetDefaultBackground(const COLORREF value) const noexcept
-{
-    return SUCCEEDED(DoSrvPrivateSetDefaultBackgroundColor(value));
+    // If we're setting the default foreground or background colors
+    // we need to make sure the index is correctly set as well.
+    if (tableIndex == TextColor::DEFAULT_FOREGROUND)
+    {
+        gci.SetDefaultForegroundIndex(TextColor::DEFAULT_FOREGROUND);
+    }
+    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
+    {
+        gci.SetDefaultBackgroundIndex(TextColor::DEFAULT_BACKGROUND);
+    }
+
+    // Update the screen colors if we're not a pty
+    // No need to force a redraw in pty mode.
+    if (g.pRender && !gci.IsInVtIoMode())
+    {
+        g.pRender->TriggerRedrawAll();
+    }
+
+    return true;
 }
+CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Connects the PrivateFillRegion call directly into our Driver Message servicing

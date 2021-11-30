@@ -318,7 +318,29 @@
     </ProjectReference>
     <!-- For whatever reason, we can't include the TerminalControl and
     TerminalSettings projects' winmds via project references. So we'll have to
-    manually include the winmds as References below -->
+    manually include the winmds as References below
+
+    BODGY: we do need to add a ProjectReference to TerminalControl.vcxproj,
+    with Private=true, ReferenceOutputAssembly=false, so that Visual Studio's
+    "Fast Up-to-date Check" will work with this project. If we don't, the Fast
+    Up-to-date Check will look for the .xaml files from that project in our
+    output, which won't actually be there.
+
+    We do still need to separately reference the winmds manually below, which is annoying.
+    -->
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
+      <!-- Private:true and ReferenceOutputAssembly:false, in combination with
+      the manual reference to TerminalControl.winmd below make sure that this
+      project will compile correct, and that we won't roll up the TermControl
+      xbf's into the packaging project twice. -->
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalSettingsEditor\Microsoft.Terminal.Settings.Editor.vcxproj">
+      <Private>true</Private>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+
   </ItemGroup>
   <PropertyGroup>
     <!-- This is a hack to get the ARM64 CI build working. See

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.pre.props" />
@@ -61,13 +61,26 @@
 
   <Import Project="$(MSBuildThisFileDirectory)..\CascadiaResources.build.items" />
   <Import Project="$(OpenConsoleDir)src\wap-common.build.post.props" />
+
   <ItemGroup>
-    <ProjectReference Include="..\WindowsTerminal\WindowsTerminal.vcxproj" />
-    <ProjectReference Include="..\..\host\exe\Host.EXE.vcxproj" />
-    <ProjectReference Include="..\..\host\proxy\Host.Proxy.vcxproj" />
-    <ProjectReference Include="..\TerminalAzBridge\TerminalAzBridge.vcxproj" />
-    <ProjectReference Include="..\ShellExtension\WindowsTerminalShellExt.vcxproj" />
-    <ProjectReference Include="..\wt\wt.vcxproj" />
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\WindowsTerminal\WindowsTerminal.vcxproj">
+      <Project>{CA5CAD1A-1754-4A9D-93D7-857A9D17CB1B}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalAzBridge\TerminalAzBridge.vcxproj">
+      <Project>{067F0A06-FCB7-472C-96E9-B03B54E8E18D}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\ShellExtension\WindowsTerminalShellExt.vcxproj">
+      <Project>{f2ed628a-db22-446f-a081-4cc845b51a2b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\cascadia\wt\wt.vcxproj">
+      <Project>{506fd703-baa7-4f6e-9361-64f550ec8fca}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\host\exe\Host.EXE.vcxproj">
+      <Project>{9CBD7DFA-1754-4A9D-93D7-857A9D17CB1B}</Project>
+    </ProjectReference>
+    <ProjectReference Include="$(OpenConsoleDir)src\host\proxy\Host.Proxy.vcxproj">
+      <Project>{71CC9D78-BA29-4D93-946F-BEF5D9A3A6EF}</Project>
+    </ProjectReference>
   </ItemGroup>
 
   <Target Name="OpenConsoleStompSourceProjectForWapProject" BeforeTargets="_ConvertItems">

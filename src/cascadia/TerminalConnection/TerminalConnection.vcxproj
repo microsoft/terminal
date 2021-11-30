@@ -97,4 +97,39 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(SolutionDir)build\rules\CollectWildcardResources.targets" />
+
+  <!--
+  BODGY:
+
+  We depend on `cpprest142*.dll`, which comes from our vcpkg dependency. As a
+  part of the vcpkg dependency restore, msbuild will call the `deployBinary()`
+  function in
+  `packages\vcpkg-cpprestsdk.2.10.14\scripts\BuildSystems\msbuild\AppLocal.ps1`.
+  That function does the actual job of copying the file. It copies it outside of
+  MsBuild. MsBuild then, in the `_CopyFilesMarkedCopyLocal` target, determines
+  that it needs to copy `cpprest142*.dll`, because that dll is a member of
+  `@(ReferencesCopiedInThisBuild)`. However, the file's already been copied, so
+  MsBuild never copies it. But that also prevents MsBuild from setting
+  `WroteAtLeastOneFile`, which then means that MsBuild will never create the
+  .CopyComplete file for this project.
+
+  Because that file is missing, MsBuild will never think the project is up to
+  date, and the FastUpToDate check in VS will always force MsBuild to run a pass
+  on this project.
+
+  To mitigate this, we're adding this other target here, which runs after
+  _CopyFilesMarkedCopyLocal, and always creates the CopyUpToDateMarker. This
+  makes the FastUpToDate check succeed.
+  -->
+
+  <Target
+      Name="_Post_CopyFilesMarkedCopyLocal"
+      AfterTargets="_CopyFilesMarkedCopyLocal"
+      Condition="'@(ReferenceCopyLocalPaths)' != ''">
+
+    <Touch Files="@(CopyUpToDateMarker)"
+      AlwaysCreate="true" />
+  </Target>
+
+
 </Project>

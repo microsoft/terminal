@@ -344,6 +344,7 @@ bool AdaptDispatch::CursorSaveState()
         savedCursorState.IsOriginModeRelative = _isOriginModeRelative;
         savedCursorState.Attributes = attributes;
         savedCursorState.TermOutput = _termOutput;
+        savedCursorState.C1ControlsAccepted = _pConApi->GetParserMode(StateMachine::Mode::AcceptC1);
         _pConApi->GetConsoleOutputCP(savedCursorState.CodePage);
     }
 
@@ -385,6 +386,9 @@ bool AdaptDispatch::CursorRestoreState()
 
     // Restore designated character set.
     _termOutput = savedCursorState.TermOutput;
+
+    // Restore the parsing state of C1 control codes.
+    AcceptC1Controls(savedCursorState.C1ControlsAccepted);
 
     // Restore the code page if it was previously saved.
     if (savedCursorState.CodePage != 0)
@@ -1243,7 +1247,12 @@ bool AdaptDispatch::SetAnsiMode(const bool ansiMode)
     // need to be reset to defaults, even if the mode doesn't actually change.
     _termOutput = {};
 
-    return _pConApi->PrivateSetAnsiMode(ansiMode);
+    _pConApi->SetParserMode(StateMachine::Mode::Ansi, ansiMode);
+    _pConApi->SetInputMode(TerminalInput::Mode::Ansi, ansiMode);
+
+    // We don't check the SetInputMode return value, because we'll never want
+    // to forward a DECANM mode change over conpty.
+    return true;
 }
 
 // Routine Description:
@@ -1687,9 +1696,10 @@ void AdaptDispatch::_InitTabStopsForWidth(const size_t width)
 
 //Routine Description:
 // DOCS - Selects the coding system through which character sets are activated.
-//     When ISO2022 is selected, the code page is set to ISO-8859-1, and both
-//     GL and GR areas of the code table can be remapped. When UTF8 is selected,
-//     the code page is set to UTF-8, and only the GL area can be remapped.
+//     When ISO2022 is selected, the code page is set to ISO-8859-1, C1 control
+//     codes are accepted, and both GL and GR areas of the code table can be
+//     remapped. When UTF8 is selected, the code page is set to UTF-8, the C1
+//     control codes are disabled, and only the GL area can be remapped.
 //Arguments:
 // - codingSystem - The coding system that will be selected.
 // Return value:
@@ -1712,6 +1722,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(28591);
         if (success)
         {
+            AcceptC1Controls(true);
             _termOutput.EnableGrTranslation(true);
         }
         break;
@@ -1719,6 +1730,7 @@ bool AdaptDispatch::DesignateCodingSystem(const VTID codingSystem)
         success = _pConApi->SetConsoleOutputCP(CP_UTF8);
         if (success)
         {
+            AcceptC1Controls(false);
             _termOutput.EnableGrTranslation(false);
         }
         break;
@@ -1793,6 +1805,17 @@ bool AdaptDispatch::SingleShift(const size_t gsetNumber)
 }
 
 //Routine Description:
+// DECAC1 - Enable or disable the reception of C1 control codes in the parser.
+//Arguments:
+// - enabled - true to allow C1 controls to be used, false to disallow.
+// Return value:
+// True if handled successfully. False otherwise.
+bool AdaptDispatch::AcceptC1Controls(const bool enabled)
+{
+    return _pConApi->SetParserMode(StateMachine::Mode::AcceptC1, enabled);
+}
+
+//Routine Description:
 // Soft Reset - Perform a soft reset. See http://www.vt100.net/docs/vt510-rm/DECSTR.html
 // The following table lists everything that should be done, 'X's indicate the ones that
 //   we actually perform. As the appropriate functionality is added to our ANSI support,
@@ -1840,6 +1863,8 @@ bool AdaptDispatch::SoftReset()
         // Restore initial code page if previously changed by a DOCS sequence.
         success = _pConApi->SetConsoleOutputCP(_initialCodePage.value()) && success;
     }
+    // Disable parsing of C1 control codes.
+    success = AcceptC1Controls(false) && success;
 
     success = SetGraphicsRendition({}) && success; // Normal rendition.
 
@@ -2225,7 +2250,7 @@ bool AdaptDispatch::SetCursorColor(const COLORREF cursorColor)
         return false;
     }
 
-    return _pConApi->SetCursorColor(cursorColor);
+    return _pConApi->SetColorTableEntry(TextColor::CURSOR_COLOR, cursorColor);
 }
 
 // Routine Description:
@@ -2248,7 +2273,7 @@ bool AdaptDispatch::SetClipboard(const std::wstring_view /*content*/) noexcept
 // True if handled successfully. False otherwise.
 bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwColor)
 {
-    const bool success = _pConApi->PrivateSetColorTableEntry(tableIndex, dwColor);
+    const bool success = _pConApi->SetColorTableEntry(tableIndex, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2268,10 +2293,10 @@ bool AdaptDispatch::SetColorTableEntry(const size_t tableIndex, const DWORD dwCo
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultForeground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetDefaultForeground(dwColor);
+    success = _pConApi->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use
@@ -2291,10 +2316,10 @@ bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultForeground(co
 // - dwColor: The new RGB color value to use, as a COLORREF, format 0x00BBGGRR.
 // Return Value:
 // True if handled successfully. False otherwise.
-bool Microsoft::Console::VirtualTerminal::AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
+bool AdaptDispatch::SetDefaultBackground(const DWORD dwColor)
 {
     bool success = true;
-    success = _pConApi->PrivateSetDefaultBackground(dwColor);
+    success = _pConApi->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, dwColor);
 
     // If we're a conpty, always return false, so that we send the updated color
     //      value to the terminal. Still handle the sequence so apps that use

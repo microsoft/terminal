@@ -41,8 +41,6 @@ Terminal::Terminal() :
     _mutableViewport{ Viewport::Empty() },
     _title{},
     _colorTable{},
-    _defaultFg{ RGB(255, 255, 255) },
-    _defaultBg{ ARGB(0, 0, 0, 0) },
     _screenReversed{ false },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
@@ -61,6 +59,14 @@ Terminal::Terminal() :
 
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
+    // Until we have a true pass-through mode (GH#1173), the decision as to
+    // whether C1 controls are interpreted or not is made at the conhost level.
+    // If they are being filtered out, then we will simply never receive them.
+    // But if they are being accepted by conhost, there's a chance they may get
+    // passed through in some situations, so it's important that our state
+    // machine is always prepared to accept them.
+    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
+
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
         {
@@ -73,6 +79,10 @@ Terminal::Terminal() :
     _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
 
     _InitializeColorTable();
+
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = RGB(255, 255, 255);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = ARGB(0, 0, 0, 0);
+    _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
 }
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
@@ -175,9 +185,15 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ appearance.DefaultBackground() };
-    _defaultBg = newBackgroundColor.with_alpha(0);
-    _defaultFg = appearance.DefaultForeground();
+    const til::color newBackgroundColor{ appearance.DefaultBackground() };
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    const til::color newForegroundColor{ appearance.DefaultForeground() };
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = newForegroundColor;
+    const til::color newCursorColor{ appearance.CursorColor() };
+    _colorTable.at(TextColor::CURSOR_COLOR) = newCursorColor;
+
+    _intenseIsBright = appearance.IntenseIsBright();
+    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
 
     for (int i = 0; i < 16; i++)
     {
@@ -214,9 +230,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     if (_buffer)
     {
-        _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
-                                      til::color{ appearance.CursorColor() },
-                                      cursorShape);
+        _buffer->GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
     }
 
     _defaultCursorShape = cursorShape;
@@ -1296,13 +1310,13 @@ Scheme Terminal::GetColorScheme() const noexcept
 {
     Scheme s;
 
-    s.Foreground = til::color{ _defaultFg };
+    s.Foreground = til::color{ _colorTable.at(TextColor::DEFAULT_FOREGROUND) };
     // Don't leak the implementation detail that our _defaultBg is stored
     // internally without alpha.
-    s.Background = til::color{ _defaultBg.with_alpha(0xff) };
+    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
 
     // SelectionBackground is stored in the ControlAppearance
-    s.CursorColor = til::color{ _buffer->GetCursor().GetColor() };
+    s.CursorColor = til::color{ _colorTable.at(TextColor::CURSOR_COLOR) };
 
     s.Black = til::color{ _colorTable[0] };
     s.Red = til::color{ _colorTable[1] };
@@ -1325,11 +1339,11 @@ Scheme Terminal::GetColorScheme() const noexcept
 
 void Terminal::ApplyScheme(const Scheme& colorScheme)
 {
-    _defaultFg = colorScheme.Foreground;
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = til::color{ colorScheme.Foreground };
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
     til::color newBackgroundColor{ colorScheme.Background };
-    _defaultBg = newBackgroundColor.with_alpha(0);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
 
     _colorTable[0] = til::color{ colorScheme.Black };
     _colorTable[1] = til::color{ colorScheme.Red };
@@ -1348,7 +1362,7 @@ void Terminal::ApplyScheme(const Scheme& colorScheme)
     _colorTable[14] = til::color{ colorScheme.BrightCyan };
     _colorTable[15] = til::color{ colorScheme.BrightWhite };
 
-    _buffer->GetCursor().SetColor(til::color{ colorScheme.CursorColor });
+    _colorTable.at(TextColor::CURSOR_COLOR) = til::color{ colorScheme.CursorColor };
 
     if (_adjustIndistinguishableColors)
     {

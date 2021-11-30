@@ -32,6 +32,7 @@ hyperlink
 hyperlinking
 hyperlinks
 img
+inlined
 It'd
 kje
 liga

@@ -3,38 +3,38 @@
 
 #include "pch.h"
 #include "TerminalPage.h"
-#include "Utils.h"
-#include "../../types/inc/utils.hpp"
+#include "TerminalPage.g.cpp"
+#include "RenameWindowRequestedArgs.g.cpp"
 
 #include <filesystem>
+
+#include <inc/WindowingBehavior.h>
 #include <LibraryResources.h>
+#include <TerminalCore/ControlKeyStates.hpp>
+#include <til/latch.h>
 
-#include "TerminalPage.g.cpp"
-#include <winrt/Windows.Storage.h>
-
-#include "TabRowControl.h"
+#include "../../types/inc/utils.hpp"
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
-#include "RenameWindowRequestedArgs.g.cpp"
-#include "../inc/WindowingBehavior.h"
-
-#include <til/latch.h>
+#include "TabRowControl.h"
 
 using namespace winrt;
-using namespace winrt::Windows::Foundation::Collections;
-using namespace winrt::Windows::UI::Xaml;
-using namespace winrt::Windows::UI::Xaml::Controls;
-using namespace winrt::Windows::UI::Core;
-using namespace winrt::Windows::System;
-using namespace winrt::Windows::ApplicationModel::DataTransfer;
-using namespace winrt::Windows::UI::Text;
-using namespace winrt::Microsoft::Terminal;
 using namespace winrt::Microsoft::Terminal::Control;
-using namespace winrt::Microsoft::Terminal::TerminalConnection;
 using namespace winrt::Microsoft::Terminal::Settings::Model;
+using namespace winrt::Microsoft::Terminal::TerminalConnection;
+using namespace winrt::Microsoft::Terminal;
+using namespace winrt::Windows::ApplicationModel::DataTransfer;
+using namespace winrt::Windows::Foundation::Collections;
+using namespace winrt::Windows::System;
+using namespace winrt::Windows::System;
+using namespace winrt::Windows::UI::Core;
+using namespace winrt::Windows::UI::Text;
+using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::UI::Xaml;
 using namespace ::TerminalApp;
 using namespace ::Microsoft::Console;
+using namespace ::Microsoft::Terminal::Core;
 using namespace std::chrono_literals;
 
 #define HOOKUP_ACTION(action) _actionDispatch->action({ this, &TerminalPage::_Handle##action });
@@ -1038,29 +1038,153 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // Called when the users pressed keyBindings while CommandPalette is open.
+    // - Called when the users pressed keyBindings while CommandPalette is open.
+    // - This method is effectively an extract of TermControl::_KeyHandler and TermControl::_TryHandleKeyBinding.
     // Arguments:
     // - e: the KeyRoutedEventArgs containing info about the keystroke.
     // Return Value:
     // - <none>
     void TerminalPage::_KeyDownHandler(Windows::Foundation::IInspectable const& /*sender*/, Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e)
     {
-        const auto key = e.OriginalKey();
-        const auto scanCode = e.KeyStatus().ScanCode;
-        const auto coreWindow = CoreWindow::GetForCurrentThread();
-        const auto ctrlDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Control), CoreVirtualKeyStates::Down);
-        const auto altDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Menu), CoreVirtualKeyStates::Down);
-        const auto shiftDown = WI_IsFlagSet(coreWindow.GetKeyState(winrt::Windows::System::VirtualKey::Shift), CoreVirtualKeyStates::Down);
+        const auto keyStatus = e.KeyStatus();
+        const auto vkey = gsl::narrow_cast<WORD>(e.OriginalKey());
+        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
+        const auto modifiers = _GetPressedModifierKeys();
 
-        winrt::Microsoft::Terminal::Control::KeyChord kc{ ctrlDown, altDown, shiftDown, false, static_cast<int32_t>(key), static_cast<int32_t>(scanCode) };
-        if (const auto cmd{ _settings.ActionMap().GetActionByKeyChord(kc) })
+        // GH#11076:
+        // For some weird reason we sometimes receive a WM_KEYDOWN
+        // message without vkey or scanCode if a user drags a tab.
+        // The KeyChord constructor has a debug assertion ensuring that all KeyChord
+        // either have a valid vkey/scanCode. This is important, because this prevents
+        // accidential insertion of invalid KeyChords into classes like ActionMap.
+        if (!vkey && !scanCode)
         {
-            if (CommandPalette().Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+            return;
+        }
+
+        // Alt-Numpad# input will send us a character once the user releases
+        // Alt, so we should be ignoring the individual keydowns. The character
+        // will be sent through the TSFInputControl. See GH#1401 for more
+        // details
+        if (modifiers.IsAltPressed() && (vkey >= VK_NUMPAD0 && vkey <= VK_NUMPAD9))
+        {
+            return;
+        }
+
+        // GH#2235: Terminal::Settings hasn't been modified to differentiate
+        // between AltGr and Ctrl+Alt yet.
+        // -> Don't check for key bindings if this is an AltGr key combination.
+        if (modifiers.IsAltGrPressed())
+        {
+            return;
+        }
+
+        const auto actionMap = _settings.ActionMap();
+        if (!actionMap)
+        {
+            return;
+        }
+
+        const auto cmd = actionMap.GetActionByKeyChord({
+            modifiers.IsCtrlPressed(),
+            modifiers.IsAltPressed(),
+            modifiers.IsShiftPressed(),
+            modifiers.IsWinPressed(),
+            vkey,
+            scanCode,
+        });
+        if (!cmd)
+        {
+            return;
+        }
+
+        if (!_actionDispatch->DoAction(cmd.ActionAndArgs()))
+        {
+            return;
+        }
+
+        if (const auto p = CommandPalette(); p.Visibility() == Visibility::Visible && cmd.ActionAndArgs().Action() != ShortcutAction::ToggleCommandPalette)
+        {
+            p.Visibility(Visibility::Collapsed);
+        }
+
+        // Let's assume the user has bound the dead key "^" to a sendInput command that sends "b".
+        // If the user presses the two keys "^a" it'll produce "bâ", despite us marking the key event as handled.
+        // The following is used to manually "consume" such dead keys and clear them from the keyboard state.
+        _ClearKeyboardState(vkey, scanCode);
+        e.Handled(true);
+    }
+
+    // Method Description:
+    // - Get the modifier keys that are currently pressed. This can be used to
+    //   find out which modifiers (ctrl, alt, shift) are pressed in events that
+    //   don't necessarily include that state.
+    // - This is a copy of TermControl::_GetPressedModifierKeys.
+    // Return Value:
+    // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
+    ControlKeyStates TerminalPage::_GetPressedModifierKeys() noexcept
+    {
+        const CoreWindow window = CoreWindow::GetForCurrentThread();
+        // DONT USE
+        //      != CoreVirtualKeyStates::None
+        // OR
+        //      == CoreVirtualKeyStates::Down
+        // Sometimes with the key down, the state is Down | Locked.
+        // Sometimes with the key up, the state is Locked.
+        // IsFlagSet(Down) is the only correct solution.
+
+        struct KeyModifier
+        {
+            VirtualKey vkey;
+            ControlKeyStates flags;
+        };
+
+        constexpr std::array<KeyModifier, 7> modifiers{ {
+            { VirtualKey::RightMenu, ControlKeyStates::RightAltPressed },
+            { VirtualKey::LeftMenu, ControlKeyStates::LeftAltPressed },
+            { VirtualKey::RightControl, ControlKeyStates::RightCtrlPressed },
+            { VirtualKey::LeftControl, ControlKeyStates::LeftCtrlPressed },
+            { VirtualKey::Shift, ControlKeyStates::ShiftPressed },
+            { VirtualKey::RightWindows, ControlKeyStates::RightWinPressed },
+            { VirtualKey::LeftWindows, ControlKeyStates::LeftWinPressed },
+        } };
+
+        ControlKeyStates flags;
+
+        for (const auto& mod : modifiers)
+        {
+            const auto state = window.GetKeyState(mod.vkey);
+            const auto isDown = WI_IsFlagSet(state, CoreVirtualKeyStates::Down);
+
+            if (isDown)
             {
-                CommandPalette().Visibility(Visibility::Collapsed);
+                flags |= mod.flags;
             }
-            _actionDispatch->DoAction(cmd.ActionAndArgs());
-            e.Handled(true);
+        }
+
+        return flags;
+    }
+
+    // Method Description:
+    // - Discards currently pressed dead keys.
+    // - This is a copy of TermControl::_ClearKeyboardState.
+    // Arguments:
+    // - vkey: The vkey of the key pressed.
+    // - scanCode: The scan code of the key pressed.
+    void TerminalPage::_ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept
+    {
+        std::array<BYTE, 256> keyState;
+        if (!GetKeyboardState(keyState.data()))
+        {
+            return;
+        }
+
+        // As described in "Sometimes you *want* to interfere with the keyboard's state buffer":
+        //   http://archives.miloush.net/michkap/archive/2006/09/10/748775.html
+        // > "The key here is to keep trying to pass stuff to ToUnicode until -1 is not returned."
+        std::array<wchar_t, 16> buffer;
+        while (ToUnicodeEx(vkey, scanCode, keyState.data(), buffer.data(), gsl::narrow_cast<int>(buffer.size()), 0b1, nullptr) < 0)
+        {
         }
     }
 

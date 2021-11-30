@@ -36,7 +36,7 @@ winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<
     profile->Name(parent->Name());
     profile->Guid(parent->Guid());
     profile->Hidden(parent->Hidden());
-    profile->InsertParent(parent);
+    profile->AddLeastImportantParent(parent);
     return profile;
 }
 
@@ -336,7 +336,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
         winrt::com_ptr<AppearanceConfig> defaultAppearance;
         defaultAppearance.copy_from(winrt::get_self<AppearanceConfig>(duplicated->DefaultAppearance()));
-        unfocusedAppearance->InsertParent(defaultAppearance);
+        unfocusedAppearance->AddLeastImportantParent(defaultAppearance);
 
         duplicated->UnfocusedAppearance(*unfocusedAppearance);
     }
