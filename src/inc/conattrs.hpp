@@ -37,4 +37,3 @@ enum class CursorType : unsigned int
 constexpr COLORREF INVALID_COLOR = 0xffffffff;
 
 constexpr WORD COLOR_TABLE_SIZE = 16;
-constexpr WORD XTERM_COLOR_TABLE_SIZE = 256;

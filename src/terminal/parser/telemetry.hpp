@@ -99,6 +99,7 @@ namespace Microsoft::Console::VirtualTerminal
             REP,
             OSCFG,
             OSCBG,
+            DECAC1,
             DECSWL,
             DECDWL,
             DECDHL,

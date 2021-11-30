@@ -46,7 +46,7 @@ void Profile::CreateUnfocusedAppearance()
         // taken from this profile's default appearance, so add it as a parent
         com_ptr<AppearanceConfig> parentCom;
         parentCom.copy_from(winrt::get_self<implementation::AppearanceConfig>(_DefaultAppearance));
-        unfocusedAppearance->InsertParent(parentCom);
+        unfocusedAppearance->AddLeastImportantParent(parentCom);
 
         _UnfocusedAppearance = *unfocusedAppearance;
     }
@@ -119,7 +119,7 @@ winrt::com_ptr<Profile> Profile::CopySettings() const
         if (*_UnfocusedAppearance)
         {
             const auto appearance = AppearanceConfig::CopyAppearance(winrt::get_self<AppearanceConfig>(*_UnfocusedAppearance), weakProfile);
-            appearance->InsertParent(defaultAppearance);
+            appearance->AddLeastImportantParent(defaultAppearance);
             unfocused = *appearance;
         }
         profile->_UnfocusedAppearance = unfocused;
@@ -189,7 +189,7 @@ void Profile::LayerJson(const Json::Value& json)
         // taken from this profile's default appearance, so add it as a parent
         com_ptr<AppearanceConfig> parentCom;
         parentCom.copy_from(defaultAppearanceImpl);
-        unfocusedAppearance->InsertParent(parentCom);
+        unfocusedAppearance->AddLeastImportantParent(parentCom);
 
         unfocusedAppearance->LayerJson(json[JsonKey(UnfocusedAppearanceKey)]);
         _UnfocusedAppearance = *unfocusedAppearance;
@@ -218,7 +218,7 @@ void Profile::_FinalizeInheritance()
         {
             if (auto parentDefaultAppearanceImpl = parent->_DefaultAppearance.try_as<AppearanceConfig>())
             {
-                defaultAppearanceImpl->InsertParent(parentDefaultAppearanceImpl);
+                defaultAppearanceImpl->AddLeastImportantParent(parentDefaultAppearanceImpl);
             }
         }
     }
@@ -231,7 +231,7 @@ void Profile::_FinalizeInheritance()
         {
             if (auto parentFontInfoImpl = parent->_FontInfo.try_as<FontConfig>())
             {
-                fontInfoImpl->InsertParent(parentFontInfoImpl);
+                fontInfoImpl->AddLeastImportantParent(parentFontInfoImpl);
             }
         }
     }

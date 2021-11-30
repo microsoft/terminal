@@ -147,6 +147,7 @@
     <ProjectReference Include="..\..\types\lib\types.vcxproj" />
     <ProjectReference Include="..\..\buffer\out\lib\bufferout.vcxproj" />
     <ProjectReference Include="$(OpenConsoleDir)src\renderer\base\lib\base.vcxproj" />
+    <ProjectReference Include="..\..\renderer\atlas\atlas.vcxproj" />
     <ProjectReference Include="..\..\renderer\dx\lib\dx.vcxproj" />
     <ProjectReference Include="..\..\renderer\uia\lib\uia.vcxproj" />
     <ProjectReference Include="..\..\terminal\parser\lib\parser.vcxproj" />

@@ -239,8 +239,8 @@ HRESULT HwndTerminal::Initialize()
     _terminal->SetBackgroundCallback([](auto) {});
 
     _terminal->Create(COORD{ 80, 25 }, 1000, *_renderer);
-    _terminal->SetDefaultBackground(RGB(12, 12, 12));
-    _terminal->SetDefaultForeground(RGB(204, 204, 204));
+    _terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, RGB(12, 12, 12));
+    _terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, RGB(204, 204, 204));
     _terminal->SetWriteInputCallback([=](std::wstring& input) noexcept { _WriteTextToConnection(input); });
     localPointerToThread->EnablePainting();
 
@@ -781,8 +781,8 @@ void _stdcall TerminalSetTheme(void* terminal, TerminalTheme theme, LPCWSTR font
     {
         auto lock = publicTerminal->_terminal->LockForWriting();
 
-        publicTerminal->_terminal->SetDefaultForeground(theme.DefaultForeground);
-        publicTerminal->_terminal->SetDefaultBackground(theme.DefaultBackground);
+        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, theme.DefaultForeground);
+        publicTerminal->_terminal->SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, theme.DefaultBackground);
         publicTerminal->_renderEngine->SetSelectionBackground(theme.DefaultSelectionBackground, theme.SelectionBackgroundAlpha);
 
         // Set the font colors

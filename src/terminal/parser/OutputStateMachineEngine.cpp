@@ -265,6 +265,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         success = _dispatch->LockingShiftRight(3);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
         break;
+    case EscActionCodes::DECAC1_AcceptC1Controls:
+        success = _dispatch->AcceptC1Controls(true);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC1);
+        break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
         _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);

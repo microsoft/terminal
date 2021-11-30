@@ -3,130 +3,136 @@
 
 #pragma once
 
-#include <bitset>
+#ifdef __cpp_concepts
+#define TIL_ENUMSET_VARARG template<std::same_as<T>... Args>
+#else
+#define TIL_ENUMSET_VARARG template<typename... Args, typename = std::enable_if_t<std::conjunction_v<std::is_same<T, Args>...>>>
+#endif
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    // By design, this class hides several methods in the std::bitset class
-    // so they can be called with an enum parameter instead of a size_t, so
-    // we need to disable the "hides a non-virtual function" warning.
-#pragma warning(push)
-#pragma warning(disable : 26434)
-
-    // til::enumset is a subclass of std::bitset, storing a fixed size array of
-    // boolean elements, the positions in the array being identified by values
-    // from a given enumerated type. By default it holds the same number of
-    // bits as a size_t value.
-    template<typename Type, size_t Bits = std::numeric_limits<size_t>::digits>
-    class enumset : public std::bitset<Bits>
+    // til::enumset stores a fixed size array of boolean elements, the positions
+    // in the array being identified by values from a given enumerated type.
+    // Position N corresponds to bit 1<<N in the UnderlyingType integer.
+    //
+    // If you only need 32 positions for your T, UnderlyingType can be set uint32_t.
+    // It defaults to uintptr_t allowing you to set as many positions as a pointer has bits.
+    // This class doesn't statically assert that your given position fits into UnderlyingType.
+    template<typename T, typename UnderlyingType = uintptr_t>
+    class enumset
     {
-        using _base = std::bitset<Bits>;
+        static_assert(std::is_unsigned_v<UnderlyingType>);
 
     public:
-        using reference = typename _base::reference;
-
-        enumset() = default;
-
         // Method Description:
         // - Constructs a new bitset with the given list of positions set to true.
-        template<typename... Args, typename = std::enable_if_t<std::conjunction_v<std::is_same<Type, Args>...>>>
-        constexpr enumset(const Args... positions) noexcept :
-            _base((... | (1ULL << static_cast<size_t>(positions))))
+        TIL_ENUMSET_VARARG
+        constexpr enumset(Args... positions) noexcept :
+            _data{ to_underlying(positions...) }
         {
         }
 
         // Method Description:
-        // - Returns the value of the bit at the given position.
-        constexpr bool operator[](const Type pos) const
+        // - Returns the underlying bit positions as a copy.
+        constexpr UnderlyingType bits() const noexcept
         {
-            return _base::operator[](static_cast<size_t>(pos));
-        }
-
-        // Method Description:
-        // - Returns a reference to the bit at the given position.
-        reference operator[](const Type pos)
-        {
-            return _base::operator[](static_cast<size_t>(pos));
+            return _data;
         }
 
         // Method Description:
         // - Returns the value of the bit at the given position.
         //   Throws std::out_of_range if it is not a valid position
         //   in the bitset.
-        bool test(const Type pos) const
+        constexpr bool test(const T pos) const noexcept
         {
-            return _base::test(static_cast<size_t>(pos));
+            const auto mask = to_underlying(pos);
+            return (_data & mask) != 0;
         }
 
         // Method Description:
         // - Returns true if any of the bits are set to true.
-        bool any() const noexcept
+        constexpr bool any() const noexcept
         {
-            return _base::any();
+            return _data != 0;
         }
 
         // Method Description:
         // - Returns true if any of the bits in the given positions are true.
-        template<typename... Args, typename = std::enable_if_t<std::conjunction_v<std::is_same<Type, Args>...>>>
-        bool any(const Args... positions) const noexcept
+        TIL_ENUMSET_VARARG
+        constexpr bool any(Args... positions) const noexcept
         {
-            return (enumset{ positions... } & *this) != 0;
+            const auto mask = to_underlying(positions...);
+            return (_data & mask) != 0;
         }
 
         // Method Description:
         // - Returns true if all of the bits are set to true.
-        bool all() const noexcept
+        constexpr bool all() const noexcept
         {
-            return _base::all();
+            return _data == ~UnderlyingType{ 0 };
         }
 
         // Method Description:
         // - Returns true if all of the bits in the given positions are true.
-        template<typename... Args, typename = std::enable_if_t<std::conjunction_v<std::is_same<Type, Args>...>>>
-        bool all(const Args... positions) const noexcept
+        TIL_ENUMSET_VARARG
+        constexpr bool all(Args... positions) const noexcept
         {
-            return (enumset{ positions... } & *this) == enumset{ positions... };
+            const auto mask = to_underlying(positions...);
+            return (_data & mask) == mask;
         }
 
         // Method Description:
-        // - Sets the bit in the given position to the specified value.
-        enumset& set(const Type pos, const bool val = true)
+        // - Sets all of the bits in the given positions to true.
+        TIL_ENUMSET_VARARG
+        constexpr enumset& set(Args... positions) noexcept
         {
-            _base::set(static_cast<size_t>(pos), val);
+            _data |= to_underlying(positions...);
             return *this;
         }
 
         // Method Description:
-        // - Resets the bit in the given position to false.
-        enumset& reset(const Type pos)
+        // - Sets the bit in the given position to the specified value.
+        constexpr enumset& set(const T pos, const bool val) noexcept
         {
-            _base::reset(static_cast<size_t>(pos));
+            const auto mask = to_underlying(pos);
+            // false == 0 --> UnderlyingType(-0) == 0b0000...
+            // true == 1  --> UnderlyingType(-1) == 0b1111...
+#pragma warning(suppress : 4804) // '-': unsafe use of type 'bool' in operation
+            _data = (_data & ~mask) | (-val & mask);
+            return *this;
+        }
+
+        // Method Description:
+        // - Resets all of the bits in the given positions to false.
+        TIL_ENUMSET_VARARG
+        constexpr enumset& reset(Args... positions) noexcept
+        {
+            _data &= ~to_underlying(positions...);
             return *this;
         }
 
         // Method Description:
         // - Flips the bit at the given position.
-        enumset& flip(const Type pos)
+        TIL_ENUMSET_VARARG
+        constexpr enumset& flip(Args... positions) noexcept
         {
-            _base::flip(static_cast<size_t>(pos));
+            _data ^= to_underlying(positions...);
             return *this;
         }
 
-        // Method Description:
-        // - Sets all of the bits in the given positions to true.
+    private:
         template<typename... Args>
-        enumset& set_all(const Args... positions)
+        static constexpr UnderlyingType to_underlying(Args... positions) noexcept
         {
-            return (..., set(positions));
+            return ((UnderlyingType{ 1 } << static_cast<UnderlyingType>(positions)) | ...);
         }
 
-        // Method Description:
-        // - Resets all of the bits in the given positions to false.
-        template<typename... Args>
-        enumset& reset_all(const Args... positions)
+        template<>
+        static constexpr UnderlyingType to_underlying() noexcept
         {
-            return (..., reset(positions));
+            return 0;
         }
+
+        UnderlyingType _data{};
     };
-#pragma warning(pop)
 }
