@@ -34,6 +34,10 @@
 
     <!-- Optional, defaults to true.  Specifies whether to use default information for PGD files. -->
     <PGOUseDefaultPGDFileInfo>true</PGOUseDefaultPGDFileInfo>
+
+    <!-- Copying the PGO runtime brings along a CRT. If we do that under normal circumstances, WAPPROJ will get its grubby hands on it and mess up all the CRT shenanigans we have to pull to make MSIX packages happy. So only pull it in for Instrument builds.-->
+    <PGOCopyRuntime>false</PGOCopyRuntime>
+    <PGOCopyRuntime Condition="'$(PGOBuildMode)' == 'Instrument'">true</PGOCopyRuntime>
   </PropertyGroup>
 
   <!-- Import PGO-Helpers -->

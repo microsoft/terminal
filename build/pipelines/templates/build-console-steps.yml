@@ -56,7 +56,7 @@ steps:
     vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /p:PGOCopyRuntime=true /bl:$(Build.SourcesDirectory)\\msbuild.binlog"
+    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /bl:$(Build.SourcesDirectory)\\msbuild.binlog"
     clean: true
     maximumCpuCount: true
 
