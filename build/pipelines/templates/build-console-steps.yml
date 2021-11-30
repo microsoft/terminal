@@ -56,7 +56,7 @@ steps:
     vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /p:PGOCopyRuntime=true"
+    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /p:PGOCopyRuntime=true /bl:$(Build.SourcesDirectory)\\msbuild.binlog"
     clean: true
     maximumCpuCount: true
 
@@ -193,3 +193,11 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO'
     ArtifactName: 'PGO'
   condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: binlog'
+  condition: failed()
+  continueOnError: True
+  inputs:
+    PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
+    ArtifactName: binlog-$(BuildPlatform)
