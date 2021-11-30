@@ -81,7 +81,6 @@ foreach ($testRun in $testRuns.value)
         if (-not $workItems.Contains($workItem))
         {
             $workItems.Add($workItem)
-
             $filesQueryUri = "https://helix.dot.net/api/2019-06-17/jobs/$helixJobId/workitems/$helixWorkItemName/files"
             $filesQueryUri = Append-HelixAccessTokenToUrl $filesQueryUri $helixAccessToken
             $files = Invoke-RestMethodWithRetries $filesQueryUri
