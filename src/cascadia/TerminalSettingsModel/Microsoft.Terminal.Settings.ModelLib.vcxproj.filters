@@ -46,6 +46,9 @@
     <ClCompile Include="VsSetupConfiguration.cpp">
       <Filter>profileGeneration</Filter>
     </ClCompile>
+    <ClCompile Include="VsDevGDKCmdGenerator.cpp">
+      <Filter>profileGeneration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h" />
@@ -91,6 +94,9 @@
       <Filter>profileGeneration</Filter>
     </ClInclude>
     <ClInclude Include="VsSetupConfiguration.h">
+      <Filter>profileGeneration</Filter>
+    </ClInclude>
+    <ClInclude Include="VsDevGDKCmdGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
   </ItemGroup>
