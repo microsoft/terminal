@@ -107,6 +107,45 @@ static size_t EmptyHash()
         _TabIndex{ tabIndex } {};
 
 ////////////////////////////////////////////////////////////////////////////////
+#define RESIZE_PANE_ARGS(X) \
+    X(Model::ResizeDirection, ResizeDirection, "direction", Model::ResizeDirection::None)
+
+#define RESIZE_PANE_CTORS                              \
+    ResizePaneArgs(Model::ResizeDirection direction) : \
+        _ResizeDirection{ direction } {};
+
+#define VALIDATE_RESIZE_PANE                                                    \
+    if (args->ResizeDirection() == ResizeDirection::None)                       \
+    {                                                                           \
+        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
+    }
+////////////////////////////////////////////////////////////////////////////////
+#define MOVE_FOCUS_ARGS(X) \
+    X(Model::FocusDirection, FocusDirection, "direction", Model::FocusDirection::None)
+
+#define MOVE_FOCUS_CTORS                             \
+    MoveFocusArgs(Model::FocusDirection direction) : \
+        _FocusDirection{ direction } {};
+
+#define VALIDATE_MOVE_FOCUS                                                     \
+    if (args->FocusDirection() == Model::FocusDirection::None)                  \
+    {                                                                           \
+        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
+    }
+////////////////////////////////////////////////////////////////////////////////
+#define SWAP_PANE_ARGS(X) \
+    X(Model::FocusDirection, Direction, "direction", Model::FocusDirection::None)
+
+#define SWAP_PANE_CTORS                             \
+    SwapPaneArgs(Model::FocusDirection direction) : \
+        _Direction{ direction } {};
+
+#define VALIDATE_SWAP_PANE                                                      \
+    if (args->Direction() == Model::FocusDirection::None)                       \
+    {                                                                           \
+        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
+    }
+////////////////////////////////////////////////////////////////////////////////
 #define ADJUST_FONT_SIZE_ARGS(X) \
     X(int32_t, Delta, "delta", 0)
 
@@ -523,179 +562,182 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS, SWITCH_TO_TAB_CTORS, NO_OTHER_VALIDATION);
 
-    struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
-    {
-        ResizePaneArgs() = default;
-        ACTION_ARG(Model::ResizeDirection, ResizeDirection, ResizeDirection::None);
+    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS, RESIZE_PANE_CTORS, VALIDATE_RESIZE_PANE);
+    // struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
+    // {
+    //     ResizePaneArgs() = default;
+    //     ACTION_ARG(Model::ResizeDirection, ResizeDirection, ResizeDirection::None);
 
-        static constexpr std::string_view DirectionKey{ "direction" };
+    //     static constexpr std::string_view DirectionKey{ "direction" };
 
-    public:
-        hstring GenerateName() const;
+    // public:
+    //     hstring GenerateName() const;
 
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ResizePaneArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_ResizeDirection == _ResizeDirection;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ResizePaneArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_ResizeDirection);
-            if (args->ResizeDirection() == ResizeDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<ResizePaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_ResizeDirection);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<ResizePaneArgs>() };
-            copy->_ResizeDirection = _ResizeDirection;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(ResizeDirection());
-        }
-    };
+    //     bool Equals(const IActionArgs& other)
+    //     {
+    //         auto otherAsUs = other.try_as<ResizePaneArgs>();
+    //         if (otherAsUs)
+    //         {
+    //             return otherAsUs->_ResizeDirection == _ResizeDirection;
+    //         }
+    //         return false;
+    //     };
+    //     static FromJsonResult FromJson(const Json::Value& json)
+    //     {
+    //         // LOAD BEARING: Not using make_self here _will_ break you in the future!
+    //         auto args = winrt::make_self<ResizePaneArgs>();
+    //         JsonUtils::GetValueForKey(json, DirectionKey, args->_ResizeDirection);
+    //         if (args->ResizeDirection() == ResizeDirection::None)
+    //         {
+    //             return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+    //         }
+    //         else
+    //         {
+    //             return { *args, {} };
+    //         }
+    //     }
+    //     static Json::Value ToJson(const IActionArgs& val)
+    //     {
+    //         if (!val)
+    //         {
+    //             return {};
+    //         }
+    //         Json::Value json{ Json::ValueType::objectValue };
+    //         const auto args{ get_self<ResizePaneArgs>(val) };
+    //         JsonUtils::SetValueForKey(json, DirectionKey, args->_ResizeDirection);
+    //         return json;
+    //     }
+    //     IActionArgs Copy() const
+    //     {
+    //         auto copy{ winrt::make_self<ResizePaneArgs>() };
+    //         copy->_ResizeDirection = _ResizeDirection;
+    //         return *copy;
+    //     }
+    //     size_t Hash() const
+    //     {
+    //         return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(ResizeDirection());
+    //     }
+    // };
 
-    struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
-    {
-        MoveFocusArgs() = default;
-        MoveFocusArgs(Model::FocusDirection direction) :
-            _FocusDirection{ direction } {};
+    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS, MOVE_FOCUS_CTORS, VALIDATE_MOVE_FOCUS);
+    // struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
+    // {
+    //     MoveFocusArgs() = default;
+    //     MoveFocusArgs(Model::FocusDirection direction) :
+    //         _FocusDirection{ direction } {};
 
-        ACTION_ARG(Model::FocusDirection, FocusDirection, FocusDirection::None);
+    //     ACTION_ARG(Model::FocusDirection, FocusDirection, FocusDirection::None);
 
-        static constexpr std::string_view DirectionKey{ "direction" };
+    //     static constexpr std::string_view DirectionKey{ "direction" };
 
-    public:
-        hstring GenerateName() const;
+    // public:
+    //     hstring GenerateName() const;
 
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<MoveFocusArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_FocusDirection == _FocusDirection;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MoveFocusArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_FocusDirection);
-            if (args->FocusDirection() == FocusDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<MoveFocusArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_FocusDirection);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<MoveFocusArgs>() };
-            copy->_FocusDirection = _FocusDirection;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(FocusDirection());
-        }
-    };
+    //     bool Equals(const IActionArgs& other)
+    //     {
+    //         auto otherAsUs = other.try_as<MoveFocusArgs>();
+    //         if (otherAsUs)
+    //         {
+    //             return otherAsUs->_FocusDirection == _FocusDirection;
+    //         }
+    //         return false;
+    //     };
+    //     static FromJsonResult FromJson(const Json::Value& json)
+    //     {
+    //         // LOAD BEARING: Not using make_self here _will_ break you in the future!
+    //         auto args = winrt::make_self<MoveFocusArgs>();
+    //         JsonUtils::GetValueForKey(json, DirectionKey, args->_FocusDirection);
+    //         if (args->FocusDirection() == FocusDirection::None)
+    //         {
+    //             return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+    //         }
+    //         else
+    //         {
+    //             return { *args, {} };
+    //         }
+    //     }
+    //     static Json::Value ToJson(const IActionArgs& val)
+    //     {
+    //         if (!val)
+    //         {
+    //             return {};
+    //         }
+    //         Json::Value json{ Json::ValueType::objectValue };
+    //         const auto args{ get_self<MoveFocusArgs>(val) };
+    //         JsonUtils::SetValueForKey(json, DirectionKey, args->_FocusDirection);
+    //         return json;
+    //     }
+    //     IActionArgs Copy() const
+    //     {
+    //         auto copy{ winrt::make_self<MoveFocusArgs>() };
+    //         copy->_FocusDirection = _FocusDirection;
+    //         return *copy;
+    //     }
+    //     size_t Hash() const
+    //     {
+    //         return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(FocusDirection());
+    //     }
+    // };
 
-    struct SwapPaneArgs : public SwapPaneArgsT<SwapPaneArgs>
-    {
-        SwapPaneArgs() = default;
-        SwapPaneArgs(Model::FocusDirection direction) :
-            _Direction{ direction } {};
+    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS, SWAP_PANE_CTORS, VALIDATE_SWAP_PANE);
+    // struct SwapPaneArgs : public SwapPaneArgsT<SwapPaneArgs>
+    // {
+    //     SwapPaneArgs() = default;
+    //     SwapPaneArgs(Model::FocusDirection direction) :
+    //         _Direction{ direction } {};
 
-        ACTION_ARG(Model::FocusDirection, Direction, FocusDirection::None);
+    //     ACTION_ARG(Model::FocusDirection, Direction, FocusDirection::None);
 
-        static constexpr std::string_view DirectionKey{ "direction" };
+    //     static constexpr std::string_view DirectionKey{ "direction" };
 
-    public:
-        hstring GenerateName() const;
+    // public:
+    //     hstring GenerateName() const;
 
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<SwapPaneArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Direction == _Direction;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SwapPaneArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
-            if (args->Direction() == FocusDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<SwapPaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<SwapPaneArgs>() };
-            copy->_Direction = _Direction;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Direction());
-        }
-    };
+    //     bool Equals(const IActionArgs& other)
+    //     {
+    //         auto otherAsUs = other.try_as<SwapPaneArgs>();
+    //         if (otherAsUs)
+    //         {
+    //             return otherAsUs->_Direction == _Direction;
+    //         }
+    //         return false;
+    //     };
+    //     static FromJsonResult FromJson(const Json::Value& json)
+    //     {
+    //         // LOAD BEARING: Not using make_self here _will_ break you in the future!
+    //         auto args = winrt::make_self<SwapPaneArgs>();
+    //         JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
+    //         if (args->Direction() == FocusDirection::None)
+    //         {
+    //             return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
+    //         }
+    //         else
+    //         {
+    //             return { *args, {} };
+    //         }
+    //     }
+    //     static Json::Value ToJson(const IActionArgs& val)
+    //     {
+    //         if (!val)
+    //         {
+    //             return {};
+    //         }
+    //         Json::Value json{ Json::ValueType::objectValue };
+    //         const auto args{ get_self<SwapPaneArgs>(val) };
+    //         JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
+    //         return json;
+    //     }
+    //     IActionArgs Copy() const
+    //     {
+    //         auto copy{ winrt::make_self<SwapPaneArgs>() };
+    //         copy->_Direction = _Direction;
+    //         return *copy;
+    //     }
+    //     size_t Hash() const
+    //     {
+    //         return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Direction());
+    //     }
+    // };
 
     ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS, NO_OTHER_CTORS, NO_OTHER_VALIDATION);
     ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS, NO_OTHER_CTORS, VALIDATE_SEND_INPUT);
