@@ -98,13 +98,13 @@ namespace winrt::TerminalApp::implementation
             return _tabStatus;
         }
 
-        DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
-        DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
-        DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
-        DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
-        DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
-        DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
-        DECLARE_EVENT(ExportTabRequested, _ExportTabRequestedHandlers, winrt::delegate<>);
+        WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
+        WINRT_CALLBACK(ColorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+        WINRT_CALLBACK(ColorCleared, winrt::delegate<>);
+        WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
+        WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
+        WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
+        WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:

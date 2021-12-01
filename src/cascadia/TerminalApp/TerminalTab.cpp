@@ -583,7 +583,7 @@ namespace winrt::TerminalApp::implementation
         _rootPane->Closed(_rootClosedToken);
         auto p = _rootPane;
         p->WalkTree([](auto pane) {
-            pane->_PaneDetachedHandlers(pane);
+            pane->_DetachedHandlers(pane);
             return false;
         });
 
@@ -1481,7 +1481,7 @@ namespace winrt::TerminalApp::implementation
 
         _RefreshVisualState();
 
-        _colorSelected(color);
+        _ColorSelectedHandlers(color);
     }
 
     // Method Description:
@@ -1535,7 +1535,7 @@ namespace winrt::TerminalApp::implementation
         TabViewItem().Background(WUX::Media::SolidColorBrush{ Windows::UI::Colors::Transparent() });
 
         _RefreshVisualState();
-        _colorCleared();
+        _ColorClearedHandlers();
     }
 
     // Method Description:
@@ -1743,12 +1743,4 @@ namespace winrt::TerminalApp::implementation
 
         return Title();
     }
-
-    DEFINE_EVENT(TerminalTab, ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
-    DEFINE_EVENT(TerminalTab, ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
-    DEFINE_EVENT(TerminalTab, ColorCleared, _colorCleared, winrt::delegate<>);
-    DEFINE_EVENT(TerminalTab, TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
-    DEFINE_EVENT(TerminalTab, DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
-    DEFINE_EVENT(TerminalTab, SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
-    DEFINE_EVENT(TerminalTab, ExportTabRequested, _ExportTabRequestedHandlers, winrt::delegate<>);
 }
