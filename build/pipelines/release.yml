@@ -69,6 +69,7 @@ jobs:
   steps:
   - checkout: self
     clean: true
+    fetchDepth: 1
     submodules: true
     persistCredentials: True
   - task: PkgESSetupBuild@12
@@ -272,6 +273,7 @@ jobs:
     steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
       submodules: true
       persistCredentials: True
     - task: PkgESSetupBuild@12
@@ -349,6 +351,7 @@ jobs:
     steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
       submodules: true
       persistCredentials: True
     - task: PkgESSetupBuild@12
@@ -451,6 +454,7 @@ jobs:
     steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
       submodules: true
     - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build
