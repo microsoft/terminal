@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 import "GlobalSettingsViewModel.idl";
-import "EnumEntry.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {

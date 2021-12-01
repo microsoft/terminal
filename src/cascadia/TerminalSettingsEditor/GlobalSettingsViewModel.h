@@ -7,7 +7,6 @@
 #include "Utils.h"
 #include "ViewModelHelpers.h"
 #include "..\TerminalSettingsModel\MTSMSettings.h"
-#include "Utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {
@@ -16,29 +15,14 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     public:
         GlobalSettingsViewModel(const Model::GlobalAppSettings& globalSettings, const Model::CascadiaSettings& appSettings);
 
+        bool ShowFirstWindowPreference() const noexcept;
+        bool FeatureNotificationIconEnabled() const noexcept;
         void SetInvertedDisableAnimationsValue(bool invertedDisableAnimationsValue);
 
-        _GET_SETTING_FUNC(_globals, DefaultProfile);
-        _SET_SETTING_FUNC(_globals, DefaultProfile);
-        _CLEAR_SETTING_FUNC(_globals, Language);
-
-        // Launch
-    public:
-        bool ShowFirstWindowPreference() const noexcept;
         IInspectable CurrentDefaultProfile();
         void CurrentDefaultProfile(const IInspectable& value);
         winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
-        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _globals, FirstWindowPreference);
-        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, _globals, LaunchMode);
-        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _globals, WindowingBehavior);
 
-        // GlobalAppearance
-    public:
-        bool FeatureNotificationIconEnabled() const noexcept;
-        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, _globals, Theme);
-        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, _globals, TabWidthMode);
-
-    public:
         // LanguageDisplayConverter maps the given BCP 47 tag to a localized string.
         // For instance "en-US" produces "English (United States)", while "de-DE" produces
         // "Deutsch (Deutschland)". This works independently of the user's locale.
@@ -49,10 +33,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         winrt::Windows::Foundation::IInspectable CurrentLanguage();
         void CurrentLanguage(const winrt::Windows::Foundation::IInspectable& tag);
 
-        // Interaction
-    public:
+        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, _globals, FirstWindowPreference);
+        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, _globals, LaunchMode);
+        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, _globals, WindowingBehavior);
+        GETSET_BINDABLE_ENUM_SETTING(Theme, winrt::Windows::UI::Xaml::ElementTheme, _globals, Theme);
+        GETSET_BINDABLE_ENUM_SETTING(TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, _globals, TabWidthMode);
         GETSET_BINDABLE_ENUM_SETTING(TabSwitcherMode, Model::TabSwitcherMode, _globals, TabSwitcherMode);
         GETSET_BINDABLE_ENUM_SETTING(CopyFormat, winrt::Microsoft::Terminal::Control::CopyFormat, _globals, CopyFormatting);
+
+        _GET_SETTING_FUNC(_globals, DefaultProfile);
+        _SET_SETTING_FUNC(_globals, DefaultProfile);
+        _CLEAR_SETTING_FUNC(_globals, Language);
 
 #define GLOBAL_SETTINGS_INITIALIZE(type, name, ...) \
     PERMANENT_OBSERVABLE_PROJECTED_SETTING(_globals, name)
