@@ -268,7 +268,7 @@ jobs:
       SymbolServerType: TeamServices
     
   # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@2
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
     condition: succeededOrFailed()
 
