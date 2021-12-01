@@ -48,6 +48,9 @@ struct InitListPlaceholder
 // In that macro, we'll use the passed-in macro (MY_FOO_ARGS) with each of these
 // macros below, which will generate the various parts of the class body.
 //
+// Trying to make changes here? I'd recommend godbolt with the `-E` flag to gcc.
+// That'll output the expanded macros, so you can see how it will all get
+// expanded. Pretty critical for tracking down extraneous commas, etc.
 
 // Property definitions, and JSON keys
 #define DECLARE_ARGS(type, name, jsonKey, ...)              \
@@ -62,7 +65,9 @@ struct InitListPlaceholder
 #define CTOR_INITS(type, name, jsonKey, ...) \
     _##name{ name##Param },
 
-// check each property in the Equals() method
+// check each property in the Equals() method. You'll note there's a stray
+// `true` in the definition of Equals() below, that's to deal with trailing
+// commas
 #define EQUALS_ARGS(type, name, jsonKey, ...) \
     &&(otherAsUs->_##name == _##name)
 
@@ -78,7 +83,9 @@ struct InitListPlaceholder
 #define COPY_ARGS(type, name, jsonKey, ...) \
     copy->_##name = _##name;
 
-// hash each property in Hash()
+// hash each property in Hash(). You'll note there's a stray `0` in the
+// definition of Hash() below, that's to deal with trailing commas (or in this
+// case, leading.)
 #define HASH_ARGS(type, name, jsonKey, ...) \
     , name()
 
