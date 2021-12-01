@@ -261,7 +261,10 @@ jobs:
     displayName: Publish symbols path
     continueOnError: True
     inputs:
-      SearchPattern: '**/*.pdb'
+      SearchPattern: |
+        **/*.pdb
+        **/*.exe
+        **/*.dll
       IndexSources: false
       SymbolServerType: TeamServices
 
@@ -402,7 +405,10 @@ jobs:
       displayName: Publish symbols path
       continueOnError: True
       inputs:
-        SearchPattern: '**/*.pdb'
+        SearchPattern: |
+          **/*.pdb
+          **/*.exe
+          **/*.dll
         IndexSources: false
         SymbolServerType: TeamServices
         SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
