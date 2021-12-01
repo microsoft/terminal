@@ -94,25 +94,25 @@ static size_t EmptyHash()
 #define MOVE_PANE_ARGS(X) \
     X(uint32_t, TabIndex, "index", 0)
 
-#define MOVE_PANE_CTORS                \
-    MovePaneArgs(uint32_t& tabIndex) : \
-        _TabIndex{ tabIndex } {};
+// #define MOVE_PANE_CTORS                \
+//     MovePaneArgs(uint32_t& tabIndex) : \
+//         _TabIndex{ tabIndex } {};
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWITCH_TO_TAB_ARGS(X) \
     X(uint32_t, TabIndex, "index", 0)
 
-#define SWITCH_TO_TAB_CTORS               \
-    SwitchToTabArgs(uint32_t& tabIndex) : \
-        _TabIndex{ tabIndex } {};
+// #define SWITCH_TO_TAB_CTORS               \
+//     SwitchToTabArgs(uint32_t& tabIndex) : \
+//         _TabIndex{ tabIndex } {};
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RESIZE_PANE_ARGS(X) \
     X(Model::ResizeDirection, ResizeDirection, "direction", Model::ResizeDirection::None)
 
-#define RESIZE_PANE_CTORS                              \
-    ResizePaneArgs(Model::ResizeDirection direction) : \
-        _ResizeDirection{ direction } {};
+// #define RESIZE_PANE_CTORS                              \
+//     ResizePaneArgs(Model::ResizeDirection direction) : \
+//         _ResizeDirection{ direction } {};
 
 #define VALIDATE_RESIZE_PANE                                                    \
     if (args->ResizeDirection() == ResizeDirection::None)                       \
@@ -123,9 +123,9 @@ static size_t EmptyHash()
 #define MOVE_FOCUS_ARGS(X) \
     X(Model::FocusDirection, FocusDirection, "direction", Model::FocusDirection::None)
 
-#define MOVE_FOCUS_CTORS                             \
-    MoveFocusArgs(Model::FocusDirection direction) : \
-        _FocusDirection{ direction } {};
+// #define MOVE_FOCUS_CTORS                             \
+//     MoveFocusArgs(Model::FocusDirection direction) : \
+//         _FocusDirection{ direction } {};
 
 #define VALIDATE_MOVE_FOCUS                                                     \
     if (args->FocusDirection() == Model::FocusDirection::None)                  \
@@ -136,9 +136,9 @@ static size_t EmptyHash()
 #define SWAP_PANE_ARGS(X) \
     X(Model::FocusDirection, Direction, "direction", Model::FocusDirection::None)
 
-#define SWAP_PANE_CTORS                             \
-    SwapPaneArgs(Model::FocusDirection direction) : \
-        _Direction{ direction } {};
+// #define SWAP_PANE_CTORS                             \
+//     SwapPaneArgs(Model::FocusDirection direction) : \
+//         _Direction{ direction } {};
 
 #define VALIDATE_SWAP_PANE                                                      \
     if (args->Direction() == Model::FocusDirection::None)                       \
@@ -162,16 +162,16 @@ static size_t EmptyHash()
 #define OPEN_SETTINGS_ARGS(X) \
     X(SettingsTarget, Target, "target", SettingsTarget::SettingsFile)
 
-#define OPEN_SETTINGS_CTORS                          \
-    OpenSettingsArgs(const SettingsTarget& target) : \
-        _Target{ target } {};
+// #define OPEN_SETTINGS_CTORS                          \
+//     OpenSettingsArgs(const SettingsTarget& target) : \
+//         _Target{ target } {};
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_COLOR_SCHEME_ARGS(X) \
     X(winrt::hstring, SchemeName, "colorScheme", L"")
 
-#define SET_COLOR_SCHEME_CTORS                \
-    SetColorSchemeArgs(winrt::hstring name) : \
-        _SchemeName{ name } {};
+// #define SET_COLOR_SCHEME_CTORS                \
+//     SetColorSchemeArgs(winrt::hstring name) : \
+//         _SchemeName{ name } {};
 
 #define VALIDATE_SET_COLOR_SCHEME                                               \
     if (args->SchemeName().empty())                                             \
@@ -203,9 +203,9 @@ static size_t EmptyHash()
 #define EXECUTE_COMMANDLINE_ARGS(X) \
     X(winrt::hstring, Commandline, "commandline", L"")
 
-#define EXECUTE_COMMANDLINE_CTORS                        \
-    ExecuteCommandlineArgs(winrt::hstring commandline) : \
-        _Commandline{ commandline } {};
+// #define EXECUTE_COMMANDLINE_CTORS                        \
+//     ExecuteCommandlineArgs(winrt::hstring commandline) : \
+//         _Commandline{ commandline } {};
 
 #define VALIDATE_EXECUTE_COMMANDLINE                                            \
     if (args->Commandline().empty())                                            \
@@ -216,18 +216,18 @@ static size_t EmptyHash()
 #define CLOSE_OTHER_TABS_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
 
-#define CLOSE_OTHER_TABS_CTORS               \
-    CloseOtherTabsArgs(uint32_t& tabIndex) : \
-        _Index{ tabIndex } {};
+// #define CLOSE_OTHER_TABS_CTORS               \
+//     CloseOtherTabsArgs(uint32_t& tabIndex) : \
+//         _Index{ tabIndex } {};
 
 #define VALIDATE_CLOSE_OTHER_TABS NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TABS_AFTER_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
 
-#define CLOSE_TABS_AFTER_CTORS               \
-    CloseTabsAfterArgs(uint32_t& tabIndex) : \
-        _Index{ tabIndex } {};
+// #define CLOSE_TABS_AFTER_CTORS               \
+//     CloseTabsAfterArgs(uint32_t& tabIndex) : \
+//         _Index{ tabIndex } {};
 
 #define VALIDATE_CLOSE_TABS_AFTER NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
@@ -243,9 +243,9 @@ static size_t EmptyHash()
 #define MOVE_TAB_ARGS(X) \
     X(MoveTabDirection, Direction, "direction", MoveTabDirection::None)
 
-#define MOVE_TAB_CTORS                        \
-    MoveTabArgs(MoveTabDirection direction) : \
-        _Direction{ direction } {};
+// #define MOVE_TAB_CTORS                        \
+//     MoveTabArgs(MoveTabDirection direction) : \
+//         _Direction{ direction } {};
 
 #define VALIDATE_MOVE_TAB                                                       \
     if (args->Direction() == MoveTabDirection::None)                            \
@@ -275,9 +275,9 @@ static size_t EmptyHash()
 #define FIND_MATCH_ARGS(X) \
     X(FindMatchDirection, Direction, "direction", FindMatchDirection::None)
 
-#define FIND_MATCH_CTORS                          \
-    FindMatchArgs(FindMatchDirection direction) : \
-        _Direction{ direction } {};
+// #define FIND_MATCH_CTORS                          \
+//     FindMatchArgs(FindMatchDirection direction) : \
+//         _Direction{ direction } {};
 
 #define VALIDATE_FIND_MATCH                                                     \
     if (args->Direction() == FindMatchDirection::None)                          \
@@ -288,53 +288,62 @@ static size_t EmptyHash()
 #define PREV_TAB_ARGS(X) \
     X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", nullptr)
 
-#define PREV_TAB_CTORS                          \
-    PrevTabArgs(TabSwitcherMode switcherMode) : \
-        _SwitcherMode(switcherMode) {}
+// #define PREV_TAB_CTORS                          \
+//     PrevTabArgs(TabSwitcherMode switcherMode) : \
+//         _SwitcherMode(switcherMode) {}
 
 #define VALIDATE_PREV_TAB NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 #define NEXT_TAB_ARGS(X) \
     X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", nullptr)
 
-#define NEXT_TAB_CTORS                          \
-    NextTabArgs(TabSwitcherMode switcherMode) : \
-        _SwitcherMode(switcherMode) {}
+// #define NEXT_TAB_CTORS                          \
+//     NextTabArgs(TabSwitcherMode switcherMode) : \
+//         _SwitcherMode(switcherMode) {}
 
 #define VALIDATE_NEXT_TAB NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
     X(winrt::hstring, Name, "name", L"")
 
-#define RENAME_WINDOW_CTORS                 \
-    RenameWindowArgs(winrt::hstring name) : \
-        _Name{ name } {};
+// #define RENAME_WINDOW_CTORS                 \
+//     RenameWindowArgs(winrt::hstring name) : \
+//         _Name{ name } {};
 
 #define VALIDATE_RENAME_WINDOW NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 #define FOCUS_PANE_ARGS(X) \
     X(uint32_t, Id, "id", 0u)
 
-#define FOCUS_PANE_CTORS         \
-    FocusPaneArgs(uint32_t id) : \
-        _Id{ id } {};
+// #define FOCUS_PANE_CTORS         \
+//     FocusPaneArgs(uint32_t id) : \
+//         _Id{ id } {};
 
 #define VALIDATE_FOCUS_PANE NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
     X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", winrt::Microsoft::Terminal::Control::ClearBufferType::All)
 
-#define CLEAR_BUFFER_CTORS                                                            \
-    ClearBufferArgs(winrt::Microsoft::Terminal::Control::ClearBufferType clearType) : \
-        _Clear{ clearType } {};
+// #define CLEAR_BUFFER_CTORS                                                            \
+//     ClearBufferArgs(winrt::Microsoft::Terminal::Control::ClearBufferType clearType) : \
+//         _Clear{ clearType } {};
 
 #define VALIDATE_CLEAR_BUFFER NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
+struct InitListPlaceholder
+{
+};
 
 #define DECLARE_ARGS(type, name, jsonKey, ...)              \
     static constexpr std::string_view name##Key{ jsonKey }; \
     ACTION_ARG(type, name, ##__VA_ARGS__);
+
+#define CTOR_PARAMS(type, name, jsonKey, ...) \
+    const type &name##Param,
+
+#define CTOR_INITS(type, name, jsonKey, ...) \
+    _##name{ name##Param },
 
 #define EQUALS_ARGS(type, name, jsonKey, ...) \
     &&(otherAsUs->_##name == _##name)
@@ -355,9 +364,17 @@ static size_t EmptyHash()
     struct className : public className##T<className>                               \
     {                                                                               \
         className() = default;                                                      \
+        className(                                                                  \
+            argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :          \
+            argsMacro(CTOR_INITS) _placeholder{} {};                                \
         otherCtorsMacro;                                                            \
-        argsMacro(DECLARE_ARGS) public :                                            \
-            hstring GenerateName() const;                                           \
+        argsMacro(DECLARE_ARGS);                                                    \
+                                                                                    \
+    private:                                                                        \
+        InitListPlaceholder _placeholder;                                           \
+                                                                                    \
+    public:                                                                         \
+        hstring GenerateName() const;                                               \
         bool Equals(const IActionArgs& other)                                       \
         {                                                                           \
             auto otherAsUs = other.try_as<className>();                             \
@@ -558,15 +575,15 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS, MOVE_PANE_CTORS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS, NO_OTHER_CTORS, NO_OTHER_VALIDATION);
 
-    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS, SWITCH_TO_TAB_CTORS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS, NO_OTHER_CTORS, NO_OTHER_VALIDATION);
 
-    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS, RESIZE_PANE_CTORS, VALIDATE_RESIZE_PANE);
+    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS, NO_OTHER_CTORS, VALIDATE_RESIZE_PANE);
 
-    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS, MOVE_FOCUS_CTORS, VALIDATE_MOVE_FOCUS);
+    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS, NO_OTHER_CTORS, VALIDATE_MOVE_FOCUS);
 
-    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS, SWAP_PANE_CTORS, VALIDATE_SWAP_PANE);
+    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS, NO_OTHER_CTORS, VALIDATE_SWAP_PANE);
 
     ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS, NO_OTHER_CTORS, NO_OTHER_VALIDATION);
 
@@ -656,31 +673,31 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS, OPEN_SETTINGS_CTORS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS, NO_OTHER_CTORS, NO_OTHER_VALIDATION);
 
-    ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS, SET_COLOR_SCHEME_CTORS, VALIDATE_SET_COLOR_SCHEME);
+    ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS, NO_OTHER_CTORS, VALIDATE_SET_COLOR_SCHEME);
 
-    ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS, SET_TAB_COLOR_CTORS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS, NO_OTHER_CTORS, NO_OTHER_VALIDATION);
 
     ACTION_ARGS_STRUCT(RenameTabArgs, RENAME_TAB_ARGS, NO_OTHER_CTORS, NO_OTHER_VALIDATION);
 
-    ACTION_ARGS_STRUCT(ExecuteCommandlineArgs, EXECUTE_COMMANDLINE_ARGS, EXECUTE_COMMANDLINE_CTORS, VALIDATE_EXECUTE_COMMANDLINE);
+    ACTION_ARGS_STRUCT(ExecuteCommandlineArgs, EXECUTE_COMMANDLINE_ARGS, NO_OTHER_CTORS, VALIDATE_EXECUTE_COMMANDLINE);
 
-    ACTION_ARGS_STRUCT(CloseOtherTabsArgs, CLOSE_OTHER_TABS_ARGS, CLOSE_OTHER_TABS_CTORS, VALIDATE_CLOSE_OTHER_TABS);
+    ACTION_ARGS_STRUCT(CloseOtherTabsArgs, CLOSE_OTHER_TABS_ARGS, NO_OTHER_CTORS, VALIDATE_CLOSE_OTHER_TABS);
 
-    ACTION_ARGS_STRUCT(CloseTabsAfterArgs, CLOSE_TABS_AFTER_ARGS, CLOSE_TABS_AFTER_CTORS, VALIDATE_CLOSE_TABS_AFTER);
+    ACTION_ARGS_STRUCT(CloseTabsAfterArgs, CLOSE_TABS_AFTER_ARGS, NO_OTHER_CTORS, VALIDATE_CLOSE_TABS_AFTER);
 
-    ACTION_ARGS_STRUCT(CloseTabArgs, CLOSE_TAB_ARGS, CLOSE_TAB_CTORS, VALIDATE_CLOSE_TAB);
+    ACTION_ARGS_STRUCT(CloseTabArgs, CLOSE_TAB_ARGS, NO_OTHER_CTORS, VALIDATE_CLOSE_TAB);
 
-    ACTION_ARGS_STRUCT(MoveTabArgs, MOVE_TAB_ARGS, MOVE_TAB_CTORS, VALIDATE_MOVE_TAB);
+    ACTION_ARGS_STRUCT(MoveTabArgs, MOVE_TAB_ARGS, NO_OTHER_CTORS, VALIDATE_MOVE_TAB);
 
-    ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS, SCROLL_UP_CTORS, VALIDATE_SCROLL_UP);
+    ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS, NO_OTHER_CTORS, VALIDATE_SCROLL_UP);
 
-    ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS, SCROLL_DOWN_CTORS, VALIDATE_SCROLL_DOWN);
+    ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS, NO_OTHER_CTORS, VALIDATE_SCROLL_DOWN);
 
-    ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS, TOGGLE_COMMAND_PALETTE_CTORS, VALIDATE_TOGGLE_COMMAND_PALETTE);
+    ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS, NO_OTHER_CTORS, VALIDATE_TOGGLE_COMMAND_PALETTE);
 
-    ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS, FIND_MATCH_CTORS, VALIDATE_FIND_MATCH);
+    ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS, NO_OTHER_CTORS, VALIDATE_FIND_MATCH);
 
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
     {
@@ -729,11 +746,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS, PREV_TAB_CTORS, VALIDATE_PREV_TAB);
+    ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS, NO_OTHER_CTORS, VALIDATE_PREV_TAB);
 
-    ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS, NEXT_TAB_CTORS, VALIDATE_NEXT_TAB);
+    ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS, NO_OTHER_CTORS, VALIDATE_NEXT_TAB);
 
-    ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS, RENAME_WINDOW_CTORS, VALIDATE_RENAME_WINDOW);
+    ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS, NO_OTHER_CTORS, VALIDATE_RENAME_WINDOW);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
     {
@@ -819,9 +836,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS, FOCUS_PANE_CTORS, VALIDATE_FOCUS_PANE);
+    ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS, NO_OTHER_CTORS, VALIDATE_FOCUS_PANE);
 
-    ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS, CLEAR_BUFFER_CTORS, VALIDATE_CLEAR_BUFFER);
+    ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS, NO_OTHER_CTORS, VALIDATE_CLEAR_BUFFER);
 
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
     {
