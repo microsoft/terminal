@@ -393,6 +393,26 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Record the configuration information of the last closed thing .
+    // - Will occasionally prune the list so it doesn't grow infinitely.
+    // Arguments:
+    // - args: the list of actions to take to remake the pane/tab
+    void TerminalPage::_AddPreviouslyClosedPaneOrTab(std::vector<ActionAndArgs>&& args)
+    {
+        // Just make sure we don't get infinitely large, but still
+        // maintain a large replay buffer.
+        if (const auto size = _previouslyClosedPanesAndTabs.size(); size > 150)
+        {
+            const auto it = _previouslyClosedPanesAndTabs.begin();
+            // delete 50 at a time so that we don't have to do an erase
+            // of the buffer every time when at capacity.
+            _previouslyClosedPanesAndTabs.erase(it, it + (size - 100));
+        }
+
+        _previouslyClosedPanesAndTabs.emplace_back(args);
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
@@ -411,9 +431,9 @@ namespace winrt::TerminalApp::implementation
 
         if (const auto terminalTab = _GetTerminalTabImpl(tab))
         {
-            const auto actions = terminalTab->BuildStartupActions();
+            auto actions = terminalTab->BuildStartupActions();
 
-            _previouslyClosedPanesAndTabs.emplace_back(std::move(actions));
+            _AddPreviouslyClosedPaneOrTab(std::move(actions));
         }
         else if (tab.try_as<SettingsTab>())
         {
@@ -422,7 +442,7 @@ namespace winrt::TerminalApp::implementation
             OpenSettingsArgs args{ SettingsTarget::SettingsUI };
             action.Args(args);
 
-            _previouslyClosedPanesAndTabs.emplace_back(std::vector{ std::move(action) });
+            _AddPreviouslyClosedPaneOrTab(std::vector{ std::move(action) });
         }
 
         _RemoveTab(tab);
@@ -727,14 +747,6 @@ namespace winrt::TerminalApp::implementation
                     });
                 }
 
-                // Just make sure we don't get infinitely large, but still
-                // maintain a large replay buffer.
-                if (const auto size = _previouslyClosedPanesAndTabs.size(); size > 100)
-                {
-                    const auto it = _previouslyClosedPanesAndTabs.begin();
-                    _previouslyClosedPanesAndTabs.erase(it, it + (size - 100));
-                }
-
                 // Build the list of actions to recreate the closed pane,
                 // BuildStartupActions returns the "first" pane and the rest of
                 // its actions are assuming that first pane has been created first.
@@ -750,7 +762,7 @@ namespace winrt::TerminalApp::implementation
 
                     state.args.emplace(state.args.begin(), std::move(splitPaneAction));
                 }
-                _previouslyClosedPanesAndTabs.emplace_back(std::move(state.args));
+                _AddPreviouslyClosedPaneOrTab(std::move(state.args));
 
                 pane->Close();
             }
