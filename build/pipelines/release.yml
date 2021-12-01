@@ -262,9 +262,9 @@ jobs:
     continueOnError: True
     inputs:
       SearchPattern: |
-        **/*.pdb
-        **/*.exe
-        **/*.dll
+        $(Build.SourcesDirectory)/bin/**/*.pdb
+        $(Build.SourcesDirectory)/bin/**/*.exe
+        $(Build.SourcesDirectory)/bin/**/*.dll
       IndexSources: false
       SymbolServerType: TeamServices
 
@@ -406,9 +406,9 @@ jobs:
       continueOnError: True
       inputs:
         SearchPattern: |
-          **/*.pdb
-          **/*.exe
-          **/*.dll
+          $(Build.SourcesDirectory)/bin/**/*.pdb
+          $(Build.SourcesDirectory)/bin/**/*.exe
+          $(Build.SourcesDirectory)/bin/**/*.dll
         IndexSources: false
         SymbolServerType: TeamServices
         SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
