@@ -40,8 +40,8 @@
                 <local:SettingContainer x:Uid="Globals_DefaultProfile"
                                         Margin="0">
                     <ComboBox x:Name="DefaultProfile"
-                              ItemsSource="{x:Bind DefaultProfiles}"
-                              SelectedItem="{x:Bind CurrentDefaultProfile, Mode=TwoWay}"
+                              ItemsSource="{x:Bind Globals.DefaultProfiles}"
+                              SelectedItem="{x:Bind Globals.CurrentDefaultProfile, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="SettingsModel:Profile">
@@ -74,8 +74,8 @@
                                         x:Uid="Globals_DefaultTerminal"
                                         x:Load="false">
                     <ComboBox x:Name="DefaultTerminal"
-                              ItemsSource="{x:Bind State.Settings.DefaultTerminals}"
-                              SelectedItem="{x:Bind State.Settings.CurrentDefaultTerminal, Mode=TwoWay}"
+                              ItemsSource="{x:Bind AppSettings.DefaultTerminals}"
+                              SelectedItem="{x:Bind AppSettings.CurrentDefaultTerminal, Mode=TwoWay}"
                               Style="{StaticResource ComboBoxSettingStyle}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate x:DataType="SettingsModel:DefaultTerminal">
@@ -130,16 +130,16 @@
 
                 <!--  Start on User Login  -->
                 <local:SettingContainer x:Uid="Globals_StartOnUserLogin">
-                    <ToggleSwitch IsOn="{x:Bind State.Settings.GlobalSettings.StartOnUserLogin, Mode=TwoWay}" />
+                    <ToggleSwitch IsOn="{x:Bind Globals.StartOnUserLogin, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  First Window Behavior  -->
                 <local:SettingContainer x:Uid="Globals_FirstWindowPreference"
-                                        Visibility="{x:Bind ShowFirstWindowPreference}">
+                                        Visibility="{x:Bind Globals.ShowFirstWindowPreference}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind FirstWindowPreferenceList}"
-                                       SelectedItem="{x:Bind CurrentFirstWindowPreference, Mode=TwoWay}" />
+                                       ItemsSource="{x:Bind Globals.FirstWindowPreferenceList}"
+                                       SelectedItem="{x:Bind Globals.CurrentFirstWindowPreference, Mode=TwoWay}" />
                 </local:SettingContainer>
 
 
@@ -148,16 +148,16 @@
                                         x:Uid="Globals_LaunchMode">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind LaunchModeList}"
-                                       SelectedItem="{x:Bind CurrentLaunchMode, Mode=TwoWay}" />
+                                       ItemsSource="{x:Bind Globals.LaunchModeList}"
+                                       SelectedItem="{x:Bind Globals.CurrentLaunchMode, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Launch Mode  -->
                 <local:SettingContainer x:Uid="Globals_WindowingBehavior">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                       ItemsSource="{x:Bind WindowingBehaviorList}"
-                                       SelectedItem="{x:Bind CurrentWindowingBehavior, Mode=TwoWay}" />
+                                       ItemsSource="{x:Bind Globals.WindowingBehaviorList}"
+                                       SelectedItem="{x:Bind Globals.CurrentWindowingBehavior, Mode=TwoWay}" />
                 </local:SettingContainer>
             </StackPanel>
 
@@ -172,13 +172,13 @@
                                         Margin="0">
                     <muxc:NumberBox x:Uid="Globals_InitialColsBox"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind State.Settings.GlobalSettings.InitialCols, Mode=TwoWay}" />
+                                    Value="{x:Bind Globals.InitialCols, Mode=TwoWay}" />
                 </local:SettingContainer>
                 <!--  Rows  -->
                 <local:SettingContainer x:Uid="Globals_InitialRows">
                     <muxc:NumberBox x:Uid="Globals_InitialRowsBox"
                                     Style="{StaticResource LaunchSizeNumberBoxStyle}"
-                                    Value="{x:Bind State.Settings.GlobalSettings.InitialRows, Mode=TwoWay}" />
+                                    Value="{x:Bind Globals.InitialRows, Mode=TwoWay}" />
                 </local:SettingContainer>
             </StackPanel>
         </StackPanel>

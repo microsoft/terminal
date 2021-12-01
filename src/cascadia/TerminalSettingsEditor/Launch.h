@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -12,12 +12,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     struct LaunchPageNavigationState : LaunchPageNavigationStateT<LaunchPageNavigationState>
     {
     public:
-        LaunchPageNavigationState(const Editor::GlobalSettingsViewModel& globals, const Model::CascadiaSettings& settings) :
+        LaunchPageNavigationState(const Editor::GlobalSettingsViewModel& globals, const Model::CascadiaSettings& appSettings) :
             _Globals{ globals },
-            _Settings{ settings } {}
+            _AppSettings{ appSettings } {}
 
         WINRT_PROPERTY(Editor::GlobalSettingsViewModel, Globals, nullptr)
-        WINRT_PROPERTY(Model::CascadiaSettings, Settings, nullptr)
+        WINRT_PROPERTY(Model::CascadiaSettings, AppSettings, nullptr);
     };
 
     struct Launch : public HasScrollViewer<Launch>, LaunchT<Launch>
@@ -26,18 +26,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Launch();
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-
-        IInspectable CurrentDefaultProfile();
-        void CurrentDefaultProfile(const IInspectable& value);
-        winrt::Windows::Foundation::Collections::IObservableVector<IInspectable> DefaultProfiles() const;
-
-        bool ShowFirstWindowPreference() const noexcept;
-
-        WINRT_PROPERTY(Editor::LaunchPageNavigationState, State, nullptr);
-
-        GETSET_BINDABLE_ENUM_SETTING(FirstWindowPreference, Model::FirstWindowPreference, State().Globals, FirstWindowPreference);
-        GETSET_BINDABLE_ENUM_SETTING(LaunchMode, Model::LaunchMode, State().Globals, LaunchMode);
-        GETSET_BINDABLE_ENUM_SETTING(WindowingBehavior, Model::WindowingMode, State().Globals, WindowingBehavior);
+        WINRT_PROPERTY(Editor::GlobalSettingsViewModel, Globals, nullptr);
+        WINRT_PROPERTY(Model::CascadiaSettings, AppSettings, nullptr);
     };
 }
 

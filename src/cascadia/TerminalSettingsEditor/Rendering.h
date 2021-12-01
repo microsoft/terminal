@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -23,8 +23,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Rendering();
 
         void OnNavigatedTo(const winrt::Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
-
-        WINRT_PROPERTY(Editor::RenderingPageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Editor::GlobalSettingsViewModel, Globals, nullptr)
     };
 }
 

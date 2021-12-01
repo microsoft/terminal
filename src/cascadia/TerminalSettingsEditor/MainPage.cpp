@@ -46,9 +46,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         return winrt::make<implementation::ProfileViewModel>(profile, appSettings);
     }
 
-    static Editor::GlobalSettingsViewModel _viewModelForGlobals(const Model::GlobalAppSettings& globals)
+    static Editor::GlobalSettingsViewModel _viewModelForGlobals(const Model::GlobalAppSettings& globals, const Model::CascadiaSettings& appSettings)
     {
-        return winrt::make<implementation::GlobalSettingsViewModel>(globals);
+        return winrt::make<implementation::GlobalSettingsViewModel>(globals, appSettings);
     }
 
     MainPage::MainPage(const CascadiaSettings& settings) :
@@ -286,17 +286,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         if (clickedItemTag == launchTag)
         {
-            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings()) };
+            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings(), _settingsClone) };
             contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(globalsVM, _settingsClone));
         }
         else if (clickedItemTag == interactionTag)
         {
-            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings()) };
+            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings(), _settingsClone) };
             contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionPageNavigationState>(globalsVM));
         }
         else if (clickedItemTag == renderingTag)
         {
-            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings()) };
+            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings(), _settingsClone) };
             contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(globalsVM));
         }
         else if (clickedItemTag == actionsTag)
@@ -320,7 +320,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
-            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings()) };
+            auto globalsVM{ _viewModelForGlobals(_settingsClone.GlobalSettings(), _settingsClone) };
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(globalsVM));
         }
         else if (clickedItemTag == addProfileTag)

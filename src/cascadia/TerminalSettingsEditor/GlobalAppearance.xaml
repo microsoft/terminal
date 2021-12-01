@@ -29,12 +29,12 @@
             <!--  Language  -->
             <local:SettingContainer x:Uid="Globals_Language"
                                     Margin="0"
-                                    Visibility="{x:Bind LanguageSelectorAvailable}">
-                <ComboBox ItemsSource="{x:Bind LanguageList}"
-                          SelectedItem="{x:Bind CurrentLanguage, Mode=TwoWay}">
+                                    Visibility="{x:Bind Globals.LanguageSelectorAvailable}">
+                <ComboBox ItemsSource="{x:Bind Globals.LanguageList}"
+                          SelectedItem="{x:Bind Globals.CurrentLanguage, Mode=TwoWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="x:String">
-                            <TextBlock Text="{x:Bind local:GlobalAppearance.LanguageDisplayConverter((x:String))}" />
+                            <TextBlock Text="{x:Bind local:GlobalSettingsViewModel.LanguageDisplayConverter((x:String))}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
@@ -44,59 +44,59 @@
             <local:SettingContainer x:Uid="Globals_Theme">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind ThemeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentTheme, Mode=TwoWay}" />
+                                   ItemsSource="{x:Bind Globals.ThemeList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind Globals.CurrentTheme, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Always show tabs  -->
             <local:SettingContainer x:Uid="Globals_AlwaysShowTabs">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowTabs, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.AlwaysShowTabs, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Show Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitlebar">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTabsInTitlebar, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.ShowTabsInTitlebar, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Show Acrylic in Tab Row  -->
             <local:SettingContainer x:Uid="Globals_AcrylicTabRow">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.UseAcrylicInTabRow, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.UseAcrylicInTabRow, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Show Title in Titlebar  -->
             <local:SettingContainer x:Uid="Globals_ShowTitleInTitlebar">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.ShowTitleInTitlebar, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.ShowTitleInTitlebar, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Always on Top  -->
             <local:SettingContainer x:Uid="Globals_AlwaysOnTop">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysOnTop, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.AlwaysOnTop, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Tab Width Mode  -->
             <local:SettingContainer x:Uid="Globals_TabWidthMode">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind TabWidthModeList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentTabWidthMode, Mode=TwoWay}" />
+                                   ItemsSource="{x:Bind Globals.TabWidthModeList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind Globals.CurrentTabWidthMode, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Disable Animations  -->
             <!--  NOTE: the UID is "DisablePaneAnimationsReversed" not "DisablePaneAnimations". See GH#9124 for more details.  -->
             <local:SettingContainer x:Uid="Globals_DisableAnimationsReversed">
-                <ToggleSwitch IsOn="{x:Bind local:Converters.InvertBoolean(State.Globals.DisableAnimations), BindBack=State.Globals.SetInvertedDisableAnimationsValue, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind local:Converters.InvertBoolean(Globals.DisableAnimations), BindBack=Globals.SetInvertedDisableAnimationsValue, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Always Show Notification Icon  -->
             <local:SettingContainer x:Uid="Globals_AlwaysShowNotificationIcon"
-                                    Visibility="{x:Bind FeatureNotificationIconEnabled}">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.AlwaysShowNotificationIcon, Mode=TwoWay}" />
+                                    Visibility="{x:Bind Globals.FeatureNotificationIconEnabled}">
+                <ToggleSwitch IsOn="{x:Bind Globals.AlwaysShowNotificationIcon, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Minimize To Notification Area  -->
             <local:SettingContainer x:Uid="Globals_MinimizeToNotificationArea"
-                                    Visibility="{x:Bind FeatureNotificationIconEnabled}">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.MinimizeToNotificationArea, Mode=TwoWay}" />
+                                    Visibility="{x:Bind Globals.FeatureNotificationIconEnabled}">
+                <ToggleSwitch IsOn="{x:Bind Globals.MinimizeToNotificationArea, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>

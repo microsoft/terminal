@@ -7,12 +7,12 @@ namespace Microsoft.Terminal.Settings.Editor
 {
     runtimeclass RenderingPageNavigationState
     {
-        GlobalSettingsViewModel Globals;
+        GlobalSettingsViewModel Globals { get; };
     };
 
     [default_interface] runtimeclass Rendering : Windows.UI.Xaml.Controls.Page
     {
         Rendering();
-        RenderingPageNavigationState State { get; };
+        GlobalSettingsViewModel Globals { get; };
     }
 }

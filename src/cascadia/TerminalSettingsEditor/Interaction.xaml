@@ -29,55 +29,55 @@
             <!--  Copy On Select  -->
             <local:SettingContainer x:Uid="Globals_CopyOnSelect"
                                     Margin="0">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.CopyOnSelect, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.CopyOnSelect, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Copy Format  -->
             <local:SettingContainer x:Uid="Globals_CopyFormat">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind CopyFormatList, Mode=OneWay}"
-                                   SelectedItem="{x:Bind CurrentCopyFormat, Mode=TwoWay}" />
+                                   ItemsSource="{x:Bind Globals.CopyFormatList, Mode=OneWay}"
+                                   SelectedItem="{x:Bind Globals.CurrentCopyFormat, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Trim Block Selection  -->
             <local:SettingContainer x:Uid="Globals_TrimBlockSelection">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimBlockSelection, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.TrimBlockSelection, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Trim Paste  -->
             <local:SettingContainer x:Uid="Globals_TrimPaste">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.TrimPaste, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.TrimPaste, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Word Delimiters  -->
             <local:SettingContainer x:Uid="Globals_WordDelimiters">
                 <TextBox IsSpellCheckEnabled="False"
                          Style="{StaticResource TextBoxSettingStyle}"
-                         Text="{x:Bind State.Globals.WordDelimiters, Mode=TwoWay}" />
+                         Text="{x:Bind Globals.WordDelimiters, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Snap On Resize  -->
             <local:SettingContainer x:Uid="Globals_SnapToGridOnResize">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.SnapToGridOnResize, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.SnapToGridOnResize, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Tab Switcher Mode  -->
             <local:SettingContainer x:Uid="Globals_TabSwitcherMode">
                 <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                    ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
-                                   ItemsSource="{x:Bind TabSwitcherModeList}"
-                                   SelectedItem="{x:Bind CurrentTabSwitcherMode, Mode=TwoWay}" />
+                                   ItemsSource="{x:Bind Globals.TabSwitcherModeList}"
+                                   SelectedItem="{x:Bind Globals.CurrentTabSwitcherMode, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Focus Follow Mouse Mode  -->
             <local:SettingContainer x:Uid="Globals_FocusFollowMouse">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.FocusFollowMouse, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.FocusFollowMouse, Mode=TwoWay}" />
             </local:SettingContainer>
 
             <!--  Detect URLs  -->
             <local:SettingContainer x:Uid="Globals_DetectURLs">
-                <ToggleSwitch IsOn="{x:Bind State.Globals.DetectURLs, Mode=TwoWay}" />
+                <ToggleSwitch IsOn="{x:Bind Globals.DetectURLs, Mode=TwoWay}" />
             </local:SettingContainer>
         </StackPanel>
     </ScrollViewer>
