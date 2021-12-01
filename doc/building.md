@@ -122,7 +122,7 @@ Or the cmd.exe version:
 @rem set WindowsSdkDir=C:\Program Files (x86)\Windows Kits\10\
 @rem vsdevcmd.bat does a lot of logic to find that.
 @rem
-@rem I'm gonna hardcode it below:
+@rem I'm gonna hard code it below:
 
 powershell -Command Set-Location -Path %OPENCON%\src\cascadia\CascadiaPackage\AppPackages\CascadiaPackage_0.0.1.0_x64_Debug_Test;if ((Get-AppxPackage -Name 'WindowsTerminalDev*') -ne $null) { Remove-AppxPackage 'WindowsTerminalDev_0.0.1.0_x64__8wekyb3d8bbwe'};New-Item ..\loose -Type Directory -Force;C:\'Program Files (x86)'\'Windows Kits'\10\bin\10.0.19041.0\x64\makeappx unpack /v /o /p .\CascadiaPackage_0.0.1.0_x64_Debug.msix /d ..\Loose\;Add-AppxPackage -Path ..\loose\AppxManifest.xml -Register -ForceUpdateFromAnyVersion -ForceApplicationShutdown
 ```
