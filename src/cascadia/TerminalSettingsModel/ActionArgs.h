@@ -81,6 +81,80 @@ static size_t EmptyHash()
     return cachedHash;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+#define COPY_TEXT_ARGS(X)                    \
+    X(bool, SingleLine, "singleLine", false) \
+    X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+#define DECLARE_ARGS(type, name, jsonKey, ...)              \
+    static constexpr std::string_view name##Key{ jsonKey }; \
+    ACTION_ARG(type, name, ##__VA_ARGS__);
+
+#define EQUALS_ARGS(type, name, jsonKey, ...) \
+    &&(otherAsUs->_##name == _##name)
+
+#define FROM_JSON_ARGS(type, name, jsonKey, ...) \
+    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);
+
+#define TO_JSON_ARGS(type, name, jsonKey, ...) \
+    JsonUtils::SetValueForKey(json, jsonKey, args->_##name);
+
+#define COPY_ARGS(type, name, jsonKey, ...) \
+    copy->_##name = _##name;
+
+#define HASH_ARGS(type, name, jsonKey, ...) \
+    , name()
+
+#define ACTION_ARGS_STRUCT(className, argsMacro)                                    \
+    struct className : public className##T<className>                               \
+    {                                                                               \
+        className() = default;                                                      \
+        argsMacro(DECLARE_ARGS) public :                                            \
+            hstring GenerateName() const;                                           \
+        bool Equals(const IActionArgs& other)                                       \
+        {                                                                           \
+            auto otherAsUs = other.try_as<className>();                             \
+            if (otherAsUs)                                                          \
+            {                                                                       \
+                return true argsMacro(EQUALS_ARGS);                                 \
+            }                                                                       \
+            return false;                                                           \
+        };                                                                          \
+        static FromJsonResult FromJson(const Json::Value& json)                     \
+        {                                                                           \
+            auto args = winrt::make_self<className>();                              \
+            argsMacro(FROM_JSON_ARGS);                                              \
+            return { *args, {} };                                                   \
+        }                                                                           \
+        static Json::Value ToJson(const IActionArgs& val)                           \
+        {                                                                           \
+            if (!val)                                                               \
+            {                                                                       \
+                return {};                                                          \
+            }                                                                       \
+            Json::Value json{ Json::ValueType::objectValue };                       \
+            const auto args{ get_self<className>(val) };                            \
+            argsMacro(TO_JSON_ARGS);                                                \
+            return json;                                                            \
+        }                                                                           \
+        IActionArgs Copy() const                                                    \
+        {                                                                           \
+            auto copy{ winrt::make_self<className>() };                             \
+            argsMacro(COPY_ARGS);                                                   \
+            return *copy;                                                           \
+        }                                                                           \
+        size_t Hash() const                                                         \
+        {                                                                           \
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty( \
+                0 argsMacro(HASH_ARGS));                                            \
+        }                                                                           \
+    };
+
+////////////////////////////////////////////////////////////////////////////////
+
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     using namespace ::Microsoft::Terminal::Settings::Model;
@@ -190,34 +264,35 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
+    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS);
+    /* struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
     {
         CopyTextArgs() = default;
-        ACTION_ARG(bool, SingleLine, false);
-        ACTION_ARG(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, nullptr);
-
         static constexpr std::string_view SingleLineKey{ "singleLine" };
+        ACTION_ARG(bool, SingleLine, false);
         static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
+        ACTION_ARG(Windows::Foundation::IReference<Control::CopyFormat>,
+                   CopyFormatting,
+                   nullptr);
 
     public:
         hstring GenerateName() const;
-
         bool Equals(const IActionArgs& other)
         {
             auto otherAsUs = other.try_as<CopyTextArgs>();
             if (otherAsUs)
             {
-                return otherAsUs->_SingleLine == _SingleLine &&
-                       otherAsUs->_CopyFormatting == _CopyFormatting;
+                return true && (otherAsUs->_SingleLine == _SingleLine) &&
+                       (otherAsUs->_CopyFormatting == _CopyFormatting);
             }
             return false;
         };
         static FromJsonResult FromJson(const Json::Value& json)
         {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
             auto args = winrt::make_self<CopyTextArgs>();
-            JsonUtils::GetValueForKey(json, SingleLineKey, args->_SingleLine);
-            JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
+            JsonUtils::GetValueForKey(json, "singleLine", args->_SingleLine);
+            JsonUtils::GetValueForKey(json, "copyFormatting", args->_CopyFormatting);
+            ;
             return { *args, {} };
         }
         static Json::Value ToJson(const IActionArgs& val)
@@ -228,23 +303,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             }
             Json::Value json{ Json::ValueType::objectValue };
             const auto args{ get_self<CopyTextArgs>(val) };
-            JsonUtils::SetValueForKey(json, SingleLineKey, args->_SingleLine);
-            JsonUtils::SetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
+            JsonUtils::SetValueForKey(json, "singleLine", args->_SingleLine);
+            JsonUtils::SetValueForKey(json, "copyFormatting", args->_CopyFormatting);
+            ;
             return json;
         }
-
         IActionArgs Copy() const
         {
             auto copy{ winrt::make_self<CopyTextArgs>() };
             copy->_SingleLine = _SingleLine;
             copy->_CopyFormatting = _CopyFormatting;
+            ;
             return *copy;
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SingleLine(), CopyFormatting());
+            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(
+                0, SingleLine(), CopyFormatting());
         }
     };
+    ;*/
+
 
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
