@@ -51,7 +51,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct SearchBoxControl : SearchBoxControlT<SearchBoxControl, implementation::SearchBoxControl>
-    {
-    };
+    BASIC_FACTORY(SearchBoxControl);
 }

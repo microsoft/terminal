@@ -93,7 +93,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct ConptyConnection : ConptyConnectionT<ConptyConnection, implementation::ConptyConnection>
-    {
-    };
+    BASIC_FACTORY(ConptyConnection);
 }

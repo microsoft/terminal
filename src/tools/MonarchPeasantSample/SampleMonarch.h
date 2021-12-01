@@ -51,7 +51,5 @@ namespace winrt::MonarchPeasantSample::implementation
 
 namespace winrt::MonarchPeasantSample::factory_implementation
 {
-    struct Monarch : MonarchT<Monarch, implementation::Monarch>
-    {
-    };
+    BASIC_FACTORY(Monarch);
 }

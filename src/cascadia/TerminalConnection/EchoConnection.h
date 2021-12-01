@@ -29,7 +29,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct EchoConnection : EchoConnectionT<EchoConnection, implementation::EchoConnection>
-    {
-    };
+    BASIC_FACTORY(EchoConnection);
 }

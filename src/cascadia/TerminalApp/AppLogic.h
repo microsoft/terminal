@@ -212,7 +212,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct AppLogic : AppLogicT<AppLogic, implementation::AppLogic>
-    {
-    };
+    BASIC_FACTORY(AppLogic);
 }

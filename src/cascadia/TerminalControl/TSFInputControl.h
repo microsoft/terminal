@@ -89,7 +89,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 }
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct TSFInputControl : TSFInputControlT<TSFInputControl, implementation::TSFInputControl>
-    {
-    };
+    BASIC_FACTORY(TSFInputControl);
 }

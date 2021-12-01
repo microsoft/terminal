@@ -40,7 +40,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct MinMaxCloseControl : MinMaxCloseControlT<MinMaxCloseControl, implementation::MinMaxCloseControl>
-    {
-    };
+    BASIC_FACTORY(MinMaxCloseControl);
 }

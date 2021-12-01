@@ -104,7 +104,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection, implementation::AzureConnection>
-    {
-    };
+    BASIC_FACTORY(AzureConnection);
 }

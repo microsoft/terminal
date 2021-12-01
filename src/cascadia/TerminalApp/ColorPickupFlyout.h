@@ -21,7 +21,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct ColorPickupFlyout : ColorPickupFlyoutT<ColorPickupFlyout, implementation::ColorPickupFlyout>
-    {
-    };
+    BASIC_FACTORY(ColorPickupFlyout);
 }

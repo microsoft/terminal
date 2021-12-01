@@ -26,7 +26,5 @@ namespace winrt::MonarchPeasantSample::implementation
 
 namespace winrt::MonarchPeasantSample::factory_implementation
 {
-    struct Peasant : PeasantT<Peasant, implementation::Peasant>
-    {
-    };
+    BASIC_FACTORY(Peasant);
 }
