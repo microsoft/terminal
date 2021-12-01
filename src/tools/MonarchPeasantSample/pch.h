@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 
 #define WIN32_LEAN_AND_MEAN
 // Manually include til after we include Windows.Foundation to give it winrt superpowers

@@ -1,4 +1,4 @@
-﻿/*++
+/*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
@@ -537,8 +537,9 @@ JSON_FLAG_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::IntenseStyle)
 
 JSON_ENUM_MAPPER(::winrt::Microsoft::Terminal::Settings::Model::InfoBarMessage)
 {
-    JSON_MAPPINGS(2) = {
+    JSON_MAPPINGS(3) = {
         pair_type{ "closeOnExitInfo", ValueType::CloseOnExitInfo },
         pair_type{ "keyboardServiceWarning", ValueType::KeyboardServiceWarning },
+        pair_type{ "setAsDefault", ValueType::SetAsDefault },
     };
 };

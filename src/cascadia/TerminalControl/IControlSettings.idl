@@ -27,10 +27,11 @@ namespace Microsoft.Terminal.Control
     interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings, Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
+        String ProfileSource;
 
         Boolean UseAcrylic;
         ScrollbarState ScrollState;
-
+        Boolean UseAtlasEngine;
         String FontFace;
         Int32 FontSize;
         Windows.UI.Text.FontWeight FontWeight;

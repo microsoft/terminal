@@ -1,4 +1,4 @@
-﻿using GUIConsole.ConPTY.Processes;
+using GUIConsole.ConPTY.Processes;
 using Microsoft.Win32.SafeHandles;
 using System;
 using System.IO;

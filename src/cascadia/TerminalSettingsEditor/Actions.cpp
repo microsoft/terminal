@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -369,7 +369,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         {
             const auto kbdVM{ get_self<KeyBindingViewModel>(_KeyBindingList.GetAt(i)) };
             const auto& otherKeys{ kbdVM->CurrentKeys() };
-            if (keys.Modifiers() == otherKeys.Modifiers() && keys.Vkey() == otherKeys.Vkey())
+            if (otherKeys && keys.Modifiers() == otherKeys.Modifiers() && keys.Vkey() == otherKeys.Vkey())
             {
                 return i;
             }

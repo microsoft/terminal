@@ -3,17 +3,16 @@
 
 #include "pch.h"
 #include "TermControl.h"
-#include <argb.h>
-#include <DefaultSettings.h>
+
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
-#include <Utils.h>
 #include <LibraryResources.h>
+
+#include "TermControlAutomationPeer.h"
 #include "../../types/inc/GlyphWidth.hpp"
-#include "../../types/inc/Utils.hpp"
+#include "../../renderer/atlas/AtlasEngine.h"
 
 #include "TermControl.g.cpp"
-#include "TermControlAutomationPeer.h"
 
 using namespace ::Microsoft::Console::Types;
 using namespace ::Microsoft::Console::VirtualTerminal;
@@ -297,37 +296,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        if (!newAppearance.BackgroundImage().empty())
-        {
-            Windows::Foundation::Uri imageUri{ newAppearance.BackgroundImage() };
-
-            // Check if the image brush is already pointing to the image
-            // in the modified settings; if it isn't (or isn't there),
-            // set a new image source for the brush
-            auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
-
-            if (imageSource == nullptr ||
-                imageSource.UriSource() == nullptr ||
-                imageSource.UriSource().RawUri() != imageUri.RawUri())
-            {
-                // Note that BitmapImage handles the image load asynchronously,
-                // which is especially important since the image
-                // may well be both large and somewhere out on the
-                // internet.
-                Media::Imaging::BitmapImage image(imageUri);
-                BackgroundImage().Source(image);
-            }
-
-            // Apply stretch, opacity and alignment settings
-            BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
-            BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
-            BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
-            BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
-        }
-        else
-        {
-            BackgroundImage().Source(nullptr);
-        }
+        _SetBackgroundImage(newAppearance);
 
         // Update our control settings
         const auto bg = newAppearance.DefaultBackground();
@@ -413,6 +382,57 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
+    // - Sets background image and applies its settings (stretch, opacity and alignment)
+    // - Checks path validity
+    // Arguments:
+    // - newAppearance
+    // Return Value:
+    // - <none>
+    void TermControl::_SetBackgroundImage(const IControlAppearance& newAppearance)
+    {
+        if (newAppearance.BackgroundImage().empty())
+        {
+            BackgroundImage().Source(nullptr);
+            return;
+        }
+
+        Windows::Foundation::Uri imageUri{ nullptr };
+        try
+        {
+            imageUri = Windows::Foundation::Uri{ newAppearance.BackgroundImage() };
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            BackgroundImage().Source(nullptr);
+            return;
+        }
+
+        // Check if the image brush is already pointing to the image
+        // in the modified settings; if it isn't (or isn't there),
+        // set a new image source for the brush
+        auto imageSource = BackgroundImage().Source().try_as<Media::Imaging::BitmapImage>();
+
+        if (imageSource == nullptr ||
+            imageSource.UriSource() == nullptr ||
+            imageSource.UriSource().RawUri() != imageUri.RawUri())
+        {
+            // Note that BitmapImage handles the image load asynchronously,
+            // which is especially important since the image
+            // may well be both large and somewhere out on the
+            // internet.
+            Media::Imaging::BitmapImage image(imageUri);
+            BackgroundImage().Source(image);
+        }
+
+        // Apply stretch, opacity and alignment settings
+        BackgroundImage().Stretch(newAppearance.BackgroundImageStretchMode());
+        BackgroundImage().Opacity(newAppearance.BackgroundImageOpacity());
+        BackgroundImage().HorizontalAlignment(newAppearance.BackgroundImageHorizontalAlignment());
+        BackgroundImage().VerticalAlignment(newAppearance.BackgroundImageVerticalAlignment());
+    }
+
+    // Method Description:
     // - Set up each layer's brush used to display the control's background.
     // - Respects the settings for acrylic, background image and opacity from
     //   _settings.
@@ -459,7 +479,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             }
 
             // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(::base::saturated_cast<float>(appearance.Opacity()));
+            _core.SetBackgroundOpacity(appearance.Opacity());
         }
         else
         {
@@ -753,12 +773,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _HidePointerCursorHandlers(*this, nullptr);
 
         const auto ch = e.Character();
-        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+        const auto keyStatus = e.KeyStatus();
+        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
-        if (e.KeyStatus().IsExtendedKey)
+
+        if (keyStatus.IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
         }
+
         const bool handled = _core.SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
@@ -853,6 +876,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
 
+        if (keyStatus.IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
+
         // GH#11076:
         // For some weird reason we sometimes receive a WM_KEYDOWN
         // message without vkey or scanCode if a user drags a tab.
@@ -884,11 +912,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
             return;
-        }
-
-        if (keyStatus.IsExtendedKey)
-        {
-            modifiers |= ControlKeyStates::EnhancedKey;
         }
 
         // Alt-Numpad# input will send us a character once the user releases
@@ -968,7 +991,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - scanCode: The scan code of the key pressed.
-    void TermControl::_ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept
+    void TermControl::_ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept
     {
         std::array<BYTE, 256> keyState;
         if (!GetKeyboardState(keyState.data()))
@@ -1807,13 +1830,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         const winrt::Windows::Foundation::Size initialSize{ cols, rows };
 
-        return GetProposedDimensions(initialSize,
-                                     settings.FontSize(),
-                                     settings.FontWeight(),
-                                     settings.FontFace(),
-                                     settings.ScrollState(),
-                                     settings.Padding(),
-                                     dpi);
+        return GetProposedDimensions(settings, dpi, initialSize);
     }
 
     // Function Description:
@@ -1834,16 +1851,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   caller knows what monitor the control is about to appear on.
     // Return Value:
     // - a size containing the requested dimensions in pixels.
-    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
-                                                                        const int32_t& fontHeight,
-                                                                        const winrt::Windows::UI::Text::FontWeight& fontWeight,
-                                                                        const winrt::hstring& fontFace,
-                                                                        const ScrollbarState& scrollState,
-                                                                        const winrt::hstring& padding,
-                                                                        const uint32_t dpi)
+    winrt::Windows::Foundation::Size TermControl::GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars)
     {
         const auto cols = ::base::saturated_cast<int>(initialSizeInChars.Width);
         const auto rows = ::base::saturated_cast<int>(initialSizeInChars.Height);
+        const auto fontSize = settings.FontSize();
+        const auto fontWeight = settings.FontWeight();
+        const auto fontFace = settings.FontFace();
+        const auto scrollState = settings.ScrollState();
+        const auto padding = settings.Padding();
 
         // Initialize our font information.
         // The font width doesn't terribly matter, we'll only be using the
@@ -1852,28 +1868,39 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      The family is only used to determine if the font is truetype or
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
-        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, gsl::narrow_cast<short>(fontHeight) }, CP_UTF8, false };
+        FontInfo actualFont = { fontFace, 0, fontWeight.Weight, { 0, gsl::narrow_cast<short>(fontSize) }, CP_UTF8, false };
         FontInfoDesired desiredFont = { actualFont };
 
         // Create a DX engine and initialize it with our font and DPI. We'll
         // then use it to measure how much space the requested rows and columns
         // will take up.
         // TODO: MSFT:21254947 - use a static function to do this instead of
-        // instantiating a DxEngine
+        // instantiating a DxEngine/AtlasEngine.
         // GH#10211 - UNDER NO CIRCUMSTANCE should this fail. If it does, the
         // whole app will crash instantaneously on launch, which is no good.
-        auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-        LOG_IF_FAILED(dxEngine->UpdateDpi(dpi));
-        LOG_IF_FAILED(dxEngine->UpdateFont(desiredFont, actualFont));
+        double scale;
+        if (Feature_AtlasEngine::IsEnabled() && settings.UseAtlasEngine())
+        {
+            auto engine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+            LOG_IF_FAILED(engine->UpdateDpi(dpi));
+            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
+            scale = engine->GetScaling();
+        }
+        else
+        {
+            auto engine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            LOG_IF_FAILED(engine->UpdateDpi(dpi));
+            LOG_IF_FAILED(engine->UpdateFont(desiredFont, actualFont));
+            scale = engine->GetScaling();
+        }
 
-        const auto scale = dxEngine->GetScaling();
-        const auto fontSize = actualFont.GetSize();
+        const auto actualFontSize = actualFont.GetSize();
 
         // UWP XAML scrollbars aren't guaranteed to be the same size as the
         // ComCtl scrollbars, but it's certainly close enough.
         const auto scrollbarSize = GetSystemMetricsForDpi(SM_CXVSCROLL, dpi);
 
-        double width = cols * fontSize.X;
+        double width = cols * actualFontSize.X;
 
         // Reserve additional space if scrollbar is intended to be visible
         if (scrollState == ScrollbarState::Visible)
@@ -1881,7 +1908,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             width += scrollbarSize;
         }
 
-        double height = rows * fontSize.Y;
+        double height = rows * actualFontSize.Y;
         const auto thickness = ParseThicknessFromPadding(padding);
         // GH#2061 - make sure to account for the size the padding _will be_ scaled to
         width += scale * (thickness.Left + thickness.Right);
@@ -1941,13 +1968,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
-            return GetProposedDimensions(minSize,
-                                         _settings.FontSize(),
-                                         _settings.FontWeight(),
-                                         _settings.FontFace(),
-                                         _settings.ScrollState(),
-                                         _settings.Padding(),
-                                         dpi);
+            return GetProposedDimensions(_settings, dpi, minSize);
         }
     }
 
@@ -2042,7 +2063,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   don't necessarily include that state.
     // Return Value:
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    ControlKeyStates TermControl::_GetPressedModifierKeys() const
+    ControlKeyStates TermControl::_GetPressedModifierKeys() noexcept
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
@@ -2250,6 +2271,42 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     }
 
                     std::wstring fullPath{ item.Path() };
+
+                    // Fix path for WSL
+                    if (_settings.ProfileSource() == L"Windows.Terminal.Wsl")
+                    {
+                        std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
+
+                        if (fullPath.size() >= 2 && fullPath.at(1) == L':')
+                        {
+                            // C:/foo/bar -> Cc/foo/bar
+                            fullPath.at(1) = til::tolower_ascii(fullPath.at(0));
+                            // Cc/foo/bar -> /mnt/c/foo/bar
+                            fullPath.replace(0, 1, L"/mnt/");
+                        }
+                        else
+                        {
+                            static constexpr std::wstring_view wslPathPrefixes[] = { L"//wsl.localhost/", L"//wsl$/" };
+                            for (auto prefix : wslPathPrefixes)
+                            {
+                                if (til::starts_with(fullPath, prefix))
+                                {
+                                    if (const auto idx = fullPath.find(L'/', prefix.size()); idx != std::wstring::npos)
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04/foo/bar -> /foo/bar
+                                        fullPath.erase(0, idx);
+                                    }
+                                    else
+                                    {
+                                        // //wsl.localhost/Ubuntu-18.04 -> /
+                                        fullPath = L"/";
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     const auto containsSpaces = std::find(fullPath.begin(),
                                                           fullPath.end(),
                                                           L' ') != fullPath.end();
@@ -2262,6 +2319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
                     allPaths += fullPath;
                 }
+
                 _core.PasteText(winrt::hstring{ allPaths });
             }
         }

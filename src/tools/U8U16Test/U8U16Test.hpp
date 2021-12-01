@@ -1,4 +1,4 @@
-﻿// TEST TOOL U8U16Test
+// TEST TOOL U8U16Test
 // Performance tests for UTF-8 <--> UTF-16 conversions, related to PR #4093
 // NOTE The functions u8u16 and u16u8 contain own algorithms. Tests have shown that they perform
 // worse than the platform API functions.

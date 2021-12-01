@@ -128,7 +128,15 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     auto controlSettings = _control.Settings().as<TerminalSettings>();
 
     args.Profile(controlSettings.ProfileName());
-    args.StartingDirectory(controlSettings.StartingDirectory());
+    // If we know the user's working directory use it instead of the profile.
+    if (const auto dir = _control.WorkingDirectory(); !dir.empty())
+    {
+        args.StartingDirectory(dir);
+    }
+    else
+    {
+        args.StartingDirectory(controlSettings.StartingDirectory());
+    }
     args.TabTitle(controlSettings.StartingTitle());
     args.Commandline(controlSettings.Commandline());
     args.SuppressApplicationTitle(controlSettings.SuppressApplicationTitle());
@@ -2245,35 +2253,32 @@ std::optional<std::optional<SplitDirection>> Pane::PreCalculateCanSplit(const st
 }
 
 // Method Description:
-// - Split the focused pane in our tree of panes, and place the given
-//   TermControl into the newly created pane. If we're the focused pane, then
-//   we'll create two new children, and place them side-by-side in our Grid.
+// - The same as above, except this takes in the pane directly instead of a
+//   profile and control to make a pane with
 // Arguments:
 // - splitType: what type of split we want to create.
-// - profile: The profile to associate with the newly created pane.
-// - control: A TermControl to use in the new pane.
+// - splitSize: the desired size of the split
+// - newPane: the new pane
 // Return Value:
 // - The two newly created Panes, with the original pane first
 std::pair<std::shared_ptr<Pane>, std::shared_ptr<Pane>> Pane::Split(SplitDirection splitType,
                                                                     const float splitSize,
-                                                                    const Profile& profile,
-                                                                    const TermControl& control)
+                                                                    std::shared_ptr<Pane> newPane)
 {
     if (!_lastActive)
     {
         if (_firstChild && _firstChild->_HasFocusedChild())
         {
-            return _firstChild->Split(splitType, splitSize, profile, control);
+            return _firstChild->Split(splitType, splitSize, newPane);
         }
         else if (_secondChild && _secondChild->_HasFocusedChild())
         {
-            return _secondChild->Split(splitType, splitSize, profile, control);
+            return _secondChild->Split(splitType, splitSize, newPane);
         }
 
         return { nullptr, nullptr };
     }
 
-    auto newPane = std::make_shared<Pane>(profile, control);
     return _Split(splitType, splitSize, newPane);
 }
 

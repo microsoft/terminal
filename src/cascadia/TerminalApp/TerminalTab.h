@@ -21,7 +21,6 @@ namespace winrt::TerminalApp::implementation
     struct TerminalTab : TerminalTabT<TerminalTab, TabBase>
     {
     public:
-        TerminalTab(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile, const winrt::Microsoft::Terminal::Control::TermControl& control);
         TerminalTab(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
@@ -40,8 +39,7 @@ namespace winrt::TerminalApp::implementation
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                        const float splitSize,
-                       const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                       winrt::Microsoft::Terminal::Control::TermControl& control);
+                       std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);

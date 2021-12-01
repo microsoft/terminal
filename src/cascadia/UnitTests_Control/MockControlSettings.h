@@ -47,9 +47,11 @@ namespace ControlUnitTests
         WINRT_PROPERTY(bool, TrimBlockSelection, false);
         WINRT_PROPERTY(bool, DetectURLs, true);
         WINRT_PROPERTY(bool, IntenseIsBright, true);
+        WINRT_PROPERTY(bool, AdjustIndistinguishableColors, true);
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);
+        WINRT_PROPERTY(winrt::hstring, ProfileSource);
         WINRT_PROPERTY(bool, UseAcrylic, false);
         WINRT_PROPERTY(double, Opacity, .5);
         WINRT_PROPERTY(winrt::hstring, Padding, DEFAULT_PADDING);
@@ -74,6 +76,7 @@ namespace ControlUnitTests
         WINRT_PROPERTY(winrt::hstring, EnvironmentVariables);
 
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible);
+        WINRT_PROPERTY(bool, UseAtlasEngine, false);
 
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 

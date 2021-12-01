@@ -1,0 +1,49 @@
+/*++
+Copyright (c) Microsoft Corporation
+Licensed under the MIT license.
+
+Module Name:
+- ColorFix
+
+Abstract:
+- Implementation of perceptual color nudging, which allows the Terminal
+  to slightly shift the foreground color to make it more perceivable on
+  the current background (for cases where the foreground is very close
+  to being imperceivable on the background).
+
+Author(s):
+- Pankaj Bhojwani - Sep 2021
+
+--*/
+
+#pragma once
+
+struct ColorFix
+{
+public:
+    ColorFix(COLORREF color);
+
+    static COLORREF GetPerceivableColor(COLORREF fg, COLORREF bg);
+
+    // RGB
+    union
+    {
+        struct
+        {
+            BYTE r, g, b, dummy;
+        };
+        COLORREF rgb;
+    };
+
+    // Lab
+    struct
+    {
+        double L, A, B;
+    };
+
+private:
+    static double _GetHPrimeFn(double x, double y);
+    static double _GetDeltaE(ColorFix x1, ColorFix x2);
+    void _ToLab();
+    void _ToRGB();
+};

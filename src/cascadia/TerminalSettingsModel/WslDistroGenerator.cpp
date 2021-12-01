@@ -37,7 +37,11 @@ std::wstring_view WslDistroGenerator::GetNamespace() const noexcept
 static winrt::com_ptr<implementation::Profile> makeProfile(const std::wstring& distName)
 {
     const auto WSLDistro{ CreateDynamicProfile(distName) };
-    WSLDistro->Commandline(winrt::hstring{ L"wsl.exe -d " + distName });
+    // GH#11096 - make sure the WSL path starts explicitly with
+    // C:\Windows\System32. Don't want someone path hijacking wsl.exe.
+    std::wstring command{};
+    THROW_IF_FAILED(wil::GetSystemDirectoryW<std::wstring>(command));
+    WSLDistro->Commandline(winrt::hstring{ command + L"\\wsl.exe -d " + distName });
     WSLDistro->DefaultAppearance().ColorSchemeName(L"Campbell");
     WSLDistro->StartingDirectory(winrt::hstring{ DEFAULT_STARTING_DIRECTORY });
     WSLDistro->Icon(L"ms-appx:///ProfileIcons/{9acb9455-ca41-5af7-950f-6bca1bc9722f}.png");
@@ -265,14 +269,12 @@ static bool getWslNames(const wil::unique_hkey& wslRootKey,
 
         std::wstring buffer;
         auto result = wil::AdaptFixedSizeToAllocatedResult<std::wstring, 256>(buffer, [&](PWSTR value, size_t valueLength, size_t* valueLengthNeededWithNull) -> HRESULT {
-            auto length = static_cast<DWORD>(valueLength);
+            auto length = gsl::narrow<DWORD>(valueLength * sizeof(wchar_t));
             const auto status = RegQueryValueExW(distroKey.get(), RegKeyDistroName, 0, nullptr, reinterpret_cast<BYTE*>(value), &length);
-            // length will receive the number of bytes - convert to a number of
-            // wchar_t's. AdaptFixedSizeToAllocatedResult will resize buffer to
-            // valueLengthNeededWithNull
-            *valueLengthNeededWithNull = (length / sizeof(wchar_t));
-            // If you add one for another trailing null, then there'll actually
-            // be _two_ trailing nulls in the buffer.
+            // length will receive the number of bytes including trailing null byte. Convert to a number of wchar_t's.
+            // AdaptFixedSizeToAllocatedResult will then resize buffer to valueLengthNeededWithNull.
+            // We're rounding up to prevent infinite loops if the data isn't a REG_SZ and length isn't divisible by 2.
+            *valueLengthNeededWithNull = (length + sizeof(wchar_t) - 1) / sizeof(wchar_t);
             return status == ERROR_MORE_DATA ? S_OK : HRESULT_FROM_WIN32(status);
         });
 

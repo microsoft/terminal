@@ -735,7 +735,6 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveByCharacter)
     {
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().RightInclusive();
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -824,7 +823,6 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveByLine)
     {
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -913,7 +911,6 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveEndpointByUnitCharacter)
     {
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const SHORT bottomRow = static_cast<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -1197,7 +1194,6 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveEndpointByUnitDocument)
     {
-        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster

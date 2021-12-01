@@ -78,7 +78,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     private:
         winrt::Microsoft::Terminal::Control::implementation::TermControl* _termControl;
         Control::InteractivityAutomationPeer _contentAutomationPeer;
-
-        winrt::com_array<Windows::UI::Xaml::Automation::Provider::ITextRangeProvider> WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges);
     };
 }

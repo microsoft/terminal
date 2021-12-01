@@ -202,15 +202,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         _IntenseIsBold = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bold);
         _IntenseIsBright = WI_IsFlagSet(appearance.IntenseTextStyle(), Microsoft::Terminal::Settings::Model::IntenseStyle::Bright);
 
-        // If the user set an opacity, then just use that. Otherwise, change the
-        // default value based off of whether useAcrylic was set or not. If they
-        // want acrylic, then default to 50%. Otherwise, default to 100% (fully
-        // opaque)
-        _Opacity = appearance.HasOpacity() ?
-                       appearance.Opacity() :
-                       UseAcrylic() ?
-                       .5 :
-                       1.0;
+        _AdjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
+        _Opacity = appearance.Opacity();
     }
 
     // Method Description:
@@ -254,7 +247,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         ClearParents();
         com_ptr<TerminalSettings> parentImpl;
         parentImpl.copy_from(get_self<TerminalSettings>(parent));
-        InsertParent(parentImpl);
+        AddLeastImportantParent(parentImpl);
     }
 
     Model::TerminalSettings TerminalSettings::GetParent()
@@ -282,6 +275,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         // Fill in the remaining properties from the profile
         _ProfileName = profile.Name();
+        _ProfileSource = profile.Source();
         _UseAcrylic = profile.UseAcrylic();
 
         _FontFace = profile.FontInfo().FontFace();
@@ -304,6 +298,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _SuppressApplicationTitle = profile.SuppressApplicationTitle();
         }
 
+        _UseAtlasEngine = profile.UseAtlasEngine();
         _ScrollState = profile.ScrollState();
 
         _AntialiasingMode = profile.AntialiasingMode();

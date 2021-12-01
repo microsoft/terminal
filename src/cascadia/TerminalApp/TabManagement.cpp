@@ -19,6 +19,9 @@
 #include "ColorHelper.h"
 #include "DebugTapConnection.h"
 #include "SettingsTab.h"
+#include "..\TerminalSettingsModel\FileUtils.h"
+
+#include <shlobj.h>
 
 using namespace winrt;
 using namespace winrt::Windows::Foundation::Collections;
@@ -65,7 +68,7 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
-        _CreateNewTabWithProfileAndSettings(profile, settings, existingConnection);
+        _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
 
         const uint32_t tabCount = _tabs.Size();
         const bool usedManualProfile = (newTerminalArgs != nullptr) &&
@@ -242,58 +245,6 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Creates a new tab with the given settings. If the tab bar is not being
-    //      currently displayed, it will be shown.
-    // Arguments:
-    // - profile: profile settings for this connection
-    // - settings: the TerminalSettings object to use to create the TerminalControl with.
-    // - existingConnection: optionally receives a connection from the outside world instead of attempting to create one
-    void TerminalPage::_CreateNewTabWithProfileAndSettings(const Profile& profile, const TerminalSettingsCreateResult& settings, TerminalConnection::ITerminalConnection existingConnection)
-    {
-        // Initialize the new tab
-        // Create a connection based on the values in our settings object if we weren't given one.
-        auto connection = existingConnection ? existingConnection : _CreateConnectionFromSettings(profile, settings.DefaultSettings());
-
-        // If we had an `existingConnection`, then this is an inbound handoff from somewhere else.
-        // We need to tell it about our size information so it can match the dimensions of what
-        // we are about to present.
-        if (existingConnection)
-        {
-            connection.Resize(settings.DefaultSettings().InitialRows(), settings.DefaultSettings().InitialCols());
-        }
-
-        TerminalConnection::ITerminalConnection debugConnection{ nullptr };
-        if (_settings.GlobalSettings().DebugFeaturesEnabled())
-        {
-            const CoreWindow window = CoreWindow::GetForCurrentThread();
-            const auto rAltState = window.GetKeyState(VirtualKey::RightMenu);
-            const auto lAltState = window.GetKeyState(VirtualKey::LeftMenu);
-            const bool bothAltsPressed = WI_IsFlagSet(lAltState, CoreVirtualKeyStates::Down) &&
-                                         WI_IsFlagSet(rAltState, CoreVirtualKeyStates::Down);
-            if (bothAltsPressed)
-            {
-                std::tie(connection, debugConnection) = OpenDebugTapConnection(connection);
-            }
-        }
-
-        // Give term control a child of the settings so that any overrides go in the child
-        // This way, when we do a settings reload we just update the parent and the overrides remain
-        auto term = _InitControl(settings, connection);
-
-        auto newTabImpl = winrt::make_self<TerminalTab>(profile, term);
-        _RegisterTerminalEvents(term);
-        _InitializeTab(newTabImpl);
-
-        if (debugConnection) // this will only be set if global debugging is on and tap is active
-        {
-            auto newControl = _InitControl(settings, debugConnection);
-            _RegisterTerminalEvents(newControl);
-            // Split (auto) with the debug tap.
-            newTabImpl->SplitPane(SplitDirection::Automatic, 0.5f, profile, newControl);
-        }
-    }
-
-    // Method Description:
     // - Get the icon of the currently focused terminal control, and set its
     //   tab's icon to that icon.
     // Arguments:
@@ -362,28 +313,14 @@ namespace winrt::TerminalApp::implementation
             // In the future, it may be preferable to just duplicate the
             // current control's live settings (which will include changes
             // made through VT).
+            _CreateNewTabFromPane(_MakePane(nullptr, true, nullptr));
 
-            if (auto profile = tab.GetFocusedProfile())
+            const auto runtimeTabText{ tab.GetTabText() };
+            if (!runtimeTabText.empty())
             {
-                // TODO GH#5047 If we cache the NewTerminalArgs, we no longer need to do this.
-                profile = GetClosestProfileForDuplicationOfProfile(profile);
-                const auto settingsCreateResult{ TerminalSettings::CreateWithProfile(_settings, profile, *_bindings) };
-                const auto workingDirectory = tab.GetActiveTerminalControl().WorkingDirectory();
-                const auto validWorkingDirectory = !workingDirectory.empty();
-                if (validWorkingDirectory)
+                if (auto newTab{ _GetFocusedTabImpl() })
                 {
-                    settingsCreateResult.DefaultSettings().StartingDirectory(workingDirectory);
-                }
-
-                _CreateNewTabWithProfileAndSettings(profile, settingsCreateResult);
-
-                const auto runtimeTabText{ tab.GetTabText() };
-                if (!runtimeTabText.empty())
-                {
-                    if (auto newTab{ _GetFocusedTabImpl() })
-                    {
-                        newTab->SetTabText(runtimeTabText);
-                    }
+                    newTab->SetTabText(runtimeTabText);
                 }
             }
         }
@@ -399,7 +336,7 @@ namespace winrt::TerminalApp::implementation
         try
         {
             _SetFocusedTab(tab);
-            _SplitPane(tab, SplitDirection::Automatic, SplitType::Duplicate);
+            _SplitPane(tab, SplitDirection::Automatic, 0.5f, _MakePane(nullptr, true));
         }
         CATCH_LOG();
     }
@@ -410,33 +347,45 @@ namespace winrt::TerminalApp::implementation
     // - tab: tab to export
     winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab)
     {
+        // This will be used to set up the file picker "filter", to select .txt
+        // files by default.
+        static constexpr COMDLG_FILTERSPEC supportedFileTypes[] = {
+            { L"Text Files (*.txt)", L"*.txt" },
+            { L"All Files (*.*)", L"*.*" }
+        };
+        // An arbitrary GUID to associate with all instances of this
+        // dialog, so they all re-open in the same path as they were
+        // open before:
+        static constexpr winrt::guid clientGuidExportFile{ 0xF6AF20BB, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
+
         try
         {
             if (const auto control{ tab.GetActiveTerminalControl() })
             {
-                const FileSavePicker savePicker;
-                savePicker.as<IInitializeWithWindow>()->Initialize(*_hostingHwnd);
-                savePicker.SuggestedStartLocation(PickerLocationId::Downloads);
-                const auto fileChoices = single_threaded_vector<hstring>({ L".txt" });
-                savePicker.FileTypeChoices().Insert(RS_(L"PlainText"), fileChoices);
-                savePicker.SuggestedFileName(control.Title());
+                // GH#11356 - we can't use the UWP apis for writing the file,
+                // because they don't work elevated (shocker) So just use the
+                // shell32 file picker manually.
+                auto path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
+                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                    try
+                    {
+                        // Default to the Downloads folder
+                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                        dialog->SetDefaultFolder(folderShellItem.get());
+                    }
+                    CATCH_LOG(); // non-fatal
+                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
 
-                const StorageFile file = co_await savePicker.PickSaveFileAsync();
-                if (file != nullptr)
+                    // Default to using the tab title as the file name
+                    THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
+                });
+
+                if (!path.empty())
                 {
                     const auto buffer = control.ReadEntireBuffer();
-                    CachedFileManager::DeferUpdates(file);
-                    co_await FileIO::WriteTextAsync(file, buffer);
-                    const auto status = co_await CachedFileManager::CompleteUpdatesAsync(file);
-                    switch (status)
-                    {
-                    case FileUpdateStatus::Complete:
-                    case FileUpdateStatus::CompleteAndRenamed:
-                        _ShowControlNoticeDialog(RS_(L"NoticeInfo"), RS_(L"ExportSuccess"));
-                        break;
-                    default:
-                        _ShowControlNoticeDialog(RS_(L"NoticeError"), RS_(L"ExportFailure"));
-                    }
+                    CascadiaSettings::ExportFile(path, buffer);
                 }
             }
         }

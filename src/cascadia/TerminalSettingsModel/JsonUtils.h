@@ -101,7 +101,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     {
     public:
         DeserializationError(const Json::Value& value) :
-            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asCString())),
+            runtime_error(std::string("failed to deserialize ") + (value.isNull() ? "" : value.asString())),
             jsonValue{ value } {}
 
         void SetKey(std::string_view newKey)
@@ -382,7 +382,6 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
     };
 
     template<typename T>
-
     struct ConversionTrait<std::unordered_map<std::string, T>>
     {
         std::unordered_map<std::string, T> FromJson(const Json::Value& json) const

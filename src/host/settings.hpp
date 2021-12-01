@@ -26,6 +26,13 @@ constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30%
 #include "ConsoleArguments.hpp"
 #include "../inc/conattrs.hpp"
 
+enum class UseDx : DWORD
+{
+    Disabled = 0,
+    DxEngine,
+    AtlasEngine,
+};
+
 class Settings
 {
 public:
@@ -160,33 +167,32 @@ public:
     void SetHistoryNoDup(const bool fHistoryNoDup);
 
     // The first 16 items of the color table are the same as the 16-color palette.
-    inline const std::array<COLORREF, XTERM_COLOR_TABLE_SIZE>& GetColorTable() const noexcept
+    inline const std::array<COLORREF, TextColor::TABLE_SIZE>& GetColorTable() const noexcept
     {
         return _colorTable;
     }
 
     void SetColorTableEntry(const size_t index, const COLORREF ColorValue);
     COLORREF GetColorTableEntry(const size_t index) const;
+    void SetLegacyColorTableEntry(const size_t index, const COLORREF ColorValue);
+    COLORREF GetLegacyColorTableEntry(const size_t index) const;
 
-    COLORREF GetCursorColor() const noexcept;
     CursorType GetCursorType() const noexcept;
-
-    void SetCursorColor(const COLORREF CursorColor) noexcept;
     void SetCursorType(const CursorType cursorType) noexcept;
 
     bool GetInterceptCopyPaste() const noexcept;
     void SetInterceptCopyPaste(const bool interceptCopyPaste) noexcept;
 
-    COLORREF GetDefaultForegroundColor() const noexcept;
-    void SetDefaultForegroundColor(const COLORREF defaultForeground) noexcept;
-
-    COLORREF GetDefaultBackgroundColor() const noexcept;
-    void SetDefaultBackgroundColor(const COLORREF defaultBackground) noexcept;
+    void CalculateDefaultColorIndices() noexcept;
+    size_t GetDefaultForegroundIndex() const noexcept;
+    void SetDefaultForegroundIndex(const size_t index) noexcept;
+    size_t GetDefaultBackgroundIndex() const noexcept;
+    void SetDefaultBackgroundIndex(const size_t index) noexcept;
 
     bool IsTerminalScrolling() const noexcept;
     void SetTerminalScrolling(const bool terminalScrollingEnabled) noexcept;
 
-    bool GetUseDx() const noexcept;
+    UseDx GetUseDx() const noexcept;
     bool GetCopyColor() const noexcept;
 
 private:
@@ -230,23 +236,22 @@ private:
     bool _fAutoReturnOnNewline;
     bool _fRenderGridWorldwide;
     bool _fScreenReversed;
-    bool _fUseDx;
+    UseDx _fUseDx;
     bool _fCopyColor;
 
-    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
+    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
 
     // this is used for the special STARTF_USESIZE mode.
     bool _fUseWindowSizePixels;
     COORD _dwWindowSizePixels;
 
-    // Technically a COLORREF, but using INVALID_COLOR as "Invert Colors"
-    unsigned int _CursorColor;
     CursorType _CursorType;
 
     bool _fInterceptCopyPaste;
 
-    COLORREF _DefaultForeground;
-    COLORREF _DefaultBackground;
+    size_t _defaultForegroundIndex;
+    size_t _defaultBackgroundIndex;
+
     bool _TerminalScrolling;
     friend class RegistrySerialization;
 };

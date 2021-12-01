@@ -40,6 +40,7 @@
             <StackPanel Margin="{StaticResource StandardControlMargin}">
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
                     <muxc:RadioButtons x:Name="Profiles"
+                                       AutomationProperties.AccessibilityView="Content"
                                        ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}">
                         <muxc:RadioButtons.ItemTemplate>
                             <DataTemplate x:DataType="model:Profile">

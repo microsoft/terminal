@@ -74,12 +74,11 @@ namespace Microsoft.Terminal.Settings.Model
         INHERITABLE_PROFILE_SETTING(IAppearanceConfig, UnfocusedAppearance);
 
         INHERITABLE_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        INHERITABLE_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
-        INHERITABLE_PROFILE_SETTING(Boolean, SoftwareRendering);
 
         INHERITABLE_PROFILE_SETTING(Int32, HistorySize);
         INHERITABLE_PROFILE_SETTING(Boolean, SnapOnInput);
         INHERITABLE_PROFILE_SETTING(Boolean, AltGrAliasing);
         INHERITABLE_PROFILE_SETTING(BellStyle, BellStyle);
+        INHERITABLE_PROFILE_SETTING(Boolean, UseAtlasEngine);
     }
 }
