@@ -75,6 +75,7 @@ UIs
 und
 unregister
 versioned
+vsdevcmd
 We'd
 wildcards
 yeru
