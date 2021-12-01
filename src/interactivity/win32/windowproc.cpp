@@ -574,6 +574,10 @@ using namespace Microsoft::Console::Types;
         {
             Menu::s_ShowPropertiesDialog(hWnd, TRUE);
         }
+        else if (wParam == SC_RESTORE && _fIsInFullscreen)
+        {
+            SetIsFullscreen(false);
+        }
         else
         {
             goto CallDefWin;

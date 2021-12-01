@@ -48,6 +48,28 @@ enum class ColorType : BYTE
 struct TextColor
 {
 public:
+    static constexpr BYTE DARK_BLACK = 0;
+    static constexpr BYTE DARK_RED = 1;
+    static constexpr BYTE DARK_GREEN = 2;
+    static constexpr BYTE DARK_YELLOW = 3;
+    static constexpr BYTE DARK_BLUE = 4;
+    static constexpr BYTE DARK_MAGENTA = 5;
+    static constexpr BYTE DARK_CYAN = 6;
+    static constexpr BYTE DARK_WHITE = 7;
+    static constexpr BYTE BRIGHT_BLACK = 8;
+    static constexpr BYTE BRIGHT_RED = 9;
+    static constexpr BYTE BRIGHT_GREEN = 10;
+    static constexpr BYTE BRIGHT_YELLOW = 11;
+    static constexpr BYTE BRIGHT_BLUE = 12;
+    static constexpr BYTE BRIGHT_MAGENTA = 13;
+    static constexpr BYTE BRIGHT_CYAN = 14;
+    static constexpr BYTE BRIGHT_WHITE = 15;
+
+    static constexpr size_t DEFAULT_FOREGROUND = 256;
+    static constexpr size_t DEFAULT_BACKGROUND = 257;
+    static constexpr size_t CURSOR_COLOR = 258;
+    static constexpr size_t TABLE_SIZE = 259;
+
     constexpr TextColor() noexcept :
         _meta{ ColorType::IsDefault },
         _red{ 0 },
@@ -86,7 +108,7 @@ public:
     void SetIndex(const BYTE index, const bool isIndex256) noexcept;
     void SetDefault() noexcept;
 
-    COLORREF GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten = false) const noexcept;
+    COLORREF GetColor(const std::array<COLORREF, TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten = false) const noexcept;
     BYTE GetLegacyIndex(const BYTE defaultIndex) const noexcept;
 
     constexpr BYTE GetIndex() const noexcept
@@ -95,6 +117,16 @@ public:
     }
 
     COLORREF GetRGB() const noexcept;
+
+    static constexpr BYTE TransposeLegacyIndex(const size_t index)
+    {
+        // When converting a 16-color index in the legacy Windows order to or
+        // from an ANSI-compatible order, we need to swap the bits in positions
+        // 0 and 2. We do this by XORing the index with 00000101, but only if
+        // one (but not both) of those bit positions is set.
+        const auto oneBitSet = (index ^ (index >> 2)) & 1;
+        return gsl::narrow_cast<BYTE>(index ^ oneBitSet ^ (oneBitSet << 2));
+    }
 
 private:
     union

@@ -372,6 +372,16 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // window is expecting it to be on the first layout.
         else
         {
+#pragma warning(suppress : 26477 26485 26494 26482 26446) // We don't control TraceLoggingWrite
+            TraceLoggingWrite(
+                g_hTerminalConnectionProvider,
+                "ConPtyConnectedToDefterm",
+                TraceLoggingDescription("Event emitted when ConPTY connection is started, for a defterm session"),
+                TraceLoggingGuid(_guid, "SessionGuid", "The WT_SESSION's GUID"),
+                TraceLoggingWideString(_clientName.c_str(), "Client", "The attached client process"),
+                TraceLoggingKeyword(MICROSOFT_KEYWORD_MEASURES),
+                TelemetryPrivacyDataTag(PDT_ProductAndServicePerformance));
+
             THROW_IF_FAILED(ConptyResizePseudoConsole(_hPC.get(), dimensions));
         }
 
@@ -419,8 +429,9 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
         // EXIT POINT
         const auto hr = wil::ResultFromCaughtException();
 
+        // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
         winrt::hstring failureText{ fmt::format(std::wstring_view{ RS_(L"ProcessFailedToLaunch") },
-                                                fmt::format(_errorFormat, hr),
+                                                fmt::format(_errorFormat, static_cast<unsigned int>(hr)),
                                                 _commandline) };
         _TerminalOutputHandlers(failureText);
 
@@ -447,6 +458,7 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
     {
         try
         {
+            // GH#11556 - make sure to format the error code to this string as an UNSIGNED int
             winrt::hstring exitText{ fmt::format(std::wstring_view{ RS_(L"ProcessExited") }, fmt::format(_errorFormat, status)) };
             _TerminalOutputHandlers(L"\r\n");
             _TerminalOutputHandlers(exitText);

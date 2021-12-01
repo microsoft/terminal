@@ -12,8 +12,30 @@ static_assert(alignof(TextAttribute) == 2);
 // Ensure that we can memcpy() and memmove() the struct for performance.
 static_assert(std::is_trivially_copyable_v<TextAttribute>);
 
-BYTE TextAttribute::s_legacyDefaultForeground = 7;
-BYTE TextAttribute::s_legacyDefaultBackground = 0;
+namespace
+{
+    constexpr std::array<TextColor, 16> s_initLegacyColorMap(const BYTE defaultIndex)
+    {
+        std::array<TextColor, 16> legacyColorMap;
+        for (auto i = 0u; i < legacyColorMap.size(); i++)
+        {
+            const auto legacyIndex = TextColor::TransposeLegacyIndex(i);
+            gsl::at(legacyColorMap, i) = i == defaultIndex ? TextColor{} : TextColor{ legacyIndex, true };
+        }
+        return legacyColorMap;
+    }
+
+    BYTE s_legacyDefaultForeground = 7;
+    BYTE s_legacyDefaultBackground = 0;
+    BYTE s_ansiDefaultForeground = 7;
+    BYTE s_ansiDefaultBackground = 0;
+}
+
+// These maps allow for an efficient conversion from a legacy attribute index
+// to a TextColor with the corresponding ANSI index, also taking into account
+// the legacy index values that need to be converted to a default TextColor.
+std::array<TextColor, 16> TextAttribute::s_legacyForegroundColorMap = s_initLegacyColorMap(7);
+std::array<TextColor, 16> TextAttribute::s_legacyBackgroundColorMap = s_initLegacyColorMap(0);
 
 // Routine Description:
 // - Sets the legacy attributes which map to and from the default colors.
@@ -23,8 +45,22 @@ BYTE TextAttribute::s_legacyDefaultBackground = 0;
 // - None
 void TextAttribute::SetLegacyDefaultAttributes(const WORD defaultAttributes) noexcept
 {
+    // First we reset the current default color map entries to what they should
+    // be for a regular translation from a legacy index to an ANSI TextColor.
+    gsl::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{ s_ansiDefaultForeground, true };
+    gsl::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{ s_ansiDefaultBackground, true };
+
+    // Then we save the new default attribute values and their corresponding
+    // ANSI translations. We use the latter values to more efficiently handle
+    // the "VT Quirk" conversion below.
     s_legacyDefaultForeground = defaultAttributes & FG_ATTRS;
     s_legacyDefaultBackground = (defaultAttributes & BG_ATTRS) >> 4;
+    s_ansiDefaultForeground = TextColor::TransposeLegacyIndex(s_legacyDefaultForeground);
+    s_ansiDefaultBackground = TextColor::TransposeLegacyIndex(s_legacyDefaultBackground);
+
+    // Finally we set the new default color map entries.
+    gsl::at(s_legacyForegroundColorMap, s_legacyDefaultForeground) = TextColor{};
+    gsl::at(s_legacyBackgroundColorMap, s_legacyDefaultBackground) = TextColor{};
 }
 
 // Routine Description:
@@ -55,13 +91,13 @@ TextAttribute TextAttribute::StripErroneousVT16VersionsOfLegacyDefaults(const Te
     const auto bg{ attribute.GetBackground() };
     auto copy{ attribute };
     if (fg.IsIndex16() &&
-        attribute.IsBold() == WI_IsFlagSet(s_legacyDefaultForeground, FOREGROUND_INTENSITY) &&
-        fg.GetIndex() == (s_legacyDefaultForeground & ~FOREGROUND_INTENSITY))
+        attribute.IsBold() == WI_IsFlagSet(s_ansiDefaultForeground, FOREGROUND_INTENSITY) &&
+        fg.GetIndex() == (s_ansiDefaultForeground & ~FOREGROUND_INTENSITY))
     {
         // We don't want to turn 1;37m into 39m (or even 1;39m), as this was meant to mimic a legacy color.
         copy.SetDefaultForeground();
     }
-    if (bg.IsIndex16() && bg.GetIndex() == s_legacyDefaultBackground)
+    if (bg.IsIndex16() && bg.GetIndex() == s_ansiDefaultBackground)
     {
         copy.SetDefaultBackground();
     }
@@ -92,22 +128,22 @@ bool TextAttribute::IsLegacy() const noexcept
 // - Calculates rgb colors based off of current color table and active modification attributes.
 // Arguments:
 // - colorTable: the current color table rgb values.
-// - defaultFgColor: the default foreground color rgb value.
-// - defaultBgColor: the default background color rgb value.
+// - defaultFgIndex: the color table index of the default foreground color.
+// - defaultBgIndex: the color table index of the default background color.
 // - reverseScreenMode: true if the screen mode is reversed.
 // - blinkingIsFaint: true if blinking should be interpreted as faint. (defaults to false)
 // - boldIsBright: true if "bold" should be interpreted as bright. (defaults to true)
 // Return Value:
 // - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
-                                                                const COLORREF defaultFgColor,
-                                                                const COLORREF defaultBgColor,
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable,
+                                                                const size_t defaultFgIndex,
+                                                                const size_t defaultBgIndex,
                                                                 const bool reverseScreenMode,
                                                                 const bool blinkingIsFaint,
                                                                 const bool boldIsBright) const noexcept
 {
-    auto fg = _foreground.GetColor(colorTable, defaultFgColor, boldIsBright && IsBold());
-    auto bg = _background.GetColor(colorTable, defaultBgColor);
+    auto fg = _foreground.GetColor(colorTable, defaultFgIndex, boldIsBright && IsBold());
+    auto bg = _background.GetColor(colorTable, defaultBgIndex);
     if (IsFaint() || (IsBlinking() && blinkingIsFaint))
     {
         fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.

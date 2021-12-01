@@ -287,9 +287,10 @@ using namespace Microsoft::Console::Types;
     }
 
     // We use the legacy color calculations to generate an approximation of the
-    // colors in the 16-color table.
-    auto fgIndex = fg.GetLegacyIndex(0);
-    auto bgIndex = bg.GetLegacyIndex(0);
+    // colors in the Windows 16-color table, but we need to transpose those
+    // values to obtain an index in an ANSI-compatible order.
+    auto fgIndex = TextColor::TransposeLegacyIndex(fg.GetLegacyIndex(0));
+    auto bgIndex = TextColor::TransposeLegacyIndex(bg.GetLegacyIndex(0));
 
     // If the bold attribute is set, and the foreground can be brightened, then do so.
     const bool brighten = textAttributes.IsBold() && fg.CanBeBrightened();

@@ -69,14 +69,6 @@ COORD Terminal::GetCursorPosition() noexcept
     return newPos;
 }
 
-bool Terminal::SetCursorColor(const COLORREF color) noexcept
-try
-{
-    _buffer->GetCursor().SetColor(color);
-    return true;
-}
-CATCH_RETURN_FALSE()
-
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
@@ -371,6 +363,22 @@ try
 CATCH_RETURN_FALSE()
 
 // Method Description:
+// - Retrieves the value in the colortable at the specified index.
+// Arguments:
+// - tableIndex: the index of the color table to retrieve.
+// Return Value:
+// - the COLORREF value for the color at that index in the table.
+COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const noexcept
+try
+{
+    return _colorTable.at(tableIndex);
+}
+catch (...)
+{
+    return INVALID_COLOR;
+}
+
+// Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
 //   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
@@ -382,6 +390,11 @@ bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 try
 {
     _colorTable.at(tableIndex) = color;
+
+    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
+    {
+        _pfnBackgroundColorChanged(color);
+    }
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
@@ -442,63 +455,13 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     return true;
 }
 
-// Method Description:
-// - Updates the default foreground color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default foreground color
-// Return Value:
-// - true
-bool Terminal::SetDefaultForeground(const COLORREF color) noexcept
+bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept
 try
 {
-    _defaultFg = color;
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
+    _terminalInput->SetInputMode(mode, enabled);
     return true;
 }
 CATCH_RETURN_FALSE()
-
-// Method Description:
-// - Updates the default background color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default background color
-// Return Value:
-// - true
-bool Terminal::SetDefaultBackground(const COLORREF color) noexcept
-try
-{
-    _defaultBg = color;
-    _pfnBackgroundColorChanged(color);
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
-}
-CATCH_RETURN_FALSE()
-
-til::color Terminal::GetDefaultBackground() const noexcept
-{
-    return _defaultBg;
-}
-
-bool Terminal::EnableWin32InputMode(const bool win32InputMode) noexcept
-{
-    _terminalInput->ChangeWin32InputMode(win32InputMode);
-    return true;
-}
-
-bool Terminal::SetCursorKeysMode(const bool applicationMode) noexcept
-{
-    _terminalInput->ChangeCursorKeysMode(applicationMode);
-    return true;
-}
-
-bool Terminal::SetKeypadMode(const bool applicationMode) noexcept
-{
-    _terminalInput->ChangeKeypadMode(applicationMode);
-    return true;
-}
 
 bool Terminal::SetScreenMode(const bool reverseMode) noexcept
 try
@@ -510,42 +473,6 @@ try
     return true;
 }
 CATCH_RETURN_FALSE()
-
-bool Terminal::EnableVT200MouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableDefaultTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableUTF8ExtendedMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->SetUtf8ExtendedMode(enabled);
-    return true;
-}
-
-bool Terminal::EnableSGRExtendedMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->SetSGRExtendedMode(enabled);
-    return true;
-}
-
-bool Terminal::EnableButtonEventMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableButtonEventTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableAnyEventMouseMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableAnyEventTracking(enabled);
-    return true;
-}
-
-bool Terminal::EnableAlternateScrollMode(const bool enabled) noexcept
-{
-    _terminalInput->EnableAlternateScroll(enabled);
-    return true;
-}
 
 bool Terminal::EnableXtermBracketedPasteMode(const bool enabled) noexcept
 {

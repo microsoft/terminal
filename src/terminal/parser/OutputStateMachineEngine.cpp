@@ -265,6 +265,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
         success = _dispatch->LockingShiftRight(3);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
         break;
+    case EscActionCodes::DECAC1_AcceptC1Controls:
+        success = _dispatch->AcceptC1Controls(true);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC1);
+        break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
         _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::DECDHL);
@@ -1101,22 +1105,22 @@ bool OutputStateMachineEngine::_GetOscSetClipboard(const std::wstring_view strin
                                                    std::wstring& content,
                                                    bool& queryClipboard) const noexcept
 {
-    const size_t pos = string.find(';');
-    if (pos != std::wstring_view::npos)
+    const auto pos = string.find(L';');
+    if (pos == std::wstring_view::npos)
     {
-        const std::wstring_view substr = string.substr(pos + 1);
-        if (substr == L"?")
-        {
-            queryClipboard = true;
-            return true;
-        }
-        else
-        {
-            return Base64::s_Decode(substr, content);
-        }
+        return false;
     }
 
-    return false;
+    const auto substr = string.substr(pos + 1);
+    if (substr == L"?")
+    {
+        queryClipboard = true;
+        return true;
+    }
+
+// Log_IfFailed has the following description: "Should be decorated WI_NOEXCEPT, but conflicts with forceinline."
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
+    return SUCCEEDED_LOG(Base64::Decode(substr, content));
 }
 
 // Method Description:

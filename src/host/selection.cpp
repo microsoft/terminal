@@ -16,7 +16,6 @@ Selection::Selection() :
     _fSelectionVisible(false),
     _ulSavedCursorSize(0),
     _fSavedCursorVisible(false),
-    _savedCursorColor(INVALID_COLOR),
     _savedCursorType(CursorType::Legacy),
     _dwSelectionFlags(0),
     _fLineSelection(true),
@@ -253,6 +252,14 @@ void Selection::ExtendSelection(_In_ COORD coordBufferPos)
     {
         srNewSelection.Bottom = coordBufferPos.Y;
         srNewSelection.Top = _coordSelectionAnchor.Y;
+    }
+
+    // This function is called on WM_MOUSEMOVE.
+    // Prevent triggering an invalidation just because the mouse moved
+    // in the same cell without changing the actual (visible) selection.
+    if (_srSelectionRect == srNewSelection)
+    {
+        return;
     }
 
     // call special update method to modify the displayed selection in-place

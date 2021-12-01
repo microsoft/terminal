@@ -106,22 +106,13 @@ public:
     bool EraseInDisplay(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::EraseType eraseType) noexcept override;
     bool WarningBell() noexcept override;
     bool SetWindowTitle(std::wstring_view title) noexcept override;
+    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
-    bool SetCursorColor(const COLORREF color) noexcept override;
-    bool SetDefaultForeground(const COLORREF color) noexcept override;
-    bool SetDefaultBackground(const COLORREF color) noexcept override;
 
-    bool EnableWin32InputMode(const bool win32InputMode) noexcept override;
-    bool SetCursorKeysMode(const bool applicationMode) noexcept override;
-    bool SetKeypadMode(const bool applicationMode) noexcept override;
+    bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;
+
     bool SetScreenMode(const bool reverseMode) noexcept override;
-    bool EnableVT200MouseMode(const bool enabled) noexcept override;
-    bool EnableUTF8ExtendedMouseMode(const bool enabled) noexcept override;
-    bool EnableSGRExtendedMouseMode(const bool enabled) noexcept override;
-    bool EnableButtonEventMouseMode(const bool enabled) noexcept override;
-    bool EnableAnyEventMouseMode(const bool enabled) noexcept override;
-    bool EnableAlternateScrollMode(const bool enabled) noexcept override;
     bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
     bool IsXtermBracketedPasteModeEnabled() const noexcept override;
 
@@ -219,7 +210,6 @@ public:
     void ClearPatternTree() noexcept;
 
     const std::optional<til::color> GetTabColor() const noexcept;
-    til::color GetDefaultBackground() const noexcept;
 
     Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
 
@@ -288,9 +278,7 @@ private:
     std::optional<til::color> _startingTabColor;
 
     // This is still stored as a COLORREF because it interacts with some code in ConTypes
-    std::array<COLORREF, XTERM_COLOR_TABLE_SIZE> _colorTable;
-    til::color _defaultFg;
-    til::color _defaultBg;
+    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
     CursorType _defaultCursorShape;
     bool _screenReversed;
     mutable Microsoft::Console::Render::BlinkingState _blinkingState;

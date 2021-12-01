@@ -45,6 +45,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _contentAutomationPeer.SelectionChanged([this](auto&&, auto&&) { SignalSelectionChanged(); });
         _contentAutomationPeer.TextChanged([this](auto&&, auto&&) { SignalTextChanged(); });
         _contentAutomationPeer.CursorChanged([this](auto&&, auto&&) { SignalCursorChanged(); });
+        _contentAutomationPeer.ParentProvider(*this);
     };
 
     // Method Description:
@@ -226,30 +227,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
 #pragma endregion
-
-    // Method Description:
-    // - extracts the UiaTextRanges from the SAFEARRAY and converts them to Xaml ITextRangeProviders
-    // Arguments:
-    // - SAFEARRAY of UIA::UiaTextRange (ITextRangeProviders)
-    // Return Value:
-    // - com_array of Xaml Wrapped UiaTextRange (ITextRangeProviders)
-    com_array<XamlAutomation::ITextRangeProvider> TermControlAutomationPeer::WrapArrayOfTextRangeProviders(SAFEARRAY* textRanges)
-    {
-        // transfer ownership of UiaTextRanges to this new vector
-        auto providers = SafeArrayToOwningVector<::Microsoft::Terminal::TermControlUiaTextRange>(textRanges);
-        int count = gsl::narrow<int>(providers.size());
-
-        std::vector<XamlAutomation::ITextRangeProvider> vec;
-        vec.reserve(count);
-        auto parentProvider = this->ProviderFromPeer(*this);
-        for (int i = 0; i < count; i++)
-        {
-            auto xutr = make_self<XamlUiaTextRange>(providers[i].detach(), parentProvider);
-            vec.emplace_back(xutr.as<XamlAutomation::ITextRangeProvider>());
-        }
-
-        com_array<XamlAutomation::ITextRangeProvider> result{ vec };
-
-        return result;
-    }
 }

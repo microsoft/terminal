@@ -3,16 +3,18 @@
 
 #include "pch.h"
 #include "ControlCore.h"
-#include <argb.h>
+
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
-#include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
+
+#include "EventArgs.h"
 #include "../../types/inc/GlyphWidth.hpp"
-#include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
+#include "../../renderer/atlas/AtlasEngine.h"
+#include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 
@@ -202,6 +204,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  const double actualHeight,
                                  const double compositionScale)
     {
+        assert(_settings);
+
         _panelWidth = actualWidth;
         _panelHeight = actualHeight;
         _compositionScale = compositionScale;
@@ -222,10 +226,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            // Set up the DX Engine
-            auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            _renderer->AddRenderEngine(dxEngine.get());
-            _renderEngine = std::move(dxEngine);
+            if (Feature_AtlasEngine::IsEnabled() && _settings.UseAtlasEngine())
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+            }
+            else
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            }
+
+            _renderer->AddRenderEngine(_renderEngine.get());
 
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
@@ -271,11 +281,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
             _renderEngine->SetIntenseIsBold(_settings.IntenseIsBold());
 
-            _updateAntiAliasingMode(_renderEngine.get());
+            _updateAntiAliasingMode();
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(_settings.Opacity()));
+            const auto backgroundIsOpaque = _settings.Opacity() == 1.0 && _settings.BackgroundImage().empty();
+            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(backgroundIsOpaque));
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -600,6 +611,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         //      not, but DX doesn't use that info at all.
         //      The Codepage is additionally not actually used by the DX engine at all.
         _actualFont = { fontFace, 0, fontWeight.Weight, { 0, fontHeight }, CP_UTF8, false };
+        _actualFontFaceName = { fontFace };
         _desiredFont = { _actualFont };
 
         // Update the terminal core with its new Core settings
@@ -615,7 +627,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetForceFullRepaintRendering(_settings.ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings.SoftwareRendering());
 
-        _updateAntiAliasingMode(_renderEngine.get());
+        _updateAntiAliasingMode();
 
         // Refresh our font with the renderer
         const auto actualFontOldSize = _actualFont.GetSize();
@@ -649,22 +661,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)
+    void ControlCore::_updateAntiAliasingMode()
     {
-        // Update DxEngine's AntialiasingMode
+        D2D1_TEXT_ANTIALIAS_MODE mode;
+
         switch (_settings.AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
             break;
         case TextAntialiasingMode::Aliased:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
             break;
-        case TextAntialiasingMode::Grayscale:
         default:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
             break;
         }
+
+        _renderEngine->SetAntialiasingMode(mode);
     }
 
     // Method Description:
@@ -742,6 +756,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fontFace = _settings.FontFace();
             const auto fontWeight = _settings.FontWeight();
             _actualFont = { fontFace, 0, fontWeight.Weight, { 0, newSize }, CP_UTF8, false };
+            _actualFontFaceName = { fontFace };
             _desiredFont = { _actualFont };
 
             auto lock = _terminal->LockForWriting();
@@ -1020,7 +1035,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     winrt::Windows::Foundation::Size ControlCore::FontSize() const noexcept
     {
-        const auto fontSize = GetFont().GetSize();
+        const auto fontSize = _actualFont.GetSize();
         return {
             ::base::saturated_cast<float>(fontSize.X),
             ::base::saturated_cast<float>(fontSize.Y)
@@ -1028,17 +1043,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
     winrt::hstring ControlCore::FontFaceName() const noexcept
     {
-        return winrt::hstring{ GetFont().GetFaceName() };
+        // This getter used to return _actualFont.GetFaceName(), however GetFaceName() returns a STL
+        // string and we need to return a WinRT string. This would require an additional allocation.
+        // This method is called 10/s by TSFInputControl at the time of writing.
+        return _actualFontFaceName;
     }
 
     uint16_t ControlCore::FontWeight() const noexcept
     {
-        return static_cast<uint16_t>(GetFont().GetWeight());
+        return static_cast<uint16_t>(_actualFont.GetWeight());
     }
 
     til::size ControlCore::FontSizeInDips() const
     {
-        const til::size fontSize{ GetFont().GetSize() };
+        const til::size fontSize{ _actualFont.GetSize() };
         return fontSize.scale(til::math::rounding, 1.0f / ::base::saturated_cast<float>(_compositionScale));
     }
 
@@ -1071,7 +1089,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return _terminal->GetDefaultBackground();
+        return _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     }
 
     // Method Description:
@@ -1291,7 +1309,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         if (_renderEngine)
         {
             auto lock = _terminal->LockForWriting();
-            _renderEngine->SetDefaultTextBackgroundOpacity(::base::saturated_cast<float>(opacity));
+            const auto backgroundIsOpaque = opacity == 1.0 && _settings.BackgroundImage().empty();
+            _renderEngine->SetDefaultTextBackgroundOpacity(static_cast<float>(backgroundIsOpaque));
         }
     }
 

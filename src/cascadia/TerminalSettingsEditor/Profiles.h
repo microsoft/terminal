@@ -33,7 +33,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             // only works on Win11. So we'll use that.
             //
             // Remove when we can remove the rest of GH#11285
-            if (value < 100.0 && winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
+            if (value < 100.0 &&
+                !winrt::Microsoft::Terminal::Settings::Model::CascadiaSettings::IsDefaultTerminalAvailable())
             {
                 UseAcrylic(true);
             }
@@ -60,12 +61,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Editor::AppearanceViewModel DefaultAppearance();
         Editor::AppearanceViewModel UnfocusedAppearance();
         bool HasUnfocusedAppearance();
-        bool EditableUnfocusedAppearance();
+        bool EditableUnfocusedAppearance() const noexcept;
         bool ShowUnfocusedAppearance();
-
         void CreateUnfocusedAppearance(const Windows::Foundation::Collections::IMapView<hstring, Model::ColorScheme>& schemes,
                                        const IHostedInWindow& windowRoot);
         void DeleteUnfocusedAppearance();
+        bool AtlasEngineAvailable() const noexcept;
 
         WINRT_PROPERTY(bool, IsBaseLayer, false);
 
@@ -85,8 +86,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, Commandline);
         OBSERVABLE_PROJECTED_SETTING(_profile, StartingDirectory);
         OBSERVABLE_PROJECTED_SETTING(_profile, AntialiasingMode);
-        OBSERVABLE_PROJECTED_SETTING(_profile, ForceFullRepaintRendering);
-        OBSERVABLE_PROJECTED_SETTING(_profile, SoftwareRendering);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Foreground);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), Background);
         OBSERVABLE_PROJECTED_SETTING(_profile.DefaultAppearance(), SelectionBackground);
@@ -96,6 +95,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         OBSERVABLE_PROJECTED_SETTING(_profile, SnapOnInput);
         OBSERVABLE_PROJECTED_SETTING(_profile, AltGrAliasing);
         OBSERVABLE_PROJECTED_SETTING(_profile, BellStyle);
+        OBSERVABLE_PROJECTED_SETTING(_profile, UseAtlasEngine);
 
     private:
         Model::Profile _profile;

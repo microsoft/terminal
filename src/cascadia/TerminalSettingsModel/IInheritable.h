@@ -35,7 +35,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             //  to pass ownership over to the com_ptr.
             com_ptr<T> parent;
             winrt::copy_from_abi(parent, const_cast<T*>(static_cast<const T*>(this)));
-            child->InsertParent(parent);
+            child->AddLeastImportantParent(parent);
 
             child->_FinalizeInheritance();
             return child;
@@ -46,15 +46,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             _parents.clear();
         }
 
-        void InsertParent(com_ptr<T> parent)
+        void AddLeastImportantParent(com_ptr<T> parent)
         {
             _parents.emplace_back(std::move(parent));
         }
 
-        void InsertParent(size_t index, com_ptr<T> parent)
+        void AddMostImportantParent(com_ptr<T> parent)
         {
-            auto pos{ _parents.begin() + index };
-            _parents.emplace(pos, std::move(parent));
+            _parents.emplace(_parents.begin(), std::move(parent));
         }
 
         const std::vector<com_ptr<T>>& Parents()

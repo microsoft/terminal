@@ -113,6 +113,7 @@ public:
     virtual bool LockingShift(const size_t gsetNumber) = 0; // LS0, LS1, LS2, LS3
     virtual bool LockingShiftRight(const size_t gsetNumber) = 0; // LS1R, LS2R, LS3R
     virtual bool SingleShift(const size_t gsetNumber) = 0; // SS2, SS3
+    virtual bool AcceptC1Controls(const bool enabled) = 0; // DECAC1
 
     virtual bool SoftReset() = 0; // DECSTR
     virtual bool HardReset() = 0; // RIS

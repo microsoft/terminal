@@ -1,4 +1,4 @@
-﻿$scriptDirectory = $script:MyInvocation.MyCommand.Path | Split-Path -Parent
+$scriptDirectory = $script:MyInvocation.MyCommand.Path | Split-Path -Parent
 
 # List all processes to aid debugging:
 Write-Host "All processes running:"

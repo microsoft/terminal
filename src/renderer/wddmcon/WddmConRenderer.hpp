@@ -19,7 +19,7 @@ namespace Microsoft::Console::Render
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX
         // application may control the screen at a time.)
-        [[nodiscard]] HRESULT Enable() noexcept;
+        [[nodiscard]] HRESULT Enable() noexcept override;
         [[nodiscard]] HRESULT Disable() noexcept;
 
         RECT GetDisplaySize();

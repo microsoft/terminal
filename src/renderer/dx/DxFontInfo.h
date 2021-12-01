@@ -41,6 +41,8 @@ namespace Microsoft::Console::Render
 
         bool GetFallback() const noexcept;
 
+        IDWriteFontCollection* GetNearbyCollection() const noexcept;
+
         void SetFromEngine(const std::wstring_view familyName,
                            const DWRITE_FONT_WEIGHT weight,
                            const DWRITE_FONT_STYLE style,
@@ -57,11 +59,11 @@ namespace Microsoft::Console::Render
         [[nodiscard]] std::wstring _GetFontFamilyName(gsl::not_null<IDWriteFontFamily*> const fontFamily,
                                                       std::wstring& localeName);
 
-        [[nodiscard]] const Microsoft::WRL::ComPtr<IDWriteFontCollection1>& _NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory) const;
+        [[nodiscard]] IDWriteFontCollection* _NearbyCollection(gsl::not_null<IDWriteFactory1*> dwriteFactory);
 
         [[nodiscard]] static std::vector<std::filesystem::path> s_GetNearbyFonts();
 
-        mutable ::Microsoft::WRL::ComPtr<IDWriteFontCollection1> _nearbyCollection;
+        ::Microsoft::WRL::ComPtr<IDWriteFontCollection> _nearbyCollection;
 
         // The font name we should be looking for
         std::wstring _familyName;

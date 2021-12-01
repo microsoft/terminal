@@ -5,6 +5,8 @@
 #include "inc/utils.hpp"
 #include "inc/colorTable.hpp"
 
+#include <wil/token_helpers.h>
+
 using namespace Microsoft::Console;
 
 // Routine Description:
@@ -558,4 +560,34 @@ GUID Utils::CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::b
     GUID newGuid{ 0 };
     ::memcpy_s(&newGuid, sizeof(GUID), buffer.data(), sizeof(GUID));
     return EndianSwap(newGuid);
+}
+
+bool Utils::IsElevated()
+{
+    static bool isElevated = []() {
+        try
+        {
+            wil::unique_handle processToken{ GetCurrentProcessToken() };
+            const auto elevationType = wil::get_token_information<TOKEN_ELEVATION_TYPE>(processToken.get());
+            const auto elevationState = wil::get_token_information<TOKEN_ELEVATION>(processToken.get());
+            if (elevationType == TokenElevationTypeDefault && elevationState.TokenIsElevated)
+            {
+                // In this case, the user has UAC entirely disabled. This is sort of
+                // weird, we treat this like the user isn't an admin at all. There's no
+                // separation of powers, so the things we normally want to gate on
+                // "having special powers" doesn't apply.
+                //
+                // See GH#7754, GH#11096
+                return false;
+            }
+
+            return wil::test_token_membership(nullptr, SECURITY_NT_AUTHORITY, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS);
+        }
+        catch (...)
+        {
+            LOG_CAUGHT_EXCEPTION();
+            return false;
+        }
+    }();
+    return isElevated;
 }

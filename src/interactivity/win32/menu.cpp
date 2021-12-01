@@ -315,7 +315,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     const Cursor& cursor = ScreenInfo.GetTextBuffer().GetCursor();
     pStateInfo->CursorSize = cursor.GetSize();
-    pStateInfo->CursorColor = cursor.GetColor();
+    pStateInfo->CursorColor = gci.GetColorTableEntry(TextColor::CURSOR_COLOR);
     pStateInfo->CursorType = static_cast<unsigned int>(cursor.GetType());
 
     // Retrieve small icon for use in displaying the dialog
@@ -337,7 +337,7 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
 
     for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
     {
-        pStateInfo->ColorTable[i] = gci.GetColorTableEntry(i);
+        pStateInfo->ColorTable[i] = gci.GetLegacyColorTableEntry(i);
     }
 
     // Create mutable copies of the titles so the propsheet can do something with them.
@@ -376,8 +376,8 @@ void Menu::s_ShowPropertiesDialog(HWND const hwnd, BOOL const Defaults)
     pStateInfo->InterceptCopyPaste = gci.GetInterceptCopyPaste();
 
     // Get the properties from the settings
-    pStateInfo->DefaultForeground = gci.GetDefaultForegroundColor();
-    pStateInfo->DefaultBackground = gci.GetDefaultBackgroundColor();
+    pStateInfo->DefaultForeground = gci.GetColorTableEntry(TextColor::DEFAULT_FOREGROUND);
+    pStateInfo->DefaultBackground = gci.GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
 
     pStateInfo->TerminalScrolling = gci.IsTerminalScrolling();
     // end console v2 properties
@@ -461,13 +461,12 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     // Set the cursor properties in the Settings
     const auto cursorType = static_cast<CursorType>(pStateInfo->CursorType);
-    gci.SetCursorColor(pStateInfo->CursorColor);
     gci.SetCursorType(cursorType);
+    gci.SetColorTableEntry(TextColor::CURSOR_COLOR, pStateInfo->CursorColor);
 
     // Then also apply them to the buffer's cursor
     ScreenInfo.SetCursorInformation(pStateInfo->CursorSize,
                                     ScreenInfo.GetTextBuffer().GetCursor().IsVisible());
-    ScreenInfo.SetCursorColor(pStateInfo->CursorColor, true);
     ScreenInfo.SetCursorType(cursorType, true);
 
     gci.SetTerminalScrolling(pStateInfo->TerminalScrolling);
@@ -566,7 +565,7 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
 
     for (size_t i = 0; i < std::size(pStateInfo->ColorTable); i++)
     {
-        gci.SetColorTableEntry(i, pStateInfo->ColorTable[i]);
+        gci.SetLegacyColorTableEntry(i, pStateInfo->ColorTable[i]);
     }
 
     // Ensure that attributes only contain color specification.
@@ -579,11 +578,13 @@ void Menu::s_PropertiesUpdate(PCONSOLE_STATE_INFO pStateInfo)
     gci.SetFillAttribute(pStateInfo->ScreenAttributes);
     gci.SetPopupFillAttribute(pStateInfo->PopupAttributes);
     // Store our updated Default Color values
-    gci.SetDefaultForegroundColor(pStateInfo->DefaultForeground);
-    gci.SetDefaultBackgroundColor(pStateInfo->DefaultBackground);
+    gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, pStateInfo->DefaultForeground);
+    gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, pStateInfo->DefaultBackground);
 
     // Make sure the updated fill attributes are passed on to the TextAttribute class.
     TextAttribute::SetLegacyDefaultAttributes(pStateInfo->ScreenAttributes);
+    // And recalculate the position of the default colors in the color table.
+    gci.CalculateDefaultColorIndices();
 
     // Set the screen info's default text attributes to defaults -
     ScreenInfo.SetDefaultAttributes({}, TextAttribute{ gci.GetPopupFillAttribute() });

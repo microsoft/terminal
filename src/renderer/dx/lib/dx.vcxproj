@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <ProjectGuid>{48D21369-3D7B-4431-9967-24E81292CF62}</ProjectGuid>
@@ -18,21 +18,21 @@
     <ClCompile Include="..\BoxDrawingEffect.cpp" />
     <ClCompile Include="..\CustomTextLayout.cpp" />
     <ClCompile Include="..\CustomTextRenderer.cpp" />
-    <ClCompile Include="..\precomp.cpp">
-      <PrecompiledHeader>Create</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="..\DxFontInfo.cpp" />
     <ClCompile Include="..\DxFontRenderData.cpp" />
     <ClCompile Include="..\DxRenderer.cpp" />
+    <ClCompile Include="..\precomp.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\BoxDrawingEffect.h" />
     <ClInclude Include="..\CustomTextLayout.h" />
     <ClInclude Include="..\CustomTextRenderer.h" />
-    <ClInclude Include="..\precomp.h" />
-    <ClInclude Include="..\DxRenderer.hpp" />
     <ClInclude Include="..\DxFontInfo.h" />
     <ClInclude Include="..\DxFontRenderData.h" />
+    <ClInclude Include="..\DxRenderer.hpp" />
+    <ClInclude Include="..\precomp.h" />
     <ClInclude Include="..\ScreenPixelShader.h" />
     <ClInclude Include="..\ScreenVertexShader.h" />
   </ItemGroup>

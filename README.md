@@ -214,7 +214,7 @@ resources useful and interesting:
 * Windows Terminal Launch: [Build 2019
   Session](https://www.youtube.com/watch?v=KMudkRcwjCw)
 * Run As Radio: [Show 645 - Windows Terminal with Richard
-  Turner](http://www.runasradio.com/Shows/Show/645)
+  Turner](https://www.runasradio.com/Shows/Show/645)
 * Azure Devops Podcast: [Episode 54 - Kayla Cinnamon and Rich Turner on DevOps
   on the Windows
   Terminal](http://azuredevopspodcast.clear-measure.com/kayla-cinnamon-and-rich-turner-on-devops-on-the-windows-terminal-team-episode-54)

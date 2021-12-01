@@ -17,6 +17,7 @@ Author(s):
 
 #include "GlobalAppSettings.g.h"
 #include "IInheritable.h"
+#include "MTSMSettings.h"
 
 #include "ActionMap.h"
 #include "Command.h"
@@ -61,45 +62,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             DisableAnimations(!invertedDisableAnimationsValue);
         }
 
-        INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialRows, DEFAULT_ROWS);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, int32_t, InitialCols, DEFAULT_COLS);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowTabs, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTitleInTitlebar, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ConfirmCloseAllTabs, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, Language);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Windows::UI::Xaml::ElementTheme, Theme, winrt::Windows::UI::Xaml::ElementTheme::Default);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode, TabWidthMode, winrt::Microsoft::UI::Xaml::Controls::TabViewWidthMode::Equal);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, UseAcrylicInTabRow, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowTabsInTitlebar, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CopyOnSelect, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, InputServiceWarning, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Microsoft::Terminal::Control::CopyFormat, CopyFormatting, 0);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutLargePaste, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, WarnAboutMultiLinePaste, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchPosition, InitialPosition, nullptr, nullptr);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, CenterOnLaunch, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::FirstWindowPreference, FirstWindowPreference, FirstWindowPreference::DefaultProfile);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::LaunchMode, LaunchMode, LaunchMode::DefaultMode);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SnapToGridOnResize, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceFullRepaintRendering, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, SoftwareRendering, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ForceVTInput, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DebugFeaturesEnabled, debugFeaturesDefault);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, StartOnUserLogin, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysOnTop, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::TabSwitcherMode, TabSwitcherMode, Model::TabSwitcherMode::InOrder);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DisableAnimations, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, StartupActions, L"");
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, FocusFollowMouse, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, Model::WindowingMode, WindowingBehavior, Model::WindowingMode::UseNew);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, TrimBlockSelection, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, DetectURLs, true);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, MinimizeToNotificationArea, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, AlwaysShowNotificationIcon, false);
-        INHERITABLE_SETTING(Model::GlobalAppSettings, winrt::Windows::Foundation::Collections::IVector<winrt::hstring>, DisabledProfileSources, nullptr);
         INHERITABLE_SETTING(Model::GlobalAppSettings, hstring, UnparsedDefaultProfile, L"");
-        INHERITABLE_SETTING(Model::GlobalAppSettings, bool, ShowAdminShield, true);
+
+#define GLOBAL_SETTINGS_INITIALIZE(type, name, jsonKey, ...) \
+    INHERITABLE_SETTING(Model::GlobalAppSettings, type, name, ##__VA_ARGS__)
+        MTSM_GLOBAL_SETTINGS(GLOBAL_SETTINGS_INITIALIZE)
+#undef GLOBAL_SETTINGS_INITIALIZE
 
     private:
 #ifdef NDEBUG

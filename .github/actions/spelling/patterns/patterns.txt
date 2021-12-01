@@ -4,7 +4,7 @@ https://www\.itscj\.ipsj\.or\.jp/iso-ir/[-0-9]+\.pdf
 https://www\.vt100\.net/docs/[-a-zA-Z0-9#_\/.]*
 https://www.w3.org/[-a-zA-Z0-9?&=\/_#]*
 https://(?:(?:www\.|)youtube\.com|youtu.be)/[-a-zA-Z0-9?&=]*
-https://(?:[a-z-]+\.|)github(?:usercontent|)\.com/[-a-zA-Z0-9?%&=_\/.]*
+https://(?:[a-z-]+\.|)github(?:usercontent|)\.com/[-a-zA-Z0-9?%&=_\/.+]*
 https://www.xfree86.org/[-a-zA-Z0-9?&=\/_#]*
 [Pp]ublicKeyToken="?[0-9a-fA-F]{16}"?
 (?:[{"]|UniqueIdentifier>)[0-9a-fA-F]{8}-(?:[0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}(?:[}"]|</UniqueIdentifier)

@@ -94,4 +94,5 @@ namespace Microsoft::Console::Utils
 
     GUID CreateV5Uuid(const GUID& namespaceGuid, const gsl::span<const gsl::byte> name);
 
+    bool IsElevated();
 }

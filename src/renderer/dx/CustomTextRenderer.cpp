@@ -487,6 +487,7 @@ CATCH_RETURN()
 {
     // Color glyph rendering sourced from https://github.com/Microsoft/Windows-universal-samples/tree/master/Samples/DWriteColorGlyph
 
+#pragma warning(suppress : 26429) // Symbol 'drawingContext' is never tested for nullness, it can be marked as not_null (f.23).
     DrawingContext* drawingContext = static_cast<DrawingContext*>(clientDrawingContext);
 
     // Since we've delegated the drawing of the background of the text into this function, the origin passed in isn't actually the baseline.

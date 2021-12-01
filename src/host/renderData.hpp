@@ -15,6 +15,7 @@ Author(s):
 #pragma once
 
 #include "../renderer/inc/IRenderData.hpp"
+#include "../types/inc/colorTable.hpp"
 #include "../types/IUiaData.h"
 
 class RenderData final :
