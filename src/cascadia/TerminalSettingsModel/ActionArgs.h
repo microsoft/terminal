@@ -82,9 +82,25 @@ static size_t EmptyHash()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+#define NO_OTHER_CTORS ;
+
 #define COPY_TEXT_ARGS(X)                    \
     X(bool, SingleLine, "singleLine", false) \
     X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", nullptr)
+
+#define MOVE_PANE_ARGS(X) \
+    X(uint32_t, TabIndex, "index", 0)
+
+#define MOVE_PANE_CTORS                \
+    MovePaneArgs(uint32_t& tabIndex) : \
+        _TabIndex{ tabIndex } {};
+
+#define SWITCH_TO_TAB_ARGS(X) \
+    X(uint32_t, TabIndex, "index", 0)
+
+#define SWITCH_TO_TAB_CTORS               \
+    SwitchToTabArgs(uint32_t& tabIndex) : \
+        _TabIndex{ tabIndex } {};
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -108,10 +124,11 @@ static size_t EmptyHash()
 #define HASH_ARGS(type, name, jsonKey, ...) \
     , name()
 
-#define ACTION_ARGS_STRUCT(className, argsMacro)                                    \
+#define ACTION_ARGS_STRUCT(className, argsMacro, otherCtorsMacro)                   \
     struct className : public className##T<className>                               \
     {                                                                               \
         className() = default;                                                      \
+        otherCtorsMacro;                                                            \
         argsMacro(DECLARE_ARGS) public :                                            \
             hstring GenerateName() const;                                           \
         bool Equals(const IActionArgs& other)                                       \
@@ -264,66 +281,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS);
-    /* struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
-    {
-        CopyTextArgs() = default;
-        static constexpr std::string_view SingleLineKey{ "singleLine" };
-        ACTION_ARG(bool, SingleLine, false);
-        static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
-        ACTION_ARG(Windows::Foundation::IReference<Control::CopyFormat>,
-                   CopyFormatting,
-                   nullptr);
-
-    public:
-        hstring GenerateName() const;
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<CopyTextArgs>();
-            if (otherAsUs)
-            {
-                return true && (otherAsUs->_SingleLine == _SingleLine) &&
-                       (otherAsUs->_CopyFormatting == _CopyFormatting);
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            auto args = winrt::make_self<CopyTextArgs>();
-            JsonUtils::GetValueForKey(json, "singleLine", args->_SingleLine);
-            JsonUtils::GetValueForKey(json, "copyFormatting", args->_CopyFormatting);
-            ;
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<CopyTextArgs>(val) };
-            JsonUtils::SetValueForKey(json, "singleLine", args->_SingleLine);
-            JsonUtils::SetValueForKey(json, "copyFormatting", args->_CopyFormatting);
-            ;
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<CopyTextArgs>() };
-            copy->_SingleLine = _SingleLine;
-            copy->_CopyFormatting = _CopyFormatting;
-            ;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(
-                0, SingleLine(), CopyFormatting());
-        }
-    };
-    ;*/
-
+    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS, NO_OTHER_CTORS);
 
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
@@ -372,107 +330,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    struct MovePaneArgs : public MovePaneArgsT<MovePaneArgs>
-    {
-        MovePaneArgs() = default;
-        MovePaneArgs(uint32_t& tabIndex) :
-            _TabIndex{ tabIndex } {};
-        ACTION_ARG(uint32_t, TabIndex, 0);
+    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS, MOVE_PANE_CTORS);
 
-        static constexpr std::string_view TabIndexKey{ "index" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<MovePaneArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_TabIndex == _TabIndex;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MovePaneArgs>();
-            JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<MovePaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<MovePaneArgs>() };
-            copy->_TabIndex = _TabIndex;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabIndex());
-        }
-    };
-
-    struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
-    {
-        SwitchToTabArgs() = default;
-        SwitchToTabArgs(uint32_t& tabIndex) :
-            _TabIndex{ tabIndex } {};
-        ACTION_ARG(uint32_t, TabIndex, 0);
-
-        static constexpr std::string_view TabIndexKey{ "index" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<SwitchToTabArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_TabIndex == _TabIndex;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<SwitchToTabArgs>(val) };
-            JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<SwitchToTabArgs>() };
-            copy->_TabIndex = _TabIndex;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabIndex());
-        }
-    };
+    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS, SWITCH_TO_TAB_CTORS);
 
     struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
     {
