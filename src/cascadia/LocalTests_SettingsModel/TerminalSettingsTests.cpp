@@ -55,8 +55,12 @@ namespace SettingsModelLocalTests
         TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
-        settings.FontSize(oldFontSize + 5);
-        auto newFontSize = settings.FontSize();
+
+        auto selfSettings = winrt::make_self<implementation::TerminalSettings>();
+        VERIFY_ARE_EQUAL(oldFontSize, selfSettings->FontSize());
+
+        selfSettings->FontSize(oldFontSize + 5);
+        auto newFontSize = selfSettings->FontSize();
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 

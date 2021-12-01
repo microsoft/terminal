@@ -324,9 +324,9 @@ void AtlasEngine::SetCallback(std::function<void()> pfn) noexcept
     _api.swapChainChangedCallback = std::move(pfn);
 }
 
-void AtlasEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
+void AtlasEngine::EnableTransparentBackground(const bool isTransparent) noexcept
 {
-    const auto mixin = opacity == 1.0f ? 0xff000000 : 0x00000000;
+    const auto mixin = !isTransparent ? 0xff000000 : 0x00000000;
     if (_api.backgroundOpaqueMixin != mixin)
     {
         _api.backgroundOpaqueMixin = mixin;

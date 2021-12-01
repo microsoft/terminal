@@ -35,7 +35,6 @@ namespace ControlUnitTests
         WINRT_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         WINRT_PROPERTY(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         WINRT_PROPERTY(bool, CopyOnSelect, false);
-        WINRT_PROPERTY(bool, InputServiceWarning, true);
         WINRT_PROPERTY(bool, FocusFollowMouse, false);
 
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr);

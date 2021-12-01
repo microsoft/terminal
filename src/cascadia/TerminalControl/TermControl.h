@@ -25,10 +25,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 {
     struct TermControl : TermControlT<TermControl>
     {
-        TermControl(IControlSettings settings, TerminalConnection::ITerminalConnection connection);
+        TermControl(IControlSettings settings,
+                    Control::IControlAppearance unfocusedAppearance,
+                    TerminalConnection::ITerminalConnection connection);
 
-        winrt::fire_and_forget UpdateSettings();
-        winrt::fire_and_forget UpdateAppearance(const IControlAppearance newAppearance);
+        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings);
+        winrt::fire_and_forget UpdateControlSettings(Control::IControlSettings settings, Control::IControlAppearance unfocusedAppearance);
+        IControlSettings Settings() const;
 
         hstring GetProfileName() const;
 
@@ -88,9 +91,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         Windows::UI::Xaml::Automation::Peers::AutomationPeer OnCreateAutomationPeer();
         const Windows::UI::Xaml::Thickness GetPadding();
 
-        IControlSettings Settings() const;
-        void Settings(IControlSettings newSettings);
-
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars);
 
@@ -104,6 +104,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         static Windows::UI::Xaml::Thickness ParseThicknessFromPadding(const hstring padding);
 
         hstring ReadEntireBuffer() const;
+
+        winrt::Microsoft::Terminal::Core::Scheme ColorScheme() const noexcept;
+        void ColorScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme) const noexcept;
 
         // -------------------------------- WinRT Events ---------------------------------
         // clang-format off
@@ -127,8 +130,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         TYPED_EVENT(WarningBell,               IInspectable, IInspectable);
         // clang-format on
 
-        WINRT_PROPERTY(IControlAppearance, UnfocusedAppearance);
-
     private:
         friend struct TermControlT<TermControl>; // friend our parent so it can bind private event handlers
 
@@ -146,7 +147,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         winrt::com_ptr<SearchBoxControl> _searchBox;
 
-        IControlSettings _settings;
         bool _closing{ false };
         bool _focused{ false };
         bool _initializedTerminal{ false };
@@ -193,14 +193,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return _closing;
         }
 
-        void _UpdateSettingsFromUIThread(IControlSettings newSettings);
-        void _UpdateAppearanceFromUIThread(IControlAppearance newAppearance);
-        void _ApplyUISettings(const IControlSettings&);
+        void _UpdateSettingsFromUIThread();
+        void _UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance);
+        void _ApplyUISettings();
+        winrt::fire_and_forget UpdateAppearance(Control::IControlAppearance newAppearance);
         void _SetBackgroundImage(const IControlAppearance& newAppearance);
 
         void _InitializeBackgroundBrush();
-        void _BackgroundColorChangedHandler(const IInspectable& sender, const IInspectable& args);
-        winrt::fire_and_forget _changeBackgroundColor(const til::color bg);
+        winrt::fire_and_forget _coreBackgroundColorChanged(const IInspectable& sender, const IInspectable& args);
+        void _changeBackgroundColor(const til::color bg);
+        void _changeBackgroundOpacity();
 
         bool _InitializeTerminal();
         void _SetFontSize(int fontSize);

@@ -180,6 +180,9 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 // - appearance: an ICoreAppearance with new settings values for us to use.
 void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
+    _intenseIsBright = appearance.IntenseIsBright();
+    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
+
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
@@ -1301,4 +1304,68 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexce
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;
+}
+
+Scheme Terminal::GetColorScheme() const noexcept
+{
+    Scheme s;
+
+    s.Foreground = til::color{ _colorTable.at(TextColor::DEFAULT_FOREGROUND) };
+    // Don't leak the implementation detail that our _defaultBg is stored
+    // internally without alpha.
+    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
+
+    // SelectionBackground is stored in the ControlAppearance
+    s.CursorColor = til::color{ _colorTable.at(TextColor::CURSOR_COLOR) };
+
+    s.Black = til::color{ _colorTable[0] };
+    s.Red = til::color{ _colorTable[1] };
+    s.Green = til::color{ _colorTable[2] };
+    s.Yellow = til::color{ _colorTable[3] };
+    s.Blue = til::color{ _colorTable[4] };
+    s.Purple = til::color{ _colorTable[5] };
+    s.Cyan = til::color{ _colorTable[6] };
+    s.White = til::color{ _colorTable[7] };
+    s.BrightBlack = til::color{ _colorTable[8] };
+    s.BrightRed = til::color{ _colorTable[9] };
+    s.BrightGreen = til::color{ _colorTable[10] };
+    s.BrightYellow = til::color{ _colorTable[11] };
+    s.BrightBlue = til::color{ _colorTable[12] };
+    s.BrightPurple = til::color{ _colorTable[13] };
+    s.BrightCyan = til::color{ _colorTable[14] };
+    s.BrightWhite = til::color{ _colorTable[15] };
+    return s;
+}
+
+void Terminal::ApplyScheme(const Scheme& colorScheme)
+{
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = til::color{ colorScheme.Foreground };
+    // Set the default background as transparent to prevent the
+    // DX layer from overwriting the background image or acrylic effect
+    til::color newBackgroundColor{ colorScheme.Background };
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+
+    _colorTable[0] = til::color{ colorScheme.Black };
+    _colorTable[1] = til::color{ colorScheme.Red };
+    _colorTable[2] = til::color{ colorScheme.Green };
+    _colorTable[3] = til::color{ colorScheme.Yellow };
+    _colorTable[4] = til::color{ colorScheme.Blue };
+    _colorTable[5] = til::color{ colorScheme.Purple };
+    _colorTable[6] = til::color{ colorScheme.Cyan };
+    _colorTable[7] = til::color{ colorScheme.White };
+    _colorTable[8] = til::color{ colorScheme.BrightBlack };
+    _colorTable[9] = til::color{ colorScheme.BrightRed };
+    _colorTable[10] = til::color{ colorScheme.BrightGreen };
+    _colorTable[11] = til::color{ colorScheme.BrightYellow };
+    _colorTable[12] = til::color{ colorScheme.BrightBlue };
+    _colorTable[13] = til::color{ colorScheme.BrightPurple };
+    _colorTable[14] = til::color{ colorScheme.BrightCyan };
+    _colorTable[15] = til::color{ colorScheme.BrightWhite };
+
+    _colorTable.at(TextColor::CURSOR_COLOR) = til::color{ colorScheme.CursorColor };
+
+    if (_adjustIndistinguishableColors)
+    {
+        _MakeAdjustedColorArray();
+    }
 }
