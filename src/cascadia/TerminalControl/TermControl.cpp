@@ -909,7 +909,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        if (vkey == VK_SPACE && modifiers.IsAltPressed())
+        if (vkey == VK_SPACE && modifiers.IsAltPressed() && !modifiers.IsAltGrPressed())
         {
             if (const auto bindings = _settings.KeyBindings())
             {
