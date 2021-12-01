@@ -5,7 +5,6 @@
 
 #include "ConptyConnection.g.h"
 #include "ConnectionStateHolder.h"
-#include <cppwinrt_utils.h>
 
 #include <conpty-static.h>
 

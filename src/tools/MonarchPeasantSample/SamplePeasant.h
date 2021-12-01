@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Peasant.g.h"
-#include <cppwinrt_utils.h>
 
 namespace winrt::MonarchPeasantSample::implementation
 {

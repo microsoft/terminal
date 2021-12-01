@@ -5,7 +5,6 @@
 
 #include "Monarch.g.h"
 #include "Peasant.h"
-#include <cppwinrt_utils.h>
 #include "WindowActivatedArgs.h"
 #include <atomic>
 

@@ -5,7 +5,6 @@
 
 #include "AppKeyBindings.g.h"
 #include "ShortcutActionDispatch.h"
-#include <cppwinrt_utils.h>
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests

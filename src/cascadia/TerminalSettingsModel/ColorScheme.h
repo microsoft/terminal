@@ -17,7 +17,6 @@ Author(s):
 #pragma once
 
 #include "../../inc/conattrs.hpp"
-#include <cppwinrt_utils.h>
 #include "DefaultSettings.h"
 
 #include "ColorScheme.g.h"

@@ -18,7 +18,6 @@ Author(s):
 #include "ActionMap.g.h"
 #include "IInheritable.h"
 #include "Command.h"
-#include <cppwinrt_utils.h>
 
 // fwdecl unittest classes
 namespace SettingsModelLocalTests

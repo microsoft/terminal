@@ -17,7 +17,6 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "TerminalSettingsCreateResult.g.h"
 #include "IInheritable.h"
-#include <cppwinrt_utils.h>
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 

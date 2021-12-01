@@ -23,7 +23,6 @@ Author(s):
 #pragma once
 
 #include <conattrs.hpp>
-#include <cppwinrt_utils.h>
 
 using namespace Microsoft::WRL;
 

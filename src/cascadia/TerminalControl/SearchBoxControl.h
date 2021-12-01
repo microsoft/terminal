@@ -16,7 +16,6 @@ Author(s):
 #pragma once
 #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Controls.h"
-#include <cppwinrt_utils.h>
 
 #include "SearchBoxControl.g.h"
 

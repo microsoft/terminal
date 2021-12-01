@@ -13,7 +13,6 @@ Abstract:
 #pragma once
 
 #include "SummonWindowBehavior.g.h"
-#include <cppwinrt_utils.h>
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {

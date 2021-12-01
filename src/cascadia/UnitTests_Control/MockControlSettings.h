@@ -4,7 +4,6 @@ Licensed under the MIT license.
 --*/
 #pragma once
 
-#include <cppwinrt_utils.h>
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 

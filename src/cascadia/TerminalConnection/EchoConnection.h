@@ -5,8 +5,6 @@
 
 #include "EchoConnection.g.h"
 
-#include <cppwinrt_utils.h>
-
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct EchoConnection : EchoConnectionT<EchoConnection>

@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include <cppwinrt_utils.h>
 #include "TaskbarState.h"
 
 // fwdecl unittest classes

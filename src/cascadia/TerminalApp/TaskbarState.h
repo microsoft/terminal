@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include <cppwinrt_utils.h>
 #include "TaskbarState.g.h"
 
 // fwdecl unittest classes

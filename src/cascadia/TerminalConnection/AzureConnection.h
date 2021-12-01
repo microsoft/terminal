@@ -11,7 +11,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include <cppwinrt_utils.h>
 #include "ConnectionStateHolder.h"
 #include "AzureClient.h"
 

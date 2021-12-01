@@ -4,7 +4,6 @@
 #pragma once
 
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
-#include <cppwinrt_utils.h>
 
 #include "TabHeaderControl.g.h"
 

@@ -18,7 +18,6 @@ Author(s):
 #pragma once
 #include "TabBase.h"
 #include "SettingsTab.g.h"
-#include <cppwinrt_utils.h>
 
 namespace winrt::TerminalApp::implementation
 {

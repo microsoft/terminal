@@ -7,7 +7,6 @@
 
 #include "HighlightedTextSegment.g.h"
 #include "HighlightedText.g.h"
-#include <cppwinrt_utils.h>
 
 namespace winrt::TerminalApp::implementation
 {

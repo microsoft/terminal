@@ -5,7 +5,6 @@
 
 #include "HighlightedTextControl.h"
 #include "FilteredCommand.g.h"
-#include <cppwinrt_utils.h>
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests

@@ -1,6 +1,5 @@
 #pragma once
 #include "ColorPickupFlyout.g.h"
-#include <cppwinrt_utils.h>
 
 namespace winrt::TerminalApp::implementation
 {

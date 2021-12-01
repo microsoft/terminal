@@ -5,7 +5,6 @@
 
 #include "PaletteItem.h"
 #include "ActionPaletteItem.g.h"
-#include <cppwinrt_utils.h>
 
 namespace winrt::TerminalApp::implementation
 {
