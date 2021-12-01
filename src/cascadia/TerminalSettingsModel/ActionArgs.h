@@ -248,6 +248,14 @@ static size_t EmptyHash()
 
 #define VALIDATE_RENAME_WINDOW() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
+#define GLOBAL_SUMMON_ARGS(X)                                                        \
+    X(winrt::hstring, Name, "name", L"")                                             \
+    X(Model::DesktopBehavior, Desktop, "desktop", Model::DesktopBehavior::ToCurrent) \
+    X(Model::MonitorBehavior, Monitor, "monitor", Model::MonitorBehavior::ToMouse)   \
+    X(bool, ToggleVisibility, "toggleVisibility", true)                              \
+    X(uint32_t, DropdownDuration, "dropdownDuration", 0)
+
+////////////////////////////////////////////////////////////////////////////////
 #define FOCUS_PANE_ARGS(X) \
     X(uint32_t, Id, "id", 0u)
 
@@ -277,7 +285,7 @@ struct InitListPlaceholder
 };
 ////////////////////////////////////////////////////////////////////////////////
 //
-// The complete ActionAndArgs definition. Each macro above BEGIN_ACTION_ARG is
+// The complete ActionAndArgs definition. Each macro above ACTION_ARGS_STRUCT is
 // some element of the class definition that will use the x-macro.
 //
 // You'll author a new arg by:
@@ -326,65 +334,65 @@ struct InitListPlaceholder
 
 // Use ACTION_ARGS_STRUCT when you've got no other customizing to do.
 #define ACTION_ARGS_STRUCT(className, argsMacro, otherValidation) \
-    BEGIN_ACTION_ARG(className, argsMacro, otherValidation)       \
-    END_ACTION_ARG()
+    struct className : public className##T<className>             \
+    {                                                             \
+        ACTION_ARG_BODY(className, argsMacro, otherValidation)    \
+    };
+// Use ACTION_ARG_BODY when you've got some other methods to add to the args class.
+// case in point:
+//   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
+//   * GlobalSummonArgs has the QuakeModeFromJson helper
 
-#define BEGIN_ACTION_ARG(className, argsMacro, otherValidation)                     \
-    struct className : public className##T<className>                               \
-    {                                                                               \
-        className() = default;                                                      \
-        className(                                                                  \
-            argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                      \
-            argsMacro(CTOR_INITS) _placeholder{} {};                                \
-        argsMacro(DECLARE_ARGS);                                                    \
-                                                                                    \
-    private:                                                                        \
-        InitListPlaceholder _placeholder;                                           \
-                                                                                    \
-    public:                                                                         \
-        hstring GenerateName() const;                                               \
-        bool Equals(const IActionArgs& other)                                       \
-        {                                                                           \
-            auto otherAsUs = other.try_as<className>();                             \
-            if (otherAsUs)                                                          \
-            {                                                                       \
-                return true argsMacro(EQUALS_ARGS);                                 \
-            }                                                                       \
-            return false;                                                           \
-        };                                                                          \
-        static FromJsonResult FromJson(const Json::Value& json)                     \
-        {                                                                           \
-            auto args = winrt::make_self<className>();                              \
-            argsMacro(FROM_JSON_ARGS);                                              \
-            otherValidation();                                                      \
-            return { *args, {} };                                                   \
-        }                                                                           \
-        static Json::Value ToJson(const IActionArgs& val)                           \
-        {                                                                           \
-            if (!val)                                                               \
-            {                                                                       \
-                return {};                                                          \
-            }                                                                       \
-            Json::Value json{ Json::ValueType::objectValue };                       \
-            const auto args{ get_self<className>(val) };                            \
-            argsMacro(TO_JSON_ARGS);                                                \
-            return json;                                                            \
-        }                                                                           \
-        IActionArgs Copy() const                                                    \
-        {                                                                           \
-            auto copy{ winrt::make_self<className>() };                             \
-            argsMacro(COPY_ARGS);                                                   \
-            return *copy;                                                           \
-        }                                                                           \
-        size_t Hash() const                                                         \
-        {                                                                           \
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty( \
-                0 argsMacro(HASH_ARGS));                                            \
-        }
-
-#define END_ACTION_ARG() \
-    }                    \
-    ;
+#define ACTION_ARG_BODY(className, argsMacro, otherValidation)                  \
+    className() = default;                                                      \
+    className(                                                                  \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                      \
+        argsMacro(CTOR_INITS) _placeholder{} {};                                \
+    argsMacro(DECLARE_ARGS);                                                    \
+                                                                                \
+private:                                                                        \
+    InitListPlaceholder _placeholder;                                           \
+                                                                                \
+public:                                                                         \
+    hstring GenerateName() const;                                               \
+    bool Equals(const IActionArgs& other)                                       \
+    {                                                                           \
+        auto otherAsUs = other.try_as<className>();                             \
+        if (otherAsUs)                                                          \
+        {                                                                       \
+            return true argsMacro(EQUALS_ARGS);                                 \
+        }                                                                       \
+        return false;                                                           \
+    };                                                                          \
+    static FromJsonResult FromJson(const Json::Value& json)                     \
+    {                                                                           \
+        auto args = winrt::make_self<className>();                              \
+        argsMacro(FROM_JSON_ARGS);                                              \
+        otherValidation();                                                      \
+        return { *args, {} };                                                   \
+    }                                                                           \
+    static Json::Value ToJson(const IActionArgs& val)                           \
+    {                                                                           \
+        if (!val)                                                               \
+        {                                                                       \
+            return {};                                                          \
+        }                                                                       \
+        Json::Value json{ Json::ValueType::objectValue };                       \
+        const auto args{ get_self<className>(val) };                            \
+        argsMacro(TO_JSON_ARGS);                                                \
+        return json;                                                            \
+    }                                                                           \
+    IActionArgs Copy() const                                                    \
+    {                                                                           \
+        auto copy{ winrt::make_self<className>() };                             \
+        argsMacro(COPY_ARGS);                                                   \
+        return *copy;                                                           \
+    }                                                                           \
+    size_t Hash() const                                                         \
+    {                                                                           \
+        return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty( \
+            0 argsMacro(HASH_ARGS));                                            \
+    }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -403,6 +411,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Handled, false);
     };
 
+    // Although it may _seem_ like NewTerminaArgs can use ACTION_ARG_BODY, it
+    // actually can't, because it isn't an `IActionArgs`, which breaks some
+    // assumptions made in the macro.
     struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
     {
         NewTerminalArgs() = default;
@@ -724,71 +735,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
     ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS, VALIDATE_RENAME_WINDOW);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
+
     {
-        GlobalSummonArgs() = default;
-        ACTION_ARG(winrt::hstring, Name, L"");
-        ACTION_ARG(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
-        ACTION_ARG(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToMouse);
-        ACTION_ARG(bool, ToggleVisibility, true);
-        ACTION_ARG(uint32_t, DropdownDuration, 0);
-
-        static constexpr std::string_view NameKey{ "name" };
-        static constexpr std::string_view DesktopKey{ "desktop" };
-        static constexpr std::string_view MonitorKey{ "monitor" };
-        static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
-        static constexpr std::string_view DropdownDurationKey{ "dropdownDuration" };
-
+        ACTION_ARG_BODY(GlobalSummonArgs, GLOBAL_SUMMON_ARGS, NO_OTHER_VALIDATION)
     public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
-            {
-                return otherAsUs->_Name == _Name &&
-                       otherAsUs->_Desktop == _Desktop &&
-                       otherAsUs->_Monitor == _Monitor &&
-                       otherAsUs->_DropdownDuration == _DropdownDuration &&
-                       otherAsUs->_ToggleVisibility == _ToggleVisibility;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<GlobalSummonArgs>();
-            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
-            JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
-            JsonUtils::GetValueForKey(json, MonitorKey, args->_Monitor);
-            JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
-            JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<GlobalSummonArgs>(val) };
-            JsonUtils::SetValueForKey(json, NameKey, args->_Name);
-            JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
-            JsonUtils::SetValueForKey(json, MonitorKey, args->_Monitor);
-            JsonUtils::SetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
-            JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<GlobalSummonArgs>() };
-            copy->_Name = _Name;
-            copy->_Desktop = _Desktop;
-            copy->_Monitor = _Monitor;
-            copy->_DropdownDuration = _DropdownDuration;
-            copy->_ToggleVisibility = _ToggleVisibility;
-            return *copy;
-        }
         // SPECIAL! This deserializer creates a GlobalSummonArgs with the
         // default values for quakeMode
         static FromJsonResult QuakeModeFromJson(const Json::Value& /*json*/)
@@ -801,11 +751,78 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             args->_DropdownDuration = 200;
             return { *args, {} };
         }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Name(), Desktop(), Monitor(), DropdownDuration(), ToggleVisibility());
-        }
     };
+    // struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
+    // {
+    //     GlobalSummonArgs() = default;
+    //     ACTION_ARG(winrt::hstring, Name, L"");
+    //     ACTION_ARG(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
+    //     ACTION_ARG(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToMouse);
+    //     ACTION_ARG(bool, ToggleVisibility, true);
+    //     ACTION_ARG(uint32_t, DropdownDuration, 0);
+
+    //     static constexpr std::string_view NameKey{ "name" };
+    //     static constexpr std::string_view DesktopKey{ "desktop" };
+    //     static constexpr std::string_view MonitorKey{ "monitor" };
+    //     static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
+    //     static constexpr std::string_view DropdownDurationKey{ "dropdownDuration" };
+
+    // public:
+    //     hstring GenerateName() const;
+
+    //     bool Equals(const IActionArgs& other)
+    //     {
+    //         if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
+    //         {
+    //             return otherAsUs->_Name == _Name &&
+    //                    otherAsUs->_Desktop == _Desktop &&
+    //                    otherAsUs->_Monitor == _Monitor &&
+    //                    otherAsUs->_DropdownDuration == _DropdownDuration &&
+    //                    otherAsUs->_ToggleVisibility == _ToggleVisibility;
+    //         }
+    //         return false;
+    //     };
+    //     static FromJsonResult FromJson(const Json::Value& json)
+    //     {
+    //         // LOAD BEARING: Not using make_self here _will_ break you in the future!
+    //         auto args = winrt::make_self<GlobalSummonArgs>();
+    //         JsonUtils::GetValueForKey(json, NameKey, args->_Name);
+    //         JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
+    //         JsonUtils::GetValueForKey(json, MonitorKey, args->_Monitor);
+    //         JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
+    //         JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
+    //         return { *args, {} };
+    //     }
+    //     static Json::Value ToJson(const IActionArgs& val)
+    //     {
+    //         if (!val)
+    //         {
+    //             return {};
+    //         }
+    //         Json::Value json{ Json::ValueType::objectValue };
+    //         const auto args{ get_self<GlobalSummonArgs>(val) };
+    //         JsonUtils::SetValueForKey(json, NameKey, args->_Name);
+    //         JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
+    //         JsonUtils::SetValueForKey(json, MonitorKey, args->_Monitor);
+    //         JsonUtils::SetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
+    //         JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
+    //         return json;
+    //     }
+    //     IActionArgs Copy() const
+    //     {
+    //         auto copy{ winrt::make_self<GlobalSummonArgs>() };
+    //         copy->_Name = _Name;
+    //         copy->_Desktop = _Desktop;
+    //         copy->_Monitor = _Monitor;
+    //         copy->_DropdownDuration = _DropdownDuration;
+    //         copy->_ToggleVisibility = _ToggleVisibility;
+    //         return *copy;
+    //     }
+    //     size_t Hash() const
+    //     {
+    //         return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Name(), Desktop(), Monitor(), DropdownDuration(), ToggleVisibility());
+    //     }
+    // };
 
     ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS, VALIDATE_FOCUS_PANE);
 
