@@ -753,12 +753,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _HidePointerCursorHandlers(*this, nullptr);
 
         const auto ch = e.Character();
-        const auto scanCode = gsl::narrow_cast<WORD>(e.KeyStatus().ScanCode);
+        const auto keyStatus = e.KeyStatus();
+        const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
-        if (e.KeyStatus().IsExtendedKey)
+
+        if (keyStatus.IsExtendedKey)
         {
             modifiers |= ControlKeyStates::EnhancedKey;
         }
+
         const bool handled = _core.SendCharEvent(ch, scanCode, modifiers);
         e.Handled(handled);
     }
@@ -853,6 +856,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto scanCode = gsl::narrow_cast<WORD>(keyStatus.ScanCode);
         auto modifiers = _GetPressedModifierKeys();
 
+        if (keyStatus.IsExtendedKey)
+        {
+            modifiers |= ControlKeyStates::EnhancedKey;
+        }
+
         // GH#11076:
         // For some weird reason we sometimes receive a WM_KEYDOWN
         // message without vkey or scanCode if a user drags a tab.
@@ -884,11 +892,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             e.Handled(!keyDown || _TryHandleKeyBinding(vkey, scanCode, modifiers));
             return;
-        }
-
-        if (keyStatus.IsExtendedKey)
-        {
-            modifiers |= ControlKeyStates::EnhancedKey;
         }
 
         // Alt-Numpad# input will send us a character once the user releases
@@ -968,7 +971,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // Arguments:
     // - vkey: The vkey of the key pressed.
     // - scanCode: The scan code of the key pressed.
-    void TermControl::_ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept
+    void TermControl::_ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept
     {
         std::array<BYTE, 256> keyState;
         if (!GetKeyboardState(keyState.data()))
@@ -2042,7 +2045,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //   don't necessarily include that state.
     // Return Value:
     // - The Microsoft::Terminal::Core::ControlKeyStates representing the modifier key states.
-    ControlKeyStates TermControl::_GetPressedModifierKeys() const
+    ControlKeyStates TermControl::_GetPressedModifierKeys() noexcept
     {
         const CoreWindow window = CoreWindow::GetForCurrentThread();
         // DONT USE
