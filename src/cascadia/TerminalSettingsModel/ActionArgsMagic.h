@@ -40,10 +40,9 @@ struct InitListPlaceholder
 //
 // You'll author a new arg by:
 //   1: define a new x-macro above with all it's properties
-//   2: If needed, add extra property validation in a new VALIDATE_MY_FOO macro
-//   3. Define the class with:
+//   2. Define the class with:
 //
-//   ACTION_ARGS_STRUCT(MyFooArgs, MY_FOO_ARGS, VALIDATE_MY_FOO);
+//   ACTION_ARGS_STRUCT(MyFooArgs, MY_FOO_ARGS);
 //
 // In that macro, we'll use the passed-in macro (MY_FOO_ARGS) with each of these
 // macros below, which will generate the various parts of the class body.
@@ -53,58 +52,68 @@ struct InitListPlaceholder
 // expanded. Pretty critical for tracking down extraneous commas, etc.
 
 // Property definitions, and JSON keys
-#define DECLARE_ARGS(type, name, jsonKey, ...)              \
+#define DECLARE_ARGS(type, name, jsonKey, required, ...)    \
     static constexpr std::string_view name##Key{ jsonKey }; \
     ACTION_ARG(type, name, ##__VA_ARGS__);
 
 // Parameters to the non-default ctor
-#define CTOR_PARAMS(type, name, jsonKey, ...) \
+#define CTOR_PARAMS(type, name, jsonKey, required, ...) \
     const type &name##Param,
 
 // initializers in the ctor
-#define CTOR_INITS(type, name, jsonKey, ...) \
+#define CTOR_INIT(type, name, jsonKey, required, ...) \
     _##name{ name##Param },
 
 // check each property in the Equals() method. You'll note there's a stray
 // `true` in the definition of Equals() below, that's to deal with trailing
 // commas
-#define EQUALS_ARGS(type, name, jsonKey, ...) \
+#define EQUALS_ARGS(type, name, jsonKey, required, ...) \
     &&(otherAsUs->_##name == _##name)
 
-// JSON deserialization
-#define FROM_JSON_ARGS(type, name, jsonKey, ...) \
+// JSON deserialization. If the parameter is required to pass any validation,
+// add that as the `required` parameter here, as the body of a conditional
+// EX: For the RESIZE_PANE_ARGS
+//    X(Model::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, Model::ResizeDirection::None)
+// the bit
+//    args->ResizeDirection() == ResizeDirection::None
+// is used as the conditional for the validation here.
+#define FROM_JSON_ARGS(type, name, jsonKey, required, ...)                      \
+    if (required)                                                               \
+    {                                                                           \
+        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
+    }                                                                           \
     JsonUtils::GetValueForKey(json, jsonKey, args->_##name);
 
 // JSON serialization
-#define TO_JSON_ARGS(type, name, jsonKey, ...) \
+#define TO_JSON_ARGS(type, name, jsonKey, required, ...) \
     JsonUtils::SetValueForKey(json, jsonKey, args->_##name);
 
 // Copy each property in the Copy() method
-#define COPY_ARGS(type, name, jsonKey, ...) \
+#define COPY_ARGS(type, name, jsonKey, required, ...) \
     copy->_##name = _##name;
 
 // hash each property in Hash(). You'll note there's a stray `0` in the
 // definition of Hash() below, that's to deal with trailing commas (or in this
 // case, leading.)
-#define HASH_ARGS(type, name, jsonKey, ...) \
+#define HASH_ARGS(type, name, jsonKey, required, ...) \
     , name()
 
 // Use ACTION_ARGS_STRUCT when you've got no other customizing to do.
-#define ACTION_ARGS_STRUCT(className, argsMacro, otherValidation) \
-    struct className : public className##T<className>             \
-    {                                                             \
-        ACTION_ARG_BODY(className, argsMacro, otherValidation)    \
+#define ACTION_ARGS_STRUCT(className, argsMacro)      \
+    struct className : public className##T<className> \
+    {                                                 \
+        ACTION_ARG_BODY(className, argsMacro)         \
     };
 // Use ACTION_ARG_BODY when you've got some other methods to add to the args class.
 // case in point:
 //   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
-#define ACTION_ARG_BODY(className, argsMacro, otherValidation)                  \
+#define ACTION_ARG_BODY(className, argsMacro)                                   \
     className() = default;                                                      \
     className(                                                                  \
         argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                      \
-        argsMacro(CTOR_INITS) _placeholder{} {};                                \
+        argsMacro(CTOR_INIT) _placeholder{} {};                                 \
     argsMacro(DECLARE_ARGS);                                                    \
                                                                                 \
 private:                                                                        \
@@ -125,7 +134,6 @@ public:                                                                         
     {                                                                           \
         auto args = winrt::make_self<className>();                              \
         argsMacro(FROM_JSON_ARGS);                                              \
-        otherValidation();                                                      \
         return { *args, {} };                                                   \
     }                                                                           \
     static Json::Value ToJson(const IActionArgs& val)                           \

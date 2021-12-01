@@ -85,7 +85,7 @@ static size_t EmptyHash()
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// BEGIN XMACRO MADNESS
+// BEGIN X-MACRO MADNESS
 ////////////////////////////////////////////////////////////////////////////////
 
 // A helper for saying "This class has no other property validation". This will
@@ -96,166 +96,126 @@ static size_t EmptyHash()
 // Each should maintain the same format:
 //
 // #define MY_FOO_ARGS(X)                    \
-//     X(ParamOneType, One, "one", {default args}) \
-//     X(Windows::Foundation::IReference<ParamTwoType>, Two, "two", nullptr)
+//     X(ParamOneType, One, "one", {validation}, {default args}) \
+//     X(Windows::Foundation::IReference<ParamTwoType>, Two, "two", {validation}, nullptr)
 //     { etc... }
 //
 // If one of your properties needs some additional validation done to it, then
-// define a VALIDATE_MY_FOO() macro with the validation, and include that when
-// calling ACTION_ARGS_STRUCT
+// fill in {validation} with whatever logic needs to be done. Or, just set to
+// false, if we don't really care if the parameter is required or not.
 
 ////////////////////////////////////////////////////////////////////////////////
-#define COPY_TEXT_ARGS(X)                    \
-    X(bool, SingleLine, "singleLine", false) \
-    X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", nullptr)
+#define COPY_TEXT_ARGS(X)                           \
+    X(bool, SingleLine, "singleLine", false, false) \
+    X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_PANE_ARGS(X) \
-    X(uint32_t, TabIndex, "index", 0)
+    X(uint32_t, TabIndex, "index", false, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SWITCH_TO_TAB_ARGS(X) \
-    X(uint32_t, TabIndex, "index", 0)
+    X(uint32_t, TabIndex, "index", false, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RESIZE_PANE_ARGS(X) \
-    X(Model::ResizeDirection, ResizeDirection, "direction", Model::ResizeDirection::None)
+    X(Model::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, Model::ResizeDirection::None)
 
-#define VALIDATE_RESIZE_PANE()                                                  \
-    if (args->ResizeDirection() == ResizeDirection::None)                       \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_FOCUS_ARGS(X) \
-    X(Model::FocusDirection, FocusDirection, "direction", Model::FocusDirection::None)
+    X(Model::FocusDirection, FocusDirection, "direction", args->FocusDirection() == Model::FocusDirection::None, Model::FocusDirection::None)
 
-#define VALIDATE_MOVE_FOCUS()                                                   \
-    if (args->FocusDirection() == Model::FocusDirection::None)                  \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define SWAP_PANE_ARGS(X) \
-    X(Model::FocusDirection, Direction, "direction", Model::FocusDirection::None)
+    X(Model::FocusDirection, Direction, "direction", args->Direction() == Model::FocusDirection::None, Model::FocusDirection::None)
 
-#define VALIDATE_SWAP_PANE()                                                    \
-    if (args->Direction() == Model::FocusDirection::None)                       \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define ADJUST_FONT_SIZE_ARGS(X) \
-    X(int32_t, Delta, "delta", 0)
+    X(int32_t, Delta, "delta", false, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SEND_INPUT_ARGS(X) \
-    X(winrt::hstring, Input, "input", L"")
+    X(winrt::hstring, Input, "input", args->Input().empty(), L"")
 
-#define VALIDATE_SEND_INPUT()                                                   \
-    if (args->Input().empty())                                                  \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define OPEN_SETTINGS_ARGS(X) \
-    X(SettingsTarget, Target, "target", SettingsTarget::SettingsFile)
+    X(SettingsTarget, Target, "target", false, SettingsTarget::SettingsFile)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_COLOR_SCHEME_ARGS(X) \
-    X(winrt::hstring, SchemeName, "colorScheme", L"")
+    X(winrt::hstring, SchemeName, "colorScheme", args->SchemeName().empty(), L"")
 
-#define VALIDATE_SET_COLOR_SCHEME()                                             \
-    if (args->SchemeName().empty())                                             \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_TAB_COLOR_ARGS(X) \
-    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "color", nullptr)
+    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "color", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_TAB_ARGS(X) \
-    X(winrt::hstring, Title, "title", L"")
+    X(winrt::hstring, Title, "title", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define EXECUTE_COMMANDLINE_ARGS(X) \
-    X(winrt::hstring, Commandline, "commandline", L"")
+    X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), L"")
 
-#define VALIDATE_EXECUTE_COMMANDLINE()                                          \
-    if (args->Commandline().empty())                                            \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_OTHER_TABS_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TABS_AFTER_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_TAB_ARGS(X) \
-    X(MoveTabDirection, Direction, "direction", MoveTabDirection::None)
+    X(MoveTabDirection, Direction, "direction", args->Direction() == MoveTabDirection::None, MoveTabDirection::None)
 
-#define VALIDATE_MOVE_TAB()                                                     \
-    if (args->Direction() == MoveTabDirection::None)                            \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_UP_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_DOWN_ARGS(X) \
-    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", nullptr)
+    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
-    X(CommandPaletteLaunchMode, LaunchMode, "launchMode", CommandPaletteLaunchMode::Action)
+    X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
-    X(FindMatchDirection, Direction, "direction", FindMatchDirection::None)
+    X(FindMatchDirection, Direction, "direction", args->Direction() == FindMatchDirection::None, FindMatchDirection::None)
 
-#define VALIDATE_FIND_MATCH()                                                   \
-    if (args->Direction() == FindMatchDirection::None)                          \
-    {                                                                           \
-        return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }
 ////////////////////////////////////////////////////////////////////////////////
 #define PREV_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", nullptr)
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define NEXT_TAB_ARGS(X) \
-    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", nullptr)
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
-    X(winrt::hstring, Name, "name", L"")
+    X(winrt::hstring, Name, "name", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
-#define GLOBAL_SUMMON_ARGS(X)                                                        \
-    X(winrt::hstring, Name, "name", L"")                                             \
-    X(Model::DesktopBehavior, Desktop, "desktop", Model::DesktopBehavior::ToCurrent) \
-    X(Model::MonitorBehavior, Monitor, "monitor", Model::MonitorBehavior::ToMouse)   \
-    X(bool, ToggleVisibility, "toggleVisibility", true)                              \
-    X(uint32_t, DropdownDuration, "dropdownDuration", 0)
+#define GLOBAL_SUMMON_ARGS(X)                                                               \
+    X(winrt::hstring, Name, "name", false, L"")                                             \
+    X(Model::DesktopBehavior, Desktop, "desktop", false, Model::DesktopBehavior::ToCurrent) \
+    X(Model::MonitorBehavior, Monitor, "monitor", false, Model::MonitorBehavior::ToMouse)   \
+    X(bool, ToggleVisibility, "toggleVisibility", false, true)                              \
+    X(uint32_t, DropdownDuration, "dropdownDuration", false, 0)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define FOCUS_PANE_ARGS(X) \
-    X(uint32_t, Id, "id", 0u)
+    X(uint32_t, Id, "id", false, 0u)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
-    X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", winrt::Microsoft::Terminal::Control::ClearBufferType::All)
+    X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -274,7 +234,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Handled, false);
     };
 
-    // Although it may _seem_ like NewTerminaArgs can use ACTION_ARG_BODY, it
+    // Although it may _seem_ like NewTerminalArgs can use ACTION_ARG_BODY, it
     // actually can't, because it isn't an `IActionArgs`, which breaks some
     // assumptions made in the macro.
     struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
@@ -553,57 +513,57 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS);
 
-    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS);
 
-    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS);
 
-    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS, VALIDATE_RESIZE_PANE);
+    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS);
 
-    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS, VALIDATE_MOVE_FOCUS);
+    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS);
 
-    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS, VALIDATE_SWAP_PANE);
+    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS);
 
-    ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS);
 
-    ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS, VALIDATE_SEND_INPUT);
+    ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS);
 
-    ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS);
 
-    ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS, VALIDATE_SET_COLOR_SCHEME);
+    ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS);
 
-    ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS);
 
-    ACTION_ARGS_STRUCT(RenameTabArgs, RENAME_TAB_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(RenameTabArgs, RENAME_TAB_ARGS);
 
-    ACTION_ARGS_STRUCT(ExecuteCommandlineArgs, EXECUTE_COMMANDLINE_ARGS, VALIDATE_EXECUTE_COMMANDLINE);
+    ACTION_ARGS_STRUCT(ExecuteCommandlineArgs, EXECUTE_COMMANDLINE_ARGS);
 
-    ACTION_ARGS_STRUCT(CloseOtherTabsArgs, CLOSE_OTHER_TABS_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(CloseOtherTabsArgs, CLOSE_OTHER_TABS_ARGS);
 
-    ACTION_ARGS_STRUCT(CloseTabsAfterArgs, CLOSE_TABS_AFTER_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(CloseTabsAfterArgs, CLOSE_TABS_AFTER_ARGS);
 
-    ACTION_ARGS_STRUCT(CloseTabArgs, CLOSE_TAB_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(CloseTabArgs, CLOSE_TAB_ARGS);
 
-    ACTION_ARGS_STRUCT(MoveTabArgs, MOVE_TAB_ARGS, VALIDATE_MOVE_TAB);
+    ACTION_ARGS_STRUCT(MoveTabArgs, MOVE_TAB_ARGS);
 
-    ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS);
 
-    ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS);
 
-    ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
 
-    ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS, VALIDATE_FIND_MATCH);
+    ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
 
-    ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS);
 
-    ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS);
 
-    ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
     {
-        ACTION_ARG_BODY(GlobalSummonArgs, GLOBAL_SUMMON_ARGS, NO_OTHER_VALIDATION)
+        ACTION_ARG_BODY(GlobalSummonArgs, GLOBAL_SUMMON_ARGS)
     public:
         // SPECIAL! This deserializer creates a GlobalSummonArgs with the
         // default values for quakeMode
@@ -619,9 +579,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS);
 
-    ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS, NO_OTHER_VALIDATION);
+    ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS);
 
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
     {

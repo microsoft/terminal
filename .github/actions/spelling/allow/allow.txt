@@ -23,9 +23,11 @@ Fitt
 formattings
 ftp
 fvar
+gcc
 geeksforgeeks
 ghe
 gje
+godbolt
 hostname
 hostnames
 hyperlink
