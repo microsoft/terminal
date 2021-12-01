@@ -46,6 +46,8 @@
 
 #include "TerminalSettingsSerializationHelpers.h"
 
+#include "ActionArgsMagic.h"
+
 #define ACTION_ARG(type, name, ...)                                                                    \
 public:                                                                                                \
     type name() const noexcept { return _##name.has_value() ? _##name.value() : type{ __VA_ARGS__ }; } \
@@ -188,17 +190,14 @@ static size_t EmptyHash()
 #define CLOSE_OTHER_TABS_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
 
-#define VALIDATE_CLOSE_OTHER_TABS() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TABS_AFTER_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
 
-#define VALIDATE_CLOSE_TABS_AFTER() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define CLOSE_TAB_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, Index, "index", nullptr)
 
-#define VALIDATE_CLOSE_TAB() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define MOVE_TAB_ARGS(X) \
     X(MoveTabDirection, Direction, "direction", MoveTabDirection::None)
@@ -212,17 +211,14 @@ static size_t EmptyHash()
 #define SCROLL_UP_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", nullptr)
 
-#define VALIDATE_SCROLL_UP() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define SCROLL_DOWN_ARGS(X) \
     X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", nullptr)
 
-#define VALIDATE_SCROLL_DOWN() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define TOGGLE_COMMAND_PALETTE_ARGS(X) \
     X(CommandPaletteLaunchMode, LaunchMode, "launchMode", CommandPaletteLaunchMode::Action)
 
-#define VALIDATE_TOGGLE_COMMAND_PALETTE() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define FIND_MATCH_ARGS(X) \
     X(FindMatchDirection, Direction, "direction", FindMatchDirection::None)
@@ -236,17 +232,14 @@ static size_t EmptyHash()
 #define PREV_TAB_ARGS(X) \
     X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", nullptr)
 
-#define VALIDATE_PREV_TAB() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define NEXT_TAB_ARGS(X) \
     X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", nullptr)
 
-#define VALIDATE_NEXT_TAB() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define RENAME_WINDOW_ARGS(X) \
     X(winrt::hstring, Name, "name", L"")
 
-#define VALIDATE_RENAME_WINDOW() NO_OTHER_VALIDATION()
 ////////////////////////////////////////////////////////////////////////////////
 #define GLOBAL_SUMMON_ARGS(X)                                                        \
     X(winrt::hstring, Name, "name", L"")                                             \
@@ -259,140 +252,9 @@ static size_t EmptyHash()
 #define FOCUS_PANE_ARGS(X) \
     X(uint32_t, Id, "id", 0u)
 
-#define VALIDATE_FOCUS_PANE NO_OTHER_VALIDATION
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
     X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", winrt::Microsoft::Terminal::Control::ClearBufferType::All)
-
-#define VALIDATE_CLEAR_BUFFER() NO_OTHER_VALIDATION()
-////////////////////////////////////////////////////////////////////////////////
-
-// MACRO HACKS
-//
-// We want to have code that looks like:
-//
-// FooArgs(const ParamOne& one, const ParamTwo& two) :
-//     _One{ one }, _Two{ two } {};
-//
-// However, if we just use the x-macro for this straight up, then the list will
-// have a trailing comma at the end of it, and won't compile. So, we're creating
-// this placeholder size-0 struct. It's going to be the last param for all the
-// args' ctors. It'll have a default value, so no one will need to know about
-// it. This will let us use the macro to populate the ctors as well.
-
-struct InitListPlaceholder
-{
-};
-////////////////////////////////////////////////////////////////////////////////
-//
-// The complete ActionAndArgs definition. Each macro above ACTION_ARGS_STRUCT is
-// some element of the class definition that will use the x-macro.
-//
-// You'll author a new arg by:
-//   1: define a new x-macro above with all it's properties
-//   2: If needed, add extra property validation in a new VALIDATE_MY_FOO macro
-//   3. Define the class with:
-//
-//   ACTION_ARGS_STRUCT(MyFooArgs, MY_FOO_ARGS, VALIDATE_MY_FOO);
-//
-// In that macro, we'll use the passed-in macro (MY_FOO_ARGS) with each of these
-// macros below, which will generate the various parts of the class body.
-//
-
-// Property definitions, and JSON keys
-#define DECLARE_ARGS(type, name, jsonKey, ...)              \
-    static constexpr std::string_view name##Key{ jsonKey }; \
-    ACTION_ARG(type, name, ##__VA_ARGS__);
-
-// Parameters to the non-default ctor
-#define CTOR_PARAMS(type, name, jsonKey, ...) \
-    const type &name##Param,
-
-// initializers in the ctor
-#define CTOR_INITS(type, name, jsonKey, ...) \
-    _##name{ name##Param },
-
-// check each property in the Equals() method
-#define EQUALS_ARGS(type, name, jsonKey, ...) \
-    &&(otherAsUs->_##name == _##name)
-
-// JSON deserialization
-#define FROM_JSON_ARGS(type, name, jsonKey, ...) \
-    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);
-
-// JSON serialization
-#define TO_JSON_ARGS(type, name, jsonKey, ...) \
-    JsonUtils::SetValueForKey(json, jsonKey, args->_##name);
-
-// Copy each property in the Copy() method
-#define COPY_ARGS(type, name, jsonKey, ...) \
-    copy->_##name = _##name;
-
-// hash each property in Hash()
-#define HASH_ARGS(type, name, jsonKey, ...) \
-    , name()
-
-// Use ACTION_ARGS_STRUCT when you've got no other customizing to do.
-#define ACTION_ARGS_STRUCT(className, argsMacro, otherValidation) \
-    struct className : public className##T<className>             \
-    {                                                             \
-        ACTION_ARG_BODY(className, argsMacro, otherValidation)    \
-    };
-// Use ACTION_ARG_BODY when you've got some other methods to add to the args class.
-// case in point:
-//   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
-//   * GlobalSummonArgs has the QuakeModeFromJson helper
-
-#define ACTION_ARG_BODY(className, argsMacro, otherValidation)                  \
-    className() = default;                                                      \
-    className(                                                                  \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                      \
-        argsMacro(CTOR_INITS) _placeholder{} {};                                \
-    argsMacro(DECLARE_ARGS);                                                    \
-                                                                                \
-private:                                                                        \
-    InitListPlaceholder _placeholder;                                           \
-                                                                                \
-public:                                                                         \
-    hstring GenerateName() const;                                               \
-    bool Equals(const IActionArgs& other)                                       \
-    {                                                                           \
-        auto otherAsUs = other.try_as<className>();                             \
-        if (otherAsUs)                                                          \
-        {                                                                       \
-            return true argsMacro(EQUALS_ARGS);                                 \
-        }                                                                       \
-        return false;                                                           \
-    };                                                                          \
-    static FromJsonResult FromJson(const Json::Value& json)                     \
-    {                                                                           \
-        auto args = winrt::make_self<className>();                              \
-        argsMacro(FROM_JSON_ARGS);                                              \
-        otherValidation();                                                      \
-        return { *args, {} };                                                   \
-    }                                                                           \
-    static Json::Value ToJson(const IActionArgs& val)                           \
-    {                                                                           \
-        if (!val)                                                               \
-        {                                                                       \
-            return {};                                                          \
-        }                                                                       \
-        Json::Value json{ Json::ValueType::objectValue };                       \
-        const auto args{ get_self<className>(val) };                            \
-        argsMacro(TO_JSON_ARGS);                                                \
-        return json;                                                            \
-    }                                                                           \
-    IActionArgs Copy() const                                                    \
-    {                                                                           \
-        auto copy{ winrt::make_self<className>() };                             \
-        argsMacro(COPY_ARGS);                                                   \
-        return *copy;                                                           \
-    }                                                                           \
-    size_t Hash() const                                                         \
-    {                                                                           \
-        return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty( \
-            0 argsMacro(HASH_ARGS));                                            \
-    }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -508,7 +370,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS, NO_OTHER_VALIDATION);
+    // New Tabs, Panes, and Windows all use NewTerminalArgs, which is more
+    // complicated and doesn't play nice with the macro. So those we'll still
+    // have to define manually.
 
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
@@ -556,20 +420,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TerminalArgs());
         }
     };
-
-    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS, NO_OTHER_VALIDATION);
-
-    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS, NO_OTHER_VALIDATION);
-
-    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS, VALIDATE_RESIZE_PANE);
-
-    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS, VALIDATE_MOVE_FOCUS);
-
-    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS, VALIDATE_SWAP_PANE);
-
-    ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS, NO_OTHER_VALIDATION);
-
-    ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS, VALIDATE_SEND_INPUT);
 
     struct SplitPaneArgs : public SplitPaneArgsT<SplitPaneArgs>
     {
@@ -655,32 +505,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS, NO_OTHER_VALIDATION);
-
-    ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS, VALIDATE_SET_COLOR_SCHEME);
-
-    ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS, NO_OTHER_VALIDATION);
-
-    ACTION_ARGS_STRUCT(RenameTabArgs, RENAME_TAB_ARGS, NO_OTHER_VALIDATION);
-
-    ACTION_ARGS_STRUCT(ExecuteCommandlineArgs, EXECUTE_COMMANDLINE_ARGS, VALIDATE_EXECUTE_COMMANDLINE);
-
-    ACTION_ARGS_STRUCT(CloseOtherTabsArgs, CLOSE_OTHER_TABS_ARGS, VALIDATE_CLOSE_OTHER_TABS);
-
-    ACTION_ARGS_STRUCT(CloseTabsAfterArgs, CLOSE_TABS_AFTER_ARGS, VALIDATE_CLOSE_TABS_AFTER);
-
-    ACTION_ARGS_STRUCT(CloseTabArgs, CLOSE_TAB_ARGS, VALIDATE_CLOSE_TAB);
-
-    ACTION_ARGS_STRUCT(MoveTabArgs, MOVE_TAB_ARGS, VALIDATE_MOVE_TAB);
-
-    ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS, VALIDATE_SCROLL_UP);
-
-    ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS, VALIDATE_SCROLL_DOWN);
-
-    ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS, VALIDATE_TOGGLE_COMMAND_PALETTE);
-
-    ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS, VALIDATE_FIND_MATCH);
-
     struct NewWindowArgs : public NewWindowArgsT<NewWindowArgs>
     {
         NewWindowArgs() = default;
@@ -728,14 +552,55 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
     };
 
-    ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS, VALIDATE_PREV_TAB);
+    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS, NO_OTHER_VALIDATION);
 
-    ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS, VALIDATE_NEXT_TAB);
+    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS, NO_OTHER_VALIDATION);
 
-    ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS, VALIDATE_RENAME_WINDOW);
+    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS, VALIDATE_RESIZE_PANE);
+
+    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS, VALIDATE_MOVE_FOCUS);
+
+    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS, VALIDATE_SWAP_PANE);
+
+    ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS, VALIDATE_SEND_INPUT);
+
+    ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS, VALIDATE_SET_COLOR_SCHEME);
+
+    ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(RenameTabArgs, RENAME_TAB_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(ExecuteCommandlineArgs, EXECUTE_COMMANDLINE_ARGS, VALIDATE_EXECUTE_COMMANDLINE);
+
+    ACTION_ARGS_STRUCT(CloseOtherTabsArgs, CLOSE_OTHER_TABS_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(CloseTabsAfterArgs, CLOSE_TABS_AFTER_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(CloseTabArgs, CLOSE_TAB_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(MoveTabArgs, MOVE_TAB_ARGS, VALIDATE_MOVE_TAB);
+
+    ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS, VALIDATE_FIND_MATCH);
+
+    ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS, NO_OTHER_VALIDATION);
+
+    ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS, NO_OTHER_VALIDATION);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
-
     {
         ACTION_ARG_BODY(GlobalSummonArgs, GLOBAL_SUMMON_ARGS, NO_OTHER_VALIDATION)
     public:
@@ -752,81 +617,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return { *args, {} };
         }
     };
-    // struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
-    // {
-    //     GlobalSummonArgs() = default;
-    //     ACTION_ARG(winrt::hstring, Name, L"");
-    //     ACTION_ARG(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
-    //     ACTION_ARG(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToMouse);
-    //     ACTION_ARG(bool, ToggleVisibility, true);
-    //     ACTION_ARG(uint32_t, DropdownDuration, 0);
 
-    //     static constexpr std::string_view NameKey{ "name" };
-    //     static constexpr std::string_view DesktopKey{ "desktop" };
-    //     static constexpr std::string_view MonitorKey{ "monitor" };
-    //     static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
-    //     static constexpr std::string_view DropdownDurationKey{ "dropdownDuration" };
+    ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS, NO_OTHER_VALIDATION);
 
-    // public:
-    //     hstring GenerateName() const;
-
-    //     bool Equals(const IActionArgs& other)
-    //     {
-    //         if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
-    //         {
-    //             return otherAsUs->_Name == _Name &&
-    //                    otherAsUs->_Desktop == _Desktop &&
-    //                    otherAsUs->_Monitor == _Monitor &&
-    //                    otherAsUs->_DropdownDuration == _DropdownDuration &&
-    //                    otherAsUs->_ToggleVisibility == _ToggleVisibility;
-    //         }
-    //         return false;
-    //     };
-    //     static FromJsonResult FromJson(const Json::Value& json)
-    //     {
-    //         // LOAD BEARING: Not using make_self here _will_ break you in the future!
-    //         auto args = winrt::make_self<GlobalSummonArgs>();
-    //         JsonUtils::GetValueForKey(json, NameKey, args->_Name);
-    //         JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
-    //         JsonUtils::GetValueForKey(json, MonitorKey, args->_Monitor);
-    //         JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
-    //         JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
-    //         return { *args, {} };
-    //     }
-    //     static Json::Value ToJson(const IActionArgs& val)
-    //     {
-    //         if (!val)
-    //         {
-    //             return {};
-    //         }
-    //         Json::Value json{ Json::ValueType::objectValue };
-    //         const auto args{ get_self<GlobalSummonArgs>(val) };
-    //         JsonUtils::SetValueForKey(json, NameKey, args->_Name);
-    //         JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
-    //         JsonUtils::SetValueForKey(json, MonitorKey, args->_Monitor);
-    //         JsonUtils::SetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
-    //         JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
-    //         return json;
-    //     }
-    //     IActionArgs Copy() const
-    //     {
-    //         auto copy{ winrt::make_self<GlobalSummonArgs>() };
-    //         copy->_Name = _Name;
-    //         copy->_Desktop = _Desktop;
-    //         copy->_Monitor = _Monitor;
-    //         copy->_DropdownDuration = _DropdownDuration;
-    //         copy->_ToggleVisibility = _ToggleVisibility;
-    //         return *copy;
-    //     }
-    //     size_t Hash() const
-    //     {
-    //         return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Name(), Desktop(), Monitor(), DropdownDuration(), ToggleVisibility());
-    //     }
-    // };
-
-    ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS, VALIDATE_FOCUS_PANE);
-
-    ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS, VALIDATE_CLEAR_BUFFER);
+    ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS, NO_OTHER_VALIDATION);
 
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
     {
