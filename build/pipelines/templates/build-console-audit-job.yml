@@ -19,6 +19,7 @@ jobs:
   - checkout: self
     submodules: true
     clean: true
+    fetchDepth: 1
 
   - task: NuGetToolInstaller@0
     displayName: Ensure NuGet 4.8.1

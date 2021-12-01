@@ -6,6 +6,7 @@ steps:
 - checkout: self
   submodules: true
   clean: true
+  fetchDepth: 1
 
 - task: NuGetToolInstaller@0
   displayName: 'Use NuGet 5.2.0'
