@@ -19,7 +19,7 @@
 #include "ControlInteractivity.g.h"
 #include "EventArgs.h"
 #include "../buffer/out/search.h"
-#include "cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 #include "ControlCore.h"
 #include "../../renderer/uia/UiaRenderer.hpp"

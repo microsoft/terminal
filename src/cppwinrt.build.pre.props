@@ -78,6 +78,8 @@
       <DisableSpecificWarnings>5104;28204;%(DisableSpecificWarnings)</DisableSpecificWarnings>
 
       <AdditionalUsingDirectories>$(WindowsSDK_WindowsMetadata);$(AdditionalUsingDirectories)</AdditionalUsingDirectories>
+
+      <AdditionalIncludeDirectories>$(OpenConsoleDir)src\cascadia\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem Condition="'%(SubSystem)'==''">Console</SubSystem>

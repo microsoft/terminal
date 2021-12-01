@@ -20,7 +20,7 @@ Author(s):
 #include "FontConfig.g.h"
 #include "JsonUtils.h"
 #include "MTSMSettings.h"
-#include "../inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 #include "IInheritable.h"
 #include <DefaultSettings.h>
 

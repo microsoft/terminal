@@ -5,7 +5,7 @@
 
 #include "EchoConnection.g.h"
 
-#include "../cascadia/inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {

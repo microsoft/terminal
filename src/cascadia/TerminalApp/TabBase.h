@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #pragma once
-#include "inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 #include "TabBase.g.h"
 
 // fwdecl unittest classes

@@ -6,7 +6,7 @@
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
 
 #include "HighlightedTextControl.g.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 namespace winrt::TerminalApp::implementation
 {

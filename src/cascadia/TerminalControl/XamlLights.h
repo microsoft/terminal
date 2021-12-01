@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 #include "VisualBellLight.g.h"
 
 namespace winrt::Microsoft::Terminal::Control::implementation

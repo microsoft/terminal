@@ -2,7 +2,7 @@
 // Licensed under the MIT license.
 
 #include "pch.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 // This enumerates all the possible actions
 // that our notification icon context menu could do.

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "Peasant.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 #include "RenameRequestArgs.h"
 
 namespace RemotingUnitTests

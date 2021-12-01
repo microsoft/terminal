@@ -5,7 +5,7 @@
 #include "TSFInputControl.g.h"
 #include "CursorPositionEventArgs.g.h"
 #include "FontInfoEventArgs.g.h"
-#include "cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {

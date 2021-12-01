@@ -4,7 +4,7 @@
 #pragma once
 
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 #include "TabRowControl.g.h"
 

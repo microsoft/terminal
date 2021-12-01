@@ -11,7 +11,7 @@
 #include "ScrollPositionChangedArgs.g.h"
 #include "RendererWarningArgs.g.h"
 #include "TransparencyChangedEventArgs.g.h"
-#include "cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {

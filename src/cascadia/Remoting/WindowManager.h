@@ -24,7 +24,7 @@ Abstract:
 #include "WindowManager.g.h"
 #include "Peasant.h"
 #include "Monarch.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 namespace winrt::Microsoft::Terminal::Remoting::implementation
 {

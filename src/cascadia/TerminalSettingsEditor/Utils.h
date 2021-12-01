@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 // This macro must be used alongside GETSET_BINDABLE_ENUM_SETTING.
 // Use this in your class's constructor after Initialize_Component().

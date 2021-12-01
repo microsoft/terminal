@@ -6,7 +6,7 @@
 #include "DefaultSettings.h"
 
 #include <winrt/Microsoft.Terminal.Core.h>
-#include "../inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 using namespace winrt::Microsoft::Terminal::Core;
 

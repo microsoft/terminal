@@ -4,7 +4,7 @@
 #pragma once
 
 #include "ShortcutActionDispatch.g.h"
-#include "../inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 #include "../TerminalSettingsModel/AllShortcutActions.h"
 
 // fwdecl unittest classes

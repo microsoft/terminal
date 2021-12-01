@@ -6,7 +6,7 @@
 #include "ActionAndArgs.g.h"
 #include "ActionArgs.h"
 #include "TerminalWarnings.h"
-#include "../inc/cppwinrt_utils.h"
+#include <cppwinrt_utils.h>
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
