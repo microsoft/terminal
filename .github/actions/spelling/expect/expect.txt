@@ -385,12 +385,14 @@ CPINFOEX
 CPLINFO
 cplusplus
 cpp
+CPPARM
 CPPCORECHECK
 cppcorecheckrules
 cppm
 cpprest
 cpprestsdk
 cppwinrt
+CPPx
 CProc
 cpx
 crbegin
@@ -1576,6 +1578,7 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
+notmatch
 NOTNULL
 NOTOPMOST
 NOTRACK
@@ -2478,6 +2481,7 @@ uint
 uintptr
 ulcch
 ulong
+umd
 Unadvise
 unattend
 uncomment
@@ -2648,6 +2652,7 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
+webclient
 webpage
 website
 websocket
@@ -2722,6 +2727,7 @@ Winperf
 WInplace
 winres
 winrt
+winsdk
 wintelnet
 winternl
 winuser
