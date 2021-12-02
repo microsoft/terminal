@@ -97,6 +97,8 @@ jobs:
       selectOrConfig: config
       nugetConfigPath: NuGet.Config
       arguments: restore OpenConsole.sln -SolutionDirectory $(Build.SourcesDirectory)
+  # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
+  - template: .\templates\install-winsdk-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
     inputs:
@@ -262,7 +264,10 @@ jobs:
     displayName: Publish symbols path
     continueOnError: True
     inputs:
-      SearchPattern: '**/*.pdb'
+      SearchPattern: |
+        $(Build.SourcesDirectory)/bin/**/*.pdb
+        $(Build.SourcesDirectory)/bin/**/*.exe
+        $(Build.SourcesDirectory)/bin/**/*.dll
       IndexSources: false
       SymbolServerType: TeamServices
 
@@ -405,7 +410,10 @@ jobs:
       displayName: Publish symbols path
       continueOnError: True
       inputs:
-        SearchPattern: '**/*.pdb'
+        SearchPattern: |
+          $(Build.SourcesDirectory)/bin/**/*.pdb
+          $(Build.SourcesDirectory)/bin/**/*.exe
+          $(Build.SourcesDirectory)/bin/**/*.dll
         IndexSources: false
         SymbolServerType: TeamServices
         SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)

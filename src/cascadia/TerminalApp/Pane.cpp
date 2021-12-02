@@ -125,7 +125,7 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
     assert(_IsLeaf());
 
     NewTerminalArgs args{};
-    auto controlSettings = _control.Settings().as<TerminalSettings>();
+    auto controlSettings = _control.Settings();
 
     args.Profile(controlSettings.ProfileName());
     // If we know the user's working directory use it instead of the profile.
@@ -156,16 +156,13 @@ NewTerminalArgs Pane::GetTerminalArgsForPane() const
         args.TabColor(winrt::Windows::Foundation::IReference<winrt::Windows::UI::Color>(c));
     }
 
-    if (controlSettings.AppliedColorScheme())
-    {
-        auto name = controlSettings.AppliedColorScheme().Name();
-        // Only save the color scheme if it is different than the profile color
-        // scheme to not override any other profile appearance choices.
-        if (_profile.DefaultAppearance().ColorSchemeName() != name)
-        {
-            args.ColorScheme(name);
-        }
-    }
+    // TODO:GH#9800 - we used to be able to persist the color scheme that a
+    // TermControl was initialized with, by name. With the change to having the
+    // control own its own copy of its settings, this isn't possible anymore.
+    //
+    // We may be able to get around this by storing the Name in the Core::Scheme
+    // object. That would work for schemes set by the Terminal, but not ones set
+    // by VT, but that seems good enough.
 
     return args;
 }
@@ -1459,21 +1456,8 @@ void Pane::UpdateSettings(const TerminalSettingsCreateResult& settings, const Pr
     assert(_IsLeaf());
 
     _profile = profile;
-    auto controlSettings = _control.Settings().as<TerminalSettings>();
-    // Update the parent of the control's settings object (and not the object itself) so
-    // that any overrides made by the control don't get affected by the reload
-    controlSettings.SetParent(settings.DefaultSettings());
-    auto unfocusedSettings{ settings.UnfocusedSettings() };
-    if (unfocusedSettings)
-    {
-        // Note: the unfocused settings needs to be entirely unchanged _except_ we need to
-        // set its parent to the settings object that lives in the control. This is because
-        // the overrides made by the control live in that settings object, so we want to make
-        // sure the unfocused settings inherit from that.
-        unfocusedSettings.SetParent(controlSettings);
-    }
-    _control.UnfocusedAppearance(unfocusedSettings);
-    _control.UpdateSettings();
+
+    _control.UpdateControlSettings(settings.DefaultSettings(), settings.UnfocusedSettings());
 }
 
 // Method Description:

@@ -2247,13 +2247,10 @@ namespace winrt::TerminalApp::implementation
 
     TermControl TerminalPage::_InitControl(const TerminalSettingsCreateResult& settings, const ITerminalConnection& connection)
     {
-        // Give term control a child of the settings so that any overrides go in the child
-        // This way, when we do a settings reload we just update the parent and the overrides remain
-        const auto child = TerminalSettings::CreateWithParent(settings);
-        TermControl term{ child.DefaultSettings(), connection };
-
-        term.UnfocusedAppearance(child.UnfocusedSettings()); // It is okay for the unfocused settings to be null
-
+        // Do any initialization that needs to apply to _every_ TermControl we
+        // create here.
+        // TermControl will copy the settings out of the settings passed to it.
+        TermControl term{ settings.DefaultSettings(), settings.UnfocusedSettings(), connection };
         return term;
     }
 

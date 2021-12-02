@@ -48,8 +48,8 @@ DEFINE_ENUM_FLAG_OPERATORS(winrt::Microsoft::Terminal::Control::MouseButtonState
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
     TermControl::TermControl(IControlSettings settings,
+                             Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection) :
-        _settings{ settings },
         _isInternalScrollBarUpdate{ false },
         _autoScrollVelocity{ 0 },
         _autoScrollingPointerPoint{ std::nullopt },
@@ -61,7 +61,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         InitializeComponent();
 
-        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, connection);
+        _interactivity = winrt::make<implementation::ControlInteractivity>(settings, unfocusedAppearance, connection);
         _core = _interactivity.Core();
 
         // These events might all be triggered by the connection, but that
@@ -77,7 +77,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // These callbacks can only really be triggered by UI interactions. So
         // they don't need weak refs - they can't be triggered unless we're
         // alive.
-        _core.BackgroundColorChanged({ this, &TermControl::_BackgroundColorChangedHandler });
+        _core.BackgroundColorChanged({ this, &TermControl::_coreBackgroundColorChanged });
         _core.FontSizeChanged({ this, &TermControl::_coreFontSizeChanged });
         _core.TransparencyChanged({ this, &TermControl::_coreTransparencyChanged });
         _core.RaiseNotice({ this, &TermControl::_coreRaisedNotice });
@@ -144,7 +144,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _autoScrollTimer.Interval(AutoScrollUpdateInterval);
         _autoScrollTimer.Tick({ this, &TermControl::_UpdateAutoScroll });
 
-        _ApplyUISettings(_settings);
+        _ApplyUISettings();
     }
 
     // Method Description:
@@ -229,11 +229,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         this->Focus(FocusState::Programmatic);
     }
 
+    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings)
+    {
+        return UpdateControlSettings(settings, _core.UnfocusedAppearance());
+    }
     // Method Description:
     // - Given Settings having been updated, applies the settings to the current terminal.
     // Return Value:
     // - <none>
-    winrt::fire_and_forget TermControl::UpdateSettings()
+    winrt::fire_and_forget TermControl::UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance)
     {
         auto weakThis{ get_weak() };
 
@@ -241,21 +245,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // terminal.
         co_await winrt::resume_foreground(Dispatcher());
 
-        _UpdateSettingsFromUIThread(_settings);
+        _core.UpdateSettings(settings, unfocusedAppearance);
 
-        auto appearance = _settings.try_as<IControlAppearance>();
-        if (!_focused && _UnfocusedAppearance)
-        {
-            appearance = _UnfocusedAppearance;
-        }
-        _UpdateAppearanceFromUIThread(appearance);
+        _UpdateSettingsFromUIThread();
+
+        _UpdateAppearanceFromUIThread(_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance());
     }
 
     // Method Description:
     // - Dispatches a call to the UI thread and updates the appearance
     // Arguments:
     // - newAppearance: the new appearance to set
-    winrt::fire_and_forget TermControl::UpdateAppearance(const IControlAppearance newAppearance)
+    winrt::fire_and_forget TermControl::UpdateAppearance(IControlAppearance newAppearance)
     {
         // Dispatch a call to the UI thread
         co_await winrt::resume_foreground(Dispatcher());
@@ -271,17 +272,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - newSettings: the new settings to set
-    void TermControl::_UpdateSettingsFromUIThread(IControlSettings newSettings)
+    void TermControl::_UpdateSettingsFromUIThread()
     {
         if (_IsClosing())
         {
             return;
         }
 
-        _core.UpdateSettings(_settings);
-
         // Update our control settings
-        _ApplyUISettings(_settings);
+        _ApplyUISettings();
     }
 
     // Method Description:
@@ -289,7 +288,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - INVARIANT: This method must be called from the UI thread.
     // Arguments:
     // - newAppearance: the new appearance to set
-    void TermControl::_UpdateAppearanceFromUIThread(IControlAppearance newAppearance)
+    void TermControl::_UpdateAppearanceFromUIThread(Control::IControlAppearance newAppearance)
     {
         if (_IsClosing())
         {
@@ -300,6 +299,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Update our control settings
         const auto bg = newAppearance.DefaultBackground();
+
+        // In the future, this might need to be changed to a
+        // _InitializeBackgroundBrush call instead, because we may need to
+        // switch from a solid color brush to an acrylic one.
         _changeBackgroundColor(bg);
 
         // Set TSF Foreground
@@ -307,7 +310,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         foregroundBrush.Color(static_cast<til::color>(newAppearance.DefaultForeground()));
         TSFInputControl().Foreground(foregroundBrush);
 
-        _core.UpdateAppearance(newAppearance);
+        _core.ApplyAppearance(_focused);
     }
 
     // Method Description:
@@ -331,7 +334,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     // Method Description:
-    // - Style our UI elements based on the values in our _settings, and set up
+    // - Style our UI elements based on the values in our settings, and set up
     //   other control-specific settings. This method will be called whenever
     //   the settings are reloaded.
     //   * Calls _InitializeBackgroundBrush to set up the Xaml brush responsible
@@ -342,21 +345,21 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - <none>
     // Return Value:
     // - <none>
-    void TermControl::_ApplyUISettings(const IControlSettings& newSettings)
+    void TermControl::_ApplyUISettings()
     {
         _InitializeBackgroundBrush();
 
-        const auto bg = newSettings.DefaultBackground();
-        _changeBackgroundColor(bg);
+        // settings might be out-of-proc in the future
+        auto settings{ _core.Settings() };
 
         // Apply padding as swapChainPanel's margin
-        const auto newMargin = ParseThicknessFromPadding(newSettings.Padding());
+        const auto newMargin = ParseThicknessFromPadding(settings.Padding());
         SwapChainPanel().Margin(newMargin);
 
         TSFInputControl().Margin(newMargin);
 
         // Apply settings for scrollbar
-        if (newSettings.ScrollState() == ScrollbarState::Hidden)
+        if (settings.ScrollState() == ScrollbarState::Hidden)
         {
             // In the scenario where the user has turned off the OS setting to automatically hide scrollbars, the
             // Terminal scrollbar would still be visible; so, we need to set the control's visibility accordingly to
@@ -440,16 +443,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     //       use bgcolor as acrylic's tint
     // - Avoids image flickering and acrylic brush redraw if settings are changed
     //   but the appropriate brush is still in place.
-    // - Does not apply background color outside of acrylic mode;
-    //   _BackgroundColorChanged must be called to do so.
     // Arguments:
     // - <none>
     // Return Value:
     // - <none>
     void TermControl::_InitializeBackgroundBrush()
     {
-        auto appearance = _settings.try_as<IControlAppearance>();
-        if (_settings.UseAcrylic())
+        auto settings{ _core.Settings() };
+        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
+        if (settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
             // to avoid the flicker when setting up a new one
@@ -464,65 +466,83 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
             // see GH#1082: Initialize background color so we don't get a
             // fade/flash when _BackgroundColorChanged is called
-            auto bgColor = til::color{ _settings.DefaultBackground() }.with_alpha(0xff);
-
             acrylic.FallbackColor(bgColor);
             acrylic.TintColor(bgColor);
 
             // Apply brush settings
-            acrylic.TintOpacity(appearance.Opacity());
+            acrylic.TintOpacity(_core.Opacity());
 
             // Apply brush to control if it's not already there
             if (RootGrid().Background() != acrylic)
             {
                 RootGrid().Background(acrylic);
             }
-
-            // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(appearance.Opacity());
         }
         else
         {
             Media::SolidColorBrush solidColor{};
-            solidColor.Opacity(_settings.Opacity());
-            RootGrid().Background(solidColor);
+            solidColor.Opacity(_core.Opacity());
+            solidColor.Color(bgColor);
 
-            // GH#5098: Inform the engine of the new opacity of the default text background.
-            _core.SetBackgroundOpacity(appearance.Opacity());
+            RootGrid().Background(solidColor);
         }
     }
 
     // Method Description:
-    // - Style the background of the control with the provided background color
+    // - Handler for the core's BackgroundColorChanged event. Updates the color
+    //   of our background brush to match.
+    // - Hops over to the UI thread to do this work.
     // Arguments:
-    // - color: The background color to use as a uint32 (aka DWORD COLORREF)
+    // <unused>
     // Return Value:
     // - <none>
-    void TermControl::_BackgroundColorChangedHandler(const IInspectable& /*sender*/,
-                                                     const IInspectable& /*args*/)
-    {
-        til::color newBgColor{ _core.BackgroundColor() };
-        _changeBackgroundColor(newBgColor);
-    }
-
-    winrt::fire_and_forget TermControl::_changeBackgroundColor(const til::color bg)
+    winrt::fire_and_forget TermControl::_coreBackgroundColorChanged(const IInspectable& /*sender*/,
+                                                                    const IInspectable& /*args*/)
     {
         auto weakThis{ get_weak() };
         co_await winrt::resume_foreground(Dispatcher());
-
         if (auto control{ weakThis.get() })
         {
-            if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
-            {
-                acrylic.FallbackColor(bg);
-                acrylic.TintColor(bg);
-            }
-            else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
-            {
-                const auto originalOpacity = solidColor.Opacity();
-                solidColor.Color(bg);
-                solidColor.Opacity(originalOpacity);
-            }
+            til::color newBgColor{ _core.BackgroundColor() };
+            _changeBackgroundColor(newBgColor);
+        }
+    }
+
+    // Method Description:
+    // - Update the color of the background brush we're using. This does _not_
+    //   update the opacity, or what type of brush it is.
+    // - INVARIANT: This needs to be called on the UI thread.
+    // Arguments:
+    // - bg: the new color to use as the background color.
+    void TermControl::_changeBackgroundColor(const til::color bg)
+    {
+        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            acrylic.FallbackColor(bg);
+            acrylic.TintColor(bg);
+        }
+        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+        {
+            const auto originalOpacity = solidColor.Opacity();
+            solidColor.Color(bg);
+            solidColor.Opacity(originalOpacity);
+        }
+    }
+
+    // Method Description:
+    // - Update the opacity of the background brush we're using. This does _not_
+    //   update the color, or what type of brush it is.
+    // - INVARIANT: This needs to be called on the UI thread.
+    void TermControl::_changeBackgroundOpacity()
+    {
+        const auto opacity{ _core.Opacity() };
+        if (auto acrylic = RootGrid().Background().try_as<Media::AcrylicBrush>())
+        {
+            acrylic.TintOpacity(opacity);
+        }
+        else if (auto solidColor = RootGrid().Background().try_as<Media::SolidColorBrush>())
+        {
+            solidColor.Opacity(opacity);
         }
     }
 
@@ -618,7 +638,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND) == hr)
             {
                 message = { fmt::format(std::wstring_view{ RS_(L"PixelShaderNotFound") },
-                                        _settings.PixelShaderPath()) };
+                                        (_focused ? _core.FocusedAppearance() : _core.UnfocusedAppearance()).PixelShaderPath()) };
             }
             else if (D2DERR_SHADER_COMPILE_FAILED == hr)
             {
@@ -740,7 +760,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         // Now that the renderer is set up, update the appearance for initialization
-        _UpdateAppearanceFromUIThread(_settings);
+        _UpdateAppearanceFromUIThread(_core.FocusedAppearance());
 
         _initializedTerminal = true;
 
@@ -815,7 +835,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             //   This is required as part of GH#638.
             // Or do so for alt+space; only send to terminal when explicitly unbound
             //  That is part of #GH7125
-            auto bindings{ _settings.KeyBindings() };
+            auto bindings{ _core.Settings().KeyBindings() };
             bool isUnbound = false;
             const KeyChord kc = {
                 modifiers.IsCtrlPressed(),
@@ -960,7 +980,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - modifiers: The ControlKeyStates representing the modifier key states.
     bool TermControl::_TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const
     {
-        auto bindings = _settings.KeyBindings();
+        // TODO: GH#5000
+        // The Core owning the keybindings is weird. That's for sure. In the
+        // future, we may want to pass the keybindings into the control
+        // separately, so the control can have a pointer to an in-proc
+        // Keybindings object, rather than routing through the ControlCore.
+        // (see GH#5000)
+        auto bindings = _core.Settings().KeyBindings();
         if (!bindings)
         {
             return false;
@@ -1139,7 +1165,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto pixelPosition = _toTerminalOrigin(cursorPosition);
         const auto type = ptr.PointerDeviceType();
 
-        if (!_focused && _settings.FocusFollowMouse())
+        if (!_focused && _core.Settings().FocusFollowMouse())
         {
             _FocusFollowMouseRequestedHandlers(*this, nullptr);
         }
@@ -1307,7 +1333,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - Called in response to the core's TransparencyChanged event. We'll use
     //   this to update our background brush.
     // - The Core should have already updated the TintOpacity and UseAcrylic
-    //   properties in the _settings.
+    //   properties in the _settings->
     // Arguments:
     // - <unused>
     // Return Value:
@@ -1318,9 +1344,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         co_await resume_foreground(Dispatcher());
         try
         {
-            _InitializeBackgroundBrush();
-            const auto bg = _settings.DefaultBackground();
-            _changeBackgroundColor(bg);
+            _changeBackgroundOpacity();
         }
         CATCH_LOG();
     }
@@ -1527,12 +1551,13 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _blinkTimer->Start();
         }
 
-        // Only update the appearance here if an unfocused config exists -
-        // if an unfocused config does not exist then we never would have switched
-        // appearances anyway so there's no need to switch back upon gaining focus
-        if (_UnfocusedAppearance)
+        // Only update the appearance here if an unfocused config exists - if an
+        // unfocused config does not exist then we never would have switched
+        // appearances anyway so there's no need to switch back upon gaining
+        // focus
+        if (_core.HasUnfocusedAppearance())
         {
-            UpdateAppearance(_settings);
+            UpdateAppearance(_core.FocusedAppearance());
         }
     }
 
@@ -1574,9 +1599,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         // Check if there is an unfocused config we should set the appearance to
         // upon losing focus
-        if (_UnfocusedAppearance)
+        if (_core.HasUnfocusedAppearance())
         {
-            UpdateAppearance(_UnfocusedAppearance);
+            UpdateAppearance(_core.UnfocusedAppearance());
         }
     }
 
@@ -1725,7 +1750,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     hstring TermControl::GetProfileName() const
     {
-        return _settings.ProfileName();
+        return _core.Settings().ProfileName();
     }
 
     hstring TermControl::WorkingDirectory() const
@@ -1947,7 +1972,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             double width = fontSize.Width;
             double height = fontSize.Height;
             // Reserve additional space if scrollbar is intended to be visible
-            if (_settings.ScrollState() == ScrollbarState::Visible)
+            if (_core.Settings().ScrollState() == ScrollbarState::Visible)
             {
                 width += ScrollBar().ActualWidth();
             }
@@ -1968,7 +1993,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
-            return GetProposedDimensions(_settings, dpi, minSize);
+
+            return GetProposedDimensions(_core.Settings(), dpi, minSize);
         }
     }
 
@@ -1990,7 +2016,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                                            padding.Left + padding.Right :
                                                            padding.Top + padding.Bottom);
 
-        if (widthOrHeight && _settings.ScrollState() == ScrollbarState::Visible)
+        if (widthOrHeight && _core.Settings().ScrollState() == ScrollbarState::Visible)
         {
             nonTerminalArea += gsl::narrow_cast<float>(ScrollBar().ActualWidth());
         }
@@ -2273,7 +2299,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     std::wstring fullPath{ item.Path() };
 
                     // Fix path for WSL
-                    if (_settings.ProfileSource() == L"Windows.Terminal.Wsl")
+                    // In the fullness of time, we should likely plumb this up
+                    // to the TerminalApp layer, and have it make the decision
+                    // if this control should have it's path mangled (and do the
+                    // mangling), rather than exposing the source concept to the
+                    // Control layer.
+                    //
+                    // However, it's likely that the control layer may need to
+                    // know about the source anyways in the future, to support
+                    // GH#3158
+                    if (_interactivity.ManglePathsForWsl())
                     {
                         std::replace(fullPath.begin(), fullPath.end(), L'\\', L'/');
 
@@ -2420,12 +2455,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     IControlSettings TermControl::Settings() const
     {
-        return _settings;
-    }
-
-    void TermControl::Settings(IControlSettings newSettings)
-    {
-        _settings = newSettings;
+        // TODO: GH#5000
+        // We still need this in a couple places:
+        // - Pane.cpp uses this for parsing out the StartingTitle, Commandline,
+        //   etc for Pane::GetTerminalArgsForPane.
+        // - TerminalTab::_CreateToolTipTitle uses the ProfileName for the
+        //   tooltip for the tab.
+        //
+        // These both happen on the UI thread right now. In the future, when we
+        // have to hop across the process boundary to get at the core settings,
+        // it may make sense to cache these values inside the TermControl
+        // itself, so it can do the hop once when it's first setup, rather than
+        // when it's needed by the UI thread.
+        return _core.Settings();
     }
 
     Windows::Foundation::IReference<winrt::Windows::UI::Color> TermControl::TabColor() noexcept
@@ -2647,5 +2689,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     hstring TermControl::ReadEntireBuffer() const
     {
         return _core.ReadEntireBuffer();
+    }
+
+    Core::Scheme TermControl::ColorScheme() const noexcept
+    {
+        return _core.ColorScheme();
+    }
+
+    void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
+    {
+        _core.ColorScheme(scheme);
     }
 }
