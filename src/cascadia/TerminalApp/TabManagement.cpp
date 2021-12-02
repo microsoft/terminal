@@ -429,21 +429,9 @@ namespace winrt::TerminalApp::implementation
             }
         }
 
-        if (const auto terminalTab = _GetTerminalTabImpl(tab))
-        {
-            auto actions = terminalTab->BuildStartupActions();
-
-            _AddPreviouslyClosedPaneOrTab(std::move(actions));
-        }
-        else if (tab.try_as<SettingsTab>())
-        {
-            ActionAndArgs action;
-            action.Action(ShortcutAction::OpenSettings);
-            OpenSettingsArgs args{ SettingsTarget::SettingsUI };
-            action.Args(args);
-
-            _AddPreviouslyClosedPaneOrTab(std::vector{ std::move(action) });
-        }
+        auto t = winrt::get_self<implementation::TabBase>(tab);
+        auto actions = t->BuildStartupActions();
+        _AddPreviouslyClosedPaneOrTab(std::move(actions));
 
         _RemoveTab(tab);
     }
