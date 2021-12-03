@@ -64,7 +64,7 @@ namespace Microsoft::Console::Render
         // DxRenderer - setter
         void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
         void SetCallback(std::function<void()> pfn) noexcept override;
-        void SetDefaultTextBackgroundOpacity(float opacity) noexcept override;
+        void EnableTransparentBackground(const bool isTransparent) noexcept override;
         void SetForceFullRepaintRendering(bool enable) noexcept override;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
         void SetPixelShaderPath(std::wstring_view value) noexcept override;

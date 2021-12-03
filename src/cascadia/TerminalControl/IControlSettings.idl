@@ -24,34 +24,37 @@ namespace Microsoft.Terminal.Control
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings, Microsoft.Terminal.Control.IControlAppearance
+    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings,
+                               Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
         String ProfileSource;
 
-        Boolean UseAcrylic;
-        ScrollbarState ScrollState;
-        Boolean UseAtlasEngine;
-        String FontFace;
-        Int32 FontSize;
-        Windows.UI.Text.FontWeight FontWeight;
-        String Padding;
-        Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures;
-        Windows.Foundation.Collections.IMap<String, Single> FontAxes;
+        Boolean UseAcrylic { get; };
+        ScrollbarState ScrollState { get; };
 
-        Microsoft.Terminal.Control.IKeyBindings KeyBindings;
+        Boolean UseAtlasEngine { get; };
 
-        Boolean CopyOnSelect;
-        Boolean FocusFollowMouse;
+        String FontFace { get; };
+        Int32 FontSize { get; };
+        Windows.UI.Text.FontWeight FontWeight { get; };
+        String Padding { get; };
+        Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
+        Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
 
-        String Commandline;
-        String StartingDirectory;
-        String EnvironmentVariables;
+        Microsoft.Terminal.Control.IKeyBindings KeyBindings { get; };
 
-        TextAntialiasingMode AntialiasingMode;
+        Boolean CopyOnSelect { get; };
+        Boolean FocusFollowMouse { get; };
+
+        String Commandline { get; };
+        String StartingDirectory { get; };
+        String EnvironmentVariables { get; };
+
+        TextAntialiasingMode AntialiasingMode { get; };
 
         // Experimental Settings
-        Boolean ForceFullRepaintRendering;
-        Boolean SoftwareRendering;
+        Boolean ForceFullRepaintRendering { get; };
+        Boolean SoftwareRendering { get; };
     };
 }

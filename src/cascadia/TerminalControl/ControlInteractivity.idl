@@ -14,6 +14,7 @@ namespace Microsoft.Terminal.Control
     [default_interface] runtimeclass ControlInteractivity
     {
         ControlInteractivity(IControlSettings settings,
+                             IControlAppearance unfocusedAppearance,
                              Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         ControlCore Core { get; };
@@ -57,6 +58,8 @@ namespace Microsoft.Terminal.Control
                            MouseButtonState state);
 
         void UpdateScrollbar(Double newValue);
+
+        Boolean ManglePathsForWsl { get; };
 
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;

@@ -33,20 +33,27 @@ namespace Microsoft.Terminal.Control
     [default_interface] runtimeclass ControlCore : ICoreState
     {
         ControlCore(IControlSettings settings,
+                    IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         Boolean Initialize(Double actualWidth,
                            Double actualHeight,
                            Double compositionScale);
 
-        void UpdateSettings(IControlSettings settings);
-        void UpdateAppearance(IControlAppearance appearance);
+        void UpdateSettings(IControlSettings settings, IControlAppearance appearance);
+        void ApplyAppearance(Boolean focused);
+
+        IControlSettings Settings { get; };
+        IControlAppearance FocusedAppearance { get; };
+        IControlAppearance UnfocusedAppearance { get; };
+        Boolean HasUnfocusedAppearance();
 
         UInt64 SwapChainHandle { get; };
 
         Windows.Foundation.Size FontSize { get; };
         String FontFaceName { get; };
         UInt16 FontWeight { get; };
+        Double Opacity { get; };
 
         Boolean TrySendKeyEvent(Int16 vkey,
                              Int16 scanCode,
@@ -75,7 +82,6 @@ namespace Microsoft.Terminal.Control
         void BlinkAttributeTick();
         void UpdatePatternLocations();
         void Search(String text, Boolean goForward, Boolean caseSensitive);
-        void SetBackgroundOpacity(Double opacity);
         Microsoft.Terminal.Core.Color BackgroundColor { get; };
 
         Boolean HasSelection { get; };
