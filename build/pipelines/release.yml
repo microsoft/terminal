@@ -293,7 +293,7 @@ jobs:
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
     condition: succeededOrFailed()
     inputs:
-      msBuildCommandline: /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Clean /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:VisualStudioVersion=16.0 $(Build.SourcesDirectory)\OpenConsole.sln
+      msBuildCommandline: msbuild.exe /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Clean /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:VisualStudioVersion=16.0 $(Build.SourcesDirectory)\OpenConsole.sln
 
   # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
   - task: CopyFiles@1
