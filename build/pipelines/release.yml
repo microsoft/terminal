@@ -147,123 +147,123 @@ jobs:
       inputs:
         filePath: tools/PGODatabase/restore-pgodb.ps1
         workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
-  - ${{ if eq(parameters.buildTerminal, true) }}:
-    - task: VSBuild@1
-      displayName: Build solution **\OpenConsole.sln
-      inputs:
-        solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
-        platform: $(BuildPlatform)
-        configuration: $(BuildConfiguration)
-        clean: true
-        maximumCpuCount: true
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: binlog'
-      condition: failed()
-      continueOnError: True
-      inputs:
-        PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
-        ArtifactName: binlog-$(BuildPlatform)
-    - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
-      - task: PowerShell@2
-        displayName: Validate binaries are optimized
-        condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
-        inputs:
-          targetType: inline
-          script: >-
-            $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
+  # - ${{ if eq(parameters.buildTerminal, true) }}:
+  #   - task: VSBuild@1
+  #     displayName: Build solution **\OpenConsole.sln
+  #     inputs:
+  #       solution: '**\OpenConsole.sln'
+  #       vsVersion: 16.0
+  #       msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+  #       platform: $(BuildPlatform)
+  #       configuration: $(BuildConfiguration)
+  #       clean: true
+  #       maximumCpuCount: true
+  #   - task: PublishBuildArtifacts@1
+  #     displayName: 'Publish Artifact: binlog'
+  #     condition: failed()
+  #     continueOnError: True
+  #     inputs:
+  #       PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
+  #       ArtifactName: binlog-$(BuildPlatform)
+  #   - ${{ if eq(parameters.pgoBuildMode, 'Optimize') }}:
+  #     - task: PowerShell@2
+  #       displayName: Validate binaries are optimized
+  #       condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+  #       inputs:
+  #         targetType: inline
+  #         script: >-
+  #           $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
 
-            foreach ($BinFile in $Binaries) {
+  #           foreach ($BinFile in $Binaries) {
 
-              & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile"
+  #             & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/src/cascadia/CascadiaPackage/bin/$(BuildPlatform)/$(BuildConfiguration)/$BinFile"
 
-            }
-    - task: PowerShell@2
-      displayName: Check MSIX for common regressions
-      inputs:
-        targetType: inline
-        script: >-
-          $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
+  #           }
+  #   - task: PowerShell@2
+  #     displayName: Check MSIX for common regressions
+  #     inputs:
+  #       targetType: inline
+  #       script: >-
+  #         $Package = Get-ChildItem -Recurse -Filter "CascadiaPackage_*.msix"
 
-          .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
-        pwsh: true
-  - ${{ if eq(parameters.buildWPF, true) }}:
-    - task: VSBuild@1
-      displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
-      inputs:
-        solution: '**\OpenConsole.sln'
-        vsVersion: 16.0
-        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
-        platform: $(BuildPlatform)
-        configuration: $(BuildConfiguration)
-  - task: PowerShell@2
-    displayName: Source Index PDBs
-    inputs:
-      filePath: build\scripts\Index-Pdbs.ps1
-      arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
-      errorActionPreference: silentlyContinue
-  - task: PowerShell@2
-    displayName: Run Unit Tests
-    condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
-    enabled: False
-    inputs:
-      filePath: build\scripts\Run-Tests.ps1
-      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
-  - task: PowerShell@2
-    displayName: Run Feature Tests
-    condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
-    enabled: False
-    inputs:
-      filePath: build\scripts\Run-Tests.ps1
-      arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
-  - ${{ if eq(parameters.buildTerminal, true) }}:
-    - task: CopyFiles@2
-      displayName: Copy *.appx/*.msix to Artifacts
-      inputs:
-        Contents: >-
-          **/*.appx
+  #         .\build\scripts\Test-WindowsTerminalPackage.ps1 -Verbose -Path $Package.FullName
+  #       pwsh: true
+  # - ${{ if eq(parameters.buildWPF, true) }}:
+  #   - task: VSBuild@1
+  #     displayName: Build solution **\OpenConsole.sln for PublicTerminalCore
+  #     condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+  #     inputs:
+  #       solution: '**\OpenConsole.sln'
+  #       vsVersion: 16.0
+  #       msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /t:Terminal\wpf\PublicTerminalCore
+  #       platform: $(BuildPlatform)
+  #       configuration: $(BuildConfiguration)
+  # - task: PowerShell@2
+  #   displayName: Source Index PDBs
+  #   inputs:
+  #     filePath: build\scripts\Index-Pdbs.ps1
+  #     arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
+  #     errorActionPreference: silentlyContinue
+  # - task: PowerShell@2
+  #   displayName: Run Unit Tests
+  #   condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
+  #   enabled: False
+  #   inputs:
+  #     filePath: build\scripts\Run-Tests.ps1
+  #     arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+  # - task: PowerShell@2
+  #   displayName: Run Feature Tests
+  #   condition: and(succeeded(), eq(variables['BuildPlatform'], 'x64'))
+  #   enabled: False
+  #   inputs:
+  #     filePath: build\scripts\Run-Tests.ps1
+  #     arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)'
+  # - ${{ if eq(parameters.buildTerminal, true) }}:
+  #   - task: CopyFiles@2
+  #     displayName: Copy *.appx/*.msix to Artifacts
+  #     inputs:
+  #       Contents: >-
+  #         **/*.appx
 
-          **/*.msix
+  #         **/*.msix
 
-          **/*.appxsym
+  #         **/*.appxsym
 
-          !**/Microsoft.VCLibs*.appx
-        TargetFolder: $(Build.ArtifactStagingDirectory)/appx
-        OverWrite: true
-        flattenFolders: true
-    - task: PublishBuildArtifacts@1
-      displayName: Publish Artifact (appx)
-      inputs:
-        PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
-        ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
-  - ${{ if eq(parameters.buildWPF, true) }}:
-    - task: CopyFiles@2
-      displayName: Copy PublicTerminalCore.dll to Artifacts
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
-      inputs:
-        Contents: >-
-          **/PublicTerminalCore.dll
+  #         !**/Microsoft.VCLibs*.appx
+  #       TargetFolder: $(Build.ArtifactStagingDirectory)/appx
+  #       OverWrite: true
+  #       flattenFolders: true
+  #   - task: PublishBuildArtifacts@1
+  #     displayName: Publish Artifact (appx)
+  #     inputs:
+  #       PathtoPublish: $(Build.ArtifactStagingDirectory)/appx
+  #       ArtifactName: appx-$(BuildPlatform)-$(BuildConfiguration)
+  # - ${{ if eq(parameters.buildWPF, true) }}:
+  #   - task: CopyFiles@2
+  #     displayName: Copy PublicTerminalCore.dll to Artifacts
+  #     condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+  #     inputs:
+  #       Contents: >-
+  #         **/PublicTerminalCore.dll
 
-          **/api-ms-win-core-synch-l1-2-0.dll
-        TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
-        OverWrite: true
-        flattenFolders: true
-    - task: PublishBuildArtifacts@1
-      displayName: Publish Artifact (PublicTerminalCore)
-      condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
-      inputs:
-        PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
-        ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
+  #         **/api-ms-win-core-synch-l1-2-0.dll
+  #       TargetFolder: $(Build.ArtifactStagingDirectory)/wpf
+  #       OverWrite: true
+  #       flattenFolders: true
+  #   - task: PublishBuildArtifacts@1
+  #     displayName: Publish Artifact (PublicTerminalCore)
+  #     condition: and(succeeded(), ne(variables['BuildPlatform'], 'arm64'))
+  #     inputs:
+  #       PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
+  #       ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
 
-  - task: PublishSymbols@2
-    displayName: Publish symbols path
-    continueOnError: True
-    inputs:
-      SearchPattern: '**/*.pdb'
-      IndexSources: false
-      SymbolServerType: TeamServices
+  # - task: PublishSymbols@2
+  #   displayName: Publish symbols path
+  #   continueOnError: True
+  #   inputs:
+  #     SearchPattern: '**/*.pdb'
+  #     IndexSources: false
+  #     SymbolServerType: TeamServices
 
   # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
