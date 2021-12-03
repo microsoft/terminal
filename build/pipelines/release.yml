@@ -66,7 +66,7 @@ jobs:
             BuildPlatform: ${{ platform }}
   displayName: Build
   cancelTimeoutInMinutes: 1
-  condition: true
+  condition: false
   steps:
   - checkout: self
     clean: true
@@ -76,10 +76,6 @@ jobs:
     displayName: Package ES - Setup Build
     inputs:
       disableOutputRedirect: true
-  # install npm because the security tasks need it (prefast@3 specifically)
-  - task: Npm@1
-    inputs:
-      command: 'install'
   - task: PowerShell@2
     displayName: Rationalize Build Platform
     inputs:
@@ -208,9 +204,6 @@ jobs:
       filePath: build\scripts\Index-Pdbs.ps1
       arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
       errorActionPreference: silentlyContinue
-  # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
-  - task: ComponentGovernanceComponentDetection@0
-    displayName: Component Detection
   - task: PowerShell@2
     displayName: Run Unit Tests
     condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
@@ -270,62 +263,10 @@ jobs:
       SearchPattern: '**/*.pdb'
       IndexSources: false
       SymbolServerType: TeamServices
-    
-  # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@2
-    displayName: 'Run the PREfast SDL Native Rules for MSBuild'
-    condition: succeededOrFailed()
-    inputs:
-      msBuildArchitecture: x64
-
-  # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
-  - task: CopyFiles@1
-    displayName: 'Copy PREfast xml files to SDLNativeRulesDir'
-    inputs:
-      SourceFolder: '$(Agent.BuildDirectory)'
-      Contents: |
-        **\*.nativecodeanalysis.xml
-      TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
-
-  # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
-  - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
-    displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
-
-  - task: PkgESSecComp@10
-    displayName: 'Security and Compliance tasks'
-    inputs:
-      fileNewBugs: false
-      areaPath: 'OS\WDX\DXP\WinDev\Terminal'
-      teamProject: 'OS'
-      iterationPath: 'OS\Future'
-      bugTags: 'TerminalReleaseCompliance'
-      scanAll: true
-      errOnBugs: false
-      failOnStdErr: true
-      taskLogVerbosity: Diagnostic
-      release: Iron
-      secCompConfigFromTask: |
-        # Overrides default build sources directory
-        sourceTargetOverrideAll: d:\ba\s\ 
-        # Overrides default build binaries directory when "Scan all" option is specified
-        binariesTargetOverrideAll: d:\ba\b\ 
-  
-        # Set the tools to false if they should not run in the build
-        tools:
-            - toolName: CheckCFlags
-              enable: true
-            - toolName: CFGCheck
-              enable: true
-            - toolName: Policheck
-              enable: true
-            - toolName: CredScan
-              enable: true
-            - toolName: XFGCheck
-              enable: true
 
 - job: ComplianceTasks
   displayName: Validate security and compliance
-  condition: false
+  condition: true
   pool:
      vmImage: 'windows-2019'
   #dependsOn: Build
@@ -348,6 +289,8 @@ jobs:
   - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
     condition: succeededOrFailed()
+    inputs:
+      msBuildCommandline: /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Clean /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:VisualStudioVersion=16.0 $(Build.SourcesDirectory)\OpenConsole.sln
 
   # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
   - task: CopyFiles@1
@@ -357,28 +300,6 @@ jobs:
       Contents: |
         **\*.nativecodeanalysis.xml
       TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
-  - task: DownloadBuildArtifacts@0
-    displayName: Download Build Artifacts
-    inputs:
-      artifactName: appx-x64-Release
-      downloadPath: $(System.ArtifactsDirectory)
-      buildType: 'specific'
-      project: $(System.TeamProjectId)
-      pipeline: 70913
-      buildVersionToDownload: 'specific'
-      buildId: 41716590
-  - task: ExtractFiles@1
-    inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.msix'
-      cleanDestinationFolder: true
-      overwriteExistingFiles: true
-      destinationFolder: $(Build.BinariesDirectory)
-  - task: ExtractFiles@1
-    inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.appxsym'
-      cleanDestinationFolder: false
-      overwriteExistingFiles: true
-      destinationFolder: $(Build.BinariesDirectory)
    # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
   - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
     displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
