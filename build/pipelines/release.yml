@@ -17,7 +17,7 @@ parameters:
   - name: buildTerminal
     displayName: "Build Windows Terminal MSIX"
     type: boolean
-    default: false
+    default: true
   - name: buildTerminalVPack
     displayName: "Build Windows Terminal VPack"
     type: boolean
