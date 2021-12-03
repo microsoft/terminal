@@ -20,7 +20,7 @@ namespace WindowsTerminal.UIA.Tests.Common
 
         public static void PgoSweepIfInstrumented(TestContext context, string assemblyName)
         {
-#if true
+#if PGO_INSTRUMENT
             string pgcFileName = context.TestName;
             Log.Comment($"Running pgosweep on '{assemblyName}' for test: {pgcFileName}");
             try
