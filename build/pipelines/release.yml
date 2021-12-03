@@ -272,11 +272,9 @@ jobs:
       SymbolServerType: TeamServices
     
   # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@2
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
     condition: succeededOrFailed()
-    inputs:
-      msBuildArchitecture: x64
 
   # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
   - task: CopyFiles@1
@@ -322,96 +320,6 @@ jobs:
               enable: true
             - toolName: XFGCheck
               enable: true
-
-- job: ComplianceTasks
-  displayName: Validate security and compliance
-  condition: false
-  pool:
-     vmImage: 'windows-2019'
-  #dependsOn: Build
-  steps:
-  - checkout: self
-    fetchDepth: 1
-    clean: true
-    submodules: true
-    persistCredentials: True
-  - task: PkgESSetupBuild@12
-    displayName: 'Package ES - Setup Build'
-
-  - task: NuGetAuthenticate@0
-
-  # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
-  - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
-    displayName: Component Detection
-    
-  # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
-    displayName: 'Run the PREfast SDL Native Rules for MSBuild'
-    condition: succeededOrFailed()
-
-  # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
-  - task: CopyFiles@1
-    displayName: 'Copy PREfast xml files to SDLNativeRulesDir'
-    inputs:
-      SourceFolder: '$(Agent.BuildDirectory)'
-      Contents: |
-        **\*.nativecodeanalysis.xml
-      TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
-  - task: DownloadBuildArtifacts@0
-    displayName: Download Build Artifacts
-    inputs:
-      artifactName: appx-x64-Release
-      downloadPath: $(System.ArtifactsDirectory)
-      buildType: 'specific'
-      project: $(System.TeamProjectId)
-      pipeline: 70913
-      buildVersionToDownload: 'specific'
-      buildId: 41716590
-  - task: ExtractFiles@1
-    inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.msix'
-      cleanDestinationFolder: true
-      overwriteExistingFiles: true
-      destinationFolder: $(Build.BinariesDirectory)
-  - task: ExtractFiles@1
-    inputs:
-      archiveFilePatterns: '$(System.ArtifactsDirectory)\**\CascadiaPackage*.appxsym'
-      cleanDestinationFolder: false
-      overwriteExistingFiles: true
-      destinationFolder: $(Build.BinariesDirectory)
-   # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
-  - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
-    displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
-  - task: PkgESSecComp@10
-    displayName: 'Security and Compliance tasks'
-    inputs:
-      fileNewBugs: false
-      areaPath: 'OS\WDX\DXP\WinDev\Terminal'
-      teamProject: 'OS'
-      iterationPath: 'OS\Future'
-      bugTags: 'TerminalReleaseCompliance'
-      scanAll: true
-      errOnBugs: false
-      failOnStdErr: true
-      taskLogVerbosity: Diagnostic
-      secCompConfigFromTask: |
-        # Overrides default build sources directory
-        sourceTargetOverrideAll: $(Build.SourcesDirectory)
-        # Overrides default build binaries directory when "Scan all" option is specified
-        binariesTargetOverrideAll: $(Build.BinariesDirectory)
-  
-        # Set the tools to false if they should not run in the build
-        tools:
-            - toolName: CheckCFlags
-              enable: true
-            - toolName: CFGCheck
-              enable: true
-            - toolName: Policheck
-              enable: false
-            - toolName: CredScan
-              enable: false
-            - toolName: XFGCheck
-              enable: false
 
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
