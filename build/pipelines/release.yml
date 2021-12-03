@@ -256,6 +256,7 @@ jobs:
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
+
   - task: PublishSymbols@2
     displayName: Publish symbols path
     continueOnError: True
@@ -264,30 +265,13 @@ jobs:
       IndexSources: false
       SymbolServerType: TeamServices
 
-- job: ComplianceTasks
-  displayName: Validate security and compliance
-  condition: true
-  variables:
-    BuildConfiguration: Release
-    BuildPlatform: x64
-  pool:
-     vmImage: 'windows-2019'
-  #dependsOn: Build
-  steps:
-  - checkout: self
-    fetchDepth: 1
-    clean: true
-    submodules: true
-    persistCredentials: True
-  - task: PkgESSetupBuild@12
-    displayName: 'Package ES - Setup Build'
-
-  - task: NuGetAuthenticate@0
-
   # 1ES Component Governance onboarding (Detects open source components). See https://docs.opensource.microsoft.com/tools/cg.html
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
     displayName: Component Detection
     
+  # PREfast needs Node. Install that first.
+  - task: NodeTool@0
+  
   # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
   - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
@@ -303,6 +287,7 @@ jobs:
       Contents: |
         **\*.nativecodeanalysis.xml
       TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
+
    # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
   - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
     displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
