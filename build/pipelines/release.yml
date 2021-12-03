@@ -76,6 +76,10 @@ jobs:
     displayName: Package ES - Setup Build
     inputs:
       disableOutputRedirect: true
+  # install npm because the security tasks need it (prefast@3 specifically)
+  - task: Npm@1
+    inputs:
+      command: 'install'
   - task: PowerShell@2
     displayName: Rationalize Build Platform
     inputs:
@@ -341,7 +345,7 @@ jobs:
     displayName: Component Detection
     
   # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@2
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
     condition: succeededOrFailed()
 
