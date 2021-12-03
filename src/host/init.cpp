@@ -32,7 +32,7 @@ void InitSideBySide()
     actctx.cbSize = sizeof(actctx);
     // We set ACTCTX_FLAG_HMODULE_VALID, but leave hModule as nullptr.
     // A nullptr HMODULE refers to the current process/executable.
-    actctx.dwFlags =  ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
+    actctx.dwFlags = ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
 
     HANDLE const hActCtx = CreateActCtxW(&actctx);
 
