@@ -359,7 +359,7 @@ namespace Microsoft::Console::Render
 
             bool is_inline() const noexcept
             {
-                // VSO-1430353: __builtin_bitcast crashes the compiler under /permissive-.
+                // VSO-1430353: __builtin_bitcast crashes the compiler under /permissive-. (BODGY)
 #pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
                 return (reinterpret_cast<uintptr_t>(allocated) & 1) != 0;
             }

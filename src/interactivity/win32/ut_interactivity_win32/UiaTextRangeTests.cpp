@@ -1447,14 +1447,14 @@ class UiaTextRangeTests
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
             VERIFY_ARE_EQUAL(-1, moveAmt);
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? lastLineStart : static_cast<COORD>(secondToLastLinePos), utr->_start);
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? til::point{ lastLineStart } : secondToLastLinePos, utr->_start);
             VERIFY_ARE_EQUAL(lastLineStart, utr->_end);
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
             VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? -1 : 0, moveAmt);
             VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? static_cast<COORD>(origin) : documentEndExclusive, utr->_end);
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? origin : til::point{ documentEndExclusive }, utr->_end);
         }
     }
 

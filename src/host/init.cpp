@@ -10,7 +10,7 @@
 
 // Routine Description:
 // - Ensures the SxS initialization for the process.
-void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range(MAX_PATH, MAX_PATH) DWORD ScratchBufferSize)
+void InitSideBySide()
 {
     // Account for the fact that sidebyside stuff happens in CreateProcess
     // but conhost is run with RtlCreateUserProcess.
@@ -28,39 +28,11 @@ void InitSideBySide(_Out_writes_(ScratchBufferSize) PWSTR ScratchBuffer, __range
     // make references to DLLs in the system that are in the SxS cache (ex. a 3rd party IME is loaded and asks for
     // comctl32.dll. The load will fail if SxS wasn't initialized.) This was bug# WIN7:681280.
 
-    DWORD const dwModuleFileNameLength = GetModuleFileNameW(nullptr, ScratchBuffer, ScratchBufferSize);
-    if (dwModuleFileNameLength == 0)
-    {
-        RIPMSG1(RIP_ERROR, "GetModuleFileNameW failed %d.\n", GetLastError());
-        return;
-    }
-    // GetModuleFileNameW truncates its result to fit in the buffer
-    // and returns the given buffer size in such cases.
-    if (dwModuleFileNameLength == ScratchBufferSize)
-    {
-        RIPMSG1(RIP_ERROR, "GetModuleFileNameW requires more than ScratchBufferSize(%d) - 1.\n", ScratchBufferSize);
-        return;
-    }
-
-    // We get an NT path from the Win32 api. Fix it to be Win32.
-    // We can test for NT paths by checking whether the string starts with "\??\C:\", or any
-    // alternative letter other than C. We specifically don't test for the drive letter below.
-    UINT NtToWin32PathOffset = 0;
-    static constexpr wchar_t ntPathSpec1[]{ L'\\', L'?', L'?', L'\\' };
-    static constexpr wchar_t ntPathSpec2[]{ L':', L'\\' };
-    if (
-        dwModuleFileNameLength >= 7 &&
-        memcmp(&ScratchBuffer[0], &ntPathSpec1[0], sizeof(ntPathSpec1)) == 0 &&
-        memcmp(&ScratchBuffer[5], &ntPathSpec2[0], sizeof(ntPathSpec2)) == 0)
-    {
-        NtToWin32PathOffset = 4;
-    }
-
     ACTCTXW actctx{};
     actctx.cbSize = sizeof(actctx);
-    actctx.dwFlags = (ACTCTX_FLAG_RESOURCE_NAME_VALID | ACTCTX_FLAG_SET_PROCESS_DEFAULT);
-    actctx.lpResourceName = MAKEINTRESOURCE(IDR_SYSTEM_MANIFEST);
-    actctx.lpSource = ScratchBuffer + NtToWin32PathOffset;
+    // We set ACTCTX_FLAG_HMODULE_VALID, but leave hModule as nullptr.
+    // A nullptr HMODULE refers to the current process/executable.
+    actctx.dwFlags =  ACTCTX_FLAG_SET_PROCESS_DEFAULT | ACTCTX_FLAG_HMODULE_VALID;
 
     HANDLE const hActCtx = CreateActCtxW(&actctx);
 
@@ -121,5 +93,5 @@ void InitEnvironmentVariables()
     }
 
     // Initialize SxS for the process.
-    InitSideBySide(wchValue, ARRAYSIZE(wchValue));
+    InitSideBySide();
 }

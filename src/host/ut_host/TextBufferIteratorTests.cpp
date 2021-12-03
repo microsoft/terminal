@@ -23,19 +23,13 @@ using namespace WEX::TestExecution;
 using Microsoft::Console::Interactivity::ServiceLocator;
 
 template<typename T>
-T GetIterator()
-{
-}
+T GetIterator();
 
 template<typename T>
-T GetIteratorAt(COORD at)
-{
-}
+T GetIteratorAt(COORD at);
 
 template<typename T>
-T GetIteratorWithAdvance()
-{
-}
+T GetIteratorWithAdvance();
 
 template<>
 TextBufferCellIterator GetIteratorAt<TextBufferCellIterator>(COORD at)
