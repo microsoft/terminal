@@ -66,7 +66,7 @@ jobs:
             BuildPlatform: ${{ platform }}
   displayName: Build
   cancelTimeoutInMinutes: 1
-  condition: false
+  condition: true
   steps:
   - checkout: self
     clean: true
@@ -271,7 +271,7 @@ jobs:
     
   # PREfast needs Node. Install that first.
   - task: NodeTool@0
-  
+
   # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
   - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
     displayName: 'Run the PREfast SDL Native Rules for MSBuild'
