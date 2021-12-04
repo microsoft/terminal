@@ -30,6 +30,7 @@ SOURCES = \
     ..\FontInfoDesired.cpp \
     ..\FontResource.cpp \
     ..\RenderEngineBase.cpp \
+    ..\RenderSettings.cpp \
     ..\renderer.cpp \
     ..\thread.cpp \
 

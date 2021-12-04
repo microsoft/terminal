@@ -45,6 +45,9 @@
     <ClCompile Include="..\BlinkingState.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\RenderSettings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\precomp.h">
@@ -87,6 +90,9 @@
       <Filter>Header Files\inc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\inc\IRenderTarget.hpp">
+      <Filter>Header Files\inc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\inc\RenderSettings.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
   </ItemGroup>

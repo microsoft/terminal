@@ -28,10 +28,12 @@ static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 // - pEngine - The output engine for targeting each rendering frame
 // Return Value:
 // - An instance of a Renderer.
-Renderer::Renderer(IRenderData* pData,
+Renderer::Renderer(const RenderSettings& renderSettings,
+                   IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
                    std::unique_ptr<RenderThread> thread) :
+    _renderSettings(renderSettings),
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
     _pThread{ std::move(thread) },
     _viewport{ pData->GetViewport() }

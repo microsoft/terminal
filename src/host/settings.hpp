@@ -18,13 +18,11 @@ Revision History:
 --*/
 #pragma once
 
-#include "../buffer/out/TextAttribute.hpp"
-
 // To prevent invisible windows, set a lower threshold on window alpha channel.
 constexpr unsigned short MIN_WINDOW_OPACITY = 0x4D; // 0x4D is approximately 30% visible/opaque (70% transparent). Valid range is 0x00-0xff.
 
 #include "ConsoleArguments.hpp"
-#include "../inc/conattrs.hpp"
+#include "../renderer/inc/RenderSettings.hpp"
 
 enum class UseDx : DWORD
 {
@@ -35,6 +33,8 @@ enum class UseDx : DWORD
 
 class Settings
 {
+    using RenderSettings = Microsoft::Console::Render::RenderSettings;
+
 public:
     Settings();
 
@@ -46,6 +46,9 @@ public:
     void Validate();
 
     CONSOLE_STATE_INFO CreateConsoleStateInfo() const;
+
+    RenderSettings& GetRenderSettings() noexcept { return _renderSettings; };
+    const RenderSettings& GetRenderSettings() const noexcept { return _renderSettings; };
 
     DWORD GetVirtTermLevel() const;
     void SetVirtTermLevel(const DWORD dwVirtTermLevel);
@@ -196,6 +199,8 @@ public:
     bool GetCopyColor() const noexcept;
 
 private:
+    RenderSettings _renderSettings;
+
     DWORD _dwHotKey;
     DWORD _dwStartupFlags;
     WORD _wFillAttribute;

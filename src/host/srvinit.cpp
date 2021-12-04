@@ -819,7 +819,7 @@ PWSTR TranslateConsoleTitle(_In_ PCWSTR pwszConsoleTitle, const BOOL fUnexpand, 
         //      and we can't do that until the renderer is constructed.
         auto* const localPointerToThread = renderThread.get();
 
-        g.pRender = new Renderer(&gci.renderData, nullptr, 0, std::move(renderThread));
+        g.pRender = new Renderer(gci.GetRenderSettings(), &gci.renderData, nullptr, 0, std::move(renderThread));
 
         THROW_IF_FAILED(localPointerToThread->Initialize(g.pRender));
 
