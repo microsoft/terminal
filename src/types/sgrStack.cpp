@@ -38,7 +38,7 @@ namespace Microsoft::Console::VirtualTerminal
 
                 // Options must be specified singly; not in combination. Values that are
                 // out of range will be ignored.
-                if (option <= SgrSaveRestoreStackOptions::Max)
+                if (option > SgrSaveRestoreStackOptions::All && option <= SgrSaveRestoreStackOptions::Max)
                 {
                     validParts.set(option);
                 }
