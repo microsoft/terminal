@@ -307,7 +307,7 @@ jobs:
         # Overrides default build sources directory
         sourceTargetOverrideAll: $(Build.SourcesDirectory)
         # Overrides default build binaries directory when "Scan all" option is specified
-        binariesTargetOverrideAll: $(Build.BinariesDirectory)
+        binariesTargetOverrideAll: $(Build.SourcesDirectory)\bin
   
         # Set the tools to false if they should not run in the build
         tools:
@@ -316,11 +316,11 @@ jobs:
             - toolName: CFGCheck
               enable: true
             - toolName: Policheck
-              enable: false
+              enable: true
             - toolName: CredScan
-              enable: false
+              enable: true
             - toolName: XFGCheck
-              enable: false
+              enable: true
 
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
