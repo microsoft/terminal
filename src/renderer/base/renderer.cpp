@@ -746,7 +746,7 @@ void Renderer::_PaintBufferOutputHelper(_In_ IRenderEngine* const pEngine,
                                         const COORD target,
                                         const bool lineWrapped)
 {
-    auto globalInvert{ _pData->IsScreenReversed() };
+    auto globalInvert{ _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed) };
 
     // If we have valid data, let's figure out how to draw it.
     if (it)
@@ -985,7 +985,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
     if (lines.any())
     {
         // Get the current foreground color to render the lines.
-        const COLORREF rgb = _pData->GetAttributeColors(textAttribute).first;
+        const COLORREF rgb = _renderSettings.GetAttributeColors(textAttribute).first;
         // Draw the lines
         LOG_IF_FAILED(pEngine->PaintBufferGridLines(lines, rgb, cchLine, coordTarget));
     }
@@ -1033,7 +1033,7 @@ void Renderer::_PaintBufferOutputGridLineHelper(_In_ IRenderEngine* const pEngin
             // The viewport X offset is saved in the options and handled with a transform.
             coordCursor.Y -= view.Top;
 
-            COLORREF cursorColor = _pData->GetCursorColor();
+            COLORREF cursorColor = _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
             bool useColor = cursorColor != INVALID_COLOR;
 
             // Build up the cursor parameters including position, color, and drawing options
@@ -1217,7 +1217,7 @@ void Renderer::_PaintSelection(_In_ IRenderEngine* const pEngine)
 {
     // The last color needs to be each engine's responsibility. If it's local to this function,
     //      then on the next engine we might not update the color.
-    return pEngine->UpdateDrawingBrushes(textAttributes, _pData, usingSoftFont, isSettingDefaultBrushes);
+    return pEngine->UpdateDrawingBrushes(textAttributes, _renderSettings, _pData, usingSoftFont, isSettingDefaultBrushes);
 }
 
 // Routine Description:

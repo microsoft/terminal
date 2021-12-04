@@ -1917,17 +1917,19 @@ CATCH_RETURN()
 // - Updates the default brush colors used for drawing
 // Arguments:
 // - textAttributes - Text attributes to use for the brush color
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
 // - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes - Lets us know that these are the default brushes to paint the swapchain background or selection
 // Return Value:
 // - S_OK or relevant DirectX error.
 [[nodiscard]] HRESULT DxEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                     const gsl::not_null<IRenderData*> pData,
+                                                     const RenderSettings& renderSettings,
+                                                     const gsl::not_null<IRenderData*> /*pData*/,
                                                      const bool /*usingSoftFont*/,
                                                      const bool isSettingDefaultBrushes) noexcept
 {
-    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
+    const auto [colorForeground, colorBackground] = renderSettings.GetAttributeColorsWithAlpha(textAttributes);
 
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
     const bool usingTransparency = _defaultBackgroundIsTransparent;

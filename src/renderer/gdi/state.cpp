@@ -268,6 +268,7 @@ GdiEngine::~GdiEngine()
 // - This method will set the GDI brushes in the drawing context (and update the hung-window background color)
 // Arguments:
 // - textAttributes - Text attributes to use for the brush color
+// - renderSettings - The color table and modes required for rendering
 // - pData - The interface to console data structures required for rendering
 // - usingSoftFont - Whether we're rendering characters from a soft font
 // - isSettingDefaultBrushes - Lets us know that the default brushes are being set so we can update the DC background
@@ -275,7 +276,8 @@ GdiEngine::~GdiEngine()
 // Return Value:
 // - S_OK if set successfully or relevant GDI error via HRESULT.
 [[nodiscard]] HRESULT GdiEngine::UpdateDrawingBrushes(const TextAttribute& textAttributes,
-                                                      const gsl::not_null<IRenderData*> pData,
+                                                      const RenderSettings& renderSettings,
+                                                      const gsl::not_null<IRenderData*> /*pData*/,
                                                       const bool usingSoftFont,
                                                       const bool isSettingDefaultBrushes) noexcept
 {
@@ -284,7 +286,7 @@ GdiEngine::~GdiEngine()
     RETURN_HR_IF_NULL(HRESULT_FROM_WIN32(ERROR_INVALID_STATE), _hdcMemoryContext);
 
     // Set the colors for painting text
-    const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
+    const auto [colorForeground, colorBackground] = renderSettings.GetAttributeColors(textAttributes);
 
     if (colorForeground != _lastFg)
     {
