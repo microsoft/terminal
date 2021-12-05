@@ -185,7 +185,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor;
     const til::color newForegroundColor{ appearance.DefaultForeground() };
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = newForegroundColor;
     const til::color newCursorColor{ appearance.CursorColor() };
@@ -1310,9 +1310,7 @@ Scheme Terminal::GetColorScheme() const noexcept
     Scheme s;
 
     s.Foreground = til::color{ _colorTable.at(TextColor::DEFAULT_FOREGROUND) };
-    // Don't leak the implementation detail that our _defaultBg is stored
-    // internally without alpha.
-    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
+    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) };
 
     // SelectionBackground is stored in the ControlAppearance
     s.CursorColor = til::color{ _colorTable.at(TextColor::CURSOR_COLOR) };
@@ -1339,10 +1337,7 @@ Scheme Terminal::GetColorScheme() const noexcept
 void Terminal::ApplyScheme(const Scheme& colorScheme)
 {
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = til::color{ colorScheme.Foreground };
-    // Set the default background as transparent to prevent the
-    // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ colorScheme.Background };
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = til::color{ colorScheme.Background };
 
     _colorTable[0] = til::color{ colorScheme.Black };
     _colorTable[1] = til::color{ colorScheme.Red };
