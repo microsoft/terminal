@@ -11,6 +11,7 @@
 
 #pragma hdrstop
 
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
 using Microsoft::Console::Interactivity::ServiceLocator;
@@ -212,8 +213,8 @@ ULONG RenderData::GetCursorPixelWidth() const noexcept
 // - the color of the cursor.
 COLORREF RenderData::GetCursorColor() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetColorTableEntry(TextColor::CURSOR_COLOR);
+    const auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    return renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
 }
 
 // Routine Description:
@@ -349,8 +350,8 @@ const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) con
 // - ARGB color values for the foreground and background
 std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupAttributeColors(attr);
+    const auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    return renderSettings.GetAttributeColors(attr);
 }
 #pragma endregion
 
@@ -466,7 +467,7 @@ void RenderData::ColorSelection(const COORD coordSelectionStart, const COORD coo
 // - true if the screen is globally inverted
 bool RenderData::IsScreenReversed() const noexcept
 {
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.IsScreenReversed();
+    const auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    return renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed);
 }
 #pragma endregion

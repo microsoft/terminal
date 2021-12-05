@@ -603,7 +603,6 @@ try
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-
     return gci.GetColorTableEntry(tableIndex);
 }
 catch (...)
@@ -624,18 +623,18 @@ try
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-
+    auto& renderSettings = gci.GetRenderSettings();
     gci.SetColorTableEntry(tableIndex, color);
 
     // If we're setting the default foreground or background colors
     // we need to make sure the index is correctly set as well.
     if (tableIndex == TextColor::DEFAULT_FOREGROUND)
     {
-        gci.SetDefaultForegroundIndex(TextColor::DEFAULT_FOREGROUND);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
     }
     if (tableIndex == TextColor::DEFAULT_BACKGROUND)
     {
-        gci.SetDefaultBackgroundIndex(TextColor::DEFAULT_BACKGROUND);
+        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
     }
 
     // Update the screen colors if we're not a pty

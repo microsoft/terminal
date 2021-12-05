@@ -31,6 +31,7 @@
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
+using namespace Microsoft::Console::Render;
 
 // Routine Description:
 // - Retrieves the console input mode (settings that apply when manipulating the input buffer)
@@ -1258,10 +1259,10 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 {
     try
     {
-        Globals& g = ServiceLocator::LocateGlobals();
-        CONSOLE_INFORMATION& gci = g.getConsoleInformation();
+        auto& g = ServiceLocator::LocateGlobals();
+        auto& renderSettings = g.getConsoleInformation().GetRenderSettings();
 
-        gci.SetScreenReversed(reverseMode);
+        renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
 
         if (g.pRender)
         {
