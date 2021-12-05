@@ -136,12 +136,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
+        _tabColor = settings.TabColor().Value();
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
+        _startingTabColor = settings.StartingTabColor().Value();
     }
 
     if (_pfnTabColorChanged)
