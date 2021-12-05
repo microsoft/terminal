@@ -6,7 +6,6 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 
@@ -81,7 +80,7 @@ Terminal::Terminal() :
     _InitializeColorTable();
 
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = RGB(255, 255, 255);
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = ARGB(0, 0, 0, 0);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = RGB(0, 0, 0);
     _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
 }
 
