@@ -147,17 +147,17 @@ jobs:
       inputs:
         filePath: tools/PGODatabase/restore-pgodb.ps1
         workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
-  # - ${{ if eq(parameters.buildTerminal, true) }}:
-  #   - task: VSBuild@1
-  #     displayName: Build solution **\OpenConsole.sln
-  #     inputs:
-  #       solution: '**\OpenConsole.sln'
-  #       vsVersion: 16.0
-  #       msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
-  #       platform: $(BuildPlatform)
-  #       configuration: $(BuildConfiguration)
-  #       clean: true
-  #       maximumCpuCount: true
+  - ${{ if eq(parameters.buildTerminal, true) }}:
+    - task: VSBuild@1
+      displayName: Build solution **\OpenConsole.sln
+      inputs:
+        solution: '**\OpenConsole.sln'
+        vsVersion: 16.0
+        msbuildArgs: /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }};PGOBuildMode=${{ parameters.pgoBuildMode }} /t:Terminal\CascadiaPackage;Terminal\WindowsTerminalUniversal /p:WindowsTerminalReleaseBuild=true /bl:$(Build.SourcesDirectory)\msbuild.binlog
+        platform: $(BuildPlatform)
+        configuration: $(BuildConfiguration)
+        clean: true
+        maximumCpuCount: true
   #   - task: PublishBuildArtifacts@1
   #     displayName: 'Publish Artifact: binlog'
   #     condition: failed()
