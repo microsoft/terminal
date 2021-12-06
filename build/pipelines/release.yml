@@ -316,7 +316,7 @@ jobs:
             - toolName: CFGCheck
               enable: true
             - toolName: Policheck
-              enable: true
+              enable: false
             - toolName: CredScan
               enable: true
             - toolName: XFGCheck
