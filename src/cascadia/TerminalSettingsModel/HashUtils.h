@@ -17,54 +17,37 @@ Revision History:
 
 #pragma once
 
-namespace Microsoft::Terminal::Settings::Model::HashUtils
+#include <til/hash.h>
+
+namespace til
 {
-    // This is a helper template function for hashing multiple variables in conjunction to each other.
     template<typename T>
-    constexpr size_t HashProperty(const T& val)
+    struct hash_trait<winrt::Windows::Foundation::IReference<T>>
     {
-        std::hash<T> hashFunc;
-        return hashFunc(val);
-    }
-
-    template<typename T, typename... Args>
-    constexpr size_t HashProperty(const T& val, Args&&... more)
-    {
-        // Inspired by boost::hash_combine, which causes this effect...
-        //   seed ^= hash_value(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-        // Source: https://www.boost.org/doc/libs/1_35_0/doc/html/boost/hash_combine_id241013.html
-        const auto seed{ HashProperty(val) };
-        return seed ^ (0x9e3779b9 + (seed << 6) + (seed >> 2) + HashProperty(std::forward<Args>(more)...));
-    }
+        constexpr void operator()(hasher& h, const winrt::Windows::Foundation::IReference<T>& v) const noexcept
+        {
+            if (v)
+            {
+                h.write(v.Value());
+            }
+        }
+    };
 
     template<>
-    constexpr size_t HashProperty(const til::color& val)
+    struct hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs>
     {
-        return HashProperty(val.a, val.r, val.g, val.b);
-    }
+        void operator()(hasher& h, const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& value) const noexcept
+        {
+            h.write(winrt::get_abi(value));
+        }
+    };
 
-#ifdef WINRT_Windows_Foundation_H
-    template<typename T>
-    constexpr size_t HashProperty(const winrt::Windows::Foundation::IReference<T>& val)
-    {
-        return val ? HashProperty(val.Value()) : 0;
-    }
-#endif
-
-#ifdef WINRT_Windows_UI_H
     template<>
-    constexpr size_t HashProperty(const winrt::Windows::UI::Color& val)
+    struct hash_trait<winrt::hstring>
     {
-        return HashProperty(til::color{ val });
-    }
-#endif
-
-#ifdef WINRT_Microsoft_Terminal_Core_H
-    template<>
-    constexpr size_t HashProperty(const winrt::Microsoft::Terminal::Core::Color& val)
-    {
-        return HashProperty(til::color{ val });
-    }
-#endif
-
-};
+        void operator()(hasher& h, const winrt::hstring& value) const noexcept
+        {
+            h.write(reinterpret_cast<const uint8_t*>(value.data()), value.size() * sizeof(wchar_t));
+        }
+    };
+}

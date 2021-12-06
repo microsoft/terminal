@@ -15,13 +15,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
     static InternalActionID Hash(const Model::ActionAndArgs& actionAndArgs)
     {
-        size_t hashedAction{ HashUtils::HashProperty(actionAndArgs.Action()) };
+        const auto action = actionAndArgs.Action();
+        til::hasher hasher;
 
-        size_t hashedArgs{};
-        if (const auto& args{ actionAndArgs.Args() })
+        if (const auto args = actionAndArgs.Args())
         {
-            // Args are defined, so hash them
-            hashedArgs = gsl::narrow_cast<size_t>(args.Hash());
+            hasher = gsl::narrow_cast<size_t>(args.Hash(hasher.finalize()));
         }
         else
         {
@@ -29,22 +28,24 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             // Check if the ShortcutAction supports args.
             switch (actionAndArgs.Action())
             {
-#define ON_ALL_ACTIONS_WITH_ARGS(action)                        \
-    case ShortcutAction::action:                                \
-        /* If it does, hash the default values for the args.*/  \
-        hashedArgs = EmptyHash<implementation::action##Args>(); \
-        break;
+#define ON_ALL_ACTIONS_WITH_ARGS(action)                                                                            \
+    case ShortcutAction::action:                                                                                    \
+    {                                                                                                               \
+        /* If it does, hash the default values for the args. */                                                     \
+        /* Since til::hasher hasn't been written to at this point, hasher.finalize() is a constexpr. */             \
+        static const size_t cachedHash = winrt::make_self<implementation::action##Args>()->Hash(hasher.finalize()); \
+        hasher = gsl::narrow_cast<size_t>(cachedHash);                                                              \
+        break;                                                                                                      \
+    }
                 ALL_SHORTCUT_ACTIONS_WITH_ARGS
 #undef ON_ALL_ACTIONS_WITH_ARGS
             default:
-            {
-                // Otherwise, hash nullptr.
-                std::hash<IActionArgs> argsHash;
-                hashedArgs = argsHash(nullptr);
-            }
+                break;
             }
         }
-        return hashedAction ^ hashedArgs;
+
+        hasher.write(action);
+        return hasher.finalize();
     }
 
     // Method Description:
