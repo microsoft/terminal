@@ -269,24 +269,24 @@ jobs:
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
     displayName: Component Detection
     
-  # PREfast needs Node. Install that first.
-  - task: NodeTool@0
+  # # PREfast needs Node. Install that first.
+  # - task: NodeTool@0
 
-  # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
-    displayName: 'Run the PREfast SDL Native Rules for MSBuild'
-    condition: succeededOrFailed()
-    inputs:
-      msBuildCommandline: msbuild.exe /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Terminal\Window\WindowsTerminal /p:VisualStudioVersion=16.0 $(Build.SourcesDirectory)\OpenConsole.sln
+  # # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
+  # - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
+  #   displayName: 'Run the PREfast SDL Native Rules for MSBuild'
+  #   condition: succeededOrFailed()
+  #   inputs:
+  #     msBuildCommandline: msbuild.exe /nologo /m /p:WindowsTerminalOfficialBuild=true /p:WindowsTerminalBranding=${{ parameters.branding }} /p:WindowsTerminalReleaseBuild=true /p:platform=$(BuildPlatform) /p:configuration=$(BuildConfiguration) /t:Terminal\Window\WindowsTerminal /p:VisualStudioVersion=16.0 $(Build.SourcesDirectory)\OpenConsole.sln
 
-  # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
-  - task: CopyFiles@1
-    displayName: 'Copy PREfast xml files to SDLNativeRulesDir'
-    inputs:
-      SourceFolder: '$(Agent.BuildDirectory)'
-      Contents: |
-        **\*.nativecodeanalysis.xml
-      TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
+  # # Copies output from PREfast SDL Native Rules task to expected location for consumption by PkgESSecComp
+  # - task: CopyFiles@1
+  #   displayName: 'Copy PREfast xml files to SDLNativeRulesDir'
+  #   inputs:
+  #     SourceFolder: '$(Agent.BuildDirectory)'
+  #     Contents: |
+  #       **\*.nativecodeanalysis.xml
+  #     TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
 
    # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
   - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
