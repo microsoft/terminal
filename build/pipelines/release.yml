@@ -65,6 +65,7 @@ jobs:
             BuildConfiguration: ${{ config }}
             BuildPlatform: ${{ platform }}
   displayName: Build
+  timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
   condition: true
   steps:
