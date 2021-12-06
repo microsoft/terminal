@@ -36,7 +36,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TitlebarControl : TitlebarControlT<TitlebarControl, implementation::TitlebarControl>
-    {
-    };
+    BASIC_FACTORY(TitlebarControl);
 }

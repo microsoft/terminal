@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "../inc/cppwinrt_utils.h"
-
 template<typename T>
 struct ViewModelHelper
 {

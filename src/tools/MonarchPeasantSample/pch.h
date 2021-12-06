@@ -24,3 +24,5 @@
 #include "til.h"
 
 #include <conio.h>
+
+#include <cppwinrt_utils.h>

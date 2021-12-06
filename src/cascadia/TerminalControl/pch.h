@@ -62,3 +62,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalControlProvider);
 #include "til.h"
 
 #include "ThrottledFunc.h"
+
+#include <cppwinrt_utils.h>

@@ -39,7 +39,6 @@
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 
-#include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include "HashUtils.h"
 #include "TerminalWarnings.h"

@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "inc/cppwinrt_utils.h"
 #include "TerminalTabStatus.g.h"
 
 namespace winrt::TerminalApp::implementation

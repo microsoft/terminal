@@ -5,8 +5,6 @@
 
 #include "EchoConnection.g.h"
 
-#include "../cascadia/inc/cppwinrt_utils.h"
-
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 {
     struct EchoConnection : EchoConnectionT<EchoConnection>
@@ -29,7 +27,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct EchoConnection : EchoConnectionT<EchoConnection, implementation::EchoConnection>
-    {
-    };
+    BASIC_FACTORY(EchoConnection);
 }

@@ -1526,7 +1526,7 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
 
         // Trigger the detached event on each child
         detached->WalkTree([](auto pane) {
-            pane->_PaneDetachedHandlers(pane);
+            pane->_DetachedHandlers(pane);
             return false;
         });
 
@@ -3253,8 +3253,3 @@ void Pane::CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& s
         _secondChild->CollectTaskbarStates(states);
     }
 }
-
-DEFINE_EVENT(Pane, GotFocus, _GotFocusHandlers, Pane::gotFocusArgs);
-DEFINE_EVENT(Pane, LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-DEFINE_EVENT(Pane, PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
-DEFINE_EVENT(Pane, Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
