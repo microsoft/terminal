@@ -303,9 +303,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ColorScheme = _ColorScheme;
             return *copy;
         }
-        size_t Hash(size_t hasherState) const
+        size_t Hash(uint64_t hasherState) const
         {
-            til::hasher h{ hasherState };
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
             h.write(Commandline());
             h.write(StartingDirectory());
             h.write(TabTitle());
@@ -363,9 +363,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
-        size_t Hash(size_t hasherState) const
+        size_t Hash(uint64_t hasherState) const
         {
-            til::hasher h{ hasherState };
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
             h.write(TerminalArgs());
             return h.finalize();
         }
@@ -449,9 +449,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitSize = _SplitSize;
             return *copy;
         }
-        size_t Hash(size_t hasherState) const
+        size_t Hash(uint64_t hasherState) const
         {
-            til::hasher h{ hasherState };
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
             h.write(SplitDirection());
             h.write(TerminalArgs());
             h.write(SplitMode());
@@ -501,9 +501,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
-        size_t Hash(size_t hasherState) const
+        size_t Hash(uint64_t hasherState) const
         {
-            til::hasher h{ hasherState };
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
             h.write(TerminalArgs());
             return h.finalize();
         }
@@ -622,9 +622,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Actions = _Actions;
             return *copy;
         }
-        size_t Hash(size_t hasherState) const
+        size_t Hash(uint64_t hasherState) const
         {
-            til::hasher h{ hasherState };
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
             h.write(winrt::get_abi(_Actions));
             return h.finalize();
         }

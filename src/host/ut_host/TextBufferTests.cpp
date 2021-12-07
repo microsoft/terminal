@@ -2583,10 +2583,10 @@ void TextBufferTests::HyperlinkTrim()
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
-    const auto url = L"test.url";
-    const auto otherUrl = L"other.url";
-    const auto customId = L"CustomId";
-    const auto otherCustomId = L"OtherCustomId";
+    static constexpr std::wstring_view url{ L"test.url" };
+    static constexpr std::wstring_view otherUrl{ L"other.url" };
+    static constexpr std::wstring_view customId{ L"CustomId" };
+    static constexpr std::wstring_view otherCustomId{ L"OtherCustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
@@ -2629,8 +2629,8 @@ void TextBufferTests::NoHyperlinkTrim()
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
-    const auto url = L"test.url";
-    const auto customId = L"CustomId";
+    static constexpr std::wstring_view url{ L"test.url" };
+    static constexpr std::wstring_view customId{ L"CustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };

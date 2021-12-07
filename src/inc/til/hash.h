@@ -119,6 +119,8 @@ namespace til
     template<typename T, typename = std::enable_if_t<std::is_integral_v<T> || std::is_enum_v<T>>>
     constexpr size_t hash(const T v) noexcept
     {
+        // This runs murmurhash3's finalizer (fmix32/fmix64) on a single integer.
+        // It's fast, public domain and produces good results.
         auto h = static_cast<size_t>(v);
         if constexpr (sizeof(size_t) == 4)
         {
