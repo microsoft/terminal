@@ -13,9 +13,9 @@ Abstract:
 
 #pragma once
 
-#include "..\..\buffer\out\TextAttribute.hpp"
-#include "..\..\inc\til\enumset.h"
-#include "..\..\terminal\adapter\DispatchTypes.hpp"
+#include "../../buffer/out/TextAttribute.hpp"
+#include "../../terminal/adapter/DispatchTypes.hpp"
+#include <til/enumset.h>
 
 namespace Microsoft::Console::VirtualTerminal
 {
