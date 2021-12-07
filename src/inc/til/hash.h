@@ -25,10 +25,12 @@ namespace til
             write(reinterpret_cast<const uint8_t*>(data), sizeof(T) * count);
         }
 
+#pragma warning(suppress : 26429) // Symbol 'data' is never tested for nullness, it can be marked as not_null (f.23).
         constexpr void write(const uint8_t* data, size_t count) noexcept
         {
             for (size_t i = 0; i < count; ++i)
             {
+#pragma warning(suppress : 26481) // Don't use pointer arithmetic. Use span instead (bounds.1).
                 _hash ^= static_cast<size_t>(data[i]);
                 _hash *= FNV_prime;
             }
@@ -84,6 +86,7 @@ namespace til
         constexpr void operator()(hasher& h, float v) const noexcept
         {
             v = v == 0.0f ? 0.0f : v; // map -0 to 0
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
             h.write(reinterpret_cast<const uint8_t*>(&v), sizeof(v));
         }
     };
@@ -94,6 +97,7 @@ namespace til
         constexpr void operator()(hasher& h, double v) const noexcept
         {
             v = v == 0.0 ? 0.0 : v; // map -0 to 0
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
             h.write(reinterpret_cast<const uint8_t*>(&v), sizeof(v));
         }
     };
