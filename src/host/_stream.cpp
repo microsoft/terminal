@@ -950,40 +950,28 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                 dwFlags,
                                 psScrollY);
     }
-
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    size_t const BufferSize = *pcb;
-    *pcb = 0;
-
+    else
     {
-        size_t TempNumSpaces = 0;
+        size_t const BufferSize = *pcb;
+        *pcb = 0;
 
-        {
-            if (NT_SUCCESS(Status))
-            {
-                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_PROCESSED_OUTPUT)));
-                FAIL_FAST_IF(!(WI_IsFlagSet(screenInfo.OutputMode, ENABLE_VIRTUAL_TERMINAL_PROCESSING)));
+        // defined down in the WriteBuffer default case hiding on the other end of the state machine. See outputStream.cpp
+        // This is the only mode used by DoWriteConsole.
+        FAIL_FAST_IF(!(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE)));
 
-                // defined down in the WriteBuffer default case hiding on the other end of the state machine. See outputStream.cpp
-                // This is the only mode used by DoWriteConsole.
-                FAIL_FAST_IF(!(WI_IsFlagSet(dwFlags, WC_LIMIT_BACKSPACE)));
+        StateMachine& machine = screenInfo.GetStateMachine();
+        size_t const cch = BufferSize / sizeof(WCHAR);
 
-                StateMachine& machine = screenInfo.GetStateMachine();
-                size_t const cch = BufferSize / sizeof(WCHAR);
-
-                machine.ProcessString({ pwchRealUnicode, cch });
-                *pcb += BufferSize;
-            }
-        }
+        machine.ProcessString({ pwchRealUnicode, cch });
+        *pcb += BufferSize;
 
         if (nullptr != pcSpaces)
         {
-            *pcSpaces = TempNumSpaces;
+            *pcSpaces = 0;
         }
-    }
 
-    return Status;
+        return STATUS_SUCCESS;
+    }
 }
 
 // Routine Description:
@@ -1065,36 +1053,58 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
 // - S_OK if successful.
 // - S_OK if we need to wait (check if ppWaiter is not nullptr).
 // - Or a suitable HRESULT code for math/string/memory failures.
-[[nodiscard]] HRESULT WriteConsoleWImplHelper(IConsoleOutputObject& context,
-                                              const std::wstring_view buffer,
-                                              size_t& read,
-                                              bool requiresVtQuirk,
-                                              std::unique_ptr<WriteData>& waiter) noexcept
+static [[nodiscard]] HRESULT WriteConsoleWImplHelper(
+    IConsoleOutputObject& context,
+    const std::wstring_view& buffer,
+    size_t& read,
+    bool requiresVtQuirk,
+    std::unique_ptr<WriteData>& waiter) noexcept
 {
-    try
+    // Set out variables in case we exit early.
+    read = 0;
+    waiter.reset();
+
+    RETURN_HR_IF(E_UNEXPECTED, buffer.size() > SIZE_T_MAX / sizeof(wchar_t));
+
+    // Convert characters to bytes to give to DoWriteConsole.
+    auto data = const_cast<wchar_t*>(buffer.data());
+    auto remaining = buffer.size();
+    NTSTATUS Status = S_OK;
+
+    while (remaining != 0)
     {
-        // Set out variables in case we exit early.
-        read = 0;
-        waiter.reset();
+        auto chunkLength = std::min<size_t>(remaining * sizeof(wchar_t), 4 * 1024 * 1024);
 
-        // Convert characters to bytes to give to DoWriteConsole.
-        size_t cbTextBufferLength;
-        RETURN_IF_FAILED(SizeTMult(buffer.size(), sizeof(wchar_t), &cbTextBufferLength));
+        LockConsole();
 
-        NTSTATUS Status = DoWriteConsole(const_cast<wchar_t*>(buffer.data()), &cbTextBufferLength, context, requiresVtQuirk, waiter);
-
-        // Convert back from bytes to characters for the resulting string length written.
-        read = cbTextBufferLength / sizeof(wchar_t);
-
-        if (Status == CONSOLE_STATUS_WAIT)
+        try
         {
-            FAIL_FAST_IF_NULL(waiter.get());
-            Status = STATUS_SUCCESS;
+            Status = DoWriteConsole(data, &chunkLength, context, requiresVtQuirk, waiter);
+        }
+        catch (...)
+        {
+            Status = wil::ResultFromCaughtException();
         }
 
-        RETURN_NTSTATUS(Status);
+        UnlockConsole();
+
+        const auto chunkRead = chunkLength / sizeof(wchar_t);
+        data += chunkRead;
+        remaining -= chunkRead;
+
+        if (FAILED_NTSTATUS(Status))
+        {
+            break;
+        }
     }
-    CATCH_RETURN();
+
+    read = buffer.size() - remaining;
+
+    if (Status == CONSOLE_STATUS_WAIT)
+    {
+        Status = STATUS_SUCCESS;
+    }
+    RETURN_NTSTATUS(Status);
 }
 
 // Routine Description:
@@ -1127,9 +1137,6 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
         {
             return S_OK;
         }
-
-        LockConsole();
-        auto unlock{ wil::scope_exit([&] { UnlockConsole(); }) };
 
         auto& screenInfo{ context.GetActiveBuffer() };
         const auto& consoleInfo{ ServiceLocator::LocateGlobals().getConsoleInformation() };
@@ -1307,18 +1314,11 @@ using Microsoft::Console::VirtualTerminal::StateMachine;
                                                      bool requiresVtQuirk,
                                                      std::unique_ptr<IWaitRoutine>& waiter) noexcept
 {
-    try
-    {
-        LockConsole();
-        auto unlock = wil::scope_exit([&] { UnlockConsole(); });
+    std::unique_ptr<WriteData> writeDataWaiter;
+    RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));
 
-        std::unique_ptr<WriteData> writeDataWaiter;
-        RETURN_IF_FAILED(WriteConsoleWImplHelper(context.GetActiveBuffer(), buffer, read, requiresVtQuirk, writeDataWaiter));
+    // Transfer specific waiter pointer into the generic interface wrapper.
+    waiter.reset(writeDataWaiter.release());
 
-        // Transfer specific waiter pointer into the generic interface wrapper.
-        waiter.reset(writeDataWaiter.release());
-
-        return S_OK;
-    }
-    CATCH_RETURN();
+    return S_OK;
 }
