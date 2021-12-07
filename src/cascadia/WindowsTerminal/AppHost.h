@@ -118,4 +118,6 @@ private:
     winrt::event_token _ShowNotificationIconContextMenuToken;
     winrt::event_token _NotificationIconMenuItemSelectedToken;
     winrt::event_token _GetWindowLayoutRequestedToken;
+    winrt::event_token _WindowCreatedToken;
+    winrt::event_token _WindowClosedToken;
 };

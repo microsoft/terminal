@@ -35,14 +35,6 @@ namespace Microsoft::Console::Render
                  const size_t cEngines,
                  std::unique_ptr<IRenderThread> thread);
 
-        [[nodiscard]] static HRESULT s_CreateInstance(IRenderData* pData,
-                                                      _In_reads_(cEngines) IRenderEngine** const rgpEngines,
-                                                      const size_t cEngines,
-                                                      _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
-
-        [[nodiscard]] static HRESULT s_CreateInstance(IRenderData* pData,
-                                                      _Outptr_result_nullonfailure_ Renderer** const ppRenderer);
-
         virtual ~Renderer() override;
 
         [[nodiscard]] HRESULT PaintFrame();

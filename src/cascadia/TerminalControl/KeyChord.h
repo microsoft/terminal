@@ -32,7 +32,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct KeyChord : KeyChordT<KeyChord, implementation::KeyChord>
-    {
-    };
+    BASIC_FACTORY(KeyChord);
 }

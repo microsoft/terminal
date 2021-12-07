@@ -19,7 +19,6 @@
 #include "ControlInteractivity.g.h"
 #include "EventArgs.h"
 #include "../buffer/out/search.h"
-#include "cppwinrt_utils.h"
 
 #include "ControlCore.h"
 #include "../../renderer/uia/UiaRenderer.hpp"
@@ -36,6 +35,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
     public:
         ControlInteractivity(IControlSettings settings,
+                             Control::IControlAppearance unfocusedAppearance,
                              TerminalConnection::ITerminalConnection connection);
 
         void GotFocus();
@@ -83,6 +83,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                       const Windows::Foundation::IReference<CopyFormat>& formats);
         void RequestPasteTextFromClipboard();
         void SetEndSelectionPoint(const til::point pixelPosition);
+        bool ManglePathsForWsl();
 
         TYPED_EVENT(OpenHyperlink, IInspectable, Control::OpenHyperlinkEventArgs);
         TYPED_EVENT(PasteFromClipboard, IInspectable, Control::PasteFromClipboardEventArgs);
