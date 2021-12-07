@@ -345,7 +345,7 @@ jobs:
             - toolName: XFGCheck
               enable: true
 
-- ${{ if eq(parameters.buildTerminal, true) }}:
+- ${{ if eq(parameters.noyou, true) }}:
   - job: BundleAndSign
     displayName: Create and sign AppX/MSIX bundles
     dependsOn: Build
