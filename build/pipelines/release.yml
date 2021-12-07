@@ -237,7 +237,7 @@ jobs:
     - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
       displayName: 'Manifest Generation Task'
       inputs:
-       BuildDropPath: '$(System.ArtifactsDirectory)/buildOutput'
+       BuildDropPath: '$(System.ArtifactsDirectory)/appx'
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (appx)
       inputs:
