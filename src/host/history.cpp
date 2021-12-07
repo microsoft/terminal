@@ -693,15 +693,15 @@ HRESULT GetConsoleCommandHistoryLengthImplHelper(const std::wstring_view exeName
             const auto command = pCommandHistory->GetNth(i);
             size_t cchCommand = command.size();
 
-            // This is the proposed length of the whole string.
-            size_t cchProposed;
-            RETURN_IF_FAILED(SizeTAdd(cchCommand, cchNull, &cchProposed));
-
             // If we're counting how much multibyte space will be needed, trial convert the command string before we add.
             if (!countInUnicode)
             {
                 cchCommand = GetALengthFromW(codepage, command);
             }
+
+            // This is the proposed length of the whole string.
+            size_t cchProposed;
+            RETURN_IF_FAILED(SizeTAdd(cchCommand, cchNull, &cchProposed));
 
             // Accumulate the result
             RETURN_IF_FAILED(SizeTAdd(cchNeeded, cchProposed, &cchNeeded));
