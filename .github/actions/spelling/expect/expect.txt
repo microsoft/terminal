@@ -634,6 +634,7 @@ doskey
 dotnet
 doubleclick
 downlevel
+DPG
 dpi
 DPIAPI
 DPICHANGE
