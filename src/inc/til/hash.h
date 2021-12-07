@@ -22,6 +22,7 @@ namespace til
         template<typename T, typename = std::enable_if_t<std::has_unique_object_representations_v<T>>>
         constexpr void write(const T* data, size_t count) noexcept
         {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
             write(reinterpret_cast<const uint8_t*>(data), sizeof(T) * count);
         }
 
@@ -60,6 +61,7 @@ namespace til
         {
             constexpr void operator()(hasher& h, const T& v) const noexcept
             {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
                 h.write(reinterpret_cast<const uint8_t*>(&v), sizeof(T));
             }
         };
@@ -107,6 +109,7 @@ namespace til
     {
         constexpr void operator()(hasher& h, const std::basic_string<T, CharTraits, Allocator>& v) const noexcept
         {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
             h.write(reinterpret_cast<const uint8_t*>(v.data()), sizeof(T) * v.size());
         }
     };
@@ -116,6 +119,7 @@ namespace til
     {
         constexpr void operator()(hasher& h, const std::basic_string_view<T, CharTraits>& v) const noexcept
         {
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
             h.write(reinterpret_cast<const uint8_t*>(v.data()), sizeof(T) * v.size());
         }
     };
