@@ -78,11 +78,11 @@ struct InitListPlaceholder
 //    args->ResizeDirection() == ResizeDirection::None
 // is used as the conditional for the validation here.
 #define FROM_JSON_ARGS(type, name, jsonKey, required, ...)                      \
+    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);                    \
     if (required)                                                               \
     {                                                                           \
         return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } }; \
-    }                                                                           \
-    JsonUtils::GetValueForKey(json, jsonKey, args->_##name);
+    }
 
 // JSON serialization
 #define TO_JSON_ARGS(type, name, jsonKey, required, ...) \
