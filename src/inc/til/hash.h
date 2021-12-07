@@ -10,7 +10,7 @@ namespace til
 
     struct hasher
     {
-        constexpr hasher(size_t state = FNV_offset_basis) noexcept :
+        explicit constexpr hasher(size_t state = FNV_offset_basis) noexcept :
             _hash{ state } {}
 
         template<typename T>
