@@ -302,14 +302,14 @@ jobs:
       optionsHMENABLE: 0
     continueOnError: true
 
-  # - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
-  #   displayName: 'Run CredScan'
-  #   inputs:
-  #     outputFormat: pre
-  #     suppressionsFile: LocalSuppressions.json
-  #     batchSize: 20
-  #     debugMode: false
-  #   continueOnError: true
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
+    displayName: 'Run CredScan'
+    inputs:
+      outputFormat: pre
+      suppressionsFile: LocalSuppressions.json
+      batchSize: 20
+      debugMode: false
+    continueOnError: true
  
   # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
   - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
@@ -341,7 +341,7 @@ jobs:
             - toolName: Policheck
               enable: false
             - toolName: CredScan
-              enable: true
+              enable: false
             - toolName: XFGCheck
               enable: true
 
