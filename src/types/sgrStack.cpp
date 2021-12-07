@@ -19,41 +19,30 @@ namespace Microsoft::Console::VirtualTerminal
     {
         AttrBitset validParts;
 
-        try
+        if (options.empty())
         {
-            if (options.empty())
-            {
-                // We save all current attributes.
-                validParts.set(static_cast<size_t>(SgrSaveRestoreStackOptions::All));
-            }
-            else
-            {
-                // Each option is encoded as a bit in validParts. All options (that fit) are
-                // encoded; options that aren't supported are ignored when read back (popped).
-                // So if you try to save only unsupported aspects of the current text
-                // attributes, you'll do what is effectively an "empty" push (the subsequent
-                // pop will not change the current attributes), which is the correct behavior.
+            // We save all current attributes.
+            validParts.set(SgrSaveRestoreStackOptions::All);
+        }
+        else
+        {
+            // Each option is encoded as a bit in validParts. All options (that fit) are
+            // encoded; options that aren't supported are ignored when read back (popped).
+            // So if you try to save only unsupported aspects of the current text
+            // attributes, you'll do what is effectively an "empty" push (the subsequent
+            // pop will not change the current attributes), which is the correct behavior.
 
-                for (size_t i = 0; i < options.size(); i++)
+            for (size_t i = 0; i < options.size(); i++)
+            {
+                const auto option = static_cast<SgrSaveRestoreStackOptions>(options.at(i).value_or(0));
+
+                // Options must be specified singly; not in combination. Values that are
+                // out of range will be ignored.
+                if (option > SgrSaveRestoreStackOptions::All && option <= SgrSaveRestoreStackOptions::Max)
                 {
-                    const size_t optionAsIndex = options.at(i).value_or(0);
-
-                    // Options must be specified singly; not in combination. Values that are
-                    // out of range will be ignored.
-                    if (optionAsIndex < validParts.size())
-                    {
-                        validParts.set(optionAsIndex);
-                    }
+                    validParts.set(option);
                 }
             }
-        }
-        catch (...)
-        {
-            // The static analyzer knows that the bitset operations can throw
-            // std::out_of_range. However, we know that won't happen, because we pre-check
-            // that everything should be in range. So we plan to never execute this
-            // failfast:
-            FAIL_FAST_CAUGHT_EXCEPTION();
         }
 
         if (_numSavedAttrs < gsl::narrow<int>(_storedSgrAttributes.size()))
@@ -82,26 +71,15 @@ namespace Microsoft::Console::VirtualTerminal
 
             SavedSgrAttributes& restoreMe = _storedSgrAttributes.at(_nextPushIndex);
 
-            try
+            if (restoreMe.ValidParts.test(SgrSaveRestoreStackOptions::All))
             {
-                if (restoreMe.ValidParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::All)))
-                {
-                    return restoreMe.TextAttributes;
-                }
-                else
-                {
-                    return _CombineWithCurrentAttributes(currentAttributes,
-                                                         restoreMe.TextAttributes,
-                                                         restoreMe.ValidParts);
-                }
+                return restoreMe.TextAttributes;
             }
-            catch (...)
+            else
             {
-                // The static analyzer knows that the bitset operations can throw
-                // std::out_of_range. However, we know that won't happen, because we
-                // pre-check that everything should be in range. So we plan to never
-                // execute this failfast:
-                FAIL_FAST_CAUGHT_EXCEPTION();
+                return _CombineWithCurrentAttributes(currentAttributes,
+                                                     restoreMe.TextAttributes,
+                                                     restoreMe.ValidParts);
             }
         }
 
@@ -110,11 +88,11 @@ namespace Microsoft::Console::VirtualTerminal
 
     TextAttribute SgrStack::_CombineWithCurrentAttributes(const TextAttribute& currentAttributes,
                                                           const TextAttribute& savedAttribute,
-                                                          const AttrBitset validParts) // of savedAttribute
+                                                          const AttrBitset validParts) noexcept // of savedAttribute
     {
         // If we are restoring all attributes, we should have just taken savedAttribute
         // before we even got here.
-        FAIL_FAST_IF(validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::All)));
+        FAIL_FAST_IF(validParts.test(SgrSaveRestoreStackOptions::All));
 
         TextAttribute result = currentAttributes;
 
@@ -141,67 +119,67 @@ namespace Microsoft::Console::VirtualTerminal
         //  (some closing braces for people with editors that get thrown off without them: }})
 
         // Boldness = 1,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Boldness)))
+        if (validParts.test(SgrSaveRestoreStackOptions::Boldness))
         {
             result.SetBold(savedAttribute.IsBold());
         }
 
         // Faintness = 2,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Faintness)))
+        if (validParts.test(SgrSaveRestoreStackOptions::Faintness))
         {
             result.SetFaint(savedAttribute.IsFaint());
         }
 
         // Italics = 3,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Italics)))
+        if (validParts.test(SgrSaveRestoreStackOptions::Italics))
         {
             result.SetItalic(savedAttribute.IsItalic());
         }
 
         // Underline = 4,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Underline)))
+        if (validParts.test(SgrSaveRestoreStackOptions::Underline))
         {
             result.SetUnderlined(savedAttribute.IsUnderlined());
         }
 
         // Blink = 5,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Blink)))
+        if (validParts.test(SgrSaveRestoreStackOptions::Blink))
         {
             result.SetBlinking(savedAttribute.IsBlinking());
         }
 
         // Negative = 7,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Negative)))
+        if (validParts.test(SgrSaveRestoreStackOptions::Negative))
         {
             result.SetReverseVideo(savedAttribute.IsReverseVideo());
         }
 
         // Invisible = 8,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::Invisible)))
+        if (validParts.test(SgrSaveRestoreStackOptions::Invisible))
         {
             result.SetInvisible(savedAttribute.IsInvisible());
         }
 
         // CrossedOut = 9,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::CrossedOut)))
+        if (validParts.test(SgrSaveRestoreStackOptions::CrossedOut))
         {
             result.SetCrossedOut(savedAttribute.IsCrossedOut());
         }
 
         // DoublyUnderlined = 21,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::DoublyUnderlined)))
+        if (validParts.test(SgrSaveRestoreStackOptions::DoublyUnderlined))
         {
             result.SetDoublyUnderlined(savedAttribute.IsDoublyUnderlined());
         }
 
         // SaveForegroundColor = 30,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveForegroundColor)))
+        if (validParts.test(SgrSaveRestoreStackOptions::SaveForegroundColor))
         {
             result.SetForeground(savedAttribute.GetForeground());
         }
 
         // SaveBackgroundColor = 31,
-        if (validParts.test(static_cast<size_t>(SgrSaveRestoreStackOptions::SaveBackgroundColor)))
+        if (validParts.test(SgrSaveRestoreStackOptions::SaveBackgroundColor))
         {
             result.SetBackground(savedAttribute.GetBackground());
         }
