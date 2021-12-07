@@ -91,6 +91,7 @@ jobs:
     displayName: Use NuGet 5.10
     inputs:
       versionSpec: 5.10
+  - task: NuGetAuthenticate@0
   - task: NuGetCommand@2
     displayName: NuGet custom
     inputs:
@@ -270,8 +271,8 @@ jobs:
   - task: ms.vss-governance-buildtask.governance-build-task-component-detection.ComponentGovernanceComponentDetection@0
     displayName: Component Detection
     
-  # # PREfast needs Node. Install that first.
-  # - task: NodeTool@0
+  # # PREfast and PoliCheck needs Node. Install that first.
+  - task: NodeTool@0
 
   # # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
   # - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
