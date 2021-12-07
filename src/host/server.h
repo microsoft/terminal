@@ -16,8 +16,6 @@ Revision History:
 
 #pragma once
 
-#include <til/ticket_lock.h>
-
 #include "IIoProvider.hpp"
 
 #include "settings.hpp"
