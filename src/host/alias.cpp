@@ -2,19 +2,14 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "alias.h"
 
-#include "_output.h"
+#include <til/hash.h>
+
 #include "output.h"
-#include "stream.h"
-#include "_stream.h"
-#include "dbcs.h"
 #include "handle.h"
 #include "misc.h"
 #include "../types/inc/convert.hpp"
-#include "srvinit.h"
-#include "resource.h"
 
 #include "ApiRoutines.h"
 
@@ -28,10 +23,12 @@ struct case_insensitive_hash
 {
     std::size_t operator()(const std::wstring& key) const
     {
-        std::wstring lower(key);
-        std::transform(lower.begin(), lower.end(), lower.begin(), ::towlower);
-        std::hash<std::wstring> hash;
-        return hash(lower);
+        til::hasher h;
+        for (const auto& ch : key)
+        {
+            h.write(::towlower(ch));
+        }
+        return h.finalize();
     }
 };
 

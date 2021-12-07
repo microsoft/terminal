@@ -62,27 +62,6 @@ private:                                                                        
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
 
-template<>
-constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
-{
-    return gsl::narrow_cast<size_t>(args.Hash());
-}
-
-template<>
-constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& args)
-{
-    return gsl::narrow_cast<size_t>(args.Hash());
-}
-
-// Retrieves the hash value for an empty-constructed object.
-template<typename T>
-static size_t EmptyHash()
-{
-    // cache the value of the empty hash
-    static const size_t cachedHash = winrt::make_self<T>()->Hash();
-    return cachedHash;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // BEGIN X-MACRO MADNESS
 ////////////////////////////////////////////////////////////////////////////////
@@ -324,9 +303,18 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ColorScheme = _ColorScheme;
             return *copy;
         }
-        size_t Hash() const
+        size_t Hash(uint64_t hasherState) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Commandline(), StartingDirectory(), TabTitle(), TabColor(), ProfileIndex(), Profile(), SuppressApplicationTitle(), ColorScheme());
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            h.write(Commandline());
+            h.write(StartingDirectory());
+            h.write(TabTitle());
+            h.write(TabColor());
+            h.write(ProfileIndex());
+            h.write(Profile());
+            h.write(SuppressApplicationTitle());
+            h.write(ColorScheme());
+            return h.finalize();
         }
     };
 
@@ -375,9 +363,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
-        size_t Hash() const
+        size_t Hash(uint64_t hasherState) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TerminalArgs());
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            h.write(TerminalArgs());
+            return h.finalize();
         }
     };
 
@@ -459,9 +449,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitSize = _SplitSize;
             return *copy;
         }
-        size_t Hash() const
+        size_t Hash(uint64_t hasherState) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SplitDirection(), TerminalArgs(), SplitMode(), SplitSize());
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            h.write(SplitDirection());
+            h.write(TerminalArgs());
+            h.write(SplitMode());
+            h.write(SplitSize());
+            return h.finalize();
         }
     };
 
@@ -506,9 +501,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
-        size_t Hash() const
+        size_t Hash(uint64_t hasherState) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TerminalArgs());
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            h.write(TerminalArgs());
+            return h.finalize();
         }
     };
 
@@ -625,9 +622,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Actions = _Actions;
             return *copy;
         }
-        size_t Hash() const
+        size_t Hash(uint64_t hasherState) const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Actions);
+            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            h.write(winrt::get_abi(_Actions));
+            return h.finalize();
         }
     };
 }

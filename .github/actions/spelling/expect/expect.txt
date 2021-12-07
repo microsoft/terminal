@@ -189,7 +189,6 @@ cacafire
 callee
 capslock
 CARETBLINKINGENABLED
-carlos
 CARRIAGERETURN
 cascadia
 cassert
@@ -635,7 +634,7 @@ doskey
 dotnet
 doubleclick
 downlevel
-dpg
+DPG
 dpi
 DPIAPI
 DPICHANGE
@@ -793,6 +792,7 @@ FIXEDCONVERTED
 FIXEDFILEINFO
 Flg
 flyout
+fmix
 fmodern
 fmtarg
 fmtid
@@ -1471,7 +1471,6 @@ msix
 msrc
 msvcrt
 MSVCRTD
-MSVS
 msys
 msysgit
 MTSM
@@ -2174,7 +2173,6 @@ SHOWNOACTIVATE
 SHOWNORMAL
 SHOWWINDOW
 SHRT
-sid
 sidebyside
 SIF
 SIGDN
@@ -2205,7 +2203,6 @@ somefile
 SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
-SPACEBAR
 spammy
 spand
 sprintf
@@ -2510,7 +2507,6 @@ unmark
 UNORM
 unparseable
 unpause
-Unregister
 unregistering
 untests
 untextured
@@ -2523,7 +2519,6 @@ upvote
 uri
 url
 urlencoded
-Urxvt
 USASCII
 usebackq
 USECALLBACK
@@ -2568,7 +2563,6 @@ Vcount
 vcpkg
 vcprintf
 vcproj
-vcvarsall
 vcxitems
 vcxproj
 vec
@@ -2825,7 +2819,6 @@ xes
 xff
 XFile
 XFORM
-xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2858,7 +2851,6 @@ YCast
 YCENTER
 YCount
 YDPI
-yIcon
 yml
 YOffset
 YPosition
@@ -2866,7 +2858,6 @@ YSize
 YSubstantial
 YVIRTUALSCREEN
 YWalk
-zamora
 ZCmd
 ZCtrl
 zsh

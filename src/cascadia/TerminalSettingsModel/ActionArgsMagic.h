@@ -17,6 +17,8 @@ Author(s):
 
 --*/
 
+#pragma once
+
 // MACRO HACKS
 //
 // We want to have code that looks like:
@@ -96,7 +98,7 @@ struct InitListPlaceholder
 // definition of Hash() below, that's to deal with trailing commas (or in this
 // case, leading.)
 #define HASH_ARGS(type, name, jsonKey, required, ...) \
-    , name()
+    h.write(name());
 
 // Use ACTION_ARGS_STRUCT when you've got no other customizing to do.
 #define ACTION_ARGS_STRUCT(className, argsMacro)      \
@@ -109,52 +111,53 @@ struct InitListPlaceholder
 //   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
-#define ACTION_ARG_BODY(className, argsMacro)                                   \
-    className() = default;                                                      \
-    className(                                                                  \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :                      \
-        argsMacro(CTOR_INIT) _placeholder{} {};                                 \
-    argsMacro(DECLARE_ARGS);                                                    \
-                                                                                \
-private:                                                                        \
-    InitListPlaceholder _placeholder;                                           \
-                                                                                \
-public:                                                                         \
-    hstring GenerateName() const;                                               \
-    bool Equals(const IActionArgs& other)                                       \
-    {                                                                           \
-        auto otherAsUs = other.try_as<className>();                             \
-        if (otherAsUs)                                                          \
-        {                                                                       \
-            return true argsMacro(EQUALS_ARGS);                                 \
-        }                                                                       \
-        return false;                                                           \
-    };                                                                          \
-    static FromJsonResult FromJson(const Json::Value& json)                     \
-    {                                                                           \
-        auto args = winrt::make_self<className>();                              \
-        argsMacro(FROM_JSON_ARGS);                                              \
-        return { *args, {} };                                                   \
-    }                                                                           \
-    static Json::Value ToJson(const IActionArgs& val)                           \
-    {                                                                           \
-        if (!val)                                                               \
-        {                                                                       \
-            return {};                                                          \
-        }                                                                       \
-        Json::Value json{ Json::ValueType::objectValue };                       \
-        const auto args{ get_self<className>(val) };                            \
-        argsMacro(TO_JSON_ARGS);                                                \
-        return json;                                                            \
-    }                                                                           \
-    IActionArgs Copy() const                                                    \
-    {                                                                           \
-        auto copy{ winrt::make_self<className>() };                             \
-        argsMacro(COPY_ARGS);                                                   \
-        return *copy;                                                           \
-    }                                                                           \
-    size_t Hash() const                                                         \
-    {                                                                           \
-        return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty( \
-            0 argsMacro(HASH_ARGS));                                            \
+#define ACTION_ARG_BODY(className, argsMacro)                   \
+    className() = default;                                      \
+    className(                                                  \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :      \
+        argsMacro(CTOR_INIT) _placeholder{} {};                 \
+    argsMacro(DECLARE_ARGS);                                    \
+                                                                \
+private:                                                        \
+    InitListPlaceholder _placeholder;                           \
+                                                                \
+public:                                                         \
+    hstring GenerateName() const;                               \
+    bool Equals(const IActionArgs& other)                       \
+    {                                                           \
+        auto otherAsUs = other.try_as<className>();             \
+        if (otherAsUs)                                          \
+        {                                                       \
+            return true argsMacro(EQUALS_ARGS);                 \
+        }                                                       \
+        return false;                                           \
+    };                                                          \
+    static FromJsonResult FromJson(const Json::Value& json)     \
+    {                                                           \
+        auto args = winrt::make_self<className>();              \
+        argsMacro(FROM_JSON_ARGS);                              \
+        return { *args, {} };                                   \
+    }                                                           \
+    static Json::Value ToJson(const IActionArgs& val)           \
+    {                                                           \
+        if (!val)                                               \
+        {                                                       \
+            return {};                                          \
+        }                                                       \
+        Json::Value json{ Json::ValueType::objectValue };       \
+        const auto args{ get_self<className>(val) };            \
+        argsMacro(TO_JSON_ARGS);                                \
+        return json;                                            \
+    }                                                           \
+    IActionArgs Copy() const                                    \
+    {                                                           \
+        auto copy{ winrt::make_self<className>() };             \
+        argsMacro(COPY_ARGS);                                   \
+        return *copy;                                           \
+    }                                                           \
+    size_t Hash(uint64_t hasherState) const                     \
+    {                                                           \
+        til::hasher h{ gsl::narrow_cast<size_t>(hasherState) }; \
+        argsMacro(HASH_ARGS);                                   \
+        return h.finalize();                                    \
     }
