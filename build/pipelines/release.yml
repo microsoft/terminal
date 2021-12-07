@@ -345,77 +345,77 @@ jobs:
             - toolName: XFGCheck
               enable: true
 
-- ${{ if eq(parameters.noyou, true) }}:
-  - job: BundleAndSign
-    displayName: Create and sign AppX/MSIX bundles
-    dependsOn: Build
-    steps:
-    - checkout: self
-      clean: true
-      submodules: true
-      persistCredentials: True
-    - task: PkgESSetupBuild@12
-      displayName: Package ES - Setup Build
-      inputs:
-        disableOutputRedirect: true
-    - task: DownloadBuildArtifacts@0
-      displayName: Download Artifacts (*.appx, *.msix)
-      inputs:
-        downloadType: specific
-        itemPattern: >-
-          **/*.msix
+# - ${{ if eq(parameters.buildTerminal, true) }}:
+#   - job: BundleAndSign
+#     displayName: Create and sign AppX/MSIX bundles
+#     dependsOn: Build
+#     steps:
+#     - checkout: self
+#       clean: true
+#       submodules: true
+#       persistCredentials: True
+#     - task: PkgESSetupBuild@12
+#       displayName: Package ES - Setup Build
+#       inputs:
+#         disableOutputRedirect: true
+#     - task: DownloadBuildArtifacts@0
+#       displayName: Download Artifacts (*.appx, *.msix)
+#       inputs:
+#         downloadType: specific
+#         itemPattern: >-
+#           **/*.msix
 
-          **/*.appx
-        extractTars: false
-    - task: PowerShell@2
-      displayName: Create WindowsTerminal*.msixbundle
-      inputs:
-        filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-    - task: PowerShell@2
-      displayName: Create WindowsTerminalUniversal*.msixbundle
-      inputs:
-        filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName WindowsTerminalUniversal -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalUniversal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-    - task: EsrpCodeSigning@1
-      displayName: Submit *.msixbundle to ESRP for code signing
-      inputs:
-        ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
-        FolderPath: $(System.ArtifactsDirectory)
-        Pattern: Microsoft.WindowsTerminal*.msixbundle
-        UseMinimatch: true
-        signConfigType: inlineSignParams
-        inlineOperation: >-
-          [
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolSign",
-                  "Parameters": {
-                      "OpusName": "Microsoft",
-                      "OpusInfo": "http://www.microsoft.com",
-                      "FileDigest": "/fd \"SHA256\"",
-                      "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
-                  },
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              },
-              {
-                  "KeyCode": "Dynamic",
-                  "CertTemplateName": "WINMSAPP1ST",
-                  "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
-                  "OperationCode": "SigntoolVerify",
-                  "Parameters": {},
-                  "ToolName": "sign",
-                  "ToolVersion": "1.0"
-              }
-          ]
-    - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: appxbundle-signed'
-      inputs:
-        PathtoPublish: $(System.ArtifactsDirectory)
-        ArtifactName: appxbundle-signed
+#           **/*.appx
+#         extractTars: false
+#     - task: PowerShell@2
+#       displayName: Create WindowsTerminal*.msixbundle
+#       inputs:
+#         filePath: build\scripts\Create-AppxBundle.ps1
+#         arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+#     - task: PowerShell@2
+#       displayName: Create WindowsTerminalUniversal*.msixbundle
+#       inputs:
+#         filePath: build\scripts\Create-AppxBundle.ps1
+#         arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName WindowsTerminalUniversal -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalUniversal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
+#     - task: EsrpCodeSigning@1
+#       displayName: Submit *.msixbundle to ESRP for code signing
+#       inputs:
+#         ConnectedServiceName: 9d6d2960-0793-4d59-943e-78dcb434840a
+#         FolderPath: $(System.ArtifactsDirectory)
+#         Pattern: Microsoft.WindowsTerminal*.msixbundle
+#         UseMinimatch: true
+#         signConfigType: inlineSignParams
+#         inlineOperation: >-
+#           [
+#               {
+#                   "KeyCode": "Dynamic",
+#                   "CertTemplateName": "WINMSAPP1ST",
+#                   "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+#                   "OperationCode": "SigntoolSign",
+#                   "Parameters": {
+#                       "OpusName": "Microsoft",
+#                       "OpusInfo": "http://www.microsoft.com",
+#                       "FileDigest": "/fd \"SHA256\"",
+#                       "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+#                   },
+#                   "ToolName": "sign",
+#                   "ToolVersion": "1.0"
+#               },
+#               {
+#                   "KeyCode": "Dynamic",
+#                   "CertTemplateName": "WINMSAPP1ST",
+#                   "CertSubjectName": "CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US",
+#                   "OperationCode": "SigntoolVerify",
+#                   "Parameters": {},
+#                   "ToolName": "sign",
+#                   "ToolVersion": "1.0"
+#               }
+#           ]
+#     - task: PublishBuildArtifacts@1
+#       displayName: 'Publish Artifact: appxbundle-signed'
+#       inputs:
+#         PathtoPublish: $(System.ArtifactsDirectory)
+#         ArtifactName: appxbundle-signed
 
 - ${{ if eq(parameters.buildWPF, true) }}:
   - job: PackageAndSignWPF
