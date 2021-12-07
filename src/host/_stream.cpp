@@ -1071,7 +1071,7 @@ static [[nodiscard]] HRESULT WriteConsoleWImplHelper(
     auto remaining = buffer.size();
     NTSTATUS Status = S_OK;
 
-    while (remaining != 0)
+    do
     {
         auto chunkLength = std::min<size_t>(remaining * sizeof(wchar_t), 4 * 1024 * 1024);
 
@@ -1096,7 +1096,7 @@ static [[nodiscard]] HRESULT WriteConsoleWImplHelper(
         {
             break;
         }
-    }
+    } while (remaining != 0);
 
     read = buffer.size() - remaining;
 
