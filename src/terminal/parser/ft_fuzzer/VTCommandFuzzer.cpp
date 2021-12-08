@@ -112,7 +112,7 @@ std::string GenerateWhiteSpaceToken()
 
 std::string GenerateTextToken()
 {
-    const LPSTR tokens[] = {
+    const LPCSTR tokens[] = {
         "The cow jumped over the moon.",
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
         "Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?",
@@ -134,14 +134,14 @@ std::string GenerateTextToken()
 
 std::string GenerateInvalidToken()
 {
-    const LPSTR tokens[]{ ":", "'", "\"", "\\" };
+    const LPCSTR tokens[]{ ":", "'", "\"", "\\" };
     return std::string(CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens)));
 }
 
 std::string GenerateFuzzedToken(
     __in_ecount(cmap) const _fuzz_type_entry<std::string>* map,
     __in DWORD cmap,
-    __in_ecount(ctokens) const LPSTR* tokens,
+    __in_ecount(ctokens) const LPCSTR* tokens,
     __in DWORD ctokens)
 {
     std::string csis[] = { CSI, C1CSI };
@@ -165,7 +165,7 @@ std::string GenerateFuzzedToken(
 std::string GenerateFuzzedOscToken(
     __in_ecount(cmap) const _fuzz_type_entry<std::string>* map,
     __in DWORD cmap,
-    __in_ecount(ctokens) const LPSTR* tokens,
+    __in_ecount(ctokens) const LPCSTR* tokens,
     __in DWORD ctokens)
 {
     std::string s(OSC);
@@ -227,7 +227,7 @@ std::string GenerateSGRToken()
         49,
     };
 
-    const LPSTR tokens[] = { "m" };
+    const LPCSTR tokens[] = { "m" };
     const _fuzz_type_entry<std::string> map[] = {
         { 40, [&](std::string) { std::string s; AppendFormat(s, "%02d", CFuzzChance::SelectOne(psValid, ARRAYSIZE(psValid))); return s; } },
         { 10, [](std::string) { std::string s; AppendFormat(s, "%d", CFuzzChance::GetRandom<BYTE>()); return s; } },
@@ -242,7 +242,7 @@ std::string GenerateSGRToken()
 // For example, moving the cursor to the next line, previous line, up, down, etc.
 std::string GenerateCUXToken()
 {
-    const LPSTR tokens[] = { "A", "B", "C", "D", "E", "F", "G" };
+    const LPCSTR tokens[] = { "A", "B", "C", "D", "E", "F", "G" };
     const _fuzz_type_entry<std::string> map[] = {
         { 25, [](std::string) { std::string s; AppendFormat(s, "%d", CFuzzChance::GetRandom<USHORT>()); return s; } },
         { 25, [](std::string) { std::string s; AppendFormat(s, "%d", CFuzzChance::GetRandom<BYTE>()); return s; } }
@@ -255,7 +255,7 @@ std::string GenerateCUXToken()
 // Differs from other cursor functions since these are ESC sequences and not CSI sequences.
 std::string GenerateCUXToken2()
 {
-    const LPSTR tokens[] = { "7", "8" };
+    const LPCSTR tokens[] = { "7", "8" };
     std::string cux(ESC);
     cux += GenerateTokenLowProbability();
     cux += CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens));
@@ -266,7 +266,7 @@ std::string GenerateCUXToken2()
 // Cursor positioning with two arguments
 std::string GenerateCUXToken3()
 {
-    const LPSTR tokens[]{ "H" };
+    const LPCSTR tokens[]{ "H" };
     const _fuzz_type_entry<std::string> map[] = {
         { 60, [](std::string) { std::string s; AppendFormat(s, "%d;%d", CFuzzChance::GetRandom<BYTE>(), CFuzzChance::GetRandom<BYTE>()); return s; } }, // 60% give us two numbers in the valid range
         { 10, [](std::string) { return std::string(";"); } }, // 10% give us just a ;
@@ -281,7 +281,7 @@ std::string GenerateCUXToken3()
 // Hard Reset (has no args)
 std::string GenerateHardResetToken()
 {
-    const LPSTR tokens[] = { "c" };
+    const LPCSTR tokens[] = { "c" };
     std::string cux(ESC);
     cux += GenerateTokenLowProbability();
     cux += CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens));
@@ -292,7 +292,7 @@ std::string GenerateHardResetToken()
 // Soft Reset (has no args)
 std::string GenerateSoftResetToken()
 {
-    const LPSTR tokens[] = { "p" };
+    const LPCSTR tokens[] = { "p" };
     std::string cux(CSI);
     cux += GenerateTokenLowProbability();
     cux += CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens));
@@ -304,7 +304,7 @@ std::string GenerateSoftResetToken()
 //      enabling mouse mode, changing to the alt buffer, blinking the cursor, etc.
 std::string GeneratePrivateModeParamToken()
 {
-    const LPSTR tokens[] = { "h", "l" };
+    const LPCSTR tokens[] = { "h", "l" };
     const _fuzz_type_entry<std::string> map[] = {
         { 12, [](std::string) { std::string s; AppendFormat(s, "?%02d", CFuzzChance::GetRandom<BYTE>()); return s; } },
         { 8, [](std::string) { return std::string("?1"); } },
@@ -327,7 +327,7 @@ std::string GeneratePrivateModeParamToken()
 // Erase sequences, valid numerical values are 0-2.  If no numeric value is specified, 0 is assumed.
 std::string GenerateEraseToken()
 {
-    const LPSTR tokens[] = { "J", "K" };
+    const LPCSTR tokens[] = { "J", "K" };
     const _fuzz_type_entry<std::string> map[] = {
         { 9, [](std::string) { return std::string(""); } },
         { 25, [](std::string) { return std::string("0"); } },
@@ -343,7 +343,7 @@ std::string GenerateEraseToken()
 // Device Attributes
 std::string GenerateDeviceAttributesToken()
 {
-    const LPSTR tokens[] = { "c" };
+    const LPCSTR tokens[] = { "c" };
     const _fuzz_type_entry<std::string> map[] = {
         { 70, [](std::string) { return std::string(""); } }, // 70% leave it blank (valid)
         { 29, [](std::string) { return std::string("0"); } }, // 29% put in a 0 (valid)
@@ -356,7 +356,7 @@ std::string GenerateDeviceAttributesToken()
 // Device Attributes
 std::string GenerateDeviceStatusReportToken()
 {
-    const LPSTR tokens[] = { "n" };
+    const LPCSTR tokens[] = { "n" };
     const _fuzz_type_entry<std::string> map[] = {
         { 50, [](std::string) { return std::string("6"); } }, // 50% of the time, give us the one we were looking for (6, cursor report)
         { 49, [](std::string) { std::string s; AppendFormat(s, "%02d", CFuzzChance::GetRandom<BYTE>()); return s; } } // 49% of the time, put in a random value
@@ -369,7 +369,7 @@ std::string GenerateDeviceStatusReportToken()
 // Scroll sequences, valid numeric values include 0-16384.
 std::string GenerateScrollToken()
 {
-    const LPSTR tokens[] = { "S", "T" };
+    const LPCSTR tokens[] = { "S", "T" };
     const _fuzz_type_entry<std::string> map[] = {
         { 5, [](std::string) { std::string s; AppendFormat(s, "%08d", CFuzzChance::GetRandom<ULONG>()); return s; } },
         { 5, [](std::string) { std::string s; AppendFormat(s, "%08d", CFuzzChance::GetRandom<USHORT>()); return s; } },
@@ -383,7 +383,7 @@ std::string GenerateScrollToken()
 // Resize sequences, valid numeric values include 0-16384.
 std::string GenerateResizeToken()
 {
-    const LPSTR tokens[] = { "t" };
+    const LPCSTR tokens[] = { "t" };
     // 5% - generate a random window manipulation with 1 params
     // 5% - generate a random window manipulation with 2 params
     // 5% - generate a random window manipulation with no params
@@ -406,7 +406,7 @@ std::string GenerateResizeToken()
 // and BEL terminated.
 std::string GenerateOscTitleToken()
 {
-    const LPSTR tokens[] = { "\x7" };
+    const LPCSTR tokens[] = { "\x7" };
     const _fuzz_type_entry<std::string> map[] = {
         { 100,
           [](std::string) {
@@ -435,7 +435,7 @@ std::string GenerateOscTitleToken()
 // and BEL terminated.
 std::string GenerateOscColorTableToken()
 {
-    const LPSTR tokens[] = { "\x7", "\x1b\\" };
+    const LPCSTR tokens[] = { "\x7", "\x1b\\" };
     const _fuzz_type_entry<std::string> map[] = {
         { 100,
           [](std::string) {
@@ -515,7 +515,7 @@ std::string GenerateOscColorTableToken()
 // VT52 sequences without parameters.
 std::string GenerateVt52Token()
 {
-    const LPSTR tokens[] = { "A", "B", "C", "D", "F", "G", "H", "I", "J", "K", "Z", "<" };
+    const LPCSTR tokens[] = { "A", "B", "C", "D", "F", "G", "H", "I", "J", "K", "Z", "<" };
     std::string cux(ESC);
     cux += GenerateTokenLowProbability();
     cux += CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens));
@@ -525,7 +525,7 @@ std::string GenerateVt52Token()
 // VT52 direct cursor address sequence with parameters.
 std::string GenerateVt52CursorAddressToken()
 {
-    const LPSTR tokens[] = { "Y" };
+    const LPCSTR tokens[] = { "Y" };
     std::string cux(ESC);
     cux += GenerateTokenLowProbability();
     cux += CFuzzChance::SelectOne(tokens, ARRAYSIZE(tokens));
@@ -540,7 +540,7 @@ std::string GenerateVt52CursorAddressToken()
 // followed by a ";", followed by a string, and BEL terminated.
 std::string GenerateOscHyperlinkToken()
 {
-    const LPSTR tokens[] = { "\x7" };
+    const LPCSTR tokens[] = { "\x7" };
     const _fuzz_type_entry<std::string> map[] = {
         { 100,
           [](std::string) {

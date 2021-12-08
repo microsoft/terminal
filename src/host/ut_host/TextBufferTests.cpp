@@ -81,7 +81,7 @@ class TextBufferTests
 
     TEST_METHOD(TestDoubleBytePadFlag);
 
-    void DoBoundaryTest(PWCHAR const pwszInputString,
+    void DoBoundaryTest(PCWCHAR const pwszInputString,
                         short const cLength,
                         short const cMax,
                         short const cLeft,
@@ -300,7 +300,7 @@ void TextBufferTests::TestDoubleBytePadFlag()
     VERIFY_IS_FALSE(Row.WasDoubleBytePadded());
 }
 
-void TextBufferTests::DoBoundaryTest(PWCHAR const pwszInputString,
+void TextBufferTests::DoBoundaryTest(PCWCHAR const pwszInputString,
                                      short const cLength,
                                      short const cMax,
                                      short const cLeft,
@@ -336,7 +336,7 @@ void TextBufferTests::TestBoundaryMeasuresRegularString()
     SHORT csBufferWidth = GetBufferWidth();
 
     // length 44, left 0, right 44
-    const PWCHAR pwszLazyDog = L"The quick brown fox jumps over the lazy dog.";
+    const auto pwszLazyDog = L"The quick brown fox jumps over the lazy dog.";
     DoBoundaryTest(pwszLazyDog, 44, csBufferWidth, 0, 44);
 }
 
@@ -345,7 +345,7 @@ void TextBufferTests::TestBoundaryMeasuresFloatingString()
     SHORT csBufferWidth = GetBufferWidth();
 
     // length 5 spaces + 4 chars + 5 spaces = 14, left 5, right 9
-    const PWCHAR pwszOffsets = L"     C:\\>     ";
+    const auto pwszOffsets = L"     C:\\>     ";
     DoBoundaryTest(pwszOffsets, 14, csBufferWidth, 5, 9);
 }
 
@@ -648,7 +648,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     //      FG = rgb(64;128;255), BG = rgb(default)
     Log::Comment(L"Case 1 \"\\E[m\\E[38;2;64;128;255mX\\E[49mX\\E[m\"");
 
-    wchar_t* sequence = L"\x1b[m\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
+    const auto sequence = L"\x1b[m\x1b[38;2;64;128;255mX\x1b[49mX\x1b[m";
 
     stateMachine.ProcessString(sequence);
     const short x = cursor.GetPosition().X;
@@ -675,7 +675,7 @@ void TextBufferTests::TestMixedRgbAndLegacyForeground()
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
@@ -693,7 +693,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     //      FG = rgb(default), BG = rgb(64;128;255)
     Log::Comment(L"Case 2 \"\\E[m\\E[48;2;64;128;255mX\\E[39mX\\E[m\"");
 
-    wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
+    const auto sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[39mX\x1b[m";
     stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -719,7 +719,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBackground()
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(fgColor, bgColor));
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(fgColor, bgColor));
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
@@ -735,7 +735,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     //      '\E[m\E[48;2;64;128;255mX\E[4mX\E[m'
     //      Make sure that the second X has RGB attributes AND underline
     Log::Comment(L"Case 3 \"\\E[m\\E[48;2;64;128;255mX\\E[4mX\\E[m\"");
-    wchar_t* sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
+    const auto sequence = L"\x1b[m\x1b[48;2;64;128;255mX\x1b[4mX\x1b[m";
     stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -764,7 +764,7 @@ void TextBufferTests::TestMixedRgbAndLegacyUnderline()
     VERIFY_ARE_EQUAL(attrA.IsUnderlined(), false);
     VERIFY_ARE_EQUAL(attrB.IsUnderlined(), true);
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
@@ -783,7 +783,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
     VERIFY_ARE_NOT_EQUAL(dark_green, bright_green);
 
-    wchar_t* sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
+    const auto sequence = L"\x1b[m\x1b[32mX\x1b[1mX";
     stateMachine.ProcessString(sequence);
     const auto x = cursor.GetPosition().X;
     const auto y = cursor.GetPosition().Y;
@@ -806,7 +806,7 @@ void TextBufferTests::TestMixedRgbAndLegacyBrightness()
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA).first, dark_green);
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB).first, bright_green);
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
@@ -1384,7 +1384,7 @@ void TextBufferTests::TestRgbThenBold()
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrA), std::make_pair(foreground, background));
     VERIFY_ARE_EQUAL(gci.LookupAttributeColors(attrB), std::make_pair(foreground, background));
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
@@ -1408,7 +1408,7 @@ void TextBufferTests::TestResetClearsBoldness()
     const auto dark_green = gci.GetColorTableEntry(TextColor::DARK_GREEN);
     const auto bright_green = gci.GetColorTableEntry(TextColor::BRIGHT_GREEN);
 
-    wchar_t* sequence = L"\x1b[32mA\x1b[1mB\x1b[0mC\x1b[32mD";
+    const auto sequence = L"\x1b[32mA\x1b[1mB\x1b[0mC\x1b[32mD";
     Log::Comment(NoThrowString().Format(sequence));
     stateMachine.ProcessString(sequence);
 
@@ -1443,7 +1443,7 @@ void TextBufferTests::TestResetClearsBoldness()
     VERIFY_IS_FALSE(attrC.IsBold());
     VERIFY_IS_FALSE(attrD.IsBold());
 
-    wchar_t* reset = L"\x1b[0m";
+    const auto reset = L"\x1b[0m";
     stateMachine.ProcessString(reset);
 }
 
@@ -1552,7 +1552,7 @@ void TextBufferTests::TestBackspaceStringsAPI()
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as a single string."));
     {
-        wchar_t* str = L"\b \b";
+        const auto str = L"\b \b";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
 
         VERIFY_ARE_EQUAL(cursor.GetPosition().X, x0);
@@ -1583,19 +1583,19 @@ void TextBufferTests::TestBackspaceStringsAPI()
     Log::Comment(NoThrowString().Format(
         L"Using WriteCharsLegacy, write \\b \\b as separate strings."));
     {
-        wchar_t* str = L"a";
+        const auto str = L"a";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
-        wchar_t* str = L"\b";
+        const auto str = L"\b";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
-        wchar_t* str = L" ";
+        const auto str = L" ";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
     {
-        wchar_t* str = L"\b";
+        const auto str = L"\b";
         VERIFY_SUCCESS_NTSTATUS(WriteCharsLegacy(si, str, str, str, &seqCb, nullptr, cursor.GetPosition().X, 0, nullptr));
     }
 

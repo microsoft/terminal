@@ -58,7 +58,7 @@ Tracing::~Tracing()
 // Return Value:
 // - An object for the caller to hold until the API call is complete.
 //   Then destroy it to signal that the call is over so the stop trace can be written.
-Tracing Tracing::s_TraceApiCall(const NTSTATUS& result, PCSTR traceName)
+Tracing Tracing::s_TraceApiCall(const NTSTATUS result, PCSTR traceName)
 {
     // clang-format off
     TraceLoggingWrite(
