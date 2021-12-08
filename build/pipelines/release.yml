@@ -306,7 +306,7 @@ jobs:
     displayName: 'Run CredScan'
     inputs:
       outputFormat: pre
-      suppressionsFile: LocalSuppressions.json
+      # suppressionsFile: LocalSuppressions.json
       batchSize: 20
       debugMode: false
     continueOnError: true
