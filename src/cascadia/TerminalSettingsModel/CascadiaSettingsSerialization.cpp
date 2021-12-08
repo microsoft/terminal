@@ -284,15 +284,15 @@ void SettingsLoader::MergeFragmentIntoUserSettings(const winrt::hstring& source,
 void SettingsLoader::FinalizeLayering()
 {
     // Layer default globals -> user globals
-    userSettings.globals->InsertParent(inboxSettings.globals);
+    userSettings.globals->AddLeastImportantParent(inboxSettings.globals);
     userSettings.globals->_FinalizeInheritance();
     // Layer default profile defaults -> user profile defaults
-    userSettings.baseLayerProfile->InsertParent(inboxSettings.baseLayerProfile);
+    userSettings.baseLayerProfile->AddLeastImportantParent(inboxSettings.baseLayerProfile);
     userSettings.baseLayerProfile->_FinalizeInheritance();
     // Layer user profile defaults -> user profiles
     for (const auto& profile : userSettings.profiles)
     {
-        profile->InsertParent(0, userSettings.baseLayerProfile);
+        profile->AddMostImportantParent(userSettings.baseLayerProfile);
         profile->_FinalizeInheritance();
     }
 }
@@ -524,7 +524,7 @@ void SettingsLoader::_parseFragment(const winrt::hstring& source, const std::str
         {
             if (const auto it = userSettings.profilesByGuid.find(updates); it != userSettings.profilesByGuid.end())
             {
-                it->second->InsertParent(0, fragmentProfile);
+                it->second->AddMostImportantParent(fragmentProfile);
             }
         }
         else
@@ -598,7 +598,7 @@ void SettingsLoader::_addParentProfile(const winrt::com_ptr<implementation::Prof
     {
         // If inserted is false, we got a matching user profile with identical GUID.
         // --> The generated profile is a parent of the existing user profile.
-        it->second->InsertParent(profile);
+        it->second->AddLeastImportantParent(profile);
     }
     else
     {

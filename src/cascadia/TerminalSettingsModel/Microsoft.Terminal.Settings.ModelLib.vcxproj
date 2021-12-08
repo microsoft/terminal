@@ -14,6 +14,7 @@
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.pre.props" />
   <!-- ========================= Headers ======================== -->
   <ItemGroup>
+    <ClInclude Include="ActionArgsMagic.h" />
     <ClInclude Include="VisualStudioGenerator.h" />
     <ClInclude Include="DefaultTerminal.h">
       <DependentUpon>DefaultTerminal.idl</DependentUpon>

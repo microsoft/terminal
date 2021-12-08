@@ -13,7 +13,6 @@
 #pragma once
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include "../../inc/cppwinrt_utils.h"
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 {

@@ -2583,10 +2583,10 @@ void TextBufferTests::HyperlinkTrim()
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
-    const auto url = L"test.url";
-    const auto otherUrl = L"other.url";
-    const auto customId = L"CustomId";
-    const auto otherCustomId = L"OtherCustomId";
+    static constexpr std::wstring_view url{ L"test.url" };
+    static constexpr std::wstring_view otherUrl{ L"other.url" };
+    static constexpr std::wstring_view customId{ L"CustomId" };
+    static constexpr std::wstring_view otherCustomId{ L"OtherCustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
@@ -2606,8 +2606,8 @@ void TextBufferTests::HyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
-    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
-    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, std::hash<std::wstring_view>{}(otherUrl));
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, til::hash(url));
+    const auto finalOtherCustomId = fmt::format(L"{}%{}", otherCustomId, til::hash(otherUrl));
 
     // The hyperlink reference that was only in the first row should be deleted from the map
     VERIFY_ARE_EQUAL(_buffer->_hyperlinkMap.find(id), _buffer->_hyperlinkMap.end());
@@ -2629,8 +2629,8 @@ void TextBufferTests::NoHyperlinkTrim()
     const TextAttribute attr{ 0x7f };
     auto _buffer = std::make_unique<TextBuffer>(bufferSize, attr, cursorSize, _renderTarget);
 
-    const auto url = L"test.url";
-    const auto customId = L"CustomId";
+    static constexpr std::wstring_view url{ L"test.url" };
+    static constexpr std::wstring_view customId{ L"CustomId" };
 
     // Set a hyperlink id in the first row and add a hyperlink to our map
     const COORD pos{ 70, 0 };
@@ -2647,7 +2647,7 @@ void TextBufferTests::NoHyperlinkTrim()
     // Increment the circular buffer
     _buffer->IncrementCircularBuffer();
 
-    const auto finalCustomId = fmt::format(L"{}%{}", customId, std::hash<std::wstring_view>{}(url));
+    const auto finalCustomId = fmt::format(L"{}%{}", customId, til::hash(url));
 
     // The hyperlink reference should not be deleted from the map since it is still present in the buffer
     VERIFY_ARE_EQUAL(_buffer->GetHyperlinkUriFromId(id), url);

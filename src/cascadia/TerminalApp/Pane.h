@@ -20,7 +20,6 @@
 
 #pragma once
 
-#include "../../cascadia/inc/cppwinrt_utils.h"
 #include "TaskbarState.h"
 
 // fwdecl unittest classes
@@ -185,10 +184,10 @@ public:
 
     using gotFocusArgs = winrt::delegate<std::shared_ptr<Pane>, winrt::Windows::UI::Xaml::FocusState>;
 
-    DECLARE_EVENT(GotFocus, _GotFocusHandlers, gotFocusArgs);
-    DECLARE_EVENT(LostFocus, _LostFocusHandlers, winrt::delegate<std::shared_ptr<Pane>>);
-    DECLARE_EVENT(PaneRaiseBell, _PaneRaiseBellHandlers, winrt::Windows::Foundation::EventHandler<bool>);
-    DECLARE_EVENT(Detached, _PaneDetachedHandlers, winrt::delegate<std::shared_ptr<Pane>>);
+    WINRT_CALLBACK(GotFocus, gotFocusArgs);
+    WINRT_CALLBACK(LostFocus, winrt::delegate<std::shared_ptr<Pane>>);
+    WINRT_CALLBACK(PaneRaiseBell, winrt::Windows::Foundation::EventHandler<bool>);
+    WINRT_CALLBACK(Detached, winrt::delegate<std::shared_ptr<Pane>>);
 
 private:
     struct PanePoint;

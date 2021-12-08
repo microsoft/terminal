@@ -403,9 +403,14 @@ void AppHost::LastTabClosed(const winrt::Windows::Foundation::IInspectable& /*se
         _HideNotificationIconRequested();
     }
 
-    // We don't want to try to save layouts if we are about to close
+    // We don't want to try to save layouts if we are about to close.
     _getWindowLayoutThrottler.reset();
     _windowManager.GetWindowLayoutRequested(_GetWindowLayoutRequestedToken);
+    // We also don't need to update any of our bookkeeping on how many
+    // windows are open.
+    _windowManager.WindowCreated(_WindowCreatedToken);
+    _windowManager.WindowClosed(_WindowClosedToken);
+
     // Remove ourself from the list of peasants so that we aren't included in
     // any future requests. This will also mean we block until any existing
     // event handler finishes.
@@ -813,11 +818,17 @@ void AppHost::_BecomeMonarch(const winrt::Windows::Foundation::IInspectable& /*s
     // and subscribe for updates if there are any changes to that number.
     _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
 
-    _windowManager.WindowCreated([this](auto&&, auto&&) {
-        _getWindowLayoutThrottler.value()();
+    _WindowCreatedToken = _windowManager.WindowCreated([this](auto&&, auto&&) {
+        if (_getWindowLayoutThrottler) {
+            _getWindowLayoutThrottler.value()();
+        }
         _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants()); });
-    _windowManager.WindowClosed([this](auto&&, auto&&) {
-        _getWindowLayoutThrottler.value()();
+
+    _WindowClosedToken = _windowManager.WindowClosed([this](auto&&, auto&&) {
+        if (_getWindowLayoutThrottler)
+        {
+            _getWindowLayoutThrottler.value()();
+        }
         _logic.SetNumberOfOpenWindows(_windowManager.GetNumberOfPeasants());
     });
 
