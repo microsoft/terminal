@@ -111,53 +111,53 @@ struct InitListPlaceholder
 //   * NewTerminalArgs has a ToCommandline method it needs to additionally declare.
 //   * GlobalSummonArgs has the QuakeModeFromJson helper
 
-#define ACTION_ARG_BODY(className, argsMacro)                   \
-    className() = default;                                      \
-    className(                                                  \
-        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :      \
-        argsMacro(CTOR_INIT) _placeholder{} {};                 \
-    argsMacro(DECLARE_ARGS);                                    \
-                                                                \
-private:                                                        \
-    InitListPlaceholder _placeholder;                           \
-                                                                \
-public:                                                         \
-    hstring GenerateName() const;                               \
-    bool Equals(const IActionArgs& other)                       \
-    {                                                           \
-        auto otherAsUs = other.try_as<className>();             \
-        if (otherAsUs)                                          \
-        {                                                       \
-            return true argsMacro(EQUALS_ARGS);                 \
-        }                                                       \
-        return false;                                           \
-    };                                                          \
-    static FromJsonResult FromJson(const Json::Value& json)     \
-    {                                                           \
-        auto args = winrt::make_self<className>();              \
-        argsMacro(FROM_JSON_ARGS);                              \
-        return { *args, {} };                                   \
-    }                                                           \
-    static Json::Value ToJson(const IActionArgs& val)           \
-    {                                                           \
-        if (!val)                                               \
-        {                                                       \
-            return {};                                          \
-        }                                                       \
-        Json::Value json{ Json::ValueType::objectValue };       \
-        const auto args{ get_self<className>(val) };            \
-        argsMacro(TO_JSON_ARGS);                                \
-        return json;                                            \
-    }                                                           \
-    IActionArgs Copy() const                                    \
-    {                                                           \
-        auto copy{ winrt::make_self<className>() };             \
-        argsMacro(COPY_ARGS);                                   \
-        return *copy;                                           \
-    }                                                           \
-    size_t Hash(uint64_t hasherState) const                     \
-    {                                                           \
-        til::hasher h{ gsl::narrow_cast<size_t>(hasherState) }; \
-        argsMacro(HASH_ARGS);                                   \
-        return h.finalize();                                    \
+#define ACTION_ARG_BODY(className, argsMacro)               \
+    className() = default;                                  \
+    className(                                              \
+        argsMacro(CTOR_PARAMS) InitListPlaceholder = {}) :  \
+        argsMacro(CTOR_INIT) _placeholder{} {};             \
+    argsMacro(DECLARE_ARGS);                                \
+                                                            \
+private:                                                    \
+    InitListPlaceholder _placeholder;                       \
+                                                            \
+public:                                                     \
+    hstring GenerateName() const;                           \
+    bool Equals(const IActionArgs& other)                   \
+    {                                                       \
+        auto otherAsUs = other.try_as<className>();         \
+        if (otherAsUs)                                      \
+        {                                                   \
+            return true argsMacro(EQUALS_ARGS);             \
+        }                                                   \
+        return false;                                       \
+    };                                                      \
+    static FromJsonResult FromJson(const Json::Value& json) \
+    {                                                       \
+        auto args = winrt::make_self<className>();          \
+        argsMacro(FROM_JSON_ARGS);                          \
+        return { *args, {} };                               \
+    }                                                       \
+    static Json::Value ToJson(const IActionArgs& val)       \
+    {                                                       \
+        if (!val)                                           \
+        {                                                   \
+            return {};                                      \
+        }                                                   \
+        Json::Value json{ Json::ValueType::objectValue };   \
+        const auto args{ get_self<className>(val) };        \
+        argsMacro(TO_JSON_ARGS);                            \
+        return json;                                        \
+    }                                                       \
+    IActionArgs Copy() const                                \
+    {                                                       \
+        auto copy{ winrt::make_self<className>() };         \
+        argsMacro(COPY_ARGS);                               \
+        return *copy;                                       \
+    }                                                       \
+    size_t Hash() const                                     \
+    {                                                       \
+        til::hasher h;                                      \
+        argsMacro(HASH_ARGS);                               \
+        return h.finalize();                                \
     }
