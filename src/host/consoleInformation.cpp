@@ -53,8 +53,6 @@ static til::ticket_lock lock;
 
 bool CONSOLE_INFORMATION::IsConsoleLocked()
 {
-    // The critical section structure's OwningThread field contains the ThreadId despite having the HANDLE type.
-    // This requires us to hard cast the ID to compare.
     return recursionCount != 0;
 }
 

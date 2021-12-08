@@ -19,7 +19,6 @@ static void CALLBACK CursorTimerRoutineWrapper(_Inout_ PTP_CALLBACK_INSTANCE /*I
     // as CursorBlinker is allocated as a static variable through the Globals class.
     // It'd be nice to fix this, but realistically it'll likely not lead to issues.
     gci.LockConsole();
-    // Cursor& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
     gci.GetCursorBlinker().TimerRoutine(gci.GetActiveOutputBuffer());
     gci.UnlockConsole();
 }
