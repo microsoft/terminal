@@ -272,54 +272,6 @@ Pane::BuildStartupState Pane::BuildStartupActions(uint32_t currentId, uint32_t n
 }
 
 // Method Description:
-// - Update the size of this pane. Resizes each of our columns so they have the
-//   same relative sizes, given the newSize.
-// - Because we're just manually setting the row/column sizes in pixels, we have
-//   to be told our new size, we can't just use our own OnSized event, because
-//   that _won't fire when we get smaller_.
-// Arguments:
-// - newSize: the amount of space that this pane has to fill now.
-// Return Value:
-// - <none>
-void Pane::ResizeContent(const Size& newSize)
-{
-    const auto width = newSize.Width;
-    const auto height = newSize.Height;
-
-    _CreateRowColDefinitions();
-
-    if (_splitState == SplitState::Vertical)
-    {
-        const auto paneSizes = _CalcChildrenSizes(width);
-
-        const Size firstSize{ paneSizes.first, height };
-        const Size secondSize{ paneSizes.second, height };
-        _firstChild->ResizeContent(firstSize);
-        _secondChild->ResizeContent(secondSize);
-    }
-    else if (_splitState == SplitState::Horizontal)
-    {
-        const auto paneSizes = _CalcChildrenSizes(height);
-
-        const Size firstSize{ width, paneSizes.first };
-        const Size secondSize{ width, paneSizes.second };
-        _firstChild->ResizeContent(firstSize);
-        _secondChild->ResizeContent(secondSize);
-    }
-}
-
-// Method Description:
-// - Recalculates and reapplies sizes of all descendant panes.
-// Arguments:
-// - <none>
-// Return Value:
-// - <none>
-void Pane::Relayout()
-{
-    ResizeContent(_root.ActualSize());
-}
-
-// Method Description:
 // - Adjust our child percentages to increase the size of one of our children
 //   and decrease the size of the other.
 // - Adjusts the separation amount by 5%
@@ -355,7 +307,7 @@ bool Pane::_Resize(const ResizeDirection& direction)
     _desiredSplitPosition = _ClampSplitPosition(changeWidth, _desiredSplitPosition - amount, actualDimension);
 
     // Resize our columns to match the new percentages.
-    ResizeContent(actualSize);
+    _CreateRowColDefinitions();
 
     return true;
 }
@@ -496,16 +448,8 @@ std::shared_ptr<Pane> Pane::NavigateDirection(const std::shared_ptr<Pane> source
     // Fixed movement
     if (direction == FocusDirection::First)
     {
-        std::shared_ptr<Pane> firstPane = nullptr;
-        WalkTree([&](auto p) {
-            if (p->_IsLeaf())
-            {
-                firstPane = p;
-                return true;
-            }
-
-            return false;
-        });
+        // Just get the first leaf pane.
+        auto firstPane = _FindPane([](const auto& p) { return p->_IsLeaf(); });
 
         // Don't need to do any movement if we are the source and target pane.
         if (firstPane == sourcePane)
@@ -662,22 +606,9 @@ std::shared_ptr<Pane> Pane::PreviousPane(const std::shared_ptr<Pane> targetPane)
 // - the parent of `pane` if pane is in this tree.
 std::shared_ptr<Pane> Pane::_FindParentOfPane(const std::shared_ptr<Pane> pane)
 {
-    if (_IsLeaf())
-    {
-        return nullptr;
-    }
-
-    if (_firstChild == pane || _secondChild == pane)
-    {
-        return shared_from_this();
-    }
-
-    if (auto p = _firstChild->_FindParentOfPane(pane))
-    {
-        return p;
-    }
-
-    return _secondChild->_FindParentOfPane(pane);
+    return _FindPane([&](const auto& p) {
+        return p->_firstChild == pane || p->_secondChild == pane;
+    });
 }
 
 // Method Description:
@@ -805,23 +736,15 @@ bool Pane::SwapPanes(std::shared_ptr<Pane> first, std::shared_ptr<Pane> second)
         }
 
         // Refocus the last pane if there was a pane focused
-        first->WalkTree([](auto p) {
-            if (p->_lastActive)
-            {
-                p->_Focus();
-                return true;
-            }
-            return false;
-        });
+        if (const auto focus = first->GetActivePane())
+        {
+            focus->_Focus();
+        }
 
-        second->WalkTree([](auto p) {
-            if (p->_lastActive)
-            {
-                p->_Focus();
-                return true;
-            }
-            return false;
-        });
+        if (const auto focus = second->GetActivePane())
+        {
+            focus->_Focus();
+        }
 
         return true;
     }
@@ -1227,21 +1150,7 @@ Controls::Grid Pane::GetRootElement()
 //   `_lastActive`, else returns this
 std::shared_ptr<Pane> Pane::GetActivePane()
 {
-    if (_lastActive)
-    {
-        return shared_from_this();
-    }
-    if (_IsLeaf())
-    {
-        return nullptr;
-    }
-
-    auto firstFocused = _firstChild->GetActivePane();
-    if (firstFocused != nullptr)
-    {
-        return firstFocused;
-    }
-    return _secondChild->GetActivePane();
+    return _FindPane([](const auto& p) { return p->_lastActive; });
 }
 
 // Method Description:
@@ -1474,18 +1383,10 @@ std::shared_ptr<Pane> Pane::AttachPane(std::shared_ptr<Pane> pane, SplitDirectio
 
     // If the new pane has a child that was the focus, re-focus it
     // to steal focus from the currently focused pane.
-    if (pane->_HasFocusedChild())
+    if (const auto focus = pane->GetActivePane())
     {
-        pane->WalkTree([](auto p) {
-            if (p->_lastActive)
-            {
-                p->_Focus();
-                return true;
-            }
-            return false;
-        });
+        focus->_Focus();
     }
-
     return first;
 }
 
@@ -1527,7 +1428,6 @@ std::shared_ptr<Pane> Pane::DetachPane(std::shared_ptr<Pane> pane)
         // Trigger the detached event on each child
         detached->WalkTree([](auto pane) {
             pane->_DetachedHandlers(pane);
-            return false;
         });
 
         return detached;
@@ -1616,7 +1516,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
                 }
-                return false;
             });
         }
 
@@ -1706,7 +1605,6 @@ void Pane::_CloseChild(const bool closeFirst, const bool isDetaching)
                     p->_control.ConnectionStateChanged(p->_connectionStateChangedToken);
                     p->_control.WarningBell(p->_warningBellToken);
                 }
-                return false;
             });
         }
 
@@ -2254,7 +2152,7 @@ void Pane::_SetupEntranceAnimation()
 //   tree, we'll reduce the size passed to each subsequent recursive call. The
 //   size passed to this method represents how much space this Pane _will_ have
 //   to use.
-//   * If this pane is a leaf, and it's the pane we're looking for, use the
+//   * If this pane is the pane we're looking for, use the
 //     available space to calculate which direction to split in.
 //   * If this pane is _any other leaf_, then just return nullopt, to indicate
 //     that the `target` Pane is not down this branch.
@@ -2265,22 +2163,26 @@ void Pane::_SetupEntranceAnimation()
 // - splitType: The direction we're attempting to split in.
 // - availableSpace: The theoretical space that's available for this pane to be able to split.
 // Return Value:
-// - nullopt if `target` is not this pane or a child of this pane, otherwise
-//   true iff we could split this pane, given `availableSpace`
-// Note:
-// - This method is highly similar to Pane::PreCalculateAutoSplit
-std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                               SplitDirection splitType,
-                                               const float splitSize,
-                                               const winrt::Windows::Foundation::Size availableSpace) const
+// - nullopt if the target is not found, or if there is not enough space to fit.
+//   Otherwise will return the "real split direction" (converting automatic splits),
+//   and will return either the split direction or nullopt.
+std::optional<std::optional<SplitDirection>> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                                                        SplitDirection splitType,
+                                                                        const float splitSize,
+                                                                        const winrt::Windows::Foundation::Size availableSpace) const
 {
     if (target.get() == this)
     {
         const auto firstPercent = 1.0f - splitSize;
         const auto secondPercent = splitSize;
-        // If this pane is a leaf, and it's the pane we're looking for, use
+        // If this pane is the pane we're looking for, use
         // the available space to calculate which direction to split in.
         const Size minSize = _GetMinSize();
+
+        if (splitType == SplitDirection::Automatic)
+        {
+            splitType = availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
+        }
 
         if (splitType == SplitDirection::Left || splitType == SplitDirection::Right)
         {
@@ -2288,7 +2190,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             const auto newFirstWidth = widthMinusSeparator * firstPercent;
             const auto newSecondWidth = widthMinusSeparator * secondPercent;
 
-            return { newFirstWidth > minSize.Width && newSecondWidth > minSize.Width };
+            return newFirstWidth > minSize.Width && newSecondWidth > minSize.Width ? std::optional{ splitType } : std::nullopt;
         }
 
         else if (splitType == SplitDirection::Up || splitType == SplitDirection::Down)
@@ -2297,7 +2199,7 @@ std::optional<bool> Pane::PreCalculateCanSplit(const std::shared_ptr<Pane> targe
             const auto newFirstHeight = heightMinusSeparator * firstPercent;
             const auto newSecondHeight = heightMinusSeparator * secondPercent;
 
-            return { newFirstHeight > minSize.Height && newSecondHeight > minSize.Height };
+            return newFirstHeight > minSize.Height && newSecondHeight > minSize.Height ? std::optional{ splitType } : std::nullopt;
         }
     }
     else if (_IsLeaf())
@@ -2630,24 +2532,19 @@ void Pane::Id(uint32_t id) noexcept
 bool Pane::FocusPane(const uint32_t id)
 {
     // Always clear the parent child path if we are focusing a leaf
-    _parentChildPath.reset();
-    if (_IsLeaf() && id == _id)
-    {
-        // Make sure to use _FocusFirstChild here - that'll properly update the
-        // focus if we're in startup.
-        _FocusFirstChild();
-        return true;
-    }
-    else
-    {
-        if (_firstChild && _secondChild)
+    return WalkTree([=](auto p) {
+        p->_parentChildPath.reset();
+        if (p->_id == id)
         {
-            return _firstChild->FocusPane(id) ||
-                   _secondChild->FocusPane(id);
+            // Make sure to use _FocusFirstChild here - that'll properly update the
+            // focus if we're in startup.
+            p->_FocusFirstChild();
+            return true;
         }
-    }
-    return false;
+        return false;
+    });
 }
+
 // Method Description:
 // - Focuses the given pane if it is in the tree.
 // - This is different than FocusPane(id) in that it allows focusing
@@ -2658,22 +2555,16 @@ bool Pane::FocusPane(const uint32_t id)
 // - true if focus was set
 bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 {
-    if (this == pane.get())
-    {
-        _Focus();
-        return true;
-    }
-    else
-    {
-        // clear the parent child path if we are not the pane being focused.
-        _parentChildPath.reset();
-        if (_firstChild && _secondChild)
+    return WalkTree([&](auto p) {
+        if (p == pane)
         {
-            return _firstChild->FocusPane(pane) ||
-                   _secondChild->FocusPane(pane);
+            p->_Focus();
+            return true;
         }
-    }
-    return false;
+        // clear the parent child path if we are not the pane being focused.
+        p->_parentChildPath.reset();
+        return false;
+    });
 }
 
 // Method Description:
@@ -2684,17 +2575,14 @@ bool Pane::FocusPane(const std::shared_ptr<Pane> pane)
 // - true if the child was found.
 bool Pane::_HasChild(const std::shared_ptr<Pane> child)
 {
-    if (_IsLeaf())
+    if (child == nullptr)
     {
         return false;
     }
 
-    if (_firstChild == child || _secondChild == child)
-    {
-        return true;
-    }
-
-    return _firstChild->_HasChild(child) || _secondChild->_HasChild(child);
+    return WalkTree([&](const auto& p) {
+        return p->_firstChild == child || p->_secondChild == child;
+    });
 }
 
 // Method Description:
@@ -2705,26 +2593,7 @@ bool Pane::_HasChild(const std::shared_ptr<Pane> child)
 // - A pointer to the pane with the given ID, if found.
 std::shared_ptr<Pane> Pane::FindPane(const uint32_t id)
 {
-    if (_IsLeaf())
-    {
-        if (id == _id)
-        {
-            return shared_from_this();
-        }
-    }
-    else
-    {
-        if (auto pane = _firstChild->FindPane(id))
-        {
-            return pane;
-        }
-        if (auto pane = _secondChild->FindPane(id))
-        {
-            return pane;
-        }
-    }
-
-    return nullptr;
+    return _FindPane([=](const auto& p) { return p->_IsLeaf() && p->_id == id; });
 }
 
 // Method Description:
@@ -3160,68 +3029,6 @@ void Pane::_SetupResources()
 int Pane::GetLeafPaneCount() const noexcept
 {
     return _IsLeaf() ? 1 : (_firstChild->GetLeafPaneCount() + _secondChild->GetLeafPaneCount());
-}
-
-// Method Description:
-// - This is a helper to determine which direction an "Automatic" split should
-//   happen in for a given pane, but without using the ActualWidth() and
-//   ActualHeight() methods. This is used during the initialization of the
-//   Terminal, when we could be processing many "split-pane" commands _before_
-//   we've ever laid out the Terminal for the first time. When this happens, the
-//   Pane's don't have an actual size yet. However, we'd still like to figure
-//   out how to do an "auto" split when these Panes are all laid out.
-// - This method assumes that the Pane we're attempting to split is `target`,
-//   and this method should be called on the root of a tree of Panes.
-// - We'll walk down the tree attempting to find `target`. As we traverse the
-//   tree, we'll reduce the size passed to each subsequent recursive call. The
-//   size passed to this method represents how much space this Pane _will_ have
-//   to use.
-//   * If this pane is a leaf, and it's the pane we're looking for, use the
-//     available space to calculate which direction to split in.
-//   * If this pane is _any other leaf_, then just return nullopt, to indicate
-//     that the `target` Pane is not down this branch.
-//   * If this pane is a parent, calculate how much space our children will be
-//     able to use, and recurse into them.
-// Arguments:
-// - target: The Pane we're attempting to split.
-// - availableSpace: The theoretical space that's available for this pane to be able to split.
-// Return Value:
-// - nullopt if `target` is not this pane or a child of this pane, otherwise the
-//   SplitDirection that `target` would use for an `Automatic` split given
-//   `availableSpace`
-std::optional<SplitDirection> Pane::PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                          const winrt::Windows::Foundation::Size availableSpace) const
-{
-    if (target.get() == this)
-    {
-        // If this pane is the pane we are looking for, use the available space
-        // to calculate which direction to split in.
-        return availableSpace.Width > availableSpace.Height ? SplitDirection::Right : SplitDirection::Down;
-    }
-    else if (_IsLeaf())
-    {
-        // If this pane is _any other leaf_, then just return nullopt, to
-        // indicate that the `target` Pane is not down this branch.
-        return std::nullopt;
-    }
-    else
-    {
-        // If this pane is a parent, calculate how much space our children will
-        // be able to use, and recurse into them.
-
-        const bool isVerticalSplit = _splitState == SplitState::Vertical;
-        const float firstWidth = isVerticalSplit ? (availableSpace.Width * _desiredSplitPosition) : availableSpace.Width;
-        const float secondWidth = isVerticalSplit ? (availableSpace.Width - firstWidth) : availableSpace.Width;
-        const float firstHeight = !isVerticalSplit ? (availableSpace.Height * _desiredSplitPosition) : availableSpace.Height;
-        const float secondHeight = !isVerticalSplit ? (availableSpace.Height - firstHeight) : availableSpace.Height;
-
-        const auto firstResult = _firstChild->PreCalculateAutoSplit(target, { firstWidth, firstHeight });
-        return firstResult.has_value() ? firstResult : _secondChild->PreCalculateAutoSplit(target, { secondWidth, secondHeight });
-    }
-
-    // We should not possibly be getting here - both the above branches should
-    // return a value.
-    FAIL_FAST();
 }
 
 // Method Description:

@@ -49,12 +49,10 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget ActivateBellIndicatorTimer();
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-        winrt::Microsoft::Terminal::Settings::Model::SplitDirection PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
-        bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                                  const float splitSize,
-                                  winrt::Windows::Foundation::Size availableSpace) const;
+        std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                                                                                        const float splitSize,
+                                                                                                        winrt::Windows::Foundation::Size availableSpace) const;
 
-        void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
@@ -122,7 +120,6 @@ namespace winrt::TerminalApp::implementation
         struct ControlEventTokens
         {
             winrt::event_token titleToken;
-            winrt::event_token fontToken;
             winrt::event_token colorToken;
             winrt::event_token taskbarToken;
             winrt::event_token readOnlyToken;

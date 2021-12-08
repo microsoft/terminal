@@ -96,8 +96,6 @@ public:
 
     void UpdateSettings(const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& settings,
                         const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
-    void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
-    void Relayout();
     bool ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
     std::shared_ptr<Pane> NavigateDirection(const std::shared_ptr<Pane> sourcePane,
                                             const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction,
@@ -112,12 +110,10 @@ public:
                                                                   std::shared_ptr<Pane> pane);
     bool ToggleSplitOrientation();
     float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateAutoSplit(const std::shared_ptr<Pane> target,
-                                                                                                     const winrt::Windows::Foundation::Size parentSize) const;
-    std::optional<bool> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
-                                             winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                                             const float splitSize,
-                                             const winrt::Windows::Foundation::Size availableSpace) const;
+    std::optional<std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection>> PreCalculateCanSplit(const std::shared_ptr<Pane> target,
+                                                                                                                   winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                                                                                                   const float splitSize,
+                                                                                                                   const winrt::Windows::Foundation::Size availableSpace) const;
     void Shutdown();
     void Close();
 
@@ -140,14 +136,15 @@ public:
 
     // Method Description:
     // - A helper method for ad-hoc recursion on a pane tree. Walks the pane
-    //   tree, calling a predicate on each pane in a depth-first pattern.
-    // - If the predicate returns true, recursion is stopped early.
+    //   tree, calling a function on each pane in a depth-first pattern.
+    // - If that function returns void, then it will be called on every pane.
+    // - Otherwise, iteration will continue until a value with operator bool
+    //   returns true.
     // Arguments:
     // - f: The function to be applied to each pane.
     // Return Value:
-    // - true if the predicate returned true on any pane.
+    // - The value of the function applied on a Pane
     template<typename F>
-    //requires std::predicate<F, std::shared_ptr<Pane>>
     auto WalkTree(F f) -> decltype(f(shared_from_this()))
     {
         using R = std::invoke_result_t<F, std::shared_ptr<Pane>>;
@@ -164,18 +161,34 @@ public:
         }
         else
         {
-            if (f(shared_from_this()))
+            if (const auto res = f(shared_from_this()))
             {
-                return true;
+                return res;
             }
 
             if (!_IsLeaf())
             {
-                return _firstChild->WalkTree(f) || _secondChild->WalkTree(f);
+                if (const auto res = _firstChild->WalkTree(f))
+                {
+                    return res;
+                }
+                return _secondChild->WalkTree(f);
             }
 
-            return false;
+            return R{};
         }
+    }
+
+    template<typename F>
+    std::shared_ptr<Pane> _FindPane(F f)
+    {
+        return WalkTree([f](const auto& pane) -> std::shared_ptr<Pane> {
+            if (f(pane))
+            {
+                return pane;
+            }
+            return nullptr;
+        });
     }
 
     void CollectTaskbarStates(std::vector<winrt::TerminalApp::TaskbarState>& states);
@@ -278,8 +291,6 @@ private:
     float _ClampSplitPosition(const bool widthOrHeight, const float requestedValue, const float totalSize) const;
 
     SplitState _convertAutomaticOrDirectionalSplitState(const winrt::Microsoft::Terminal::Settings::Model::SplitDirection& splitType) const;
-
-    std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> _preCalculateAutoSplit(const std::shared_ptr<Pane> target, const winrt::Windows::Foundation::Size parentSize) const;
 
     // Function Description:
     // - Returns true if the given direction can be used with the given split

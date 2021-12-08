@@ -44,8 +44,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _activePane = pane;
             }
-
-            return false;
         });
 
         // In case none of the panes were already marked as the focus, just
@@ -206,7 +204,6 @@ namespace winrt::TerminalApp::implementation
             {
                 _AttachEventHandlersToControl(pane->Id().value(), control);
             }
-            return false;
         });
     }
 
@@ -584,7 +581,6 @@ namespace winrt::TerminalApp::implementation
         auto p = _rootPane;
         p->WalkTree([](auto pane) {
             pane->_DetachedHandlers(pane);
-            return false;
         });
 
         // Clean up references and close the tab
@@ -612,13 +608,9 @@ namespace winrt::TerminalApp::implementation
             if (p->_IsLeaf())
             {
                 p->Id(_nextPaneId);
+                _AttachEventHandlersToControl(p->Id().value(), p->_control);
                 _nextPaneId++;
             }
-            if (auto control = p->GetTerminalControl())
-            {
-                _AttachEventHandlersToControl(p->Id().value(), control);
-            }
-            return false;
         });
 
         // pass the old id to the new child
@@ -639,14 +631,10 @@ namespace winrt::TerminalApp::implementation
         _AttachEventHandlersToPane(first);
 
         // Make sure that we have the right pane set as the active pane
-        pane->WalkTree([&](auto p) {
-            if (p->_lastActive)
-            {
-                _UpdateActivePane(p);
-                return true;
-            }
-            return false;
-        });
+        if (const auto focus = pane->GetActivePane())
+        {
+            _UpdateActivePane(focus);
+        }
     }
 
     // Method Description:
@@ -664,20 +652,6 @@ namespace winrt::TerminalApp::implementation
     float TerminalTab::CalcSnappedDimension(const bool widthOrHeight, const float dimension) const
     {
         return _rootPane->CalcSnappedDimension(widthOrHeight, dimension);
-    }
-
-    // Method Description:
-    // - Update the size of our panes to fill the new given size. This happens when
-    //   the window is resized.
-    // Arguments:
-    // - newSize: the amount of space that the panes have to fill now.
-    // Return Value:
-    // - <none>
-    void TerminalTab::ResizeContent(const winrt::Windows::Foundation::Size& newSize)
-    {
-        // NOTE: This _must_ be called on the root pane, so that it can propagate
-        // throughout the entire tree.
-        _rootPane->ResizeContent(newSize);
     }
 
     // Method Description:
@@ -833,7 +807,6 @@ namespace winrt::TerminalApp::implementation
             auto& events = it->second;
 
             control.TitleChanged(events.titleToken);
-            control.FontSizeChanged(events.fontToken);
             control.TabColorChanged(events.colorToken);
             control.SetTaskbarProgress(events.taskbarToken);
             control.ReadOnlyChanged(events.readOnlyToken);
@@ -867,20 +840,6 @@ namespace winrt::TerminalApp::implementation
                 // The title of the control changed, but not necessarily the title of the tab.
                 // Set the tab's text to the active panes' text.
                 tab->UpdateTitle();
-            }
-        });
-
-        // This is called when the terminal changes its font size or sets it for the first
-        // time (because when we just create terminal via its ctor it has invalid font size).
-        // On the latter event, we tell the root pane to resize itself so that its descendants
-        // (including ourself) can properly snap to character grids. In future, we may also
-        // want to do that on regular font changes.
-        events.fontToken = control.FontSizeChanged([this](const int /* fontWidth */,
-                                                          const int /* fontHeight */,
-                                                          const bool isInitialChange) {
-            if (isInitialChange)
-            {
-                _rootPane->Relayout();
             }
         });
 
@@ -1582,25 +1541,20 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - This is a helper to determine which direction an "Automatic" split should
-    //   happen in for the active pane of this tab, but without using the ActualWidth() and
-    //   ActualHeight() methods.
-    // - See Pane::PreCalculateAutoSplit
+    // - Calculate if a split is possible with the given direction and size.
+    // - Converts Automatic splits to an appropriate direction depending on space.
     // Arguments:
-    // - availableSpace: The theoretical space that's available for this Tab's content
-    // Return Value:
-    // - The SplitDirection that we should use for an `Automatic` split given
-    //   `availableSpace`
-    SplitDirection TerminalTab::PreCalculateAutoSplit(winrt::Windows::Foundation::Size availableSpace) const
+    // - splitType: what direction to split.
+    // - splitSize: how big the new split should be.
+    // - availableSpace: how much space there is to work with.
+    // Return value:
+    // - This will return nullopt if a split of the given size/direction was not possible,
+    //   or it will return the split direction with automatic converted to a cardinal direction.
+    std::optional<SplitDirection> TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
+                                                                    const float splitSize,
+                                                                    winrt::Windows::Foundation::Size availableSpace) const
     {
-        return _rootPane->PreCalculateAutoSplit(_activePane, availableSpace).value_or(SplitDirection::Right);
-    }
-
-    bool TerminalTab::PreCalculateCanSplit(SplitDirection splitType,
-                                           const float splitSize,
-                                           winrt::Windows::Foundation::Size availableSpace) const
-    {
-        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(false);
+        return _rootPane->PreCalculateCanSplit(_activePane, splitType, splitSize, availableSpace).value_or(std::nullopt);
     }
 
     // Method Description:
