@@ -34,15 +34,6 @@ namespace til
     };
 
     template<>
-    struct hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs>
-    {
-        void operator()(hasher& h, const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& value) const noexcept
-        {
-            h.write(winrt::get_abi(value));
-        }
-    };
-
-    template<>
     struct hash_trait<winrt::hstring>
     {
         void operator()(hasher& h, const winrt::hstring& value) const noexcept

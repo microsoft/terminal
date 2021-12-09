@@ -303,9 +303,14 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_ColorScheme = _ColorScheme;
             return *copy;
         }
-        size_t Hash(uint64_t hasherState) const
+        size_t Hash() const
         {
-            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            til::hasher h;
+            Hash(h);
+            return h.finalize();
+        }
+        void Hash(til::hasher& h) const
+        {
             h.write(Commandline());
             h.write(StartingDirectory());
             h.write(TabTitle());
@@ -314,10 +319,27 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             h.write(Profile());
             h.write(SuppressApplicationTitle());
             h.write(ColorScheme());
-            return h.finalize();
         }
     };
+}
 
+template<>
+struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs>
+{
+    using M = winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs;
+    using I = winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs;
+
+    void operator()(hasher& h, const M& value) const noexcept
+    {
+        if (value)
+        {
+            winrt::get_self<I>(value)->Hash(h);
+        }
+    }
+};
+
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+{
     // New Tabs, Panes, and Windows all use NewTerminalArgs, which is more
     // complicated and doesn't play nice with the macro. So those we'll still
     // have to define manually.
@@ -363,9 +385,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
-        size_t Hash(uint64_t hasherState) const
+        size_t Hash() const
         {
-            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            til::hasher h;
             h.write(TerminalArgs());
             return h.finalize();
         }
@@ -449,9 +471,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_SplitSize = _SplitSize;
             return *copy;
         }
-        size_t Hash(uint64_t hasherState) const
+        size_t Hash() const
         {
-            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            til::hasher h;
             h.write(SplitDirection());
             h.write(TerminalArgs());
             h.write(SplitMode());
@@ -501,9 +523,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_TerminalArgs = _TerminalArgs.Copy();
             return *copy;
         }
-        size_t Hash(uint64_t hasherState) const
+        size_t Hash() const
         {
-            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            til::hasher h;
             h.write(TerminalArgs());
             return h.finalize();
         }
@@ -622,9 +644,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             copy->_Actions = _Actions;
             return *copy;
         }
-        size_t Hash(uint64_t hasherState) const
+        size_t Hash() const
         {
-            til::hasher h{ gsl::narrow_cast<size_t>(hasherState) };
+            til::hasher h;
             h.write(winrt::get_abi(_Actions));
             return h.finalize();
         }
