@@ -152,6 +152,7 @@ jobs:
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln
+      condition: false
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
@@ -299,7 +300,7 @@ jobs:
       result: PoliCheck.xml
       optionsFC: 1
       optionsXS: 1
-      optionsUEPath: build/config/PolicheckExclusions.xml
+      optionsUEPath: $(Build.SourcesDirectory)\build\config\PolicheckExclusions.xml
       optionsHMENABLE: 0
     continueOnError: true
 
