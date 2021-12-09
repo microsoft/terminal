@@ -331,7 +331,7 @@ jobs:
         # Overrides default build sources directory
         sourceTargetOverrideAll: $(Build.SourcesDirectory)
         # Overrides default build binaries directory when "Scan all" option is specified
-        binariesTargetOverrideAll: $(Build.SourcesDirectory)\bin\$(BuildPlatform)\$(BuildConfiguration)
+        binariesTargetOverrideAll: $(Build.SourcesDirectory)\bin
   
         # Set the tools to false if they should not run in the build
         tools:

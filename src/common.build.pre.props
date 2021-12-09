@@ -171,7 +171,7 @@
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalOptions>/debugtype:cv,fixup /guard:xfg %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/debugtype:cv,fixup /guard:cf,xfg %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
 
