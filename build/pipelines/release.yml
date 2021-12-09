@@ -152,7 +152,7 @@ jobs:
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln
-      condition: false
+      condition: true
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
@@ -291,7 +291,6 @@ jobs:
   #       **\*.nativecodeanalysis.xml
   #     TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
 
-
   - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@2
     displayName: 'Run PoliCheck'
     inputs:
@@ -337,7 +336,7 @@ jobs:
         # Set the tools to false if they should not run in the build
         tools:
             - toolName: CheckCFlags
-              enable: false
+              enable: true
             - toolName: CFGCheck
               enable: true
             - toolName: Policheck
@@ -345,7 +344,7 @@ jobs:
             - toolName: CredScan
               enable: false
             - toolName: XFGCheck
-              enable: false
+              enable: true
 
 # - ${{ if eq(parameters.buildTerminal, true) }}:
 #   - job: BundleAndSign
