@@ -291,25 +291,25 @@ jobs:
   #     TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
 
 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@2
-    displayName: 'Run PoliCheck'
-    inputs:
-      targetType: F
-      targetArgument: $(Build.SourcesDirectory)
-      result: PoliCheck.xml
-      optionsFC: 1
-      optionsXS: 1
-      optionsHMENABLE: 0
-    continueOnError: true
+  # - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@2
+  #   displayName: 'Run PoliCheck'
+  #   inputs:
+  #     targetType: F
+  #     targetArgument: $(Build.SourcesDirectory)
+  #     result: PoliCheck.xml
+  #     optionsFC: 1
+  #     optionsXS: 1
+  #     optionsHMENABLE: 0
+  #   continueOnError: true
 
-  - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
-    displayName: 'Run CredScan'
-    inputs:
-      outputFormat: pre
-      # suppressionsFile: LocalSuppressions.json
-      batchSize: 20
-      debugMode: false
-    continueOnError: true
+  # - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
+  #   displayName: 'Run CredScan'
+  #   inputs:
+  #     outputFormat: pre
+  #     # suppressionsFile: LocalSuppressions.json
+  #     batchSize: 20
+  #     debugMode: false
+  #   continueOnError: true
  
   # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
   - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
@@ -330,12 +330,12 @@ jobs:
         # Overrides default build sources directory
         sourceTargetOverrideAll: $(Build.SourcesDirectory)
         # Overrides default build binaries directory when "Scan all" option is specified
-        binariesTargetOverrideAll: $(Build.SourcesDirectory)\bin
+        binariesTargetOverrideAll: $(Build.SourcesDirectory)\bin\$(BuildPlatform)\$(BuildConfiguration)
   
         # Set the tools to false if they should not run in the build
         tools:
             - toolName: CheckCFlags
-              enable: true
+              enable: false
             - toolName: CFGCheck
               enable: true
             - toolName: Policheck
@@ -343,7 +343,7 @@ jobs:
             - toolName: CredScan
               enable: false
             - toolName: XFGCheck
-              enable: true
+              enable: false
 
 # - ${{ if eq(parameters.buildTerminal, true) }}:
 #   - job: BundleAndSign
