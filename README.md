@@ -339,7 +339,9 @@ Solution Explorer) and go to properties. In the Debug menu, change "Application
 process" and "Background task process" to "Native Only".
 
 You should then be able to build & debug the Terminal project by hitting
-<kbd>F5</kbd>.
+<kbd>F5</kbd>. Make sure to select either the "x64" or the "x86" platform - the
+Terminal doesn't build for "Any Cpu" (because the Terminal is a C++ application,
+not a C# one).
 
 > 👉 You will _not_ be able to launch the Terminal directly by running the
 > WindowsTerminal.exe. For more details on why, see
