@@ -237,6 +237,10 @@ jobs:
         TargetFolder: $(Build.ArtifactStagingDirectory)/appx
         OverWrite: true
         flattenFolders: true
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOM manifest'
+      inputs:
+       BuildDropPath: '$(System.ArtifactsDirectory)/appx'
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (appx)
       inputs:
