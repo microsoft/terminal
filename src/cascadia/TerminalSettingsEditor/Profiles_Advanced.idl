@@ -1,0 +1,24 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
+
+import "Profiles.idl";
+
+namespace Microsoft.Terminal.Settings.Editor
+{
+    [default_interface] runtimeclass Profiles_Advanced : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
+    {
+        Profiles_Advanced();
+        ProfilePageNavigationState State { get; };
+
+        Boolean IsBellStyleFlagSet(UInt32 flag);
+        void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
+        void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
+
+        IInspectable CurrentAntiAliasingMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
+
+        IInspectable CurrentCloseOnExitMode;
+        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CloseOnExitModeList { get; };
+    }
+}

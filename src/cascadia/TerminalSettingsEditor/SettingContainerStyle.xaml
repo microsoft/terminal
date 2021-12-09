@@ -18,6 +18,9 @@
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{StaticResource SystemBaseMediumColor}" />
+            <Color x:Key="CardStrokeColorDefault">#0F000000</Color>
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -25,6 +28,7 @@
             <!--  Do not mess with the foreground color for High Contrast. Let it ride as is.  -->
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{ThemeResource SystemColorWindowTextColor}" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="SystemColorButtonTextColorBrush" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -33,6 +37,9 @@
             </Style>
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{StaticResource SystemBaseMediumColor}" />
+            <Color x:Key="CardStrokeColorDefault">#19000000</Color>
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -67,7 +74,7 @@
         <Setter Property="BorderThickness" Value="{ThemeResource ExpanderHeaderBorderThickness}" />
         <Setter Property="BorderBrush" Value="{ThemeResource ExpanderHeaderBorderBrush}" />
         <Setter Property="Padding" Value="16,0,8,0" />
-        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
     </Style>
 
@@ -88,7 +95,8 @@
     </Style>
 
     <Style TargetType="local:SettingContainer">
-        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Margin" Value="0,4,8,0" />
+            <Setter Property="IsTabStop" Value="False" />
         <Setter Property="MaxWidth" Value="1000" />
         <Setter Property="Template">
             <Setter.Value>
