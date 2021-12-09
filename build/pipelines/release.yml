@@ -291,16 +291,17 @@ jobs:
   #     TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
 
 
-  # - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@2
-  #   displayName: 'Run PoliCheck'
-  #   inputs:
-  #     targetType: F
-  #     targetArgument: $(Build.SourcesDirectory)
-  #     result: PoliCheck.xml
-  #     optionsFC: 1
-  #     optionsXS: 1
-  #     optionsHMENABLE: 0
-  #   continueOnError: true
+  - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@2
+    displayName: 'Run PoliCheck'
+    inputs:
+      targetType: F
+      targetArgument: $(Build.SourcesDirectory)
+      result: PoliCheck.xml
+      optionsFC: 1
+      optionsXS: 1
+      optionsUEPath: build/config/PolicheckExclusions.xml
+      optionsHMENABLE: 0
+    continueOnError: true
 
   # - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
   #   displayName: 'Run CredScan'
