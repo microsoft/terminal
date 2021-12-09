@@ -57,7 +57,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT UpdateDpi(const int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, const int iDpi) noexcept override;
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 

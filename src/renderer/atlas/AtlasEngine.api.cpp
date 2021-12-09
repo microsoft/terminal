@@ -232,7 +232,7 @@ try
 }
 CATCH_RETURN()
 
-[[nodiscard]] HRESULT AtlasEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT AtlasEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     area = gsl::span{ &_api.dirtyRect, 1 };
     return S_OK;

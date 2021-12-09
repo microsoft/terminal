@@ -516,8 +516,8 @@ std::wstring Terminal::GetHyperlinkAtPosition(const COORD position)
         const auto end = result->stop;
         std::wstring uri;
 
-        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start));
-        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end));
+        const auto startIter = _buffer->GetCellDataAt(_ConvertToBufferCell(start.to_win32_coord()));
+        const auto endIter = _buffer->GetCellDataAt(_ConvertToBufferCell(end.to_win32_coord()));
         for (auto iter = startIter; iter != endIter; ++iter)
         {
             uri += iter->Chars();
@@ -546,7 +546,7 @@ uint16_t Terminal::GetHyperlinkIdAtPosition(const COORD position)
 // - The interval representing the start and end coordinates
 std::optional<PointTree::interval> Terminal::GetHyperlinkIntervalFromPosition(const COORD position)
 {
-    const auto results = _patternIntervalTree.findOverlapping(COORD{ position.X + 1, position.Y }, position);
+    const auto results = _patternIntervalTree.findOverlapping(til::point{ position.X + 1, position.Y }, til::point{ position });
     if (results.size() > 0)
     {
         for (const auto& result : results)
@@ -716,8 +716,8 @@ void Terminal::_InvalidatePatternTree(interval_tree::IntervalTree<til::point, si
 {
     const auto vis = _VisibleStartIndex();
     auto invalidate = [=](const PointTree::interval& interval) {
-        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x()), gsl::narrow<SHORT>(interval.start.y() + vis) };
-        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x()), gsl::narrow<SHORT>(interval.stop.y() + vis) };
+        COORD startCoord{ gsl::narrow<SHORT>(interval.start.x), gsl::narrow<SHORT>(interval.start.y + vis) };
+        COORD endCoord{ gsl::narrow<SHORT>(interval.stop.x), gsl::narrow<SHORT>(interval.stop.y + vis) };
         _InvalidateFromCoords(startCoord, endCoord);
     };
     tree.visit_all(invalidate);
@@ -739,18 +739,18 @@ void Terminal::_InvalidateFromCoords(const COORD start, const COORD end)
         const auto rowSize = gsl::narrow<SHORT>(_buffer->GetRowByOffset(0).size());
 
         // invalidate the first line
-        SMALL_RECT region{ start.X, start.Y, rowSize - 1, start.Y };
+        SMALL_RECT region{ start.X, start.Y, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(start.Y) };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
 
         if ((end.Y - start.Y) > 1)
         {
             // invalidate the lines in between the first and last line
-            region = til::rectangle(0, start.Y + 1, rowSize - 1, end.Y - 1);
+            region = SMALL_RECT{ 0, start.Y + 1, gsl::narrow<short>(rowSize - 1), gsl::narrow<short>(end.Y - 1) };
             _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
         }
 
         // invalidate the last line
-        region = til::rectangle(0, end.Y, end.X, end.Y);
+        region = SMALL_RECT{ 0, end.Y, end.X, end.Y };
         _buffer->GetRenderTarget().TriggerRedraw(Viewport::FromInclusive(region));
     }
 }
@@ -1105,7 +1105,7 @@ void Terminal::_AdjustCursorPosition(const COORD proposedPosition)
         // We have to report the delta here because we might have circled the text buffer.
         // That didn't change the viewport and therefore the TriggerScroll(void)
         // method can't detect the delta on its own.
-        COORD delta{ 0, -rowsPushedOffTopOfBuffer };
+        COORD delta{ 0, gsl::narrow_cast<short>(-rowsPushedOffTopOfBuffer) };
         _buffer->GetRenderTarget().TriggerScroll(&delta);
     }
 

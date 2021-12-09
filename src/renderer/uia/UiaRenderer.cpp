@@ -440,11 +440,11 @@ void UiaEngine::WaitUntilCanRender() noexcept
 // - area - Rectangle describing dirty area in characters.
 // Return Value:
 // - S_OK.
-[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT UiaEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     // Magic static is only valid because any instance of this object has the same behavior.
     // Use member variable instead if this ever changes.
-    const static til::rectangle empty;
+    const static til::rect empty;
     area = { &empty, 1 };
     return S_OK;
 }

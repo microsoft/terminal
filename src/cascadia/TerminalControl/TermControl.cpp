@@ -1129,7 +1129,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             const auto contactRect = point.Properties().ContactRect();
             auto anchor = til::point{ til::math::rounding, contactRect.X, contactRect.Y };
-            _interactivity.TouchPressed(anchor);
+            _interactivity.TouchPressed(anchor.to_core_point());
         }
         else
         {
@@ -1138,7 +1138,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                           TermControl::GetPointerUpdateKind(point),
                                           point.Timestamp(),
                                           ControlKeyStates{ args.KeyModifiers() },
-                                          _toTerminalOrigin(cursorPosition));
+                                          _toTerminalOrigin(cursorPosition).to_core_point());
         }
 
         args.Handled(true);
@@ -1177,7 +1177,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                         TermControl::GetPointerUpdateKind(point),
                                         ControlKeyStates(args.KeyModifiers()),
                                         _focused,
-                                        pixelPosition,
+                                        pixelPosition.to_core_point(),
                                         _pointerPressedInBounds);
 
             // GH#9109 - Only start an auto-scroll when the drag actually
@@ -1219,7 +1219,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto contactRect = point.Properties().ContactRect();
             til::point newTouchPoint{ til::math::rounding, contactRect.X, contactRect.Y };
 
-            _interactivity.TouchMoved(newTouchPoint, _focused);
+            _interactivity.TouchMoved(newTouchPoint.to_core_point(), _focused);
         }
 
         args.Handled(true);
@@ -1255,7 +1255,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _interactivity.PointerReleased(TermControl::GetPressedMouseButtons(point),
                                            TermControl::GetPointerUpdateKind(point),
                                            ControlKeyStates(args.KeyModifiers()),
-                                           pixelPosition);
+                                           pixelPosition.to_core_point());
         }
         else if (type == Windows::Devices::Input::PointerDeviceType::Touch)
         {
@@ -1295,7 +1295,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         auto result = _interactivity.MouseWheel(ControlKeyStates{ args.KeyModifiers() },
                                                 point.Properties().MouseWheelDelta(),
-                                                _toTerminalOrigin(point.Position()),
+                                                _toTerminalOrigin(point.Position()).to_core_point(),
                                                 TermControl::GetPressedMouseButtons(point));
         if (result)
         {
@@ -1326,7 +1326,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         WI_SetFlagIf(state, Control::MouseButtonState::IsMiddleButtonDown, midButtonDown);
         WI_SetFlagIf(state, Control::MouseButtonState::IsRightButtonDown, rightButtonDown);
 
-        return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location), state);
+        return _interactivity.MouseWheel(modifiers, delta, _toTerminalOrigin(location).to_core_point(), state);
     }
 
     // Method Description:
@@ -1696,7 +1696,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     // - cursorPosition: in pixels, relative to the origin of the control
     void TermControl::_SetEndSelectionPointAtCursor(Windows::Foundation::Point const& cursorPosition)
     {
-        _interactivity.SetEndSelectionPoint(_toTerminalOrigin(cursorPosition));
+        _interactivity.SetEndSelectionPoint(_toTerminalOrigin(cursorPosition).to_core_point());
     }
 
     // Method Description:
@@ -2150,7 +2150,10 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;
 
         // Convert it to pixels
-        const til::point relativeToMarginInPixels{ relativeToMarginInDIPs * SwapChainPanel().CompositionScaleX() };
+        const auto panel = SwapChainPanel();
+        const auto scaleX = panel.CompositionScaleX();
+        const auto scaleY = panel.CompositionScaleY();
+        const til::point relativeToMarginInPixels{ til::math::flooring, relativeToMarginInDIPs.x * scaleX, relativeToMarginInDIPs.y * scaleY };
 
         return relativeToMarginInPixels;
     }
@@ -2190,8 +2193,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         const til::point cursorPos = _core.CursorPosition();
-        Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x()),
-                                         ::base::ClampedNumeric<float>(cursorPos.y()) };
+        Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x),
+                                         ::base::ClampedNumeric<float>(cursorPos.y) };
         eventArgs.CurrentPosition(p);
     }
 
@@ -2590,13 +2593,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 const auto uriText = _core.HoveredUriText();
                 if (!uriText.empty())
                 {
+                    const auto panel = SwapChainPanel();
+                    const auto scaleX = panel.CompositionScaleX();
+                    const auto scaleY = panel.CompositionScaleY();
+
                     // Update the tooltip with the URI
                     HoveredUri().Text(uriText);
 
                     // Set the border thickness so it covers the entire cell
                     const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / SwapChainPanel().CompositionScaleY();
-                    const auto wtInDips = charSizeInPixels.Width / SwapChainPanel().CompositionScaleX();
+                    const auto htInDips = charSizeInPixels.Height / scaleY;
+                    const auto wtInDips = charSizeInPixels.Width / scaleX;
                     const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
                     HyperlinkTooltipBorder().BorderThickness(newThickness);
 
@@ -2605,14 +2612,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const til::point startPos{ lastHoveredCell.Value() };
                     const til::size fontSize{ til::math::rounding, _core.FontSize() };
                     const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ posInPixels / SwapChainPanel().CompositionScaleX() };
+                    const til::point posInDIPs{ til::math::flooring, posInPixels.x / scaleX, posInPixels.y / scaleY };
                     const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
                     // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(),
-                                            (locationInDIPs.x() - SwapChainPanel().ActualOffset().x));
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(),
-                                           (locationInDIPs.y() - SwapChainPanel().ActualOffset().y));
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - panel.ActualOffset().x);
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - panel.ActualOffset().y);
                 }
             }
         }

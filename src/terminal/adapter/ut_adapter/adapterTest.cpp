@@ -1794,7 +1794,7 @@ public:
 
             wchar_t pwszBuffer[50];
 
-            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR\x1b[%d;%dR", coordCursorExpectedFirst.y<int>(), coordCursorExpectedFirst.x<int>(), coordCursorExpectedSecond.y<int>(), coordCursorExpectedSecond.x<int>());
+            swprintf_s(pwszBuffer, ARRAYSIZE(pwszBuffer), L"\x1b[%d;%dR\x1b[%d;%dR", coordCursorExpectedFirst.y, coordCursorExpectedFirst.x, coordCursorExpectedSecond.y, coordCursorExpectedSecond.x);
             _testGetSet->ValidateInputEvent(pwszBuffer);
         }
     }

@@ -423,7 +423,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                      const short wheelDelta,
                                      const TerminalInput::MouseButtonState state)
     {
-        return _terminal->SendMouseEvent(viewportPos, uiButton, states, wheelDelta, state);
+        return _terminal->SendMouseEvent(viewportPos.to_win32_coord(), uiButton, states, wheelDelta, state);
     }
 
     void ControlCore::UserScrollViewport(const int viewTop)
@@ -537,12 +537,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _lastHoveredCell = terminalPosition;
         uint16_t newId{ 0u };
         // we can't use auto here because we're pre-declaring newInterval.
-        decltype(_terminal->GetHyperlinkIntervalFromPosition(til::point{})) newInterval{ std::nullopt };
+        decltype(_terminal->GetHyperlinkIntervalFromPosition(COORD{})) newInterval{ std::nullopt };
         if (terminalPosition.has_value())
         {
             auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
-            newId = _terminal->GetHyperlinkIdAtPosition(*terminalPosition);
-            newInterval = _terminal->GetHyperlinkIntervalFromPosition(*terminalPosition);
+            newId = _terminal->GetHyperlinkIdAtPosition(terminalPosition->to_win32_coord());
+            newInterval = _terminal->GetHyperlinkIntervalFromPosition(terminalPosition->to_win32_coord());
         }
 
         // If the hyperlink ID changed or the interval changed, trigger a redraw all
@@ -568,11 +568,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    winrt::hstring ControlCore::GetHyperlink(const til::point pos) const
+    winrt::hstring ControlCore::GetHyperlink(const Core::Point pos) const
     {
         // Lock for the duration of our reads.
         auto lock = _terminal->LockForReading();
-        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(pos) };
+        return winrt::hstring{ _terminal->GetHyperlinkAtPosition(til::point{ pos }.to_win32_coord()) };
     }
 
     winrt::hstring ControlCore::HoveredUriText() const
@@ -580,14 +580,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForReading(); // Lock for the duration of our reads.
         if (_lastHoveredCell.has_value())
         {
-            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(*_lastHoveredCell) };
+            return winrt::hstring{ _terminal->GetHyperlinkAtPosition(_lastHoveredCell->to_win32_coord()) };
         }
         return {};
     }
 
     Windows::Foundation::IReference<Core::Point> ControlCore::HoveredCell() const
     {
-        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value() } : nullptr;
+        return _lastHoveredCell.has_value() ? Windows::Foundation::IReference<Core::Point>{ _lastHoveredCell.value().to_core_point() } : nullptr;
     }
 
     // Method Description:
@@ -929,7 +929,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void ControlCore::SetSelectionAnchor(til::point const& position)
     {
         auto lock = _terminal->LockForWriting();
-        _terminal->SetSelectionAnchor(position);
+        _terminal->SetSelectionAnchor(position.to_win32_coord());
     }
 
     // Method Description:
@@ -951,12 +951,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
 
         til::point terminalPosition{
-            std::clamp<short>(position.x<short>(), 0, lastVisibleCol),
-            std::clamp<short>(position.y<short>(), 0, lastVisibleRow)
+            std::clamp<short>(position.narrow_x<short>(), 0, lastVisibleCol),
+            std::clamp<short>(position.narrow_y<short>(), 0, lastVisibleRow)
         };
 
         // save location (for rendering) + render
-        _terminal->SetSelectionEnd(terminalPosition);
+        _terminal->SetSelectionEnd(terminalPosition.to_win32_coord());
         _renderer->TriggerSelection();
     }
 
@@ -1422,7 +1422,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _terminal != nullptr && _terminal->IsTrackingMouseInput();
     }
 
-    til::point ControlCore::CursorPosition() const
+    Core::Point ControlCore::CursorPosition() const
     {
         // If we haven't been initialized yet, then fake it.
         if (!_initializedTerminal)
@@ -1431,7 +1431,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
 
         auto lock = _terminal->LockForReading();
-        return _terminal->GetCursorPosition();
+        return til::point{ _terminal->GetCursorPosition() }.to_core_point();
     }
 
     // This one's really pushing the boundary of what counts as "encapsulation".
@@ -1483,7 +1483,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             // If shift is pressed and there is a selection we extend it using
             // the selection mode (expand the "end" selection point)
-            _terminal->SetSelectionEnd(terminalPosition, mode);
+            _terminal->SetSelectionEnd(terminalPosition.to_win32_coord(), mode);
             selectionNeedsToBeCopied = true;
         }
         else if (mode != ::Terminal::SelectionExpansion::Char || shiftEnabled)
@@ -1491,7 +1491,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             // If we are handling a double / triple-click or shift+single click
             // we establish selection using the selected mode
             // (expand both "start" and "end" selection points)
-            _terminal->MultiClickSelection(terminalPosition, mode);
+            _terminal->MultiClickSelection(terminalPosition.to_win32_coord(), mode);
             selectionNeedsToBeCopied = true;
         }
 

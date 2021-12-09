@@ -2474,7 +2474,7 @@ ITermDispatch::StringHandler AdaptDispatch::DownloadDRCS(const size_t fontNumber
             const auto bitPattern = _fontBuffer->GetBitPattern();
             const auto cellSize = _fontBuffer->GetCellSize();
             const auto centeringHint = _fontBuffer->GetTextCenteringHint();
-            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize, centeringHint);
+            _pConApi->PrivateUpdateSoftFont(bitPattern, cellSize.to_win32_size(), centeringHint);
         }
         return true;
     };

@@ -24,7 +24,7 @@ $result = "// Copyright (c) Microsoft Corporation.
 # 1. Define a few helpful variables to make life easier.
 $result += "
 // Define a few helpful variables
-constexpr til::rectangle bufferSize{ 0, 0, 80, 300 };
+constexpr til::rect bufferSize{ 0, 0, 80, 300 };
 constexpr short midX{ 40 };
 constexpr short midY{ 150 };
 constexpr short midPopulatedY{ 75 };

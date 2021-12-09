@@ -222,9 +222,9 @@ gsl::span<const uint16_t> FontBuffer::GetBitPattern() const noexcept
     return { _buffer.data(), MAX_CHARS * _fullHeight };
 }
 
-til::size FontBuffer::GetCellSize() const
+til::size FontBuffer::GetCellSize() const noexcept
 {
-    return { _fullWidth, _fullHeight };
+    return { gsl::narrow_cast<til::CoordType>(_fullWidth), gsl::narrow_cast<til::CoordType>(_fullHeight) };
 }
 
 size_t FontBuffer::GetTextCenteringHint() const noexcept

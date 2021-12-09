@@ -132,7 +132,7 @@ void NotificationIcon::ShowContextMenu(const til::point& coord,
             uFlags |= TPM_LEFTALIGN;
         }
 
-        TrackPopupMenuEx(hMenu, uFlags, gsl::narrow_cast<int>(coord.x()), gsl::narrow_cast<int>(coord.y()), _owningHwnd, NULL);
+        TrackPopupMenuEx(hMenu, uFlags, coord.x, coord.y, _owningHwnd, NULL);
     }
 }
 

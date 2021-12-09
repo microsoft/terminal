@@ -354,7 +354,7 @@ bool WddmConEngine::IsInitialized()
     return S_OK;
 }
 
-[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept
+[[nodiscard]] HRESULT WddmConEngine::GetDirtyArea(gsl::span<const til::rect>& area) noexcept
 {
     SMALL_RECT r;
     r.Bottom = _displayHeight > 0 ? (SHORT)(_displayHeight - 1) : 0;

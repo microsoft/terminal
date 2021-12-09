@@ -3,195 +3,105 @@
 
 #pragma once
 
-#ifdef UNIT_TESTING
-class SizeTests;
-#endif
+#include "point.h"
 
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    class size
+    struct size
     {
-    public:
-        constexpr size() noexcept :
-            size(0, 0)
-        {
-        }
+        CoordType width = 0;
+        CoordType height = 0;
 
-        // On 64-bit processors, int and ptrdiff_t are different fundamental types.
-        // On 32-bit processors, they're the same which makes this a double-definition
-        // with the `ptrdiff_t` one below.
-#if defined(_M_AMD64) || defined(_M_ARM64)
-        constexpr size(int width, int height) noexcept :
-            size(static_cast<ptrdiff_t>(width), static_cast<ptrdiff_t>(height))
-        {
-        }
-        constexpr size(ptrdiff_t width, int height) noexcept :
-            size(width, static_cast<ptrdiff_t>(height))
-        {
-        }
-        constexpr size(int width, ptrdiff_t height) noexcept :
-            size(static_cast<ptrdiff_t>(width), height)
-        {
-        }
-#endif
+        constexpr size() noexcept = default;
 
-        size(size_t width, size_t height)
-        {
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width).AssignIfValid(&_width));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height).AssignIfValid(&_height));
-        }
-        size(long width, long height)
-        {
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width).AssignIfValid(&_width));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height).AssignIfValid(&_height));
-        }
-
-        constexpr size(ptrdiff_t width, ptrdiff_t height) noexcept :
-            _width(width),
-            _height(height)
-        {
-        }
-
-        // This template will convert to size from anything that has an X and a Y field that appear convertible to an integer value
-        template<typename TOther>
-        constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
-            size(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
-        {
-        }
-
-        // This template will convert to size from anything that has a cx and a cy field that appear convertible to an integer value
-        template<typename TOther>
-        constexpr size(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().cx)> && std::is_integral_v<decltype(std::declval<TOther>().cy)>, int> /*sentinel*/ = 0) :
-            size(static_cast<ptrdiff_t>(other.cx), static_cast<ptrdiff_t>(other.cy))
-        {
-        }
-
-        // This template will convert to size from anything that has a X and a Y field that are floating-point;
-        // a math type is required. If you _don't_ provide one, you're going to
-        // get a compile-time error about "cannot convert from initializer-list to til::size"
-        template<typename TilMath, typename TOther>
-        constexpr size(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
-            size(TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y))
-        {
-        }
-
-        // This template will convert to size from anything that has a cx and a cy field that are floating-point;
-        // a math type is required. If you _don't_ provide one, you're going to
-        // get a compile-time error about "cannot convert from initializer-list to til::size"
-        template<typename TilMath, typename TOther>
-        constexpr size(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().cx)> && std::is_floating_point_v<decltype(std::declval<TOther>().cy)>, int> /*sentinel*/ = 0) :
-            size(TilMath::template cast<ptrdiff_t>(other.cx), TilMath::template cast<ptrdiff_t>(other.cy))
-        {
-        }
-
-        // This template will convert to size from anything that has a Width and a Height field that are floating-point;
-        // a math type is required. If you _don't_ provide one, you're going to
-        // get a compile-time error about "cannot convert from initializer-list to til::size"
-        template<typename TilMath, typename TOther>
-        constexpr size(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().Width)> && std::is_floating_point_v<decltype(std::declval<TOther>().Height)>, int> /*sentinel*/ = 0) :
-            size(TilMath::template cast<ptrdiff_t>(other.Width), TilMath::template cast<ptrdiff_t>(other.Height))
+        constexpr size(CoordType width, CoordType height) noexcept :
+            width{ width }, height{ height }
         {
         }
 
         // This template will convert to size from floating-point args;
         // a math type is required. If you _don't_ provide one, you're going to
         // get a compile-time error about "cannot convert from initializer-list to til::size"
-        template<typename TilMath, typename TOther>
-        constexpr size(TilMath, const TOther& width, const TOther& height, std::enable_if_t<std::is_floating_point_v<TOther>, int> /*sentinel*/ = 0) :
-            size(TilMath::template cast<ptrdiff_t>(width), TilMath::template cast<ptrdiff_t>(height))
+        template<typename TilMath, typename T>
+        constexpr size(TilMath, const T width, const T height) :
+            width{ TilMath::template cast<CoordType>(width) }, height{ TilMath::template cast<CoordType>(height) }
         {
         }
 
-        constexpr bool operator==(const size& other) const noexcept
+        constexpr bool operator==(const size& rhs) const noexcept
         {
-            return _width == other._width &&
-                   _height == other._height;
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
         }
 
-        constexpr bool operator!=(const size& other) const noexcept
+        constexpr bool operator!=(const size& rhs) const noexcept
         {
-            return !(*this == other);
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
         constexpr explicit operator bool() const noexcept
         {
-            return _width > 0 && _height > 0;
+            return width > 0 && height > 0;
         }
 
-        size operator+(const size& other) const
+        constexpr size operator+(const size& other) const
         {
-            ptrdiff_t width;
-            THROW_HR_IF(E_ABORT, !base::CheckAdd(_width, other._width).AssignIfValid(&width));
-
-            ptrdiff_t height;
-            THROW_HR_IF(E_ABORT, !base::CheckAdd(_height, other._height).AssignIfValid(&height));
-
-            return size{ width, height };
+            return size{
+                details::extract(::base::CheckAdd(width, other.width)),
+                details::extract(::base::CheckAdd(height, other.height)),
+            };
         }
 
-        size operator-(const size& other) const
+        constexpr size operator-(const size& other) const
         {
-            ptrdiff_t width;
-            THROW_HR_IF(E_ABORT, !base::CheckSub(_width, other._width).AssignIfValid(&width));
-
-            ptrdiff_t height;
-            THROW_HR_IF(E_ABORT, !base::CheckSub(_height, other._height).AssignIfValid(&height));
-
-            return size{ width, height };
+            return size{
+                details::extract(::base::CheckSub(width, other.width)),
+                details::extract(::base::CheckSub(height, other.height)),
+            };
         }
 
-        size operator*(const size& other) const
+        constexpr size operator*(const size& other) const
         {
-            ptrdiff_t width;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_width, other._width).AssignIfValid(&width));
-
-            ptrdiff_t height;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_height, other._height).AssignIfValid(&height));
-
-            return size{ width, height };
+            return size{
+                details::extract(::base::CheckMul(width, other.width)),
+                details::extract(::base::CheckMul(height, other.height)),
+            };
         }
 
-        template<typename TilMath>
-        size scale(TilMath, const float scale) const
+        constexpr size operator/(const size& other) const
         {
-            struct
-            {
-                float Width, Height;
-            } sz;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _width).AssignIfValid(&sz.Width));
-            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _height).AssignIfValid(&sz.Height));
-
-            return til::size(TilMath(), sz);
+            return size{
+                details::extract(::base::CheckDiv(width, other.width)),
+                details::extract(::base::CheckDiv(height, other.height)),
+            };
         }
 
-        size operator/(const size& other) const
+        template<typename TilMath, typename T, typename = std::enable_if_t<std::is_floating_point_v<T>>>
+        constexpr size scale(TilMath math, const T scale) const
         {
-            ptrdiff_t width;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_width, other._width).AssignIfValid(&width));
-
-            ptrdiff_t height;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_height, other._height).AssignIfValid(&height));
-
-            return size{ width, height };
+            return til::size{
+                math,
+                width * scale,
+                height * scale,
+            };
         }
 
-        size divide_ceil(const size& other) const
+        constexpr size divide_ceil(const size& other) const
         {
             // Divide normally to get the floor.
             const size floor = *this / other;
 
-            ptrdiff_t adjWidth = 0;
-            ptrdiff_t adjHeight = 0;
+            CoordType adjWidth = 0;
+            CoordType adjHeight = 0;
 
             // Check for width remainder, anything not 0.
             // If we multiply the floored number with the other, it will equal
             // the old width if there was no remainder.
-            if (other._width * floor._width != _width)
+            if (other.width * floor.width != width)
             {
                 // If there was any remainder,
                 // Grow the magnitude by 1 in the
                 // direction of the sign.
-                if (floor.width() >= 0)
+                if (floor.width >= 0)
                 {
                     ++adjWidth;
                 }
@@ -204,12 +114,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             // Check for height remainder, anything not 0.
             // If we multiply the floored number with the other, it will equal
             // the old width if there was no remainder.
-            if (other._height * floor._height != _height)
+            if (other.height * floor.height != height)
             {
                 // If there was any remainder,
                 // Grow the magnitude by 1 in the
                 // direction of the sign.
-                if (_height >= 0)
+                if (height >= 0)
                 {
                     ++adjHeight;
                 }
@@ -222,86 +132,80 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return floor + size{ adjWidth, adjHeight };
         }
 
-        constexpr ptrdiff_t width() const noexcept
+        template<typename T = CoordType>
+        constexpr T narrow_width() const
         {
-            return _width;
+            return gsl::narrow<T>(width);
         }
 
-        template<typename T>
-        T width() const
+        template<typename T = CoordType>
+        constexpr T narrow_height() const
         {
-            T ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(width()).AssignIfValid(&ret));
-            return ret;
+            return gsl::narrow<T>(height);
         }
 
-        constexpr ptrdiff_t height() const noexcept
+        template<typename T = CoordType>
+        constexpr T area() const
         {
-            return _height;
-        }
-
-        template<typename T>
-        T height() const
-        {
-            T ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(height()).AssignIfValid(&ret));
-            return ret;
-        }
-
-        ptrdiff_t area() const
-        {
-            ptrdiff_t result;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_width, _height).AssignIfValid(&result));
-            return result;
-        }
-
-        template<typename T>
-        T area() const
-        {
-            T ret;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_width, _height).AssignIfValid(&ret));
-            return ret;
+            return gsl::narrow<T>(static_cast<int64_t>(width) * static_cast<int64_t>(height));
         }
 
 #ifdef _WINCONTYPES_
-        operator COORD() const
+        explicit constexpr size(const COORD other) noexcept :
+            width{ other.X }, height{ other.Y }
         {
-            COORD ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_width).AssignIfValid(&ret.X));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_height).AssignIfValid(&ret.Y));
-            return ret;
+        }
+
+        constexpr COORD to_win32_coord() const
+        {
+            return { gsl::narrow<short>(width), gsl::narrow<short>(height) };
         }
 #endif
 
 #ifdef _WINDEF_
-        operator SIZE() const
+        explicit constexpr size(const SIZE other) noexcept :
+            width{ other.cx }, height{ other.cy }
         {
-            SIZE ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_width).AssignIfValid(&ret.cx));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_height).AssignIfValid(&ret.cy));
-            return ret;
+        }
+
+        constexpr SIZE to_win32_size() const noexcept
+        {
+            return { width, height };
         }
 #endif
 
 #ifdef DCOMMON_H_INCLUDED
-        constexpr operator D2D1_SIZE_F() const noexcept
+        template<typename TilMath>
+        constexpr size(TilMath, const D2D1_SIZE_F other) :
+            width{ TilMath::template cast<CoordType>(other.width) },
+            height{ TilMath::template cast<CoordType>(other.height) }
         {
-            return D2D1_SIZE_F{ gsl::narrow_cast<float>(_width), gsl::narrow_cast<float>(_height) };
+        }
+
+        constexpr D2D1_SIZE_F to_d2d_size() const noexcept
+        {
+            return { static_cast<float>(width), static_cast<float>(height) };
+        }
+#endif
+
+#ifdef WINRT_Windows_Foundation_H
+        template<typename TilMath>
+        constexpr size(TilMath, const winrt::Windows::Foundation::Size other) :
+            width{ TilMath::template cast<CoordType>(other.Width) },
+            height{ TilMath::template cast<CoordType>(other.Height) }
+        {
+        }
+
+        winrt::Windows::Foundation::Size to_winrt_size() const noexcept
+        {
+            return { static_cast<float>(width), static_cast<float>(height) };
         }
 #endif
 
         std::wstring to_string() const
         {
-            return wil::str_printf<std::wstring>(L"[W:%td, H:%td]", width(), height());
+            return wil::str_printf<std::wstring>(L"[W:%td, H:%td]", width, height);
         }
-
-    protected:
-        ptrdiff_t _width;
-        ptrdiff_t _height;
-
-#ifdef UNIT_TESTING
-        friend class ::SizeTests;
-#endif
     };
 };
 

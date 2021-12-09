@@ -308,7 +308,8 @@ GdiEngine::~GdiEngine()
 
     // If the font type has changed, select an appropriate font variant or soft font.
     const auto usingItalicFont = textAttributes.IsItalic();
-    const auto fontType = usingSoftFont ? FontType::Soft : usingItalicFont ? FontType::Italic : FontType::Default;
+    const auto fontType = usingSoftFont ? FontType::Soft : usingItalicFont ? FontType::Italic :
+                                                                             FontType::Default;
     if (fontType != _lastFontType)
     {
         switch (fontType)
@@ -435,7 +436,7 @@ GdiEngine::~GdiEngine()
     _fontCodepage = Font.GetCodePage();
 
     // Inform the soft font of the change in size.
-    _softFont.SetTargetSize(_GetFontSize());
+    _softFont.SetTargetSize(til::size{ _GetFontSize() });
 
     LOG_IF_FAILED(InvalidateAll());
 
@@ -462,7 +463,7 @@ GdiEngine::~GdiEngine()
     }
 
     // Create a new font resource with the updated pattern, or delete if empty.
-    _softFont = { bitPattern, cellSize, _GetFontSize(), centeringHint };
+    _softFont = FontResource{ bitPattern, til::size{ cellSize }, til::size{ _GetFontSize() }, centeringHint };
 
     return S_OK;
 }

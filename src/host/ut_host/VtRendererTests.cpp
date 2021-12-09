@@ -234,7 +234,7 @@ void VtRendererTest::Xterm256TestInvalidate()
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
@@ -249,7 +249,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
 
@@ -275,7 +275,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -291,7 +291,7 @@ void VtRendererTest::Xterm256TestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -316,7 +316,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -346,7 +346,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -386,7 +386,7 @@ void VtRendererTest::Xterm256TestInvalidate()
         // 0000
         // 0000
         // 1111
-        const til::rectangle expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
+        const til::rect expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
         VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -912,7 +912,7 @@ void VtRendererTest::XtermTestInvalidate()
     VERIFY_SUCCEEDED(engine->Invalidate(&invalid));
     TestPaint(*engine, [&]() {
         VERIFY_IS_TRUE(engine->_invalidMap.one());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, *(engine->_invalidMap.begin()));
     });
 
     Log::Comment(NoThrowString().Format(
@@ -927,7 +927,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[H"); // Go Home
         qExpectedInput.push_back("\x1b[L"); // insert a line
@@ -952,7 +952,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
         // We would expect a CUP here, but the cursor is already at the home position
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
         VERIFY_SUCCEEDED(engine->ScrollFrame());
@@ -968,7 +968,7 @@ void VtRendererTest::XtermTestInvalidate()
 
         const auto runs = engine->_invalidMap.runs();
         VERIFY_ARE_EQUAL(1u, runs.size());
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, runs.front());
 
         qExpectedInput.push_back("\x1b[32;1H"); // Bottom of buffer
         qExpectedInput.push_back("\n"); // Scroll down once
@@ -993,7 +993,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         // We would expect a CUP here, but we're already at the bottom from the last call.
         qExpectedInput.push_back("\n\n\n"); // Scroll down three times
@@ -1023,7 +1023,7 @@ void VtRendererTest::XtermTestInvalidate()
         }
 
         // verify the rect matches the invalid one.
-        VERIFY_ARE_EQUAL(til::rectangle{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
+        VERIFY_ARE_EQUAL(til::rect{ Viewport::FromExclusive(invalid).ToInclusive() }, invalidRect);
 
         qExpectedInput.push_back("\x1b[H"); // Go to home
         qExpectedInput.push_back("\x1b[3L"); // insert 3 lines
@@ -1063,7 +1063,7 @@ void VtRendererTest::XtermTestInvalidate()
         // 0000
         // 0000
         // 1111
-        const til::rectangle expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
+        const til::rect expected{ til::point{ view.Left(), view.BottomInclusive() }, til::size{ view.Width(), 1 } };
         VERIFY_ARE_EQUAL(expected, invalidRect);
 
         VERIFY_SUCCEEDED(engine->ScrollFrame());

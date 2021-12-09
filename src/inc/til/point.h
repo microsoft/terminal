@@ -3,368 +3,229 @@
 
 #pragma once
 
-#ifdef UNIT_TESTING
-class PointTests;
-#endif
-
 namespace til // Terminal Implementation Library. Also: "Today I Learned"
 {
-    class point
+    using CoordType = int32_t;
+
+    namespace details
     {
-    public:
-        constexpr point() noexcept :
-            point(0, 0)
+        template<typename T, typename U = T>
+        constexpr U extract(const ::base::CheckedNumeric<T>& num)
         {
+            U val;
+            if (!num.AssignIfValid(&val))
+            {
+                throw gsl::narrowing_error{};
+            }
+            return val;
         }
+    }
 
-        // On 64-bit processors, int and ptrdiff_t are different fundamental types.
-        // On 32-bit processors, they're the same which makes this a double-definition
-        // with the `ptrdiff_t` one below.
-#if defined(_M_AMD64) || defined(_M_ARM64)
-        constexpr point(int x, int y) noexcept :
-            point(static_cast<ptrdiff_t>(x), static_cast<ptrdiff_t>(y))
-        {
-        }
-        constexpr point(ptrdiff_t width, int height) noexcept :
-            point(width, static_cast<ptrdiff_t>(height))
-        {
-        }
-        constexpr point(int width, ptrdiff_t height) noexcept :
-            point(static_cast<ptrdiff_t>(width), height)
-        {
-        }
-#endif
+    struct point
+    {
+        CoordType x = 0;
+        CoordType y = 0;
 
-        point(size_t x, size_t y)
-        {
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(x).AssignIfValid(&_x));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y).AssignIfValid(&_y));
-        }
-        point(long x, long y)
-        {
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(x).AssignIfValid(&_x));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y).AssignIfValid(&_y));
-        }
+        constexpr point() noexcept = default;
 
-        constexpr point(ptrdiff_t x, ptrdiff_t y) noexcept :
-            _x(x),
-            _y(y)
-        {
-        }
-
-        // This template will convert to size from anything that has an X and a Y field that appear convertible to an integer value
-        template<typename TOther>
-        constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().X)> && std::is_integral_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
-            point(static_cast<ptrdiff_t>(other.X), static_cast<ptrdiff_t>(other.Y))
-        {
-        }
-
-        // This template will convert to size from anything that has a x and a y field that appear convertible to an integer value
-        template<typename TOther>
-        constexpr point(const TOther& other, std::enable_if_t<std::is_integral_v<decltype(std::declval<TOther>().x)> && std::is_integral_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
-            point(static_cast<ptrdiff_t>(other.x), static_cast<ptrdiff_t>(other.y))
+        constexpr point(CoordType x, CoordType y) noexcept :
+            x{ x }, y{ y }
         {
         }
 
         // This template will convert to point from floating-point args;
         // a math type is required. If you _don't_ provide one, you're going to
         // get a compile-time error about "cannot convert from initializer-list to til::point"
-        template<typename TilMath, typename TOther>
-        constexpr point(TilMath, const TOther& x, const TOther& y, std::enable_if_t<std::is_floating_point_v<TOther>, int> /*sentinel*/ = 0) :
-            point(TilMath::template cast<ptrdiff_t>(x), TilMath::template cast<ptrdiff_t>(y))
+        template<typename TilMath, typename T>
+        constexpr point(TilMath, const T x, const T y) :
+            x{ TilMath::template cast<CoordType>(x) }, y{ TilMath::template cast<CoordType>(y) }
         {
         }
 
-        // This template will convert to size from anything that has a X and a Y field that are floating-point;
-        // a math type is required. If you _don't_ provide one, you're going to
-        // get a compile-time error about "cannot convert from initializer-list to til::point"
-        template<typename TilMath, typename TOther>
-        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().X)> && std::is_floating_point_v<decltype(std::declval<TOther>().Y)>, int> /*sentinel*/ = 0) :
-            point(TilMath::template cast<ptrdiff_t>(other.X), TilMath::template cast<ptrdiff_t>(other.Y))
+        constexpr bool operator==(const point& rhs) const noexcept
         {
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
         }
 
-        // This template will convert to size from anything that has a x and a y field that are floating-point;
-        // a math type is required. If you _don't_ provide one, you're going to
-        // get a compile-time error about "cannot convert from initializer-list to til::point"
-        template<typename TilMath, typename TOther>
-        constexpr point(TilMath, const TOther& other, std::enable_if_t<std::is_floating_point_v<decltype(std::declval<TOther>().x)> && std::is_floating_point_v<decltype(std::declval<TOther>().y)>, int> /*sentinel*/ = 0) :
-            point(TilMath::template cast<ptrdiff_t>(other.x), TilMath::template cast<ptrdiff_t>(other.y))
+        constexpr bool operator!=(const point& rhs) const noexcept
         {
-        }
-
-        constexpr bool operator==(const point& other) const noexcept
-        {
-            return _x == other._x &&
-                   _y == other._y;
-        }
-
-        constexpr bool operator!=(const point& other) const noexcept
-        {
-            return !(*this == other);
+            return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
         constexpr bool operator<(const point& other) const noexcept
         {
-            if (_y < other._y)
-            {
-                return true;
-            }
-            else if (_y > other._y)
-            {
-                return false;
-            }
-            else
-            {
-                return _x < other._x;
-            }
-        }
-
-        constexpr bool operator>(const point& other) const noexcept
-        {
-            if (_y > other._y)
-            {
-                return true;
-            }
-            else if (_y < other._y)
-            {
-                return false;
-            }
-            else
-            {
-                return _x > other._x;
-            }
+            return y < other.y || (y == other.y && x < other.x);
         }
 
         constexpr bool operator<=(const point& other) const noexcept
         {
-            if (_y < other._y)
-            {
-                return true;
-            }
-            else if (_y > other._y)
-            {
-                return false;
-            }
-            else
-            {
-                return _x <= other._x;
-            }
+            return y < other.y || (y == other.y && x <= other.x);
+        }
+
+        constexpr bool operator>(const point& other) const noexcept
+        {
+            return y > other.y || (y == other.y && x > other.x);
         }
 
         constexpr bool operator>=(const point& other) const noexcept
         {
-            if (_y > other._y)
-            {
-                return true;
-            }
-            else if (_y < other._y)
-            {
-                return false;
-            }
-            else
-            {
-                return _x >= other._x;
-            }
+            return y > other.y || (y == other.y && x >= other.x);
         }
 
-        point operator+(const point& other) const
+        constexpr point operator+(const point& other) const
         {
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckAdd(_x, other._x).AssignIfValid(&x));
-
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckAdd(_y, other._y).AssignIfValid(&y));
-
-            return point{ x, y };
+            return point{
+                details::extract(::base::CheckAdd(x, other.x)),
+                details::extract(::base::CheckAdd(y, other.y)),
+            };
         }
 
-        point& operator+=(const point& other)
+        constexpr point& operator+=(const point& other)
         {
             *this = *this + other;
             return *this;
         }
 
-        point operator-(const point& other) const
+        constexpr point operator-(const point& other) const
         {
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckSub(_x, other._x).AssignIfValid(&x));
-
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckSub(_y, other._y).AssignIfValid(&y));
-
-            return point{ x, y };
+            return point{
+                details::extract(::base::CheckSub(x, other.x)),
+                details::extract(::base::CheckSub(y, other.y)),
+            };
         }
 
-        point& operator-=(const point& other)
+        constexpr point& operator-=(const point& other)
         {
             *this = *this - other;
             return *this;
         }
 
-        point operator*(const point& other) const
+        constexpr point operator*(const point& other) const
         {
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, other._x).AssignIfValid(&x));
-
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, other._y).AssignIfValid(&y));
-
-            return point{ x, y };
+            return point{
+                details::extract(::base::CheckMul(x, other.x)),
+                details::extract(::base::CheckMul(y, other.y)),
+            };
         }
 
-        point& operator*=(const point& other)
+        constexpr point& operator*=(const point& other)
         {
             *this = *this * other;
             return *this;
         }
 
-        template<typename TilMath>
-        point scale(TilMath, const float scale) const
+        constexpr point operator/(const point& other) const
         {
-            struct
-            {
-                float x, y;
-            } pt;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _x).AssignIfValid(&pt.x));
-            THROW_HR_IF(E_ABORT, !base::CheckMul(scale, _y).AssignIfValid(&pt.y));
-
-            return til::point(TilMath(), pt);
+            return point{
+                details::extract(::base::CheckDiv(x, other.x)),
+                details::extract(::base::CheckDiv(y, other.y)),
+            };
         }
 
-        point operator/(const point& other) const
-        {
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, other._x).AssignIfValid(&x));
-
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, other._y).AssignIfValid(&y));
-
-            return point{ x, y };
-        }
-
-        point& operator/=(const point& other)
+        constexpr point& operator/=(const point& other)
         {
             *this = *this / other;
             return *this;
         }
 
-        template<typename T>
-        point operator*(const T& scale) const
+        template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+        constexpr point operator*(const T scale) const
         {
-            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_x, scale).AssignIfValid(&x));
+            return point{
+                details::extract(::base::CheckMul(x, scale)),
+                details::extract(::base::CheckMul(y, scale)),
+            };
+        }
 
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckMul(_y, scale).AssignIfValid(&y));
-
-            return point{ x, y };
+        template<typename T, typename = std::enable_if_t<std::is_integral_v<T>>>
+        constexpr point operator/(const T scale) const
+        {
+            return point{
+                details::extract(::base::CheckDiv(x, scale)),
+                details::extract(::base::CheckDiv(y, scale)),
+            };
         }
 
         template<typename T>
-        point operator/(const T& scale) const
+        constexpr T narrow_x() const
         {
-            static_assert(std::is_arithmetic<T>::value, "Type must be arithmetic");
-            ptrdiff_t x;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_x, scale).AssignIfValid(&x));
-
-            ptrdiff_t y;
-            THROW_HR_IF(E_ABORT, !base::CheckDiv(_y, scale).AssignIfValid(&y));
-
-            return point{ x, y };
-        }
-
-        constexpr ptrdiff_t x() const noexcept
-        {
-            return _x;
+            return gsl::narrow<T>(x);
         }
 
         template<typename T>
-        T x() const
+        constexpr T narrow_y() const
         {
-            T ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(x()).AssignIfValid(&ret));
-            return ret;
-        }
-
-        constexpr ptrdiff_t y() const noexcept
-        {
-            return _y;
-        }
-
-        template<typename T>
-        T y() const
-        {
-            T ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(y()).AssignIfValid(&ret));
-            return ret;
+            return gsl::narrow<T>(y);
         }
 
 #ifdef _WINCONTYPES_
-        operator COORD() const
+        explicit constexpr point(const COORD other) noexcept :
+            x{ other.X }, y{ other.Y }
         {
-            COORD ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.Y));
-            return ret;
+        }
+
+        constexpr COORD to_win32_coord() const
+        {
+            return { gsl::narrow<short>(x), gsl::narrow<short>(y) };
         }
 #endif
 
 #ifdef _WINDEF_
-        operator POINT() const
+        explicit constexpr point(const POINT other) noexcept :
+            x{ other.x }, y{ other.y }
         {
-            POINT ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.x));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.y));
-            return ret;
+        }
+
+        constexpr POINT to_win32_point() const noexcept
+        {
+            return { x, y };
         }
 #endif
 
 #ifdef DCOMMON_H_INCLUDED
-        constexpr operator D2D1_POINT_2F() const noexcept
+        template<typename TilMath>
+        constexpr point(TilMath, const D2D1_POINT_2F other) :
+            x{ TilMath::template cast<CoordType>(other.x) },
+            y{ TilMath::template cast<CoordType>(other.y) }
         {
-            return D2D1_POINT_2F{ gsl::narrow_cast<float>(_x), gsl::narrow_cast<float>(_y) };
+        }
+
+        constexpr D2D1_POINT_2F to_d2d_point() const noexcept
+        {
+            return { static_cast<float>(x), static_cast<float>(y) };
         }
 #endif
 
 #ifdef WINRT_Windows_Foundation_H
-        operator winrt::Windows::Foundation::Point() const
+        template<typename TilMath>
+        constexpr point(TilMath, const winrt::Windows::Foundation::Point other) :
+            x{ TilMath::template cast<CoordType>(other.X) },
+            y{ TilMath::template cast<CoordType>(other.Y) }
         {
-            winrt::Windows::Foundation::Point ret;
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_x).AssignIfValid(&ret.X));
-            THROW_HR_IF(E_ABORT, !base::MakeCheckedNum(_y).AssignIfValid(&ret.Y));
-            return ret;
+        }
+
+        winrt::Windows::Foundation::Point to_winrt_point() const noexcept
+        {
+            return { static_cast<float>(x), static_cast<float>(y) };
         }
 #endif
 
 #ifdef WINRT_Microsoft_Terminal_Core_H
-        constexpr point(const winrt::Microsoft::Terminal::Core::Point& corePoint) :
-            point(corePoint.X, corePoint.Y)
+        constexpr point(const winrt::Microsoft::Terminal::Core::Point other) :
+            x{ other.X }, y{ other.Y }
         {
         }
 
-        operator winrt::Microsoft::Terminal::Core::Point() const
+        winrt::Microsoft::Terminal::Core::Point to_core_point() const noexcept
         {
-            winrt::Microsoft::Terminal::Core::Point ret;
-            ret.X = x<int>();
-            ret.Y = y<int>();
-            return ret;
+            return { x, y };
         }
 #endif
 
         std::wstring to_string() const
         {
-            return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x(), y());
+            return wil::str_printf<std::wstring>(L"(X:%td, Y:%td)", x, y);
         }
-
-    protected:
-        ptrdiff_t _x;
-        ptrdiff_t _y;
-
-#ifdef UNIT_TESTING
-        friend class ::PointTests;
-#endif
     };
 }
 
@@ -385,21 +246,21 @@ namespace WEX::TestExecution
     class VerifyCompareTraits<::til::point, ::til::point>
     {
     public:
-        static bool AreEqual(const ::til::point& expected, const ::til::point& actual) noexcept
+        static constexpr bool AreEqual(const ::til::point& expected, const ::til::point& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::point& expected, const ::til::point& actual) noexcept
+        static constexpr bool AreSame(const ::til::point& expected, const ::til::point& actual) noexcept
         {
             return &expected == &actual;
         }
 
-        static bool IsLessThan(const ::til::point& expectedLess, const ::til::point& expectedGreater) = delete;
+        static constexpr bool IsLessThan(const ::til::point& expectedLess, const ::til::point& expectedGreater) = delete;
 
-        static bool IsGreaterThan(const ::til::point& expectedGreater, const ::til::point& expectedLess) = delete;
+        static constexpr bool IsGreaterThan(const ::til::point& expectedGreater, const ::til::point& expectedLess) = delete;
 
-        static bool IsNull(const ::til::point& object) noexcept
+        static constexpr bool IsNull(const ::til::point& object) noexcept
         {
             return object == til::point{};
         }

@@ -202,7 +202,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const auto ctrlEnabled = modifiers.IsCtrlPressed();
 
         // GH#9396: we prioritize hyper-link over VT mouse events
-        auto hyperlink = _core->GetHyperlink(terminalPosition);
+        auto hyperlink = _core->GetHyperlink(terminalPosition.to_core_point());
         if (WI_IsFlagSet(buttonState, MouseButtonState::IsLeftButtonDown) &&
             ctrlEnabled && !hyperlink.empty())
         {
@@ -293,15 +293,17 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             if (_singleClickTouchdownPos)
             {
-                // Figure out if the user's moved a quarter of a cell's smaller axis away from the clickdown point
-                auto& touchdownPoint{ *_singleClickTouchdownPos };
-                float dx = ::base::saturated_cast<float>(pixelPosition.x() - touchdownPoint.x());
-                float dy = ::base::saturated_cast<float>(pixelPosition.y() - touchdownPoint.y());
-                auto distance{ std::sqrtf(std::powf(dx, 2) +
-                                          std::powf(dy, 2)) };
+                // Figure out if the user's moved a 1/4th of a cell's smaller axis
+                // (practically always the width) away from the clickdown point.
+                const auto fontSizeInDips = _core->FontSizeInDips();
+                const auto touchdownPoint = *_singleClickTouchdownPos;
+                const auto dx = pixelPosition.x - touchdownPoint.x;
+                const auto dy = pixelPosition.y - touchdownPoint.y;
+                const auto w = fontSizeInDips.width;
+                const auto distanceSquared = dx * dx + dy * dy;
+                const auto maxDistanceSquared = w * w / 16; // (w /4)^2
 
-                const auto fontSizeInDips{ _core->FontSizeInDips() };
-                if (distance >= (std::min(fontSizeInDips.width(), fontSizeInDips.height()) / 4.f))
+                if (distanceSquared >= maxDistanceSquared)
                 {
                     // GH#9955.c: Make sure to use the terminal location of the
                     // _touchdown_ point here. We want to start the selection
@@ -317,7 +319,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             SetEndSelectionPoint(pixelPosition);
         }
 
-        _core->SetHoveredCell(terminalPosition);
+        _core->SetHoveredCell(terminalPosition.to_core_point());
     }
 
     void ControlInteractivity::TouchMoved(const til::point newTouchPoint,
@@ -333,19 +335,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const auto fontSizeInDips{ _core->FontSizeInDips() };
 
             // Get the difference between the point we've dragged to and the start of the touch.
-            const float dy = ::base::saturated_cast<float>(newTouchPoint.y() - anchor.y());
+            const auto dy = static_cast<double>(newTouchPoint.y - anchor.y);
 
             // Start viewport scroll after we've moved more than a half row of text
-            if (std::abs(dy) > (fontSizeInDips.height<float>() / 2.0f))
+            if (std::abs(dy) > (fontSizeInDips.height / 2.0))
             {
                 // Multiply by -1, because moving the touch point down will
                 // create a positive delta, but we want the viewport to move up,
                 // so we'll need a negative scroll amount (and the inverse for
                 // panning down)
-                const float numRows = -1.0f * (dy / fontSizeInDips.height<float>());
+                const auto numRows = dy / -fontSizeInDips.height;
 
-                const double currentOffset = ::base::ClampedNumeric<double>(_core->ScrollOffset());
-                const double newValue = numRows + currentOffset;
+                const auto currentOffset = _core->ScrollOffset();
+                const auto newValue = numRows + currentOffset;
 
                 // Update the Core's viewport position, and raise a
                 // ScrollPositionChanged event to update the scrollbar
@@ -604,9 +606,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto adjustment = _core->ScrollOffset() > 0 ? _core->BufferHeight() - _core->ScrollOffset() - _core->ViewHeight() : 0;
         // If the click happened outside the active region, just don't send any mouse event
-        if (const auto adjustedY = terminalPosition.y() - adjustment; adjustedY >= 0)
+        if (const auto adjustedY = terminalPosition.y - adjustment; adjustedY >= 0)
         {
-            return _core->SendMouseEvent({ terminalPosition.x(), adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
+            return _core->SendMouseEvent({ terminalPosition.x, adjustedY }, pointerUpdateKind, modifiers, wheelDelta, toInternalMouseState(buttonState));
         }
         return false;
     }

@@ -174,7 +174,7 @@ const std::wstring Microsoft::Terminal::Core::Terminal::GetHyperlinkCustomId(uin
 const std::vector<size_t> Terminal::GetPatternId(const COORD location) const noexcept
 {
     // Look through our interval tree for this location
-    const auto intervals = _patternIntervalTree.findOverlapping(COORD{ location.X + 1, location.Y }, location);
+    const auto intervals = _patternIntervalTree.findOverlapping(til::point{ location.X + 1, location.Y }, til::point{ location });
     if (intervals.size() == 0)
     {
         return {};

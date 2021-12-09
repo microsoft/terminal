@@ -516,11 +516,12 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             // and HIWORD treat the coordinates as unsigned quantities.
             const til::point eventPoint{ GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam) };
             // This mouse event is relative to the display origin, not the window. Convert here.
-            const til::rectangle windowRect{ GetWindowRect() };
+            const til::rect windowRect{ GetWindowRect() };
             const auto origin = windowRect.origin();
             const auto relative = eventPoint - origin;
             // Convert to logical scaling before raising the event.
-            const auto real = relative / GetCurrentDpiScale();
+            const auto scale = GetCurrentDpiScale();
+            const til::point real{ til::math::flooring, relative.x / scale, relative.y / scale };
 
             const short wheelDelta = static_cast<short>(HIWORD(wparam));
 
@@ -569,8 +570,8 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
             GetMonitorInfo(proposed, &proposedInfo);
 
             // If the monitor changed...
-            if (til::rectangle{ proposedInfo.rcMonitor } !=
-                til::rectangle{ currentInfo.rcMonitor })
+            if (til::rect{ proposedInfo.rcMonitor } !=
+                til::rect{ currentInfo.rcMonitor })
             {
                 const auto newWindowRect{ _getQuakeModeSize(proposed) };
 
@@ -578,10 +579,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
                 // and dimensions that _getQuakeModeSize returned. When we
                 // snap across monitor boundaries, this will re-evaluate our
                 // size for the new monitor.
-                lpwpos->x = newWindowRect.left<int>();
-                lpwpos->y = newWindowRect.top<int>();
-                lpwpos->cx = newWindowRect.width<int>();
-                lpwpos->cy = newWindowRect.height<int>();
+                lpwpos->x = newWindowRect.left;
+                lpwpos->y = newWindowRect.top;
+                lpwpos->cx = newWindowRect.width();
+                lpwpos->cy = newWindowRect.height();
 
                 return 0;
             }
@@ -961,14 +962,14 @@ void IslandWindow::_SetIsBorderless(const bool borderlessEnabled)
 
     // Resize the window, with SWP_FRAMECHANGED, to trigger user32 to
     // recalculate the non/client areas
-    const til::rectangle windowPos{ GetWindowRect() };
+    const til::rect windowPos{ GetWindowRect() };
 
     SetWindowPos(GetHandle(),
                  HWND_TOP,
-                 windowPos.left<int>(),
-                 windowPos.top<int>(),
-                 windowPos.width<int>(),
-                 windowPos.height<int>(),
+                 windowPos.left,
+                 windowPos.top,
+                 windowPos.width(),
+                 windowPos.height(),
                  SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
@@ -1036,8 +1037,8 @@ void IslandWindow::_RestoreFullscreenPosition(const RECT rcWork)
     // We want to make sure the window is restored within the bounds of the
     // monitor we're on, but it's totally fine if the invisible borders are
     // outside the monitor.
-    const auto halfWidth{ ncSize.width<long>() / 2 };
-    const auto halfHeight{ ncSize.height<long>() / 2 };
+    const auto halfWidth{ ncSize.width / 2 };
+    const auto halfHeight{ ncSize.height / 2 };
 
     rcWorkAdjusted.left -= halfWidth;
     rcWorkAdjusted.right += halfWidth;
@@ -1242,8 +1243,8 @@ void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
         // mouse, then we should move to that monitor instead of dismissing.
         if (args.ToMonitor() == Remoting::MonitorBehavior::ToMouse)
         {
-            const til::rectangle cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
-            const til::rectangle currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
+            const til::rect cursorMonitorRect{ _getMonitorForCursor().rcMonitor };
+            const til::rect currentMonitorRect{ _getMonitorForWindow(GetHandle()).rcMonitor };
             if (cursorMonitorRect != currentMonitorRect)
             {
                 // We're not on the same monitor as the mouse. Go to that monitor.
@@ -1280,8 +1281,8 @@ void IslandWindow::_summonWindowRoutineBody(Remoting::SummonWindowBehavior args)
 // - <none>
 void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool down)
 {
-    til::rectangle fullWindowSize{ GetWindowRect() };
-    const double fullHeight = fullWindowSize.height<double>();
+    til::rect fullWindowSize{ GetWindowRect() };
+    const auto fullHeight = fullWindowSize.height();
 
     const double animationDuration = dropdownDuration; // use floating-point math throughout
     const auto start = std::chrono::system_clock::now();
@@ -1300,15 +1301,11 @@ void IslandWindow::_doSlideAnimation(const uint32_t dropdownDuration, const bool
         }
 
         // If going down, increase the height over time. If going up, decrease the height.
-        const double currentHeight = ::base::saturated_cast<double>(
+        const auto currentHeight = ::base::saturated_cast<int>(
             down ? ((dt / animationDuration) * fullHeight) :
                    ((1.0 - (dt / animationDuration)) * fullHeight));
 
-        wil::unique_hrgn rgn{ CreateRectRgn(0,
-                                            0,
-                                            fullWindowSize.width<int>(),
-                                            ::base::saturated_cast<int>(currentHeight)) };
-
+        wil::unique_hrgn rgn{ CreateRectRgn(0, 0, fullWindowSize.width(), currentHeight) };
         SetWindowRgn(_interopWindowHandle, rgn.get(), true);
 
         // Go immediately into another frame. This prevents the window from
@@ -1550,20 +1547,20 @@ void IslandWindow::_moveToMonitor(const MONITORINFO activeMonitor)
     // Get the monitor info for the window's current monitor.
     const auto currentMonitor = _getMonitorForWindow(GetHandle());
 
-    const til::rectangle currentRect{ currentMonitor.rcMonitor };
-    const til::rectangle activeRect{ activeMonitor.rcMonitor };
+    const til::rect currentRect{ currentMonitor.rcMonitor };
+    const til::rect activeRect{ activeMonitor.rcMonitor };
     if (currentRect != activeRect)
     {
-        const til::rectangle currentWindowRect{ GetWindowRect() };
+        const til::rect currentWindowRect{ GetWindowRect() };
         const til::point offset{ currentWindowRect.origin() - currentRect.origin() };
         const til::point newOrigin{ activeRect.origin() + offset };
 
         SetWindowPos(GetHandle(),
                      0,
-                     newOrigin.x<int>(),
-                     newOrigin.y<int>(),
-                     currentWindowRect.width<int>(),
-                     currentWindowRect.height<int>(),
+                     newOrigin.x,
+                     newOrigin.y,
+                     currentWindowRect.width(),
+                     currentWindowRect.height(),
                      SWP_NOZORDER | SWP_NOSIZE | SWP_NOACTIVATE);
 
         // GH#10274, GH#10182: Re-evaluate the size of the quake window when we
@@ -1615,10 +1612,10 @@ void IslandWindow::_enterQuakeMode()
 
     SetWindowPos(GetHandle(),
                  HWND_TOP,
-                 newRect.left<int>(),
-                 newRect.top<int>(),
-                 newRect.width<int>(),
-                 newRect.height<int>(),
+                 newRect.left,
+                 newRect.top,
+                 newRect.width(),
+                 newRect.height(),
                  SWP_SHOWWINDOW | SWP_FRAMECHANGED | SWP_NOACTIVATE);
 }
 
@@ -1630,7 +1627,7 @@ void IslandWindow::_enterQuakeMode()
 // - <none>
 // Return Value:
 // - <none>
-til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
+til::rect IslandWindow::_getQuakeModeSize(HMONITOR hmon)
 {
     MONITORINFO nearestMonitorInfo;
 
@@ -1655,15 +1652,15 @@ til::rectangle IslandWindow::_getQuakeModeSize(HMONITOR hmon)
     // smaller on either side to account for that, so they don't hang onto
     // adjacent monitors.
     const til::point origin{
-        ::base::ClampSub<long>(nearestMonitorInfo.rcWork.left, (ncSize.width() / 2)) + 1,
+        ::base::ClampSub(nearestMonitorInfo.rcWork.left, (ncSize.width / 2)) + 1,
         (nearestMonitorInfo.rcWork.top)
     };
     const til::size dimensions{
-        availableSpace.width() - 2,
-        availableSpace.height() / 2
+        availableSpace.width - 2,
+        availableSpace.height / 2
     };
 
-    return til::rectangle{ origin, dimensions };
+    return til::rect{ origin, dimensions };
 }
 
 void IslandWindow::HideWindow()

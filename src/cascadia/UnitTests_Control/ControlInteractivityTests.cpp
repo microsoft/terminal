@@ -550,7 +550,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
 
         Log::Comment(L"Drag the mouse a lot. This simulates dragging the mouse real fast.");
-        const til::point cursorPosition1{ 6 + fontSize.width<int>() * 2, 0 };
+        const til::point cursorPosition1{ 6 + fontSize.width * 2, 0 };
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
@@ -595,7 +595,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(cursorPosition0, interactivity->_singleClickTouchdownPos.value());
 
         Log::Comment(L"Drag the mouse a lot. This simulates dragging the mouse real fast.");
-        const til::point cursorPosition1{ 6 + fontSize.width<int>() * 2, 0 };
+        const til::point cursorPosition1{ 6 + fontSize.width * 2, 0 };
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,
@@ -621,7 +621,7 @@ namespace ControlUnitTests
         VERIFY_ARE_EQUAL(expectedEnd, core->_terminal->GetSelectionEnd());
 
         Log::Comment(L"Simulate dragging the mouse into the control, without first clicking into the control");
-        const til::point cursorPosition2{ fontSize.width<int>() * 10, 0 };
+        const til::point cursorPosition2{ fontSize.width * 10, 0 };
         interactivity->PointerMoved(leftMouseDown,
                                     WM_LBUTTONDOWN, //pointerUpdateKind
                                     modifiers,

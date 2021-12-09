@@ -49,7 +49,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT UpdateDpi(int iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(SMALL_RECT srNewViewport) noexcept override;
         [[nodiscard]] HRESULT GetProposedFont(const FontInfoDesired& FontInfoDesired, _Out_ FontInfo& FontInfo, int iDpi) noexcept override;
-        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rectangle>& area) noexcept override;
+        [[nodiscard]] HRESULT GetDirtyArea(gsl::span<const til::rect>& area) noexcept override;
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(std::wstring_view glyph, _Out_ bool* pResult) noexcept override;
         [[nodiscard]] HRESULT UpdateTitle(std::wstring_view newTitle) noexcept override;
@@ -741,7 +741,7 @@ namespace Microsoft::Console::Render
             u32 selectionColor = 0x7fffffff;
 
             // dirtyRect is a computed value based on invalidatedRows.
-            til::rectangle dirtyRect;
+            til::rect dirtyRect;
             // These "invalidation" fields are reset in EndPaint()
             u16r invalidatedCursorArea = invalidatedAreaNone;
             u16x2 invalidatedRows = invalidatedRowsNone; // x is treated as "top" and y as "bottom"
