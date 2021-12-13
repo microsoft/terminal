@@ -283,8 +283,9 @@ jobs:
   # that's the one all the tooling works against for sure.
   strategy:
     matrix:
-      BuildConfiguration: Release
-      BuildPlatform: x64
+      Release_x64:
+        BuildConfiguration: Release
+        BuildPlatform: x64
   displayName: Validate Security and Compliance
   steps:
   - checkout: self
