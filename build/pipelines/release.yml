@@ -69,6 +69,7 @@ jobs:
   steps:
   - checkout: self
     clean: true
+    fetchDepth: 1
     submodules: true
     persistCredentials: True
   - task: PkgESSetupBuild@12
@@ -97,6 +98,8 @@ jobs:
       selectOrConfig: config
       nugetConfigPath: NuGet.Config
       arguments: restore OpenConsole.sln -SolutionDirectory $(Build.SourcesDirectory)
+  # Pull the Windows SDK for the developer tools like the debuggers so we can index sources later
+  - template: .\templates\install-winsdk-steps.yml
   - task: UniversalPackages@0
     displayName: Download terminal-internal Universal Package
     inputs:
@@ -234,6 +237,10 @@ jobs:
         TargetFolder: $(Build.ArtifactStagingDirectory)/appx
         OverWrite: true
         flattenFolders: true
+    - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+      displayName: 'Generate SBOM manifest'
+      inputs:
+       BuildDropPath: '$(System.ArtifactsDirectory)/appx'
     - task: PublishBuildArtifacts@1
       displayName: Publish Artifact (appx)
       inputs:
@@ -262,7 +269,10 @@ jobs:
     displayName: Publish symbols path
     continueOnError: True
     inputs:
-      SearchPattern: '**/*.pdb'
+      SearchPattern: |
+        $(Build.SourcesDirectory)/bin/**/*.pdb
+        $(Build.SourcesDirectory)/bin/**/*.exe
+        $(Build.SourcesDirectory)/bin/**/*.dll
       IndexSources: false
       SymbolServerType: TeamServices
 
@@ -432,6 +442,7 @@ jobs:
     steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
       submodules: true
       persistCredentials: True
     - task: PkgESSetupBuild@12
@@ -509,6 +520,7 @@ jobs:
     steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
       submodules: true
       persistCredentials: True
     - task: PkgESSetupBuild@12
@@ -562,7 +574,10 @@ jobs:
       displayName: Publish symbols path
       continueOnError: True
       inputs:
-        SearchPattern: '**/*.pdb'
+        SearchPattern: |
+          $(Build.SourcesDirectory)/bin/**/*.pdb
+          $(Build.SourcesDirectory)/bin/**/*.exe
+          $(Build.SourcesDirectory)/bin/**/*.dll
         IndexSources: false
         SymbolServerType: TeamServices
         SymbolsArtifactName: Symbols_WPF_$(BuildConfiguration)
@@ -611,6 +626,7 @@ jobs:
     steps:
     - checkout: self
       clean: true
+      fetchDepth: 1
       submodules: true
     - task: PkgESSetupBuild@12
       displayName: Package ES - Setup Build

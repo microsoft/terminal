@@ -39,13 +39,14 @@
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 
-#include "../../cascadia/inc/cppwinrt_utils.h"
 #include "JsonUtils.h"
 #include "HashUtils.h"
 #include "TerminalWarnings.h"
 #include "../inc/WindowingBehavior.h"
 
 #include "TerminalSettingsSerializationHelpers.h"
+
+#include "ActionArgsMagic.h"
 
 #define ACTION_ARG(type, name, ...)                                                                    \
 public:                                                                                                \
@@ -61,26 +62,140 @@ private:                                                                        
 // * ActionEventArgs holds a single IActionArgs. For events that don't need
 //   additional args, this can be nullptr.
 
-template<>
-constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::IActionArgs& args)
-{
-    return gsl::narrow_cast<size_t>(args.Hash());
-}
+////////////////////////////////////////////////////////////////////////////////
+// BEGIN X-MACRO MADNESS
+////////////////////////////////////////////////////////////////////////////////
 
-template<>
-constexpr size_t Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& args)
-{
-    return gsl::narrow_cast<size_t>(args.Hash());
-}
+// A helper for saying "This class has no other property validation". This will
+// make sense below.
+#define NO_OTHER_VALIDATION() ;
 
-// Retrieves the hash value for an empty-constructed object.
-template<typename T>
-static size_t EmptyHash()
-{
-    // cache the value of the empty hash
-    static const size_t cachedHash = winrt::make_self<T>()->Hash();
-    return cachedHash;
-}
+// Below are definitions for the properties for each and every ActionArgs type.
+// Each should maintain the same format:
+//
+// #define MY_FOO_ARGS(X)                    \
+//     X(ParamOneType, One, "one", {validation}, {default args}) \
+//     X(Windows::Foundation::IReference<ParamTwoType>, Two, "two", {validation}, nullptr)
+//     { etc... }
+//
+// If one of your properties needs some additional validation done to it, then
+// fill in {validation} with whatever logic needs to be done. Or, just set to
+// false, if we don't really care if the parameter is required or not.
+
+////////////////////////////////////////////////////////////////////////////////
+#define COPY_TEXT_ARGS(X)                           \
+    X(bool, SingleLine, "singleLine", false, false) \
+    X(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, "copyFormatting", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define MOVE_PANE_ARGS(X) \
+    X(uint32_t, TabIndex, "index", false, 0)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SWITCH_TO_TAB_ARGS(X) \
+    X(uint32_t, TabIndex, "index", false, 0)
+
+////////////////////////////////////////////////////////////////////////////////
+#define RESIZE_PANE_ARGS(X) \
+    X(Model::ResizeDirection, ResizeDirection, "direction", args->ResizeDirection() == ResizeDirection::None, Model::ResizeDirection::None)
+
+////////////////////////////////////////////////////////////////////////////////
+#define MOVE_FOCUS_ARGS(X) \
+    X(Model::FocusDirection, FocusDirection, "direction", args->FocusDirection() == Model::FocusDirection::None, Model::FocusDirection::None)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SWAP_PANE_ARGS(X) \
+    X(Model::FocusDirection, Direction, "direction", args->Direction() == Model::FocusDirection::None, Model::FocusDirection::None)
+
+////////////////////////////////////////////////////////////////////////////////
+#define ADJUST_FONT_SIZE_ARGS(X) \
+    X(int32_t, Delta, "delta", false, 0)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SEND_INPUT_ARGS(X) \
+    X(winrt::hstring, Input, "input", args->Input().empty(), L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define OPEN_SETTINGS_ARGS(X) \
+    X(SettingsTarget, Target, "target", false, SettingsTarget::SettingsFile)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_COLOR_SCHEME_ARGS(X) \
+    X(winrt::hstring, SchemeName, "colorScheme", args->SchemeName().empty(), L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_TAB_COLOR_ARGS(X) \
+    X(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, "color", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define RENAME_TAB_ARGS(X) \
+    X(winrt::hstring, Title, "title", false, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define EXECUTE_COMMANDLINE_ARGS(X) \
+    X(winrt::hstring, Commandline, "commandline", args->Commandline().empty(), L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define CLOSE_OTHER_TABS_ARGS(X) \
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define CLOSE_TABS_AFTER_ARGS(X) \
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define CLOSE_TAB_ARGS(X) \
+    X(Windows::Foundation::IReference<uint32_t>, Index, "index", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define MOVE_TAB_ARGS(X) \
+    X(MoveTabDirection, Direction, "direction", args->Direction() == MoveTabDirection::None, MoveTabDirection::None)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SCROLL_UP_ARGS(X) \
+    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SCROLL_DOWN_ARGS(X) \
+    X(Windows::Foundation::IReference<uint32_t>, RowsToScroll, "rowsToScroll", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define TOGGLE_COMMAND_PALETTE_ARGS(X) \
+    X(CommandPaletteLaunchMode, LaunchMode, "launchMode", false, CommandPaletteLaunchMode::Action)
+
+////////////////////////////////////////////////////////////////////////////////
+#define FIND_MATCH_ARGS(X) \
+    X(FindMatchDirection, Direction, "direction", args->Direction() == FindMatchDirection::None, FindMatchDirection::None)
+
+////////////////////////////////////////////////////////////////////////////////
+#define PREV_TAB_ARGS(X) \
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define NEXT_TAB_ARGS(X) \
+    X(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, "tabSwitcherMode", false, nullptr)
+
+////////////////////////////////////////////////////////////////////////////////
+#define RENAME_WINDOW_ARGS(X) \
+    X(winrt::hstring, Name, "name", false, L"")
+
+////////////////////////////////////////////////////////////////////////////////
+#define GLOBAL_SUMMON_ARGS(X)                                                               \
+    X(winrt::hstring, Name, "name", false, L"")                                             \
+    X(Model::DesktopBehavior, Desktop, "desktop", false, Model::DesktopBehavior::ToCurrent) \
+    X(Model::MonitorBehavior, Monitor, "monitor", false, Model::MonitorBehavior::ToMouse)   \
+    X(bool, ToggleVisibility, "toggleVisibility", false, true)                              \
+    X(uint32_t, DropdownDuration, "dropdownDuration", false, 0)
+
+////////////////////////////////////////////////////////////////////////////////
+#define FOCUS_PANE_ARGS(X) \
+    X(uint32_t, Id, "id", false, 0u)
+
+////////////////////////////////////////////////////////////////////////////////
+#define CLEAR_BUFFER_ARGS(X) \
+    X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
+
+////////////////////////////////////////////////////////////////////////////////
 
 namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 {
@@ -97,6 +212,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         WINRT_PROPERTY(bool, Handled, false);
     };
 
+    // Although it may _seem_ like NewTerminalArgs can use ACTION_ARG_BODY, it
+    // actually can't, because it isn't an `IActionArgs`, which breaks some
+    // assumptions made in the macro.
     struct NewTerminalArgs : public NewTerminalArgsT<NewTerminalArgs>
     {
         NewTerminalArgs() = default;
@@ -187,65 +305,44 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Commandline(), StartingDirectory(), TabTitle(), TabColor(), ProfileIndex(), Profile(), SuppressApplicationTitle(), ColorScheme());
+            til::hasher h;
+            Hash(h);
+            return h.finalize();
+        }
+        void Hash(til::hasher& h) const
+        {
+            h.write(Commandline());
+            h.write(StartingDirectory());
+            h.write(TabTitle());
+            h.write(TabColor());
+            h.write(ProfileIndex());
+            h.write(Profile());
+            h.write(SuppressApplicationTitle());
+            h.write(ColorScheme());
         }
     };
+}
 
-    struct CopyTextArgs : public CopyTextArgsT<CopyTextArgs>
+template<>
+struct til::hash_trait<winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs>
+{
+    using M = winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs;
+    using I = winrt::Microsoft::Terminal::Settings::Model::implementation::NewTerminalArgs;
+
+    void operator()(hasher& h, const M& value) const noexcept
     {
-        CopyTextArgs() = default;
-        ACTION_ARG(bool, SingleLine, false);
-        ACTION_ARG(Windows::Foundation::IReference<Control::CopyFormat>, CopyFormatting, nullptr);
-
-        static constexpr std::string_view SingleLineKey{ "singleLine" };
-        static constexpr std::string_view CopyFormattingKey{ "copyFormatting" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
+        if (value)
         {
-            auto otherAsUs = other.try_as<CopyTextArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_SingleLine == _SingleLine &&
-                       otherAsUs->_CopyFormatting == _CopyFormatting;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<CopyTextArgs>();
-            JsonUtils::GetValueForKey(json, SingleLineKey, args->_SingleLine);
-            JsonUtils::GetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
-            return { *args, {} };
+            winrt::get_self<I>(value)->Hash(h);
         }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<CopyTextArgs>(val) };
-            JsonUtils::SetValueForKey(json, SingleLineKey, args->_SingleLine);
-            JsonUtils::SetValueForKey(json, CopyFormattingKey, args->_CopyFormatting);
-            return json;
-        }
+    }
+};
 
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<CopyTextArgs>() };
-            copy->_SingleLine = _SingleLine;
-            copy->_CopyFormatting = _CopyFormatting;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SingleLine(), CopyFormatting());
-        }
-    };
+namespace winrt::Microsoft::Terminal::Settings::Model::implementation
+{
+    // New Tabs, Panes, and Windows all use NewTerminalArgs, which is more
+    // complicated and doesn't play nice with the macro. So those we'll still
+    // have to define manually.
 
     struct NewTabArgs : public NewTabArgsT<NewTabArgs>
     {
@@ -290,384 +387,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TerminalArgs());
-        }
-    };
-
-    struct MovePaneArgs : public MovePaneArgsT<MovePaneArgs>
-    {
-        MovePaneArgs() = default;
-        MovePaneArgs(uint32_t& tabIndex) :
-            _TabIndex{ tabIndex } {};
-        ACTION_ARG(uint32_t, TabIndex, 0);
-
-        static constexpr std::string_view TabIndexKey{ "index" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<MovePaneArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_TabIndex == _TabIndex;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MovePaneArgs>();
-            JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<MovePaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<MovePaneArgs>() };
-            copy->_TabIndex = _TabIndex;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabIndex());
-        }
-    };
-
-    struct SwitchToTabArgs : public SwitchToTabArgsT<SwitchToTabArgs>
-    {
-        SwitchToTabArgs() = default;
-        SwitchToTabArgs(uint32_t& tabIndex) :
-            _TabIndex{ tabIndex } {};
-        ACTION_ARG(uint32_t, TabIndex, 0);
-
-        static constexpr std::string_view TabIndexKey{ "index" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<SwitchToTabArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_TabIndex == _TabIndex;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SwitchToTabArgs>();
-            JsonUtils::GetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<SwitchToTabArgs>(val) };
-            JsonUtils::SetValueForKey(json, TabIndexKey, args->_TabIndex);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<SwitchToTabArgs>() };
-            copy->_TabIndex = _TabIndex;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabIndex());
-        }
-    };
-
-    struct ResizePaneArgs : public ResizePaneArgsT<ResizePaneArgs>
-    {
-        ResizePaneArgs() = default;
-        ACTION_ARG(Model::ResizeDirection, ResizeDirection, ResizeDirection::None);
-
-        static constexpr std::string_view DirectionKey{ "direction" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ResizePaneArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_ResizeDirection == _ResizeDirection;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ResizePaneArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_ResizeDirection);
-            if (args->ResizeDirection() == ResizeDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<ResizePaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_ResizeDirection);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<ResizePaneArgs>() };
-            copy->_ResizeDirection = _ResizeDirection;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(ResizeDirection());
-        }
-    };
-
-    struct MoveFocusArgs : public MoveFocusArgsT<MoveFocusArgs>
-    {
-        MoveFocusArgs() = default;
-        MoveFocusArgs(Model::FocusDirection direction) :
-            _FocusDirection{ direction } {};
-
-        ACTION_ARG(Model::FocusDirection, FocusDirection, FocusDirection::None);
-
-        static constexpr std::string_view DirectionKey{ "direction" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<MoveFocusArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_FocusDirection == _FocusDirection;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MoveFocusArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_FocusDirection);
-            if (args->FocusDirection() == FocusDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<MoveFocusArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_FocusDirection);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<MoveFocusArgs>() };
-            copy->_FocusDirection = _FocusDirection;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(FocusDirection());
-        }
-    };
-
-    struct SwapPaneArgs : public SwapPaneArgsT<SwapPaneArgs>
-    {
-        SwapPaneArgs() = default;
-        SwapPaneArgs(Model::FocusDirection direction) :
-            _Direction{ direction } {};
-
-        ACTION_ARG(Model::FocusDirection, Direction, FocusDirection::None);
-
-        static constexpr std::string_view DirectionKey{ "direction" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<SwapPaneArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Direction == _Direction;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SwapPaneArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
-            if (args->Direction() == FocusDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<SwapPaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<SwapPaneArgs>() };
-            copy->_Direction = _Direction;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Direction());
-        }
-    };
-
-    struct AdjustFontSizeArgs : public AdjustFontSizeArgsT<AdjustFontSizeArgs>
-    {
-        AdjustFontSizeArgs() = default;
-        ACTION_ARG(int32_t, Delta, 0);
-
-        static constexpr std::string_view AdjustFontSizeDelta{ "delta" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<AdjustFontSizeArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Delta == _Delta;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<AdjustFontSizeArgs>();
-            JsonUtils::GetValueForKey(json, AdjustFontSizeDelta, args->_Delta);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<AdjustFontSizeArgs>(val) };
-            JsonUtils::SetValueForKey(json, AdjustFontSizeDelta, args->_Delta);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<AdjustFontSizeArgs>() };
-            copy->_Delta = _Delta;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Delta());
-        }
-    };
-
-    struct SendInputArgs : public SendInputArgsT<SendInputArgs>
-    {
-        SendInputArgs() = default;
-        ACTION_ARG(winrt::hstring, Input, L"");
-
-        static constexpr std::string_view InputKey{ "input" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            if (auto otherAsUs = other.try_as<SendInputArgs>(); otherAsUs)
-            {
-                return otherAsUs->_Input == _Input;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SendInputArgs>();
-            JsonUtils::GetValueForKey(json, InputKey, args->_Input);
-            if (args->Input().empty())
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<SendInputArgs>(val) };
-            JsonUtils::SetValueForKey(json, InputKey, args->_Input);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<SendInputArgs>() };
-            copy->_Input = _Input;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Input());
+            til::hasher h;
+            h.write(TerminalArgs());
+            return h.finalize();
         }
     };
 
@@ -751,686 +473,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SplitDirection(), TerminalArgs(), SplitMode(), SplitSize());
-        }
-    };
-
-    struct OpenSettingsArgs : public OpenSettingsArgsT<OpenSettingsArgs>
-    {
-        OpenSettingsArgs() = default;
-        OpenSettingsArgs(const SettingsTarget& target) :
-            _Target{ target } {}
-        ACTION_ARG(SettingsTarget, Target, SettingsTarget::SettingsFile);
-
-        static constexpr std::string_view TargetKey{ "target" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<OpenSettingsArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Target == _Target;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<OpenSettingsArgs>();
-            JsonUtils::GetValueForKey(json, TargetKey, args->_Target);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<OpenSettingsArgs>(val) };
-            JsonUtils::SetValueForKey(json, TargetKey, args->_Target);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<OpenSettingsArgs>() };
-            copy->_Target = _Target;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Target());
-        }
-    };
-
-    struct SetColorSchemeArgs : public SetColorSchemeArgsT<SetColorSchemeArgs>
-    {
-        SetColorSchemeArgs() = default;
-        SetColorSchemeArgs(winrt::hstring name) :
-            _SchemeName{ name } {};
-        ACTION_ARG(winrt::hstring, SchemeName, L"");
-
-        static constexpr std::string_view NameKey{ "colorScheme" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<SetColorSchemeArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_SchemeName == _SchemeName;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SetColorSchemeArgs>();
-            JsonUtils::GetValueForKey(json, NameKey, args->_SchemeName);
-            if (args->SchemeName().empty())
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<SetColorSchemeArgs>(val) };
-            JsonUtils::SetValueForKey(json, NameKey, args->_SchemeName);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<SetColorSchemeArgs>() };
-            copy->_SchemeName = _SchemeName;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SchemeName());
-        }
-    };
-
-    struct SetTabColorArgs : public SetTabColorArgsT<SetTabColorArgs>
-    {
-        SetTabColorArgs() = default;
-        SetTabColorArgs(Windows::UI::Color tabColor) :
-            _TabColor{ tabColor } {}
-        ACTION_ARG(Windows::Foundation::IReference<Windows::UI::Color>, TabColor, nullptr);
-
-        static constexpr std::string_view ColorKey{ "color" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<SetTabColorArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_TabColor == _TabColor;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<SetTabColorArgs>();
-            JsonUtils::GetValueForKey(json, ColorKey, args->_TabColor);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<SetTabColorArgs>(val) };
-            JsonUtils::SetValueForKey(json, ColorKey, args->_TabColor);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<SetTabColorArgs>() };
-            copy->_TabColor = _TabColor;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TabColor());
-        }
-    };
-
-    struct RenameTabArgs : public RenameTabArgsT<RenameTabArgs>
-    {
-        RenameTabArgs() = default;
-        ACTION_ARG(winrt::hstring, Title, L"");
-
-        static constexpr std::string_view TitleKey{ "title" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<RenameTabArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Title == _Title;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<RenameTabArgs>();
-            JsonUtils::GetValueForKey(json, TitleKey, args->_Title);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<RenameTabArgs>(val) };
-            JsonUtils::SetValueForKey(json, TitleKey, args->_Title);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<RenameTabArgs>() };
-            copy->_Title = _Title;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Title());
-        }
-    };
-
-    struct ExecuteCommandlineArgs : public ExecuteCommandlineArgsT<ExecuteCommandlineArgs>
-    {
-        ExecuteCommandlineArgs() = default;
-        ExecuteCommandlineArgs(winrt::hstring commandline) :
-            _Commandline{ commandline } {};
-        ACTION_ARG(winrt::hstring, Commandline, L"");
-
-        static constexpr std::string_view CommandlineKey{ "commandline" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ExecuteCommandlineArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Commandline == _Commandline;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ExecuteCommandlineArgs>();
-            JsonUtils::GetValueForKey(json, CommandlineKey, args->_Commandline);
-            if (args->Commandline().empty())
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<ExecuteCommandlineArgs>(val) };
-            JsonUtils::SetValueForKey(json, CommandlineKey, args->_Commandline);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<ExecuteCommandlineArgs>() };
-            copy->_Commandline = _Commandline;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Commandline());
-        }
-    };
-
-    struct CloseOtherTabsArgs : public CloseOtherTabsArgsT<CloseOtherTabsArgs>
-    {
-        CloseOtherTabsArgs() = default;
-        CloseOtherTabsArgs(uint32_t& tabIndex) :
-            _Index{ tabIndex } {};
-        ACTION_ARG(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
-
-        static constexpr std::string_view IndexKey{ "index" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<CloseOtherTabsArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Index == _Index;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<CloseOtherTabsArgs>();
-            JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<CloseOtherTabsArgs>(val) };
-            JsonUtils::SetValueForKey(json, IndexKey, args->_Index);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<CloseOtherTabsArgs>() };
-            copy->_Index = _Index;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Index());
-        }
-    };
-
-    struct CloseTabsAfterArgs : public CloseTabsAfterArgsT<CloseTabsAfterArgs>
-    {
-        CloseTabsAfterArgs() = default;
-        CloseTabsAfterArgs(uint32_t& tabIndex) :
-            _Index{ tabIndex } {};
-        ACTION_ARG(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
-
-        static constexpr std::string_view IndexKey{ "index" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<CloseTabsAfterArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Index == _Index;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<CloseTabsAfterArgs>();
-            JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<CloseTabsAfterArgs>(val) };
-            JsonUtils::SetValueForKey(json, IndexKey, args->_Index);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<CloseTabsAfterArgs>() };
-            copy->_Index = _Index;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Index());
-        }
-    };
-
-    struct CloseTabArgs : public CloseTabArgsT<CloseTabArgs>
-    {
-        CloseTabArgs() = default;
-        CloseTabArgs(uint32_t tabIndex) :
-            _Index{ tabIndex } {};
-        ACTION_ARG(Windows::Foundation::IReference<uint32_t>, Index, nullptr);
-
-        static constexpr std::string_view IndexKey{ "index" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<CloseTabArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Index == _Index;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<CloseTabArgs>();
-            JsonUtils::GetValueForKey(json, IndexKey, args->_Index);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<CloseTabArgs>(val) };
-            JsonUtils::SetValueForKey(json, IndexKey, args->_Index);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<CloseTabArgs>() };
-            copy->_Index = _Index;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Index());
-        }
-    };
-
-    struct MoveTabArgs : public MoveTabArgsT<MoveTabArgs>
-    {
-        MoveTabArgs() = default;
-        MoveTabArgs(MoveTabDirection direction) :
-            _Direction{ direction } {};
-        ACTION_ARG(MoveTabDirection, Direction, MoveTabDirection::None);
-
-        static constexpr std::string_view DirectionKey{ "direction" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<MoveTabArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Direction == _Direction;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<MoveTabArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
-            if (args->Direction() == MoveTabDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<MoveTabArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<MoveTabArgs>() };
-            copy->_Direction = _Direction;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Direction());
-        }
-    };
-
-    struct ScrollUpArgs : public ScrollUpArgsT<ScrollUpArgs>
-    {
-        ScrollUpArgs() = default;
-        ACTION_ARG(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
-
-        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ScrollUpArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_RowsToScroll == _RowsToScroll;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ScrollUpArgs>();
-            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<ScrollUpArgs>(val) };
-            JsonUtils::SetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<ScrollUpArgs>() };
-            copy->_RowsToScroll = _RowsToScroll;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(RowsToScroll());
-        }
-    };
-
-    struct ScrollDownArgs : public ScrollDownArgsT<ScrollDownArgs>
-    {
-        ScrollDownArgs() = default;
-        ACTION_ARG(Windows::Foundation::IReference<uint32_t>, RowsToScroll, nullptr);
-
-        static constexpr std::string_view RowsToScrollKey{ "rowsToScroll" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ScrollDownArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_RowsToScroll == _RowsToScroll;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ScrollDownArgs>();
-            JsonUtils::GetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<ScrollDownArgs>(val) };
-            JsonUtils::SetValueForKey(json, RowsToScrollKey, args->_RowsToScroll);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<ScrollDownArgs>() };
-            copy->_RowsToScroll = _RowsToScroll;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(RowsToScroll());
-        }
-    };
-
-    struct ToggleCommandPaletteArgs : public ToggleCommandPaletteArgsT<ToggleCommandPaletteArgs>
-    {
-        ToggleCommandPaletteArgs() = default;
-
-        // To preserve backward compatibility the default is Action.
-        ACTION_ARG(CommandPaletteLaunchMode, LaunchMode, CommandPaletteLaunchMode::Action);
-
-        static constexpr std::string_view LaunchModeKey{ "launchMode" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ToggleCommandPaletteArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_LaunchMode == _LaunchMode;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ToggleCommandPaletteArgs>();
-            JsonUtils::GetValueForKey(json, LaunchModeKey, args->_LaunchMode);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<ToggleCommandPaletteArgs>(val) };
-            JsonUtils::SetValueForKey(json, LaunchModeKey, args->_LaunchMode);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<ToggleCommandPaletteArgs>() };
-            copy->_LaunchMode = _LaunchMode;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(LaunchMode());
-        }
-    };
-
-    struct FindMatchArgs : public FindMatchArgsT<FindMatchArgs>
-    {
-        FindMatchArgs() = default;
-        FindMatchArgs(FindMatchDirection direction) :
-            _Direction{ direction } {};
-        ACTION_ARG(FindMatchDirection, Direction, FindMatchDirection::None);
-
-        static constexpr std::string_view DirectionKey{ "direction" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<FindMatchArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Direction == _Direction;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<FindMatchArgs>();
-            JsonUtils::GetValueForKey(json, DirectionKey, args->_Direction);
-            if (args->Direction() == FindMatchDirection::None)
-            {
-                return { nullptr, { SettingsLoadWarnings::MissingRequiredParameter } };
-            }
-            else
-            {
-                return { *args, {} };
-            }
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<FindMatchArgs>(val) };
-            JsonUtils::SetValueForKey(json, DirectionKey, args->_Direction);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<FindMatchArgs>() };
-            copy->_Direction = _Direction;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Direction());
+            til::hasher h;
+            h.write(SplitDirection());
+            h.write(TerminalArgs());
+            h.write(SplitMode());
+            h.write(SplitSize());
+            return h.finalize();
         }
     };
 
@@ -1477,226 +525,64 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(TerminalArgs());
+            til::hasher h;
+            h.write(TerminalArgs());
+            return h.finalize();
         }
     };
 
-    struct PrevTabArgs : public PrevTabArgsT<PrevTabArgs>
-    {
-        PrevTabArgs() = default;
-        PrevTabArgs(TabSwitcherMode switcherMode) :
-            _SwitcherMode(switcherMode) {}
-        ACTION_ARG(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
-        static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
+    ACTION_ARGS_STRUCT(CopyTextArgs, COPY_TEXT_ARGS);
 
-    public:
-        hstring GenerateName() const;
+    ACTION_ARGS_STRUCT(MovePaneArgs, MOVE_PANE_ARGS);
 
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<PrevTabArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_SwitcherMode == _SwitcherMode;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<PrevTabArgs>();
-            JsonUtils::GetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<PrevTabArgs>(val) };
-            JsonUtils::SetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<PrevTabArgs>() };
-            copy->_SwitcherMode = _SwitcherMode;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SwitcherMode());
-        }
-    };
+    ACTION_ARGS_STRUCT(SwitchToTabArgs, SWITCH_TO_TAB_ARGS);
 
-    struct NextTabArgs : public NextTabArgsT<NextTabArgs>
-    {
-        NextTabArgs() = default;
-        NextTabArgs(TabSwitcherMode switcherMode) :
-            _SwitcherMode(switcherMode) {}
-        ACTION_ARG(Windows::Foundation::IReference<TabSwitcherMode>, SwitcherMode, nullptr);
-        static constexpr std::string_view SwitcherModeKey{ "tabSwitcherMode" };
+    ACTION_ARGS_STRUCT(ResizePaneArgs, RESIZE_PANE_ARGS);
 
-    public:
-        hstring GenerateName() const;
+    ACTION_ARGS_STRUCT(MoveFocusArgs, MOVE_FOCUS_ARGS);
 
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<NextTabArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_SwitcherMode == _SwitcherMode;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<NextTabArgs>();
-            JsonUtils::GetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<NextTabArgs>(val) };
-            JsonUtils::SetValueForKey(json, SwitcherModeKey, args->_SwitcherMode);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<NextTabArgs>() };
-            copy->_SwitcherMode = _SwitcherMode;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(SwitcherMode());
-        }
-    };
+    ACTION_ARGS_STRUCT(SwapPaneArgs, SWAP_PANE_ARGS);
 
-    struct RenameWindowArgs : public RenameWindowArgsT<RenameWindowArgs>
-    {
-        RenameWindowArgs() = default;
-        RenameWindowArgs(winrt::hstring name) :
-            _Name{ name } {};
-        ACTION_ARG(winrt::hstring, Name);
-        static constexpr std::string_view NameKey{ "name" };
+    ACTION_ARGS_STRUCT(AdjustFontSizeArgs, ADJUST_FONT_SIZE_ARGS);
 
-    public:
-        hstring GenerateName() const;
+    ACTION_ARGS_STRUCT(SendInputArgs, SEND_INPUT_ARGS);
 
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<RenameWindowArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Name == _Name;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<RenameWindowArgs>();
-            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<RenameWindowArgs>(val) };
-            JsonUtils::SetValueForKey(json, NameKey, args->_Name);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<RenameWindowArgs>() };
-            copy->_Name = _Name;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Name());
-        }
-    };
+    ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS);
+
+    ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS);
+
+    ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS);
+
+    ACTION_ARGS_STRUCT(RenameTabArgs, RENAME_TAB_ARGS);
+
+    ACTION_ARGS_STRUCT(ExecuteCommandlineArgs, EXECUTE_COMMANDLINE_ARGS);
+
+    ACTION_ARGS_STRUCT(CloseOtherTabsArgs, CLOSE_OTHER_TABS_ARGS);
+
+    ACTION_ARGS_STRUCT(CloseTabsAfterArgs, CLOSE_TABS_AFTER_ARGS);
+
+    ACTION_ARGS_STRUCT(CloseTabArgs, CLOSE_TAB_ARGS);
+
+    ACTION_ARGS_STRUCT(MoveTabArgs, MOVE_TAB_ARGS);
+
+    ACTION_ARGS_STRUCT(ScrollUpArgs, SCROLL_UP_ARGS);
+
+    ACTION_ARGS_STRUCT(ScrollDownArgs, SCROLL_DOWN_ARGS);
+
+    ACTION_ARGS_STRUCT(ToggleCommandPaletteArgs, TOGGLE_COMMAND_PALETTE_ARGS);
+
+    ACTION_ARGS_STRUCT(FindMatchArgs, FIND_MATCH_ARGS);
+
+    ACTION_ARGS_STRUCT(PrevTabArgs, PREV_TAB_ARGS);
+
+    ACTION_ARGS_STRUCT(NextTabArgs, NEXT_TAB_ARGS);
+
+    ACTION_ARGS_STRUCT(RenameWindowArgs, RENAME_WINDOW_ARGS);
 
     struct GlobalSummonArgs : public GlobalSummonArgsT<GlobalSummonArgs>
     {
-        GlobalSummonArgs() = default;
-        ACTION_ARG(winrt::hstring, Name, L"");
-        ACTION_ARG(Model::DesktopBehavior, Desktop, Model::DesktopBehavior::ToCurrent);
-        ACTION_ARG(Model::MonitorBehavior, Monitor, Model::MonitorBehavior::ToMouse);
-        ACTION_ARG(bool, ToggleVisibility, true);
-        ACTION_ARG(uint32_t, DropdownDuration, 0);
-
-        static constexpr std::string_view NameKey{ "name" };
-        static constexpr std::string_view DesktopKey{ "desktop" };
-        static constexpr std::string_view MonitorKey{ "monitor" };
-        static constexpr std::string_view ToggleVisibilityKey{ "toggleVisibility" };
-        static constexpr std::string_view DropdownDurationKey{ "dropdownDuration" };
-
+        ACTION_ARG_BODY(GlobalSummonArgs, GLOBAL_SUMMON_ARGS)
     public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            if (auto otherAsUs = other.try_as<GlobalSummonArgs>())
-            {
-                return otherAsUs->_Name == _Name &&
-                       otherAsUs->_Desktop == _Desktop &&
-                       otherAsUs->_Monitor == _Monitor &&
-                       otherAsUs->_DropdownDuration == _DropdownDuration &&
-                       otherAsUs->_ToggleVisibility == _ToggleVisibility;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<GlobalSummonArgs>();
-            JsonUtils::GetValueForKey(json, NameKey, args->_Name);
-            JsonUtils::GetValueForKey(json, DesktopKey, args->_Desktop);
-            JsonUtils::GetValueForKey(json, MonitorKey, args->_Monitor);
-            JsonUtils::GetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
-            JsonUtils::GetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<GlobalSummonArgs>(val) };
-            JsonUtils::SetValueForKey(json, NameKey, args->_Name);
-            JsonUtils::SetValueForKey(json, DesktopKey, args->_Desktop);
-            JsonUtils::SetValueForKey(json, MonitorKey, args->_Monitor);
-            JsonUtils::SetValueForKey(json, DropdownDurationKey, args->_DropdownDuration);
-            JsonUtils::SetValueForKey(json, ToggleVisibilityKey, args->_ToggleVisibility);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<GlobalSummonArgs>() };
-            copy->_Name = _Name;
-            copy->_Desktop = _Desktop;
-            copy->_Monitor = _Monitor;
-            copy->_DropdownDuration = _DropdownDuration;
-            copy->_ToggleVisibility = _ToggleVisibility;
-            return *copy;
-        }
         // SPECIAL! This deserializer creates a GlobalSummonArgs with the
         // default values for quakeMode
         static FromJsonResult QuakeModeFromJson(const Json::Value& /*json*/)
@@ -1709,111 +595,11 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             args->_DropdownDuration = 200;
             return { *args, {} };
         }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(Name(), Desktop(), Monitor(), DropdownDuration(), ToggleVisibility());
-        }
     };
 
-    struct FocusPaneArgs : public FocusPaneArgsT<FocusPaneArgs>
-    {
-        FocusPaneArgs() = default;
-        FocusPaneArgs(uint32_t id) :
-            _Id{ id } {};
-        WINRT_PROPERTY(uint32_t, Id);
-        static constexpr std::string_view IdKey{ "id" };
+    ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS);
 
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<FocusPaneArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Id == _Id;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<FocusPaneArgs>();
-            JsonUtils::GetValueForKey(json, IdKey, args->_Id);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<FocusPaneArgs>(val) };
-            JsonUtils::SetValueForKey(json, IdKey, args->_Id);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<FocusPaneArgs>() };
-            copy->_Id = _Id;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Id);
-        }
-    };
-
-    struct ClearBufferArgs : public ClearBufferArgsT<ClearBufferArgs>
-    {
-        ClearBufferArgs() = default;
-        ClearBufferArgs(winrt::Microsoft::Terminal::Control::ClearBufferType clearType) :
-            _Clear{ clearType } {};
-        WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, winrt::Microsoft::Terminal::Control::ClearBufferType::All);
-        static constexpr std::string_view ClearKey{ "clear" };
-
-    public:
-        hstring GenerateName() const;
-
-        bool Equals(const IActionArgs& other)
-        {
-            auto otherAsUs = other.try_as<ClearBufferArgs>();
-            if (otherAsUs)
-            {
-                return otherAsUs->_Clear == _Clear;
-            }
-            return false;
-        };
-        static FromJsonResult FromJson(const Json::Value& json)
-        {
-            // LOAD BEARING: Not using make_self here _will_ break you in the future!
-            auto args = winrt::make_self<ClearBufferArgs>();
-            JsonUtils::GetValueForKey(json, ClearKey, args->_Clear);
-            return { *args, {} };
-        }
-        static Json::Value ToJson(const IActionArgs& val)
-        {
-            if (!val)
-            {
-                return {};
-            }
-            Json::Value json{ Json::ValueType::objectValue };
-            const auto args{ get_self<ClearBufferArgs>(val) };
-            JsonUtils::SetValueForKey(json, ClearKey, args->_Clear);
-            return json;
-        }
-        IActionArgs Copy() const
-        {
-            auto copy{ winrt::make_self<ClearBufferArgs>() };
-            copy->_Clear = _Clear;
-            return *copy;
-        }
-        size_t Hash() const
-        {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Clear);
-        }
-    };
+    ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS);
 
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
     {
@@ -1860,7 +646,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         }
         size_t Hash() const
         {
-            return ::Microsoft::Terminal::Settings::Model::HashUtils::HashProperty(_Actions);
+            til::hasher h;
+            h.write(winrt::get_abi(_Actions));
+            return h.finalize();
         }
     };
 }

@@ -23,9 +23,11 @@ Fitt
 formattings
 ftp
 fvar
+gcc
 geeksforgeeks
 ghe
 gje
+godbolt
 hostname
 hostnames
 hyperlink
@@ -75,6 +77,7 @@ UIs
 und
 unregister
 versioned
+vsdevcmd
 We'd
 wildcards
 yeru

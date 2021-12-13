@@ -77,3 +77,5 @@ TRACELOGGING_DECLARE_PROVIDER(g_hTerminalAppProvider);
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <cppwinrt_utils.h>

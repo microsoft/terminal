@@ -34,3 +34,5 @@
 
 #include <shlobj.h>
 #include <shobjidl_core.h>
+
+#include <cppwinrt_utils.h>

@@ -57,3 +57,5 @@ typedef NTSTATUS* PNTSTATUS;
 /*lint -restore */ // Resume checking for different typedefs.
 #define NT_SUCCESS(Status) (((NTSTATUS)(Status)) >= 0)
 // </Conhost Includes>
+
+#include <cppwinrt_utils.h>

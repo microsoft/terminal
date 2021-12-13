@@ -17,7 +17,6 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "TerminalSettingsCreateResult.g.h"
 #include "IInheritable.h"
-#include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
@@ -64,12 +63,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                                                                              const Model::NewTerminalArgs& newTerminalArgs,
                                                                              const Control::IKeyBindings& keybindings);
 
-        static Model::TerminalSettingsCreateResult CreateWithParent(const Model::TerminalSettingsCreateResult& parent);
-
-        Model::TerminalSettings GetParent();
-
-        void SetParent(const Model::TerminalSettings& parent);
-
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
         // --------------------------- Core Settings ---------------------------
@@ -95,7 +88,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, CopyOnSelect, false);
-        INHERITABLE_SETTING(Model::TerminalSettings, bool, InputServiceWarning, true);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, FocusFollowMouse, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, TrimBlockSelection, false);
         INHERITABLE_SETTING(Model::TerminalSettings, bool, DetectURLs, true);

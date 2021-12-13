@@ -8,6 +8,7 @@
 
 #include "../types/inc/utils.hpp"
 #include "../types/inc/convert.hpp"
+#include "../../types/inc/Utf16Parser.hpp"
 #include "../../types/inc/GlyphWidth.hpp"
 
 #pragma hdrstop
@@ -2447,7 +2448,7 @@ uint16_t TextBuffer::GetHyperlinkId(std::wstring_view uri, std::wstring_view id)
         // assign _currentHyperlinkId if the custom id does not already exist
         std::wstring newId{ id };
         // hash the URL and add it to the custom ID - GH#7698
-        newId += L"%" + std::to_wstring(std::hash<std::wstring_view>{}(uri));
+        newId += L"%" + std::to_wstring(til::hash(uri));
         const auto result = _hyperlinkCustomIdMap.emplace(newId, _currentHyperlinkId);
         if (result.second)
         {
@@ -2585,16 +2586,17 @@ PointTree TextBuffer::GetPatterns(const size_t firstRow, const size_t lastRow) c
             // match and the previous match, so we use the size of the prefix
             // along with the size of the match to determine the locations
             size_t prefixSize = 0;
-
-            for (const auto ch : i->prefix().str())
+            for (const std::vector<wchar_t> parsedGlyph : Utf16Parser::Parse(i->prefix().str()))
             {
-                prefixSize += IsGlyphFullWidth(ch) ? 2 : 1;
+                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
+                prefixSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto start = lenUpToThis + prefixSize;
             size_t matchSize = 0;
-            for (const auto ch : i->str())
+            for (const std::vector<wchar_t> parsedGlyph : Utf16Parser::Parse(i->str()))
             {
-                matchSize += IsGlyphFullWidth(ch) ? 2 : 1;
+                const std::wstring_view glyph{ parsedGlyph.data(), parsedGlyph.size() };
+                matchSize += IsGlyphFullWidth(glyph) ? 2 : 1;
             }
             const auto end = start + matchSize;
             lenUpToThis = end;
