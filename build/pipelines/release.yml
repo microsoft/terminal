@@ -291,6 +291,7 @@ jobs:
           BuildConfiguration: Release
           BuildPlatform: x64
     displayName: Validate Security and Compliance
+    timeoutInMinutes: 240
     steps:
     - checkout: self
       clean: true
