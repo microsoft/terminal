@@ -3,7 +3,7 @@
 
 #include "pch.h"
 #include "Terminal.hpp"
-#include "ColorFix.hpp"
+#include "../../types/inc/ColorFix.hpp"
 #include <DefaultSettings.h>
 
 using namespace Microsoft::Terminal::Core;

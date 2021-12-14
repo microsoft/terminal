@@ -5,10 +5,9 @@
 // https://github.com/Maximus5/ConEmu/blob/master/src/ConEmu/ColorFix.cpp
 // and then adjusted to fit our style guidelines
 
-#include "pch.h"
+#include "precomp.h"
 
-#include <Windows.h>
-#include "ColorFix.hpp"
+#include "inc/ColorFix.hpp"
 
 static constexpr double gMinThreshold = 12.0;
 static constexpr double gExpThreshold = 20.0;

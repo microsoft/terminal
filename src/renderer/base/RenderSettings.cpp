@@ -5,10 +5,14 @@
 
 #include "../inc/RenderSettings.hpp"
 #include "../inc/IRenderTarget.hpp"
+#include "../../types/inc/ColorFix.hpp"
 #include "../../types/inc/colorTable.hpp"
 
 using namespace Microsoft::Console::Render;
 using Microsoft::Console::Utils::InitializeColorTable;
+
+static constexpr size_t AdjustedFgIndex{ 16 };
+static constexpr size_t AdjustedBgIndex{ 17 };
 
 RenderSettings::RenderSettings() noexcept
 {
@@ -60,6 +64,38 @@ const std::array<COLORREF, TextColor::TABLE_SIZE>& RenderSettings::GetColorTable
 void RenderSettings::ResetColorTable() noexcept
 {
     InitializeColorTable({ _colorTable.data(), 16 });
+}
+
+// Routine Description:
+// - Creates the adjusted color array, which contains the possible foreground colors,
+//   adjusted for perceivability
+// - The adjusted color array is 2-d, and effectively maps a background and foreground
+//   color pair to the adjusted foreground for that color pair
+void RenderSettings::MakeAdjustedColorArray() noexcept
+{
+    // The color table has 16 colors, but the adjusted color table needs to be 18
+    // to include the default background and default foreground colors
+    std::array<COLORREF, 18> colorTableWithDefaults;
+    std::copy_n(std::begin(_colorTable), 16, std::begin(colorTableWithDefaults));
+    colorTableWithDefaults[AdjustedFgIndex] = GetColorAlias(ColorAlias::DefaultForeground);
+    colorTableWithDefaults[AdjustedBgIndex] = GetColorAlias(ColorAlias::DefaultBackground);
+
+    for (auto fgIndex = 0; fgIndex < 18; ++fgIndex)
+    {
+        const auto fg = til::at(colorTableWithDefaults, fgIndex);
+        for (auto bgIndex = 0; bgIndex < 18; ++bgIndex)
+        {
+            if (fgIndex == bgIndex)
+            {
+                _adjustedForegroundColors[bgIndex][fgIndex] = fg;
+            }
+            else
+            {
+                const auto bg = til::at(colorTableWithDefaults, bgIndex);
+                _adjustedForegroundColors[bgIndex][fgIndex] = ColorFix::GetPerceivableColor(fg, bg);
+            }
+        }
+    }
 }
 
 // Routine Description:
@@ -138,26 +174,65 @@ std::pair<COLORREF, COLORREF> RenderSettings::GetAttributeColors(const TextAttri
 {
     _blinkIsInUse = _blinkIsInUse || attr.IsBlinking();
 
+    const auto fgTextColor = attr.GetForeground();
+    const auto bgTextColor = attr.GetBackground();
+
     const auto defaultFgIndex = GetColorAliasIndex(ColorAlias::DefaultForeground);
     const auto defaultBgIndex = GetColorAliasIndex(ColorAlias::DefaultBackground);
-    const auto brightenFg = GetRenderMode(Mode::IntenseIsBright) && attr.IsBold();
-    auto fg = attr.GetForeground().GetColor(_colorTable, defaultFgIndex, brightenFg);
-    auto bg = attr.GetBackground().GetColor(_colorTable, defaultBgIndex);
 
-    if (attr.IsFaint() || (_blinkShouldBeFaint && attr.IsBlinking()))
-    {
-        fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
-    }
-    if (attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed))
-    {
-        std::swap(fg, bg);
-    }
-    if (attr.IsInvisible())
-    {
-        fg = bg;
-    }
+    const auto brightenFg = attr.IsBold() && GetRenderMode(Mode::IntenseIsBright);
+    const auto dimFg = attr.IsFaint() || (_blinkShouldBeFaint && attr.IsBlinking());
+    const auto swapFgAndBg = attr.IsReverseVideo() ^ GetRenderMode(Mode::ScreenReversed);
 
-    return { fg, bg };
+    // We want to nudge the foreground color to make it more perceivable only for the
+    // default color pairs within the color table
+    if (GetRenderMode(Mode::DistinguishableColors) &&
+        !dimFg &&
+        (fgTextColor.IsDefault() || fgTextColor.IsLegacy()) &&
+        (bgTextColor.IsDefault() || bgTextColor.IsLegacy()))
+    {
+        const auto bgIndex = bgTextColor.IsDefault() ? AdjustedBgIndex : bgTextColor.GetIndex();
+        auto fgIndex = fgTextColor.IsDefault() ? AdjustedFgIndex : fgTextColor.GetIndex();
+
+        if (fgTextColor.IsIndex16() && (fgIndex < 8) && brightenFg)
+        {
+            // There is a special case for bold here - we need to get the bright version of the foreground color
+            fgIndex += 8;
+        }
+
+        if (swapFgAndBg)
+        {
+            const auto fg = _adjustedForegroundColors[fgIndex][bgIndex];
+            const auto bg = fgTextColor.GetColor(_colorTable, defaultFgIndex);
+            return { fg, bg };
+        }
+        else
+        {
+            const auto fg = _adjustedForegroundColors[bgIndex][fgIndex];
+            const auto bg = bgTextColor.GetColor(_colorTable, defaultBgIndex);
+            return { fg, bg };
+        }
+    }
+    else
+    {
+        auto fg = fgTextColor.GetColor(_colorTable, defaultFgIndex, brightenFg);
+        auto bg = bgTextColor.GetColor(_colorTable, defaultBgIndex);
+
+        if (dimFg)
+        {
+            fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.
+        }
+        if (swapFgAndBg)
+        {
+            std::swap(fg, bg);
+        }
+        if (attr.IsInvisible())
+        {
+            fg = bg;
+        }
+
+        return { fg, bg };
+    }
 }
 
 // Routine Description:
