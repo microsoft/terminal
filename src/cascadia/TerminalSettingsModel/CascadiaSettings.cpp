@@ -226,7 +226,7 @@ static bool isProfilesDefaultsOrigin(const T& profile)
 }
 
 template<typename T>
-static bool isProfilesDefaultsOriginSub(const T& sub) 
+static bool isProfilesDefaultsOriginSub(const T& sub)
 {
     return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
 }
