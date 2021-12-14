@@ -433,13 +433,13 @@ jobs:
               - toolName: CheckCFlags
                 enable: true
               - toolName: CFGCheck
-                enable: true
+                enable: false
               - toolName: Policheck
                 enable: false
               - toolName: CredScan
                 enable: false
               - toolName: XFGCheck
-                enable: false
+                enable: true
 
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
