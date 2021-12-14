@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props" Condition="Exists('..\..\..\packages\Microsoft.Toolkit.Win32.UI.XamlApplication.6.1.3\build\native\Microsoft.Toolkit.Win32.UI.XamlApplication.props')" />
   <Import Project="..\..\..\common.openconsole.props" Condition="'$(OpenConsoleDir)'==''" />

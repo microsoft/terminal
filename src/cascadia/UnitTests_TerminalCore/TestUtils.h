@@ -171,7 +171,7 @@ public:
             auto mismatched = (actualChars != expectedChars || actualAttrs != expectedAttrs);
             if (mismatched)
             {
-                Log::Comment(NoThrowString().Format(
+                WEX::Logging::Log::Comment(WEX::Common::NoThrowString().Format(
                     L"Character or attribute at index %d was mismatched", charsProcessed));
             }
 

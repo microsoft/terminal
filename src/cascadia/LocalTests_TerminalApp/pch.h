@@ -73,3 +73,5 @@ Author(s):
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"
+
+#include <cppwinrt_utils.h>

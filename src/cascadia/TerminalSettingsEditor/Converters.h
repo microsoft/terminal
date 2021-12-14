@@ -27,7 +27,5 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
 namespace winrt::Microsoft::Terminal::Settings::Editor::factory_implementation
 {
-    struct Converters : ConvertersT<Converters, implementation::Converters>
-    {
-    };
+    BASIC_FACTORY(Converters);
 }

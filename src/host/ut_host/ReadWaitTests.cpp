@@ -118,7 +118,7 @@ class InputRecordConversionTests
                                                dbcsChars,
                                                INPUT_RECORD_COUNT * 2,
                                                nullptr,
-                                               false);
+                                               FALSE);
         VERIFY_ARE_EQUAL(writtenBytes, static_cast<int>(INPUT_RECORD_COUNT * 2));
         for (size_t i = 0; i < INPUT_RECORD_COUNT * 2; ++i)
         {

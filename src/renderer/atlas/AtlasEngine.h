@@ -64,7 +64,7 @@ namespace Microsoft::Console::Render
         // DxRenderer - setter
         void SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
         void SetCallback(std::function<void()> pfn) noexcept override;
-        void SetDefaultTextBackgroundOpacity(float opacity) noexcept override;
+        void EnableTransparentBackground(const bool isTransparent) noexcept override;
         void SetForceFullRepaintRendering(bool enable) noexcept override;
         [[nodiscard]] HRESULT SetHwnd(HWND hwnd) noexcept override;
         void SetPixelShaderPath(std::wstring_view value) noexcept override;
@@ -359,7 +359,9 @@ namespace Microsoft::Console::Render
 
             bool is_inline() const noexcept
             {
-                return (__builtin_bit_cast(uintptr_t, allocated) & 1) != 0;
+                // VSO-1430353: __builtin_bitcast crashes the compiler under /permissive-. (BODGY)
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
+                return (reinterpret_cast<uintptr_t>(allocated) & 1) != 0;
             }
 
             const T* data() const noexcept

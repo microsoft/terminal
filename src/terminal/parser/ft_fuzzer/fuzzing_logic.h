@@ -38,12 +38,12 @@ namespace fuzz
     {
         if (rcch > 1)
         {
-            const LPWSTR rgFormatStringChars[] = { L"%n", L"%s", L"%d" };
+            const PCWSTR rgFormatStringChars[] = { L"%n", L"%s", L"%d" };
             size_t cbDestSize = 2 * sizeof(WCHAR);
             memcpy_s(
                 &(pwsz[CFuzzChance::GetRandom<size_t>(rcch - 1)]), // -1 because we are writing 2 chars
                 cbDestSize,
-                CFuzzChance::SelectOne<const LPWSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
+                CFuzzChance::SelectOne<const PCWSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
                 cbDestSize);
         }
 
@@ -56,12 +56,12 @@ namespace fuzz
     {
         if (rcch > 1)
         {
-            const LPSTR rgFormatStringChars[] = { "%n", "%s", "%d" };
+            const LPCSTR rgFormatStringChars[] = { "%n", "%s", "%d" };
             size_t cbDestSize = 2 * sizeof(CHAR);
             memcpy_s(
                 &(psz[CFuzzChance::GetRandom<size_t>(rcch - 1)]),
                 cbDestSize,
-                CFuzzChance::SelectOne<const LPSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
+                CFuzzChance::SelectOne<const LPCSTR>(rgFormatStringChars, ARRAYSIZE(rgFormatStringChars)),
                 cbDestSize);
         }
 
@@ -238,12 +238,40 @@ namespace fuzz
         return _strrev(psz);
     }
 
+    template<class _Alloc = CFuzzCRTAllocator>
+    class CFuzzLogic;
+
+    // Flips a random byte value within the buffer.
+    template<typename _Type>
+    static _Type* _fz_flipByte(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
+    {
+        if (rcelms > 0)
+        {
+            return reinterpret_cast<_Type*>(CFuzzLogic<>::FuzzArrayElement(
+                reinterpret_cast<BYTE*>(p), (rcelms) * sizeof(_Type)));
+        }
+
+        return p;
+    }
+
+    // Flips a random entry value within the buffer
+    template<typename _Type>
+    static _Type* _fz_flipEntry(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
+    {
+        if (rcelms > 0)
+        {
+            return CFuzzLogic<>::FuzzArrayElement(p, rcelms);
+        }
+
+        return p;
+    }
+
     // Contains fuzzing logic based upon a variety of default scenarios.  The
     // idea is to capture and make available a comprehensive fuzzing library
     // that does not require external modules or complex setup.  This should
     // make fuzzing easier to implement and test, as well as more explicit
     // with regard to what fuzzing manipulations are possible.
-    template<class _Alloc = CFuzzCRTAllocator>
+    template<class _Alloc>
     class CFuzzLogic
     {
     public:
@@ -428,31 +456,6 @@ namespace fuzz
             return psz;
         }
     };
-
-    // Flips a random byte value within the buffer.
-    template<typename _Type>
-    static _Type* _fz_flipByte(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
-    {
-        if (rcelms > 0)
-        {
-            return reinterpret_cast<_Type*>(CFuzzLogic<>::FuzzArrayElement(
-                reinterpret_cast<BYTE*>(p), (rcelms) * sizeof(_Type)));
-        }
-
-        return p;
-    }
-
-    // Flips a random entry value within the buffer
-    template<typename _Type>
-    static _Type* _fz_flipEntry(__inout_ecount(rcelms) _Type* p, __inout size_t& rcelms)
-    {
-        if (rcelms > 0)
-        {
-            return CFuzzLogic<>::FuzzArrayElement(p, rcelms);
-        }
-
-        return p;
-    }
 
     static char* _fz_sz_tokenizeSpaces(__in char* psz)
     {

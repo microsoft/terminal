@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #pragma once
@@ -46,7 +46,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(const Editor::ProfileViewModel& profile);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
-        winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState _lastProfilesNavState{ nullptr };
     };
 }
 

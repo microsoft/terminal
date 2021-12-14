@@ -1,4 +1,4 @@
-﻿#include "pch.h"
+#include "pch.h"
 #include "AppState.h"
 #include "../../types/inc/utils.hpp"
 

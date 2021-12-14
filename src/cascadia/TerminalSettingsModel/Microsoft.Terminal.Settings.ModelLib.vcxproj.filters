@@ -99,6 +99,7 @@
     <ClInclude Include="VsDevGDKCmdGenerator.h">
       <Filter>profileGeneration</Filter>
     </ClInclude>
+    <ClInclude Include="ActionArgsMagic.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ActionArgs.idl" />
