@@ -15,13 +15,13 @@ Author(s):
 
 #pragma once
 
+#include <../host/VtIo.hpp>
 #include "../inc/RenderEngineBase.hpp"
-#include "../../inc/ITerminalOutputConnection.hpp"
-#include "../../inc/ITerminalOwner.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "tracing.hpp"
 #include <string>
 #include <functional>
+#include <memory>
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
@@ -31,9 +31,14 @@ namespace TerminalCoreUnitTests
 };
 #endif
 
+namespace Microsoft::Console::VirtualTerminal
+{
+    class VtIo;
+}
+
 namespace Microsoft::Console::Render
 {
-    class VtEngine : public RenderEngineBase, public Microsoft::Console::ITerminalOutputConnection
+    class VtEngine : public RenderEngineBase
     {
     public:
         // See _PaintUtf8BufferLine for explanation of this value.
@@ -73,7 +78,7 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT InheritCursor(const COORD coordCursor) noexcept;
         [[nodiscard]] HRESULT WriteTerminalUtf8(const std::string_view str) noexcept;
         [[nodiscard]] virtual HRESULT WriteTerminalW(const std::wstring_view str) noexcept = 0;
-        void SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner);
+        void SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const terminalOwner);
         void BeginResizeRequest();
         void EndResizeRequest();
         void SetResizeQuirk(const bool resizeQuirk);
@@ -113,7 +118,7 @@ namespace Microsoft::Console::Render
 
         bool _pipeBroken;
         HRESULT _exitResult;
-        Microsoft::Console::ITerminalOwner* _terminalOwner;
+        Microsoft::Console::VirtualTerminal::VtIo* _terminalOwner;
 
         Microsoft::Console::VirtualTerminal::RenderTracing _trace;
         bool _inResizeRequest{ false };

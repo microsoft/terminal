@@ -16,9 +16,7 @@ Author(s):
 
 #pragma once
 
-#include "../inc/IRenderer.hpp"
-#include "../inc/IRenderEngine.hpp"
-#include "../inc/IRenderData.hpp"
+#include "../inc/IRenderTarget.hpp"
 
 #include "thread.hpp"
 
@@ -27,19 +25,19 @@ Author(s):
 
 namespace Microsoft::Console::Render
 {
-    class Renderer sealed : public IRenderer
+    class Renderer : public IRenderTarget
     {
     public:
         Renderer(IRenderData* pData,
                  _In_reads_(cEngines) IRenderEngine** const pEngine,
                  const size_t cEngines,
-                 std::unique_ptr<IRenderThread> thread);
+                 std::unique_ptr<RenderThread> thread);
 
-        virtual ~Renderer() override;
+        virtual ~Renderer();
 
         [[nodiscard]] HRESULT PaintFrame();
 
-        void TriggerSystemRedraw(const RECT* const prcDirtyClient) override;
+        void TriggerSystemRedraw(const RECT* const prcDirtyClient);
         void TriggerRedraw(const Microsoft::Console::Types::Viewport& region) override;
         void TriggerRedraw(const COORD* const pcoord) override;
         void TriggerRedrawCursor(const COORD* const pcoord) override;
@@ -55,23 +53,23 @@ namespace Microsoft::Console::Render
 
         void TriggerFontChange(const int iDpi,
                                const FontInfoDesired& FontInfoDesired,
-                               _Out_ FontInfo& FontInfo) override;
+                               _Out_ FontInfo& FontInfo);
 
         void UpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                             const SIZE cellSize,
-                            const size_t centeringHint) override;
+                            const size_t centeringHint);
 
         [[nodiscard]] HRESULT GetProposedFont(const int iDpi,
                                               const FontInfoDesired& FontInfoDesired,
-                                              _Out_ FontInfo& FontInfo) override;
+                                              _Out_ FontInfo& FontInfo);
 
-        bool IsGlyphWideByFont(const std::wstring_view glyph) override;
+        bool IsGlyphWideByFont(const std::wstring_view glyph);
 
-        void EnablePainting() override;
-        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs) override;
-        void WaitUntilCanRender() override;
+        void EnablePainting();
+        void WaitForPaintCompletionAndDisable(const DWORD dwTimeoutMs);
+        void WaitUntilCanRender();
 
-        void AddRenderEngine(_In_ IRenderEngine* const pEngine) override;
+        void AddRenderEngine(_In_ IRenderEngine* const pEngine);
 
         void SetRendererEnteredErrorStateCallback(std::function<void()> pfn);
         void ResetErrorStateAndResume();
@@ -103,7 +101,7 @@ namespace Microsoft::Console::Render
 
         std::array<IRenderEngine*, 2> _engines{};
         IRenderData* _pData = nullptr; // Non-ownership pointer
-        std::unique_ptr<IRenderThread> _pThread;
+        std::unique_ptr<RenderThread> _pThread;
         static constexpr size_t _firstSoftFontChar = 0xEF20;
         size_t _lastSoftFontChar = 0;
         std::optional<interval_tree::IntervalTree<til::point, size_t>::interval> _hoveredInterval;
