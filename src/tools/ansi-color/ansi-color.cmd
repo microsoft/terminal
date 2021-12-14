@@ -1,17 +1,20 @@
-@ECHO OFF
+@ECHO OFF & :: ANSI-COLOR :: Authored by Ryan Beesley :: https://github.com/rbeesley
 GOTO :DEFINE_MACROS
 
 %=- Entry point after macro definitions -=%
 :MAIN
 SETLOCAL ENABLEDELAYEDEXPANSION
 CALL :PARSE_ARGS %1 %2 %3 %4 %5 %6 %7 %8 %9
+:: Error when parsing
 IF ERRORLEVEL 1 %@exit% %ERRORLEVEL%
-
-REM ::Debug -- Use this to break after parsing arguments
-REM CMD /C EXIT -1073741510
+:: Parsing success
+IF ERRORLEVEL 0 GOTO :CONFIGURATION
+:: Help requested, but this shouldn't actually be an error from CMDs perspective
+IF ERRORLEVEL -1 %@exit% 0
 
 
 %=- Configuration -=%
+:CONFIGURATION
 :: Default test text if not defined in the data segment
 SET "CELL= gYw "
 :: Uncomment to use UTF-8 for output, such as when the test text is Unicode
@@ -22,8 +25,6 @@ REM SET "SPINNER.DISABLED=#TRUE#"
 REM SET "SHOW.ANSI=#TRUE#"
 :: Uncomment to show cell R1C1 reference addressing instead of cell text
 REM SET "SHOW.R1C1_REFERENCE=#TRUE#"
-:: Uncomment to turn on debug output for diagnosing separator resolution
-REM SET "DEBUG.OUT=#TRUE#"
 %=- End Configuration -=%
 
 
@@ -368,34 +369,62 @@ REM FOR /F "tokens=* USEBACKQ" %%G IN (`PowerShell -Command "[char]0x1B"`) DO (S
 SET "ESC="
 
 :: If we're going to display the ANSI Escape Sequence control characters
-:: save the active console Code Page, change to UTF-8, and override ESC
+:: we require UTF-8, will disable the spinner, and override the ANSI ESC
+:: character with a Unicode codepoint which represents ESC.
 IF DEFINED SHOW.ANSI (
+  SET "UTF8.REQUIRED=#TRUE#"
   SET "SPINNER.DISABLED=#TRUE#"
-  REM SET "SHOW.UTF8=#TRUE#"
 )
 
 :: The console (CMD) is normally not UTF-8, so preserve the codepage so we can reset it.
 :: Because the output of chcp is localized, we grab the last value of the string,
 :: which we have our fingers crossed, will be the codepage.
-FOR /F "tokens=*" %%_ IN ('chcp') DO (SET CHCP_OUT=%%_)
-FOR %%_ IN (!CHCP_OUT!) DO (SET CHCP=%%_)
+FOR /F "tokens=*" %%_ IN ('chcp 2^>^&1 ^& FOR /F %%_ IN ^("ERRORLEVEL"^) DO @CALL ECHO __ERRORLEVEL__:%%%%_%%') DO (
+  SET CHCP_OUT=%%_
+  :: Check if the CHCP call failed
+  IF ["!CHCP_OUT:~0,15!"] EQU ["__ERRORLEVEL__:"] (
+    SET "CHCP_ERR=!CHCP_OUT:__ERRORLEVEL__:=!"
+    IF [!CHCP_ERR!] EQU [9009] (
+      REM This means that CHCP wasn't found
+      REM If the definition doesn't require UTF-8, this might be okay
+      REM CHCP_RET is no longer valid though, so undefine it
+      REM Interesting side note, this is an example where the :: can be used for REM
+      REM See https://stackoverflow.com/a/61981588 for more information
+      SET "CHCP_RET="
+    ) ELSE IF [!CHCP_ERR!] NEQ [0] (
+      ECHO Error: Unable to read active codepage
+      %@exit% !CHCP_ERR!
+    )
+  ) ELSE (
+    SET "CHCP_RET=!CHCP_OUT!"
+  )
+)
+
+:: If we didn't get an error, read the last value of the output string
+FOR %%_ IN (!CHCP_RET!) DO (SET CHCP=%%_)
 IF DEFINED CHCP (
   IF [!CHCP!] EQU [65001] (
     SET "SHOW.UTF8=#TRUE#" 
   ) ELSE (
     IF DEFINED SHOW.UTF8 (
-      chcp 65001>NUL
+      chcp 65001 > NUL 2>&1
+      IF ERRORLEVEL 1 (
+        ECHO Error: Unable to set the active codepage
+        %@exit% %ErrorLevel%
+      )
     )
   )
 )
 SET "CHCP_OUT="
+SET "CHCP_ERR="
+SET "CHCP_RET="
 
-:: This is a seperate code block so that the active console Code Page is changed first
+:: This is a separate code block so that the active console Code Page is changed first
 IF DEFINED SHOW.ANSI (
   SET "ESC=␛"
 )
 
-:: Control Sequence Introducer
+:: Control Sequence Introducer (CSI)
 SET "CSI=!ESC!["
 
 :: Cursor Up
@@ -421,7 +450,7 @@ IF DEFINED SHOW.R1C1_REFERENCE (
   SET /A COL.MAX_WIDTH=7
 )
 
-:: Default properites if not defined in the data segment
+:: Default properties if not defined in the data segment
 :: See Figure 1.1 in the PDF for Wang Terminology
 :: https://uwspace.uwaterloo.ca/handle/10012/10962
 
@@ -460,7 +489,7 @@ SET "SEPARATOR.COLUMN="
 :: build the table, and show the table
 CALL :READ_DATA_SEGMENT
 CALL :VALIDATE_CONFIGURATION
-IF ERRORLEVEL 4 (
+IF ERRORLEVEL 1 (
   %@exit% %ERRORLEVEL%
 )
 CALL :RESOLVE_SEPARATORS
@@ -469,7 +498,11 @@ CALL :DISPLAY_TABLE
 
 :: Restore the console Code Page saved at the beginning of the script
 IF DEFINED CHCP (
-  chcp !CHCP!>NUL
+  chcp !CHCP! > NUL 2>&1
+  IF ERRORLEVEL 1 (
+    ECHO Error: Unable to reset the active codepage
+    %@exit% %ErrorLevel%
+  )
 )
 
 :: Exit
@@ -494,19 +527,19 @@ FOR /F "delims=" %%_ IN (!DATA_FILE!) DO (
     )
     IF ["%%_"] EQU ["__ROWS__"] (
       SET SEGMENT=ROWS
-      :: Initalize the row globals
+      :: Initialize the row globals
       SET /A ROW[#]=0
       SET /A ROWS.LEN=0
     )
     IF ["%%_"] EQU ["__COLS__"] (
       SET SEGMENT=COLS
-      :: Initalize the column globals
+      :: Initialize the column globals
       SET /A COL[#]=0
       SET /A COLS.LEN=0
     )
     IF ["%%_"] EQU ["__TABLE__"] (
       SET SEGMENT=TABLE
-      :: Initalize the table globals
+      :: Initialize the table globals
       SET /A TABLE[#]=0
     )
     IF ["%%_"] EQU ["__DATA__"] (
@@ -581,9 +614,9 @@ SET "ROW[!ROW[#]!]=!ROW!"
 IF DEFINED UTF8.REQUIRED (
   IF NOT DEFINED SHOW.UTF8 (
     SET "SCRIPT_NAME=%~nx0"
-    SET "msg=Error: Requested definition script requires UTF-8.!LF!       Try ^"!SCRIPT_NAME! /U [^<definition_file^>]^" to run with UTF-8 support!LF!       or change the default configuration in !SCRIPT_NAME! to always use UTF-8."
+    SET "msg=Error: UTF-8 console support is required.!LF!       Try ^"!SCRIPT_NAME! /U [^<definition_file^>]^" to enable UTF-8 support!LF!       or change the default configuration in !SCRIPT_NAME! to always use UTF-8."
     CALL :USAGE msg
-    %@exit% 4
+    %@exit% 1
   )
 )
 %@exit%
@@ -592,36 +625,6 @@ IF DEFINED UTF8.REQUIRED (
 :: Separators have cascading effects, so if some are not defined this is where
 :: they are defined
 :RESOLVE_SEPARATORS
-IF DEFINED DEBUG.OUT (
-  REM ::DEBUG
-  ECHO.
-  ECHO RESOLVE_SEPARATORS enter
-  ECHO.
-  ECHO SEPARATOR.COL                    : "!SEPARATOR.COL!"
-  ECHO SEPARATOR.BOXHEAD                : "!SEPARATOR.BOXHEAD!"
-  ECHO SEPARATOR.INTERSECT              : "!SEPARATOR.INTERSECT!"
-  ECHO SEPARATOR.STUB                   : "!SEPARATOR.STUB!"
-  ECHO SEPARATOR.CELL                   : "!SEPARATOR.CELL!"
-
-  ECHO SEPARATOR.VERTICAL               : "!SEPARATOR.VERTICAL!"
-  ECHO SEPARATOR.HORIZONTAL             : "!SEPARATOR.HORIZONTAL!"
-  ECHO SEPARATOR.COLUMN                 : "!SEPARATOR.COLUMN!"
-
-  ECHO STUBHEAD                         : "!STUBHEAD!"
-
-  ECHO SEPARATOR.VERTICAL.WIDTH         : "!SEPARATOR.VERTICAL.WIDTH!"
-  ECHO SEPARATOR.STUBHEAD_BOXHEAD       : "!SEPARATOR.STUBHEAD_BOXHEAD!"
-  ECHO SEPARATOR.STUB_BODY              : "!SEPARATOR.STUB_BODY!"
-  ECHO SEPARATOR.BOXHEADERS             : "!SEPARATOR.BOXHEADERS!"
-
-  ECHO SEPARATOR.STUBHEAD_STUB          : "!SEPARATOR.STUBHEAD_STUB!"
-  ECHO SEPARATOR.BOXHEAD_BODY           : "!SEPARATOR.BOXHEAD_BODY!"
-
-  ECHO SEPARATOR.STUB_BOXHEAD_INTERSECT : "!SEPARATOR.STUB_BOXHEAD_INTERSECT!"
-  ECHO SEPARATOR.BOXHEAD_BODY_INTERSECT : "!SEPARATOR.BOXHEAD_BODY_INTERSECT!"
-  ECHO.
-  REM ::DEBUG
-)
 
 :: Define the vertical separator
 IF DEFINED SEPARATOR.STUB (
@@ -705,24 +708,6 @@ IF DEFINED SEPARATOR.INTERSECT (
   )
 )
 
-IF DEFINED DEBUG.OUT (
-  REM ::DEBUG
-  ECHO.
-  ECHO RESOLVE_SEPARATORS pre-trim
-  ECHO.
-  ECHO SEPARATOR.COL                    : "!SEPARATOR.COL!"
-  ECHO SEPARATOR.BOXHEAD                : "!SEPARATOR.BOXHEAD!"
-  ECHO SEPARATOR.INTERSECT              : "!SEPARATOR.INTERSECT!"
-  ECHO SEPARATOR.STUB                   : "!SEPARATOR.STUB!"
-  ECHO SEPARATOR.CELL                   : "!SEPARATOR.CELL!"
-  ECHO SEPARATOR.STUBHEAD_BOXHEAD       : "!SEPARATOR.STUBHEAD_BOXHEAD!"
-  ECHO SEPARATOR.STUB_BODY              : "!SEPARATOR.STUB_BODY!"
-  ECHO SEPARATOR.STUBHEAD_STUB          : "!SEPARATOR.STUBHEAD_STUB!"
-  ECHO SEPARATOR.BOXHEAD_BODY           : "!SEPARATOR.BOXHEAD_BODY!"
-  ECHO.
-  REM ::DEBUG
-)
-
 :: Trim the variables we use to draw our separators
 :: so we only work with non-space characters
 SET "SEPARATOR.COL.TRIM=!SEPARATOR.COL!"
@@ -743,24 +728,6 @@ SET "SEPARATOR.STUBHEAD_STUB.TRIM=!SEPARATOR.STUBHEAD_STUB!"
 %@trim% SEPARATOR.STUBHEAD_STUB.TRIM
 SET "SEPARATOR.BOXHEAD_BODY.TRIM=!SEPARATOR.BOXHEAD_BODY!"
 %@trim% SEPARATOR.BOXHEAD_BODY.TRIM
-
-IF DEFINED DEBUG.OUT (
-  REM ::DEBUG
-  ECHO.
-  ECHO RESOLVE_SEPARATORS post-trim
-  ECHO.
-  ECHO SEPARATOR.COL.TRIM               : "!SEPARATOR.COL.TRIM!"
-  ECHO SEPARATOR.BOXHEAD.TRIM           : "!SEPARATOR.BOXHEAD.TRIM!"
-  ECHO SEPARATOR.INTERSECT.TRIM         : "!SEPARATOR.INTERSECT.TRIM!"
-  ECHO SEPARATOR.STUB.TRIM              : "!SEPARATOR.STUB.TRIM!"
-  ECHO SEPARATOR.CELL.TRIM              : "!SEPARATOR.CELL.TRIM!"
-  ECHO SEPARATOR.STUBHEAD_BOXHEAD.TRIM  : "!SEPARATOR.STUBHEAD_BOXHEAD.TRIM!"
-  ECHO SEPARATOR.STUB_BODY.TRIM         : "!SEPARATOR.STUB_BODY.TRIM!"
-  ECHO SEPARATOR.STUBHEAD_STUB.TRIM     : "!SEPARATOR.STUBHEAD_STUB.TRIM!"
-  ECHO SEPARATOR.BOXHEAD_BODY.TRIM      : "!SEPARATOR.BOXHEAD_BODY.TRIM!"
-  ECHO.
-  REM ::DEBUG
-)
 
 IF DEFINED SEPARATOR.VERTICAL (
   IF DEFINED SEPARATOR.HORIZONTAL (
@@ -807,35 +774,6 @@ IF DEFINED SEPARATOR.VERTICAL (
   IF DEFINED SEPARATOR.STUB_BODY ( %@align% SEPARATOR.STUB_BODY !SEPARATOR.VERTICAL.WIDTH! C SEPARATOR.STUB_BODY )
 )
 
-IF DEFINED DEBUG.OUT (
-  REM ::DEBUG
-  ECHO.
-  ECHO RESOLVE_SEPARATORS exit
-  ECHO.
-  ECHO SEPARATOR.COL                    : "!SEPARATOR.COL!"
-  ECHO SEPARATOR.BOXHEAD                : "!SEPARATOR.BOXHEAD!"
-  ECHO SEPARATOR.INTERSECT              : "!SEPARATOR.INTERSECT!"
-  ECHO SEPARATOR.STUB                   : "!SEPARATOR.STUB!"
-  ECHO SEPARATOR.CELL                   : "!SEPARATOR.CELL!"
-
-  ECHO SEPARATOR.VERTICAL               : "!SEPARATOR.VERTICAL!"
-  ECHO SEPARATOR.HORIZONTAL             : "!SEPARATOR.HORIZONTAL!"
-  ECHO SEPARATOR.COLUMN                 : "!SEPARATOR.COLUMN!"
-
-  ECHO STUBHEAD                         : "!STUBHEAD!"
-
-  ECHO SEPARATOR.VERTICAL.WIDTH         : "!SEPARATOR.VERTICAL.WIDTH!"
-  ECHO SEPARATOR.STUBHEAD_BOXHEAD       : "!SEPARATOR.STUBHEAD_BOXHEAD!"
-  ECHO SEPARATOR.STUB_BODY              : "!SEPARATOR.STUB_BODY!"
-  ECHO SEPARATOR.BOXHEADERS             : "!SEPARATOR.BOXHEADERS!"
-
-  ECHO SEPARATOR.STUBHEAD_STUB          : "!SEPARATOR.STUBHEAD_STUB!"
-  ECHO SEPARATOR.BOXHEAD_BODY           : "!SEPARATOR.BOXHEAD_BODY!"
-
-  ECHO SEPARATOR.STUB_BOXHEAD_INTERSECT : "!SEPARATOR.STUB_BOXHEAD_INTERSECT!"
-  ECHO.
-  REM ::DEBUG
-)
 %@exit%
 
 
@@ -1263,7 +1201,7 @@ SET @counter=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
 ::
 ::   Used to exit and optionally sets an error code if provided.
 ::   This is prefered for exiting a script over GOTO :EOF for consistency
-::   and to pass Error Levels if necessery. This tidy's up a call
+::   and to pass Error Levels if necessary. This tidy's up a call
 ::   to EXIT /B [ErrorLevel] so the use feels the same as other macros.
 ::
 SET @exit=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
@@ -1295,12 +1233,13 @@ FOR %%a IN (%*) DO (
     IF /I ["!opt!"] EQU ["H"] (
       SET "opt="
       CALL :USAGE
-      %@exit% 1
+      %@exit% -1
     )
     :: /A [ANSI]
     IF /I ["!opt!"] EQU ["A"] (
       SET "opt="
       SET "SHOW.ANSI=#TRUE#"
+      SET "SHOW.UTF8=#TRUE#"
     )
     :: /R [R1C1]
     IF /I ["!opt!"] EQU ["R"] (
@@ -1315,7 +1254,7 @@ FOR %%a IN (%*) DO (
     IF ["!opt!"] NEQ [""] (
       SET "msg=Error: Unknown option: !opt!"
       CALL :USAGE msg
-      %@exit% 2
+      %@exit% 1
     )
   )
 )
@@ -1333,7 +1272,7 @@ IF [%~1] EQU [] (
 IF NOT EXIST !DATA_FILE! (
   SET "msg=Error: File does not exist: !DATA_FILE!"
   CALL :USAGE msg
-  %@exit% 3
+  %@exit% 1
 )
 
 %@exit%
@@ -1349,7 +1288,7 @@ IF NOT EXIST !DATA_FILE! (
 SET "SCRIPT_NAME=%~nx0"
 
 :: The following ECHO intentionally has 80 spaces to clear the 
-:: line any remaining onscreen text on call.
+:: line any remaining on screen text on call.
 ECHO.                                                                                
 IF [%1] NEQ [] (
   ECHO !%1!
@@ -1366,6 +1305,7 @@ ECHO.
 ECHO    Flags:
 ECHO      /H  :  This message
 ECHO      /A  :  Display the ANSI Escape Sequence control characters
+ECHO             This requires UTF-8 support and implies the additional /U flag
 ECHO      /R  :  Show cell R1C1 reference addressing instead of cell text
 ECHO      /U  :  Enable UTF-8 support
 ECHO.

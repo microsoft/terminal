@@ -25,7 +25,9 @@
 :: done
 :: echo
 
-:: This is the recreation of the TLDP.org bash script output
+:: https://tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
+:: This is the recreation of the output of the TLDP.org 
+:: bash script provided by Daniel Crisman.
 __DATA__
 __TABLE__
 :: Greatest mystery ever. Why gYw?
