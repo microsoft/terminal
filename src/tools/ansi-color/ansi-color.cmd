@@ -388,7 +388,7 @@ FOR /F "tokens=*" %%_ IN ('chcp 2^>^&1 ^& FOR /F %%_ IN ^("ERRORLEVEL"^) DO @CAL
       REM This means that CHCP wasn't found
       REM If the definition doesn't require UTF-8, this might be okay
       REM CHCP_RET is no longer valid though, so undefine it
-      REM Interesting side note, this is an example where the :: can be used for REM
+      REM Interesting side note, this is an example where the :: can't be used for REM
       REM See https://stackoverflow.com/a/61981588 for more information
       SET "CHCP_RET="
     ) ELSE IF [!CHCP_ERR!] NEQ [0] (
@@ -982,7 +982,7 @@ SET @strlen=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
 ::   Max value passed through multiple subsequent calls, to
 ::   determine the largest string passed in.
 ::
-SET @maxVal=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
+SET @maxval=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
   FOR /F "tokens=1,2,3 delims=, " %%1 IN ("!argv!") DO ( ENDLOCAL%\n%
     IF [!%%~1!] NEQ [] (SET /a "a=!%%~1!") ELSE (SET /a "a=%%~1")%\n%
     IF [!%%~2!] NEQ [] (SET /a "b=!%%~2!") ELSE (SET /a "b=%%~2")%\n%
