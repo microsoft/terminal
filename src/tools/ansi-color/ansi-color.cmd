@@ -9,7 +9,7 @@ CALL :PARSE_ARGS %1 %2 %3 %4 %5 %6 %7 %8 %9
 IF ERRORLEVEL 1 %@exit% %ERRORLEVEL%
 :: Parsing success
 IF ERRORLEVEL 0 GOTO :CONFIGURATION
-:: Help requested, but this shouldn't actually be an error from CMDs perspective
+:: Help requested, but this shouldn't actually be an error from CMD's perspective
 IF ERRORLEVEL -1 %@exit% 0
 
 
