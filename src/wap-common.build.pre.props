@@ -51,6 +51,9 @@
     <ProjectCapability Include="AssemblyReferences" />
   </ItemGroup>
 
+  <!-- Install an empty one for WAP projects as they don't PGO. -->
+  <Target Name="MergePGOCounts" />
+
   <PropertyGroup>
     <WapProjPath Condition="'$(WapProjPath)'==''">$(MSBuildExtensionsPath)\Microsoft\DesktopBridge\</WapProjPath>
     <!-- Turn off the 6+MB Windows.winmd that's emitted into our package

@@ -1763,6 +1763,7 @@ PFONTENUMDATA
 PFS
 pgd
 pgdn
+PGONu
 pgorepro
 pgort
 PGU

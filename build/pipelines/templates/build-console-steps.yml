@@ -13,17 +13,10 @@ steps:
   inputs:
     versionSpec: 5.2.0
 
+- task: NuGetAuthenticate@0
+
 # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
 # This should be `task: NuGetCommand@2`
-- task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
-  displayName: Restore NuGet packages for solution
-  inputs:
-    command: restore
-    feedsToUse: config
-    configPath: NuGet.config
-    restoreSolution: OpenConsole.sln
-    restoreDirectory: '$(Build.SourcesDirectory)\packages'
-
 - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
   displayName: Restore NuGet packages for extraneous build actions
   inputs:
@@ -31,6 +24,15 @@ steps:
     feedsToUse: config
     configPath: NuGet.config
     restoreSolution: build/packages.config
+    restoreDirectory: '$(Build.SourcesDirectory)\packages'
+
+- task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
+  displayName: Restore NuGet packages for solution
+  inputs:
+    command: restore
+    feedsToUse: config
+    configPath: NuGet.config
+    restoreSolution: OpenConsole.sln
     restoreDirectory: '$(Build.SourcesDirectory)\packages'
 
 # The environment variable VCToolsInstallDir isn't defined on lab machines, so we need to retrieve it ourselves.
@@ -48,14 +50,6 @@ steps:
   inputs:
     filename: 'set'
 
-- task: powershell@2
-  displayName: 'Restore PGO database'
-  condition: eq(variables['PGOBuildMode'], 'Optimize')
-  inputs:
-    targetType: filePath
-    workingDirectory: $(Build.SourcesDirectory)\tools\PGODatabase
-    filePath: $(Build.SourcesDirectory)\tools\PGODatabase\restore-pgodb.ps1
-
 - task: VSBuild@1
   displayName: 'Build solution **\OpenConsole.sln'
   inputs:
@@ -63,7 +57,7 @@ steps:
     vsVersion: 16.0
     platform: '$(BuildPlatform)'
     configuration: '$(BuildConfiguration)'
-    msbuildArgs: "${{ parameters.additionalBuildArguments }}"
+    msbuildArgs: "${{ parameters.additionalBuildArguments }} /p:PGOBuildMode=$(PGOBuildMode) /bl:$(Build.SourcesDirectory)\\msbuild.binlog"
     clean: true
     maximumCpuCount: true
 
@@ -95,18 +89,6 @@ steps:
       $Arch = "$(BuildPlatform)"
       If ($Arch -Eq "x86") { $Arch = "Win32" }
       Write-Host "##vso[task.setvariable variable=RationalizedBuildPlatform]${Arch}"
-
-- task: PowerShell@2
-  displayName: 'Validate binaries are optimized'
-  condition: eq(variables['pgoBuildMode'], 'Optimize')
-  inputs:
-    targetType: inline
-    script: |
-      $Binaries = 'OpenConsole.exe', 'WindowsTerminal.exe', 'TerminalApp.dll', 'TerminalConnection.dll', 'Microsoft.Terminal.Control.dll', 'Microsoft.Terminal.Remoting.dll', 'Microsoft.Terminal.Settings.Editor.dll', 'Microsoft.Terminal.Settings.Model.dll'
-      foreach ($BinFile in $Binaries)
-      {
-        & "$(Build.SourcesDirectory)\tools\PGODatabase\verify-pgo.ps1" "$(Build.SourcesDirectory)/bin/$(RationalizedBuildPlatform)/$(BuildConfiguration)/$BinFile"
-      }
 
 - task: PowerShell@2
   displayName: 'Run Unit Tests'
@@ -212,3 +194,11 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)/$(BuildConfiguration)/PGO'
     ArtifactName: 'PGO'
   condition: and(succeeded(), eq(variables['PGOBuildMode'], 'Instrument'))
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: binlog'
+  condition: failed()
+  continueOnError: True
+  inputs:
+    PathtoPublish: $(Build.SourcesDirectory)\msbuild.binlog
+    ArtifactName: binlog-$(BuildPlatform)
