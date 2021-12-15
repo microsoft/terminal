@@ -384,16 +384,21 @@ FOR /F "tokens=*" %%_ IN ('chcp 2^>^&1 ^& FOR /F %%_ IN ^("ERRORLEVEL"^) DO @CAL
   :: Check if the CHCP call failed
   IF ["!CHCP_OUT:~0,15!"] EQU ["__ERRORLEVEL__:"] (
     SET "CHCP_ERR=!CHCP_OUT:__ERRORLEVEL__:=!"
-    IF [!CHCP_ERR!] EQU [9009] (
-      REM This means that CHCP wasn't found
-      REM If the definition doesn't require UTF-8, this might be okay
-      REM CHCP_RET is no longer valid though, so undefine it
-      REM Interesting side note, this is an example where the :: can't be used for REM
-      REM See https://stackoverflow.com/a/61981588 for more information
-      SET "CHCP_RET="
-    ) ELSE IF [!CHCP_ERR!] NEQ [0] (
-      ECHO Error: Unable to read active codepage
-      %@exit% !CHCP_ERR!
+    IF [!CHCP_ERR!] NEQ [0] (
+      :: This means that the call to CHCP failed
+      ECHO Warning: Error reading the active codepage, check the output from the command CHCP.
+      If DEFINED SHOW.UTF8 (
+        :: UTF8 is required if SHOW.UTF8 is defined, so error out
+        ECHO.
+        ECHO Error: UTF8 is required for the definition file in use or flags provided. Exiting.
+        :: Since this was fatal, also pass the error code received trying to call CHCP
+        %@exit% !CHCP_ERR!
+      ) ELSE (
+        :: If UTF8 isn't required, maybe we can swallow this error and still show ANSI definition file
+        SET "SHOW.UTF8="
+        :: Clear the CHCP_RET value as nothing returned should be considered valid
+        SET "CHCP_RET="
+      )
     )
   ) ELSE (
     SET "CHCP_RET=!CHCP_OUT!"
@@ -517,32 +522,32 @@ CMD /C EXIT -1073741510
 :READ_DATA_SEGMENT
 SET "DATA_SEGMENT="
 FOR /F "delims=" %%_ IN (!DATA_FILE!) DO (
-    IF ["%%_"] EQU ["__ROWS:END__"] SET SEGMENT=
-    IF ["%%_"] EQU ["__COLS:END__"] SET SEGMENT=
-    IF ["%%_"] EQU ["__TABLE:END__"] SET SEGMENT=
-    IF ["%%_"] EQU ["__DATA:END__"] SET DATA_SEGMENT=
+    IF /I ["%%_"] EQU ["__ROWS:END__"] SET SEGMENT=
+    IF /I ["%%_"] EQU ["__COLS:END__"] SET SEGMENT=
+    IF /I ["%%_"] EQU ["__TABLE:END__"] SET SEGMENT=
+    IF /I ["%%_"] EQU ["__DATA:END__"] SET DATA_SEGMENT=
     IF DEFINED DATA_SEGMENT (
       SET "DATA=%%_"
       CALL :PARSE_DATA_SEGMENT !DATA!
     )
-    IF ["%%_"] EQU ["__ROWS__"] (
+    IF /I ["%%_"] EQU ["__ROWS__"] (
       SET SEGMENT=ROWS
       :: Initialize the row globals
       SET /A ROW[#]=0
       SET /A ROWS.LEN=0
     )
-    IF ["%%_"] EQU ["__COLS__"] (
+    IF /I ["%%_"] EQU ["__COLS__"] (
       SET SEGMENT=COLS
       :: Initialize the column globals
       SET /A COL[#]=0
       SET /A COLS.LEN=0
     )
-    IF ["%%_"] EQU ["__TABLE__"] (
+    IF /I ["%%_"] EQU ["__TABLE__"] (
       SET SEGMENT=TABLE
       :: Initialize the table globals
       SET /A TABLE[#]=0
     )
-    IF ["%%_"] EQU ["__DATA__"] (
+    IF /I ["%%_"] EQU ["__DATA__"] (
       SET DATA_SEGMENT=#TRUE#
       SET SEGMENT=
     )
@@ -556,9 +561,9 @@ IF NOT DEFINED SEGMENT %@exit%
 SET "DATA=%*"
 
 :: Skip over any comments
-IF ["!DATA:~0,2!"] EQU ["::"] %@exit%
-IF ["!DATA:~0,3!"] EQU ["REM"] %@exit%
-IF ["!DATA:~0,4!"] EQU ["@REM"] %@exit%
+IF /I ["!DATA:~0,2!"] EQU ["::"] %@exit%
+IF /I ["!DATA:~0,4!"] EQU ["REM "] %@exit%
+IF /I ["!DATA:~0,5!"] EQU ["@REM "] %@exit%
 
 :: Advance and output the spinner animation if not disabled
 IF NOT DEFINED SPINNER.DISABLED (
@@ -566,9 +571,9 @@ IF NOT DEFINED SPINNER.DISABLED (
 )
 
 :: Dispatch to TABLE, COLS, or ROWS parsing routines
-IF ["!SEGMENT!"] EQU ["TABLE"] CALL :PARSE_TABLE_DATA !DATA!
-IF ["!SEGMENT!"] EQU ["COLS"] CALL :PARSE_COLS_DATA !DATA!
-IF ["!SEGMENT!"] EQU ["ROWS"] CALL :PARSE_ROWS_DATA !DATA!
+IF /I ["!SEGMENT!"] EQU ["TABLE"] CALL :PARSE_TABLE_DATA !DATA!
+IF /I ["!SEGMENT!"] EQU ["COLS"] CALL :PARSE_COLS_DATA !DATA!
+IF /I ["!SEGMENT!"] EQU ["ROWS"] CALL :PARSE_ROWS_DATA !DATA!
 %@exit%
 
 
@@ -880,14 +885,14 @@ FOR /L %%r IN (1,1,!ROW[#]!) DO (
     )
   )
 
-  IF [!ROW!] EQU [#SPC#] (
+  IF /I ["!ROW!"] EQU ["#SPC#"] (
     :: We want a special case for #SPC# so that we print a blank line
     SET "LINE="
   ) ELSE (
     :: Otherwise process the line
     SET "LINE=!ROW.VALUE!!SEPARATOR!"
 
-    IF [!ROW!] EQU [#NUL#] (
+    IF /I ["!ROW!"] EQU ["#NUL#"] (
       SET "ROW="
     ) ELSE (
       SET "ROW=!CSI!!ROW!"
@@ -904,7 +909,7 @@ FOR /L %%r IN (1,1,!ROW[#]!) DO (
         SET "R1C1_REFERENCE=R!R1C1_REFERENCE.R!C!R1C1_REFERENCE.C!"
         %@align% R1C1_REFERENCE !COL.MAX_WIDTH! !ALIGN.CELL.R1C1! CELL
       )
-      IF [!COL[%%c]!] EQU [#NUL#] (
+      IF /I ["!COL[%%c]!"] EQU ["#NUL#"] (
         SET "COL="
       ) ELSE (
         SET "COL=!CSI!!COL[%%c]!"
