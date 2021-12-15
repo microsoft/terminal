@@ -348,8 +348,7 @@ try
     if (!fInvert)
     {
         // Make sure to make the cursor opaque
-        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ OPACITY_OPAQUE | options.cursorColor },
-                                                           &brush));
+        RETURN_IF_FAILED(d2dContext->CreateSolidColorBrush(til::color{ options.cursorColor }, &brush));
     }
     else
     {

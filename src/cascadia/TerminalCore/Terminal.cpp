@@ -6,7 +6,6 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 
@@ -81,7 +80,7 @@ Terminal::Terminal() :
     _InitializeColorTable();
 
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = RGB(255, 255, 255);
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = ARGB(0, 0, 0, 0);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = RGB(0, 0, 0);
     _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
 }
 
@@ -137,12 +136,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
+        _tabColor = settings.TabColor().Value();
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
+        _startingTabColor = settings.StartingTabColor().Value();
     }
 
     if (_pfnTabColorChanged)
@@ -186,7 +185,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
     const til::color newBackgroundColor{ appearance.DefaultBackground() };
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor;
     const til::color newForegroundColor{ appearance.DefaultForeground() };
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = newForegroundColor;
     const til::color newCursorColor{ appearance.CursorColor() };
@@ -1226,8 +1225,6 @@ try
     const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     // First set up the basic 256 colors
     Utils::InitializeColorTable(tableView);
-    // Then make sure all the values have an alpha of 255
-    Utils::SetColorTableAlpha(tableView, 0xff);
 }
 CATCH_LOG()
 
@@ -1311,9 +1308,7 @@ Scheme Terminal::GetColorScheme() const noexcept
     Scheme s;
 
     s.Foreground = til::color{ _colorTable.at(TextColor::DEFAULT_FOREGROUND) };
-    // Don't leak the implementation detail that our _defaultBg is stored
-    // internally without alpha.
-    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
+    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) };
 
     // SelectionBackground is stored in the ControlAppearance
     s.CursorColor = til::color{ _colorTable.at(TextColor::CURSOR_COLOR) };
@@ -1340,10 +1335,7 @@ Scheme Terminal::GetColorScheme() const noexcept
 void Terminal::ApplyScheme(const Scheme& colorScheme)
 {
     _colorTable.at(TextColor::DEFAULT_FOREGROUND) = til::color{ colorScheme.Foreground };
-    // Set the default background as transparent to prevent the
-    // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ colorScheme.Background };
-    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor.with_alpha(0);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = til::color{ colorScheme.Background };
 
     _colorTable[0] = til::color{ colorScheme.Black };
     _colorTable[1] = til::color{ colorScheme.Red };
