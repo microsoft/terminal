@@ -938,6 +938,7 @@ groupbox
 gset
 gsl
 GTP
+guardxfg
 guc
 gui
 guidatom
@@ -2818,6 +2819,7 @@ xdy
 XEncoding
 xes
 xff
+xfg
 XFile
 XFORM
 XManifest
