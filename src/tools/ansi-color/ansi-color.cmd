@@ -388,13 +388,13 @@ FOR /F "tokens=*" %%_ IN ('chcp 2^>^&1 ^& FOR /F %%_ IN ^("ERRORLEVEL"^) DO @CAL
       :: This means that the call to CHCP failed
       ECHO Warning: Error reading the active codepage, check the output from the command CHCP.
       If DEFINED SHOW.UTF8 (
-        :: UTF8 is required if SHOW.UTF8 is defined, so error out
+        :: UTF-8 support is required if SHOW.UTF8 is defined, so error out
         ECHO.
-        ECHO Error: UTF8 is required for the definition file in use or flags provided. Exiting.
+        ECHO Error: UTF-8 support is required for the definition file in use or flags provided.
         :: Since this was fatal, also pass the error code received trying to call CHCP
         %@exit% !CHCP_ERR!
       ) ELSE (
-        :: If UTF8 isn't required, maybe we can swallow this error and still show ANSI definition file
+        :: If UTF-8 support isn't required, maybe we can swallow this error and still show ANSI definition file
         SET "SHOW.UTF8="
         :: Clear the CHCP_RET value as nothing returned should be considered valid
         SET "CHCP_RET="
