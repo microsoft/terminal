@@ -81,7 +81,6 @@ namespace SettingsModelLocalTests
         std::array<COLORREF, COLOR_TABLE_SIZE> expectedCampbellTable;
         const auto campbellSpan = gsl::make_span(expectedCampbellTable);
         Utils::InitializeColorTable(campbellSpan);
-        Utils::SetColorTableAlpha(campbellSpan, 0);
 
         for (size_t i = 0; i < expectedCampbellTable.size(); i++)
         {

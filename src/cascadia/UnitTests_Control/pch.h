@@ -50,7 +50,6 @@ Licensed under the MIT license.
 #include "ThrottledFunc.h"
 
 // Common includes for most tests:
-#include "../../inc/argb.h"
 #include "../../inc/conattrs.hpp"
 #include "../../types/inc/utils.hpp"
 #include "../../inc/DefaultSettings.h"

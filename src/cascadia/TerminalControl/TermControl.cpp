@@ -450,7 +450,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_InitializeBackgroundBrush()
     {
         auto settings{ _core.Settings() };
-        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
+        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
         if (settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush

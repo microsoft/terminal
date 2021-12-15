@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ControlInteractivity.h"
-#include <argb.h>
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
