@@ -369,7 +369,24 @@ jobs:
     # # PREfast and PoliCheck need Node. Install that first.
     - task: NodeTool@0
 
+    # !!! NOTE !!! Run PREfast first. Some of the other tasks are going to run on a completed build.
+    # PREfast is going to build the code as a part of its analysis and the generated sources
+    # and output binaries will be sufficient for the rest of the analysis.
+    # If you disable this, the other tasks won't likely work. You would have to add a build
+    # step instead that builds the code normally before calling them.
+    # Also... PREfast will rebuild anyway so that's why we're not running a normal build first.
+    # Waste of time to build twice.
     # PREfast. See https://www.1eswiki.com/wiki/SDL_Native_Rules_Build_Task 
+
+    # The following 1ES tasks all operate completely differently and have a different syntax for usage.
+    # Most notable is every one of them has a different way of excluding things.
+    # Go see their 1eswiki.com pages to figure out how to exclude things.
+    # When writing exclusions, try to make them narrow so when new projects/binaries are added, they
+    # cause an error here and have to be explicitly pulled out. Don't write an exclusion so broad
+    # that it will catch other new stuff.
+
+    # https://www.1eswiki.com/wiki/PREfast_Build_Task
+    # Builds the project with C/C++ static analysis tools to find coding flaws and vulnerabilities
     - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
       displayName: 'Run the PREfast SDL Native Rules for MSBuild'
       condition: succeededOrFailed()
@@ -385,6 +402,9 @@ jobs:
           **\*.nativecodeanalysis.xml
         TargetFolder: '$(Agent.BuildDirectory)\_sdt\logs\SDLNativeRules'
 
+    # https://www.1eswiki.com/index.php?title=PoliCheck_Build_Task
+    # Scans the text of source code, comments, and content for terminology that could be sensitive for legal, cultural, or geopolitical reasons.
+    # (Also finds vulgarities... takes all the fun out of everything.)
     - task: securedevelopmentteam.vss-secure-development-tools.build-task-policheck.PoliCheck@2
       displayName: 'Run PoliCheck'
       inputs:
@@ -397,6 +417,8 @@ jobs:
         optionsHMENABLE: 0
       continueOnError: true
 
+    # https://www.1eswiki.com/wiki/CredScan_Azure_DevOps_Build_Task
+    # Searches through source code and build outputs for a credential left behind in the open
     - task: securedevelopmentteam.vss-secure-development-tools.build-task-credscan.CredScan@3
       displayName: 'Run CredScan'
       inputs:
@@ -406,15 +428,40 @@ jobs:
         debugMode: false
       continueOnError: true
 
+    # https://www.1eswiki.com/wiki/BinSkim_Build_Task
+    # Searches managed and unmanaged binaries for known security vulnerabilities.
     - task: securedevelopmentteam.vss-secure-development-tools.build-task-binskim.BinSkim@4
       displayName: 'Run BinSkim'
       inputs:
         TargetPattern: guardianGlob
-        AnalyzeTargetGlob: $(Build.SourcesDirectory)\bin\**.dll;$(Build.SourcesDirectory)\bin\**.exe
+        # See https://aka.ms/gdn-globs for how to do match patterns
+        AnalyzeTargetGlob: $(Build.SourcesDirectory)\bin\**.dll;$(Build.SourcesDirectory)\bin\**.exe;-:file|**\Microsoft.UI.Xaml.dll;-:file|**\Microsoft.Toolkit.Win32.UI.XamlHost.dll;-:file|**\vcruntime*.dll;-:file|**\vcomp*.dll;-:file|**\vccorlib*.dll;-:file|**\vcamp*.dll;-:file|**\msvcp*.dll;-:file|**\concrt*.dll;-:file|**\TerminalThemeHelpers*.dll;-:file|**\cpprest*.dll
+      continueOnError: true
 
     # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
     - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
       displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
+
+    # https://www.osgwiki.com/wiki/Package_ES_Security_and_Compliance
+    # Does a few things:
+    # - Ensures that Windows-required compliance tasks are run either inside this task
+    #   or were run as a previous step prior to this one
+    #   (PREfast, PoliCheck, Credscan)
+    # - Runs Windows-specific compliance tasks inside the task
+    #   + CheckCFlags - ensures that compiler and linker flags meet Windows standards
+    #   + CFGCheck/XFGCheck - ensures that Control Flow Guard (CFG) or 
+    #                         eXtended Flow Guard (XFG) are enabled on binaries
+    #                         NOTE: CFG is deprecated and XFG isn't fully ready yet.
+    #                         NOTE2: CFG fails on an XFG'd binary
+    # - Brokers all security/compliance task logs to "Trust Services Automation (TSA)" (https://aka.ms/tsa)
+    #   which is a system that maps all errors into the appropriate bug database 
+    #   template for each organization since they all vary. It should also suppress
+    #   new bugs when one already exists for the product.
+    #   This one is set up to go to the OS repository and use the given parameters
+    #   to file bugs to our AzDO product path.
+    #   If we don't use PkgESSecComp to do this for us, we need to install the TSA task
+    #   ourselves in this pipeline to finalize data upload and bug creation.
+    # !!! NOTE !!! This task goes *LAST* after any other compliance tasks so it catches their logs
     - task: PkgESSecComp@10
       displayName: 'Security and Compliance tasks'
       inputs:
@@ -434,7 +481,6 @@ jobs:
           binariesTargetOverrideAll: $(Build.SourcesDirectory)\bin
 
           # Set the tools to false if they should not run in the build
-          # MINIKSA NOTE: APPARENTLY CFGCHECK IS DEPRECATED. USE XFGCHECK INSTEAD TO SUPERSEDE IT.
           tools:
               - toolName: CheckCFlags
                 enable: true
