@@ -406,6 +406,12 @@ jobs:
         debugMode: false
       continueOnError: true
 
+    - task: securedevelopmentteam.vss-secure-development-tools.build-task-binskim.BinSkim@4
+      displayName: 'Run BinSkim'
+      inputs:
+        TargetPattern: guardianGlob
+        AnalyzeTargetGlob: $(Build.SourcesDirectory)\bin\**.dll;$(Build.SourcesDirectory)\bin\**.exe
+
     # Set XES_SERIALPOSTBUILDREADY to run Security and Compliance task once per build
     - powershell: Write-Host “##vso[task.setvariable variable=XES_SERIALPOSTBUILDREADY;]true”  
       displayName: 'Set XES_SERIALPOSTBUILDREADY Vars'
