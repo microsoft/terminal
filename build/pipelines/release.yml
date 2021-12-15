@@ -387,6 +387,7 @@ jobs:
 
     # https://www.1eswiki.com/wiki/PREfast_Build_Task
     # Builds the project with C/C++ static analysis tools to find coding flaws and vulnerabilities
+    # !!! WARNING !!! It doesn't work with WAPPROJ packaging projects. Build the sub-projects instead.
     - task: securedevelopmentteam.vss-secure-development-tools.build-task-prefast.SDLNativeRules@3
       displayName: 'Run the PREfast SDL Native Rules for MSBuild'
       condition: succeededOrFailed()
