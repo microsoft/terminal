@@ -493,10 +493,9 @@ SET "SEPARATOR.COLUMN="
 :: Read and parse the data, validate the configuration, calculate table headings,
 :: build the table, and show the table
 CALL :READ_DATA_SEGMENT
+IF ERRORLEVEL 1 %@exit% %ERRORLEVEL%
 CALL :VALIDATE_CONFIGURATION
-IF ERRORLEVEL 1 (
-  %@exit% %ERRORLEVEL%
-)
+IF ERRORLEVEL 1 %@exit% %ERRORLEVEL%
 CALL :RESOLVE_SEPARATORS
 CALL :BUILD_TABLE
 CALL :DISPLAY_TABLE
@@ -522,34 +521,35 @@ CMD /C EXIT -1073741510
 :READ_DATA_SEGMENT
 SET "DATA_SEGMENT="
 FOR /F "delims=" %%_ IN (!DATA_FILE!) DO (
-    IF /I ["%%_"] EQU ["__ROWS:END__"] SET SEGMENT=
-    IF /I ["%%_"] EQU ["__COLS:END__"] SET SEGMENT=
-    IF /I ["%%_"] EQU ["__TABLE:END__"] SET SEGMENT=
-    IF /I ["%%_"] EQU ["__DATA:END__"] SET DATA_SEGMENT=
+    SET "DATA=%%_"
+    IF /I ["!DATA:~0,12!"] EQU ["__ROWS:END__"] SET "SEGMENT="
+    IF /I ["!DATA:~0,12!"] EQU ["__COLS:END__"] SET "SEGMENT="
+    IF /I ["!DATA:~0,13!"] EQU ["__TABLE:END__"] SET "SEGMENT="
+    IF /I ["!DATA:~0,12!"] EQU ["__DATA:END__"] SET "DATA_SEGMENT="
     IF DEFINED DATA_SEGMENT (
-      SET "DATA=%%_"
       CALL :PARSE_DATA_SEGMENT !DATA!
+      IF ERRORLEVEL 1 %@exit% %ERRORLEVEL%
     )
-    IF /I ["%%_"] EQU ["__ROWS__"] (
-      SET SEGMENT=ROWS
+    IF /I ["!DATA:~0,8!"] EQU ["__ROWS__"] (
+      SET "SEGMENT=ROWS"
       :: Initialize the row globals
       SET /A ROW[#]=0
       SET /A ROWS.LEN=0
     )
-    IF /I ["%%_"] EQU ["__COLS__"] (
-      SET SEGMENT=COLS
+    IF /I ["!DATA:~0,8!"] EQU ["__COLS__"] (
+      SET "SEGMENT=COLS"
       :: Initialize the column globals
       SET /A COL[#]=0
       SET /A COLS.LEN=0
     )
-    IF /I ["%%_"] EQU ["__TABLE__"] (
-      SET SEGMENT=TABLE
+    IF /I ["!DATA:~0,9!"] EQU ["__TABLE__"] (
+      SET "SEGMENT=TABLE"
       :: Initialize the table globals
       SET /A TABLE[#]=0
     )
-    IF /I ["%%_"] EQU ["__DATA__"] (
-      SET DATA_SEGMENT=#TRUE#
-      SET SEGMENT=
+    IF /I ["!DATA:~0,8!"] EQU ["__DATA__"] (
+      SET "DATA_SEGMENT=#TRUE#"
+      SET "SEGMENT="
     )
 )
 %@exit%
@@ -559,11 +559,15 @@ FOR /F "delims=" %%_ IN (!DATA_FILE!) DO (
 :PARSE_DATA_SEGMENT
 IF NOT DEFINED SEGMENT %@exit%
 SET "DATA=%*"
+:: We're parsing the data segment, so clean up the data before further processing
+%@trim% DATA
 
 :: Skip over any comments
 IF /I ["!DATA:~0,2!"] EQU ["::"] %@exit%
 IF /I ["!DATA:~0,4!"] EQU ["REM "] %@exit%
+IF /I ["!DATA!"] EQU ["REM"] %@exit%
 IF /I ["!DATA:~0,5!"] EQU ["@REM "] %@exit%
+IF /I ["!DATA!"] EQU ["@REM"] %@exit%
 
 :: Advance and output the spinner animation if not disabled
 IF NOT DEFINED SPINNER.DISABLED (
@@ -588,6 +592,9 @@ IF /I ["!DATA:~0,3!"] EQU ["IF "] GOTO :EVAL_TABLE_DATA
 :EVAL_TABLE_DATA
 :: Eval the TABLE data directly
 %*
+:: If there is an error, we want to catch it
+IF ERRORLEVEL 1 %@exit% %ERRORLEVEL%
+:: Otherwise just exit the routine
 %@exit%
 
 
