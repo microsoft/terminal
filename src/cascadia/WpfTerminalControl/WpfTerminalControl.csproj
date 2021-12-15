@@ -29,6 +29,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Install an empty one for CSPROJ projects as they don't PGO. -->
+  <Target Name="MergePGOCounts" />
+
   <Target Name="CollectNativePackContents">
     <ItemGroup>
       <None Include="$(RepoBinPath)\Win32\$(Configuration)\PublicTerminalCore.dll">

@@ -117,6 +117,8 @@
       </ItemGroup>
     </When>
   </Choose>
+  <!-- Install an empty one for projects that don't PGO. -->
+  <Target Name="MergePGOCounts" />
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
