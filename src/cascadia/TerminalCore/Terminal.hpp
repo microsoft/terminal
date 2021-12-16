@@ -164,7 +164,6 @@ public:
 
 #pragma region IRenderData
     // These methods are defined in TerminalRenderData.cpp
-    const TextAttribute GetDefaultBrushColors() noexcept override;
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;

@@ -102,17 +102,6 @@ void RenderData::UnlockConsole() noexcept
 #pragma endregion
 
 #pragma region IRenderData
-// Routine Description:
-// - Retrieves the brush colors that should be used in absence of any other color data from
-//   cells in the text buffer.
-// Return Value:
-// - TextAttribute containing the foreground and background brush color data.
-const TextAttribute RenderData::GetDefaultBrushColors() noexcept
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.GetActiveOutputBuffer().GetAttributes();
-}
-
 // Method Description:
 // - Gets the cursor's position in the buffer, relative to the buffer origin.
 // Arguments:

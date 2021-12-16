@@ -46,8 +46,6 @@ namespace Microsoft::Console::Render
         IRenderData& operator=(const IRenderData&) = default;
         IRenderData& operator=(IRenderData&&) = default;
 
-        virtual const TextAttribute GetDefaultBrushColors() noexcept = 0;
-
         virtual COORD GetCursorPosition() const noexcept = 0;
         virtual bool IsCursorVisible() const noexcept = 0;
         virtual bool IsCursorOn() const noexcept = 0;
