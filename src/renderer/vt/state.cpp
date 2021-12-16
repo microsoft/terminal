@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
-#include "../../types/inc/convert.hpp"
+#include "../../host/VtIo.hpp"
 
 // For _vcprintf
 #include <conio.h>

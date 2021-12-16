@@ -15,13 +15,11 @@ Author(s):
 
 #pragma once
 
-#include <../host/VtIo.hpp>
 #include "../inc/RenderEngineBase.hpp"
 #include "../../types/inc/Viewport.hpp"
 #include "tracing.hpp"
 #include <string>
 #include <functional>
-#include <memory>
 
 // fwdecl unittest classes
 #ifdef UNIT_TESTING
