@@ -42,37 +42,37 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        constexpr bool operator==(const point& rhs) const noexcept
+        constexpr bool operator==(const point rhs) const noexcept
         {
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
         }
 
-        constexpr bool operator!=(const point& rhs) const noexcept
+        constexpr bool operator!=(const point rhs) const noexcept
         {
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
 
-        constexpr bool operator<(const point& other) const noexcept
+        constexpr bool operator<(const point other) const noexcept
         {
             return y < other.y || (y == other.y && x < other.x);
         }
 
-        constexpr bool operator<=(const point& other) const noexcept
+        constexpr bool operator<=(const point other) const noexcept
         {
             return y < other.y || (y == other.y && x <= other.x);
         }
 
-        constexpr bool operator>(const point& other) const noexcept
+        constexpr bool operator>(const point other) const noexcept
         {
             return y > other.y || (y == other.y && x > other.x);
         }
 
-        constexpr bool operator>=(const point& other) const noexcept
+        constexpr bool operator>=(const point other) const noexcept
         {
             return y > other.y || (y == other.y && x >= other.x);
         }
 
-        constexpr point operator+(const point& other) const
+        constexpr point operator+(const point other) const
         {
             return point{
                 details::extract(::base::CheckAdd(x, other.x)),
@@ -80,13 +80,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr point& operator+=(const point& other)
+        constexpr point& operator+=(const point other)
         {
             *this = *this + other;
             return *this;
         }
 
-        constexpr point operator-(const point& other) const
+        constexpr point operator-(const point other) const
         {
             return point{
                 details::extract(::base::CheckSub(x, other.x)),
@@ -94,13 +94,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr point& operator-=(const point& other)
+        constexpr point& operator-=(const point other)
         {
             *this = *this - other;
             return *this;
         }
 
-        constexpr point operator*(const point& other) const
+        constexpr point operator*(const point other) const
         {
             return point{
                 details::extract(::base::CheckMul(x, other.x)),
@@ -108,13 +108,13 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr point& operator*=(const point& other)
+        constexpr point& operator*=(const point other)
         {
             *this = *this * other;
             return *this;
         }
 
-        constexpr point operator/(const point& other) const
+        constexpr point operator/(const point other) const
         {
             return point{
                 details::extract(::base::CheckDiv(x, other.x)),
@@ -122,7 +122,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr point& operator/=(const point& other)
+        constexpr point& operator/=(const point other)
         {
             *this = *this / other;
             return *this;
@@ -211,7 +211,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 #endif
 
 #ifdef WINRT_Microsoft_Terminal_Core_H
-        constexpr point(const winrt::Microsoft::Terminal::Core::Point other) :
+        explicit constexpr point(const winrt::Microsoft::Terminal::Core::Point other) :
             x{ other.X }, y{ other.Y }
         {
         }
@@ -233,34 +233,34 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 namespace WEX::TestExecution
 {
     template<>
-    class VerifyOutputTraits<::til::point>
+    class VerifyOutputTraits<til::point>
     {
     public:
-        static WEX::Common::NoThrowString ToString(const ::til::point& point)
+        static WEX::Common::NoThrowString ToString(const til::point point)
         {
             return WEX::Common::NoThrowString(point.to_string().c_str());
         }
     };
 
     template<>
-    class VerifyCompareTraits<::til::point, ::til::point>
+    class VerifyCompareTraits<til::point, til::point>
     {
     public:
-        static constexpr bool AreEqual(const ::til::point& expected, const ::til::point& actual) noexcept
+        static constexpr bool AreEqual(const til::point expected, const til::point actual) noexcept
         {
             return expected == actual;
         }
 
-        static constexpr bool AreSame(const ::til::point& expected, const ::til::point& actual) noexcept
+        static constexpr bool AreSame(const til::point expected, const til::point actual) noexcept
         {
             return &expected == &actual;
         }
 
-        static constexpr bool IsLessThan(const ::til::point& expectedLess, const ::til::point& expectedGreater) = delete;
+        static constexpr bool IsLessThan(const til::point expectedLess, const til::point expectedGreater) = delete;
 
-        static constexpr bool IsGreaterThan(const ::til::point& expectedGreater, const ::til::point& expectedLess) = delete;
+        static constexpr bool IsGreaterThan(const til::point expectedGreater, const til::point expectedLess) = delete;
 
-        static constexpr bool IsNull(const ::til::point& object) noexcept
+        static constexpr bool IsNull(const til::point object) noexcept
         {
             return object == til::point{};
         }

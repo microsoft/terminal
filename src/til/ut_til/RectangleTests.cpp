@@ -1331,25 +1331,5 @@ class RectangleTests
                 VERIFY_ARE_EQUAL((til::rect{ 4, 4, 6, 6 }), converted);
             }
         }
-
-        Log::Comment(L"Truncating");
-        {
-            {
-                til::rect converted{ til::math::truncating, 1.f, 2.f, 3.f, 4.f };
-                VERIFY_ARE_EQUAL((til::rect{ 1, 2, 3, 4 }), converted);
-            }
-            {
-                til::rect converted{ til::math::truncating, 1.6f, 2.4f, 3.2f, 4.8f };
-                VERIFY_ARE_EQUAL((til::rect{ 1, 2, 3, 4 }), converted);
-            }
-            {
-                til::rect converted{ til::math::truncating, 3., 4., 5., 6. };
-                VERIFY_ARE_EQUAL((til::rect{ 3, 4, 5, 6 }), converted);
-            }
-            {
-                til::rect converted{ til::math::truncating, 3.6, 4.4, 5.7, 6.3 };
-                VERIFY_ARE_EQUAL((til::rect{ 3, 4, 5, 6 }), converted);
-            }
-        }
     }
 };

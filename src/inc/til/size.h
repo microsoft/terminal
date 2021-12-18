@@ -28,12 +28,12 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
         {
         }
 
-        constexpr bool operator==(const size& rhs) const noexcept
+        constexpr bool operator==(const size rhs) const noexcept
         {
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
         }
 
-        constexpr bool operator!=(const size& rhs) const noexcept
+        constexpr bool operator!=(const size rhs) const noexcept
         {
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) != 0;
         }
@@ -43,7 +43,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             return width > 0 && height > 0;
         }
 
-        constexpr size operator+(const size& other) const
+        constexpr size operator+(const size other) const
         {
             return size{
                 details::extract(::base::CheckAdd(width, other.width)),
@@ -51,7 +51,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr size operator-(const size& other) const
+        constexpr size operator-(const size other) const
         {
             return size{
                 details::extract(::base::CheckSub(width, other.width)),
@@ -59,7 +59,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr size operator*(const size& other) const
+        constexpr size operator*(const size other) const
         {
             return size{
                 details::extract(::base::CheckMul(width, other.width)),
@@ -67,7 +67,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr size operator/(const size& other) const
+        constexpr size operator/(const size other) const
         {
             return size{
                 details::extract(::base::CheckDiv(width, other.width)),
@@ -85,7 +85,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
             };
         }
 
-        constexpr size divide_ceil(const size& other) const
+        constexpr size divide_ceil(const size other) const
         {
             // Divide normally to get the floor.
             const size floor = *this / other;
@@ -213,34 +213,34 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 namespace WEX::TestExecution
 {
     template<>
-    class VerifyOutputTraits<::til::size>
+    class VerifyOutputTraits<til::size>
     {
     public:
-        static WEX::Common::NoThrowString ToString(const ::til::size& size)
+        static WEX::Common::NoThrowString ToString(const til::size size)
         {
             return WEX::Common::NoThrowString(size.to_string().c_str());
         }
     };
 
     template<>
-    class VerifyCompareTraits<::til::size, ::til::size>
+    class VerifyCompareTraits<til::size, til::size>
     {
     public:
-        static bool AreEqual(const ::til::size& expected, const ::til::size& actual) noexcept
+        static bool AreEqual(const til::size expected, const til::size actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const ::til::size& expected, const ::til::size& actual) noexcept
+        static bool AreSame(const til::size expected, const til::size actual) noexcept
         {
             return &expected == &actual;
         }
 
-        static bool IsLessThan(const ::til::size& expectedLess, const ::til::size& expectedGreater) = delete;
+        static bool IsLessThan(const til::size expectedLess, const til::size expectedGreater) = delete;
 
-        static bool IsGreaterThan(const ::til::size& expectedGreater, const ::til::size& expectedLess) = delete;
+        static bool IsGreaterThan(const til::size expectedGreater, const til::size expectedLess) = delete;
 
-        static bool IsNull(const ::til::size& object) noexcept
+        static bool IsNull(const til::size object) noexcept
         {
             return object == til::size{};
         }

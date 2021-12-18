@@ -109,7 +109,7 @@ void NotificationIcon::CreateNotificationIcon()
 // - peasants: The map of all peasants that should be available in the context menu.
 // Return Value:
 // - <none>
-void NotificationIcon::ShowContextMenu(const til::point& coord,
+void NotificationIcon::ShowContextMenu(const til::point coord,
                                        const IVectorView<winrt::Microsoft::Terminal::Remoting::PeasantInfo>& peasants)
 {
     if (const auto hMenu = _CreateContextMenu(peasants))

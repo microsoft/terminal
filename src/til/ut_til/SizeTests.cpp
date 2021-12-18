@@ -589,33 +589,5 @@ class SizeTests
                 VERIFY_ARE_EQUAL((til::size{ 6, 6 }), converted);
             }
         }
-
-        Log::Comment(L"3.) Truncating");
-        {
-            {
-                til::size converted{ til::math::truncating, 1.f, 2.f };
-                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, 1.6f, 2.4f };
-                VERIFY_ARE_EQUAL((til::size{ 1, 2 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, 3., 4. };
-                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, 3.6, 4.4 };
-                VERIFY_ARE_EQUAL((til::size{ 3, 4 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, 5., 6. };
-                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
-            }
-            {
-                til::size converted{ til::math::truncating, 5.6, 6.4 };
-                VERIFY_ARE_EQUAL((til::size{ 5, 6 }), converted);
-            }
-        }
     }
 };

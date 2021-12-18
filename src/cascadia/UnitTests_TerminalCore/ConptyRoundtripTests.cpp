@@ -226,7 +226,7 @@ private:
     void _resizeConpty(const unsigned short sx, const unsigned short sy);
     void _clearConpty();
 
-    [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> _performResize(const til::size& newSize);
+    [[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> _performResize(const til::size newSize);
 
     std::deque<std::string> expectedOutput;
 
@@ -306,7 +306,7 @@ void ConptyRoundtripTests::_clearConpty()
     _pConApi->PrivateClearBuffer();
 }
 
-[[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size& newSize)
+[[nodiscard]] std::tuple<TextBuffer*, TextBuffer*> ConptyRoundtripTests::_performResize(const til::size newSize)
 {
     // IMPORTANT! Anyone calling this should make sure that the test is running
     // in IsolationLevel: Method. If you don't add that, then it might secretly
@@ -1457,7 +1457,7 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A')); // Print 100 'A's
 
     auto verifyBuffer = [](const TextBuffer& tb, const til::rect viewport) {
-        const short wrappedRow = viewport.bottom - 2;
+        const auto wrappedRow = gsl::narrow<short>(viewport.bottom - 2);
         const short start = viewport.narrow_top<short>();
         for (short i = start; i < wrappedRow; i++)
         {
@@ -2281,7 +2281,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
         // | B_ ...    | (b) (cursor is on the '_')
         // |    ...    | (b)
 
-        const short wrappedRow = viewport.bottom - 2;
+        const auto wrappedRow = gsl::narrow<short>(viewport.bottom - 2);
         VERIFY_IS_TRUE(tb.GetRowByOffset(wrappedRow).WasWrapForced());
         VERIFY_IS_FALSE(tb.GetRowByOffset(wrappedRow + 1).WasWrapForced());
 
@@ -2615,7 +2615,7 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
         // Last row
         {
-            short row = viewport.bottom - 1;
+            const auto row = gsl::narrow<short>(viewport.bottom - 1);
             Log::Comment(NoThrowString().Format(L"Checking row %d", row));
             VERIFY_IS_TRUE(tb.GetRowByOffset(row).WasWrapForced());
             auto iter = tb.GetCellDataAt({ 0, row });

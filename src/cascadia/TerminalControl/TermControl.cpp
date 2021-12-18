@@ -2192,10 +2192,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        const til::point cursorPos = _core.CursorPosition();
-        Windows::Foundation::Point p = { ::base::ClampedNumeric<float>(cursorPos.x),
-                                         ::base::ClampedNumeric<float>(cursorPos.y) };
-        eventArgs.CurrentPosition(p);
+        const auto cursorPos = _core.CursorPosition();
+        eventArgs.CurrentPosition({ static_cast<float>(cursorPos.X), static_cast<float>(cursorPos.Y) });
     }
 
     // Method Description:

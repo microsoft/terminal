@@ -202,8 +202,7 @@ LRESULT IslandWindow::_OnSizing(const WPARAM wParam, const LPARAM lParam)
     // bad parameters, which we won't have, so no big deal.
     LOG_IF_FAILED(GetDpiForMonitor(hmon, MDT_EFFECTIVE_DPI, &dpix, &dpiy));
 
-    const auto widthScale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
-    const long minWidthScaled = minimumWidth * widthScale;
+    const long minWidthScaled = minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI;
 
     const auto nonClientSize = GetTotalNonClientExclusiveSize(dpix);
 
@@ -383,11 +382,10 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 
     // From now we use dpix for all computations (same as in _OnSizing).
     const auto nonClientSizeScaled = GetTotalNonClientExclusiveSize(dpix);
-    const auto scale = base::ClampedNumeric<float>(dpix) / USER_DEFAULT_SCREEN_DPI;
 
     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
-    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * scale, nonClientSizeScaled.cx);
-    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * scale, nonClientSizeScaled.cy);
+    lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cx);
+    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cy);
 }
 
 // Method Description:

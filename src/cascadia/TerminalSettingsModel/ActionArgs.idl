@@ -5,14 +5,16 @@ import "Command.idl";
 
 namespace Microsoft.Terminal.Settings.Model
 {
-    interface IActionArgs {
+    interface IActionArgs
+    {
         Boolean Equals(IActionArgs other);
         String GenerateName();
         IActionArgs Copy();
         UInt64 Hash();
     };
 
-    interface IActionEventArgs {
+    interface IActionEventArgs
+    {
         Boolean Handled;
         IActionArgs ActionArgs { get; };
     };

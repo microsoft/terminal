@@ -1420,6 +1420,7 @@ try
                 // It's not nice to use reinterpret_cast between til::rect and RECT,
                 // but to be honest... it does save a ton of type juggling.
                 static_assert(sizeof(decltype(_presentDirty)::value_type) == sizeof(RECT));
+#pragma warning(suppress : 26490) // Don't use reinterpret_cast (type.1).
                 _presentParams.pDirtyRects = reinterpret_cast<RECT*>(_presentDirty.data());
 
                 _presentParams.pScrollOffset = &_presentOffset;

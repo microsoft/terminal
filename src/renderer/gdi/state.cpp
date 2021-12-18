@@ -308,8 +308,7 @@ GdiEngine::~GdiEngine()
 
     // If the font type has changed, select an appropriate font variant or soft font.
     const auto usingItalicFont = textAttributes.IsItalic();
-    const auto fontType = usingSoftFont ? FontType::Soft : usingItalicFont ? FontType::Italic :
-                                                                             FontType::Default;
+    const auto fontType = usingSoftFont ? FontType::Soft : usingItalicFont ? FontType::Italic : FontType::Default;
     if (fontType != _lastFontType)
     {
         switch (fontType)

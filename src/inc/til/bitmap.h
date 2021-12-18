@@ -106,7 +106,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
                     // We'll only count up until the end of this row.
                     // a run can be a max of one row tall.
-                    const size_t rowEndIndex = _rc.index_of(til::point(_rc.right - 1, runStart.y)) + 1;
+                    const size_t rowEndIndex = _rc.index_of<size_t>(til::point(_rc.right - 1, runStart.y)) + 1;
 
                     // Find the length for the rectangle.
                     size_t runLength = 0;
@@ -357,7 +357,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
                 _bits.set(_rc.index_of(pt));
             }
 
-            void set(const til::rect rc)
+            void set(const til::rect& rc)
             {
                 THROW_HR_IF(E_INVALIDARG, !_rc.contains(rc));
                 _runs.reset(); // reset cached runs on any non-const method

@@ -18,7 +18,6 @@ Revision History:
 #pragma once
 
 #include <til/bit.h>
-#include <til/point.h>
 
 // Helper for declaring a variable to store a TEST_METHOD_PROPERTY and get it's value from the test metadata
 #define INIT_TEST_PROPERTY(type, identifer, description) \
