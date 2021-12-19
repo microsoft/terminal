@@ -8,7 +8,6 @@
 #include "../../inc/DefaultSettings.h"
 #include "../../buffer/out/textBuffer.hpp"
 #include "../../types/inc/sgrStack.hpp"
-#include "../../renderer/inc/BlinkingState.hpp"
 #include "../../renderer/inc/RenderSettings.hpp"
 #include "../../terminal/parser/StateMachine.hpp"
 #include "../../terminal/input/terminalInput.hpp"
@@ -220,8 +219,6 @@ public:
     winrt::Microsoft::Terminal::Core::Scheme GetColorScheme() const noexcept;
     void ApplyScheme(const winrt::Microsoft::Terminal::Core::Scheme& scheme);
 
-    Microsoft::Console::Render::BlinkingState& GetBlinkingState() const noexcept;
-
     const size_t GetTaskbarState() const noexcept;
     const size_t GetTaskbarProgress() const noexcept;
 
@@ -287,19 +284,13 @@ private:
     std::optional<til::color> _tabColor;
     std::optional<til::color> _startingTabColor;
 
-    // This is still stored as a COLORREF because it interacts with some code in ConTypes
-    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
     CursorType _defaultCursorShape;
-    bool _screenReversed;
-    mutable Microsoft::Console::Render::BlinkingState _blinkingState;
 
     bool _snapOnInput;
     bool _altGrAliasing;
     bool _suppressApplicationTitle;
     bool _bracketedPasteMode;
     bool _trimBlockSelection;
-    bool _intenseIsBright;
-    bool _adjustIndistinguishableColors;
 
     size_t _taskbarState;
     size_t _taskbarProgress;
@@ -376,8 +367,6 @@ private:
     Microsoft::Console::Types::Viewport _GetMutableViewport() const noexcept;
     Microsoft::Console::Types::Viewport _GetVisibleViewport() const noexcept;
 
-    void _InitializeColorTable();
-
     void _WriteBuffer(const std::wstring_view& stringView);
 
     void _AdjustCursorPosition(const COORD proposedPosition);
@@ -399,9 +388,6 @@ private:
 #pragma endregion
 
     Microsoft::Console::VirtualTerminal::SgrStack _sgrStack;
-
-    void _MakeAdjustedColorArray();
-    std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
 
 #ifdef UNIT_TESTING
     friend class TerminalCoreUnitTests::TerminalBufferTests;

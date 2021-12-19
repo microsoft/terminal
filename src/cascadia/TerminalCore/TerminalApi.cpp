@@ -6,6 +6,7 @@
 #include "../src/inc/unicode.hpp"
 
 using namespace Microsoft::Terminal::Core;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::VirtualTerminal;
 
@@ -371,7 +372,7 @@ CATCH_RETURN_FALSE()
 COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const noexcept
 try
 {
-    return _colorTable.at(tableIndex);
+    return _renderSettings.GetColorTableEntry(tableIndex);
 }
 catch (...)
 {
@@ -389,10 +390,15 @@ catch (...)
 bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept
 try
 {
-    _colorTable.at(tableIndex) = color;
+    _renderSettings.SetColorTableEntry(tableIndex, color);
 
+    if (tableIndex == TextColor::DEFAULT_FOREGROUND)
+    {
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
+    }
     if (tableIndex == TextColor::DEFAULT_BACKGROUND)
     {
+        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
         _pfnBackgroundColorChanged(color);
     }
 
@@ -466,7 +472,7 @@ CATCH_RETURN_FALSE()
 bool Terminal::SetScreenMode(const bool reverseMode) noexcept
 try
 {
-    _screenReversed = reverseMode;
+    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
 
     // Repaint everything - the colors will have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();

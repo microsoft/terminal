@@ -1104,7 +1104,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
+        return _terminal->GetRenderSettings().GetColorAlias(ColorAlias::DefaultBackground);
     }
 
     // Method Description:
@@ -1390,8 +1390,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         auto lock = _terminal->LockForWriting();
 
         auto& renderTarget = *_renderer;
-        auto& blinkingState = _terminal->GetBlinkingState();
-        blinkingState.ToggleBlinkingRendition(renderTarget);
+        auto& renderSettings = _terminal->GetRenderSettings();
+        renderSettings.ToggleBlinkRendition(renderTarget);
     }
 
     void ControlCore::BlinkCursor()
