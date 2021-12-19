@@ -31,7 +31,6 @@
 
 using namespace Microsoft::Console::Types;
 using namespace Microsoft::Console::Interactivity;
-using namespace Microsoft::Console::Render;
 
 // Routine Description:
 // - Retrieves the console input mode (settings that apply when manipulating the input buffer)
@@ -1246,35 +1245,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
         return S_OK;
     }
     CATCH_RETURN();
-}
-
-// Routine Description:
-// - A private API call for changing the screen mode between normal and reverse.
-//    When in reverse screen mode, the background and foreground colors are switched.
-// Parameters:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
-// Return value:
-// - STATUS_SUCCESS if handled successfully. Otherwise, an appropriate error code.
-[[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode)
-{
-    try
-    {
-        auto& g = ServiceLocator::LocateGlobals();
-        auto& renderSettings = g.getConsoleInformation().GetRenderSettings();
-
-        renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
-
-        if (g.pRender)
-        {
-            g.pRender->TriggerRedrawAll();
-        }
-
-        return STATUS_SUCCESS;
-    }
-    catch (...)
-    {
-        return NTSTATUS_FROM_HRESULT(wil::ResultFromCaughtException());
-    }
 }
 
 // Routine Description:

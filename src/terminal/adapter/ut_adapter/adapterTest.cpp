@@ -145,11 +145,11 @@ public:
         return false;
     }
 
-    bool PrivateSetScreenMode(const bool /*reverseMode*/) override
+    bool SetRenderMode(const RenderSettings::Mode /*mode*/, const bool /*enabled*/) override
     {
-        Log::Comment(L"PrivateSetScreenMode MOCK called...");
+        Log::Comment(L"SetRenderMode MOCK called...");
 
-        return true;
+        return false;
     }
 
     bool PrivateSetAutoWrapMode(const bool /*wrapAtEOL*/) override

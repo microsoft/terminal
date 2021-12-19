@@ -11,6 +11,7 @@
 #include "../parser/ascii.hpp"
 
 using namespace Microsoft::Console::Types;
+using namespace Microsoft::Console::Render;
 using namespace Microsoft::Console::VirtualTerminal;
 
 // Routine Description:
@@ -1270,7 +1271,7 @@ bool AdaptDispatch::SetScreenMode(const bool reverseMode)
         return false;
     }
 
-    return _pConApi->PrivateSetScreenMode(reverseMode);
+    return _pConApi->SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
 }
 
 // Routine Description:

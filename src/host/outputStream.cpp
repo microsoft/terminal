@@ -294,16 +294,24 @@ bool ConhostInternalGetSet::GetParserMode(const Microsoft::Console::VirtualTermi
 }
 
 // Routine Description:
-// - Connects the PrivateSetScreenMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetScreenMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
+// - Sets the various render modes.
 // Arguments:
-// - reverseMode - set to true to enable reverse screen mode, false for normal mode.
+// - mode - the render mode to change.
+// - enabled - set to true to enable the mode, false to disable it.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetScreenMode). false otherwise.
-bool ConhostInternalGetSet::PrivateSetScreenMode(const bool reverseMode)
+// - true if successful. false otherwise.
+bool ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const bool enabled)
 {
-    return NT_SUCCESS(DoSrvPrivateSetScreenMode(reverseMode));
+    auto& g = ServiceLocator::LocateGlobals();
+    auto& renderSettings = g.getConsoleInformation().GetRenderSettings();
+    renderSettings.SetRenderMode(mode, enabled);
+
+    if (g.pRender)
+    {
+        g.pRender->TriggerRedrawAll();
+    }
+
+    return true;
 }
 
 // Routine Description:

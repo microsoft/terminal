@@ -469,10 +469,10 @@ try
 }
 CATCH_RETURN_FALSE()
 
-bool Terminal::SetScreenMode(const bool reverseMode) noexcept
+bool Terminal::SetRenderMode(const RenderSettings::Mode mode, const bool enabled) noexcept
 try
 {
-    _renderSettings.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
+    _renderSettings.SetRenderMode(mode, enabled);
 
     // Repaint everything - the colors will have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();

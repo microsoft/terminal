@@ -117,8 +117,8 @@ public:
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
 
     bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;
+    bool SetRenderMode(const ::Microsoft::Console::Render::RenderSettings::Mode mode, const bool enabled) noexcept override;
 
-    bool SetScreenMode(const bool reverseMode) noexcept override;
     bool EnableXtermBracketedPasteMode(const bool enabled) noexcept override;
     bool IsXtermBracketedPasteModeEnabled() const noexcept override;
 

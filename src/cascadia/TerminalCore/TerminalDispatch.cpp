@@ -7,6 +7,7 @@
 
 using namespace Microsoft::Console;
 using namespace ::Microsoft::Terminal::Core;
+using namespace ::Microsoft::Console::Render;
 using namespace ::Microsoft::Console::VirtualTerminal;
 
 // NOTE:
@@ -347,7 +348,7 @@ bool TerminalDispatch::SetCursorKeysMode(const bool applicationMode) noexcept
 // - True if handled successfully. False otherwise.
 bool TerminalDispatch::SetScreenMode(const bool reverseMode) noexcept
 {
-    return _terminalApi.SetScreenMode(reverseMode);
+    return _terminalApi.SetRenderMode(RenderSettings::Mode::ScreenReversed, reverseMode);
 }
 
 // Method Description:

@@ -18,7 +18,6 @@ Revision History:
 #include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
-[[nodiscard]] NTSTATUS DoSrvPrivateSetScreenMode(const bool reverseMode);
 [[nodiscard]] NTSTATUS DoSrvPrivateSetAutoWrapMode(const bool wrapAtEOL);
 
 void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept;

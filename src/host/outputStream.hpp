@@ -75,8 +75,8 @@ public:
     bool SetInputMode(const Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) override;
     bool SetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode, const bool enabled) override;
     bool GetParserMode(const Microsoft::Console::VirtualTerminal::StateMachine::Mode mode) const override;
+    bool SetRenderMode(const RenderSettings::Mode mode, const bool enabled) override;
 
-    bool PrivateSetScreenMode(const bool reverseMode) override;
     bool PrivateSetAutoWrapMode(const bool wrapAtEOL) override;
 
     bool PrivateShowCursor(const bool show) noexcept override;
