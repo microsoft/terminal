@@ -38,11 +38,6 @@ void Terminal::SetFontInfo(const FontInfo& fontInfo)
     _fontInfo = fontInfo;
 }
 
-std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
-{
-    return _renderSettings.GetAttributeColors(attr);
-}
-
 COORD Terminal::GetCursorPosition() const noexcept
 {
     const auto& cursor = _buffer->GetCursor();
@@ -74,11 +69,6 @@ ULONG Terminal::GetCursorHeight() const noexcept
 CursorType Terminal::GetCursorStyle() const noexcept
 {
     return _buffer->GetCursor().GetType();
-}
-
-COLORREF Terminal::GetCursorColor() const noexcept
-{
-    return _renderSettings.GetColorTableEntry(TextColor::CURSOR_COLOR);
 }
 
 bool Terminal::IsCursorDoubleWidth() const
@@ -132,6 +122,11 @@ const std::vector<size_t> Terminal::GetPatternId(const COORD location) const noe
         return result;
     }
     return {};
+}
+
+std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
+{
+    return _renderSettings.GetAttributeColors(attr);
 }
 
 std::vector<Microsoft::Console::Types::Viewport> Terminal::GetSelectionRects() noexcept
@@ -224,15 +219,6 @@ void Terminal::LockConsole() noexcept
 void Terminal::UnlockConsole() noexcept
 {
     _readWriteLock.unlock();
-}
-
-// Method Description:
-// - Returns whether the screen is inverted;
-// Return Value:
-// - false.
-bool Terminal::IsScreenReversed() const noexcept
-{
-    return _renderSettings.GetRenderMode(RenderSettings::Mode::ScreenReversed);
 }
 
 const bool Terminal::IsUiaDataInitialized() const noexcept

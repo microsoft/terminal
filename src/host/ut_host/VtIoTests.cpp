@@ -325,17 +325,7 @@ public:
         return 12ul;
     }
 
-    COLORREF GetCursorColor() const noexcept override
-    {
-        return COLORREF{};
-    }
-
     bool IsCursorDoubleWidth() const override
-    {
-        return false;
-    }
-
-    bool IsScreenReversed() const noexcept override
     {
         return false;
     }
