@@ -22,6 +22,7 @@ namespace Microsoft::Console::Render
         {
             BlinkAllowed,
             DistinguishableColors,
+            IntenseIsBold,
             IntenseIsBright,
             ScreenReversed
         };

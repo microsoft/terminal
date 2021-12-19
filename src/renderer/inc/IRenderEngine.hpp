@@ -112,7 +112,6 @@ namespace Microsoft::Console::Render
         virtual void SetRetroTerminalEffect(bool enable) noexcept {}
         virtual void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept {}
         virtual void SetSoftwareRendering(bool enable) noexcept {}
-        virtual void SetIntenseIsBold(bool enable) noexcept {}
         virtual void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept {}
         virtual [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept { return E_NOTIMPL; }
         virtual void ToggleShaderEffects() noexcept {}

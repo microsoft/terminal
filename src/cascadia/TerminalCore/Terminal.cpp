@@ -172,6 +172,7 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 // - appearance: an ICoreAppearance with new settings values for us to use.
 void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
+    _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBold, appearance.IntenseIsBold());
     _renderSettings.SetRenderMode(RenderSettings::Mode::IntenseIsBright, appearance.IntenseIsBright());
     _renderSettings.SetRenderMode(RenderSettings::Mode::DistinguishableColors, appearance.AdjustIndistinguishableColors());
 

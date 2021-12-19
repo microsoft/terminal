@@ -94,7 +94,6 @@ DxEngine::DxEngine() :
     _dpi{ USER_DEFAULT_SCREEN_DPI },
     _scale{ 1.0f },
     _prevScale{ 1.0f },
-    _intenseIsBold{ true },
     _chainMode{ SwapChainMode::ForComposition },
     _customLayout{},
     _customRenderer{ ::Microsoft::WRL::Make<CustomTextRenderer>() },
@@ -1036,17 +1035,6 @@ try
 }
 CATCH_LOG()
 
-void DxEngine::SetIntenseIsBold(bool enable) noexcept
-try
-{
-    if (_intenseIsBold != enable)
-    {
-        _intenseIsBold = enable;
-        LOG_IF_FAILED(InvalidateAll());
-    }
-}
-CATCH_LOG()
-
 HANDLE DxEngine::GetSwapChainHandle() noexcept
 {
     if (!_swapChainHandle)
@@ -1969,7 +1957,7 @@ CATCH_RETURN()
     if (_drawingContext)
     {
         _drawingContext->forceGrayscaleAA = _ShouldForceGrayscaleAA();
-        _drawingContext->useBoldFont = _intenseIsBold && textAttributes.IsBold();
+        _drawingContext->useBoldFont = textAttributes.IsBold() && renderSettings.GetRenderMode(RenderSettings::Mode::IntenseIsBold);
         _drawingContext->useItalicFont = textAttributes.IsItalic();
     }
 

@@ -71,7 +71,6 @@ namespace Microsoft::Console::Render
         void SetRetroTerminalEffect(bool enable) noexcept override;
         void SetSelectionBackground(COLORREF color, float alpha = 0.5f) noexcept override;
         void SetSoftwareRendering(bool enable) noexcept override;
-        void SetIntenseIsBold(bool enable) noexcept override;
         void SetWarningCallback(std::function<void(HRESULT)> pfn) noexcept override;
         [[nodiscard]] HRESULT SetWindowSize(SIZE pixels) noexcept override;
         void ToggleShaderEffects() noexcept override;

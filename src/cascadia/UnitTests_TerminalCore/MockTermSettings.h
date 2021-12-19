@@ -72,6 +72,7 @@ namespace TerminalCoreUnitTests
         void TrimBlockSelection(bool) {}
         void DetectURLs(bool) {}
 
+        WINRT_PROPERTY(bool, IntenseIsBold, true);
         WINRT_PROPERTY(bool, IntenseIsBright, true);
         WINRT_PROPERTY(bool, AdjustIndistinguishableColors, true);
 

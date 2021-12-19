@@ -44,6 +44,7 @@ namespace ControlUnitTests
 
         WINRT_PROPERTY(bool, TrimBlockSelection, false);
         WINRT_PROPERTY(bool, DetectURLs, true);
+        WINRT_PROPERTY(bool, IntenseIsBold, true);
         WINRT_PROPERTY(bool, IntenseIsBright, true);
         WINRT_PROPERTY(bool, AdjustIndistinguishableColors, true);
         // ------------------------ End of Core Settings -----------------------
@@ -87,7 +88,6 @@ namespace ControlUnitTests
 
         WINRT_PROPERTY(IFontFeatureMap, FontFeatures);
         WINRT_PROPERTY(IFontAxesMap, FontAxes);
-        WINRT_PROPERTY(bool, IntenseIsBold, true);
 
     private:
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
