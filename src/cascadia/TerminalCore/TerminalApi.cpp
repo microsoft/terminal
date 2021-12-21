@@ -392,13 +392,8 @@ try
 {
     _renderSettings.SetColorTableEntry(tableIndex, color);
 
-    if (tableIndex == TextColor::DEFAULT_FOREGROUND)
+    if (tableIndex == _renderSettings.GetColorAliasIndex(ColorAlias::DefaultBackground))
     {
-        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
-    }
-    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
-    {
-        _renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
         _pfnBackgroundColorChanged(color);
     }
 
@@ -407,6 +402,18 @@ try
     return true;
 }
 CATCH_RETURN_FALSE()
+
+// Method Description:
+// - Sets the position in the color table for the given color alias.
+// Arguments:
+// - alias: the color alias to update.
+// - tableIndex: the new position of the alias in the color table.
+// Return Value:
+// - <none>
+void Terminal::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
+{
+    _renderSettings.SetColorAliasIndex(alias, tableIndex);
+}
 
 // Method Description:
 // - Sets the cursor style to the given style.

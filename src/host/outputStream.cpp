@@ -631,19 +631,7 @@ try
 {
     auto& g = ServiceLocator::LocateGlobals();
     auto& gci = g.getConsoleInformation();
-    auto& renderSettings = gci.GetRenderSettings();
     gci.SetColorTableEntry(tableIndex, color);
-
-    // If we're setting the default foreground or background colors
-    // we need to make sure the index is correctly set as well.
-    if (tableIndex == TextColor::DEFAULT_FOREGROUND)
-    {
-        renderSettings.SetColorAliasIndex(ColorAlias::DefaultForeground, TextColor::DEFAULT_FOREGROUND);
-    }
-    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
-    {
-        renderSettings.SetColorAliasIndex(ColorAlias::DefaultBackground, TextColor::DEFAULT_BACKGROUND);
-    }
 
     // Update the screen colors if we're not a pty
     // No need to force a redraw in pty mode.
@@ -652,9 +640,26 @@ try
         g.pRender->TriggerRedrawAll();
     }
 
-    return true;
+    // If we're a conpty, always return false, so that we send the updated color
+    //      value to the terminal. Still handle the sequence so apps that use
+    //      the API or VT to query the values of the color table still read the
+    //      correct color.
+    return !gci.IsInVtIoMode();
 }
 CATCH_RETURN_FALSE()
+
+// Routine Description:
+// - Sets the position in the color table for the given color alias.
+// Arguments:
+// - alias: the color alias to update.
+// - tableIndex: the new position of the alias in the color table.
+// Return Value:
+// - <none>
+void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept
+{
+    auto& renderSettings = ServiceLocator::LocateGlobals().getConsoleInformation().GetRenderSettings();
+    renderSettings.SetColorAliasIndex(alias, tableIndex);
+}
 
 // Routine Description:
 // - Connects the PrivateFillRegion call directly into our Driver Message servicing

@@ -114,6 +114,7 @@ public:
     bool SetWindowTitle(std::wstring_view title) noexcept override;
     COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
+    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept override;
     bool SetCursorStyle(const ::Microsoft::Console::VirtualTerminal::DispatchTypes::CursorStyle cursorStyle) noexcept override;
 
     bool SetInputMode(const ::Microsoft::Console::VirtualTerminal::TerminalInput::Mode mode, const bool enabled) noexcept override;

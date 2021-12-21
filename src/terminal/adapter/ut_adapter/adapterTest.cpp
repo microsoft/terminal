@@ -455,6 +455,11 @@ public:
         return _setColorTableEntryResult;
     }
 
+    void SetColorAliasIndex(const ColorAlias /*alias*/, const size_t /*tableIndex*/) noexcept override
+    {
+        Log::Comment(L"SetColorAliasIndex MOCK called...");
+    }
+
     bool PrivateFillRegion(const COORD /*startPosition*/,
                            const size_t /*fillLength*/,
                            const wchar_t /*fillChar*/,
@@ -2368,12 +2373,6 @@ public:
             _testGetSet->_expectedColorTableIndex = i;
             VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(i, testColor));
         }
-
-        // Test in pty mode - we should fail, but SetColorTableEntry should still be called
-        _testGetSet->_isPty = true;
-
-        _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
-        VERIFY_IS_FALSE(_pDispatch.get()->SetColorTableEntry(15, testColor));
     }
 
     TEST_METHOD(SoftFontSizeDetection)

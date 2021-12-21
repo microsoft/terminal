@@ -120,6 +120,7 @@ public:
 
     COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override;
     bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override;
+    void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) noexcept override;
 
     bool PrivateFillRegion(const COORD startPosition,
                            const size_t fillLength,

@@ -91,6 +91,7 @@ namespace Microsoft::Console::VirtualTerminal
 
         virtual COLORREF GetColorTableEntry(const size_t tableIndex) const = 0;
         virtual bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) = 0;
+        virtual void SetColorAliasIndex(const ColorAlias alias, const size_t tableIndex) = 0;
 
         virtual bool PrivateFillRegion(const COORD startPosition,
                                        const size_t fillLength,
