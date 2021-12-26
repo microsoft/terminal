@@ -101,6 +101,7 @@ namespace Microsoft::Console::VirtualTerminal
                                           const VTInt bottomMargin) override; // DECSTBM
         bool SetLeftRightScrollingMargins(const VTInt leftMargin,
                                           const VTInt rightMargin) override; // DECSLRM
+        bool EnquireAnswerback() override; // ENQ
         bool WarningBell() override; // BEL
         bool CarriageReturn() override; // CR
         bool LineFeed(const DispatchTypes::LineFeedType lineFeedType) override; // IND, NEL, LF, FF, VT

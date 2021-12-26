@@ -2476,6 +2476,17 @@ bool AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
 }
 
 // Routine Description:
+// - ENQ - Directs the terminal to send the answerback message.
+// Arguments:
+// - None
+// Return Value:
+// - True if handled successfully. False otherwise.
+bool AdaptDispatch::EnquireAnswerback()
+{
+    return false;
+}
+
+// Routine Description:
 // - BEL - Rings the warning bell.
 //    Causes the terminal to emit an audible tone of brief duration.
 // Arguments:

@@ -49,9 +49,7 @@ bool OutputStateMachineEngine::ActionExecute(const wchar_t wch)
     switch (wch)
     {
     case AsciiChars::ENQ:
-        // GH#11946: At some point we may want to add support for the VT
-        // answerback feature, which requires responding to an ENQ control
-        // with a user-defined reply, but until then we just ignore it.
+        _dispatch->EnquireAnswerback();
         break;
     case AsciiChars::BEL:
         _dispatch->WarningBell();
