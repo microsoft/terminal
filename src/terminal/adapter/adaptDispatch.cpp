@@ -2480,10 +2480,11 @@ bool AdaptDispatch::SetLeftRightScrollingMargins(const VTInt leftMargin,
 // Arguments:
 // - None
 // Return Value:
-// - True if handled successfully. False otherwise.
+// - True.
 bool AdaptDispatch::EnquireAnswerback()
 {
-    return false;
+    _api.ReturnAnswerback();
+    return true;
 }
 
 // Routine Description:

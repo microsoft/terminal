@@ -40,6 +40,7 @@ public:
     void SetSystemMode(const Mode mode, const bool enabled) override;
     bool GetSystemMode(const Mode mode) const override;
 
+    void ReturnAnswerback() override;
     void WarningBell() override;
 
     void SetWindowTitle(const std::wstring_view title) override;
