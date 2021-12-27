@@ -65,9 +65,9 @@ __COLS:END__
 :: [Intensity;][Attribute;]Foreground
 __ROWS__
 :: Attributes
-1m
-#NUL#
 2m
+#NUL#
+1m
 #SPC#
 :: Normal
 30m
@@ -90,53 +90,53 @@ __ROWS__
 :: Bold or increased intensity, 1
 :: Normal
 :: Faint (decreased intensity), 2
-1;30m
-  30m
 2;30m
-1;90m
-  90m
+  30m
+1;30m
 2;90m
-1;31m
-  31m
+  90m
+1;90m
 2;31m
-1;91m
-  91m
+  31m
+1;31m
 2;91m
-1;32m
-  32m
+  91m
+1;91m
 2;32m
-1;92m
-  92m
+  32m
+1;32m
 2;92m
-1;33m
-  33m
+  92m
+1;92m
 2;33m
-1;93m
-  93m
+  33m
+1;33m
 2;93m
-1;34m
-  34m
+  93m
+1;93m
 2;34m
-1;94m
-  94m
+  34m
+1;34m
 2;94m
-1;35m
-  35m
+  94m
+1;94m
 2;35m
-1;95m
-  95m
+  35m
+1;35m
 2;95m
-1;36m
-  36m
+  95m
+1;95m
 2;36m
-1;96m
-  96m
+  36m
+1;36m
 2;96m
-1;37m
-  37m
+  96m
+1;96m
 2;37m
-1;97m
-  97m
+  37m
+1;37m
 2;97m
+  97m
+1;97m
 __ROWS:END__
 __DATA:END__

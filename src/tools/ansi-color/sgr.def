@@ -60,6 +60,7 @@ __COLS__
 8m
 9m
 21m
+#SPC#
 40m
 100m
 41m
@@ -91,6 +92,7 @@ __ROWS__
 8m
 9m
 21m
+#SPC#
 :: Normal
 30m
 90m
@@ -108,6 +110,7 @@ __ROWS__
 96m
 37m
 97m
+#SPC#
 :: Bold or increased intensity, 1
 1;30m
 1;90m
@@ -125,6 +128,7 @@ __ROWS__
 1;96m
 1;37m
 1;97m
+#SPC#
 :: Faint (decreased intensity), 2
 2;30m
 2;90m
@@ -142,6 +146,7 @@ __ROWS__
 2;96m
 2;37m
 2;97m
+#SPC#
 :: Italic, 3
 3;30m
 3;90m
@@ -159,6 +164,7 @@ __ROWS__
 3;96m
 3;37m
 3;97m
+#SPC#
 :: Underline, 4
 4;30m
 4;90m
@@ -176,6 +182,7 @@ __ROWS__
 4;96m
 4;37m
 4;97m
+#SPC#
 :: Slow Blink, 5
 5;30m
 5;90m
@@ -193,6 +200,7 @@ __ROWS__
 5;96m
 5;37m
 5;97m
+#SPC#
 :: Rapid Blink, 6
 6;30m
 6;90m
@@ -210,6 +218,7 @@ __ROWS__
 6;96m
 6;37m
 6;97m
+#SPC#
 :: Reverse video, 7
 7;30m
 7;90m
@@ -227,6 +236,7 @@ __ROWS__
 7;96m
 7;37m
 7;97m
+#SPC#
 :: Conceal, 8
 8;30m
 8;90m
@@ -244,6 +254,7 @@ __ROWS__
 8;96m
 8;37m
 8;97m
+#SPC#
 :: Crossed-out, 9
 9;30m
 9;90m
@@ -261,6 +272,7 @@ __ROWS__
 9;96m
 9;37m
 9;97m
+#SPC#
 :: Double Underline, 21
 21;30m
 21;90m
