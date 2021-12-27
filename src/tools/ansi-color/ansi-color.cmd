@@ -563,11 +563,11 @@ SET "DATA=%*"
 %@trim% DATA
 
 :: Skip over any comments
+IF /I ["!DATA!"] EQU ["REM"] %@exit%
+IF /I ["!DATA!"] EQU ["@REM"] %@exit%
 IF /I ["!DATA:~0,2!"] EQU ["::"] %@exit%
 IF /I ["!DATA:~0,4!"] EQU ["REM "] %@exit%
-IF /I ["!DATA!"] EQU ["REM"] %@exit%
 IF /I ["!DATA:~0,5!"] EQU ["@REM "] %@exit%
-IF /I ["!DATA!"] EQU ["@REM"] %@exit%
 
 :: Advance and output the spinner animation if not disabled
 IF NOT DEFINED SPINNER.DISABLED (
@@ -922,9 +922,19 @@ FOR /L %%r IN (1,1,!ROW[#]!) DO (
         SET "COL=!CSI!!COL[%%c]!"
       )
       IF [%%c] EQU [1] (
-        SET "LINE=!LINE!!ROW!!COL!!CELL!!RESET!"
+        IF /I ["!COL[%%c]!"] EQU ["#SPC#"] (
+          %@repeat% #SPC# !COL.MAX_WIDTH! OUT
+          SET "LINE=!LINE!!OUT!"
+        ) ELSE (
+          SET "LINE=!LINE!!ROW!!COL!!CELL!!RESET!"
+        )
       ) ELSE (
-        SET "LINE=!LINE!!SEPARATOR.CELL!!ROW!!COL!!CELL!!RESET!"
+        IF /I ["!COL[%%c]!"] EQU ["#SPC#"] (
+          %@repeat% #SPC# !COL.MAX_WIDTH! OUT
+          SET "LINE=!LINE!!SEPARATOR.CELL!!OUT!"
+        ) ELSE (
+          SET "LINE=!LINE!!SEPARATOR.CELL!!ROW!!COL!!CELL!!RESET!"
+        )
       )
     )
   )
