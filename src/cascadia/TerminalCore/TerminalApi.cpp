@@ -71,6 +71,11 @@ bool Terminal::GetSystemMode(const Mode mode) const noexcept
     return _systemMode.test(mode);
 }
 
+void Terminal::ReturnAnswerback()
+{
+    ReturnResponse(_answerbackMessage);
+}
+
 void Terminal::WarningBell()
 {
     _pfnWarningBell();
