@@ -444,24 +444,6 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
 }
 
 // Routine Description:
-// - Writes events to the input buffer already formed into IInputEvents (private call)
-// Arguments:
-// - context - the input buffer to write to
-// - events - the events to written
-// - written  - on output, the number of events written
-// - append - true if events should be written to the end of the input
-// buffer, false if they should be written to the front
-// Return Value:
-// - HRESULT indicating success or failure
-[[nodiscard]] HRESULT DoSrvPrivateWriteConsoleInputW(_Inout_ InputBuffer* const pInputBuffer,
-                                                     _Inout_ std::deque<std::unique_ptr<IInputEvent>>& events,
-                                                     _Out_ size_t& eventsWritten,
-                                                     const bool append) noexcept
-{
-    return _WriteConsoleInputWImplHelper(*pInputBuffer, events, eventsWritten, append);
-}
-
-// Routine Description:
 // - Writes events to the input buffer, translating from codepage to unicode first
 // Arguments:
 // - context - the input buffer to write to

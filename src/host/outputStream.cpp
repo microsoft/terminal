@@ -208,23 +208,21 @@ SHORT ConhostInternalGetSet::PrivateGetLineWidth(const size_t row) const
 }
 
 // Routine Description:
-// - Connects the WriteConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// - Writes events to the input buffer already formed into IInputEvents
 // Arguments:
 // - events - the input events to be copied into the head of the input
 //            buffer for the underlying attached process
 // - eventsWritten - on output, the number of events written
 // Return Value:
-// - true if successful (see DoSrvWriteConsoleInput). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateWriteConsoleInputW(std::deque<std::unique_ptr<IInputEvent>>& events,
                                                       size_t& eventsWritten)
+try
 {
-    eventsWritten = 0;
-
-    return SUCCEEDED(DoSrvPrivateWriteConsoleInputW(_io.GetActiveInputBuffer(),
-                                                    events,
-                                                    eventsWritten,
-                                                    true)); // append
+    eventsWritten = _io.GetActiveInputBuffer()->Write(events);
+    return true;
 }
+CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Connects the SetConsoleWindowInfo API call directly into our Driver Message servicing call inside Conhost.exe
