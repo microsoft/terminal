@@ -3032,6 +3032,10 @@
           "description": "By default Windows treats Ctrl+Alt as an alias for AltGr. When altGrAliasing is set to false, this behavior will be disabled.",
           "type": "boolean"
         },
+        "answerbackMessage": {
+          "description": "The response that is sent when an ENQ control character is received.",
+          "type": "string"
+        },
         "source": {
           "description": "Stores the name of the profile generator that originated this profile.",
           "type": [
