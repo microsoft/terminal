@@ -1248,38 +1248,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for setting the top and bottom scrolling margins for
-//     the current page. This creates a subsection of the screen that scrolls
-//     when input reaches the end of the region, leaving the rest of the screen
-//     untouched.
-//  Currently only accessible through the use of ANSI sequence DECSTBM
-// Parameters:
-// - scrollMargins - A rect who's Top and Bottom members will be used to set
-//     the new values of the top and bottom margins. If (0,0), then the margins
-//     will be disabled. NOTE: This is a rect in the case that we'll need the
-//     left and right margins in the future.
-// Return value:
-// - True if handled successfully. False otherwise.
-[[nodiscard]] NTSTATUS DoSrvPrivateSetScrollingRegion(SCREEN_INFORMATION& screenInfo, const SMALL_RECT& scrollMargins)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    if (scrollMargins.Top > scrollMargins.Bottom)
-    {
-        Status = STATUS_INVALID_PARAMETER;
-    }
-    if (NT_SUCCESS(Status))
-    {
-        SMALL_RECT srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
-        srScrollMargins.Top = scrollMargins.Top;
-        srScrollMargins.Bottom = scrollMargins.Bottom;
-        screenInfo.GetActiveBuffer().SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
-    }
-
-    return Status;
-}
-
-// Routine Description:
 // - A private API call for performing a line feed, possibly preceded by carriage return.
 //    Moves the cursor down one line, and possibly also to the leftmost column.
 // Parameters:

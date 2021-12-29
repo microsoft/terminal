@@ -364,16 +364,24 @@ bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 }
 
 // Routine Description:
-// - Connects the PrivateSetScrollingRegion call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetScrollingRegion is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Sets the top and bottom scrolling margins for the current page. This creates
+//     a subsection of the screen that scrolls when input reaches the end of the
+//     region, leaving the rest of the screen untouched.
 // Arguments:
-// - scrollMargins - The bounds of the region to be the scrolling region of the viewport.
+// - scrollMargins - A rect who's Top and Bottom members will be used to set
+//     the new values of the top and bottom margins. If (0,0), then the margins
+//     will be disabled. NOTE: This is a rect in the case that we'll need the
+//     left and right margins in the future.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetScrollingRegion). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateSetScrollingRegion(const SMALL_RECT& scrollMargins)
 {
-    return NT_SUCCESS(DoSrvPrivateSetScrollingRegion(_io.GetActiveOutputBuffer(), scrollMargins));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto srScrollMargins = screenInfo.GetRelativeScrollMargins().ToInclusive();
+    srScrollMargins.Top = scrollMargins.Top;
+    srScrollMargins.Bottom = scrollMargins.Bottom;
+    screenInfo.SetScrollMargins(Viewport::FromInclusive(srScrollMargins));
+    return true;
 }
 
 // Method Description:
