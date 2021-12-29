@@ -327,16 +327,15 @@ bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
 }
 
 // Routine Description:
-// - Connects the PrivateShowCursor call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateShowCursor is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Makes the cursor visible or hidden. Does not modify blinking state.
 // Arguments:
 // - show - set to true to make the cursor visible, false to hide.
 // Return Value:
-// - true if successful (see DoSrvPrivateShowCursor). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
 {
-    DoSrvPrivateShowCursor(_io.GetActiveOutputBuffer(), show);
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.GetCursor().SetIsVisible(show);
     return true;
 }
 

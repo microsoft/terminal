@@ -1248,18 +1248,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for making the cursor visible or not. Does not modify
-//      blinking state.
-// Parameters:
-// - show - set to true to make the cursor visible, false to hide.
-// Return value:
-// - <none>
-void DoSrvPrivateShowCursor(SCREEN_INFORMATION& screenInfo, const bool show) noexcept
-{
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsVisible(show);
-}
-
-// Routine Description:
 // - A private API call for enabling or disabling the cursor blinking.
 // Parameters:
 // - fEnable - set to true to enable blinking, false to disable
