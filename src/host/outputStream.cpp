@@ -340,26 +340,27 @@ bool ConhostInternalGetSet::PrivateShowCursor(const bool show) noexcept
 }
 
 // Routine Description:
-// - Connects the PrivateAllowCursorBlinking call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateAllowCursorBlinking is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Enables or disables the cursor blinking.
 // Arguments:
 // - fEnable - set to true to enable blinking, false to disable
 // Return Value:
-// - true if successful (see DoSrvPrivateAllowCursorBlinking). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateAllowCursorBlinking(const bool fEnable)
 {
-    DoSrvPrivateAllowCursorBlinking(_io.GetActiveOutputBuffer(), fEnable);
+    auto& textBuffer = _io.GetActiveOutputBuffer().GetTextBuffer();
+    textBuffer.GetCursor().SetBlinkingAllowed(fEnable);
 
-    bool isPty;
-    DoSrvIsConsolePty(isPty);
+    // GH#2642 - From what we've gathered from other terminals, when blinking is
+    // disabled, the cursor should remain On always, and have the visibility
+    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
+    // to disable blinking, the cursor stays stuck On. At this point, only the
+    // cursor visibility property controls whether the user can see it or not.
+    // (Yes, the cursor can be On and NOT Visible)
+    textBuffer.GetCursor().SetIsOn(true);
+
     // If we are connected to a pty, return that we could not handle this
     // so that the VT sequence gets flushed to terminal.
-    // Note: we technically don't need to handle it ourselves at all if
-    // we are connected to a pty (i.e. we could have just returned false
-    // immediately without needing to call DoSrvPrivateAllowCursorBlinking),
-    // but we call it anyway for consistency, just in case.
-    return !isPty;
+    return !IsConsolePty();
 }
 
 // Routine Description:

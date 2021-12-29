@@ -1248,25 +1248,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for enabling or disabling the cursor blinking.
-// Parameters:
-// - fEnable - set to true to enable blinking, false to disable
-// Return value:
-// - True if handled successfully. False otherwise.
-void DoSrvPrivateAllowCursorBlinking(SCREEN_INFORMATION& screenInfo, const bool fEnable)
-{
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetBlinkingAllowed(fEnable);
-
-    // GH#2642 - From what we've gathered from other terminals, when blinking is
-    // disabled, the cursor should remain On always, and have the visibility
-    // controlled by the IsVisible property. So when you do a printf "\e[?12l"
-    // to disable blinking, the cursor stays stuck On. At this point, only the
-    // cursor visibility property controls whether the user can see it or not.
-    // (Yes, the cursor can be On and NOT Visible)
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetIsOn(true);
-}
-
-// Routine Description:
 // - A private API call for setting the top and bottom scrolling margins for
 //     the current page. This creates a subsection of the screen that scrolls
 //     when input reaches the end of the region, leaving the rest of the screen
