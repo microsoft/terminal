@@ -1101,7 +1101,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return til::color{ _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
+        return _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     }
 
     // Method Description:
