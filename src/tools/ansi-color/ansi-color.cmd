@@ -40,9 +40,14 @@ __DATA__
 :: or row, but there is no row or column value applied to the cell.
 :: This has the effect that the row or column has no SGR parameter applied
 :: and so this will show the default.
-:: #SPC# is also a special case which can be used to make gaps in the table.
+:: #SPC# is a special case which can be used to make gaps in the table.
 :: Whereas #NUL# still outputs the CELL text, #SPC# won't show anything in
-:: that row.
+:: that row. #SPC# can be used in columns to also provide a gap which matches
+:: cell width.
+:: #LBL# is also a special case similar to #SPC#. #LBL# makes it possible to
+:: write a text label in the middle of a generated table for a particular row.
+:: Formatting can be applied to the labels and an SGR RESET is automatically
+:: applied at the end of the string.
 __TABLE__
 :: If the definition is defined using Unicode characters, uncomment and include
 :: the following line in the __TABLE__ section of the definition file.
@@ -89,6 +94,8 @@ REM SET "SEPARATOR.CELL=╎"                & :: UTF-8
 IF DEFINED SHOW.UTF8 (SET "SEPARATOR.STUBHEAD_BOXHEAD=│") ELSE (SET "SEPARATOR.STUBHEAD_BOXHEAD=:")
 IF DEFINED SHOW.UTF8 (SET "SEPARATOR.STUBHEAD_STUB=─") ELSE (SET "SEPARATOR.STUBHEAD_STUB=-")
 IF DEFINED SHOW.UTF8 (SET "SEPARATOR.INTERSECT=┘") ELSE (SET "SEPARATOR.INTERSECT=+")
+:: You can also define control for formating
+SET "SECTION=!CSI!1;4m"
 __TABLE:END__
 
 :: Background
@@ -125,6 +132,9 @@ __COLS:END__
 :: [Intensity;][Attribute;]Foreground
 __ROWS__
 #NUL#
+#SPC#
+:: Attributes
+#LBL# !SECTION!Attributes
 1m
 2m
 3m
@@ -156,6 +166,7 @@ REM 28m
 REM 29m
 #SPC#
 :: Normal
+#LBL# !SECTION!Normal
 30m
 90m
 31m
@@ -174,6 +185,7 @@ REM 29m
 97m
 #SPC#
 :: Bold or increased intensity, 1
+#LBL# !SECTION!Bold or increased intensity, 1
 1;30m
 1;90m
 1;31m
@@ -192,6 +204,7 @@ REM 29m
 1;97m
 #SPC#
 :: Faint (decreased intensity), 2
+#LBL# !SECTION!Faint (decreased intensity), 2
 2;30m
 2;90m
 2;31m
@@ -210,6 +223,7 @@ REM 29m
 2;97m
 #SPC#
 :: Italic, 3
+#LBL# !SECTION!Italic, 3
 3;30m
 3;90m
 3;31m
@@ -228,6 +242,7 @@ REM 29m
 3;97m
 #SPC#
 :: Underline, 4
+#LBL# !SECTION!Underline, 4
 4;30m
 4;90m
 4;31m
@@ -246,6 +261,7 @@ REM 29m
 4;97m
 #SPC#
 :: Slow Blink, 5
+#LBL# !SECTION!Slow Blink, 5
 5;30m
 5;90m
 5;31m
@@ -264,6 +280,7 @@ REM 29m
 5;97m
 #SPC#
 :: Rapid Blink, 6
+#LBL# !SECTION!Rapid Blink, 6
 6;30m
 6;90m
 6;31m
@@ -282,6 +299,7 @@ REM 29m
 6;97m
 #SPC#
 :: Reverse video, 7
+#LBL# !SECTION!Reverse video, 7
 7;30m
 7;90m
 7;31m
@@ -300,6 +318,7 @@ REM 29m
 7;97m
 #SPC#
 :: Conceal, 8
+#LBL# !SECTION!Conceal, 8
 8;30m
 8;90m
 8;31m
@@ -318,6 +337,7 @@ REM 29m
 8;97m
 #SPC#
 :: Crossed-out, 9
+#LBL# !SECTION!Crossed-out, 9
 9;30m
 9;90m
 9;31m
@@ -336,6 +356,7 @@ REM 29m
 9;97m
 #SPC#
 :: Double Underline, 21
+#LBL# !SECTION!Double Underline, 21
 21;30m
 21;90m
 21;31m
@@ -601,7 +622,16 @@ IF ERRORLEVEL 1 %@exit% %ERRORLEVEL%
 :PARSE_COLS_DATA
 SET "COL=%*"
 :: Set the column header text and track the max width
-%@strlen% COL COL.LEN
+IF ["!COL:~0,1!"] EQU ["#"] (
+  IF ["!COL:~4,1!"] EQU ["#"] (
+    :: Special case for #???# tokens
+    SET /A "COL.LEN=0"
+  ) ELSE (
+    %@strlen% COL COL.LEN
+  )
+) ELSE (
+  %@strlen% COL COL.LEN
+)
 %@maxval% COL.MAX_WIDTH COL.LEN
 :: Set the col index and store value
 SET /A COL[#]+=1
@@ -612,7 +642,16 @@ SET "COL[!COL[#]!]=!COL!"
 :PARSE_ROWS_DATA
 SET "ROW=%*"
 :: Set the row header text
-%@strlen% ROW ROW.LEN
+IF ["!ROW:~0,1!"] EQU ["#"] (
+  IF ["!ROW:~4,1!"] EQU ["#"] (
+    :: Special case for #???# tokens
+    SET /A "ROW.LEN=0"
+  ) ELSE (
+    %@strlen% ROW ROW.LEN
+  )
+) ELSE (
+  %@strlen% ROW ROW.LEN
+)
 %@maxval% STUB.MAX_WIDTH ROW.LEN
 :: Set the row index and store value
 SET /A ROW[#]+=1
@@ -892,9 +931,21 @@ FOR /L %%r IN (1,1,!ROW[#]!) DO (
     )
   )
 
-  IF /I ["!ROW!"] EQU ["#SPC#"] (
+  IF /I ["!ROW:~0,5!"] EQU ["#SPC#"] (
     :: We want a special case for #SPC# so that we print a blank line
     SET "LINE="
+  ) ELSE IF /I ["!ROW:~0,5!"] EQU ["#LBL#"] (
+    :: We want a special case for #LBL# so that we print the string which follows and append an SGR RESET
+    IF /I ["!ROW:~5,1!"] EQU [" "] (
+      :: Allow for a space to follow #LBL#
+      SET "LINE=!ROW:~6!!RESET!"
+    ) ELSE IF /I ["!ROW:~5,1!"] EQU ["."] (
+      :: Allow for a period to follow #LBL# and treat it like space, to mimic ECHO
+      SET "LINE=!ROW:~6!!RESET!"
+    ) ELSE (
+      :: Assume that any other character is part of the label
+      SET "LINE=!ROW:~5!!RESET!"
+    )
   ) ELSE (
     :: Otherwise process the line
     SET "LINE=!ROW.VALUE!!SEPARATOR!"
@@ -974,15 +1025,21 @@ SETLOCAL DISABLEDELAYEDEXPANSION
 ::
 ::   Computes the length of string in variable StrVar
 ::   and stores the result in variable RtnVar.
-::   If StrVar is #NUL#, this should be 0 width.
-::   If StrVar is #SPC#, this should empty padding.
+::   If StrVar is #SPC#, the return val should be 1.
+::   If StrVar is any other Special Token, the return val should be 0.
 ::   If RtnVar is not specified, then print the length to stdout.
 ::
 SET @strlen=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
   FOR /F "tokens=1,2 delims=, " %%1 IN ("!argv!") DO ( ENDLOCAL%\n%
     SET "s=A!%%~1!"%\n%
-    SET "s=!s:#NUL#=!"%\n%
-    SET "s=!s:#SPC#= !"%\n%
+    IF /I ["!s:~0,5!"] EQU ["#SPC#"] (%\n%
+      SET "s= "%\n%
+    ) ELSE IF /I ["!s:~0,1!"] EQU ["#"] (%\n%
+      IF /I ["!s:~4,1!"] EQU ["#"] (%\n%
+        :: Look for Special Tokens of the form #???# %\n%
+        SET "s="%\n%
+      )%\n%
+    )%\n%
     SET "len=0"%\n%
     FOR %%P in (4096 2048 1024 512 256 128 64 32 16 8 4 2 1) DO (%\n%
       IF ["!s:~%%P,1!"] NEQ [""] (%\n%
@@ -1016,15 +1073,21 @@ SET @maxval=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
 :: @repeat  StrVal  Count  [RetVar]
 ::
 ::   Repeats StrVal, Count times, and assigns to RetVar.
-::   If StrVar is #NUL#, this should empty padding.
 ::   If StrVar is #SPC#, this should empty padding.
+::   If StrVar is any other Special Token, this should be empty.
 ::   If RtnVar is not specified, then print the output string to stdout.
 ::
 SET @repeat=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
   FOR /F "tokens=1,2,3 delims=, " %%1 IN ("!argv!") DO ( ENDLOCAL%\n%
     IF [!%%~1!] NEQ [] (SET "s=!%%~1!") ELSE (SET "s=%%~1")%\n%
-    SET "s=!s:#NUL#= !"%\n%
-    SET "s=!s:#SPC#= !"%\n%
+    IF /I ["!s:~0,5!"] EQU ["#SPC#"] (%\n%
+      SET "s= "%\n%
+    ) ELSE IF /I ["!s:~0,1!"] EQU ["#"] (%\n%
+      IF /I ["!s:~4,1!"] EQU ["#"] (%\n%
+        :: Look for Special Tokens of the form #???# %\n%
+        SET "s="%\n%
+      )%\n%
+    )%\n%
     SET "count=%%~2"%\n%
     SET "outstr="%\n%
     FOR /L %%. IN (1,1,!count!) DO SET "outstr=!outstr!!s!"%\n%
@@ -1125,15 +1188,18 @@ SET @trim=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
 ::   Aligns the string in variable StrVar
 ::   in the field using the Width and Alignment provided
 ::   and stores the result in variable RtnVar.
-::   If StrVar is #NUL#, this should empty padding.
-::   If StrVar is #SPC#, this should empty padding.
+::   If StrVar is a Special Token, it is treated as a space.
 ::   If RtnVar is not specified, then print the output to stdout.
 ::
 SET @align=FOR %%. IN (1 2) DO IF [%%.] EQU [2] (%\n%
   FOR /F "tokens=1,2,3,4 delims=, " %%1 IN ("!argv!") DO ( ENDLOCAL%\n%
     IF ["!%%~1!"] NEQ [""] (SET "strVar=!%%~1!") ELSE (SET "strVar=%%~1")%\n%
-    SET "strVar=!strVar:#NUL#= !"%\n%
-    SET "strVar=!strVar:#SPC#= !"%\n%
+    IF /I ["!strVar:~0,1!"] EQU ["#"] (%\n%
+      IF /I ["!strVar:~4,1!"] EQU ["#"] (%\n%
+        :: Look for Special Tokens of the form #???# %\n%
+        SET "strVar= "%\n%
+      )%\n%
+    )%\n%
     IF ["!%%~2!"] NEQ [""] (SET "width=!%%~2!") ELSE (SET "width=%%~2")%\n%
     SET "alignment=%%~3"%\n%
     IF ["!%%~4!"] NEQ [""] (SET "%%~4=")%\n%
