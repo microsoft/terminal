@@ -397,16 +397,35 @@ bool ConhostInternalGetSet::PrivateGetLineFeedMode() const
 }
 
 // Routine Description:
-// - Connects the PrivateLineFeed call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateLineFeed is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
+// - Performs a line feed, possibly preceded by carriage return.
 // Arguments:
 // - withReturn - Set to true if a carriage return should be performed as well.
 // Return Value:
-// - true if successful (see DoSrvPrivateLineFeed). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateLineFeed(const bool withReturn)
 {
-    return NT_SUCCESS(DoSrvPrivateLineFeed(_io.GetActiveOutputBuffer(), withReturn));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    auto cursorPosition = textBuffer.GetCursor().GetPosition();
+
+    // We turn the cursor on before an operation that might scroll the viewport, otherwise
+    // that can result in an old copy of the cursor being left behind on the screen.
+    textBuffer.GetCursor().SetIsOn(true);
+
+    // Since we are explicitly moving down a row, clear the wrap status on the row we're leaving
+    textBuffer.GetRowByOffset(cursorPosition.Y).SetWrapForced(false);
+
+    cursorPosition.Y += 1;
+    if (withReturn)
+    {
+        cursorPosition.X = 0;
+    }
+    else
+    {
+        cursorPosition = textBuffer.ClampPositionWithinLine(cursorPosition);
+    }
+
+    return AdjustCursorPosition(screenInfo, cursorPosition, FALSE, nullptr);
 }
 
 // Routine Description:
