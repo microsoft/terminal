@@ -1,13 +1,21 @@
 :: Complete matrix of SGR parameters available
 :: This definition also demonstrates the various configuration changes
 :: which are used to control the way the table is generated
-:: Requires 142 columns to display correctly
+:: Requires 92 columns to display correctly
 __DATA__
 :: Select Graphic Rendition (SGR) parameters
 :: #NUL# is treated as a special case to provide cells in that column
 :: or row, but there is no row or column value applied to the cell.
 :: This has the effect that the row or column has no SGR parameter applied
 :: and so this will show the default.
+:: #SPC# is a special case which can be used to make gaps in the table.
+:: Whereas #NUL# still outputs the CELL text, #SPC# won't show anything in
+:: that row. #SPC# can be used in columns to also provide a gap which matches
+:: cell width.
+:: #LBL# is also a special case similar to #SPC#. #LBL# makes it possible to
+:: write a text label in the middle of a generated table for a particular row.
+:: Formatting can be applied to the labels and an SGR RESET is automatically
+:: applied at the end of the string.
 __TABLE__
 SET "UTF8.REQUIRED=#TRUE#"
 :: The test text
@@ -45,22 +53,23 @@ REM SET "SEPARATOR.BOXHEADERS= "
 REM SET "SEPARATOR.BOXHEADERS=╎"
 REM SET "SEPARATOR.CELL= "
 REM SET "SEPARATOR.CELL=╎"
+:: Formatting for labels
+SET "SECTION=!CSI!1;4m"
 __TABLE:END__
 
 :: Background
 __COLS__
 #NUL#
-1m
-2m
-3m
-4m
-5m
-6m
-7m
-8m
-9m
-21m
-#SPC#
+REM 1m
+REM 2m
+REM 3m
+REM 4m
+REM 5m
+REM 6m
+REM 7m
+REM 8m
+REM 9m
+REM 21m
 40m
 100m
 41m
@@ -82,6 +91,9 @@ __COLS:END__
 :: [Intensity;][Attribute;]Foreground
 __ROWS__
 #NUL#
+#SPC#
+:: Attributes
+#LBL# !SECTION!Attributes
 1m
 2m
 3m
@@ -91,9 +103,29 @@ __ROWS__
 7m
 8m
 9m
+REM 10m
+REM 11m
+REM 12m
+REM 13m
+REM 14m
+REM 15m
+REM 16m
+REM 17m
+REM 18m
+REM 19m
+REM 20m
 21m
+REM 22m
+REM 23m
+REM 24m
+REM 25m
+REM 26m
+REM 27m
+REM 28m
+REM 29m
 #SPC#
 :: Normal
+#LBL# !SECTION!Normal
 30m
 90m
 31m
@@ -112,6 +144,7 @@ __ROWS__
 97m
 #SPC#
 :: Bold or increased intensity, 1
+#LBL# !SECTION!Bold or increased intensity, 1
 1;30m
 1;90m
 1;31m
@@ -130,6 +163,7 @@ __ROWS__
 1;97m
 #SPC#
 :: Faint (decreased intensity), 2
+#LBL# !SECTION!Faint (decreased intensity), 2
 2;30m
 2;90m
 2;31m
@@ -148,6 +182,7 @@ __ROWS__
 2;97m
 #SPC#
 :: Italic, 3
+#LBL# !SECTION!Italic, 3
 3;30m
 3;90m
 3;31m
@@ -166,6 +201,7 @@ __ROWS__
 3;97m
 #SPC#
 :: Underline, 4
+#LBL# !SECTION!Underline, 4
 4;30m
 4;90m
 4;31m
@@ -184,6 +220,7 @@ __ROWS__
 4;97m
 #SPC#
 :: Slow Blink, 5
+#LBL# !SECTION!Slow Blink, 5
 5;30m
 5;90m
 5;31m
@@ -202,6 +239,7 @@ __ROWS__
 5;97m
 #SPC#
 :: Rapid Blink, 6
+#LBL# !SECTION!Rapid Blink, 6
 6;30m
 6;90m
 6;31m
@@ -220,6 +258,7 @@ __ROWS__
 6;97m
 #SPC#
 :: Reverse video, 7
+#LBL# !SECTION!Reverse video, 7
 7;30m
 7;90m
 7;31m
@@ -238,6 +277,7 @@ __ROWS__
 7;97m
 #SPC#
 :: Conceal, 8
+#LBL# !SECTION!Conceal, 8
 8;30m
 8;90m
 8;31m
@@ -256,6 +296,7 @@ __ROWS__
 8;97m
 #SPC#
 :: Crossed-out, 9
+#LBL# !SECTION!Crossed-out, 9
 9;30m
 9;90m
 9;31m
@@ -274,6 +315,7 @@ __ROWS__
 9;97m
 #SPC#
 :: Double Underline, 21
+#LBL# !SECTION!Double Underline, 21
 21;30m
 21;90m
 21;31m

@@ -1,4 +1,4 @@
-:: Check SGR intensity attributes, requires 100 columns
+:: Check SGR intensity attributes, requires 110 columns
 __DATA__
 __TABLE__
 :: The test text
@@ -43,6 +43,8 @@ __TABLE:END__
 
 :: Background
 __COLS__
+49m
+#SPC#
 #NUL#
 40m
 100m
@@ -64,12 +66,13 @@ __COLS:END__
 
 :: [Intensity;][Attribute;]Foreground
 __ROWS__
-:: Attributes
-2m
-#NUL#
-1m
+:: Default
+#LBL# Default
+39m
 #SPC#
 :: Normal
+#LBL# Normal
+#NUL#
 30m
 90m
 31m
@@ -87,9 +90,24 @@ __ROWS__
 37m
 97m
 #SPC#
-:: Bold or increased intensity, 1
-:: Normal
+:: Attributes
+#LBL# Attributes
+2m
+#NUL#
+1m
+#SPC#
 :: Faint (decreased intensity), 2
+:: Normal
+:: Bold or increased intensity, 1
+#LBL# Applied !CSI!2mdecreased!RESET! intensity
+#LBL# Normal
+#LBL# Applied !CSI!1mincreased!RESET! intensity
+2;39m
+  39m
+1;39m
+  2m
+#NUL#
+  1m
 2;30m
   30m
 1;30m

@@ -3,12 +3,9 @@
 :: per foreground color instead of incrementing on the attributes
 :: ForEach(fg in Foreground) { ForEach(a in Attribute) { a;fm }} instead of
 :: ForEach(a in Attribute) { ForEach(fg in Foreground) { a;fm }}
+:: Requires 147 columns
 __DATA__
 :: Select Graphic Rendition (SGR) parameters
-:: #NUL# is treated as a special case to provide cells in that column
-:: or row, but there is no row or column value applied to the cell.
-:: This has the effect that the row or column has no SGR parameter applied
-:: and so this will show the default.
 __TABLE__
 SET "UTF8.REQUIRED=#TRUE#"
 :: The test text
