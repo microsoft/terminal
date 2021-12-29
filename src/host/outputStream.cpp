@@ -313,16 +313,17 @@ bool ConhostInternalGetSet::SetRenderMode(const RenderSettings::Mode mode, const
 }
 
 // Routine Description:
-// - Connects the PrivateSetAutoWrapMode call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateSetAutoWrapMode is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Sets the ENABLE_WRAP_AT_EOL_OUTPUT mode. This controls whether the cursor moves
+//     to the beginning of the next row when it reaches the end of the current row.
 // Arguments:
 // - wrapAtEOL - set to true to wrap, false to overwrite the last character.
 // Return Value:
-// - true if successful (see DoSrvPrivateSetAutoWrapMode). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateSetAutoWrapMode(const bool wrapAtEOL)
 {
-    return NT_SUCCESS(DoSrvPrivateSetAutoWrapMode(wrapAtEOL));
+    auto& outputMode = _io.GetActiveOutputBuffer().OutputMode;
+    WI_UpdateFlag(outputMode, ENABLE_WRAP_AT_EOL_OUTPUT, wrapAtEOL);
+    return true;
 }
 
 // Routine Description:
