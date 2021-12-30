@@ -438,14 +438,62 @@ bool ConhostInternalGetSet::PrivateWarningBell()
 }
 
 // Routine Description:
-// - Connects the PrivateReverseLineFeed call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateReverseLineFeed is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Performs a "Reverse line feed", essentially, the opposite of '\n'.
 // Return Value:
-// - true if successful (see DoSrvPrivateReverseLineFeed). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateReverseLineFeed()
 {
-    return NT_SUCCESS(DoSrvPrivateReverseLineFeed(_io.GetActiveOutputBuffer()));
+    auto success = true;
+
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    const SMALL_RECT viewport = screenInfo.GetViewport().ToInclusive();
+    const COORD oldCursorPosition = screenInfo.GetTextBuffer().GetCursor().GetPosition();
+    COORD newCursorPosition = { oldCursorPosition.X, oldCursorPosition.Y - 1 };
+    newCursorPosition = screenInfo.GetTextBuffer().ClampPositionWithinLine(newCursorPosition);
+
+    // If the cursor is at the top of the viewport, we don't want to shift the viewport up.
+    // We want it to stay exactly where it is.
+    // In that case, shift the buffer contents down, to emulate inserting a line
+    //      at the top of the buffer.
+    if (oldCursorPosition.Y > viewport.Top)
+    {
+        // Cursor is below the top line of the viewport
+        success = NT_SUCCESS(AdjustCursorPosition(screenInfo, newCursorPosition, TRUE, nullptr));
+    }
+    else
+    {
+        // If we don't have margins, or the cursor is within the boundaries of the margins
+        // It's important to check if the cursor is in the margins,
+        //      If it's not, but the margins are set, then we don't want to scroll anything
+        if (screenInfo.IsCursorInMargins(oldCursorPosition))
+        {
+            // Cursor is at the top of the viewport
+            // Rectangle to cut out of the existing buffer. This is inclusive.
+            // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+            SMALL_RECT srScroll;
+            srScroll.Left = 0;
+            srScroll.Right = SHORT_MAX;
+            srScroll.Top = viewport.Top;
+            srScroll.Bottom = viewport.Bottom;
+            // Clip to the DECSTBM margin boundary
+            if (screenInfo.AreMarginsSet())
+            {
+                srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+            }
+            // Paste coordinate for cut text above
+            COORD coordDestination;
+            coordDestination.X = 0;
+            coordDestination.Y = viewport.Top + 1;
+
+            // Note the revealed lines are filled with the standard erase attributes.
+            success = SUCCEEDED(DoSrvPrivateScrollRegion(screenInfo,
+                                                         srScroll,
+                                                         srScroll,
+                                                         coordDestination,
+                                                         true));
+        }
+    }
+    return success;
 }
 
 // Routine Description:
