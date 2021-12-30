@@ -408,7 +408,7 @@ FOR /F "tokens=*" %%_ IN ('chcp 2^>^&1 ^& FOR /F %%_ IN ^("ERRORLEVEL"^) DO @CAL
     IF [!CHCP_ERR!] NEQ [0] (
       :: This means that the call to CHCP failed
       ECHO Warning: Error reading the active codepage, check the output from the command CHCP.
-      If DEFINED SHOW.UTF8 (
+      IF DEFINED SHOW.UTF8 (
         :: UTF-8 support is required if SHOW.UTF8 is defined, so error out
         ECHO.
         ECHO Error: UTF-8 support is required for the definition file in use or flags provided.
@@ -430,8 +430,10 @@ FOR /F "tokens=*" %%_ IN ('chcp 2^>^&1 ^& FOR /F %%_ IN ^("ERRORLEVEL"^) DO @CAL
 FOR %%_ IN (!CHCP_RET!) DO (SET CHCP=%%_)
 IF DEFINED CHCP (
   IF [!CHCP!] EQU [65001] (
+    :: If the CHCP value was 65001, we can show UTF8 and we don't need to check more
     SET "SHOW.UTF8=#TRUE#" 
   ) ELSE (
+    :: Otherwise we now want to set the codepage to 65001 and exit with the error if that fails
     IF DEFINED SHOW.UTF8 (
       chcp 65001 > NUL 2>&1
       IF ERRORLEVEL 1 (
@@ -445,7 +447,10 @@ SET "CHCP_OUT="
 SET "CHCP_ERR="
 SET "CHCP_RET="
 
-:: This is a separate code block so that the active console Code Page is changed first
+:: This is a separate code block from the test above so that the active console Code Page 
+:: is changed first. If we want to show the ANSI characters rather than actually drawing 
+:: them, we need to replace ESC with a Unicode codepoint which represents ESC. We do this
+:: now that UTF8 has been configured for the console and before we define the CSI commands.
 IF DEFINED SHOW.ANSI (
   SET "ESC=␛"
 )
@@ -903,11 +908,13 @@ IF DEFINED SEPARATOR.HORIZONTAL (
   SET "TABLE[!TABLE[#]!]=!LINE!"
 )
 
-:: Figure out the CELL alignment now so we only need to compute this once
-IF NOT DEFINED SHOW.R1C1_REFERENCE (
-  %@align% CELL !COL.MAX_WIDTH! !ALIGN.CELL! CELL
-) ELSE (
+:: If we're going to show an R1C1 reference, we don't need to compute the cell alignment
+IF DEFINED SHOW.R1C1_REFERENCE (
+  :: Set up the R1C1 row counter
   SET /A "R1C1_REFERENCE.R=0"
+) ELSE (
+  :: Otherwise figure out the CELL alignment now so we only need to compute this once
+  %@align% CELL !COL.MAX_WIDTH! !ALIGN.CELL! CELL
 )
 
 :: Build the row
@@ -956,37 +963,47 @@ FOR /L %%r IN (1,1,!ROW[#]!) DO (
       SET "ROW=!CSI!!ROW!"
     )
 
+    :: Set up the R1C1 column counter
     IF DEFINED SHOW.R1C1_REFERENCE (
       SET /A "R1C1_REFERENCE.C=0"
       %@counter% R1C1_REFERENCE.R
     )
-    :: Append a cell to the row
+
+    :: Append a cell to the row, adding separators unless processing the first column
     FOR /L %%c IN (1,1,!COL[#]!) DO (
+      :: This is where we actually build the R1C1 reference, replacing the CELL
       IF DEFINED SHOW.R1C1_REFERENCE (
         %@counter% R1C1_REFERENCE.C
         SET "R1C1_REFERENCE=R!R1C1_REFERENCE.R!C!R1C1_REFERENCE.C!"
         %@align% R1C1_REFERENCE !COL.MAX_WIDTH! !ALIGN.CELL.R1C1! CELL
       )
+
       IF /I ["!COL[%%c]!"] EQU ["#NUL#"] (
-        SET "COL="
-      ) ELSE (
-        SET "COL=!CSI!!COL[%%c]!"
-      )
-      IF [%%c] EQU [1] (
-        IF /I ["!COL[%%c]!"] EQU ["#SPC#"] (
-          %@repeat% #SPC# !COL.MAX_WIDTH! OUT
+        :: Special case for #NUL#
+        IF [%%c] EQU [1] (
+          SET "LINE=!LINE!!ROW!!CELL!!RESET!"
+        ) ELSE (
+          SET "LINE=!LINE!!SEPARATOR.CELL!!ROW!!CELL!!RESET!"
+        )
+      ) ELSE IF /I ["!COL[%%c]!"] EQU ["#SPC#"] (
+        :: Special case for #SPC#
+        %@repeat% #SPC# !COL.MAX_WIDTH! OUT
+        IF [%%c] EQU [1] (
           SET "LINE=!LINE!!OUT!"
         ) ELSE (
-          SET "LINE=!LINE!!ROW!!COL!!CELL!!RESET!"
-        )
-      ) ELSE (
-        IF /I ["!COL[%%c]!"] EQU ["#SPC#"] (
-          %@repeat% #SPC# !COL.MAX_WIDTH! OUT
           SET "LINE=!LINE!!SEPARATOR.CELL!!OUT!"
+        )
+        :: Don't count spaces as columns for R1C1_REFERENCE
+        SET /A "R1C1_REFERENCE.C-=1"
+      ) ELSE (
+        :: Normal processing
+        SET "COL=!CSI!!COL[%%c]!"
+        IF [%%c] EQU [1] (
+          SET "LINE=!LINE!!ROW!!COL!!CELL!!RESET!"
         ) ELSE (
           SET "LINE=!LINE!!SEPARATOR.CELL!!ROW!!COL!!CELL!!RESET!"
         )
-      )
+      )      
     )
   )
 
