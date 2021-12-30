@@ -1248,19 +1248,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for swapping to the main screen buffer. From the
-//     alternate buffer, returns to the main screen buffer. From the main
-//     screen buffer, does nothing. The alternate is discarded.
-// Parameters:
-// - screenInfo - a reference to the screen buffer that should use the main buffer
-// Return value:
-// - True if handled successfully. False otherwise.
-void DoSrvPrivateUseMainScreenBuffer(SCREEN_INFORMATION& screenInfo)
-{
-    screenInfo.GetActiveBuffer().UseMainScreenBuffer();
-}
-
-// Routine Description:
 // - A private API call for performing a VT-style erase all operation on the buffer.
 //      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Parameters:

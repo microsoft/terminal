@@ -519,14 +519,13 @@ bool ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
 }
 
 // Routine Description:
-// - Connects the PrivateUseMainScreenBuffer call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateUseMainScreenBuffer is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Swaps to the main screen buffer. From the alternate buffer, returns to the main screen
+//     buffer. From the main screen buffer, does nothing. The alternate is discarded.
 // Return Value:
-// - true if successful (see DoSrvPrivateUseMainScreenBuffer). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
 {
-    DoSrvPrivateUseMainScreenBuffer(_io.GetActiveOutputBuffer());
+    _io.GetActiveOutputBuffer().UseMainScreenBuffer();
     return true;
 }
 
