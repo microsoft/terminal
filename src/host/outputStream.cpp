@@ -564,16 +564,14 @@ bool ConhostInternalGetSet::GetUserDefaultCursorStyle(CursorType& style)
 }
 
 // Routine Description:
-// - Connects the SetCursorStyle call directly into our Driver Message servicing call inside Conhost.exe
-//   SetCursorStyle is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
+// - Sets the current cursor style.
 // Arguments:
 // - style: The style of cursor to change the cursor to.
 // Return Value:
-// - true if successful (see DoSrvSetCursorStyle). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 {
-    DoSrvSetCursorStyle(_io.GetActiveOutputBuffer(), style);
+    _io.GetActiveOutputBuffer().GetTextBuffer().GetCursor().SetType(style);
     return true;
 }
 

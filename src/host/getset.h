@@ -18,9 +18,6 @@ Revision History:
 #include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
-void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
-                         const CursorType cursorType);
-
 void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view uri,
                        const std::wstring_view params);

@@ -1247,12 +1247,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     CATCH_RETURN();
 }
 
-void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
-                         const CursorType cursorType)
-{
-    screenInfo.GetActiveBuffer().GetTextBuffer().GetCursor().SetType(cursorType);
-}
-
 void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
                        const std::wstring_view uri,
                        const std::wstring_view params)
