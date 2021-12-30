@@ -221,6 +221,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass RenameTabArgs : IActionArgs
     {
+        RenameTabArgs(String title);
         String Title { get; };
     };
 

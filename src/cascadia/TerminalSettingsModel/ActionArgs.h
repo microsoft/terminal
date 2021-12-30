@@ -662,6 +662,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(MovePaneArgs);
     BASIC_FACTORY(SetTabColorArgs);
+    BASIC_FACTORY(RenameTabArgs);
     BASIC_FACTORY(SwapPaneArgs);
     BASIC_FACTORY(SplitPaneArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
