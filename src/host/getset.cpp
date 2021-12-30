@@ -1247,12 +1247,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     CATCH_RETURN();
 }
 
-// See SCREEN_INFORMATION::ClearBuffer's description for details.
-[[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo)
-{
-    return screenInfo.GetActiveBuffer().ClearBuffer();
-}
-
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
                          const CursorType cursorType)
 {

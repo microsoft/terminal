@@ -539,9 +539,15 @@ bool ConhostInternalGetSet::PrivateEraseAll()
     return SUCCEEDED(_io.GetActiveOutputBuffer().VtEraseAll());
 }
 
+// Routine Description:
+// - Clears the entire contents of the viewport, except for the cursor's row,
+//     which is moved to the top line of the viewport.
+//     See SCREEN_INFORMATION::ClearBuffer's description for details.
+// Return Value:
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateClearBuffer()
 {
-    return SUCCEEDED(DoSrvPrivateClearBuffer(_io.GetActiveOutputBuffer()));
+    return SUCCEEDED(_io.GetActiveOutputBuffer().ClearBuffer());
 }
 
 // Method Description:
