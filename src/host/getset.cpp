@@ -1247,18 +1247,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     CATCH_RETURN();
 }
 
-// Routine Description:
-// - A private API call for performing a VT-style erase all operation on the buffer.
-//      See SCREEN_INFORMATION::VtEraseAll's description for details.
-// Parameters:
-//  The ScreenBuffer to perform the erase on.
-// Return value:
-// - S_OK if we succeeded, otherwise the HRESULT of the failure.
-[[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo)
-{
-    return screenInfo.GetActiveBuffer().VtEraseAll();
-}
-
 // See SCREEN_INFORMATION::ClearBuffer's description for details.
 [[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo)
 {

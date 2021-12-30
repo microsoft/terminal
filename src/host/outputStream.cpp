@@ -530,16 +530,13 @@ bool ConhostInternalGetSet::PrivateUseMainScreenBuffer()
 }
 
 // Routine Description:
-// - Connects the PrivateEraseAll call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateEraseAll is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on our public API surface.
-// Arguments:
-// <none>
+// - Performs a VT-style erase all operation on the buffer.
+//      See SCREEN_INFORMATION::VtEraseAll's description for details.
 // Return Value:
-// - true if successful (see DoSrvPrivateEraseAll). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateEraseAll()
 {
-    return SUCCEEDED(DoSrvPrivateEraseAll(_io.GetActiveOutputBuffer()));
+    return SUCCEEDED(_io.GetActiveOutputBuffer().VtEraseAll());
 }
 
 bool ConhostInternalGetSet::PrivateClearBuffer()

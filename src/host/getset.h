@@ -18,7 +18,6 @@ Revision History:
 #include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
-[[nodiscard]] HRESULT DoSrvPrivateEraseAll(SCREEN_INFORMATION& screenInfo);
 [[nodiscard]] HRESULT DoSrvPrivateClearBuffer(SCREEN_INFORMATION& screenInfo);
 
 void DoSrvSetCursorStyle(SCREEN_INFORMATION& screenInfo,
