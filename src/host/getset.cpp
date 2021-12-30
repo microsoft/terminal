@@ -1248,19 +1248,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for swapping to the alternate screen buffer. In virtual terminals, there exists both a "main"
-//     screen buffer and an alternate. ASBSET creates a new alternate, and switches to it. If there is an already
-//     existing alternate, it is discarded.
-// Parameters:
-// - screenInfo - a reference to the screen buffer that should use an alternate buffer
-// Return value:
-// - True if handled successfully. False otherwise.
-[[nodiscard]] NTSTATUS DoSrvPrivateUseAlternateScreenBuffer(SCREEN_INFORMATION& screenInfo)
-{
-    return screenInfo.GetActiveBuffer().UseAlternateScreenBuffer();
-}
-
-// Routine Description:
 // - A private API call for swapping to the main screen buffer. From the
 //     alternate buffer, returns to the main screen buffer. From the main
 //     screen buffer, does nothing. The alternate is discarded.

@@ -508,14 +508,14 @@ bool ConhostInternalGetSet::SetConsoleTitleW(std::wstring_view title)
 }
 
 // Routine Description:
-// - Connects the PrivateUseAlternateScreenBuffer call directly into our Driver Message servicing call inside Conhost.exe
-//   PrivateUseAlternateScreenBuffer is an internal-only "API" call that the vt commands can execute,
-//     but it is not represented as a function call on out public API surface.
+// - Swaps to the alternate screen buffer. In virtual terminals, there exists both a "main"
+//     screen buffer and an alternate. This creates a new alternate, and switches to it.
+//     If there is an already existing alternate, it is discarded.
 // Return Value:
-// - true if successful (see DoSrvPrivateUseAlternateScreenBuffer). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateUseAlternateScreenBuffer()
 {
-    return NT_SUCCESS(DoSrvPrivateUseAlternateScreenBuffer(_io.GetActiveOutputBuffer()));
+    return NT_SUCCESS(_io.GetActiveOutputBuffer().UseAlternateScreenBuffer());
 }
 
 // Routine Description:
