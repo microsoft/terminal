@@ -1290,24 +1290,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for forcing the renderer to repaint the screen. If the
-//      input screen buffer is not the active one, then just do nothing. We only
-//      want to redraw the screen buffer that requested the repaint, and
-//      switching screen buffers will already force a repaint.
-// Parameters:
-//  The ScreenBuffer to perform the repaint for.
-// Return value:
-// - None
-void DoSrvPrivateRefreshWindow(_In_ const SCREEN_INFORMATION& screenInfo)
-{
-    Globals& g = ServiceLocator::LocateGlobals();
-    if (&screenInfo == &g.getConsoleInformation().GetActiveOutputBuffer().GetActiveBuffer())
-    {
-        g.pRender->TriggerRedrawAll();
-    }
-}
-
-// Routine Description:
 // - Gets title information from the console. It can be truncated if the buffer is too small.
 // Arguments:
 // - title - If given, this buffer is filled with the title information requested.

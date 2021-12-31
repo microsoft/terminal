@@ -28,8 +28,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
                                           const SIZE cellSize,
                                           const size_t centeringHint) noexcept;
 
-void DoSrvPrivateRefreshWindow(const SCREEN_INFORMATION& screenInfo);
-
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
 void DoSrvGetConsoleOutputCodePage(unsigned int& codepage);
 

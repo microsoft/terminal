@@ -576,14 +576,21 @@ bool ConhostInternalGetSet::SetCursorStyle(const CursorType style)
 }
 
 // Routine Description:
-// - Connects the PrivatePrependConsoleInput API call directly into our Driver Message servicing call inside Conhost.exe
+// - Forces the renderer to repaint the screen. If the input screen buffer is
+//      not the active one, then just do nothing. We only want to redraw the
+//      screen buffer that requested the repaint, and switching screen buffers
+//      will already force a repaint.
 // Arguments:
 // - <none>
 // Return Value:
-// - true if successful (see DoSrvPrivateRefreshWindow). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateRefreshWindow()
 {
-    DoSrvPrivateRefreshWindow(_io.GetActiveOutputBuffer());
+    auto& g = ServiceLocator::LocateGlobals();
+    if (&_io.GetActiveOutputBuffer() == &g.getConsoleInformation().GetActiveOutputBuffer())
+    {
+        g.pRender->TriggerRedrawAll();
+    }
     return true;
 }
 
