@@ -619,10 +619,10 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     case WM_SYSCOMMAND:
     {
         // the low 4 bits contain additional information (that we don't care about)
-        auto hibits = wparam & 0xFFF0;
-        if (hibits == SC_RESTORE || hibits == SC_MAXIMIZE)
+        auto highBits = wparam & 0xFFF0;
+        if (highBits == SC_RESTORE || highBits == SC_MAXIMIZE)
         {
-            _MaximizeChangedHandlers(hibits == SC_MAXIMIZE);
+            _MaximizeChangedHandlers(highBits == SC_MAXIMIZE);
         }
 
         if (wparam == SC_RESTORE && _fullscreen)
