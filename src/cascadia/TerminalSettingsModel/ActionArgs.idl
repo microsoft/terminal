@@ -207,6 +207,24 @@ namespace Microsoft.Terminal.Settings.Model
         SettingsTarget Target { get; };
     };
 
+    [default_interface] runtimeclass SetFocusModeArgs : IActionArgs
+    {
+        SetFocusModeArgs(Boolean isFocusMode);
+        Boolean IsFocusMode { get; };
+    };
+
+    [default_interface] runtimeclass SetFullScreenArgs : IActionArgs
+    {
+        SetFullScreenArgs(Boolean isFullScreen);
+        Boolean IsFullScreen { get; };
+    };
+
+    [default_interface] runtimeclass SetMaximizedArgs : IActionArgs
+    {
+        SetMaximizedArgs(Boolean isMaximized);
+        Boolean IsMaximized { get; };
+    };
+
     [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
     {
         SetColorSchemeArgs(String name);

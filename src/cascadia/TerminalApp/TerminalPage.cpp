@@ -1482,6 +1482,22 @@ namespace winrt::TerminalApp::implementation
         WindowLayout layout{};
         layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
 
+        LaunchMode mode = LaunchMode::DefaultMode;
+        if (_isFullscreen)
+        {
+            mode = WI_SetFlag(mode, LaunchMode::FullscreenMode);
+        }
+        if (_isInFocusMode)
+        {
+            mode = WI_SetFlag(mode, LaunchMode::FocusMode);
+        }
+        if (_isMaximized)
+        {
+            mode = WI_SetFlag(mode, LaunchMode::MaximizedMode);
+        }
+
+        layout.LaunchMode({ mode });
+
         // Only save the content size because the tab size will be added on load.
         const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
         const float contentHeight = ::base::saturated_cast<float>(_tabContent.ActualHeight());
@@ -2607,10 +2623,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFocusMode()
     {
-        _SetFocusMode(!_isInFocusMode);
+        SetFocusMode(!_isInFocusMode);
     }
 
-    void TerminalPage::_SetFocusMode(const bool inFocusMode)
+    void TerminalPage::SetFocusMode(const bool inFocusMode)
     {
         const bool newInFocusMode = inFocusMode;
         if (newInFocusMode != FocusMode())
@@ -2856,6 +2872,21 @@ namespace winrt::TerminalApp::implementation
         _isFullscreen = newFullscreen;
         _UpdateTabView();
         _FullscreenChangedHandlers(*this, nullptr);
+    }
+
+    void TerminalPage::Maximized(bool newMaximized)
+    {
+        _isMaximized = newMaximized;
+    }
+
+    void TerminalPage::RequestSetMaximized(bool newMaximized)
+    {
+        if (_isMaximized == newMaximized)
+        {
+            return;
+        }
+        _isMaximized = newMaximized;
+        _ChangeMaximizeRequestedHandlers(*this, nullptr);
     }
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
@@ -3260,7 +3291,7 @@ namespace winrt::TerminalApp::implementation
                         // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
                         // If we're entering Quake Mode from Focus Mode, then this will do nothing
                         // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                        _SetFocusMode(true);
+                        SetFocusMode(true);
                         _IsQuakeWindowChangedHandlers(*this, nullptr);
                     }
                 }
