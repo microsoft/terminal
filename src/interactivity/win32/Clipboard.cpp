@@ -274,7 +274,7 @@ void Clipboard::CopyTextToSystemClipboard(const TextBuffer::TextAndColor& rows, 
         {
             const auto& fontData = ServiceLocator::LocateGlobals().getConsoleInformation().GetActiveOutputBuffer().GetCurrentFont();
             int const iFontHeightPoints = fontData.GetUnscaledSize().Y * 72 / ServiceLocator::LocateGlobals().dpi;
-            const COLORREF bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().GetDefaultBackground();
+            const auto bgColor = ServiceLocator::LocateGlobals().getConsoleInformation().LookupAttributeColors({}).second;
 
             std::string HTMLToPlaceOnClip = TextBuffer::GenHTML(rows, iFontHeightPoints, fontData.GetFaceName(), bgColor);
             CopyToSystemClipboard(HTMLToPlaceOnClip, L"HTML Format");
