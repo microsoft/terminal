@@ -765,6 +765,7 @@ fdw
 fesb
 FFDE
 FFrom
+fgbg
 FGCOLOR
 fgetc
 fgetwc
@@ -2066,6 +2067,7 @@ runut
 runxamlformat
 rvalue
 RVERTICAL
+rvpa
 RWIN
 rxvt
 safearray

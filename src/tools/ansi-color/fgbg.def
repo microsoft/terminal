@@ -1,4 +1,4 @@
-:: Compact display of FG over BG colors
+:: Compact display of foreground over background colors
 :: Requires 76 columns
 
 __DATA__
