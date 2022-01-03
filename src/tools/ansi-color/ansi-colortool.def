@@ -14,7 +14,7 @@ SET "STUBHEAD=ANSI"
 SET "SEPARATOR.STUB=║"
 SET "SEPARATOR.BOXHEAD=─"
 SET "SEPARATOR.CELL=│"
-SET "SEPARATOR.COL_INTERSECT=┬"
+SET "SEPARATOR.CELL_INTERSECT=┬"
 :::: To get the alignment to match the original ColorTool, we specify the
 :::: stub max width and prepend an extra boxhead character to the intersect
 REM SET /A "STUB.MAX_WIDTH=6"
