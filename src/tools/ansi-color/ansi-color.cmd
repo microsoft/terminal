@@ -813,7 +813,7 @@ IF DEFINED SEPARATOR.INTERSECT (
 :: decide what makes the most sense based on other separators, either
 :: trying to extend the vertical default or the horizontal default.
 :: If default vertical or horizontal separators weren't used, it is an
-:: advanced definition and the interesect should have been provided,
+:: advanced definition and the intersect should have been provided,
 :: so with no better guidance we define it as a space.
 IF DEFINED SEPARATOR.VERTICAL (
   IF DEFINED SEPARATOR.HORIZONTAL (
