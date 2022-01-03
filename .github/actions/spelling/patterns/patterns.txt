@@ -26,3 +26,5 @@ D2DERR_SHADER_COMPILE_FAILED
 TIL_FEATURE_[0-9A-Z_]+
 vcvars\w*
 ROY\sG\.\sBIV
+!(?:(?i)ESC)!\[
+!(?:(?i)CSI)!(?:\d+(?:;\d+|)m|[ABCDF])

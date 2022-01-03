@@ -9,15 +9,19 @@ SET "ALIGN.CELL=C"
 SET "ALIGN.BOXHEAD=C"
 SET "ALIGN.STUB=L"
 SET "ALIGN.STUBHEAD=C"
-:: For testing
+:: Draw table labels and lines
 SET "STUBHEAD=ANSI"
-SET "SEPARATOR.STUBHEAD_BOXHEAD=║"
-SET "SEPARATOR.STUB_BODY=║"
-SET "SEPARATOR.STUBHEAD_STUB=─"
-SET "SEPARATOR.BOXHEAD_BODY=─"
-SET "SEPARATOR.INTERSECT=─╫─"
-SET "SEPARATOR.BOXHEAD=│"
+SET "SEPARATOR.STUB=║"
+SET "SEPARATOR.BOXHEAD=─"
 SET "SEPARATOR.CELL=│"
+SET "SEPARATOR.COL_INTERSECT=┬"
+:::: To get the alignment to match the original ColorTool, we specify the
+:::: stub max width and prepend an extra boxhead character to the intersect
+REM SET /A "STUB.MAX_WIDTH=6"
+REM SET "SEPARATOR.INTERSECT=!SEPARATOR.BOXHEAD!╫"
+:::: Alternatively this provides the same thing but with the stub separator
+:::: shifted further to the left. This is an individual preference.
+SET "SEPARATOR.INTERSECT=!SEPARATOR.BOXHEAD!╫!SEPARATOR.BOXHEAD!"
 __TABLE:END__
 __COLS__
 #NUL#

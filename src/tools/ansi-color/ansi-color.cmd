@@ -398,7 +398,7 @@ IF DEFINED SHOW.ANSI (
 )
 
 :: The console (CMD) is normally not UTF-8, so preserve the codepage so we can reset it.
-:: Because the output of chcp is localized, we grab the last value of the string,
+:: Because the output of CHCP is localized, we grab the last value of the string,
 :: which we have our fingers crossed, will be the codepage.
 FOR /F "tokens=*" %%_ IN ('chcp 2^>^&1 ^& FOR /F %%_ IN ^("ERRORLEVEL"^) DO @CALL ECHO __ERRORLEVEL__:%%%%_%%') DO (
   SET CHCP_OUT=%%_
@@ -497,6 +497,8 @@ SET "ALIGN.STUB=R"
 SET "ALIGN.STUBHEAD_STUB=C"
 SET "ALIGN.STUB_BODY=C"
 SET "ALIGN.BOXHEAD_BODY=C"
+SET "ALIGN.INTERSECT=C"
+SET "ALIGN.STUB_BOXHEAD_INTERSECT=C"
 
 :: Separators
 SET "SEPARATOR.STUB="
@@ -510,6 +512,7 @@ SET "SEPARATOR.BOXHEAD_BODY="
 SET "SEPARATOR.BOXHEAD="
 SET "SEPARATOR.INTERSECT="
 SET "SEPARATOR.STUB_BOXHEAD_INTERSECT="
+SET "SEPARATOR.COL_INTERSECT="
 
 :: Flags
 SET "SEPARATOR.VERTICAL="
@@ -588,7 +591,8 @@ SET "DATA=%*"
 :: We're parsing the data segment, so clean up the data before further processing
 %@trim% DATA
 
-:: Skip over any comments
+:: Skip over any blank lines or comments
+IF NOT DEFINED DATA %@exit%
 IF /I ["!DATA!"] EQU ["REM"] %@exit%
 IF /I ["!DATA!"] EQU ["@REM"] %@exit%
 IF /I ["!DATA:~0,2!"] EQU ["::"] %@exit%
@@ -670,67 +674,29 @@ SET "ROW[!ROW[#]!]=!ROW!"
 IF DEFINED UTF8.REQUIRED (
   IF NOT DEFINED SHOW.UTF8 (
     SET "SCRIPT_NAME=%~nx0"
-    SET "msg=Error: UTF-8 console support is required.!LF!       Try ^"!SCRIPT_NAME! /U [^<definition_file^>]^" to enable UTF-8 support!LF!       or change the default configuration in !SCRIPT_NAME! to always use UTF-8."
-    CALL :USAGE msg
+    SET "MSG=Error: UTF-8 console support is required.!LF!       Try ^"!SCRIPT_NAME! /U [^<definition_file^>]^" to enable UTF-8 support!LF!       or change the default configuration in !SCRIPT_NAME! to always use UTF-8."
+    CALL :USAGE MSG
     %@exit% 1
   )
 )
 %@exit%
 
 
-:: Separators have cascading effects, so if some are not defined this is where
-:: they are defined
 :RESOLVE_SEPARATORS
+:: There's a lot to consider with separators in trying to do what is best
+:: for the definition author. Look at the separator.def and ansi-colortool.def
+:: for examples for how to most effectively manage this.
 
-:: Define the vertical separator
-IF DEFINED SEPARATOR.STUB (
-  SET "SEPARATOR.VERTICAL=#TRUE#"
-  IF NOT DEFINED SEPARATOR.STUBHEAD_BOXHEAD (
-    SET "SEPARATOR.STUBHEAD_BOXHEAD=!SEPARATOR.STUB!"
-  )
-  IF NOT DEFINED SEPARATOR.STUB_BODY (
-    SET "SEPARATOR.STUB_BODY=!SEPARATOR.STUB!"
-  )
-) ELSE (
-  IF DEFINED SEPARATOR.STUBHEAD_BOXHEAD (
-    SET "SEPARATOR.VERTICAL=#TRUE#"
-    IF NOT DEFINED SEPARATOR.STUB_BODY (
-      SET "SEPARATOR.STUB_BODY= "
-    )
-  )
-  IF DEFINED SEPARATOR.STUB_BODY (
-    SET "SEPARATOR.VERTICAL=#TRUE#"
-    IF NOT DEFINED SEPARATOR.STUBHEAD_BOXHEAD (
-      SET "SEPARATOR.STUBHEAD_BOXHEAD= "
-    )
-  )
-)
-
-:: Define the horizontal separator
-IF DEFINED SEPARATOR.BOXHEAD (
-  SET "SEPARATOR.HORIZONTAL=#TRUE#"
-  IF NOT DEFINED SEPARATOR.STUBHEAD_STUB (
-    SET "SEPARATOR.STUBHEAD_STUB=!SEPARATOR.BOXHEAD!"
-  )
-  IF NOT DEFINED SEPARATOR.BOXHEAD_BODY (
-    SET "SEPARATOR.BOXHEAD_BODY=!SEPARATOR.BOXHEAD!"
-  )
-) ELSE (
-  IF DEFINED SEPARATOR.STUBHEAD_STUB (
-    SET "SEPARATOR.HORIZONTAL=#TRUE#"
-    IF NOT DEFINED SEPARATOR.BOXHEAD_BODY (
-      SET "SEPARATOR.BOXHEAD_BODY= "
-    )
-  )
-  IF DEFINED SEPARATOR.BOXHEAD_BODY (
-    SET "SEPARATOR.HORIZONTAL=#TRUE#"
-    IF NOT DEFINED SEPARATOR.STUBHEAD_STUB (
-      SET "SEPARATOR.STUBHEAD_STUB= "
-    )
-  )
-)
+:: Separators have cascading effects, so if some are not defined this is where
+:: they are defined.
 
 :: Define the column separator
+::
+:: SEPARATOR.COL is the default column separator and it will be overridden
+:: by SEPARATOR.BOXHEADERS or SEPARATOR.CELL.
+:: If SEPARATOR.COL is not defined, and SEPARATOR.BOXHEADERS is defined
+:: but SEPARATOR.CELL is not defined, or vice versa, then the undefined 
+:: separator will be defined with a space to preserve proper separation.
 IF DEFINED SEPARATOR.COL (
   SET "SEPARATOR.COLUMN=#TRUE#"
   IF NOT DEFINED SEPARATOR.BOXHEADERS (
@@ -754,8 +720,87 @@ IF DEFINED SEPARATOR.COL (
   )
 )
 
+:: Define the vertical separator
+::
+:: SEPARATOR.STUB is the default vertical separator and it will be
+:: overridden by SEPARATOR.STUBHEAD_BOXHEAD or SEPARATOR.STUB_BODY.
+:: If SEPARATOR.STUB is not defined, and SEPARATOR.STUB_BODY is defined
+:: but SEPARATOR.STUBHEAD_BOXHEAD is not defined, or vice versa, then
+:: the undefined separator will be defined with a space to preserve
+:: proper separation.
+IF DEFINED SEPARATOR.STUB (
+  SET "SEPARATOR.VERTICAL=#TRUE#"
+  IF NOT DEFINED SEPARATOR.STUBHEAD_BOXHEAD (
+    SET "SEPARATOR.STUBHEAD_BOXHEAD=!SEPARATOR.STUB!"
+  )
+  IF NOT DEFINED SEPARATOR.STUB_BODY (
+    SET "SEPARATOR.STUB_BODY=!SEPARATOR.STUB!"
+  )
+) ELSE (
+  IF DEFINED SEPARATOR.STUB_BODY (
+    SET "SEPARATOR.VERTICAL=#TRUE#"
+    IF NOT DEFINED SEPARATOR.STUBHEAD_BOXHEAD (
+      SET "SEPARATOR.STUBHEAD_BOXHEAD= "
+    )
+  )
+  IF DEFINED SEPARATOR.STUBHEAD_BOXHEAD (
+    SET "SEPARATOR.VERTICAL=#TRUE#"
+    IF NOT DEFINED SEPARATOR.STUB_BODY (
+      SET "SEPARATOR.STUB_BODY= "
+    )
+  )
+)
+
+:: If there is no vertical separator defined, but there is a column separator
+:: assume that the column separator should be uniformally applied. This can be
+:: forcibly overridden by putting SET "SEPARATOR.VERTICAL=#TRUE#" in the table
+:: definition and leaving SEPARATOR.STUBHEAD_BOXHEAD and SEPARATOR.STUB_BODY
+:: undefined.
+IF NOT DEFINED SEPARATOR.VERTICAL (
+  IF DEFINED SEPARATOR.COLUMN (
+    SET "SEPARATOR.VERTICAL=#TRUE#"
+    SET "SEPARATOR.STUBHEAD_BOXHEAD=!SEPARATOR.BOXHEADERS!"
+    SET "SEPARATOR.STUB_BODY=!SEPARATOR.CELL!"
+    IF NOT DEFINED SEPARATOR.INTERSECT (
+      SET "SEPARATOR.INTERSECT=!SEPARATOR.COL_INTERSECT!"
+    )
+    IF NOT DEFINED SEPARATOR.COL_INTERSECT (
+      SET "SEPARATOR.COL_INTERSECT=!SEPARATOR.INTERSECT!"
+    )
+  )
+)
+
+:: Define the horizontal separator
+::
+:: SEPARATOR.BOXHEAD is the default horizontal separator and it will be 
+:: overridden by SEPARATOR.STUBHEAD_STUB or SEPARATOR.BOXHEAD_BODY.
+:: If SEPARATOR.BOXHEAD is not defined and SEPARATOR.BOXHEAD_BODY is defined
+:: but SEPARATOR.STUBHEAD_STUB is not defined, SEPARATOR.STUBHEAD_STUB will
+:: be defined with a space so that there is proper separation.
+:: SEPARATOR.BOXHEAD_BODY does not need this treatment as a newline is an
+:: adequate replacement for trailing spaces.
+IF DEFINED SEPARATOR.BOXHEAD (
+  SET "SEPARATOR.HORIZONTAL=#TRUE#"
+  IF NOT DEFINED SEPARATOR.STUBHEAD_STUB (
+    SET "SEPARATOR.STUBHEAD_STUB=!SEPARATOR.BOXHEAD!"
+  )
+  IF NOT DEFINED SEPARATOR.BOXHEAD_BODY (
+    SET "SEPARATOR.BOXHEAD_BODY=!SEPARATOR.BOXHEAD!"
+  )
+) ELSE (
+  IF DEFINED SEPARATOR.STUBHEAD_STUB (
+    SET "SEPARATOR.HORIZONTAL=#TRUE#"
+  )
+  IF DEFINED SEPARATOR.BOXHEAD_BODY (
+    SET "SEPARATOR.HORIZONTAL=#TRUE#"
+    IF NOT DEFINED SEPARATOR.STUBHEAD_STUB (
+      SET "SEPARATOR.STUBHEAD_STUB= "
+    )
+  )
+)
+
 :: SEPARATOR.INTERSECT is intended to be a friendlier name of SEPARATOR.STUB_BOXHEAD_INTERSECT
-:: Only one should be defined with a non-space character
+:: Only one should be defined with a non-space character.
 IF DEFINED SEPARATOR.INTERSECT (
   IF NOT DEFINED SEPARATOR.STUB_BOXHEAD_INTERSECT (
     SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.INTERSECT!"
@@ -764,58 +809,78 @@ IF DEFINED SEPARATOR.INTERSECT (
   )
 )
 
-:: Trim the variables we use to draw our separators
-:: so we only work with non-space characters
-SET "SEPARATOR.COL.TRIM=!SEPARATOR.COL!"
-%@trim% SEPARATOR.COL.TRIM
-SET "SEPARATOR.BOXHEAD.TRIM=!SEPARATOR.BOXHEAD!"
-%@trim% SEPARATOR.BOXHEAD.TRIM
-SET "SEPARATOR.INTERSECT.TRIM=!SEPARATOR.INTERSECT!"
-%@trim% SEPARATOR.INTERSECT.TRIM
-SET "SEPARATOR.STUB.TRIM=!SEPARATOR.STUB!"
-%@trim% SEPARATOR.STUB.TRIM
-SET "SEPARATOR.CELL.TRIM=!SEPARATOR.CELL!"
-%@trim% SEPARATOR.CELL.TRIM
-SET "SEPARATOR.STUBHEAD_BOXHEAD.TRIM=!SEPARATOR.STUBHEAD_BOXHEAD!"
-%@trim% SEPARATOR.STUBHEAD_BOXHEAD.TRIM
-SET "SEPARATOR.STUB_BODY.TRIM=!SEPARATOR.STUB_BODY!"
-%@trim% SEPARATOR.STUB_BODY.TRIM
-SET "SEPARATOR.STUBHEAD_STUB.TRIM=!SEPARATOR.STUBHEAD_STUB!"
-%@trim% SEPARATOR.STUBHEAD_STUB.TRIM
-SET "SEPARATOR.BOXHEAD_BODY.TRIM=!SEPARATOR.BOXHEAD_BODY!"
-%@trim% SEPARATOR.BOXHEAD_BODY.TRIM
-
+:: Determine if we need an intersect and if it wasn't already defined
+:: decide what makes the most sense based on other separators, either
+:: trying to extend the vertical default or the horizontal default.
+:: If default vertical or horizontal separators weren't used, it is an
+:: advanced definition and the interesect should have been provided,
+:: so with no better guidance we define it as a space.
 IF DEFINED SEPARATOR.VERTICAL (
   IF DEFINED SEPARATOR.HORIZONTAL (
-    IF NOT DEFINED SEPARATOR.STUB_BOXHEAD_INTERSECT.TRIM (
-      IF DEFINED SEPARATOR.INTERSECT.TRIM (
-        SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.INTERSECT!"
-      ) ELSE (
-        IF DEFINED SEPARATOR.STUB.TRIM (
-          IF NOT DEFINED SEPARATOR.BOXHEAD.TRIM (
-            SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.STUB!"
-          ) ELSE (
-            SET "SEPARATOR.STUB_BOXHEAD_INTERSECT= "
-          )
+    :: Both vertical and horizontal separators are defined
+    IF NOT DEFINED SEPARATOR.STUB_BOXHEAD_INTERSECT (
+      :: But no intersect was actually defined
+      IF DEFINED SEPARATOR.STUB (
+        :: A default vertical separator is already defined
+        IF NOT DEFINED SEPARATOR.BOXHEAD (
+          :: but not a default horizontal, so extend the vertical
+          SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.STUB!"
         ) ELSE (
-          IF DEFINED SEPARATOR.BOXHEAD.TRIM (
-            SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.BOXHEAD!"
-          ) ELSE (
-            SET "SEPARATOR.STUB_BOXHEAD_INTERSECT= "
-          )
+          :: SEPARATOR.INTERSECT should be defined by the definition, just provide a space
+          SET "SEPARATOR.STUB_BOXHEAD_INTERSECT= "
+        )
+      ) ELSE (
+        :: There is no default vertical separator
+        IF DEFINED SEPARATOR.BOXHEAD (
+          :: but there is a default horizontal, so extend the horizontal
+          SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.BOXHEAD!"
+        ) ELSE (
+          :: SEPARATOR.INTERSECT should be defined by the definition, just provide a space
+          SET "SEPARATOR.STUB_BOXHEAD_INTERSECT= "
         )
       )
     )
   ) ELSE (
-    SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.STUB!"
+    :: Both a vertical and horizontal separator are needed for a SEPARATOR.INTERSECT, so undefine
+    SET "SEPARATOR.STUB_BOXHEAD_INTERSECT="
   )
 ) ELSE (
-  IF DEFINED SEPARATOR.HORIZONTAL (
-    SET "SEPARATOR.STUB_BOXHEAD_INTERSECT=!SEPARATOR.BOXHEAD!"
-  )
+  :: Both a vertical and horizontal separator are needed for a SEPARATOR.INTERSECT, so undefine
   SET "SEPARATOR.STUB_BOXHEAD_INTERSECT="
 )
 
+:: If SEPARATOR.COL_INTERSECT is not defined, but SEPARATOR.BOXHEAD_BODY is defined,
+:: see if SEPARATOR.COLS, SEPARATOR.CELL, or SEPARATOR.BOXHEADERS is defined and extend 
+:: SEPARATOR.BOXHEAD_BODY for SEPARATOR.COL_INTERSECT as default.
+IF NOT DEFINED SEPARATOR.COL_INTERSECT (
+  IF DEFINED SEPARATOR.BOXHEAD_BODY (
+    IF DEFINED SEPARATOR.COL (
+      SET "SEPARATOR.COL_INTERSECT=!SEPARATOR.BOXHEAD_BODY!"
+    ) ELSE IF DEFINED SEPARATOR.CELL (
+      SET "SEPARATOR.COL_INTERSECT=!SEPARATOR.BOXHEAD_BODY!"
+    ) ELSE IF DEFINED SEPARATOR.BOXHEADERS (
+      SET "SEPARATOR.COL_INTERSECT=!SEPARATOR.BOXHEAD_BODY!"
+    )
+  )
+)
+
+:: SEPARATOR.COL_INTERSECT only applies if SEPARATOR.BOXHEADERS, SEPARATOR.COL, or SEPARATOR.CELL is defined
+IF DEFINED SEPARATOR.COL_INTERSECT (
+  IF NOT DEFINED SEPARATOR.BOXHEADERS (
+    IF NOT DEFINED SEPARATOR.COL (
+      IF NOT DEFINED SEPARATOR.CELL (
+        SET "SEPARATOR.COL_INTERSECT="
+      )
+    )
+  )
+)
+
+:: Now with all the separators resolved, determine the maximum vertical width in
+:: the stub separators. This is the only category of separators supported to be 
+:: more than a character wide because it can be calculated in a column whereas
+:: a horizontal separator would require multiple lines and that hasn't been
+:: implemented. Boxhead and Cell separators could conceivably be more than a
+:: character, but that would quickly take up more space as it is multiplied out.
 IF DEFINED SEPARATOR.VERTICAL (
   SET /A "SEPARATOR.VERTICAL.WIDTH=0"
   %@strlen% SEPARATOR.STUBHEAD_BOXHEAD SEPARATOR.WIDTH
@@ -829,7 +894,6 @@ IF DEFINED SEPARATOR.VERTICAL (
   IF DEFINED SEPARATOR.STUB_BOXHEAD_INTERSECT ( %@align% SEPARATOR.STUB_BOXHEAD_INTERSECT !SEPARATOR.VERTICAL.WIDTH! C SEPARATOR.STUB_BOXHEAD_INTERSECT )
   IF DEFINED SEPARATOR.STUB_BODY ( %@align% SEPARATOR.STUB_BODY !SEPARATOR.VERTICAL.WIDTH! C SEPARATOR.STUB_BODY )
 )
-
 %@exit%
 
 
@@ -842,6 +906,10 @@ IF NOT DEFINED STUBHEAD (
 )
 %@strlen% STUBHEAD STUBHEAD.WIDTH
 %@maxval% STUB.MAX_WIDTH STUBHEAD.WIDTH
+IF DEFINED SEPARATOR.HORIZONTAL (
+  %@strlen% SEPARATOR.STUBHEAD_STUB STUBHEAD.WIDTH
+  %@maxval% STUB.MAX_WIDTH STUBHEAD.WIDTH
+)
 %@align% STUBHEAD !STUB.MAX_WIDTH! !ALIGN.STUBHEAD! STUBHEAD
 
 SET "LINE=!STUBHEAD!!SEPARATOR.STUBHEAD_BOXHEAD!"
@@ -880,27 +948,53 @@ IF DEFINED SEPARATOR.HORIZONTAL (
   SET "SEPARATOR="
   %@strlen% SEPARATOR.STUBHEAD_STUB SEPARATOR.WIDTH
   IF [!SEPARATOR.WIDTH!] EQU [1] (
+    :: If the SEPARATOR.STUBHEAD_STUB is a single character, repeat it
     IF DEFINED SEPARATOR.STUBHEAD_STUB ( %@repeat% SEPARATOR.STUBHEAD_STUB !STUB.MAX_WIDTH! SEPARATOR)
   ) ELSE (
+    :: Otherwise align it based on the defined ALIGN.STUBHEAD_STUB
     IF DEFINED SEPARATOR.STUBHEAD_STUB ( %@align% SEPARATOR.STUBHEAD_STUB !STUB.MAX_WIDTH! !ALIGN.STUBHEAD_STUB! SEPARATOR )
   )
   SET "LINE=!LINE!!SEPARATOR!"
 
+  :: ALIGN.INTERSECT is intended to be a friendlier name of ALIGN.STUB_BOXHEAD_INTERSECT
+  IF DEFINED ALIGN.INTERSECT (
+    IF NOT DEFINED ALIGN.STUB_BOXHEAD_INTERSECT (
+      SET "ALIGN.STUB_BOXHEAD_INTERSECT=!ALIGN.INTERSECT!"
+    ) ELSE (
+      ECHO Warning: ALIGN.STUB_BOXHEAD_INTERSECT definition overriding ALIGN.INTERSECT
+    )
+  )
+
   SET "SEPARATOR="
   %@strlen% SEPARATOR.STUB_BOXHEAD_INTERSECT SEPARATOR.WIDTH
   IF [!SEPARATOR.WIDTH!] EQU [1] (
+    :: If the SEPARATOR.STUB_BOXHEAD_INTERSECT is a single character, repeat it
     IF DEFINED SEPARATOR.STUB_BOXHEAD_INTERSECT ( %@repeat% SEPARATOR.STUB_BOXHEAD_INTERSECT !SEPARATOR.VERTICAL.WIDTH! SEPARATOR )
   ) ELSE (
-    IF DEFINED SEPARATOR.STUB_BOXHEAD_INTERSECT ( %@align% SEPARATOR.STUB_BOXHEAD_INTERSECT !SEPARATOR.VERTICAL.WIDTH! !ALIGN.STUBHEAD! SEPARATOR )
+    :: Otherwise align it based on the defined ALIGN.STUBHEAD
+    IF DEFINED SEPARATOR.STUB_BOXHEAD_INTERSECT ( %@align% SEPARATOR.STUB_BOXHEAD_INTERSECT !SEPARATOR.VERTICAL.WIDTH! !ALIGN.STUB_BOXHEAD_INTERSECT! SEPARATOR )
   )
   SET "LINE=!LINE!!SEPARATOR!"
 
   SET "SEPARATOR="
   %@strlen% SEPARATOR.BOXHEAD_BODY SEPARATOR.WIDTH
   IF [!SEPARATOR.WIDTH!] EQU [1] (
-    IF DEFINED SEPARATOR.BOXHEAD_BODY ( %@repeat% SEPARATOR.BOXHEAD_BODY !BOXHEAD.WIDTH! SEPARATOR )
+    IF DEFINED SEPARATOR.COL_INTERSECT (
+      :: If there is a column intersect, we need to build the line out for each column,
+      FOR /L %%c IN (2,1,!COL[#]!) DO (
+        :: Loop COL[#]-1 times so that we don't have too many segments
+        %@repeat% SEPARATOR.BOXHEAD_BODY !COL.MAX_WIDTH! COLUMN
+        SET "LINE=!LINE!!COLUMN!!SEPARATOR.COL_INTERSECT!"
+      )
+      :: Append the final column
+      SET "LINE=!LINE!!COLUMN!"
+    ) ELSE (
+      :: otherwise, if the SEPARATOR.BOXHEAD_BODY is a single character, repeat it for the width of the BOXHEAD
+      IF DEFINED SEPARATOR.BOXHEAD_BODY ( %@repeat% SEPARATOR.BOXHEAD_BODY !BOXHEAD.WIDTH! SEPARATOR )
+    )
   ) ELSE (
-    IF DEFINED SEPARATOR.BOXHEAD_BODY ( %@align% SEPARATOR.BOXHEAD_BODY !BOXHEAD.WIDTH! !ALIGN.STUBHEAD! SEPARATOR )
+    :: Otherwise align it based on the defined ALIGN.STUBHEAD
+    IF DEFINED SEPARATOR.BOXHEAD_BODY ( %@align% SEPARATOR.BOXHEAD_BODY !BOXHEAD.WIDTH! !ALIGN.BOXHEAD_BODY! SEPARATOR )
   )
   SET "LINE=!LINE!!SEPARATOR!"
 
@@ -1330,35 +1424,43 @@ SET "SCRIPT_NAME=%~nx0"
 SET "DATA_FILE="
 
 FOR %%a IN (%*) DO (
-  SET "arg=%%~a"
-  IF ["!arg:~0,1!"] EQU ["/"] (
+  SET "ARG=%%~a"
+  SET "OPT.FOUND="
+  :: Check for options
+  IF ["!ARG:~0,1!"] EQU ["/"] (
+    SET "OPT.FOUND=#TRUE#"
+  ) ELSE IF ["!ARG:~0,1!"] EQU ["-"] (
+    :: Makes this more friendly to run in PowerShell where - is used for arguments
+    SET "OPT.FOUND=#TRUE#"
+  )
+  IF DEFINED OPT.FOUND (
     SHIFT /1
-    SET "opt=!arg:~1,1!"
+    SET "OPT=!ARG:~1,1!"
     :: /H [Help]
-    IF /I ["!opt!"] EQU ["H"] (
-      SET "opt="
+    IF /I ["!OPT!"] EQU ["H"] (
+      SET "OPT="
       CALL :USAGE
       %@exit% -1
     )
     :: /A [ANSI]
-    IF /I ["!opt!"] EQU ["A"] (
-      SET "opt="
+    IF /I ["!OPT!"] EQU ["A"] (
+      SET "OPT="
       SET "SHOW.ANSI=#TRUE#"
       SET "SHOW.UTF8=#TRUE#"
     )
     :: /R [R1C1]
-    IF /I ["!opt!"] EQU ["R"] (
-      SET "opt="
+    IF /I ["!OPT!"] EQU ["R"] (
+      SET "OPT="
       SET "SHOW.R1C1_REFERENCE=#TRUE#"
     )
     :: /U [UTF-8]
-    IF /I ["!opt!"] EQU ["U"] (
-      SET "opt="
+    IF /I ["!OPT!"] EQU ["U"] (
+      SET "OPT="
       SET "SHOW.UTF8=#TRUE#"
     )
-    IF ["!opt!"] NEQ [""] (
-      SET "msg=Error: Unknown option: !opt!"
-      CALL :USAGE msg
+    IF ["!OPT!"] NEQ [""] (
+      SET "MSG=Error: Unknown option: !OPT!"
+      CALL :USAGE MSG
       %@exit% 1
     )
   )
@@ -1373,10 +1475,10 @@ IF [%~1] EQU [] (
 )
 
 :: Verify that the definition file exists and exit with
-:: error code 3 if it doesn't.
+:: error code 1 if it doesn't.
 IF NOT EXIST !DATA_FILE! (
-  SET "msg=Error: File does not exist: !DATA_FILE!"
-  CALL :USAGE msg
+  SET "MSG=Error: File does not exist: !DATA_FILE!"
+  CALL :USAGE MSG
   %@exit% 1
 )
 

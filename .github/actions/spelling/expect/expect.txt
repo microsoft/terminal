@@ -1395,7 +1395,6 @@ MBUTTONDBLCLK
 MBUTTONDOWN
 MBUTTONUP
 Mbxy
-mdecreased
 mdmerge
 MDs
 MEASUREITEM
@@ -1421,7 +1420,6 @@ MIIM
 milli
 mimetype
 mincore
-mincreased
 mindbogglingly
 mingw
 minimizeall
