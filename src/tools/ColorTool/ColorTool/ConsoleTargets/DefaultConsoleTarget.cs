@@ -23,12 +23,12 @@ namespace ColorTool.ConsoleTargets
             }
             if (colorScheme.ScreenColorAttributes is ushort screenColors)
             {
-                ushort fgIndex = (ushort)(screenColors & 0xF);
-                ushort bgIndex = (ushort)(screenColors >> 4);
+                ushort fgidx = (ushort)(screenColors & 0xF);
+                ushort bgidx = (ushort)(screenColors >> 4);
 
                 consoleKey.SetValue("ScreenColors", screenColors, RegistryValueKind.DWord);
 
-                if (colorScheme.ColorTable[fgIndex] != colorScheme.ConsoleAttributes.Foreground.Value)
+                if (colorScheme.ColorTable[fgidx] != colorScheme.ConsoleAttributes.Foreground.Value)
                 {
                     consoleKey.SetValue("DefaultForeground", colorScheme.ConsoleAttributes.Foreground.Value, RegistryValueKind.DWord);
                 }
@@ -36,7 +36,7 @@ namespace ColorTool.ConsoleTargets
                 {
                     consoleKey.SetValue("DefaultForeground", 0xffffffff, RegistryValueKind.DWord);
                 }
-                if (colorScheme.ColorTable[bgIndex] != colorScheme.ConsoleAttributes.Background.Value)
+                if (colorScheme.ColorTable[bgidx] != colorScheme.ConsoleAttributes.Background.Value)
                 {
                     consoleKey.SetValue("DefaultBackground", colorScheme.ConsoleAttributes.Background.Value, RegistryValueKind.DWord);
                 }
