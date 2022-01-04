@@ -69,14 +69,6 @@ COORD Terminal::GetCursorPosition() noexcept
     return newPos;
 }
 
-bool Terminal::SetCursorColor(const COLORREF color) noexcept
-try
-{
-    _buffer->GetCursor().SetColor(color);
-    return true;
-}
-CATCH_RETURN_FALSE()
-
 // Method Description:
 // - Moves the cursor down one line, and possibly also to the leftmost column.
 // Arguments:
@@ -371,6 +363,22 @@ try
 CATCH_RETURN_FALSE()
 
 // Method Description:
+// - Retrieves the value in the colortable at the specified index.
+// Arguments:
+// - tableIndex: the index of the color table to retrieve.
+// Return Value:
+// - the COLORREF value for the color at that index in the table.
+COLORREF Terminal::GetColorTableEntry(const size_t tableIndex) const noexcept
+try
+{
+    return _colorTable.at(tableIndex);
+}
+catch (...)
+{
+    return INVALID_COLOR;
+}
+
+// Method Description:
 // - Updates the value in the colortable at index tableIndex to the new color
 //   color. color is a COLORREF, format 0x00BBGGRR.
 // Arguments:
@@ -382,6 +390,11 @@ bool Terminal::SetColorTableEntry(const size_t tableIndex, const COLORREF color)
 try
 {
     _colorTable.at(tableIndex) = color;
+
+    if (tableIndex == TextColor::DEFAULT_BACKGROUND)
+    {
+        _pfnBackgroundColorChanged(color);
+    }
 
     // Repaint everything - the colors might have changed
     _buffer->GetRenderTarget().TriggerRedrawAll();
@@ -440,46 +453,6 @@ bool Terminal::SetCursorStyle(const DispatchTypes::CursorStyle cursorStyle) noex
     _buffer->GetCursor().SetBlinkingAllowed(shouldBlink);
 
     return true;
-}
-
-// Method Description:
-// - Updates the default foreground color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default foreground color
-// Return Value:
-// - true
-bool Terminal::SetDefaultForeground(const COLORREF color) noexcept
-try
-{
-    _defaultFg = color;
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
-}
-CATCH_RETURN_FALSE()
-
-// Method Description:
-// - Updates the default background color from a COLORREF, format 0x00BBGGRR.
-// Arguments:
-// - color: the new COLORREF to use as the default background color
-// Return Value:
-// - true
-bool Terminal::SetDefaultBackground(const COLORREF color) noexcept
-try
-{
-    _defaultBg = color;
-    _pfnBackgroundColorChanged(color);
-
-    // Repaint everything - the colors might have changed
-    _buffer->GetRenderTarget().TriggerRedrawAll();
-    return true;
-}
-CATCH_RETURN_FALSE()
-
-til::color Terminal::GetDefaultBackground() const noexcept
-{
-    return _defaultBg;
 }
 
 bool Terminal::SetInputMode(const TerminalInput::Mode mode, const bool enabled) noexcept

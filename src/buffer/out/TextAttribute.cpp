@@ -128,22 +128,22 @@ bool TextAttribute::IsLegacy() const noexcept
 // - Calculates rgb colors based off of current color table and active modification attributes.
 // Arguments:
 // - colorTable: the current color table rgb values.
-// - defaultFgColor: the default foreground color rgb value.
-// - defaultBgColor: the default background color rgb value.
+// - defaultFgIndex: the color table index of the default foreground color.
+// - defaultBgIndex: the color table index of the default background color.
 // - reverseScreenMode: true if the screen mode is reversed.
 // - blinkingIsFaint: true if blinking should be interpreted as faint. (defaults to false)
 // - boldIsBright: true if "bold" should be interpreted as bright. (defaults to true)
 // Return Value:
 // - the foreground and background colors that should be displayed.
-std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, 256>& colorTable,
-                                                                const COLORREF defaultFgColor,
-                                                                const COLORREF defaultBgColor,
+std::pair<COLORREF, COLORREF> TextAttribute::CalculateRgbColors(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable,
+                                                                const size_t defaultFgIndex,
+                                                                const size_t defaultBgIndex,
                                                                 const bool reverseScreenMode,
                                                                 const bool blinkingIsFaint,
                                                                 const bool boldIsBright) const noexcept
 {
-    auto fg = _foreground.GetColor(colorTable, defaultFgColor, boldIsBright && IsBold());
-    auto bg = _background.GetColor(colorTable, defaultBgColor);
+    auto fg = _foreground.GetColor(colorTable, defaultFgIndex, boldIsBright && IsBold());
+    auto bg = _background.GetColor(colorTable, defaultBgIndex);
     if (IsFaint() || (IsBlinking() && blinkingIsFaint))
     {
         fg = (fg >> 1) & 0x7F7F7F; // Divide foreground color components by two.

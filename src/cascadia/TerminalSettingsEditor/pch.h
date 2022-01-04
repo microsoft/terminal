@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 //
 // pch.h
@@ -51,8 +51,9 @@
 
 #include <shlobj.h>
 #include <shobjidl_core.h>
-#include <dwrite.h>
-#include <dwrite_1.h>
+#include <dwrite_3.h>
 
 // Manually include til after we include Windows.Foundation to give it winrt superpowers
 #include "til.h"
+
+#include <cppwinrt_utils.h>

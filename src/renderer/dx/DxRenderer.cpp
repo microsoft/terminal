@@ -88,7 +88,7 @@ DxEngine::DxEngine() :
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
-    _defaultTextBackgroundOpacity{ 1.0f },
+    _defaultBackgroundIsTransparent{ true },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -911,7 +911,7 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     // someone has chosen the slower ClearType antialiasing (versus the faster
     // grayscale antialiasing)
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
+    const bool usingTransparency = _defaultBackgroundIsTransparent;
     // Another way of naming "bgIsDefault" is "bgHasTransparency"
     const auto bgIsDefault = (_backgroundColor.a == _defaultBackgroundColor.a) &&
                              (_backgroundColor.r == _defaultBackgroundColor.r) &&
@@ -1927,20 +1927,16 @@ CATCH_RETURN()
                                                      const bool /*usingSoftFont*/,
                                                      const bool isSettingDefaultBrushes) noexcept
 {
-    // GH#5098: If we're rendering with cleartype text, we need to always render
-    // onto an opaque background. If our background's opacity is 1.0f, that's
-    // great, we can actually use cleartype in that case. In that scenario
-    // (cleartype && opacity == 1.0), we'll force the opacity bits of the
-    // COLORREF to 0xff so we draw as cleartype. In any other case, leave the
-    // opacity bits unchanged. PaintBufferLine will later do some logic to
-    // determine if we should paint the text as grayscale or not.
-    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
-    const bool usingTransparency = _defaultTextBackgroundOpacity != 1.0f;
-    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
-
     const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultBackgroundIsTransparent;
+    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
+    // October 2021: small changes were made to the way BG color interacts with
+    // grayscale AA, esp. with regards to acrylic and GH#5098. See comment in
+    // _ShouldForceGrayscaleAA for more details.
     _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
@@ -2237,14 +2233,19 @@ CATCH_LOG()
 //   rendering onto a transparent surface (like acrylic), then cleartype won't
 //   work correctly, and will actually just additively blend with the
 //   background. This is here to support GH#5098.
+// - We'll use this, along with whether cleartype was requested, to manually set
+//   the alpha channel of the background brush to 1.0. We need to do that to
+//   make cleartype work without blending. However, we don't want to do that too
+//   often - if we do that on top of a transparent BG, then the entire swap
+//   chain will be fully opaque.
 // Arguments:
-// - opacity: the new opacity of our background, on [0.0f, 1.0f]
+// - isTransparent: true if our BG is transparent (acrylic, or anything that's not fully opaque)
 // Return Value:
 // - <none>
-void DxEngine::SetDefaultTextBackgroundOpacity(const float opacity) noexcept
+void DxEngine::EnableTransparentBackground(const bool isTransparent) noexcept
 try
 {
-    _defaultTextBackgroundOpacity = opacity;
+    _defaultBackgroundIsTransparent = isTransparent;
 
     // Make sure we redraw all the cells, to update whether they're actually
     // drawn with cleartype or not.

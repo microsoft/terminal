@@ -55,8 +55,12 @@ namespace SettingsModelLocalTests
         TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
         auto oldFontSize = settings.FontSize();
-        settings.FontSize(oldFontSize + 5);
-        auto newFontSize = settings.FontSize();
+
+        auto selfSettings = winrt::make_self<implementation::TerminalSettings>();
+        VERIFY_ARE_EQUAL(oldFontSize, selfSettings->FontSize());
+
+        selfSettings->FontSize(oldFontSize + 5);
+        auto newFontSize = selfSettings->FontSize();
         VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 
@@ -728,11 +732,11 @@ namespace SettingsModelLocalTests
         const auto terminalSettings4 = createTerminalSettings(activeProfiles.GetAt(4), colorSchemes);
         const auto terminalSettings5 = createTerminalSettings(activeProfiles.GetAt(5), colorSchemes);
 
-        VERIFY_ARE_EQUAL(ARGB(0, 0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
+        VERIFY_ARE_EQUAL(RGB(0x12, 0x34, 0x56), terminalSettings0->CursorColor()); // from color scheme
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings1->CursorColor()); // default
-        VERIFY_ARE_EQUAL(ARGB(0, 0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
-        VERIFY_ARE_EQUAL(ARGB(0, 0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
-        VERIFY_ARE_EQUAL(ARGB(0, 0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
+        VERIFY_ARE_EQUAL(RGB(0x23, 0x45, 0x67), terminalSettings2->CursorColor()); // from profile (trumps color scheme)
+        VERIFY_ARE_EQUAL(RGB(0x34, 0x56, 0x78), terminalSettings3->CursorColor()); // from profile (not set in color scheme)
+        VERIFY_ARE_EQUAL(RGB(0x45, 0x67, 0x89), terminalSettings4->CursorColor()); // from profile (no color scheme)
         VERIFY_ARE_EQUAL(DEFAULT_CURSOR_COLOR, terminalSettings5->CursorColor()); // default
     }
 

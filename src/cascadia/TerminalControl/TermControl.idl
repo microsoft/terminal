@@ -17,14 +17,15 @@ namespace Microsoft.Terminal.Control
                                                    ICoreState
     {
         TermControl(IControlSettings settings,
+                    IControlAppearance unfocusedAppearance,
                     Microsoft.Terminal.TerminalConnection.ITerminalConnection connection);
 
         static Windows.Foundation.Size GetProposedDimensions(IControlSettings settings, UInt32 dpi);
 
-        void UpdateSettings();
+        void UpdateControlSettings(IControlSettings settings);
+        void UpdateControlSettings(IControlSettings settings, IControlAppearance unfocusedAppearance);
 
-        Microsoft.Terminal.Control.IControlSettings Settings;
-        Microsoft.Terminal.Control.IControlAppearance UnfocusedAppearance;
+        Microsoft.Terminal.Control.IControlSettings Settings { get; };
 
         event FontSizeChangedEventArgs FontSizeChanged;
         event Windows.Foundation.TypedEventHandler<Object, TitleChangedEventArgs> TitleChanged;

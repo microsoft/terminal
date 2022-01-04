@@ -139,14 +139,16 @@ void TextColor::SetDefault() noexcept
 // Arguments:
 // - colorTable: The table of colors we should use to look up the value of
 //      an indexed attribute from.
-// - defaultColor: The color value to use if we're a default attribute.
+// - defaultIndex: The color table index to use if we're a default attribute.
 // - brighten: if true, we'll brighten a dark color table index.
 // Return Value:
 // - a COLORREF containing the real value of this TextColor.
-COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten) const noexcept
+COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten) const noexcept
 {
     if (IsDefault())
     {
+        const auto defaultColor = til::at(colorTable, defaultIndex);
+
         if (brighten)
         {
             // See MSFT:20266024 for context on this fix.

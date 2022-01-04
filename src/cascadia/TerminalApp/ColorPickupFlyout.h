@@ -1,6 +1,5 @@
 #pragma once
 #include "ColorPickupFlyout.g.h"
-#include "../cascadia/inc/cppwinrt_utils.h"
 
 namespace winrt::TerminalApp::implementation
 {
@@ -21,7 +20,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct ColorPickupFlyout : ColorPickupFlyoutT<ColorPickupFlyout, implementation::ColorPickupFlyout>
-    {
-    };
+    BASIC_FACTORY(ColorPickupFlyout);
 }

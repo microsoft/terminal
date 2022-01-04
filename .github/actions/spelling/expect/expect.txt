@@ -189,7 +189,6 @@ cacafire
 callee
 capslock
 CARETBLINKINGENABLED
-carlos
 CARRIAGERETURN
 cascadia
 cassert
@@ -385,12 +384,14 @@ CPINFOEX
 CPLINFO
 cplusplus
 cpp
+CPPARM
 CPPCORECHECK
 cppcorecheckrules
 cppm
 cpprest
 cpprestsdk
 cppwinrt
+CPPx
 CProc
 cpx
 crbegin
@@ -508,6 +509,7 @@ dealloc
 Debian
 debolden
 debugtype
+DECAC
 DECALN
 DECANM
 DECAUPSS
@@ -632,7 +634,7 @@ doskey
 dotnet
 doubleclick
 downlevel
-dpg
+DPG
 dpi
 DPIAPI
 DPICHANGE
@@ -790,6 +792,7 @@ FIXEDCONVERTED
 FIXEDFILEINFO
 Flg
 flyout
+fmix
 fmodern
 fmtarg
 fmtid
@@ -1468,7 +1471,6 @@ msix
 msrc
 msvcrt
 MSVCRTD
-MSVS
 msys
 msysgit
 MTSM
@@ -1576,6 +1578,7 @@ nothrow
 NOTICKS
 NOTIMPL
 notin
+notmatch
 NOTNULL
 NOTOPMOST
 NOTRACK
@@ -1760,6 +1763,7 @@ PFONTENUMDATA
 PFS
 pgd
 pgdn
+PGONu
 pgorepro
 pgort
 PGU
@@ -2170,7 +2174,6 @@ SHOWNOACTIVATE
 SHOWNORMAL
 SHOWWINDOW
 SHRT
-sid
 sidebyside
 SIF
 SIGDN
@@ -2201,7 +2204,6 @@ somefile
 SOURCEBRANCH
 sourced
 SOURCESDIRECTORY
-SPACEBAR
 spammy
 spand
 sprintf
@@ -2478,6 +2480,7 @@ uint
 uintptr
 ulcch
 ulong
+umd
 Unadvise
 unattend
 uncomment
@@ -2505,7 +2508,6 @@ unmark
 UNORM
 unparseable
 unpause
-Unregister
 unregistering
 untests
 untextured
@@ -2518,7 +2520,6 @@ upvote
 uri
 url
 urlencoded
-Urxvt
 USASCII
 usebackq
 USECALLBACK
@@ -2563,7 +2564,6 @@ Vcount
 vcpkg
 vcprintf
 vcproj
-vcvarsall
 vcxitems
 vcxproj
 vec
@@ -2648,6 +2648,7 @@ wddmcon
 wddmconrenderer
 WDDMCONSOLECONTEXT
 wdm
+webclient
 webpage
 website
 websocket
@@ -2722,6 +2723,7 @@ Winperf
 WInplace
 winres
 winrt
+winsdk
 wintelnet
 winternl
 winuser
@@ -2818,7 +2820,6 @@ xes
 xff
 XFile
 XFORM
-xIcon
 XManifest
 XMath
 XMFLOAT
@@ -2851,7 +2852,6 @@ YCast
 YCENTER
 YCount
 YDPI
-yIcon
 yml
 YOffset
 YPosition
@@ -2859,7 +2859,6 @@ YSize
 YSubstantial
 YVIRTUALSCREEN
 YWalk
-zamora
 ZCmd
 ZCtrl
 zsh

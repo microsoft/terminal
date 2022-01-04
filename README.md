@@ -290,8 +290,8 @@ If you would like to ask a question that you feel doesn't warrant an issue
   app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
   to locally install and run Windows Terminal
 * You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
-* You must have the [Windows 10 1903
-  SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-10-sdk)
+* You must have the [Windows 11 (10.0.22000.0)
+  SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/)
   installed
 * You must have at least [VS
   2019](https://visualstudio.microsoft.com/downloads/) installed
@@ -339,7 +339,9 @@ Solution Explorer) and go to properties. In the Debug menu, change "Application
 process" and "Background task process" to "Native Only".
 
 You should then be able to build & debug the Terminal project by hitting
-<kbd>F5</kbd>.
+<kbd>F5</kbd>. Make sure to select either the "x64" or the "x86" platform - the
+Terminal doesn't build for "Any Cpu" (because the Terminal is a C++ application,
+not a C# one).
 
 > 👉 You will _not_ be able to launch the Terminal directly by running the
 > WindowsTerminal.exe. For more details on why, see

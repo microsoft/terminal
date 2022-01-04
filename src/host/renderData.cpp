@@ -102,19 +102,6 @@ void RenderData::UnlockConsole() noexcept
 #pragma endregion
 
 #pragma region IRenderData
-// Routine Description:
-// - Retrieves the brush colors that should be used in absence of any other color data from
-//   cells in the text buffer.
-// Return Value:
-// - TextAttribute containing the foreground and background brush color data.
-const TextAttribute RenderData::GetDefaultBrushColors() noexcept
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    _defaultForeground = gci.GetDefaultForeground();
-    _defaultBackground = gci.GetDefaultBackground();
-    return gci.GetActiveOutputBuffer().GetAttributes();
-}
-
 // Method Description:
 // - Gets the cursor's position in the buffer, relative to the buffer origin.
 // Arguments:
@@ -226,8 +213,7 @@ ULONG RenderData::GetCursorPixelWidth() const noexcept
 COLORREF RenderData::GetCursorColor() const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    const auto& cursor = gci.GetActiveOutputBuffer().GetTextBuffer().GetCursor();
-    return cursor.GetColor();
+    return gci.GetColorTableEntry(TextColor::CURSOR_COLOR);
 }
 
 // Routine Description:
@@ -364,7 +350,7 @@ const std::vector<size_t> RenderData::GetPatternId(const COORD /*location*/) con
 std::pair<COLORREF, COLORREF> RenderData::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
     const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    return gci.LookupAttributeColors(attr, _defaultForeground, _defaultBackground);
+    return gci.LookupAttributeColors(attr);
 }
 #pragma endregion
 

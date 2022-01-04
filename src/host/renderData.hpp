@@ -37,8 +37,6 @@ public:
 #pragma endregion
 
 #pragma region IRenderData
-    const TextAttribute GetDefaultBrushColors() noexcept override;
-
     COORD GetCursorPosition() const noexcept override;
     bool IsCursorVisible() const noexcept override;
     bool IsCursorOn() const noexcept override;
@@ -72,8 +70,4 @@ public:
     void ColorSelection(const COORD coordSelectionStart, const COORD coordSelectionEnd, const TextAttribute attr);
     const bool IsUiaDataInitialized() const noexcept override { return true; }
 #pragma endregion
-
-private:
-    COLORREF _defaultForeground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 7);
-    COLORREF _defaultBackground = gsl::at(Microsoft::Console::Utils::CampbellColorTable(), 0);
 };

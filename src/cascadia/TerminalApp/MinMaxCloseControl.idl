@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 import "TitlebarControl.idl";
@@ -10,6 +10,10 @@ namespace TerminalApp
         MinMaxCloseControl();
 
         void SetWindowVisualState(WindowVisualState visualState);
+
+        void HoverButton(CaptionButton button);
+        void PressButton(CaptionButton button);
+        void ReleaseButtons();
 
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MinimizeClick;
         event Windows.Foundation.TypedEventHandler<MinMaxCloseControl, Windows.UI.Xaml.RoutedEventArgs> MaximizeClick;

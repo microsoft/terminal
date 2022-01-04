@@ -3,7 +3,6 @@
 
 #include "pch.h"
 #include "ControlInteractivity.h"
-#include <argb.h>
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
@@ -39,13 +38,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     }
 
     ControlInteractivity::ControlInteractivity(IControlSettings settings,
+                                               Control::IControlAppearance unfocusedAppearance,
                                                TerminalConnection::ITerminalConnection connection) :
         _touchAnchor{ std::nullopt },
         _lastMouseClickTimestamp{},
         _lastMouseClickPos{},
         _selectionNeedsToBeCopied{ false }
     {
-        _core = winrt::make_self<ControlCore>(settings, connection);
+        _core = winrt::make_self<ControlCore>(settings, unfocusedAppearance, connection);
     }
 
     // Method Description:
@@ -641,4 +641,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         return _core->GetUiaData();
     }
 
+    // Method Description:
+    // - Used by the TermControl to know if it should translate drag-dropped
+    //   paths into WSL-friendly paths.
+    // Arguments:
+    // - <none>
+    // Return Value:
+    // - true if the connection we were created with was a WSL profile.
+    bool ControlInteractivity::ManglePathsForWsl()
+    {
+        return _core->Settings().ProfileSource() == L"Windows.Terminal.Wsl";
+    }
 }
