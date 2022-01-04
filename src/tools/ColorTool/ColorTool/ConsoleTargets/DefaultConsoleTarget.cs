@@ -21,11 +21,31 @@ namespace ColorTool.ConsoleTargets
                 string valueName = "ColorTable" + (i < 10 ? "0" : "") + i;
                 consoleKey.SetValue(valueName, colorScheme.ColorTable[i], RegistryValueKind.DWord);
             }
-            if(colorScheme.ScreenColorAttributes is ushort screenColors)
+            if (colorScheme.ScreenColorAttributes is ushort screenColors)
             {
+                ushort fgindex = (ushort)(screenColors & 0xF);
+                ushort bgindex = (ushort)(screenColors >> 4);
+
                 consoleKey.SetValue("ScreenColors", screenColors, RegistryValueKind.DWord);
+
+                if (colorScheme.ColorTable[fgindex] != colorScheme.ConsoleAttributes.Foreground.Value)
+                {
+                    consoleKey.SetValue("DefaultForeground", colorScheme.ConsoleAttributes.Foreground.Value, RegistryValueKind.DWord);
+                }
+                else
+                {
+                    consoleKey.SetValue("DefaultForeground", 0xffffffff, RegistryValueKind.DWord);
+                }
+                if (colorScheme.ColorTable[bgindex] != colorScheme.ConsoleAttributes.Background.Value)
+                {
+                    consoleKey.SetValue("DefaultBackground", colorScheme.ConsoleAttributes.Background.Value, RegistryValueKind.DWord);
+                }
+                else
+                {
+                    consoleKey.SetValue("DefaultBackground", 0xffffffff, RegistryValueKind.DWord);
+                }
             }
-            if(colorScheme.PopupColorAttributes is ushort popupColors)
+            if (colorScheme.PopupColorAttributes is ushort popupColors)
             {
                 consoleKey.SetValue("PopupColors", popupColors, RegistryValueKind.DWord);
             }
