@@ -55,50 +55,66 @@ namespace ColorTool
         private static readonly IReadOnlyList<int> Backgrounds = new[]
         {
             DarkBlack,
+            BrightBlack,
             DarkRed,
+            BrightRed,
             DarkGreen,
+            BrightGreen,
             DarkYellow,
+            BrightYellow,
             DarkBlue,
+            BrightBlue,
             DarkMagenta,
+            BrightMagenta,
             DarkCyan,
-            DarkWhite
+            BrightCyan,
+            DarkWhite,
+            BrightWhite
         };
 
-        private const string TestText = "  gYw  ";
+        private const string TestText = " gYw ";
 
         private static readonly IReadOnlyList<string> AnsiForegroundSequences = new[]
         {
-            "m",
+            "39m",
             "1m",
             "30m",
-            "1;30m",
+            "90m",
             "31m",
-            "1;31m",
+            "91m",
             "32m",
-            "1;32m",
+            "92m",
             "33m",
-            "1;33m",
+            "93m",
             "34m",
-            "1;34m",
+            "94m",
             "35m",
-            "1;35m",
+            "95m",
             "36m",
-            "1;36m",
+            "96m",
             "37m",
-            "1;37m"
+            "97m"
         };
 
         private static readonly IReadOnlyList<string> AnsiBackgroundSequences = new[]
         {
-            "m",
+            "49m",
             "40m",
+            "100m",
             "41m",
+            "101m",
             "42m",
+            "102m",
             "43m",
+            "103m",
             "44m",
+            "104m",
             "45m",
+            "105m",
             "46m",
-            "47m"
+            "106m",
+            "47m",
+            "107m"
         };
 
         public static void PrintTable()
@@ -108,17 +124,18 @@ namespace ColorTool
             ConsoleColor currentBackground = Console.BackgroundColor;
             ConsoleColor currentForeground = Console.ForegroundColor;
 
+            // first column
             Console.Write("\t");
             for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
             {
-                if (bg > 0) Console.Write(" ");
-                Console.Write("  ");
-                Console.Write(bg == 0 ? "   " : AnsiBackgroundSequences[bg]);
-                Console.Write("  ");
+                if (bg != 0) Console.Write(" ");
+                Console.Write(" ");
+                Console.Write(AnsiBackgroundSequences[bg]);
+                if (AnsiBackgroundSequences[bg].Length == 3) Console.Write(" ");
             }
             Console.WriteLine();
 
-            for (int fg = 0; fg < AnsiForegroundSequences.Count; fg++)
+            for (int fg = 0; fg <= Foregrounds.Count; fg++)
             {
                 Console.ForegroundColor = currentForeground;
                 Console.BackgroundColor = currentBackground;
@@ -128,7 +145,7 @@ namespace ColorTool
                 if (fg == 0) Console.ForegroundColor = currentForeground;
                 else Console.ForegroundColor = colors[Foregrounds[fg - 1]];
 
-                for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
+                for (int bg = 0; bg <= Backgrounds.Count; bg++)
                 {
                     if (bg > 0) Console.Write(" ");
                     if (bg == 0)
@@ -148,13 +165,14 @@ namespace ColorTool
 
         public static void PrintTableWithVt()
         {
+            // first column
             Console.Write("\t");
             for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
             {
-                if (bg > 0) Console.Write(" ");
-                Console.Write("  ");
-                Console.Write(bg == 0 ? "   " : AnsiBackgroundSequences[bg]);
-                Console.Write("  ");
+                if (bg != 0) Console.Write(" ");
+                Console.Write(" ");
+                Console.Write(AnsiBackgroundSequences[bg]);
+                if (AnsiBackgroundSequences[bg].Length == 3) Console.Write(" ");
             }
             Console.WriteLine();
 
