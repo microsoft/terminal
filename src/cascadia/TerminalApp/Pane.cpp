@@ -92,8 +92,8 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
                 // We tried moving the MediaPlayer singleton up to the
                 // TerminalPage, but alas, that teardown had the same problem.
                 // So _whatever_. We'll leak it here. It needs to last the
-                // lifetim of the app anyways, and it'll get cleaned up when the
-                // Termnial is closed, so whatever.
+                // lifetime of the app anyways, and it'll get cleaned up when the
+                // Terminal is closed, so whatever.
                 winrt::Windows::Media::Playback::MediaPlayer p{ s_bellPlayer };
                 ::winrt::detach_abi(p);
             }
