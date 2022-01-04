@@ -48,11 +48,25 @@ namespace ColorTool.ConsoleTargets
                 SetConsoleMode(hOut, requestedMode);
             }
 
+            if (colorScheme.ConsoleAttributes.Foreground.HasValue)
+            {
+                Color color = colorScheme.Foreground;
+                string s = $"\x1b]10;rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x1b\\";
+                Console.Write(s);
+
+            }
+            if (colorScheme.ConsoleAttributes.Background.HasValue)
+            {
+                Color color = colorScheme.Background;
+                string s = $"\x1b]11;rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x1b\\";
+                Console.Write(s);
+            }
+
             for (int i = 0; i < colorScheme.ColorTable.Length; i++)
             {
                 int vtIndex = VirtualTerminalIndices[i];
                 Color color = colorScheme[i];
-                string s = $"\x1b]4;{vtIndex};rgb:{color.R:X}/{color.G:X}/{color.B:X}\x7";
+                string s = $"\x1b]4;{vtIndex};rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x7";
                 Console.Write(s);
             }
             if (!quietMode)
