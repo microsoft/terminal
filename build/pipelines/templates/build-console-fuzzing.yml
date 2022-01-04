@@ -55,11 +55,6 @@ jobs:
       echo VCToolsInstallDir = %VCToolsInstallDir%
       echo ##vso[task.setvariable variable=VCToolsInstallDir]%VCToolsInstallDir%
     displayName: 'Retrieve VC tools directory'
-
-  - task: CmdLine@1
-    displayName: 'Display build machine environment variables'
-    inputs:
-      filename: 'set'
   
   - task: VSBuild@1
     displayName: 'Build solution **\OpenConsole.sln'
@@ -93,19 +88,6 @@ jobs:
       flattenFolders: true
 
   - task: CopyFiles@2
-    displayName: 'Copy *.appx/*.msix to Artifacts (Non-PR builds only)'
-    inputs:
-      Contents: |
-       **/*.appx
-       **/*.msix
-       **/*.appxsym
-       !**/Microsoft.VCLibs*.appx
-      TargetFolder: '$(Build.ArtifactStagingDirectory)/appx'
-      OverWrite: true
-      flattenFolders: true
-    condition: succeeded()
-
-  - task: CopyFiles@2
     displayName: 'Copy outputs needed for test runs to Artifacts'
     inputs:
       Contents: |
@@ -129,4 +111,4 @@ jobs:
     displayName: 'Publish All Build Artifacts'
     inputs:
       PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      ArtifactName: 'drop'
+      ArtifactName: 'fuzzingBuildOutput'

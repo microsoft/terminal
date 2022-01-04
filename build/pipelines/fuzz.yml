@@ -31,7 +31,7 @@ stages:
     pool:
       vmImage: 'ubuntu-latest'
     variables:
-      artifactName: drop
+      artifactName: fuzzingBuildOutput
     jobs:
     - job:
       steps:
@@ -48,8 +48,8 @@ stages:
           set -ex
           pip -q install onefuzz
           onefuzz config --endpoint $(endpoint) --client_id $(client_id) --authority $(authority) --tenant_domain $(tenant_domain) --client_secret $(client_secret)
-          sed -i s/INSERT_PAT_HERE/${ado_pat}/ build/Fuzz/notifications-ado.json
-          sed -i s/INSERT_ASSIGNED_HERE/${ado_assigned_to}/ build/Fuzz/notifications-ado.json
+          sed -i s/INSERT_PAT_HERE/$(ado_pat)/ build/Fuzz/notifications-ado.json
+          sed -i s/INSERT_ASSIGNED_HERE/$(ado_assigned_to)/ build/Fuzz/notifications-ado.json
         displayName: Configure OneFuzz
       # replace the bash command below with this to run this with notifications
       # onefuzz template libfuzzer basic --colocate_all_tasks --vm_count 1 --target_exe $target_exe_path --notification_config build/Fuzz/notifications-ado.json OpenConsole $test_name $(Build.SourceVersion) default

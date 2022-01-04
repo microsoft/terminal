@@ -2,9 +2,7 @@
 
 ## Setting up a fuzzer locally
 
-As of v1.8, OpenConsole can now be built with a `Fuzzing` configuration.
-
-To set up a fuzzer, you'll need an `LLVMFuzzerTestOneInput` function. This serves as a way for the fuzzer to attach itself and inject tests into your fuzz target.
+OpenConsole can be built with a `Fuzzing` configuration. To set up a fuzzer, you'll need an `LLVMFuzzerTestOneInput` function. This serves as a way for the fuzzer to attach itself and inject tests into your fuzz target.
 
 To build the fuzzer locally, build the OpenConsole solution in the `Fuzzing` configuration. This should output an executable that runs the fuzzer on the provided test case. In the case of PR #9604, the desired executable is located at `bin\x64\Fuzzing\OpenConsoleFuzzer.exe`.
 
