@@ -21,6 +21,14 @@ namespace ColorTool.ConsoleTargets
                 string valueName = "ColorTable" + (i < 10 ? "0" : "") + i;
                 consoleKey.SetValue(valueName, colorScheme.ColorTable[i], RegistryValueKind.DWord);
             }
+            if (colorScheme.ConsoleAttributes.Cursor.HasValue)
+            {
+                consoleKey.SetValue("CursorColor", colorScheme.ConsoleAttributes.Cursor, RegistryValueKind.DWord);
+            }
+            else
+            {
+                consoleKey.SetValue("CursorColor", 0xffffffff, RegistryValueKind.DWord);
+            }
             if (colorScheme.ScreenColorAttributes is ushort screenColors)
             {
                 ushort fgidx = (ushort)(screenColors & 0xF);

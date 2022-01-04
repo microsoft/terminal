@@ -62,6 +62,13 @@ namespace ColorTool.ConsoleTargets
                 Console.Write(s);
             }
 
+            if (colorScheme.ConsoleAttributes.Cursor.HasValue)
+            {
+                Color color = colorScheme.Cursor;
+                string s = $"\x1b]12;rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x1b\\";
+                Console.Write(s);
+            }
+
             for (int i = 0; i < colorScheme.ColorTable.Length; i++)
             {
                 int vtIndex = VirtualTerminalIndices[i];

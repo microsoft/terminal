@@ -4,11 +4,11 @@
 //
 
 using System;
-using System.Linq;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using static ColorTool.ConsoleAPI;
 
 namespace ColorTool.SchemeParsers
@@ -56,6 +56,7 @@ namespace ColorTool.SchemeParsers
             uint? backgroundColor = null;
             uint? popupForegroundColor = null;
             uint? popupBackgroundColor = null;
+            uint? cursorColor = null;
 
             for (int i = 0; i < ColorTableSize; i++)
             {
@@ -85,7 +86,7 @@ namespace ColorTool.SchemeParsers
                         colorTable[i] = ParseColor(tableStrings[i]);
                     }
 
-                    if (ReadAttributes("popup", out var foreground, out var background))
+                    if (ReadAttributes("popup", out var foreground, out var background, out var cursor))
                     {
                         var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
                         var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
@@ -96,7 +97,7 @@ namespace ColorTool.SchemeParsers
                         }
                     }
 
-                    if (ReadAttributes("screen", out foreground, out background))
+                    if (ReadAttributes("screen", out foreground, out background, out cursor))
                     {
                         var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
                         var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
@@ -116,6 +117,10 @@ namespace ColorTool.SchemeParsers
                         {
                             backgroundColor = ParseColor(background);
                         }
+                        if (cursor.Length > 1)
+                        {
+                            cursorColor = ParseColor(cursor);
+                        }
                     }
                 }
                 catch (Exception /*e*/)
@@ -131,7 +136,7 @@ namespace ColorTool.SchemeParsers
 
             if (colorTable != null)
             {
-                var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor);
+                var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor, cursorColor);
                 return new ColorScheme(ExtractSchemeName(schemeName), colorTable, consoleAttributes);
             }
             else
@@ -139,10 +144,11 @@ namespace ColorTool.SchemeParsers
                 return null;
             }
 
-            bool ReadAttributes(string section, out string foreground, out string background)
+            bool ReadAttributes(string section, out string foreground, out string background, out string cursor)
             {
                 foreground = null;
                 background = null;
+                cursor = null;
 
                 StringBuilder buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "FOREGROUND", null, buffer, 512, filename);
@@ -156,6 +162,10 @@ namespace ColorTool.SchemeParsers
                 background = buffer.ToString();
                 if (background.Length <= 1)
                     return false;
+
+                buffer = new StringBuilder(512);
+                GetPrivateProfileString(section, "CURSOR", null, buffer, 512, filename);
+                cursor = buffer.ToString();
 
                 return true;
             }

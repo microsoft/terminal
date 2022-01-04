@@ -48,6 +48,10 @@ namespace ColorTool.ConsoleTargets
             {
                 writeColorItem(colorScheme.ConsoleAttributes.Background.Value, "background", false);
             }
+            if (colorScheme.ConsoleAttributes.Cursor.HasValue)
+            {
+                writeColorItem(colorScheme.ConsoleAttributes.Cursor.Value, "cursorColor", false);
+            }
             for (int i = 0; i < colors.Length; i++)
             {
                 writeColorItem(colorScheme.ColorTable[i], colors[i], i == colors.Length - 1);
