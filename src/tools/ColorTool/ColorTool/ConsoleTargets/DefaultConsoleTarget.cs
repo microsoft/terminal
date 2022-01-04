@@ -27,7 +27,7 @@ namespace ColorTool.ConsoleTargets
             }
             else
             {
-                consoleKey.SetValue("CursorColor", 0xffffffff, RegistryValueKind.DWord);
+                consoleKey.SetValue("CursorColor", -1, RegistryValueKind.DWord);
             }
             if (colorScheme.ScreenColorAttributes is ushort screenColors)
             {
@@ -42,7 +42,7 @@ namespace ColorTool.ConsoleTargets
                 }
                 else
                 {
-                    consoleKey.SetValue("DefaultForeground", 0xffffffff, RegistryValueKind.DWord);
+                    consoleKey.SetValue("DefaultForeground", -1, RegistryValueKind.DWord);
                 }
                 if (colorScheme.ColorTable[bgidx] != colorScheme.ConsoleAttributes.Background.Value)
                 {
@@ -50,7 +50,7 @@ namespace ColorTool.ConsoleTargets
                 }
                 else
                 {
-                    consoleKey.SetValue("DefaultBackground", 0xffffffff, RegistryValueKind.DWord);
+                    consoleKey.SetValue("DefaultBackground", -1, RegistryValueKind.DWord);
                 }
             }
             if (colorScheme.PopupColorAttributes is ushort popupColors)
