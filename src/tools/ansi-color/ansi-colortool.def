@@ -1,0 +1,57 @@
+:: ColorTool equivalent (ColorTool.exe -c) - Modified with ANSI table line drawing
+__DATA__
+__TABLE__
+SET "UTF8.REQUIRED=#TRUE#"
+:: The test text
+SET "CELL=  gYw  "
+:: Alignment properties for the cells and headers
+SET "ALIGN.CELL=C"
+SET "ALIGN.BOXHEAD=C"
+SET "ALIGN.STUB=L"
+SET "ALIGN.STUBHEAD=C"
+:: Draw table labels and lines
+SET "STUBHEAD=ANSI"
+SET "SEPARATOR.STUB=║"
+SET "SEPARATOR.BOXHEAD=─"
+SET "SEPARATOR.CELL=│"
+SET "SEPARATOR.CELL_INTERSECT=┬"
+:::: To get the alignment to match the original ColorTool, we specify the
+:::: stub max width and prepend an extra boxhead character to the intersect
+REM SET /A "STUB.MAX_WIDTH=6"
+REM SET "SEPARATOR.INTERSECT=!SEPARATOR.BOXHEAD!╫"
+:::: Alternatively this provides the same thing but with the stub separator
+:::: shifted further to the left. This is an individual preference.
+SET "SEPARATOR.INTERSECT=!SEPARATOR.BOXHEAD!╫!SEPARATOR.BOXHEAD!"
+__TABLE:END__
+__COLS__
+#NUL#
+40m
+41m
+42m
+43m
+44m
+45m
+46m
+47m
+__COLS:END__
+__ROWS__
+m
+1m
+30m
+1;30m
+31m
+1;31m
+32m
+1;32m
+33m
+1;33m
+34m
+1;34m
+35m
+1;35m
+36m
+1;36m
+37m
+1;37m
+__ROWS:END__
+__DATA:END__
