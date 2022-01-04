@@ -1,0 +1,124 @@
+:: Demonstrates all the different ways the separators can be configured
+
+__DATA__
+__TABLE__
+SET "UTF8.REQUIRED=#TRUE#"
+
+:: The test text
+SET "CELL= gYw "
+SET "STUBHEAD=SGR"
+
+:: Alignment properties for the cells and headers
+REM SET "ALIGN.CELL=C"
+REM SET "ALIGN.BOXHEAD=R"
+REM SET "ALIGN.STUB=L"
+SET "ALIGN.STUBHEAD=C"
+
+
+:: Separator characters for cells and headers
+
+:: Create a grid
+SET "SEPARATOR.BOXHEAD=─"
+SET "SEPARATOR.COL=╎"
+:: With a distinct separator between the stub and the rest of the table
+SET "SEPARATOR.STUB=│"
+:: With an intersect
+:::: This should be specifically defined if there are both SEPARATOR.VERTICAL
+:::: and SEPARATOR.HORIZONTAL components, and therefore it can't be determined
+:::: how the intersect should be extended. When non-deterministic and undefined,
+:::: the intersect will be shown as a blank space.
+SET "SEPARATOR.INTERSECT=┼"
+:: With a column intersect
+SET "SEPARATOR.CELL_INTERSECT=┼"
+
+
+:: Create a table with columns
+REM SET "SEPARATOR.COL=╎"
+:: But no separator between the stub and the rest of the table
+REM SET "SEPARATOR.VERTICAL=#TRUE#"
+
+
+:: Equivalent to SEPARATOR.BOXHEAD with individual definitions for the respective parts
+REM SET "SEPARATOR.STUBHEAD_STUB=─"
+REM SET "SEPARATOR.BOXHEAD_BODY=━"
+:: With an intersect, not shown if there isn't also a SEPARATOR.VERTICAL component
+:: such as SEPARATOR.COL
+REM SET "SEPARATOR.COL=╎"
+REM SET "SEPARATOR.INTERSECT=┾"
+:: SEPARATOR.STUB
+REM SET "SEPARATOR.STUB=│"
+REM SET "SEPARATOR.INTERSECT=┾"
+:: SEPARATOR.STUBHEAD_BOXHEAD
+REM SET "SEPARATOR.STUBHEAD_BOXHEAD=│"
+REM SET "SEPARATOR.INTERSECT=┶"
+:: or SEPARATOR.STUB_BODY
+REM SET "SEPARATOR.STUB_BODY=┃"
+REM SET "SEPARATOR.INTERSECT=┲"
+
+
+:: Equivalent to SEPARATOR.STUB with individual definitions for the respective parts
+REM SET "SEPARATOR.STUBHEAD_BOXHEAD=│"
+REM SET "SEPARATOR.STUB_BODY=┃"
+:: With an intersect, not shown if there isn't also a SEPARATOR.HORIZONTAL component
+:: such as SEPARATOR.BOXHEAD
+REM SET "SEPARATOR.INTERSECT=╁"
+REM SET "SEPARATOR.BOXHEAD=─"
+:: SEPARATOR.STUBHEAD_STUB
+REM SET "SEPARATOR.INTERSECT=┧"
+REM SET "SEPARATOR.STUBHEAD_STUB=─"
+:: or SEPARATOR.BOXHEAD_BODY
+REM SET "SEPARATOR.INTERSECT=┢"
+REM SET "SEPARATOR.BOXHEAD_BODY=━"
+:: Column intersects require a SEPARATOR.BOXHEAD component and a SEPARATOR.COLUMN component
+:: such as SEPARATOR.COL
+REM SET "SEPARATOR.BOXHEAD=─"
+REM SET "SEPARATOR.INTERSECT=╁"
+REM SET "SEPARATOR.COL=│"
+REM SET "SEPARATOR.CELL_INTERSECT=┼"
+:: SEPARATOR.CELL
+REM SET "SEPARATOR.BOXHEAD=─"
+REM SET "SEPARATOR.INTERSECT=╁"
+REM SET "SEPARATOR.CELL=│"
+REM SET "SEPARATOR.CELL_INTERSECT=┬"
+:: or SEPARATOR.BOXHEADERS
+REM SET "SEPARATOR.BOXHEAD=─"
+REM SET "SEPARATOR.INTERSECT=╁"
+REM SET "SEPARATOR.BOXHEADERS=│"
+REM SET "SEPARATOR.CELL_INTERSECT=┴"
+
+
+:: And all combined
+REM SET "SEPARATOR.STUBHEAD_STUB=─"
+REM SET "SEPARATOR.BOXHEAD_BODY=━"
+REM SET "SEPARATOR.COL=╎"
+REM SET "SEPARATOR.STUBHEAD_BOXHEAD=│"
+REM SET "SEPARATOR.STUB_BODY=┃"
+REM SET "SEPARATOR.INTERSECT=╆"
+REM SET "SEPARATOR.CELL_INTERSECT=┿"
+
+__TABLE:END__
+
+:: Background
+__COLS__
+40m
+41m
+42m
+43m
+44m
+45m
+46m
+47m
+__COLS:END__
+
+:: [Intensity;][Attribute;]Foreground
+__ROWS__
+30m
+31m
+32m
+33m
+34m
+35m
+36m
+37m
+__ROWS:END__
+__DATA:END__
