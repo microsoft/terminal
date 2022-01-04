@@ -105,6 +105,8 @@ namespace ColorTool.SchemeParsers
                             foregroundColor = colorTable[foregroundIndex];
                             backgroundColor = colorTable[backgroundIndex];
                         }
+                        foregroundColor = ParseColor(foreground);
+                        backgroundColor = ParseColor(background);
                     }
                 }
                 catch (Exception /*e*/)
@@ -136,14 +138,14 @@ namespace ColorTool.SchemeParsers
                 StringBuilder buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "FOREGROUND", null, buffer, 512, filename);
                 foreground = buffer.ToString();
-                if (!ColorNames.Contains(foreground))
+                if (foreground.Length <= 1)
                     return false;
 
 
                 buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "BACKGROUND", null, buffer, 512, filename);
                 background = buffer.ToString();
-                if (!ColorNames.Contains(background))
+                if (background.Length <= 1)
                     return false;
 
                 return true;
