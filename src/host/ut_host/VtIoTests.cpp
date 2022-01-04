@@ -290,11 +290,6 @@ public:
     {
     }
 
-    const TextAttribute GetDefaultBrushColors() noexcept override
-    {
-        return TextAttribute{};
-    }
-
     std::pair<COLORREF, COLORREF> GetAttributeColors(const TextAttribute& /*attr*/) const noexcept override
     {
         return std::make_pair(COLORREF{}, COLORREF{});

@@ -1020,6 +1020,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
         // 1. Delete input string if necessary (see menu.c)
         commandLine.Hide(FALSE);
+
+        const auto savedCursorVisibility = _textBuffer->GetCursor().IsVisible();
         _textBuffer->GetCursor().SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
@@ -1028,7 +1030,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // MSFT:19976291 Don't re-show the commandline here. We need to wait for
         //      the viewport to also get resized before we can re-show the commandline.
         //      ProcessResizeWindow will call commandline.Show() for us.
-        _textBuffer->GetCursor().SetIsVisible(true);
+        _textBuffer->GetCursor().SetIsVisible(savedCursorVisibility);
 
         // Return S_OK, to indicate we succeeded and actually did something.
         hr = S_OK;
