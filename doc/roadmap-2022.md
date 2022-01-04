@@ -6,7 +6,9 @@ This document outlines the roadmap of features we're planning for the Windows Te
 
 Initially we had planned on a discrete "Terminal v2" goal, but over the last 18 months it's become clear to the team that we don't need a strict "2.0" release. We can continue serving the community effectively with continual, incremental updates. Should a future release warrant a substantial change to the Terminal worthy of the "2.0" moniker, we can re-evaluate then.
 
-In 2022, we're going to try tracking our overall work with two "semester" milestones, "[22H1]" and "[22H2]", which roughly align with internal deadlines. These have inherited the remainder of the work that was originally targeting the Terminal v2 milestone.
+In 2022, we're going to try tracking our overall work with two "semester" milestones, "[22H1]" and "[22H2]", which roughly align with internal deadlines. Although the Windows Terminal ships updates out-of-band from the rest of the OS, we still have commitments to fixing bugs in the broader console ecosystem. Those changes need to be made in sync with the rest of the OS. Aligning our external milestones with those deadlines should help make sure we get bugs resolved in a timely fashion and checked into the OS.
+
+These have additionally inherited the remainder of the work that was originally targeting the Terminal v2 milestone. As we burn down the features and bugs in these milestones, we'll draw new features into them from the "[Up Next]" milestone, which is itself populated from the highest-priority elements of the [Backlog].
 
 ## Milestones
 
@@ -64,6 +66,7 @@ Incoming issues/asks/etc. are triaged several times a week, labeled appropriatel
 
 [22H1]: https://github.com/microsoft/terminal/milestone/43
 [22H2]: https://github.com/microsoft/terminal/milestone/44
+[Up Next]: https://github.com/microsoft/terminal/milestone/37
 [Backlog]: https://github.com/microsoft/terminal/milestone/45
 
 [Terminal v2 Roadmap]: https://github.com/microsoft/terminal/tree/main/doc/terminal-v2-roadmap.md
