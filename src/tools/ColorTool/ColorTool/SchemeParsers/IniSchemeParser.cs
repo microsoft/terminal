@@ -100,13 +100,22 @@ namespace ColorTool.SchemeParsers
                     {
                         var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
                         var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
-                        if (foregroundIndex != -1 && backgroundIndex != -1)
+                        if (foregroundIndex != -1)
                         {
                             foregroundColor = colorTable[foregroundIndex];
+                        }
+                        else
+                        {
+                            foregroundColor = ParseColor(foreground);
+                        }
+                        if (backgroundIndex != -1)
+                        {
                             backgroundColor = colorTable[backgroundIndex];
                         }
-                        foregroundColor = ParseColor(foreground);
-                        backgroundColor = ParseColor(background);
+                        else
+                        {
+                            backgroundColor = ParseColor(background);
+                        }
                     }
                 }
                 catch (Exception /*e*/)
