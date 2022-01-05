@@ -937,6 +937,8 @@ groupbox
 gset
 gsl
 GTP
+GTR
+guardxfg
 guc
 gui
 guidatom
@@ -1798,6 +1800,7 @@ PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
+Poli
 POLYTEXTW
 popd
 POPF
@@ -2823,6 +2826,7 @@ xdy
 XEncoding
 xes
 xff
+xfg
 XFile
 XFORM
 xIcon
