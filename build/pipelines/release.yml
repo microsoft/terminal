@@ -18,6 +18,10 @@ parameters:
     displayName: "Build Windows Terminal MSIX"
     type: boolean
     default: true
+  - name: runCompliance
+    displayName: "Run Compliance and Security Build"
+    type: boolean
+    default: true
   - name: buildTerminalVPack
     displayName: "Build Windows Terminal VPack"
     type: boolean
@@ -34,7 +38,6 @@ parameters:
       - Optimize
       - Instrument
       - None
-
   - name: buildConfigurations
     type: object
     default:
@@ -65,11 +68,11 @@ jobs:
             BuildConfiguration: ${{ config }}
             BuildPlatform: ${{ platform }}
   displayName: Build
+  timeoutInMinutes: 240
   cancelTimeoutInMinutes: 1
   steps:
   - checkout: self
     clean: true
-    fetchDepth: 1
     submodules: true
     persistCredentials: True
   - task: PkgESSetupBuild@12
@@ -90,6 +93,7 @@ jobs:
     displayName: Use NuGet 5.10
     inputs:
       versionSpec: 5.10
+  - task: NuGetAuthenticate@0
   # In the Microsoft Azure DevOps tenant, NuGetCommand is ambiguous.
   # This should be `task: NuGetCommand@2`
   - task: 333b11bd-d341-40d9-afcf-b32d5ce6f23b@2
@@ -156,6 +160,7 @@ jobs:
   - ${{ if eq(parameters.buildTerminal, true) }}:
     - task: VSBuild@1
       displayName: Build solution **\OpenConsole.sln
+      condition: true
       inputs:
         solution: '**\OpenConsole.sln'
         vsVersion: 16.0
@@ -196,8 +201,6 @@ jobs:
       filePath: build\scripts\Index-Pdbs.ps1
       arguments: -SearchDir '$(Build.SourcesDirectory)' -SourceRoot '$(Build.SourcesDirectory)' -recursive -Verbose -CommitId $(Build.SourceVersion)
       errorActionPreference: silentlyContinue
-  - task: ComponentGovernanceComponentDetection@0
-    displayName: Component Detection
   - task: PowerShell@2
     displayName: Run Unit Tests
     condition: and(succeeded(), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
@@ -254,6 +257,7 @@ jobs:
       inputs:
         PathtoPublish: $(Build.ArtifactStagingDirectory)/wpf
         ArtifactName: wpf-dll-$(BuildPlatform)-$(BuildConfiguration)
+
   - task: PublishSymbols@2
     displayName: Publish symbols path
     continueOnError: True
@@ -265,6 +269,9 @@ jobs:
       IndexSources: false
       SymbolServerType: TeamServices
 
+- ${{ if eq(parameters.runCompliance, true) }}:
+  - template: ./templates/build-console-compliance-job.yml
+  
 - ${{ if eq(parameters.buildTerminal, true) }}:
   - job: BundleAndSign
     displayName: Create and sign AppX/MSIX bundles
