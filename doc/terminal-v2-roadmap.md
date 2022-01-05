@@ -2,7 +2,7 @@
 
 > **NOTE**
 >
-> This document has been superceeded by the [Terminal 2022 Roadmap]. Please refer to that document for the updated roadmap.
+> This document has been superseded by the [Terminal 2022 Roadmap]. Please refer to that document for the updated roadmap.
 
 ## Overview
 
