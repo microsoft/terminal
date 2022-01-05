@@ -41,6 +41,7 @@
                 <local:SettingContainer x:Uid="AddProfile_Duplicate">
                     <muxc:RadioButtons x:Name="Profiles"
                                        AutomationProperties.AccessibilityView="Content"
+                                       SelectionChanged="ProfilesSelectionChanged"
                                        ItemsSource="{x:Bind State.Settings.AllProfiles, Mode=OneWay}">
                         <muxc:RadioButtons.ItemTemplate>
                             <DataTemplate x:DataType="model:Profile">
@@ -72,6 +73,7 @@
                         AutomationProperties.AutomationId="AddProfile_DuplicateButton"
                         AutomationProperties.Name="{Binding Tag, RelativeSource={RelativeSource Self}}"
                         Click="DuplicateClick"
+                        IsEnabled="{x:Bind IsProfileSelected, Mode=OneWay}"
                         Style="{StaticResource AccentButtonStyle}">
                     <Button.Content>
                         <StackPanel Orientation="Horizontal">
