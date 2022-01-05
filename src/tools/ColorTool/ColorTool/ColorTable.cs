@@ -135,7 +135,7 @@ namespace ColorTool
                     if (bg > 0) Console.Write(" ");
                     if (bg == 0)
                         Console.BackgroundColor = currentBackground;
-                    else Console.BackgroundColor = colors[TableColors[bg - 1]];
+                    else Console.BackgroundColor = colors[TableColors[bg - (1 + Convert.ToUInt16(compact))]];
                     Console.Write(TestText);
                     Console.BackgroundColor = currentBackground;
                 }
