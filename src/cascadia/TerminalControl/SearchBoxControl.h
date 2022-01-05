@@ -1,4 +1,4 @@
-﻿/*++
+/*++
 Copyright (c) Microsoft Corporation
 Licensed under the MIT license.
 
@@ -16,7 +16,6 @@ Author(s):
 #pragma once
 #include "winrt/Windows.UI.Xaml.h"
 #include "winrt/Windows.UI.Xaml.Controls.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include "SearchBoxControl.g.h"
 
@@ -51,7 +50,5 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
 namespace winrt::Microsoft::Terminal::Control::factory_implementation
 {
-    struct SearchBoxControl : SearchBoxControlT<SearchBoxControl, implementation::SearchBoxControl>
-    {
-    };
+    BASIC_FACTORY(SearchBoxControl);
 }

@@ -57,6 +57,15 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // WINRT_PROPERTY for these, because they actually exist inside the
         // _focusedAppearance member. We don't need to reserve another member to
         // hold them.
+        //
+        // The Appearance members (including GetColorTableEntry below) are used
+        // when this ControlSettings is cast to a IControlAppearance or
+        // ICoreAppearance. In those cases, we'll always return the Focused
+        // appearance's version of the member. Callers who care about which
+        // appearance is being used should be more careful. Fortunately, this
+        // situation is generally only used when a control is first created, or
+        // when calling UpdateSettings.
+
 #define APPEARANCE_GEN(type, name, ...)                               \
     type name() const noexcept { return _focusedAppearance->name(); } \
     void name(const type& value) noexcept { _focusedAppearance->name(value); }

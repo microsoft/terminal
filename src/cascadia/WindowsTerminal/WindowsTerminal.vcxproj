@@ -115,6 +115,23 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 
+  <!--
+  BODGY
+
+  The wapproj `GetResolvedWinMD` target tries to get a winmd from every cppwinrt
+  executable we put in the package. But we DON'T produce a winmd. This makes the
+  FastUpToDate check fail every time, and leads to the whole wapproj build
+  running even if you're just f5'ing the package. EVEN AFTER A SUCCESSFUL BUILD.
+
+  Setting GenerateWindowsMetadata=false is enough to tell the build system that
+  we don't produce one, and get it off our backs.
+  -->
+  <ItemDefinitionGroup>
+    <Link>
+        <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+
   <Import Project="$(OpenConsoleDir)src\cppwinrt.build.post.props" />
 
   <Import Project="..\..\..\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets" Condition="Exists('..\..\..\packages\Microsoft.UI.Xaml.2.7.0-prerelease.210913003\build\native\Microsoft.UI.Xaml.targets')" />

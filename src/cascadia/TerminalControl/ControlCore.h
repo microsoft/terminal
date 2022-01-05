@@ -15,15 +15,13 @@
 
 #pragma once
 
-#include "EventArgs.h"
 #include "ControlCore.g.h"
 #include "ControlSettings.h"
 #include "../../renderer/base/Renderer.hpp"
-#include "../../renderer/dx/DxRenderer.hpp"
-#include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
-#include "cppwinrt_utils.h"
+
+#include <til/ticket_lock.h>
 
 #include <til/ticket_lock.h>
 
@@ -39,7 +37,7 @@ private:                                                          \
     void name(const type newValue) { _runtime##name = newValue; } \
                                                                   \
 public:                                                           \
-    type name() const { return _runtime##name ? *_runtime##name : setting; }
+    type name() const { return til::coalesce_value(_runtime##name, setting); }
 
 namespace winrt::Microsoft::Terminal::Control::implementation
 {
@@ -214,7 +212,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // As _renderer has a dependency on _renderEngine (through a raw pointer)
         // we must ensure the _renderer is deallocated first.
         // (C++ class members are destroyed in reverse order.)
-        std::unique_ptr<::Microsoft::Console::Render::DxEngine> _renderEngine{ nullptr };
+        std::unique_ptr<::Microsoft::Console::Render::IRenderEngine> _renderEngine{ nullptr };
         std::unique_ptr<::Microsoft::Console::Render::Renderer> _renderer{ nullptr };
 
         FontInfoDesired _desiredFont;
@@ -272,10 +270,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 #pragma endregion
 
         void _raiseReadOnlyWarning();
-        void _updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine);
+        void _updateAntiAliasingMode();
         void _connectionOutputHandler(const hstring& hstr);
         void _updateHoveredCell(const std::optional<til::point> terminalPosition);
         void _setOpacity(const double opacity);
+
+        bool _isBackgroundTransparent();
 
         inline bool _IsClosing() const noexcept
         {

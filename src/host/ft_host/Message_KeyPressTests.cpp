@@ -25,7 +25,7 @@
 
 using namespace WEX::TestExecution;
 using namespace WEX::Common;
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 
 class KeyPressTests
 {

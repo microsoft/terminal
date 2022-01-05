@@ -21,7 +21,6 @@ namespace winrt::TerminalApp::implementation
     struct TerminalTab : TerminalTabT<TerminalTab, TabBase>
     {
     public:
-        TerminalTab(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile, const winrt::Microsoft::Terminal::Control::TermControl& control);
         TerminalTab(std::shared_ptr<Pane> rootPane);
 
         // Called after construction to perform the necessary setup, which relies on weak_ptr
@@ -40,8 +39,7 @@ namespace winrt::TerminalApp::implementation
 
         void SplitPane(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
                        const float splitSize,
-                       const winrt::Microsoft::Terminal::Settings::Model::Profile& profile,
-                       winrt::Microsoft::Terminal::Control::TermControl& control);
+                       std::shared_ptr<Pane> newPane);
 
         void ToggleSplitOrientation();
         winrt::fire_and_forget UpdateIcon(const winrt::hstring iconPath);
@@ -51,12 +49,10 @@ namespace winrt::TerminalApp::implementation
         winrt::fire_and_forget ActivateBellIndicatorTimer();
 
         float CalcSnappedDimension(const bool widthOrHeight, const float dimension) const;
-        winrt::Microsoft::Terminal::Settings::Model::SplitDirection PreCalculateAutoSplit(winrt::Windows::Foundation::Size rootSize) const;
-        bool PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
-                                  const float splitSize,
-                                  winrt::Windows::Foundation::Size availableSpace) const;
+        std::optional<winrt::Microsoft::Terminal::Settings::Model::SplitDirection> PreCalculateCanSplit(winrt::Microsoft::Terminal::Settings::Model::SplitDirection splitType,
+                                                                                                        const float splitSize,
+                                                                                                        winrt::Windows::Foundation::Size availableSpace) const;
 
-        void ResizeContent(const winrt::Windows::Foundation::Size& newSize);
         void ResizePane(const winrt::Microsoft::Terminal::Settings::Model::ResizeDirection& direction);
         bool NavigateFocus(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
         bool SwapPane(const winrt::Microsoft::Terminal::Settings::Model::FocusDirection& direction);
@@ -100,13 +96,13 @@ namespace winrt::TerminalApp::implementation
             return _tabStatus;
         }
 
-        DECLARE_EVENT(ActivePaneChanged, _ActivePaneChangedHandlers, winrt::delegate<>);
-        DECLARE_EVENT(ColorSelected, _colorSelected, winrt::delegate<winrt::Windows::UI::Color>);
-        DECLARE_EVENT(ColorCleared, _colorCleared, winrt::delegate<>);
-        DECLARE_EVENT(TabRaiseVisualBell, _TabRaiseVisualBellHandlers, winrt::delegate<>);
-        DECLARE_EVENT(DuplicateRequested, _DuplicateRequestedHandlers, winrt::delegate<>);
-        DECLARE_EVENT(SplitTabRequested, _SplitTabRequestedHandlers, winrt::delegate<>);
-        DECLARE_EVENT(ExportTabRequested, _ExportTabRequestedHandlers, winrt::delegate<>);
+        WINRT_CALLBACK(ActivePaneChanged, winrt::delegate<>);
+        WINRT_CALLBACK(ColorSelected, winrt::delegate<winrt::Windows::UI::Color>);
+        WINRT_CALLBACK(ColorCleared, winrt::delegate<>);
+        WINRT_CALLBACK(TabRaiseVisualBell, winrt::delegate<>);
+        WINRT_CALLBACK(DuplicateRequested, winrt::delegate<>);
+        WINRT_CALLBACK(SplitTabRequested, winrt::delegate<>);
+        WINRT_CALLBACK(ExportTabRequested, winrt::delegate<>);
         TYPED_EVENT(TaskbarProgressChanged, IInspectable, IInspectable);
 
     private:
@@ -124,7 +120,6 @@ namespace winrt::TerminalApp::implementation
         struct ControlEventTokens
         {
             winrt::event_token titleToken;
-            winrt::event_token fontToken;
             winrt::event_token colorToken;
             winrt::event_token taskbarToken;
             winrt::event_token readOnlyToken;

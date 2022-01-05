@@ -3,16 +3,18 @@
 
 #include "pch.h"
 #include "ControlCore.h"
-#include <argb.h>
+
 #include <DefaultSettings.h>
 #include <unicode.hpp>
 #include <Utf16Parser.hpp>
-#include <Utils.h>
 #include <WinUser.h>
 #include <LibraryResources.h>
+
+#include "EventArgs.h"
 #include "../../types/inc/GlyphWidth.hpp"
-#include "../../types/inc/Utils.hpp"
 #include "../../buffer/out/search.h"
+#include "../../renderer/atlas/AtlasEngine.h"
+#include "../../renderer/dx/DxRenderer.hpp"
 
 #include "ControlCore.g.cpp"
 
@@ -204,6 +206,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  const double actualHeight,
                                  const double compositionScale)
     {
+        assert(_settings);
+
         _panelWidth = actualWidth;
         _panelHeight = actualHeight;
         _compositionScale = compositionScale;
@@ -224,10 +228,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 return false;
             }
 
-            // Set up the DX Engine
-            auto dxEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
-            _renderer->AddRenderEngine(dxEngine.get());
-            _renderEngine = std::move(dxEngine);
+            if (Feature_AtlasEngine::IsEnabled() && _settings->UseAtlasEngine())
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::AtlasEngine>();
+            }
+            else
+            {
+                _renderEngine = std::make_unique<::Microsoft::Console::Render::DxEngine>();
+            }
+
+            _renderer->AddRenderEngine(_renderEngine.get());
 
             // Initialize our font with the renderer
             // We don't have to care about DPI. We'll get a change message immediately if it's not 96
@@ -273,11 +283,11 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
             _renderEngine->SetIntenseIsBold(_settings->IntenseIsBold());
 
-            _updateAntiAliasingMode(_renderEngine.get());
+            _updateAntiAliasingMode();
 
             // GH#5098: Inform the engine of the opacity of the default text background.
             // GH#11315: Always do this, even if they don't have acrylic on.
-            _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
 
             THROW_IF_FAILED(_renderEngine->Enable());
 
@@ -460,17 +470,14 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // is what the Terminal did prior to 1.12.
         if (!IsVintageOpacityAvailable())
         {
-            const auto oldUseAcrylic{ UseAcrylic() };
             _runtimeUseAcrylic = newOpacity < 1.0;
-            // If they've changed the value of UseAcrylic, then update the
-            // renderer as well.
-            if (oldUseAcrylic != UseAcrylic() && _renderEngine)
-            {
-                // GH#5098: Inform the engine of the new opacity of the default
-                // text background.
-                auto lock = _terminal->LockForWriting();
-                _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
-            }
+        }
+
+        // Update the renderer as well. It might need to fall back from
+        // cleartype -> grayscale if the BG is transparent / acrylic.
+        if (_renderEngine)
+        {
+            _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
         }
 
         auto eventArgs = winrt::make_self<TransparencyChangedEventArgs>(newOpacity);
@@ -639,9 +646,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _renderEngine->SetForceFullRepaintRendering(_settings->ForceFullRepaintRendering());
         _renderEngine->SetSoftwareRendering(_settings->SoftwareRendering());
         // Inform the renderer of our opacity
-        _renderEngine->SetDefaultTextBackgroundOpacity(UseAcrylic());
+        _renderEngine->EnableTransparentBackground(_isBackgroundTransparent());
 
-        _updateAntiAliasingMode(_renderEngine.get());
+        _updateAntiAliasingMode();
 
         // Refresh our font with the renderer
         const auto actualFontOldSize = _actualFont.GetSize();
@@ -675,22 +682,24 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         }
     }
 
-    void ControlCore::_updateAntiAliasingMode(::Microsoft::Console::Render::DxEngine* const dxEngine)
+    void ControlCore::_updateAntiAliasingMode()
     {
+        D2D1_TEXT_ANTIALIAS_MODE mode;
         // Update DxEngine's AntialiasingMode
         switch (_settings->AntialiasingMode())
         {
         case TextAntialiasingMode::Cleartype:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
             break;
         case TextAntialiasingMode::Aliased:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_ALIASED);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_ALIASED;
             break;
-        case TextAntialiasingMode::Grayscale:
         default:
-            dxEngine->SetAntialiasingMode(D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE);
+            mode = D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE;
             break;
         }
+
+        _renderEngine->SetAntialiasingMode(mode);
     }
 
     // Method Description:
@@ -995,6 +1004,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             textData += text;
         }
 
+        const auto bgColor = _terminal->GetAttributeColors({}).second;
+
         // convert text to HTML format
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
@@ -1003,7 +1014,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      til::color{ _settings->DefaultBackground() }) :
+                                                      bgColor) :
                                   "";
 
         // convert to RTF format
@@ -1011,7 +1022,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    til::color{ _settings->DefaultBackground() }) :
+                                                    bgColor) :
                                  "";
 
         if (!_settings->CopyOnSelect())
@@ -1101,10 +1112,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        // The Terminal internally stores it's BG with 0 opacity, so as to allow
-        // DX to paint the BG color transparently. We however don't want to leak
-        // that implementation detail.
-        return _terminal->GetDefaultBackground().with_alpha(0xff);
+        return _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     }
 
     // Method Description:
@@ -1607,14 +1615,74 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     Core::Scheme ControlCore::ColorScheme() const noexcept
     {
-        auto s = _terminal->GetColorScheme();
+        Core::Scheme s;
+
+        // This part is definitely a hack.
+        //
+        // This function is usually used by the "Preview Color Scheme"
+        // functionality in TerminalPage. If we've got an unfocused appearance,
+        // then we've applied that appearance before this is even getting called
+        // (because the command palette is open with focus on top of us). If we
+        // return the _current_ colors now, we'll return out the _unfocused_
+        // colors. If we do that, and the user dismisses the command palette,
+        // then the scheme that will get restored is the _unfocused_ one, which
+        // is not what we want.
+        //
+        // So if that's the case, then let's grab the colors from the focused
+        // appearance as the scheme instead. We'll lose any current runtime
+        // changes to the color table, but those were already blown away when we
+        // switched to an unfocused appearance.
+        //
+        // IF WE DON'T HAVE AN UNFOCUSED APPEARANCE: then just ask the Terminal
+        // for it's current color table. That way, we can restore those colors
+        // back.
+        if (HasUnfocusedAppearance())
+        {
+            s.Foreground = _settings->FocusedAppearance()->DefaultForeground();
+            s.Background = _settings->FocusedAppearance()->DefaultBackground();
+
+            s.CursorColor = _settings->FocusedAppearance()->CursorColor();
+
+            s.Black = _settings->FocusedAppearance()->GetColorTableEntry(0);
+            s.Red = _settings->FocusedAppearance()->GetColorTableEntry(1);
+            s.Green = _settings->FocusedAppearance()->GetColorTableEntry(2);
+            s.Yellow = _settings->FocusedAppearance()->GetColorTableEntry(3);
+            s.Blue = _settings->FocusedAppearance()->GetColorTableEntry(4);
+            s.Purple = _settings->FocusedAppearance()->GetColorTableEntry(5);
+            s.Cyan = _settings->FocusedAppearance()->GetColorTableEntry(6);
+            s.White = _settings->FocusedAppearance()->GetColorTableEntry(7);
+            s.BrightBlack = _settings->FocusedAppearance()->GetColorTableEntry(8);
+            s.BrightRed = _settings->FocusedAppearance()->GetColorTableEntry(9);
+            s.BrightGreen = _settings->FocusedAppearance()->GetColorTableEntry(10);
+            s.BrightYellow = _settings->FocusedAppearance()->GetColorTableEntry(11);
+            s.BrightBlue = _settings->FocusedAppearance()->GetColorTableEntry(12);
+            s.BrightPurple = _settings->FocusedAppearance()->GetColorTableEntry(13);
+            s.BrightCyan = _settings->FocusedAppearance()->GetColorTableEntry(14);
+            s.BrightWhite = _settings->FocusedAppearance()->GetColorTableEntry(15);
+        }
+        else
+        {
+            s = _terminal->GetColorScheme();
+        }
+
         // This might be a tad bit of a hack. This event only gets called by set
         // color scheme / preview color scheme, and in that case, we know the
         // control _is_ focused.
         s.SelectionBackground = _settings->FocusedAppearance()->SelectionBackground();
+
         return s;
     }
 
+    // Method Description:
+    // - Apply the given color scheme to this control. We'll take the colors out
+    //   of it and apply them to our focused appearance, and update the terminal
+    //   buffer with the new color table.
+    // - This is here to support the Set Color Scheme action, and the ability to
+    //   preview schemes in the control.
+    // Arguments:
+    // - scheme: the collection of colors to apply.
+    // Return Value:
+    // - <none>
     void ControlCore::ColorScheme(const Core::Scheme& scheme)
     {
         auto l{ _terminal->LockForWriting() };
@@ -1643,6 +1711,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
         _terminal->ApplyScheme(scheme);
 
+        _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
+
         _renderer->TriggerRedrawAll();
         _BackgroundColorChangedHandlers(*this, nullptr);
     }
@@ -1663,5 +1733,18 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         {
             _setOpacity(opacityAdjust);
         }
+    }
+
+    bool ControlCore::_isBackgroundTransparent()
+    {
+        // If we're:
+        // * Not fully opaque
+        // * On an acrylic background (of any opacity)
+        // * rendering on top of an image
+        //
+        // then the renderer should not render "default background" text with a
+        // fully opaque background. Doing that would cover up our nice
+        // transparency, or our acrylic, or our image.
+        return Opacity() < 1.0f || UseAcrylic() || !_settings->BackgroundImage().empty();
     }
 }

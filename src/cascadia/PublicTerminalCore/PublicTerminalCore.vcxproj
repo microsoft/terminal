@@ -29,6 +29,9 @@
     <ProjectReference Include="$(SolutionDir)src\types\lib\types.vcxproj">
       <Project>{18D09A24-8240-42D6-8CB6-236EEE820263}</Project>
     </ProjectReference>
+    <ProjectReference Include="$(SolutionDir)src\renderer\atlas\atlas.vcxproj">
+      <Project>{8222900C-8B6C-452A-91AC-BE95DB04B95F}</Project>
+    </ProjectReference>
     <ProjectReference Include="$(SolutionDir)src\renderer\base\lib\base.vcxproj">
       <Project>{af0a096a-8b3a-4949-81ef-7df8f0fee91f}</Project>
     </ProjectReference>

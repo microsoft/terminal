@@ -68,8 +68,12 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::_RunRestorePreviews()
     {
-        for (const auto& f : _restorePreviewFuncs)
+        // Apply the reverts in reverse order - If we had multiple previews
+        // stacked on top of each other, then this will ensure the first one in
+        // is the last one out.
+        for (auto i{ _restorePreviewFuncs.rbegin() }; i < _restorePreviewFuncs.rend(); i++)
         {
+            auto f = *i;
             f();
         }
         _restorePreviewFuncs.clear();
@@ -91,17 +95,15 @@ namespace winrt::TerminalApp::implementation
     {
         if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
         {
-            // Clear the saved preview funcs because we don't need to add a restore each time
-            // the preview color changes, we only need to be able to restore the last one.
-            _restorePreviewFuncs.clear();
-
             _ApplyToActiveControls([&](const auto& control) {
-                // Stash a copy of the original scheme.
+                // Stash a copy of the current scheme.
                 auto originalScheme{ control.ColorScheme() };
 
                 // Apply the new scheme.
                 control.ColorScheme(scheme.ToCoreScheme());
 
+                // Each control will emplace a revert into the
+                // _restorePreviewFuncs for itself.
                 _restorePreviewFuncs.emplace_back([=]() {
                     // On dismiss, restore the original scheme.
                     control.ColorScheme(originalScheme);
@@ -128,7 +130,7 @@ namespace winrt::TerminalApp::implementation
             _restorePreviewFuncs.emplace_back([=]() {
                 // On dismiss:
                 // Don't adjust relatively, just set outright.
-                control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity*100), false);
+                control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity * 100), false);
             });
         });
         // }

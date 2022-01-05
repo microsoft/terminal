@@ -11,7 +11,6 @@
 #include "../../renderer/uia/UiaRenderer.hpp"
 #include "../../cascadia/TerminalCore/Terminal.hpp"
 #include "../buffer/out/search.h"
-#include "cppwinrt_utils.h"
 #include "SearchBoxControl.h"
 
 #include "ControlInteractivity.h"
@@ -95,13 +94,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const Windows::UI::Xaml::Thickness GetPadding();
 
         static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi);
-        static Windows::Foundation::Size GetProposedDimensions(const winrt::Windows::Foundation::Size& initialSizeInChars,
-                                                               const int32_t& fontSize,
-                                                               const winrt::Windows::UI::Text::FontWeight& fontWeight,
-                                                               const winrt::hstring& fontFace,
-                                                               const ScrollbarState& scrollState,
-                                                               const winrt::hstring& padding,
-                                                               const uint32_t dpi);
+        static Windows::Foundation::Size GetProposedDimensions(IControlSettings const& settings, const uint32_t dpi, const winrt::Windows::Foundation::Size& initialSizeInChars);
 
         void BellLightOn();
 
@@ -258,9 +251,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         void _UpdateAutoScroll(Windows::Foundation::IInspectable const& sender, Windows::Foundation::IInspectable const& e);
 
         void _KeyHandler(Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e, const bool keyDown);
-        ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() const;
+        static ::Microsoft::Terminal::Core::ControlKeyStates _GetPressedModifierKeys() noexcept;
         bool _TryHandleKeyBinding(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers) const;
-        void _ClearKeyboardState(const WORD vkey, const WORD scanCode) const noexcept;
+        static void _ClearKeyboardState(const WORD vkey, const WORD scanCode) noexcept;
         bool _TrySendKeyEvent(const WORD vkey, const WORD scanCode, ::Microsoft::Terminal::Core::ControlKeyStates modifiers, const bool keyDown);
 
         const til::point _toTerminalOrigin(winrt::Windows::Foundation::Point cursorPosition);

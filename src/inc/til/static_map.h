@@ -97,7 +97,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
     public:
         template<typename... Args>
         constexpr explicit presorted_static_map(const Args&... args) noexcept :
-            static_map{ args... } {};
+            static_map<K, V, Compare, N, details::presorted_input_t>{ args... } {};
     };
 
     // this is a deduction guide that ensures two things:

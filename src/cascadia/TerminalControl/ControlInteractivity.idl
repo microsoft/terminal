@@ -59,6 +59,8 @@ namespace Microsoft.Terminal.Control
 
         void UpdateScrollbar(Double newValue);
 
+        Boolean ManglePathsForWsl { get; };
+
         event Windows.Foundation.TypedEventHandler<Object, OpenHyperlinkEventArgs> OpenHyperlink;
         event Windows.Foundation.TypedEventHandler<Object, ScrollPositionChangedArgs> ScrollPositionChanged;
         event Windows.Foundation.TypedEventHandler<Object, PasteFromClipboardEventArgs> PasteFromClipboard;

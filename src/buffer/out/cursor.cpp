@@ -27,9 +27,7 @@ Cursor::Cursor(const ULONG ulSize, TextBuffer& parentBuffer) noexcept :
     _fDeferCursorRedraw(false),
     _fHaveDeferredCursorRedraw(false),
     _ulSize(ulSize),
-    _cursorType(CursorType::Legacy),
-    _fUseColor(false),
-    _color(s_InvertCursorColor)
+    _cursorType(CursorType::Legacy)
 {
 }
 
@@ -143,10 +141,9 @@ void Cursor::SetSize(const ULONG ulSize) noexcept
     _RedrawCursor();
 }
 
-void Cursor::SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type) noexcept
+void Cursor::SetStyle(const ULONG ulSize, const CursorType type) noexcept
 {
     _ulSize = ulSize;
-    _color = color;
     _cursorType = type;
 
     _RedrawCursor();
@@ -285,7 +282,6 @@ void Cursor::CopyProperties(const Cursor& OtherCursor) noexcept
     // Size will be handled separately in the resize operation.
     //_ulSize                       = OtherCursor._ulSize;
     _cursorType = OtherCursor._cursorType;
-    _color = OtherCursor._color;
 }
 
 void Cursor::DelayEOLWrap(const COORD coordDelayedAt) noexcept
@@ -333,21 +329,6 @@ void Cursor::EndDeferDrawing() noexcept
 const CursorType Cursor::GetType() const noexcept
 {
     return _cursorType;
-}
-
-const bool Cursor::IsUsingColor() const noexcept
-{
-    return GetColor() != INVALID_COLOR;
-}
-
-const COLORREF Cursor::GetColor() const noexcept
-{
-    return _color;
-}
-
-void Cursor::SetColor(const unsigned int color) noexcept
-{
-    _color = gsl::narrow_cast<COLORREF>(color);
 }
 
 void Cursor::SetType(const CursorType type) noexcept

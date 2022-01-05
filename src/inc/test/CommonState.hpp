@@ -132,9 +132,9 @@ public:
                                               0,
                                               nullptr,
                                               0,
-                                              nullptr,
                                               L"",
-                                              initialData);
+                                              initialData,
+                                              nullptr);
         gci.SetCookedReadData(readData);
     }
 

@@ -123,7 +123,6 @@ SCREEN_INFORMATION::~SCREEN_INFORMATION()
                                                             pScreen->_renderTarget);
 
         const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-        pScreen->_textBuffer->GetCursor().SetColor(gci.GetCursorColor());
         pScreen->_textBuffer->GetCursor().SetType(gci.GetCursorType());
 
         const NTSTATUS status = pScreen->_InitializeOutputStateMachine();
@@ -364,7 +363,7 @@ void SCREEN_INFORMATION::GetScreenBufferInformation(_Out_ PCOORD pcoordSize,
     // the copy length must be constant for now to keep OACR happy with buffer overruns.
     for (size_t i = 0; i < COLOR_TABLE_SIZE; i++)
     {
-        lpColorTable[i] = gci.GetColorTableEntry(i);
+        lpColorTable[i] = gci.GetLegacyColorTableEntry(i);
     }
 
     *pcoordMaximumWindowSize = GetMaxWindowSizeInCharacters();
@@ -1021,6 +1020,8 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // TODO: Deleting and redrawing the command line during resizing can cause flickering. See: http://osgvsowi/658439
         // 1. Delete input string if necessary (see menu.c)
         commandLine.Hide(FALSE);
+
+        const auto savedCursorVisibility = _textBuffer->GetCursor().IsVisible();
         _textBuffer->GetCursor().SetIsVisible(false);
 
         // 2. Call the resize screen buffer method (expensive) to redimension the backing buffer (and reflow)
@@ -1029,7 +1030,7 @@ void SCREEN_INFORMATION::ProcessResizeWindow(const RECT* const prcClientNew,
         // MSFT:19976291 Don't re-show the commandline here. We need to wait for
         //      the viewport to also get resized before we can re-show the commandline.
         //      ProcessResizeWindow will call commandline.Show() for us.
-        _textBuffer->GetCursor().SetIsVisible(true);
+        _textBuffer->GetCursor().SetIsVisible(savedCursorVisibility);
 
         // Return S_OK, to indicate we succeeded and actually did something.
         hr = S_OK;
@@ -1631,29 +1632,6 @@ void SCREEN_INFORMATION::SetCursorInformation(const ULONG Size,
 }
 
 // Routine Description:
-// - This routine sets the cursor color. Also updates the cursor information of
-//      this buffer's main buffer, if this buffer is an alt buffer.
-// Arguments:
-// - Color - The new color to set the cursor to
-// - setMain - If true, propagate change to main buffer as well.
-// Return Value:
-// - None
-void SCREEN_INFORMATION::SetCursorColor(const unsigned int Color, const bool setMain) noexcept
-{
-    Cursor& cursor = _textBuffer->GetCursor();
-
-    cursor.SetColor(Color);
-
-    // If we're an alt buffer, DON'T propagate this setting up to the main buffer.
-    // We don't want to pollute that buffer with this state,
-    // UNLESS we're getting called from the propsheet, then we DO want to update this.
-    if (_psiMainBuffer && setMain)
-    {
-        _psiMainBuffer->SetCursorColor(Color);
-    }
-}
-
-// Routine Description:
 // - This routine sets the cursor shape both in the data
 //      structures and on the screen. Also updates the cursor information of
 //      this buffer's main buffer, if this buffer is an alt buffer.
@@ -1908,7 +1886,7 @@ const SCREEN_INFORMATION& SCREEN_INFORMATION::GetMainBuffer() const
         auto& myCursor = GetTextBuffer().GetCursor();
         auto* const createdBuffer = *ppsiNewScreenBuffer;
         auto& altCursor = createdBuffer->GetTextBuffer().GetCursor();
-        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetColor(), myCursor.GetType());
+        altCursor.SetStyle(myCursor.GetSize(), myCursor.GetType());
         altCursor.SetIsVisible(myCursor.IsVisible());
         altCursor.SetBlinkingAllowed(myCursor.IsBlinkingAllowed());
         // The new position should match the viewport-relative position of the main buffer.
@@ -2006,7 +1984,7 @@ void SCREEN_INFORMATION::UseMainScreenBuffer()
         // Copy the alt buffer's cursor style and visibility back to the main buffer.
         const auto& altCursor = psiAlt->GetTextBuffer().GetCursor();
         auto& mainCursor = psiMain->GetTextBuffer().GetCursor();
-        mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetColor(), altCursor.GetType());
+        mainCursor.SetStyle(altCursor.GetSize(), altCursor.GetType());
         mainCursor.SetIsVisible(altCursor.IsVisible());
         mainCursor.SetBlinkingAllowed(altCursor.IsBlinkingAllowed());
 

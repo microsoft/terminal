@@ -96,9 +96,10 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
         auto& g = ServiceLocator::LocateGlobals();
         auto& gci = g.getConsoleInformation();
 
-        gci.SetDefaultForegroundColor(INVALID_COLOR);
-        gci.SetDefaultBackgroundColor(INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
+        gci.SetColorTableEntry(TextColor::DEFAULT_BACKGROUND, INVALID_COLOR);
         gci.SetFillAttribute(0x07); // DARK_WHITE on DARK_BLACK
+        gci.CalculateDefaultColorIndices();
 
         m_state->PrepareNewTextBufferInfo(true, TerminalViewWidth, TerminalViewHeight);
         auto& currentBuffer = gci.GetActiveOutputBuffer();
@@ -2901,15 +2902,9 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
 
     auto defaultAttrs = si.GetAttributes();
     auto conhostGreenAttrs = TextAttribute();
-
-    // Conhost and Terminal store attributes in different bits.
-    // conhostGreenAttrs.SetIndexedAttributes(std::nullopt,
-    //                                        { static_cast<BYTE>(FOREGROUND_GREEN) });
-    conhostGreenAttrs.SetIndexedBackground(FOREGROUND_GREEN);
+    conhostGreenAttrs.SetIndexedBackground(TextColor::DARK_GREEN);
     auto terminalGreenAttrs = TextAttribute();
-    // terminalGreenAttrs.SetIndexedAttributes(std::nullopt,
-    //                                         { static_cast<BYTE>(XTERM_GREEN_ATTR) });
-    terminalGreenAttrs.SetIndexedBackground(XTERM_GREEN_ATTR);
+    terminalGreenAttrs.SetIndexedBackground(TextColor::DARK_GREEN);
 
     // Use an initial ^[[m to start printing with default-on-default
     sm.ProcessString(L"\x1b[m");
@@ -2942,7 +2937,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
     auto verifyBuffer = [&](const TextBuffer& tb, const til::rectangle viewport, const bool isTerminal, const bool afterResize) {
         const auto width = viewport.width<short>();
 
-        // Conhost and Terminal store attributes in different bits.
+        // Conhost and Terminal attributes are potentially different.
         const auto greenAttrs = isTerminal ? terminalGreenAttrs : conhostGreenAttrs;
 
         for (short row = 0; row < tb.GetSize().Height(); row++)
@@ -3034,13 +3029,11 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
 
     auto defaultAttrs = si.GetAttributes();
     auto conhostBlueAttrs = defaultAttrs;
-
-    // Conhost and Terminal store attributes in different bits.
-    conhostBlueAttrs.SetIndexedForeground(FOREGROUND_GREEN);
-    conhostBlueAttrs.SetIndexedBackground(FOREGROUND_BLUE);
+    conhostBlueAttrs.SetIndexedForeground(TextColor::DARK_GREEN);
+    conhostBlueAttrs.SetIndexedBackground(TextColor::DARK_BLUE);
     auto terminalBlueAttrs = TextAttribute();
-    terminalBlueAttrs.SetIndexedForeground(XTERM_GREEN_ATTR);
-    terminalBlueAttrs.SetIndexedBackground(XTERM_BLUE_ATTR);
+    terminalBlueAttrs.SetIndexedForeground(TextColor::DARK_GREEN);
+    terminalBlueAttrs.SetIndexedBackground(TextColor::DARK_BLUE);
 
     // We're going to print 4 more rows than the entire height of the viewport,
     // causing the buffer to circle 4 times. This is 2 extra iterations of the
@@ -3083,7 +3076,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         const auto width = viewport.width<short>();
         const auto isTerminal = viewport.top() != 0;
 
-        // Conhost and Terminal store attributes in different bits.
+        // Conhost and Terminal attributes are potentially different.
         const auto blueAttrs = isTerminal ? terminalBlueAttrs : conhostBlueAttrs;
 
         for (short row = 0; row < viewport.bottom<short>() - 2; row++)

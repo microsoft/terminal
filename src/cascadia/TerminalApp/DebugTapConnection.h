@@ -4,7 +4,6 @@
 #pragma once
 
 #include <winrt/Microsoft.Terminal.TerminalConnection.h>
-#include "../../inc/cppwinrt_utils.h"
 #include <til/latch.h>
 
 namespace winrt::Microsoft::TerminalApp::implementation

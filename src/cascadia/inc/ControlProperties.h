@@ -48,6 +48,7 @@
 //  All of these settings are defined in IControlSettings.
 #define CONTROL_SETTINGS(X)                                                                                                                              \
     X(winrt::hstring, ProfileName)                                                                                                                       \
+    X(winrt::hstring, ProfileSource)                                                                                                                     \
     X(bool, UseAcrylic, false)                                                                                                                           \
     X(winrt::hstring, Padding, DEFAULT_PADDING)                                                                                                          \
     X(winrt::hstring, FontFace, L"Consolas")                                                                                                             \
@@ -65,4 +66,5 @@
     X(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale) \
     X(bool, ForceFullRepaintRendering, false)                                                                                                            \
     X(bool, SoftwareRendering, false)                                                                                                                    \
-    X(bool, ForceVTInput, false)
+    X(bool, ForceVTInput, false)                                                                                                                         \
+    X(bool, UseAtlasEngine, false)

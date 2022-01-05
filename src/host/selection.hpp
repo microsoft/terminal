@@ -174,7 +174,6 @@ private:
     COORD _coordSavedCursorPosition;
     ULONG _ulSavedCursorSize;
     bool _fSavedCursorVisible;
-    COLORREF _savedCursorColor;
     CursorType _savedCursorType;
 
 #ifdef UNIT_TESTING

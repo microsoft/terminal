@@ -4,7 +4,6 @@
 #pragma once
 
 #include "winrt/Microsoft.UI.Xaml.Controls.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
 
 #include "TabRowControl.g.h"
 
@@ -25,7 +24,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct TabRowControl : TabRowControlT<TabRowControl, implementation::TabRowControl>
-    {
-    };
+    BASIC_FACTORY(TabRowControl);
 }

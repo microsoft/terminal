@@ -22,24 +22,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Color Table is special because it's an array
         std::array<winrt::Microsoft::Terminal::Core::Color, COLOR_TABLE_SIZE> _ColorTable;
 
-        // Color table is _extra_ special because each individual color is
-        // overridable, not the whole array.
-        std::array<std::optional<winrt::Microsoft::Terminal::Core::Color>, COLOR_TABLE_SIZE> _runtimeColorTable;
-
     public:
         winrt::Microsoft::Terminal::Core::Color GetColorTableEntry(int32_t index) noexcept
         {
-            return _runtimeColorTable.at(index) ? *_runtimeColorTable.at(index) :
-                                                  _ColorTable.at(index);
+            return _ColorTable.at(index);
         }
         void SetColorTableEntry(int32_t index,
                                 winrt::Microsoft::Terminal::Core::Color color) noexcept
         {
-            _runtimeColorTable.at(index) = color;
+            _ColorTable.at(index) = color;
         }
-
-        std::array<winrt::Microsoft::Terminal::Core::Color, 16> ColorTable() { return _ColorTable; }
-        void ColorTable(std::array<winrt::Microsoft::Terminal::Core::Color, 16> /*colors*/) {}
 
         ControlAppearance(Control::IControlAppearance appearance)
         {
@@ -48,9 +40,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             CONTROL_APPEARANCE_SETTINGS(COPY_SETTING)
 #undef COPY_SETTING
 
-            for (int32_t i = 0; i < _ColorTable.size(); i++)
+            for (size_t i = 0; i < _ColorTable.size(); i++)
             {
-                _ColorTable[i] = appearance.GetColorTableEntry(i);
+                _ColorTable[i] = appearance.GetColorTableEntry(static_cast<int32_t>(i));
             }
         }
     };

@@ -11,7 +11,7 @@
 
 using namespace Microsoft::Console::Types;
 using namespace WEX::TestExecution;
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using namespace WEX::Common;
 
 class OutputTests

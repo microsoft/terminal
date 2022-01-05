@@ -125,16 +125,24 @@ public:
         return _setInputModeResult;
     }
 
-    bool PrivateSetAnsiMode(const bool ansiMode) override
+    bool SetParserMode(const StateMachine::Mode mode, const bool enabled) override
     {
-        Log::Comment(L"PrivateSetAnsiMode MOCK called...");
+        Log::Comment(L"SetParserMode MOCK called...");
 
-        if (_privateSetAnsiModeResult)
+        if (_setParserModeResult)
         {
-            VERIFY_ARE_EQUAL(_expectedAnsiMode, ansiMode);
+            VERIFY_ARE_EQUAL(_expectedParserMode, mode);
+            VERIFY_ARE_EQUAL(_expectedParserModeEnabled, enabled);
         }
 
-        return _privateSetAnsiModeResult;
+        return _setParserModeResult;
+    }
+
+    bool GetParserMode(const StateMachine::Mode /*mode*/) const override
+    {
+        Log::Comment(L"GetParserMode MOCK called...");
+
+        return false;
     }
 
     bool PrivateSetScreenMode(const bool /*reverseMode*/) override
@@ -362,16 +370,6 @@ public:
         return _setCursorStyleResult;
     }
 
-    bool SetCursorColor(const COLORREF cursorColor) override
-    {
-        Log::Comment(L"SetCursorColor MOCK called...");
-        if (_setCursorColorResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedCursorColor, cursorColor);
-        }
-        return _setCursorColorResult;
-    }
-
     bool PrivateRefreshWindow() override
     {
         Log::Comment(L"PrivateRefreshWindow MOCK called...");
@@ -386,10 +384,14 @@ public:
         return FALSE;
     }
 
-    bool SetConsoleOutputCP(const unsigned int /*codepage*/) override
+    bool SetConsoleOutputCP(const unsigned int codepage) override
     {
         Log::Comment(L"SetConsoleOutputCP MOCK called...");
-        return TRUE;
+        if (_setConsoleOutputCPResult)
+        {
+            VERIFY_ARE_EQUAL(_expectedOutputCP, codepage);
+        }
+        return _setConsoleOutputCPResult;
     }
 
     bool GetConsoleOutputCP(unsigned int& codepage) override
@@ -426,53 +428,31 @@ public:
         return _moveToBottomResult;
     }
 
-    bool PrivateGetColorTableEntry(const size_t index, COLORREF& value) const noexcept override
+    COLORREF GetColorTableEntry(const size_t tableIndex) const noexcept override
     {
-        Log::Comment(L"PrivateGetColorTableEntry MOCK called...");
+        Log::Comment(L"GetColorTableEntry MOCK called...");
 
-        if (_privateGetColorTableEntryResult)
+        if (_getColorTableEntryResult)
         {
-            VERIFY_ARE_EQUAL(_expectedColorTableIndex, index);
+            VERIFY_ARE_EQUAL(_expectedColorTableIndex, tableIndex);
             // Simply returning the index as the color value makes it easy for
             // tests to confirm that they've received the color they expected.
-            value = gsl::narrow_cast<COLORREF>(index);
+            return gsl::narrow_cast<COLORREF>(tableIndex);
         }
 
-        return _privateGetColorTableEntryResult;
+        return INVALID_COLOR;
     }
 
-    bool PrivateSetColorTableEntry(const size_t index, const COLORREF value) const noexcept override
+    bool SetColorTableEntry(const size_t tableIndex, const COLORREF color) noexcept override
     {
-        Log::Comment(L"PrivateSetColorTableEntry MOCK called...");
-        if (_privateSetColorTableEntryResult)
+        Log::Comment(L"SetColorTableEntry MOCK called...");
+        if (_setColorTableEntryResult)
         {
-            VERIFY_ARE_EQUAL(_expectedColorTableIndex, index);
-            VERIFY_ARE_EQUAL(_expectedColorValue, value);
+            VERIFY_ARE_EQUAL(_expectedColorTableIndex, tableIndex);
+            VERIFY_ARE_EQUAL(_expectedColorValue, color);
         }
 
-        return _privateSetColorTableEntryResult;
-    }
-
-    bool PrivateSetDefaultForeground(const COLORREF value) const noexcept override
-    {
-        Log::Comment(L"PrivateSetDefaultForeground MOCK called...");
-        if (_privateSetDefaultForegroundResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedDefaultForegroundColorValue, value);
-        }
-
-        return _privateSetDefaultForegroundResult;
-    }
-
-    bool PrivateSetDefaultBackground(const COLORREF value) const noexcept override
-    {
-        Log::Comment(L"PrivateSetDefaultForeground MOCK called...");
-        if (_privateSetDefaultBackgroundResult)
-        {
-            VERIFY_ARE_EQUAL(_expectedDefaultBackgroundColorValue, value);
-        }
-
-        return _privateSetDefaultBackgroundResult;
+        return _setColorTableEntryResult;
     }
 
     bool PrivateFillRegion(const COORD /*startPosition*/,
@@ -712,8 +692,9 @@ public:
     bool _setInputModeResult = false;
     TerminalInput::Mode _expectedInputMode;
     bool _expectedInputModeEnabled = false;
-    bool _privateSetAnsiModeResult = false;
-    bool _expectedAnsiMode = false;
+    bool _setParserModeResult = false;
+    StateMachine::Mode _expectedParserMode;
+    bool _expectedParserModeEnabled = false;
     bool _privateAllowCursorBlinkingResult = false;
     bool _enable = false; // for cursor blinking
     bool _privateSetScrollingRegionResult = false;
@@ -726,21 +707,14 @@ public:
     std::wstring_view _expectedWindowTitle{};
     bool _setCursorStyleResult = false;
     CursorType _expectedCursorStyle;
-    bool _setCursorColorResult = false;
-    COLORREF _expectedCursorColor = 0;
+    bool _setConsoleOutputCPResult = false;
     bool _getConsoleOutputCPResult = false;
     bool _moveToBottomResult = false;
 
-    bool _privateGetColorTableEntryResult = false;
-    bool _privateSetColorTableEntryResult = false;
+    bool _getColorTableEntryResult = false;
+    bool _setColorTableEntryResult = false;
     size_t _expectedColorTableIndex = SIZE_MAX;
     COLORREF _expectedColorValue = INVALID_COLOR;
-
-    bool _privateSetDefaultForegroundResult = false;
-    COLORREF _expectedDefaultForegroundColorValue = INVALID_COLOR;
-
-    bool _privateSetDefaultBackgroundResult = false;
-    COLORREF _expectedDefaultBackgroundColorValue = INVALID_COLOR;
 
     SIZE _expectedCellSize = {};
 
@@ -1307,49 +1281,49 @@ public:
             Log::Comment(L"Testing graphics 'Foreground Color Black'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE | FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(0);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundBlue:
             Log::Comment(L"Testing graphics 'Foreground Color Blue'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundGreen:
             Log::Comment(L"Testing graphics 'Foreground Color Green'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_BLUE | FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundCyan:
             Log::Comment(L"Testing graphics 'Foreground Color Cyan'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE | FOREGROUND_GREEN);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundRed:
             Log::Comment(L"Testing graphics 'Foreground Color Red'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundMagenta:
             Log::Comment(L"Testing graphics 'Foreground Color Magenta'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_GREEN | FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE | FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundYellow:
             Log::Comment(L"Testing graphics 'Foreground Color Yellow'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN | FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundWhite:
             Log::Comment(L"Testing graphics 'Foreground Color White'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_WHITE);
             break;
         case DispatchTypes::GraphicsOptions::ForegroundDefault:
             Log::Comment(L"Testing graphics 'Foreground Color Default'");
@@ -1362,49 +1336,49 @@ public:
             Log::Comment(L"Testing graphics 'Background Color Black'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE | BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground(0);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundBlue:
             Log::Comment(L"Testing graphics 'Background Color Blue'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_BLUE >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundGreen:
             Log::Comment(L"Testing graphics 'Background Color Green'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_BLUE | BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundCyan:
             Log::Comment(L"Testing graphics 'Background Color Cyan'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_BLUE | BACKGROUND_GREEN) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundRed:
             Log::Comment(L"Testing graphics 'Background Color Red'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_RED >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_RED);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundMagenta:
             Log::Comment(L"Testing graphics 'Background Color Magenta'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_GREEN | BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_BLUE | BACKGROUND_RED) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundYellow:
             Log::Comment(L"Testing graphics 'Background Color Yellow'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_GREEN | BACKGROUND_RED) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundWhite:
             Log::Comment(L"Testing graphics 'Background Color White'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_INTENSITY };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_WHITE);
             break;
         case DispatchTypes::GraphicsOptions::BackgroundDefault:
             Log::Comment(L"Testing graphics 'Background Color Default'");
@@ -1417,97 +1391,97 @@ public:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Black'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundBlue:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Blue'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_GREEN };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY | FOREGROUND_BLUE);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundGreen:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Green'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED | FOREGROUND_BLUE };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY | FOREGROUND_GREEN);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundCyan:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Cyan'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_RED };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundRed:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Red'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE | FOREGROUND_GREEN };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY | FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_RED);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Magenta'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_GREEN };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundYellow:
             Log::Comment(L"Testing graphics 'Bright Foreground Color Yellow'");
             _testGetSet->_attribute = TextAttribute{ FOREGROUND_BLUE };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::BrightForegroundWhite:
             Log::Comment(L"Testing graphics 'Bright Foreground Color White'");
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_INTENSITY | FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
+            _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_WHITE);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundBlack:
             Log::Comment(L"Testing graphics 'Bright Background Color Black'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_INTENSITY >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_BLACK);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundBlue:
             Log::Comment(L"Testing graphics 'Bright Background Color Blue'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_GREEN };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_INTENSITY | BACKGROUND_BLUE) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_BLUE);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundGreen:
             Log::Comment(L"Testing graphics 'Bright Background Color Green'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED | BACKGROUND_BLUE };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_INTENSITY | BACKGROUND_GREEN) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_GREEN);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundCyan:
             Log::Comment(L"Testing graphics 'Bright Background Color Cyan'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_RED };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_CYAN);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundRed:
             Log::Comment(L"Testing graphics 'Bright Background Color Red'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE | BACKGROUND_GREEN };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_INTENSITY | BACKGROUND_RED) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_RED);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundMagenta:
             Log::Comment(L"Testing graphics 'Bright Background Color Magenta'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_GREEN };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_RED) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_MAGENTA);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundYellow:
             Log::Comment(L"Testing graphics 'Bright Background Color Yellow'");
             _testGetSet->_attribute = TextAttribute{ BACKGROUND_BLUE };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_INTENSITY | BACKGROUND_GREEN | BACKGROUND_RED) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
             break;
         case DispatchTypes::GraphicsOptions::BrightBackgroundWhite:
             Log::Comment(L"Testing graphics 'Bright Background Color White'");
             _testGetSet->_attribute = TextAttribute{ 0 };
             _testGetSet->_expectedAttribute = _testGetSet->_attribute;
-            _testGetSet->_expectedAttribute.SetIndexedBackground((BACKGROUND_INTENSITY | BACKGROUND_BLUE | BACKGROUND_GREEN | BACKGROUND_RED) >> 4);
+            _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::BRIGHT_WHITE);
             break;
         default:
             VERIFY_FAIL(L"Test not implemented yet!");
@@ -1545,7 +1519,7 @@ public:
         cOptions = 1;
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundCyan;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(3);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_CYAN);
         _testGetSet->_expectedAttribute.SetDefaultBackground();
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
@@ -1561,7 +1535,7 @@ public:
         cOptions = 1;
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundRed;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetDefaultBackground();
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
@@ -1572,14 +1546,14 @@ public:
         cOptions = 1;
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetDefaultBackground();
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         // First pop:
         cOptions = 0;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
         _testGetSet->_expectedAttribute.SetDefaultBackground();
         VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
 
@@ -1593,22 +1567,22 @@ public:
         cOptions = 1;
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetDefaultBackground();
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         cOptions = 1;
         rgOptions[0] = DispatchTypes::GraphicsOptions::BoldBright;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetBold(true);
         _testGetSet->_expectedAttribute.SetDefaultBackground();
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundBlue;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
-        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_BLUE >> 4);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
         _testGetSet->_expectedAttribute.SetBold(true);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
@@ -1624,8 +1598,8 @@ public:
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundGreen;
         rgOptions[1] = DispatchTypes::GraphicsOptions::DoublyUnderlined;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
-        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetBold(true);
         _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
@@ -1633,24 +1607,24 @@ public:
         cOptions = 1;
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundRed;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
-        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetBold(true);
         _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         rgOptions[0] = DispatchTypes::GraphicsOptions::NotBoldOrFaint;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
-        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_GREEN >> 4);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_GREEN);
         _testGetSet->_expectedAttribute.SetDoublyUnderlined(true);
         VERIFY_IS_TRUE(_pDispatch->SetGraphicsRendition({ rgOptions, cOptions }));
 
         // And then restore...
         cOptions = 0;
         _testGetSet->_expectedAttribute = {};
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_RED);
-        _testGetSet->_expectedAttribute.SetIndexedBackground(BACKGROUND_BLUE >> 4);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_RED);
+        _testGetSet->_expectedAttribute.SetIndexedBackground(TextColor::DARK_BLUE);
         _testGetSet->_expectedAttribute.SetBold(true);
         VERIFY_IS_TRUE(_pDispatch->PopGraphicsRendition());
     }
@@ -1672,7 +1646,7 @@ public:
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Enabling brightness");
@@ -1683,7 +1657,7 @@ public:
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_TRUE(WI_IsFlagSet(_testGetSet->_attribute.GetLegacyAttributes(), FOREGROUND_GREEN));
         VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
@@ -1698,13 +1672,13 @@ public:
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue', brightness of 9x series doesn't persist");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
 
@@ -1717,7 +1691,7 @@ public:
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_FALSE(_testGetSet->_attribute.IsBold());
 
@@ -1729,19 +1703,19 @@ public:
 
         Log::Comment(L"Testing graphics 'Foreground Color Bright Blue'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BrightForegroundBlue;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE | FOREGROUND_INTENSITY);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::BRIGHT_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
 
         Log::Comment(L"Testing graphics 'Foreground Color Blue, with brightness', brightness of 9x series doesn't affect brightness");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundBlue;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_BLUE);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_BLUE);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
 
         Log::Comment(L"Testing graphics 'Foreground Color Green, with brightness'");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundGreen;
-        _testGetSet->_expectedAttribute.SetIndexedForeground(FOREGROUND_GREEN);
+        _testGetSet->_expectedAttribute.SetIndexedForeground(TextColor::DARK_GREEN);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
         VERIFY_IS_TRUE(_testGetSet->_attribute.IsBold());
     }
@@ -1971,16 +1945,16 @@ public:
         Log::Comment(L"Requesting SGR attributes (standard colors).");
         _testGetSet->PrepData();
         _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetIndexedForeground((BYTE)::XtermToWindowsIndex(3));
-        _testGetSet->_attribute.SetIndexedBackground((BYTE)::XtermToWindowsIndex(6));
+        _testGetSet->_attribute.SetIndexedForeground(TextColor::DARK_YELLOW);
+        _testGetSet->_attribute.SetIndexedBackground(TextColor::DARK_CYAN);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;33;46m\033\\");
 
         Log::Comment(L"Requesting SGR attributes (AIX colors).");
         _testGetSet->PrepData();
         _testGetSet->_attribute = {};
-        _testGetSet->_attribute.SetIndexedForeground((BYTE)::XtermToWindowsIndex(14));
-        _testGetSet->_attribute.SetIndexedBackground((BYTE)::XtermToWindowsIndex(11));
+        _testGetSet->_attribute.SetIndexedForeground(TextColor::BRIGHT_CYAN);
+        _testGetSet->_attribute.SetIndexedBackground(TextColor::BRIGHT_YELLOW);
         requestSetting(L"m");
         _testGetSet->ValidateInputEvent(L"\033P1$r0;96;103m\033\\");
 
@@ -2057,15 +2031,17 @@ public:
         // success cases
         // set ansi mode = true
         Log::Comment(L"Test 1: ansi mode = true");
-        _testGetSet->_privateSetAnsiModeResult = true;
-        _testGetSet->_expectedAnsiMode = true;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
+        _testGetSet->_expectedParserModeEnabled = true;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(true));
 
         // set ansi mode = false
         Log::Comment(L"Test 2: ansi mode = false.");
-        _testGetSet->_privateSetAnsiModeResult = true;
-        _testGetSet->_expectedAnsiMode = false;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::Ansi;
+        _testGetSet->_expectedParserModeEnabled = false;
 
         VERIFY_IS_TRUE(_pDispatch.get()->SetAnsiMode(false));
     }
@@ -2290,21 +2266,21 @@ public:
         VTParameter rgOptions[16];
         size_t cOptions = 3;
 
-        _testGetSet->_privateGetColorTableEntryResult = true;
+        _testGetSet->_getColorTableEntryResult = true;
         _testGetSet->_expectedAttribute = _testGetSet->_attribute;
 
         Log::Comment(L"Test 1: Change Foreground");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)2; // Green
-        _testGetSet->_expectedAttribute.SetIndexedForeground256((BYTE)::XtermToWindowsIndex(2));
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_GREEN);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 2: Change Background");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
-        _testGetSet->_expectedAttribute.SetIndexedBackground256((BYTE)::XtermToWindowsIndex(9));
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::BRIGHT_RED);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
 
         Log::Comment(L"Test 3: Change Foreground to RGB color");
@@ -2328,7 +2304,7 @@ public:
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = (DispatchTypes::GraphicsOptions)9; // Bright Red
-        _testGetSet->_expectedAttribute.SetIndexedForeground256((BYTE)::XtermToWindowsIndex(9));
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::BRIGHT_RED);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, cOptions }));
     }
 
@@ -2340,20 +2316,20 @@ public:
 
         VTParameter rgOptions[16];
 
-        _testGetSet->_privateGetColorTableEntryResult = true;
+        _testGetSet->_getColorTableEntryResult = true;
         _testGetSet->_expectedAttribute = _testGetSet->_attribute;
 
         Log::Comment(L"Test 1: Change Indexed Foreground with missing index parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::ForegroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
-        _testGetSet->_expectedAttribute.SetIndexedForeground256(0);
+        _testGetSet->_expectedAttribute.SetIndexedForeground256(TextColor::DARK_BLACK);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 2 }));
 
         Log::Comment(L"Test 2: Change Indexed Background with default index parameter");
         rgOptions[0] = DispatchTypes::GraphicsOptions::BackgroundExtended;
         rgOptions[1] = DispatchTypes::GraphicsOptions::BlinkOrXterm256Index;
         rgOptions[2] = {};
-        _testGetSet->_expectedAttribute.SetIndexedBackground256(0);
+        _testGetSet->_expectedAttribute.SetIndexedBackground256(TextColor::DARK_BLACK);
         VERIFY_IS_TRUE(_pDispatch.get()->SetGraphicsRendition({ rgOptions, 3 }));
 
         Log::Comment(L"Test 3: Change RGB Foreground with all RGB parameters missing");
@@ -2383,7 +2359,7 @@ public:
     {
         _testGetSet->PrepData();
 
-        _testGetSet->_privateSetColorTableEntryResult = true;
+        _testGetSet->_setColorTableEntryResult = true;
         const auto testColor = RGB(1, 2, 3);
         _testGetSet->_expectedColorValue = testColor;
 
@@ -2393,7 +2369,7 @@ public:
             VERIFY_IS_TRUE(_pDispatch.get()->SetColorTableEntry(i, testColor));
         }
 
-        // Test in pty mode - we should fail, but PrivateSetColorTableEntry should still be called
+        // Test in pty mode - we should fail, but SetColorTableEntry should still be called
         _testGetSet->_isPty = true;
 
         _testGetSet->_expectedColorTableIndex = 15; // Windows BRIGHT_WHITE
@@ -2621,6 +2597,39 @@ public:
         _testGetSet->_expectedCellSize = { 6, 16 };
         const auto bitmapOf6x18 = L"??????/??????/??????";
         VERIFY_IS_TRUE(decdld(CellMatrix::Default, 0, FontSet::Size132x24, FontUsage::FullCell, bitmapOf6x18));
+    }
+
+    TEST_METHOD(TogglingC1ParserMode)
+    {
+        Log::Comment(L"1. Accept C1 controls");
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(true));
+
+        Log::Comment(L"2. Don't accept C1 controls");
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->AcceptC1Controls(false));
+
+        Log::Comment(L"3. Designate ISO-2022 coding system");
+        // Code page should be set to ISO-8859-1 and C1 parsing enabled
+        _testGetSet->_setConsoleOutputCPResult = true;
+        _testGetSet->_expectedOutputCP = 28591;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = true;
+        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::ISO2022));
+
+        Log::Comment(L"4. Designate UTF-8 coding system");
+        // Code page should be set to UTF-8 and C1 parsing disabled
+        _testGetSet->_setConsoleOutputCPResult = true;
+        _testGetSet->_expectedOutputCP = CP_UTF8;
+        _testGetSet->_setParserModeResult = true;
+        _testGetSet->_expectedParserMode = StateMachine::Mode::AcceptC1;
+        _testGetSet->_expectedParserModeEnabled = false;
+        VERIFY_IS_TRUE(_pDispatch.get()->DesignateCodingSystem(DispatchTypes::CodingSystem::UTF8));
     }
 
 private:

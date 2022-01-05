@@ -92,7 +92,9 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
 
     if (!NT_SUCCESS(Status))
     {
-        goto Error;
+        UnlockConsole();
+        pMessage->SetReplyStatus(Status);
+        return pMessage;
     }
 
     auto deviceComm{ ServiceLocator::LocateGlobals().pDeviceComm };
@@ -110,16 +112,6 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleCreateObject(_In_ PCONSOLE_API_MSG pMessa
     UnlockConsole();
 
     return nullptr;
-
-Error:
-
-    FAIL_FAST_IF(NT_SUCCESS(Status));
-
-    UnlockConsole();
-
-    pMessage->SetReplyStatus(Status);
-
-    return pMessage;
 }
 
 // Routine Description:
@@ -256,17 +248,32 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     Telemetry::Instance().LogApiCall(Telemetry::ApiCall::AttachConsole);
 
     ConsoleProcessHandle* ProcessData = nullptr;
+    NTSTATUS Status;
 
     LockConsole();
+
+    const auto cleanup = wil::scope_exit([&]() noexcept {
+        UnlockConsole();
+
+        if (!NT_SUCCESS(Status))
+        {
+            pReceiveMsg->SetReplyStatus(Status);
+            if (ProcessData != nullptr)
+            {
+                CommandHistory::s_Free(ProcessData);
+                gci.ProcessHandleList.FreeProcessData(ProcessData);
+            }
+        }
+    });
 
     DWORD const dwProcessId = (DWORD)pReceiveMsg->Descriptor.Process;
     DWORD const dwThreadId = (DWORD)pReceiveMsg->Descriptor.Object;
 
     CONSOLE_API_CONNECTINFO Cac;
-    NTSTATUS Status = ConsoleInitializeConnectInfo(pReceiveMsg, &Cac);
+    Status = ConsoleInitializeConnectInfo(pReceiveMsg, &Cac);
     if (!NT_SUCCESS(Status))
     {
-        goto Error;
+        return pReceiveMsg;
     }
 
     // If we pass the tests...
@@ -354,7 +361,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     if (!NT_SUCCESS(Status))
     {
-        goto Error;
+        return pReceiveMsg;
     }
 
     ProcessData->fRootProcess = WI_IsFlagClear(gci.Flags, CONSOLE_INITIALIZED);
@@ -376,7 +383,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         Status = ConsoleAllocateConsole(&Cac);
         if (!NT_SUCCESS(Status))
         {
-            goto Error;
+            return pReceiveMsg;
         }
 
         WI_SetFlag(gci.Flags, CONSOLE_INITIALIZED);
@@ -389,7 +396,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
     catch (...)
     {
         LOG_CAUGHT_EXCEPTION();
-        goto Error;
+        return pReceiveMsg;
     }
 
     gci.ProcessHandleList.ModifyConsoleProcessFocus(WI_IsFlagSet(gci.Flags, CONSOLE_HAS_FOCUS));
@@ -403,7 +410,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     if (!NT_SUCCESS(Status))
     {
-        goto Error;
+        return pReceiveMsg;
     }
 
     auto& screenInfo = gci.GetActiveOutputBuffer().GetMainBuffer();
@@ -414,7 +421,7 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
 
     if (!NT_SUCCESS(Status))
     {
-        goto Error;
+        return pReceiveMsg;
     }
 
     // Complete the request.
@@ -432,24 +439,9 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleHandleConnectionRequest(_In_ PCONSOLE_API
         gci.ProcessHandleList.FreeProcessData(ProcessData);
     }
 
-    UnlockConsole();
+    Tracing::s_TraceConsoleAttachDetach(ProcessData, true);
 
     return nullptr;
-
-Error:
-    FAIL_FAST_IF(NT_SUCCESS(Status));
-
-    if (ProcessData != nullptr)
-    {
-        CommandHistory::s_Free((HANDLE)ProcessData);
-        gci.ProcessHandleList.FreeProcessData(ProcessData);
-    }
-
-    UnlockConsole();
-
-    pReceiveMsg->SetReplyStatus(Status);
-
-    return pReceiveMsg;
 }
 
 // Routine Description:
@@ -469,6 +461,8 @@ PCONSOLE_API_MSG IoDispatchers::ConsoleClientDisconnectRoutine(_In_ PCONSOLE_API
     {
         pNotifier->NotifyConsoleEndApplicationEvent(pProcessData->dwProcessId);
     }
+
+    Tracing::s_TraceConsoleAttachDetach(pProcessData, false);
 
     LOG_IF_FAILED(RemoveConsole(pProcessData));
 

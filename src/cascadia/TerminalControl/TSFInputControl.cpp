@@ -1,4 +1,4 @@
-﻿// Copyright (c) Microsoft Corporation.
+// Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
 #include "pch.h"
@@ -441,7 +441,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     {
         const auto text = _inputBuffer.substr(_activeTextStart);
 
-        _compositionCompletedHandlers(text);
+        _CompositionCompletedHandlers(text);
 
         _activeTextStart = _inputBuffer.length();
 
@@ -470,6 +470,4 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TSFInputControl::_formatUpdatingHandler(CoreTextEditContext sender, CoreTextFormatUpdatingEventArgs const& /*args*/)
     {
     }
-
-    DEFINE_EVENT(TSFInputControl, CompositionCompleted, _compositionCompletedHandlers, Control::CompositionCompletedEventArgs);
 }

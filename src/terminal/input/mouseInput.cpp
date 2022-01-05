@@ -542,7 +542,7 @@ std::wstring TerminalInput::_GenerateSGRSequence(const COORD position,
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the alternate buffer is active and alternate scroll mode is enabled and the event is a mouse wheel event.
-bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const short delta) const
+bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const short delta) const noexcept
 {
     return _mouseInputState.inAlternateBuffer &&
            _inputMode.test(Mode::AlternateScroll) &&
@@ -555,7 +555,7 @@ bool TerminalInput::_ShouldSendAlternateScroll(const unsigned int button, const 
 // - delta: The scroll wheel delta of the input event
 // Return value:
 // True iff the input sequence was sent successfully.
-bool TerminalInput::_SendAlternateScroll(const short delta) const
+bool TerminalInput::_SendAlternateScroll(const short delta) const noexcept
 {
     if (delta > 0)
     {

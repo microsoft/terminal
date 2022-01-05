@@ -88,7 +88,7 @@ DxEngine::DxEngine() :
     _forceFullRepaintRendering{ false },
     _softwareRendering{ false },
     _antialiasingMode{ D2D1_TEXT_ANTIALIAS_MODE_GRAYSCALE },
-    _defaultBackgroundIsTransparent{ false },
+    _defaultBackgroundIsTransparent{ true },
     _hwndTarget{ static_cast<HWND>(INVALID_HANDLE_VALUE) },
     _sizeTarget{},
     _dpi{ USER_DEFAULT_SCREEN_DPI },
@@ -244,10 +244,11 @@ bool DxEngine::_HasTerminalEffects() const noexcept
 // Arguments:
 // Return Value:
 // - Void
-void DxEngine::ToggleShaderEffects()
+void DxEngine::ToggleShaderEffects() noexcept
 {
     _terminalEffectsEnabled = !_terminalEffectsEnabled;
     _recreateDeviceRequested = true;
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
     LOG_IF_FAILED(InvalidateAll());
 }
 
@@ -978,14 +979,14 @@ try
 }
 CATCH_RETURN();
 
-void DxEngine::SetCallback(std::function<void()> pfn)
+void DxEngine::SetCallback(std::function<void()> pfn) noexcept
 {
-    _pfn = pfn;
+    _pfn = std::move(pfn);
 }
 
-void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn)
+void DxEngine::SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept
 {
-    _pfnWarningCallback = pfn;
+    _pfnWarningCallback = std::move(pfn);
 }
 
 bool DxEngine::GetRetroTerminalEffect() const noexcept
@@ -1055,11 +1056,12 @@ try
 }
 CATCH_LOG()
 
-HANDLE DxEngine::GetSwapChainHandle()
+HANDLE DxEngine::GetSwapChainHandle() noexcept
 {
     if (!_swapChainHandle)
     {
-        THROW_IF_FAILED(_CreateDeviceResources(true));
+#pragma warning(suppress : 26447) // The function is declared 'noexcept' but calls function 'Log_IfFailed()' which may throw exceptions (f.6).
+        LOG_IF_FAILED(_CreateDeviceResources(true));
     }
 
     return _swapChainHandle.get();
@@ -1507,18 +1509,13 @@ CATCH_RETURN()
 // - See https://docs.microsoft.com/en-us/windows/uwp/gaming/reduce-latency-with-dxgi-1-3-swap-chains.
 void DxEngine::WaitUntilCanRender() noexcept
 {
-    if (!_swapChainFrameLatencyWaitableObject)
-    {
-        return;
-    }
+    // Throttle the DxEngine a bit down to ~60 FPS.
+    // This improves throughput for rendering complex or colored text.
+    Sleep(8);
 
-    const auto ret = WaitForSingleObjectEx(
-        _swapChainFrameLatencyWaitableObject.get(),
-        1000, // 1 second timeout (shouldn't ever occur)
-        true);
-    if (ret != WAIT_OBJECT_0)
+    if (_swapChainFrameLatencyWaitableObject)
     {
-        LOG_WIN32_MSG(ret, "Waiting for swap chain frame latency waitable object returned error or timeout.");
+        WaitForSingleObjectEx(_swapChainFrameLatencyWaitableObject.get(), 100, true);
     }
 }
 
@@ -1941,11 +1938,15 @@ CATCH_RETURN()
 {
     const auto [colorForeground, colorBackground] = pData->GetAttributeColors(textAttributes);
 
+    const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
+    const bool usingTransparency = _defaultBackgroundIsTransparent;
+    const bool forceOpaqueBG = usingCleartype && !usingTransparency;
+
     _foregroundColor = _ColorFFromColorRef(OPACITY_OPAQUE | colorForeground);
     // October 2021: small changes were made to the way BG color interacts with
     // grayscale AA, esp. with regards to acrylic and GH#5098. See comment in
     // _ShouldForceGrayscaleAA for more details.
-    _backgroundColor = _ColorFFromColorRef(colorBackground);
+    _backgroundColor = _ColorFFromColorRef((forceOpaqueBG ? OPACITY_OPAQUE : 0) | colorBackground);
 
     _d2dBrushForeground->SetColor(_foregroundColor);
     _d2dBrushBackground->SetColor(_backgroundColor);
@@ -2024,7 +2025,7 @@ try
 }
 CATCH_RETURN();
 
-[[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) noexcept
+[[nodiscard]] Viewport DxEngine::GetViewportInCharacters(const Viewport& viewInPixels) const noexcept
 {
     const short widthInChars = base::saturated_cast<short>(viewInPixels.Width() / _fontRenderData->GlyphCell().width());
     const short heightInChars = base::saturated_cast<short>(viewInPixels.Height() / _fontRenderData->GlyphCell().height());
@@ -2032,7 +2033,7 @@ CATCH_RETURN();
     return Viewport::FromDimensions(viewInPixels.Origin(), { widthInChars, heightInChars });
 }
 
-[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) noexcept
+[[nodiscard]] Viewport DxEngine::GetViewportInPixels(const Viewport& viewInCharacters) const noexcept
 {
     const short widthInPixels = base::saturated_cast<short>(viewInCharacters.Width() * _fontRenderData->GlyphCell().width());
     const short heightInPixels = base::saturated_cast<short>(viewInCharacters.Height() * _fontRenderData->GlyphCell().height());
@@ -2241,14 +2242,19 @@ CATCH_LOG()
 //   rendering onto a transparent surface (like acrylic), then cleartype won't
 //   work correctly, and will actually just additively blend with the
 //   background. This is here to support GH#5098.
+// - We'll use this, along with whether cleartype was requested, to manually set
+//   the alpha channel of the background brush to 1.0. We need to do that to
+//   make cleartype work without blending. However, we don't want to do that too
+//   often - if we do that on top of a transparent BG, then the entire swap
+//   chain will be fully opaque.
 // Arguments:
-// - opacity: the new opacity of our background, on [0.0f, 1.0f]
+// - isTransparent: true if our BG is transparent (acrylic, or anything that's not fully opaque)
 // Return Value:
 // - <none>
-void DxEngine::SetDefaultTextBackgroundOpacity(const bool useAcrylic) noexcept
+void DxEngine::EnableTransparentBackground(const bool isTransparent) noexcept
 try
 {
-    _defaultBackgroundIsTransparent = useAcrylic;
+    _defaultBackgroundIsTransparent = isTransparent;
 
     // Make sure we redraw all the cells, to update whether they're actually
     // drawn with cleartype or not.

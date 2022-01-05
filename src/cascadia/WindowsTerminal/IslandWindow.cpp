@@ -24,6 +24,7 @@ using namespace ::Microsoft::Console::Types;
 using VirtualKeyModifiers = winrt::Windows::System::VirtualKeyModifiers;
 
 #define XAML_HOSTING_WINDOW_CLASS_NAME L"CASCADIA_HOSTING_WINDOW_CLASS"
+#define IDM_SYSTEM_MENU_BEGIN 0x1000
 
 const UINT WM_TASKBARCREATED = RegisterWindowMessage(L"TaskbarCreated");
 
@@ -321,6 +322,8 @@ void IslandWindow::Initialize()
         }
     }
 
+    _systemMenuNextItemId = IDM_SYSTEM_MENU_BEGIN;
+
     // Enable vintage opacity by removing the XAML emergency backstop, GH#603.
     // We don't really care if this failed or not.
     TerminalTrySetTransparentBackground(true);
@@ -489,7 +492,7 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
         // If the user wants to close the app by clicking 'X' button,
         // we hand off the close experience to the app layer. If all the tabs
         // are closed, the window will be closed as well.
-        _windowCloseButtonClickedHandler();
+        _WindowCloseButtonClickedHandlers();
         return 0;
     }
     case WM_MOUSEWHEEL:
@@ -607,6 +610,20 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     {
         _NotifyNotificationIconMenuItemSelectedHandlers((HMENU)lparam, (UINT)wparam);
         return 0;
+    }
+    case WM_SYSCOMMAND:
+    {
+        if (wparam == SC_RESTORE && _fullscreen)
+        {
+            _ShouldExitFullscreenHandlers();
+            return 0;
+        }
+        auto search = _systemMenuItems.find(LOWORD(wparam));
+        if (search != _systemMenuItems.end())
+        {
+            search->second.callback();
+        }
+        break;
     }
     default:
         // We'll want to receive this message when explorer.exe restarts
@@ -1717,5 +1734,47 @@ void IslandWindow::OpenSystemMenu(const std::optional<int> mouseX, const std::op
     }
 }
 
-DEFINE_EVENT(IslandWindow, DragRegionClicked, _DragRegionClickedHandlers, winrt::delegate<>);
-DEFINE_EVENT(IslandWindow, WindowCloseButtonClicked, _windowCloseButtonClickedHandler, winrt::delegate<>);
+void IslandWindow::AddToSystemMenu(const winrt::hstring& itemLabel, winrt::delegate<void()> callback)
+{
+    const HMENU systemMenu = GetSystemMenu(_window.get(), FALSE);
+    UINT wID = _systemMenuNextItemId;
+
+    MENUITEMINFOW item;
+    item.cbSize = sizeof(MENUITEMINFOW);
+    item.fMask = MIIM_STATE | MIIM_ID | MIIM_STRING;
+    item.fState = MF_ENABLED;
+    item.wID = wID;
+    item.dwTypeData = const_cast<LPWSTR>(itemLabel.c_str());
+    item.cch = static_cast<UINT>(itemLabel.size());
+
+    if (LOG_LAST_ERROR_IF(!InsertMenuItemW(systemMenu, wID, FALSE, &item)))
+    {
+        return;
+    }
+    _systemMenuItems.insert({ wID, { itemLabel, callback } });
+    _systemMenuNextItemId++;
+}
+
+void IslandWindow::RemoveFromSystemMenu(const winrt::hstring& itemLabel)
+{
+    const HMENU systemMenu = GetSystemMenu(_window.get(), FALSE);
+    int itemCount = GetMenuItemCount(systemMenu);
+    if (LOG_LAST_ERROR_IF(itemCount == -1))
+    {
+        return;
+    }
+
+    auto it = std::find_if(_systemMenuItems.begin(), _systemMenuItems.end(), [&itemLabel](const std::pair<UINT, SystemMenuItemInfo>& elem) {
+        return elem.second.label == itemLabel;
+    });
+    if (it == _systemMenuItems.end())
+    {
+        return;
+    }
+
+    if (LOG_LAST_ERROR_IF(!DeleteMenu(systemMenu, it->first, MF_BYCOMMAND)))
+    {
+        return;
+    }
+    _systemMenuItems.erase(it->first);
+}

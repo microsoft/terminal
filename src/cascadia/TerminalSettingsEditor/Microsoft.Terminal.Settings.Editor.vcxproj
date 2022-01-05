@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <!--
     We're explicitly telling our references to be non-private so that they won't
@@ -71,6 +71,10 @@
     </ClInclude>
     <ClInclude Include="Profiles.h">
       <DependentUpon>Profiles.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </ClInclude>
+    <ClInclude Include="ProfileViewModel.h">
+      <DependentUpon>ProfileViewModel.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="Appearances.h">
@@ -167,6 +171,10 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
+    <ClCompile Include="ProfileViewModel.cpp">
+      <DependentUpon>ProfileViewModel.idl</DependentUpon>
+      <SubType>Code</SubType>
+    </ClCompile>
     <ClCompile Include="Appearances.cpp">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -225,6 +233,7 @@
       <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
+    <Midl Include="ProfileViewModel.idl" />
     <Midl Include="Appearances.idl">
       <DependentUpon>Appearances.xaml</DependentUpon>
       <SubType>Code</SubType>

@@ -1,4 +1,4 @@
-﻿using GUIConsole.ConPTY;
+using GUIConsole.ConPTY;
 using System;
 using System.IO;
 using System.Linq;

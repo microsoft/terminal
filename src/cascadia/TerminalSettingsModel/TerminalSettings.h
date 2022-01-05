@@ -17,7 +17,6 @@ Author(s):
 #include "TerminalSettings.g.h"
 #include "TerminalSettingsCreateResult.g.h"
 #include "IInheritable.h"
-#include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
@@ -63,10 +62,6 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         static Model::TerminalSettingsCreateResult CreateWithNewTerminalArgs(const Model::CascadiaSettings& appSettings,
                                                                              const Model::NewTerminalArgs& newTerminalArgs,
                                                                              const Control::IKeyBindings& keybindings);
-
-        Model::TerminalSettings GetParent();
-
-        void SetParent(const Model::TerminalSettings& parent);
 
         void ApplyColorScheme(const Model::ColorScheme& scheme);
 
@@ -116,6 +111,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         // ------------------------ End of Core Settings -----------------------
 
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileName);
+        INHERITABLE_SETTING(Model::TerminalSettings, hstring, ProfileSource);
+
         INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAcrylic, false);
         INHERITABLE_SETTING(Model::TerminalSettings, double, Opacity, UseAcrylic() ? 0.5 : 1.0);
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, Padding, DEFAULT_PADDING);
@@ -143,6 +140,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         INHERITABLE_SETTING(Model::TerminalSettings, hstring, EnvironmentVariables);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::ScrollbarState, ScrollState, Microsoft::Terminal::Control::ScrollbarState::Visible);
+        INHERITABLE_SETTING(Model::TerminalSettings, bool, UseAtlasEngine, false);
 
         INHERITABLE_SETTING(Model::TerminalSettings, Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 

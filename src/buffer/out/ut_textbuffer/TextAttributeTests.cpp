@@ -24,9 +24,11 @@ class TextAttributeTests
     TEST_METHOD(TestRoundtripDefaultColors);
     TEST_METHOD(TestBoldAsBright);
 
-    std::array<COLORREF, 256> _colorTable;
-    COLORREF _defaultFg = RGB(1, 2, 3);
-    COLORREF _defaultBg = RGB(4, 5, 6);
+    std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
+    const COLORREF _defaultFg = RGB(1, 2, 3);
+    const COLORREF _defaultBg = RGB(4, 5, 6);
+    const size_t _defaultFgIndex = TextColor::DEFAULT_FOREGROUND;
+    const size_t _defaultBgIndex = TextColor::DEFAULT_BACKGROUND;
 };
 
 bool TextAttributeTests::ClassSetup()
@@ -47,6 +49,8 @@ bool TextAttributeTests::ClassSetup()
     _colorTable[13] = RGB(180, 0, 158); // Bright Magenta
     _colorTable[14] = RGB(249, 241, 165); // Bright Yellow
     _colorTable[15] = RGB(242, 242, 242); // White
+    _colorTable[_defaultFgIndex] = _defaultFg;
+    _colorTable[_defaultBgIndex] = _defaultBg;
     return true;
 }
 
@@ -132,17 +136,17 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     //      values when reverse video is not set
     VERIFY_IS_FALSE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(red, green), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(red, green), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     // with reverse video set, calculated foreground/background values should be
     //      switched while getters stay the same
     attr.SetReverseVideo(true);
 
-    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(green, red), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(green, red), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     // reset the reverse video
     attr.SetReverseVideo(false);
@@ -151,17 +155,17 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     //      while the background and getters stay the same
     attr.SetFaint(true);
 
-    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(faintRed, green), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(faintRed, green), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     // with reverse video set, calculated foreground/background values should be
     //      switched, and the background fainter, while getters stay the same
     attr.SetReverseVideo(true);
 
-    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(green, faintRed), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(green, faintRed), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     // reset the reverse video and faint attributes
     attr.SetReverseVideo(false);
@@ -171,17 +175,17 @@ void TextAttributeTests::TestTextAttributeColorGetters()
     //       background, while getters stay the same
     attr.SetInvisible(true);
 
-    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(green, green), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(green, green), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     // with reverse video set, the calculated background value should match
     //      the foreground, while getters stay the same
     attr.SetReverseVideo(true);
 
-    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(red, red), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(red, red), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 }
 
 void TextAttributeTests::TestReverseDefaultColors()
@@ -194,34 +198,34 @@ void TextAttributeTests::TestReverseDefaultColors()
     //      values when reverse video is not set
     VERIFY_IS_FALSE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     // with reverse video set, calculated foreground/background values should be
     //      switched while getters stay the same
     attr.SetReverseVideo(true);
     VERIFY_IS_TRUE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultBg, _defaultFg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultBg, _defaultFg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     attr.SetForeground(red);
     VERIFY_IS_TRUE(attr.IsReverseVideo());
 
-    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultBg, red), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(red, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultBg, red), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 
     attr.Invert();
     VERIFY_IS_FALSE(attr.IsReverseVideo());
     attr.SetDefaultForeground();
     attr.SetBackground(green);
 
-    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, green), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(green, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, green), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex));
 }
 
 void TextAttributeTests::TestRoundtripDefaultColors()
@@ -237,7 +241,7 @@ void TextAttributeTests::TestRoundtripDefaultColors()
     Log::Comment(L"Foreground legacy default index should map to default text color.");
     legacyAttribute = fgLegacyDefault | BACKGROUND_GREEN;
     textAttribute.SetDefaultForeground();
-    textAttribute.SetIndexedBackground256(BACKGROUND_GREEN >> 4);
+    textAttribute.SetIndexedBackground256(TextColor::DARK_GREEN);
     VERIFY_ARE_EQUAL(textAttribute, TextAttribute{ legacyAttribute });
 
     Log::Comment(L"Default foreground text color should map back to legacy default index.");
@@ -245,7 +249,7 @@ void TextAttributeTests::TestRoundtripDefaultColors()
 
     Log::Comment(L"Background legacy default index should map to default text color.");
     legacyAttribute = FOREGROUND_GREEN | bgLegacyDefault;
-    textAttribute.SetIndexedForeground256(FOREGROUND_GREEN);
+    textAttribute.SetIndexedForeground256(TextColor::DARK_GREEN);
     textAttribute.SetDefaultBackground();
     VERIFY_ARE_EQUAL(textAttribute, TextAttribute{ legacyAttribute });
 
@@ -277,43 +281,43 @@ void TextAttributeTests::TestBoldAsBright()
     //      values when not bold
     VERIFY_IS_FALSE(attr.IsBold());
 
-    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFg));
-    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBg));
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+    VERIFY_ARE_EQUAL(_defaultFg, attr.GetForeground().GetColor(_colorTable, _defaultFgIndex));
+    VERIFY_ARE_EQUAL(_defaultBg, attr.GetBackground().GetColor(_colorTable, _defaultBgIndex));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, false));
 
     // with bold set, calculated foreground/background values shouldn't change for the default colors.
     attr.SetBold(true);
     VERIFY_IS_TRUE(attr.IsBold());
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
-    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(_defaultFg, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, false));
 
-    attr.SetIndexedForeground(0);
+    attr.SetIndexedForeground(TextColor::DARK_BLACK);
     VERIFY_IS_TRUE(attr.IsBold());
 
     Log::Comment(L"Foreground should be bright black when bold is bright is enabled");
-    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, true));
 
     Log::Comment(L"Foreground should be dark black when bold is bright is disabled");
-    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, _defaultBg), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, false));
 
-    attr.SetIndexedBackground(2);
+    attr.SetIndexedBackground(TextColor::DARK_GREEN);
     VERIFY_IS_TRUE(attr.IsBold());
 
     Log::Comment(L"background should be unaffected by 'bold is bright'");
-    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
-    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, false));
 
     attr.SetBold(false);
     VERIFY_IS_FALSE(attr.IsBold());
     Log::Comment(L"when not bold, 'bold is bright' changes nothing");
-    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
-    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(darkBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, false));
 
     Log::Comment(L"When set to a bright color, and bold, 'bold is bright' changes nothing");
     attr.SetBold(true);
-    attr.SetIndexedForeground(8);
+    attr.SetIndexedForeground(TextColor::BRIGHT_BLACK);
     VERIFY_IS_TRUE(attr.IsBold());
-    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, true));
-    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFg, _defaultBg, false, false, false));
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, true));
+    VERIFY_ARE_EQUAL(std::make_pair(brightBlack, darkGreen), attr.CalculateRgbColors(_colorTable, _defaultFgIndex, _defaultBgIndex, false, false, false));
 }

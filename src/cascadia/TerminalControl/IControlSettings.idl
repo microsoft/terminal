@@ -28,9 +28,12 @@ namespace Microsoft.Terminal.Control
                                Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
+        String ProfileSource;
 
         Boolean UseAcrylic { get; };
         ScrollbarState ScrollState { get; };
+
+        Boolean UseAtlasEngine { get; };
 
         String FontFace { get; };
         Int32 FontSize { get; };

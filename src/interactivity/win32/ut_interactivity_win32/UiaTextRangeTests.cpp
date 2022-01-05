@@ -315,7 +315,7 @@ class UiaTextRangeTests
         short yPos;
     };
 
-    static constexpr wchar_t* toString(TextUnit unit) noexcept
+    static constexpr const wchar_t* toString(TextUnit unit) noexcept
     {
         // if a format is not supported, it goes to the next largest text unit
         switch (unit)
@@ -735,7 +735,6 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveByCharacter)
     {
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().RightInclusive();
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -824,7 +823,6 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveByLine)
     {
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -913,7 +911,6 @@ class UiaTextRangeTests
     TEST_METHOD(CanMoveEndpointByUnitCharacter)
     {
         const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
-        const SHORT bottomRow = static_cast<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
         //          instead of parsing through thousands of empty lines of text.
@@ -1197,7 +1194,6 @@ class UiaTextRangeTests
 
     TEST_METHOD(CanMoveEndpointByUnitDocument)
     {
-        const SHORT lastColumnIndex = _pScreenInfo->GetBufferSize().Width() - 1;
         const SHORT bottomRow = gsl::narrow<SHORT>(_pTextBuffer->TotalRowCount() - 1);
 
         // GH#6986: This is used as the "end of the buffer" to help screen readers run faster
@@ -1372,17 +1368,17 @@ class UiaTextRangeTests
         Log::Comment(NoThrowString().Format(L"Forward by %s", toString(textUnit)));
 
         // Create an UTR at EndExclusive
-        const auto utrEnd{ atDocumentEnd ? documentEndExclusive : endExclusive };
+        const auto utrEnd{ atDocumentEnd ? documentEndExclusive : static_cast<COORD>(endExclusive) };
         if (degenerate)
         {
             // UTR: (exclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndExclusive : endExclusive };
+            const auto utrStart{ atDocumentEnd ? documentEndExclusive : static_cast<COORD>(endExclusive) };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
         else
         {
             // UTR: (inclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndInclusive : endInclusive };
+            const auto utrStart{ atDocumentEnd ? documentEndInclusive : static_cast<COORD>(endInclusive) };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
         THROW_IF_FAILED(utr->Move(textUnit, 1, &moveAmt));
@@ -1418,13 +1414,13 @@ class UiaTextRangeTests
         if (degenerate)
         {
             // UTR: (exclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndExclusive : endExclusive };
+            const auto utrStart{ atDocumentEnd ? documentEndExclusive : static_cast<COORD>(endExclusive) };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
         else
         {
             // UTR: (inclusive, exclusive) range
-            const auto utrStart{ atDocumentEnd ? documentEndInclusive : endInclusive };
+            const auto utrStart{ atDocumentEnd ? documentEndInclusive : static_cast<COORD>(endInclusive) };
             THROW_IF_FAILED(Microsoft::WRL::MakeAndInitialize<UiaTextRange>(&utr, _pUiaData, &_dummyProvider, utrStart, utrEnd));
         }
 
@@ -1451,14 +1447,14 @@ class UiaTextRangeTests
         else if (textUnit <= TextUnit::TextUnit_Line)
         {
             VERIFY_ARE_EQUAL(-1, moveAmt);
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? lastLineStart : secondToLastLinePos, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(lastLineStart, til::point{ utr->_end });
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? til::point{ lastLineStart } : secondToLastLinePos, til::point{ utr->_start });
+            VERIFY_ARE_EQUAL(lastLineStart, utr->_end);
         }
         else // textUnit <= TextUnit::TextUnit_Document:
         {
             VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? -1 : 0, moveAmt);
             VERIFY_ARE_EQUAL(origin, til::point{ utr->_start });
-            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? origin : documentEndExclusive, til::point{ utr->_end });
+            VERIFY_ARE_EQUAL(degenerate || !atDocumentEnd ? origin : til::point{ documentEndExclusive }, til::point{ utr->_end });
         }
     }
 
