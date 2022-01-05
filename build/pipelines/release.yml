@@ -124,6 +124,8 @@ jobs:
       resourceFilePath: >-
         src\cascadia\TerminalApp\Resources\en-US\Resources.resw
 
+        src\cascadia\TerminalApp\Resources\en-US\ContextMenu.resw
+
         src\cascadia\TerminalControl\Resources\en-US\Resources.resw
 
         src\cascadia\TerminalConnection\Resources\en-US\Resources.resw
