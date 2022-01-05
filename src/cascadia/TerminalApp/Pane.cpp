@@ -85,7 +85,7 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
                 // App itself.
                 //
                 // We have to do this because there's some bug in the OS with
-                // the way a MediaPlayer gets torn down. At time fo writing (Nov
+                // the way a MediaPlayer gets torn down. At time of writing (Nov
                 // 2021), if you search for `remove_SoundLevelChanged` in the OS
                 // repo, you'll find a pile of bugs.
                 //
