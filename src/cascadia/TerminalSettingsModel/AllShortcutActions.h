@@ -80,6 +80,7 @@
     ON_ALL_ACTIONS(QuakeMode)              \
     ON_ALL_ACTIONS(FocusPane)              \
     ON_ALL_ACTIONS(OpenSystemMenu)         \
+    ON_ALL_ACTIONS(ExportBuffer)           \
     ON_ALL_ACTIONS(ClearBuffer)            \
     ON_ALL_ACTIONS(MultipleActions)        \
     ON_ALL_ACTIONS(Quit)
@@ -114,5 +115,6 @@
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \
     ON_ALL_ACTIONS_WITH_ARGS(FocusPane)            \
+    ON_ALL_ACTIONS_WITH_ARGS(ExportBuffer)         \
     ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
     ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)
