@@ -388,6 +388,14 @@ namespace winrt::TerminalApp::implementation
                         THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
                     });
                 }
+                else
+                {
+                    // The file picker isn't going to give us paths with
+                    // environment variables, but the user might have set one in
+                    // the settings. Expand those here.
+
+                    path = { wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+                }
 
                 if (!path.empty())
                 {
