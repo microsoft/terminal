@@ -1243,7 +1243,7 @@
             "path": {
               "type": "string",
               "default": "",
-              "description": "The path to export the text buffer to. If left blank, the Terminal will open a file pisker to choose the path."
+              "description": "The path to export the text buffer to. If left blank, the Terminal will open a file picker to choose the path."
             }
           }
         }
