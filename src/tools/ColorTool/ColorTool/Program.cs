@@ -4,6 +4,7 @@
 //
 
 using ColorTool.ConsoleTargets;
+using static ColorTool.ConsoleAPI;
 using ColorTool.SchemeWriters;
 using System;
 using System.Collections.Generic;
@@ -103,7 +104,20 @@ namespace ColorTool
             }
             if (printCurrent)
             {
-                if (setUnixStyle) ColorTable.PrintTableWithVt(compactTableStyle);
+                if (setUnixStyle)
+                {
+                    IntPtr hOut = GetStdOutputHandle();
+                    uint originalMode;
+                    uint requestedMode;
+                    bool succeeded = GetConsoleMode(hOut, out originalMode);
+                    if (succeeded)
+                    {
+                        requestedMode = originalMode | (uint)ConsoleAPI.ConsoleOutputModes.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                        SetConsoleMode(hOut, requestedMode);
+                    }
+                    ColorTable.PrintTableWithVt(compactTableStyle);
+                    if (succeeded) SetConsoleMode(hOut, originalMode);
+                }
                 else ColorTable.PrintTable(compactTableStyle);
                 return;
             }
