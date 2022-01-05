@@ -114,8 +114,6 @@ namespace winrt::TerminalApp::implementation
 
     void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
     {
-        // if (const auto& scheme{ _settings.GlobalSettings().ColorSchemes().TryLookup(args.SchemeName()) })
-        // {
         // Clear the saved preview funcs because we don't need to add a restore each time
         // the preview color changes, we only need to be able to restore the last one.
         _restorePreviewFuncs.clear();
@@ -133,7 +131,6 @@ namespace winrt::TerminalApp::implementation
                 control.AdjustOpacity(::base::saturated_cast<int>(originalOpacity * 100), false);
             });
         });
-        // }
     }
 
     // Method Description:

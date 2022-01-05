@@ -337,6 +337,7 @@
         "toggleShaderEffects",
         "wt",
         "quit",
+        "adjustOpacity",
         "unbound"
       ],
       "type": "string"
@@ -1264,6 +1265,34 @@
         }
       ]
     },
+    "AdjustOpacityAction": {
+      "description": "Changes the opacity of the active Terminal window. If `relative` is specified, then this action will increase/decrease relative to the current opacity.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "adjustOpacity"
+            },
+            "opacity": {
+              "type": "integer",
+              "minimum": -100,
+              "maximum": 100,
+              "default": 0,
+              "description": "How opaque the terminal should become or how much the opacity should be changed by, depending on the value of `relative`"
+            },
+            "opacity": {
+              "type": "boolean",
+              "default": false,
+              "description": "If true, then adjust the current opacity by the given `opacity` parameter. If false, set the opacity to exactly that value."
+            }
+          }
+        }
+      ]
+    },
     "Keybinding": {
       "additionalProperties": false,
       "properties": {
@@ -1365,6 +1394,9 @@
             },
             {
               "$ref": "#/$defs/QuakeModeAction"
+            },
+            {
+              "$ref": "#/$defs/AdjustOpacityAction"
             },
             {
               "type": "null"
