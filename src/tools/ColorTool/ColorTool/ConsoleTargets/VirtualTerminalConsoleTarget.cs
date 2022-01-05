@@ -36,7 +36,7 @@ namespace ColorTool.ConsoleTargets
             8+7, // Bright White
         };
 
-        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
+        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode, bool compactColortable)
         {
             IntPtr hOut = GetStdOutputHandle();
             uint originalMode;
@@ -57,7 +57,7 @@ namespace ColorTool.ConsoleTargets
             }
             if (!quietMode)
             {
-                ColorTable.PrintTableWithVt();
+                ColorTable.PrintTableWithVt(compactColortable);
             }
 
             if (succeeded)

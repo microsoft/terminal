@@ -10,6 +10,6 @@ namespace ColorTool.ConsoleTargets
     /// </summary>
     interface IConsoleTarget
     {
-        void ApplyColorScheme(ColorScheme colorScheme, bool quietMode);
+        void ApplyColorScheme(ColorScheme colorScheme, bool quietMode, bool compactColortable);
     }
 }
