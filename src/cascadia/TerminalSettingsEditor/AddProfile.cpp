@@ -43,7 +43,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void AddProfile::ProfilesSelectionChanged(const IInspectable& /*sender*/,
                                               const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
     {
-        if (!IsProfileSelected())
+        if (!_IsProfileSelected)
         {
             IsProfileSelected(true);
         }
