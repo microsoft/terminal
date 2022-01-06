@@ -1068,8 +1068,8 @@ winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
     {
         if (s_bellPlayer)
         {
-            auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
-            auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+            const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+            const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
             s_bellPlayer.Source(item);
             s_bellPlayer.Play();
         }
