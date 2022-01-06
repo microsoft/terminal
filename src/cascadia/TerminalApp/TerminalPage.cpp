@@ -1483,18 +1483,9 @@ namespace winrt::TerminalApp::implementation
         layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
 
         LaunchMode mode = LaunchMode::DefaultMode;
-        if (_isFullscreen)
-        {
-            mode = WI_SetFlag(mode, LaunchMode::FullscreenMode);
-        }
-        if (_isInFocusMode)
-        {
-            mode = WI_SetFlag(mode, LaunchMode::FocusMode);
-        }
-        if (_isMaximized)
-        {
-            mode = WI_SetFlag(mode, LaunchMode::MaximizedMode);
-        }
+        WI_SetFlagIf(mode, LaunchMode::FullscreenMode, _isFullscreen);
+        WI_SetFlagIf(mode, LaunchMode::FocusMode, _isInFocusMode);
+        WI_SetFlagIf(mode, LaunchMode::MaximizedMode, _isMaximized);
 
         layout.LaunchMode({ mode });
 
@@ -2874,11 +2865,15 @@ namespace winrt::TerminalApp::implementation
         _FullscreenChangedHandlers(*this, nullptr);
     }
 
+    // Method Description:
+    // - Updates the page's state for isMaximized when the window changes externally.
     void TerminalPage::Maximized(bool newMaximized)
     {
         _isMaximized = newMaximized;
     }
 
+    // Method Description:
+    // - Asks the window to change its maximized state.
     void TerminalPage::RequestSetMaximized(bool newMaximized)
     {
         if (_isMaximized == newMaximized)
