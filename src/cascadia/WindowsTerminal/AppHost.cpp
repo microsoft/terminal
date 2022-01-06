@@ -348,7 +348,7 @@ void AppHost::Initialize()
     _window->SetContent(_logic.GetRoot());
     _window->OnAppInitialized();
 
-    // THIS IS A HACK
+    // BODGY
     //
     // We've got a weird crash that happens terribly inconsistently, but pretty
     // readily on migrie's laptop, only in Debug mode. Apparently, there's some
