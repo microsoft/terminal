@@ -647,8 +647,23 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                     // Tilde followed by non-space should be okay (like, wsl -d Debian ~/blah.sh)
                 }
 
+                // GH#11994 - If the path starts with //wsl$, then the user is
+                // likely passing a Windows-style path to the WSL filesystem,
+                // but with forward slashes instead of backslashes.
+                // Unfortunately, `wsl --cd` will try to treat this as a
+                // linux-relative path, which will fail to do the expected
+                // thing.
+                //
+                // In that case, manually mangle the startingDirectory to use
+                // backslashes as the path separator instead.
+                std::wstring mangledDirectory{ startingDirectory };
+                if (til::starts_with(mangledDirectory, L"//wsl$"))
+                {
+                    mangledDirectory = std::filesystem::path{ startingDirectory }.make_preferred().wstring();
+                }
+
                 return {
-                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), startingDirectory, arguments),
+                    fmt::format(LR"("{}" --cd "{}" {})", executablePath.wstring(), mangledDirectory, arguments),
                     std::wstring{}
                 };
             }
