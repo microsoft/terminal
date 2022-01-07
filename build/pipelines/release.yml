@@ -138,8 +138,6 @@ jobs:
 
         src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
 
-        src\cascadia\WindowsTerminalUniversal\Resources\en-US\Resources.resw
-
         src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
       appendRelativeDir: true
       localizationTarget: false
@@ -302,11 +300,6 @@ jobs:
       inputs:
         filePath: build\scripts\Create-AppxBundle.ps1
         arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName CascadiaPackage -BundleVersion 0.0.0.0 -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
-    - task: PowerShell@2
-      displayName: Create WindowsTerminalUniversal*.msixbundle
-      inputs:
-        filePath: build\scripts\Create-AppxBundle.ps1
-        arguments: -InputPath "$(System.ArtifactsDirectory)" -ProjectName WindowsTerminalUniversal -BundleVersion $(XES_APPXMANIFESTVERSION) -OutputPath "$(System.ArtifactsDirectory)\Microsoft.WindowsTerminalUniversal_$(XES_APPXMANIFESTVERSION)_8wekyb3d8bbwe.msixbundle"
     - task: EsrpCodeSigning@1
       displayName: Submit *.msixbundle to ESRP for code signing
       inputs:

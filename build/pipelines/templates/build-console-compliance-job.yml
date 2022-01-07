@@ -75,8 +75,6 @@ jobs:
 
         src\cascadia\TerminalSettingsEditor\Resources\en-US\Resources.resw
 
-        src\cascadia\WindowsTerminalUniversal\Resources\en-US\Resources.resw
-
         src\cascadia\CascadiaPackage\Resources\en-US\Resources.resw
       appendRelativeDir: true
       localizationTarget: false
