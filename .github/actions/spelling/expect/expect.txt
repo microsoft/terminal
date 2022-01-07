@@ -1162,7 +1162,6 @@ IRaw
 IRead
 IReference
 IRender
-IRenderer
 IScheme
 ISelection
 IShell
@@ -1590,6 +1589,7 @@ NOTSUPPORTED
 nouicompat
 nounihan
 NOUPDATE
+novtable
 NOWAIT
 NOYIELD
 NOZORDER
