@@ -64,13 +64,6 @@ public:
     static TextAttribute StripErroneousVT16VersionsOfLegacyDefaults(const TextAttribute& attribute) noexcept;
     WORD GetLegacyAttributes() const noexcept;
 
-    std::pair<COLORREF, COLORREF> CalculateRgbColors(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable,
-                                                     const size_t defaultFgIndex,
-                                                     const size_t defaultBgIndex,
-                                                     const bool reverseScreenMode = false,
-                                                     const bool blinkingIsFaint = false,
-                                                     const bool boldIsBright = true) const noexcept;
-
     bool IsLeadingByte() const noexcept;
     bool IsTrailingByte() const noexcept;
     bool IsTopHorizontalDisplayed() const noexcept;
