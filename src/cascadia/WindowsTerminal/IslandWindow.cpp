@@ -156,7 +156,7 @@ void IslandWindow::_HandleCreateWindow(const WPARAM, const LPARAM lParam) noexce
     }
 
     int nCmdShow = SW_SHOW;
-    if (launchMode == LaunchMode::MaximizedMode || launchMode == LaunchMode::MaximizedFocusMode)
+    if (WI_IsFlagSet(launchMode, LaunchMode::MaximizedMode))
     {
         nCmdShow = SW_MAXIMIZE;
     }
@@ -471,6 +471,11 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_SIZE:
     {
+        if (wparam == SIZE_RESTORED || wparam == SIZE_MAXIMIZED)
+        {
+            _MaximizeChangedHandlers(wparam == SIZE_MAXIMIZED);
+        }
+
         if (wparam == SIZE_MINIMIZED && _isQuakeWindow)
         {
             ShowWindow(GetHandle(), SW_HIDE);
@@ -613,6 +618,13 @@ long IslandWindow::_calculateTotalSize(const bool isWidth, const long clientSize
     }
     case WM_SYSCOMMAND:
     {
+        // the low 4 bits contain additional information (that we don't care about)
+        auto highBits = wparam & 0xFFF0;
+        if (highBits == SC_RESTORE || highBits == SC_MAXIMIZE)
+        {
+            _MaximizeChangedHandlers(highBits == SC_MAXIMIZE);
+        }
+
         if (wparam == SC_RESTORE && _fullscreen)
         {
             _ShouldExitFullscreenHandlers();
