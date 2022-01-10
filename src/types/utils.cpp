@@ -657,7 +657,7 @@ std::tuple<std::wstring, std::wstring> Utils::MangleStartingDirectoryForWSL(std:
                 // In that case, manually mangle the startingDirectory to use
                 // backslashes as the path separator instead.
                 std::wstring mangledDirectory{ startingDirectory };
-                if (til::starts_with(mangledDirectory, L"//wsl$"))
+                if (til::starts_with(mangledDirectory, L"//wsl$") || til::starts_with(mangledDirectory, L"//wsl.localhost"))
                 {
                     mangledDirectory = std::filesystem::path{ startingDirectory }.make_preferred().wstring();
                 }
