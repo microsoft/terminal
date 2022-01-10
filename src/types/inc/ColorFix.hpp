@@ -21,7 +21,7 @@ Author(s):
 struct ColorFix
 {
 public:
-    ColorFix(COLORREF color);
+    ColorFix(COLORREF color) noexcept;
 
     static COLORREF GetPerceivableColor(COLORREF fg, COLORREF bg);
 
@@ -42,8 +42,8 @@ public:
     };
 
 private:
-    static double _GetHPrimeFn(double x, double y);
-    static double _GetDeltaE(ColorFix x1, ColorFix x2);
-    void _ToLab();
+    static double _GetHPrimeFn(double x, double y) noexcept;
+    static double _GetDeltaE(ColorFix x1, ColorFix x2) noexcept;
+    void _ToLab() noexcept;
     void _ToRGB();
 };
