@@ -15,6 +15,11 @@ Author(s):
 --*/
 #pragma once
 
+namespace Microsoft::Console::VirtualTerminal
+{
+    class ConGetSet;
+}
+
 namespace Microsoft::Console
 {
     class PtySignalInputThread final

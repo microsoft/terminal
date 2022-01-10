@@ -414,8 +414,26 @@
     <value>Toggle focus mode</value>
     <comment>"Focus mode" is a mode with minimal UI elements, for a distraction-free experience</comment>
   </data>
+  <data name="EnableFocusModeCommandKey" xml:space="preserve">
+    <value>Enable focus mode</value>
+  </data>
+  <data name="DisableFocusModeCommandKey" xml:space="preserve">
+    <value>Disable focus mode</value>
+  </data>
   <data name="ToggleFullscreenCommandKey" xml:space="preserve">
     <value>Toggle fullscreen</value>
+  </data>
+  <data name="EnableFullScreenCommandKey" xml:space="preserve">
+    <value>Enable fullscreen</value>
+  </data>
+  <data name="DisableFullScreenCommandKey" xml:space="preserve">
+    <value>Disable fullscreen</value>
+  </data>
+  <data name="EnableMaximizedCommandKey" xml:space="preserve">
+    <value>Maximize window</value>
+  </data>
+  <data name="DisableMaximizedCommandKey" xml:space="preserve">
+    <value>Restore maximized window</value>
   </data>
   <data name="ToggleSplitOrientationCommandKey" xml:space="preserve">
     <value>Toggle pane split orientation</value>

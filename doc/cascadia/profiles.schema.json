@@ -330,7 +330,10 @@
         "tabSearch",
         "toggleAlwaysOnTop",
         "toggleFocusMode",
+        "setFocusMode",
         "toggleFullscreen",
+        "setFullScreen",
+        "setMaximized",
         "togglePaneZoom",
         "toggleSplitOrientation",
         "toggleReadOnlyMode",
@@ -822,6 +825,66 @@
       "required": [
         "colorScheme"
       ]
+    },
+    "SetFocusModeAction": {
+      "description": "Arguments for a setFocusMode action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFocusMode"
+            },
+            "isFocusMode": {
+              "type": "boolean",
+              "description": "whether focus mode is enabled"
+            }
+          }
+        }
+      ],
+    },
+    "SetFullScreenAction": {
+      "description": "Arguments for a setFullScreen action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFullScreen"
+            },
+            "isFullScreen": {
+              "type": "boolean",
+              "description": "whether the window should be full screen"
+            }
+          }
+        }
+      ],
+    },
+    "SetMaximizedAction": {
+      "description": "Arguments for a setMaximized action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setMaximized"
+            },
+            "isMaximized": {
+              "type": "boolean",
+              "description": "whether the window should be maximized"
+            }
+          }
+        }
+      ],
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",

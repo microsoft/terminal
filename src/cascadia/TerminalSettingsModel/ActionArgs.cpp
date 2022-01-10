@@ -18,6 +18,9 @@
 #include "SendInputArgs.g.cpp"
 #include "SplitPaneArgs.g.cpp"
 #include "OpenSettingsArgs.g.cpp"
+#include "SetFocusModeArgs.g.cpp"
+#include "SetFullScreenArgs.g.cpp"
+#include "SetMaximizedArgs.g.cpp"
 #include "SetColorSchemeArgs.g.cpp"
 #include "SetTabColorArgs.g.cpp"
 #include "RenameTabArgs.g.cpp"
@@ -453,6 +456,33 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
         default:
             return RS_(L"OpenSettingsUICommandKey");
         }
+    }
+
+    winrt::hstring SetFocusModeArgs::GenerateName() const
+    {
+        if (IsFocusMode())
+        {
+            return RS_(L"EnableFocusModeCommandKey");
+        }
+        return RS_(L"DisableFocusModeCommandKey");
+    }
+
+    winrt::hstring SetFullScreenArgs::GenerateName() const
+    {
+        if (IsFullScreen())
+        {
+            return RS_(L"EnableFullScreenCommandKey");
+        }
+        return RS_(L"DisableFullScreenCommandKey");
+    }
+
+    winrt::hstring SetMaximizedArgs::GenerateName() const
+    {
+        if (IsMaximized())
+        {
+            return RS_(L"EnableMaximizedCommandKey");
+        }
+        return RS_(L"DisableMaximizedCommandKey");
     }
 
     winrt::hstring SetColorSchemeArgs::GenerateName() const

@@ -18,6 +18,9 @@
 #include "SendInputArgs.g.h"
 #include "SplitPaneArgs.g.h"
 #include "OpenSettingsArgs.g.h"
+#include "SetFocusModeArgs.g.h"
+#include "SetFullScreenArgs.g.h"
+#include "SetMaximizedArgs.g.h"
 #include "SetColorSchemeArgs.g.h"
 #include "SetTabColorArgs.g.h"
 #include "RenameTabArgs.g.h"
@@ -118,6 +121,22 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define OPEN_SETTINGS_ARGS(X) \
     X(SettingsTarget, Target, "target", false, SettingsTarget::SettingsFile)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_FOCUS_MODE_ARGS(X) \
+    X(bool, IsFocusMode, "isFocusMode", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_MAXIMIZED_ARGS(X) \
+    X(bool, IsMaximized, "isMaximized", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_FULL_SCREEN_ARGS(X) \
+    X(bool, IsFullScreen, "isFullScreen", false, false)
+
+////////////////////////////////////////////////////////////////////////////////
+#define SET_MAXIMIZED_ARGS(X) \
+    X(bool, IsMaximized, "isMaximized", false, false)
 
 ////////////////////////////////////////////////////////////////////////////////
 #define SET_COLOR_SCHEME_ARGS(X) \
@@ -549,6 +568,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(OpenSettingsArgs, OPEN_SETTINGS_ARGS);
 
+    ACTION_ARGS_STRUCT(SetFocusModeArgs, SET_FOCUS_MODE_ARGS);
+
+    ACTION_ARGS_STRUCT(SetFullScreenArgs, SET_FULL_SCREEN_ARGS);
+
+    ACTION_ARGS_STRUCT(SetMaximizedArgs, SET_MAXIMIZED_ARGS);
+
     ACTION_ARGS_STRUCT(SetColorSchemeArgs, SET_COLOR_SCHEME_ARGS);
 
     ACTION_ARGS_STRUCT(SetTabColorArgs, SET_TAB_COLOR_ARGS);
@@ -662,8 +687,12 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(MoveFocusArgs);
     BASIC_FACTORY(MovePaneArgs);
     BASIC_FACTORY(SetTabColorArgs);
+    BASIC_FACTORY(RenameTabArgs);
     BASIC_FACTORY(SwapPaneArgs);
     BASIC_FACTORY(SplitPaneArgs);
+    BASIC_FACTORY(SetFocusModeArgs);
+    BASIC_FACTORY(SetFullScreenArgs);
+    BASIC_FACTORY(SetMaximizedArgs);
     BASIC_FACTORY(SetColorSchemeArgs);
     BASIC_FACTORY(RenameWindowArgs);
     BASIC_FACTORY(ExecuteCommandlineArgs);

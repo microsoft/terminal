@@ -1,5 +1,9 @@
 # Terminal 2.0 Roadmap
 
+> **NOTE**
+>
+> This document has been superseded by the [Terminal 2022 Roadmap]. Please refer to that document for the updated roadmap.
+
 ## Overview
 
 This document outlines the roadmap towards delivering Windows Terminal 2.0.
@@ -32,8 +36,6 @@ Below is the schedule for when milestones will be included in release builds of 
 | 2021-07-14 | [1.10] in Windows Terminal Preview<br>[1.9] in Windows Terminal | [Windows Terminal Preview 1.10 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-10-release/) |
 | 2021-08-31 | [1.11] in Windows Terminal Preview<br>[1.10] in Windows Terminal | [Windows Terminal Preview 1.11 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-11-release/) |
 | 2021-10-20 | [1.12] in Windows Terminal Preview<br>[1.11] in Windows Terminal | [Windows Terminal Preview 1.12 Release](https://devblogs.microsoft.com/commandline/windows-terminal-preview-1-12-release/) |
-|  | 2.0 RC in Windows Terminal Preview<br>2.0 RC in Windows Terminal | |
-|  | [2.0] in Windows Terminal Preview<br>[2.0] in Windows Terminal | |
 
 ## Issue Triage & Prioritization
 
@@ -139,3 +141,5 @@ Feature Notes:
 [#632]: https://github.com/microsoft/terminal/issues/632
 [#4472]: https://github.com/microsoft/terminal/issues/4472
 [#8048]: https://github.com/microsoft/terminal/pull/8048
+
+[Terminal 2022 Roadmap]: https://github.com/microsoft/terminal/tree/main/doc/roadmap-2022.md
