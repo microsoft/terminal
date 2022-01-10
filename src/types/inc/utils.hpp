@@ -97,7 +97,7 @@ namespace Microsoft::Console::Utils
     bool IsElevated();
 
     // This function is only ever used by the ConPTY connection in
-    // TerminalConnection. However, that library does not have a good systen of
+    // TerminalConnection. However, that library does not have a good system of
     // tests set up. Since this function has a plethora of edge cases that would
     // be beneficial to have tests for, we're hosting it in this lib, so it can
     // be easily tested.
