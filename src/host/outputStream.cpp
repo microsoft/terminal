@@ -906,13 +906,21 @@ bool ConhostInternalGetSet::PrivateIsVtInputEnabled() const
 // - true
 bool ConhostInternalGetSet::PrivateAddHyperlink(const std::wstring_view uri, const std::wstring_view params) const
 {
-    DoSrvAddHyperlink(_io.GetActiveOutputBuffer(), uri, params);
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto attr = screenInfo.GetAttributes();
+    const auto id = screenInfo.GetTextBuffer().GetHyperlinkId(uri, params);
+    attr.SetHyperlinkId(id);
+    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
+    screenInfo.GetTextBuffer().AddHyperlinkToMap(uri, id);
     return true;
 }
 
 bool ConhostInternalGetSet::PrivateEndHyperlink() const
 {
-    DoSrvEndHyperlink(_io.GetActiveOutputBuffer());
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto attr = screenInfo.GetAttributes();
+    attr.SetHyperlinkId(0);
+    screenInfo.GetTextBuffer().SetCurrentAttributes(attr);
     return true;
 }
 

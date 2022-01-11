@@ -18,12 +18,6 @@ Revision History:
 #include "../inc/conattrs.hpp"
 class SCREEN_INFORMATION;
 
-void DoSrvAddHyperlink(SCREEN_INFORMATION& screenInfo,
-                       const std::wstring_view uri,
-                       const std::wstring_view params);
-
-void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
-
 [[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                                           const SIZE cellSize,
                                           const size_t centeringHint) noexcept;
