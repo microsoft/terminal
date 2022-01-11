@@ -1555,21 +1555,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for forcing the VT Renderer to NOT paint the next resize
-//      event. This is used by InteractDispatch, to prevent resizes from echoing
-//      between terminal and host.
-// Parameters:
-//  <none>
-// Return value:
-// - STATUS_SUCCESS if we succeeded, otherwise the NTSTATUS version of the failure.
-[[nodiscard]] NTSTATUS DoSrvPrivateSuppressResizeRepaint()
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    FAIL_FAST_IF(!(gci.IsInVtIoMode()));
-    return NTSTATUS_FROM_HRESULT(gci.GetVtIo()->SuppressResizeRepaint());
-}
-
-// Routine Description:
 // - An API call for checking if the console host is acting as a pty.
 // Parameters:
 // - isPty: receives the bool indicating whether or not we're in pty mode.

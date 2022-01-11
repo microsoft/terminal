@@ -637,15 +637,16 @@ bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
 }
 
 // Routine Description:
-// - Connects the PrivateSuppressResizeRepaint API call directly into our Driver
-//      Message servicing call inside Conhost.exe
+// - Forces the VT Renderer to NOT paint the next resize event. This is used by
+//      InteractDispatch, to prevent resizes from echoing between terminal and host.
 // Arguments:
 // - <none>
 // Return Value:
-// - true if successful (see DoSrvPrivateSuppressResizeRepaint). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 {
-    return SUCCEEDED(DoSrvPrivateSuppressResizeRepaint());
+    auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    return SUCCEEDED(gci.GetVtIo()->SuppressResizeRepaint());
 }
 
 // Routine Description:
