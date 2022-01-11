@@ -1502,12 +1502,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
     LockConsole();
     auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
 
-    return DoSrvSetConsoleTitleW(title);
-}
-
-[[nodiscard]] HRESULT DoSrvSetConsoleTitleW(const std::wstring_view title) noexcept
-{
-    CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    gci.SetTitle(title);
+    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
     return S_OK;
 }

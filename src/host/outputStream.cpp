@@ -494,14 +494,15 @@ bool ConhostInternalGetSet::PrivateReverseLineFeed()
 }
 
 // Routine Description:
-// - Connects the SetConsoleTitleW API call directly into our Driver Message servicing call inside Conhost.exe
+// - Sets the title of the console window.
 // Arguments:
 // - title - The null-terminated string to set as the window title
 // Return Value:
-// - true if successful (see DoSrvSetConsoleTitle). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::SetConsoleTitleW(std::wstring_view title)
 {
-    return SUCCEEDED(DoSrvSetConsoleTitleW(title));
+    ServiceLocator::LocateGlobals().getConsoleInformation().SetTitle(title);
+    return true;
 }
 
 // Routine Description:
