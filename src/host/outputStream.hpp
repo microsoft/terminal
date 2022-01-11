@@ -142,5 +142,7 @@ public:
                                const size_t centeringHint) noexcept override;
 
 private:
+    void _modifyLines(const size_t count, const bool insert);
+
     Microsoft::Console::IIoProvider& _io;
 };

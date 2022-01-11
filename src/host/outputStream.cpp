@@ -662,16 +662,74 @@ bool ConhostInternalGetSet::IsConsolePty() const
     return ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode();
 }
 
+// Routine Description:
+// - Deletes lines in the active screen buffer.
+// Parameters:
+// - count - the number of lines to delete
 bool ConhostInternalGetSet::DeleteLines(const size_t count)
 {
-    DoSrvPrivateDeleteLines(count);
+    _modifyLines(count, false);
     return true;
 }
 
+// Routine Description:
+// - Inserts lines in the active screen buffer.
+// Parameters:
+// - count - the number of lines to insert
 bool ConhostInternalGetSet::InsertLines(const size_t count)
 {
-    DoSrvPrivateInsertLines(count);
+    _modifyLines(count, true);
     return true;
+}
+
+// Routine Description:
+// - internal logic for adding or removing lines in the active screen buffer
+//   this also moves the cursor to the left margin, which is expected behavior for IL and DL
+// Parameters:
+// - count - the number of lines to modify
+// - insert - true if inserting lines, false if deleting lines
+void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
+{
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+    auto& textBuffer = screenInfo.GetTextBuffer();
+    const auto cursorPosition = textBuffer.GetCursor().GetPosition();
+    if (screenInfo.IsCursorInMargins(cursorPosition))
+    {
+        // Rectangle to cut out of the existing buffer. This is inclusive.
+        // It will be clipped to the buffer boundaries so SHORT_MAX gives us the full buffer width.
+        SMALL_RECT srScroll;
+        srScroll.Left = 0;
+        srScroll.Right = SHORT_MAX;
+        srScroll.Top = cursorPosition.Y;
+        srScroll.Bottom = screenInfo.GetViewport().BottomInclusive();
+        // Clip to the DECSTBM margin boundary
+        if (screenInfo.AreMarginsSet())
+        {
+            srScroll.Bottom = screenInfo.GetAbsoluteScrollMargins().BottomInclusive();
+        }
+        // Paste coordinate for cut text above
+        COORD coordDestination;
+        coordDestination.X = 0;
+        if (insert)
+        {
+            coordDestination.Y = (cursorPosition.Y) + gsl::narrow<short>(count);
+        }
+        else
+        {
+            coordDestination.Y = (cursorPosition.Y) - gsl::narrow<short>(count);
+        }
+
+        // Note the revealed lines are filled with the standard erase attributes.
+        LOG_IF_FAILED(DoSrvPrivateScrollRegion(screenInfo,
+                                               srScroll,
+                                               srScroll,
+                                               coordDestination,
+                                               true));
+
+        // The IL and DL controls are also expected to move the cursor to the left margin.
+        // For now this is just column 0, since we don't yet support DECSLRM.
+        LOG_IF_NTSTATUS_FAILED(screenInfo.SetCursorPosition({ 0, cursorPosition.Y }, false));
+    }
 }
 
 // Method Description:
