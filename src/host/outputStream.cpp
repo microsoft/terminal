@@ -8,6 +8,7 @@
 #include "_stream.h"
 #include "getset.h"
 #include "directio.h"
+#include "output.h"
 
 #include "../interactivity/inc/ServiceLocator.hpp"
 
@@ -486,11 +487,7 @@ bool ConhostInternalGetSet::PrivateReverseLineFeed()
             coordDestination.Y = viewport.Top + 1;
 
             // Note the revealed lines are filled with the standard erase attributes.
-            success = SUCCEEDED(DoSrvPrivateScrollRegion(screenInfo,
-                                                         srScroll,
-                                                         srScroll,
-                                                         coordDestination,
-                                                         true));
+            success = PrivateScrollRegion(srScroll, srScroll, coordDestination, true);
         }
     }
     return success;
@@ -720,11 +717,7 @@ void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
         }
 
         // Note the revealed lines are filled with the standard erase attributes.
-        LOG_IF_FAILED(DoSrvPrivateScrollRegion(screenInfo,
-                                               srScroll,
-                                               srScroll,
-                                               coordDestination,
-                                               true));
+        LOG_IF_WIN32_BOOL_FALSE((BOOL)PrivateScrollRegion(srScroll, srScroll, coordDestination, true));
 
         // The IL and DL controls are also expected to move the cursor to the left margin.
         // For now this is just column 0, since we don't yet support DECSLRM.
@@ -857,10 +850,8 @@ try
 CATCH_RETURN_FALSE()
 
 // Routine Description:
-// - Connects the PrivateScrollRegion call directly into our Driver Message servicing
-//    call inside Conhost.exe
-//   PrivateScrollRegion is an internal-only "API" call that the vt commands can execute,
-//    but it is not represented as a function call on our public API surface.
+// - Moves a block of data in the screen buffer, optionally limiting the effects
+//      of the move to a clipping rectangle.
 // Arguments:
 // - scrollRect - Region to copy/move (source and size).
 // - clipRect - Optional clip region to contain buffer change effects.
@@ -868,18 +859,30 @@ CATCH_RETURN_FALSE()
 // - standardFillAttrs - If true, fill with the standard erase attributes.
 //                       If false, fill with the default attributes.
 // Return value:
-// - true if successful (see DoSrvPrivateScrollRegion). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateScrollRegion(const SMALL_RECT scrollRect,
                                                 const std::optional<SMALL_RECT> clipRect,
                                                 const COORD destinationOrigin,
                                                 const bool standardFillAttrs) noexcept
+try
 {
-    return SUCCEEDED(DoSrvPrivateScrollRegion(_io.GetActiveOutputBuffer(),
-                                              scrollRect,
-                                              clipRect,
-                                              destinationOrigin,
-                                              standardFillAttrs));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+
+    // For most VT scrolling operations, the standard requires that the
+    // erased area be filled with the current background color, but with
+    // no additional meta attributes set. For all other cases, we just
+    // fill with the default attributes.
+    auto fillAttrs = TextAttribute{};
+    if (standardFillAttrs)
+    {
+        fillAttrs = screenInfo.GetAttributes();
+        fillAttrs.SetStandardErase();
+    }
+
+    ScrollRegion(screenInfo, scrollRect, clipRect, destinationOrigin, UNICODE_SPACE, fillAttrs);
+    return true;
 }
+CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Checks if the InputBuffer is willing to accept VT Input directly

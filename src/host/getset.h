@@ -29,9 +29,3 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
                                           const size_t centeringHint) noexcept;
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
-
-[[nodiscard]] HRESULT DoSrvPrivateScrollRegion(SCREEN_INFORMATION& screenInfo,
-                                               const SMALL_RECT scrollRect,
-                                               const std::optional<SMALL_RECT> clipRect,
-                                               const COORD destinationOrigin,
-                                               const bool standardFillAttrs) noexcept;
