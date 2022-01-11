@@ -5036,7 +5036,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
 #pragma region Test ScrollConsoleScreenBufferWImpl()
         // Clear text of alt buffer (same params as in CMD)
-        VERIFY_SUCCEEDED(g.api.ScrollConsoleScreenBufferWImpl(siMain,
+        VERIFY_SUCCEEDED(g.api->ScrollConsoleScreenBufferWImpl(siMain,
                                                               { 0, 0, 120, 9001 },
                                                               { 0, -9001 },
                                                               std::nullopt,
@@ -5049,7 +5049,7 @@ void ScreenBufferTests::ClearAlternateBuffer()
 
 #pragma region Test SetConsoleCursorPositionImpl()
         // Reset cursor position as we do with CLS command (same params as in CMD)
-        VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(siMain, { 0 }));
+        VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(siMain, { 0 }));
 
         // Verify state of alt buffer
         auto& altBufferCursor = altBuffer.GetTextBuffer().GetCursor();
