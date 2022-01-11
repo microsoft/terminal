@@ -1059,12 +1059,6 @@ void ApiRoutines::GetConsoleInputCodePageImpl(ULONG& codepage) noexcept
     CATCH_LOG();
 }
 
-void DoSrvGetConsoleOutputCodePage(unsigned int& codepage)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    codepage = gci.OutputCP;
-}
-
 // Routine Description:
 // - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
@@ -1075,9 +1069,8 @@ void ApiRoutines::GetConsoleOutputCodePageImpl(ULONG& codepage) noexcept
     {
         LockConsole();
         auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-        unsigned int cp;
-        DoSrvGetConsoleOutputCodePage(cp);
-        codepage = cp;
+        const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+        codepage = gci.OutputCP;
     }
     CATCH_LOG();
 }

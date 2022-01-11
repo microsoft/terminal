@@ -29,7 +29,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
                                           const size_t centeringHint) noexcept;
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
-void DoSrvGetConsoleOutputCodePage(unsigned int& codepage);
 
 [[nodiscard]] NTSTATUS DoSrvPrivateSuppressResizeRepaint();
 

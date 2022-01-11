@@ -624,14 +624,15 @@ bool ConhostInternalGetSet::SetConsoleOutputCP(const unsigned int codepage)
 }
 
 // Routine Description:
-// - Connects the GetConsoleOutputCP API call directly into our Driver Message servicing call inside Conhost.exe
+// - Gets the codepage used for translating text when calling A versions of functions affecting the output buffer.
 // Arguments:
 // - codepage - receives the outputCP of the console.
 // Return Value:
-// - true if successful (see DoSrvPrivateWriteConsoleControlInput). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::GetConsoleOutputCP(unsigned int& codepage)
 {
-    DoSrvGetConsoleOutputCodePage(codepage);
+    const auto& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
+    codepage = gci.OutputCP;
     return true;
 }
 
