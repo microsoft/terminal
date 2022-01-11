@@ -31,7 +31,7 @@ namespace TerminalCoreUnitTests
         TEST_METHOD(AltShiftKey);
         TEST_METHOD(InvalidKeyEvent);
 
-        void _VerifyExpectedInput(std::wstring& actualInput)
+        void _VerifyExpectedInput(std::wstring_view actualInput)
         {
             VERIFY_ARE_EQUAL(expectedinput.size(), actualInput.size());
             VERIFY_ARE_EQUAL(expectedinput, actualInput);

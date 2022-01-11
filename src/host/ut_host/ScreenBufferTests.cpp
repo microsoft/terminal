@@ -1850,7 +1850,7 @@ void ScreenBufferTests::ResizeAltBufferGetScreenBufferInfo()
     altBuffer.SetViewportSize(&newBufferSize);
 
     CONSOLE_SCREEN_BUFFER_INFOEX csbiex{ 0 };
-    g.api.GetConsoleScreenBufferInfoExImpl(mainBuffer, csbiex);
+    g.api->GetConsoleScreenBufferInfoExImpl(mainBuffer, csbiex);
     const auto newActualMainView = mainBuffer.GetViewport();
     const auto newActualAltView = altBuffer.GetViewport();
 
@@ -4960,7 +4960,7 @@ void ScreenBufferTests::SnapCursorWithTerminalScrolling()
 
     Log::Comment(NoThrowString().Format(
         L"Call SetConsoleCursorPosition to snap to the cursor"));
-    VERIFY_SUCCEEDED(g.api.SetConsoleCursorPositionImpl(si, secondWindowOrigin));
+    VERIFY_SUCCEEDED(g.api->SetConsoleCursorPositionImpl(si, secondWindowOrigin));
 
     const auto fourthView = si._viewport;
     const auto fourthVirtualBottom = si._virtualBottom;

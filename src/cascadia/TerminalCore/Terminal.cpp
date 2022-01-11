@@ -951,7 +951,6 @@ void Terminal::_WriteBuffer(const std::wstring_view& stringView)
 
     for (size_t i = 0; i < stringView.size(); i++)
     {
-        const auto wch = stringView.at(i);
         const COORD cursorPosBefore = cursor.GetPosition();
         COORD proposedCursorPosition = cursorPosBefore;
 

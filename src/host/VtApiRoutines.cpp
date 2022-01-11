@@ -246,8 +246,8 @@ void VtApiRoutines::GetConsoleOutputModeImpl(SCREEN_INFORMATION& context,
                                                                     size_t& cellsModified) noexcept
 {
     (void)m_pVtEngine->_CursorPosition(startingCoordinate);
-    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute, true);
-    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute >> 4, false);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attribute), true);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attribute >> 4), false);
     (void)m_pVtEngine->_WriteFill(lengthToWrite, s_readBackAscii.Char.AsciiChar);
     (void)m_pVtEngine->_Flush();
     cellsModified = lengthToWrite;
@@ -356,8 +356,8 @@ void VtApiRoutines::GetConsoleScreenBufferInfoExImpl(const SCREEN_INFORMATION& c
 {
     (void)m_pVtEngine->_ResizeWindow(data.srWindow.Right - data.srWindow.Left, data.srWindow.Bottom - data.srWindow.Top);
     (void)m_pVtEngine->_CursorPosition(data.dwCursorPosition);
-    (void)m_pVtEngine->_SetGraphicsRendition16Color(data.wAttributes, true);
-    (void)m_pVtEngine->_SetGraphicsRendition16Color(data.wAttributes >> 4, false);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(data.wAttributes), true);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(data.wAttributes >> 4), false);
     //color table?
     // popup attributes... hold internally?
     // TODO: popups are gonna erase the stuff behind them... deal with that somehow.
@@ -421,8 +421,8 @@ void VtApiRoutines::GetLargestConsoleWindowSizeImpl(const SCREEN_INFORMATION& co
 [[nodiscard]] HRESULT VtApiRoutines::SetConsoleTextAttributeImpl(SCREEN_INFORMATION& context,
                                                                  const WORD attribute) noexcept
 {
-    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute, true);
-    (void)m_pVtEngine->_SetGraphicsRendition16Color(attribute >> 4, false);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attribute), true);
+    (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attribute >> 4), false);
     (void)m_pVtEngine->_Flush();
     return S_OK;
 }
@@ -516,8 +516,8 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
 
         for (const auto& ci : subspan)
         {
-            (void)m_pVtEngine->_SetGraphicsRendition16Color(ci.Attributes, true);
-            (void)m_pVtEngine->_SetGraphicsRendition16Color(ci.Attributes >> 4, false);
+            (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(ci.Attributes), true);
+            (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(ci.Attributes >> 4), false);
             (void)m_pVtEngine->WriteTerminalW(std::wstring_view{ &ci.Char.UnicodeChar, 1 });
         }
 
@@ -541,8 +541,8 @@ extern HRESULT _ConvertCellsToWInplace(const UINT codepage,
 
     for (const auto& attr : attrs)
     {
-        (void)m_pVtEngine->_SetGraphicsRendition16Color(attr, true);
-        (void)m_pVtEngine->_SetGraphicsRendition16Color(attr >> 4, false);
+        (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attr), true);
+        (void)m_pVtEngine->_SetGraphicsRendition16Color(static_cast<BYTE>(attr >> 4), false);
         (void)m_pVtEngine->WriteTerminalUtf8(std::string_view{ &s_readBackAscii.Char.AsciiChar, 1 });
     }
 

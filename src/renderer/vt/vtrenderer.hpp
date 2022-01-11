@@ -83,7 +83,6 @@ namespace Microsoft::Console::Render
         void SetPassthroughMode(const bool passthrough) noexcept;
         void SetLookingForDSRCallback(std::function<void(bool)> pfnLooking) noexcept;
         void SetTerminalCursorTextPosition(const COORD coordCursor) noexcept;
-
         [[nodiscard]] virtual HRESULT ManuallyClearScrollback() noexcept;
         [[nodiscard]] HRESULT RequestWin32Input() noexcept;
 
