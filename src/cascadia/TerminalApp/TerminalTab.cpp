@@ -463,6 +463,17 @@ namespace winrt::TerminalApp::implementation
             state.args.emplace_back(std::move(setColorAction));
         }
 
+        if (!_runtimeTabText.empty())
+        {
+            ActionAndArgs renameTabAction{};
+            renameTabAction.Action(ShortcutAction::RenameTab);
+
+            RenameTabArgs renameTabArgs{ _runtimeTabText };
+            renameTabAction.Args(renameTabArgs);
+
+            state.args.emplace_back(std::move(renameTabAction));
+        }
+
         // If we only have one arg, we only have 1 pane so we don't need any
         // special focus logic
         if (state.args.size() > 1 && state.focusedPaneId.has_value())

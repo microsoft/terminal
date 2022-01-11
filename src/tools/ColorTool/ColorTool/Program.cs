@@ -104,20 +104,7 @@ namespace ColorTool
             }
             if (printCurrent)
             {
-                if (setUnixStyle)
-                {
-                    IntPtr hOut = GetStdOutputHandle();
-                    uint originalMode;
-                    uint requestedMode;
-                    bool succeeded = GetConsoleMode(hOut, out originalMode);
-                    if (succeeded)
-                    {
-                        requestedMode = originalMode | (uint)ConsoleAPI.ConsoleOutputModes.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-                        SetConsoleMode(hOut, requestedMode);
-                    }
-                    ColorTable.PrintTableWithVt(compactTableStyle);
-                    if (succeeded) SetConsoleMode(hOut, originalMode);
-                }
+                if (setUnixStyle) DoInVTMode(() => ColorTable.PrintTableWithVt(compactTableStyle));
                 else ColorTable.PrintTable(compactTableStyle);
                 return;
             }
@@ -147,6 +134,24 @@ namespace ColorTool
         private static void OutputUsage()
         {
             Console.WriteLine(Resources.OutputUsage);
+        }
+
+        public static bool DoInVTMode(Action VTAction)
+        {
+            IntPtr hOut = GetStdOutputHandle();
+            uint requestedMode;
+            uint originalConsoleMode;
+            bool succeeded = GetConsoleMode(hOut, out originalConsoleMode);
+            if (succeeded)
+            {
+                requestedMode = originalConsoleMode | (uint)ConsoleAPI.ConsoleOutputModes.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                SetConsoleMode(hOut, requestedMode);
+            }
+
+            VTAction();
+
+            if (succeeded) SetConsoleMode(hOut, originalConsoleMode);
+            return succeeded;
         }
 
         private static void Version()

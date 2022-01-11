@@ -48,7 +48,10 @@ static constexpr std::string_view TabSearchKey{ "tabSearch" };
 static constexpr std::string_view ToggleAlwaysOnTopKey{ "toggleAlwaysOnTop" };
 static constexpr std::string_view ToggleCommandPaletteKey{ "commandPalette" };
 static constexpr std::string_view ToggleFocusModeKey{ "toggleFocusMode" };
+static constexpr std::string_view SetFocusModeKey{ "setFocusMode" };
 static constexpr std::string_view ToggleFullscreenKey{ "toggleFullscreen" };
+static constexpr std::string_view SetFullScreenKey{ "setFullScreen" };
+static constexpr std::string_view SetMaximizedKey{ "setMaximized" };
 static constexpr std::string_view TogglePaneZoomKey{ "togglePaneZoom" };
 static constexpr std::string_view ToggleSplitOrientationKey{ "toggleSplitOrientation" };
 static constexpr std::string_view LegacyToggleRetroEffectKey{ "toggleRetroEffect" };
@@ -354,7 +357,10 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
                 { ShortcutAction::ToggleAlwaysOnTop, RS_(L"ToggleAlwaysOnTopCommandKey") },
                 { ShortcutAction::ToggleCommandPalette, L"" },
                 { ShortcutAction::ToggleFocusMode, RS_(L"ToggleFocusModeCommandKey") },
+                { ShortcutAction::SetFocusMode, L"" },
                 { ShortcutAction::ToggleFullscreen, RS_(L"ToggleFullscreenCommandKey") },
+                { ShortcutAction::SetFullScreen, L"" },
+                { ShortcutAction::SetMaximized, L"" },
                 { ShortcutAction::TogglePaneZoom, RS_(L"TogglePaneZoomCommandKey") },
                 { ShortcutAction::ToggleSplitOrientation, RS_(L"ToggleSplitOrientationCommandKey") },
                 { ShortcutAction::ToggleShaderEffects, RS_(L"ToggleShaderEffectsCommandKey") },

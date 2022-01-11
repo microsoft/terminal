@@ -943,6 +943,7 @@ gset
 gsl
 GTP
 GTR
+guardxfg
 guc
 gui
 guidatom
@@ -1161,7 +1162,6 @@ IRaw
 IRead
 IReference
 IRender
-IRenderer
 IScheme
 ISelection
 IShell
@@ -1589,6 +1589,7 @@ NOTSUPPORTED
 nouicompat
 nounihan
 NOUPDATE
+novtable
 NOWAIT
 NOYIELD
 NOZORDER
@@ -1802,6 +1803,7 @@ PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
+Poli
 POLYTEXTW
 popd
 POPF
@@ -2389,6 +2391,7 @@ TIcon
 tif
 tilunittests
 Timeline
+timelines
 titlebar
 TITLEISLINKNAME
 TJson
@@ -2826,6 +2829,7 @@ xdy
 XEncoding
 xes
 xff
+xfg
 XFile
 XFORM
 XManifest

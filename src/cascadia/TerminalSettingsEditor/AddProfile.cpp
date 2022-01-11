@@ -39,4 +39,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             _State.RequestDuplicate(selected.try_as<Model::Profile>().Guid());
         }
     }
+
+    void AddProfile::ProfilesSelectionChanged(const IInspectable& /*sender*/,
+                                              const Windows::UI::Xaml::RoutedEventArgs& /*eventArgs*/)
+    {
+        if (!_IsProfileSelected)
+        {
+            IsProfileSelected(true);
+        }
+    }
 }

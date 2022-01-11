@@ -4,7 +4,7 @@
 #include "precomp.h"
 #include "vtrenderer.hpp"
 #include "../../inc/conattrs.hpp"
-#include "../../types/inc/convert.hpp"
+#include "../../host/VtIo.hpp"
 
 // For _vcprintf
 #include <conio.h>
@@ -133,7 +133,7 @@ VtEngine::VtEngine(_In_ wil::unique_hfile pipe,
 }
 
 // Method Description:
-// - Wrapper for ITerminalOutputConnection. See _Write.
+// - Wrapper for _Write.
 [[nodiscard]] HRESULT VtEngine::WriteTerminalUtf8(const std::string_view str) noexcept
 {
     return _Write(str);
@@ -359,7 +359,7 @@ bool VtEngine::_AllIsInvalid() const
     return S_OK;
 }
 
-void VtEngine::SetTerminalOwner(Microsoft::Console::ITerminalOwner* const terminalOwner)
+void VtEngine::SetTerminalOwner(Microsoft::Console::VirtualTerminal::VtIo* const terminalOwner)
 {
     _terminalOwner = terminalOwner;
 }

@@ -89,6 +89,9 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
         void SetFullscreen(bool);
+        void SetFocusMode(const bool inFocusMode);
+        void Maximized(bool newMaximized);
+        void RequestSetMaximized(bool newMaximized);
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
 
@@ -137,6 +140,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SetTitleBarContent, IInspectable, winrt::Windows::UI::Xaml::UIElement);
         TYPED_EVENT(FocusModeChanged, IInspectable, IInspectable);
         TYPED_EVENT(FullscreenChanged, IInspectable, IInspectable);
+        TYPED_EVENT(ChangeMaximizeRequested, IInspectable, IInspectable);
         TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
         TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
@@ -176,6 +180,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
+        bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
@@ -403,8 +408,6 @@ namespace winrt::TerminalApp::implementation
         void _WindowRenamerKeyUp(const IInspectable& sender, winrt::Windows::UI::Xaml::Input::KeyRoutedEventArgs const& e);
 
         void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
-
-        void _SetFocusMode(const bool inFocusMode);
 
         winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
 

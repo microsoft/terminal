@@ -21,11 +21,39 @@ namespace ColorTool.ConsoleTargets
                 string valueName = "ColorTable" + (i < 10 ? "0" : "") + i;
                 consoleKey.SetValue(valueName, colorScheme.ColorTable[i], RegistryValueKind.DWord);
             }
-            if(colorScheme.ScreenColorAttributes is ushort screenColors)
+            if (colorScheme.ConsoleAttributes.Cursor.HasValue)
             {
-                consoleKey.SetValue("ScreenColors", screenColors, RegistryValueKind.DWord);
+                consoleKey.SetValue("CursorColor", colorScheme.ConsoleAttributes.Cursor, RegistryValueKind.DWord);
             }
-            if(colorScheme.PopupColorAttributes is ushort popupColors)
+            else
+            {
+                consoleKey.SetValue("CursorColor", -1, RegistryValueKind.DWord);
+            }
+            if (colorScheme.ScreenColorAttributes is ushort screenColors)
+            {
+                ushort fgidx = (ushort)(screenColors & 0xF);
+                ushort bgidx = (ushort)(screenColors >> 4);
+
+                consoleKey.SetValue("ScreenColors", screenColors, RegistryValueKind.DWord);
+
+                if (colorScheme.ColorTable[fgidx] != colorScheme.ConsoleAttributes.Foreground.Value)
+                {
+                    consoleKey.SetValue("DefaultForeground", colorScheme.ConsoleAttributes.Foreground.Value, RegistryValueKind.DWord);
+                }
+                else
+                {
+                    consoleKey.SetValue("DefaultForeground", -1, RegistryValueKind.DWord);
+                }
+                if (colorScheme.ColorTable[bgidx] != colorScheme.ConsoleAttributes.Background.Value)
+                {
+                    consoleKey.SetValue("DefaultBackground", colorScheme.ConsoleAttributes.Background.Value, RegistryValueKind.DWord);
+                }
+                else
+                {
+                    consoleKey.SetValue("DefaultBackground", -1, RegistryValueKind.DWord);
+                }
+            }
+            if (colorScheme.PopupColorAttributes is ushort popupColors)
             {
                 consoleKey.SetValue("PopupColors", popupColors, RegistryValueKind.DWord);
             }
