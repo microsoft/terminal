@@ -13,7 +13,7 @@ namespace ColorTool.ConsoleTargets
     /// </summary>
     class DefaultConsoleTarget : IConsoleTarget
     {
-        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
+        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode, bool compactColortable)
         {
             RegistryKey consoleKey = Registry.CurrentUser.OpenSubKey("Console", true);
             for (int i = 0; i < colorScheme.ColorTable.Length; i++)

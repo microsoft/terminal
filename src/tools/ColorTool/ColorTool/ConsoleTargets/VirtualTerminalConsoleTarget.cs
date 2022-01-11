@@ -36,7 +36,7 @@ namespace ColorTool.ConsoleTargets
             8+7, // Bright White
         };
 
-        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode)
+        public void ApplyColorScheme(ColorScheme colorScheme, bool quietMode, bool compactColortable)
         {
             Program.DoInVTMode(() =>
             {
@@ -58,7 +58,6 @@ namespace ColorTool.ConsoleTargets
                     string s = $"\x1b]12;rgb:{color.R:X2}/{color.G:X2}/{color.B:X2}\x1b\\";
                     Console.Write(s);
                 }
-
                 for (int i = 0; i < colorScheme.ColorTable.Length; i++)
                 {
                     int vtIndex = VirtualTerminalIndices[i];
@@ -69,7 +68,7 @@ namespace ColorTool.ConsoleTargets
 
                 if (!quietMode)
                 {
-                    ColorTable.PrintTableWithVt();
+                    ColorTable.PrintTableWithVt(compactColortable);
                 }
             });
         }

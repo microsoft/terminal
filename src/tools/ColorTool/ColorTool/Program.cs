@@ -4,8 +4,8 @@
 //
 
 using ColorTool.ConsoleTargets;
-using ColorTool.SchemeWriters;
 using static ColorTool.ConsoleAPI;
+using ColorTool.SchemeWriters;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +20,8 @@ namespace ColorTool
         private static bool setProperties = true;
         private static bool setUnixStyle = false;
         private static bool setTerminalStyle = false;
+        private static bool compactTableStyle = true;
+        private static bool printCurrent = false;
 
         public static void Main(string[] args)
         {
@@ -39,8 +41,8 @@ namespace ColorTool
                         return;
                     case "-c":
                     case "--current":
-                        ColorTable.PrintTable();
-                        return;
+                        printCurrent = true;
+                        break;
                     case "-l":
                     case "--location":
                         SchemeManager.PrintSchemesDirectory();
@@ -66,35 +68,45 @@ namespace ColorTool
                         return;
                     case "-e":
                     case "--errors":
-                        reportErrors     = true;
+                        reportErrors = true;
                         break;
                     case "-q":
                     case "--quiet":
-                        quietMode        = true;
+                        quietMode = true;
                         break;
                     case "-d":
                     case "--defaults":
-                        setDefaults      = true;
-                        setProperties    = false;
+                        setDefaults = true;
+                        setProperties = false;
                         break;
                     case "-b":
                     case "--both":
-                        setDefaults      = true;
-                        setProperties    = true;
+                        setDefaults = true;
+                        setProperties = true;
                         break;
                     case "-x":
                     case "--xterm":
-                        setUnixStyle     = true;
-                        setProperties    = true;
+                        setUnixStyle = true;
+                        setProperties = true;
+                        break;
+                    case "-a":
+                    case "--allcolors":
+                        compactTableStyle = false;
                         break;
                     case "-t":
                     case "--terminal":
                         setTerminalStyle = true;
-                        setProperties    = true;
+                        setProperties = true;
                         break;
                     default:
                         break;
                 }
+            }
+            if (printCurrent)
+            {
+                if (setUnixStyle) DoInVTMode(() => ColorTable.PrintTableWithVt(compactTableStyle));
+                else ColorTable.PrintTable(compactTableStyle);
+                return;
             }
 
             string schemeName = args[args.Length - 1];
@@ -109,7 +121,7 @@ namespace ColorTool
 
             foreach (var target in GetConsoleTargets())
             {
-                target.ApplyColorScheme(colorScheme, quietMode);
+                target.ApplyColorScheme(colorScheme, quietMode, compactTableStyle);
             }
         }
 
