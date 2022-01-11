@@ -931,10 +931,17 @@ bool ConhostInternalGetSet::PrivateEndHyperlink() const
 // - cellSize - The cell size for an individual glyph.
 // - centeringHint - The horizontal extent that glyphs are offset from center.
 // Return Value:
-// - true if successful (see DoSrvUpdateSoftFont). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
                                                   const SIZE cellSize,
                                                   const size_t centeringHint) noexcept
+try
 {
-    return SUCCEEDED(DoSrvUpdateSoftFont(bitPattern, cellSize, centeringHint));
+    auto* pRender = ServiceLocator::LocateGlobals().pRender;
+    if (pRender)
+    {
+        pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
+    }
+    return true;
 }
+CATCH_RETURN_FALSE();

@@ -1241,30 +1241,6 @@ void ApiRoutines::GetConsoleDisplayModeImpl(ULONG& flags) noexcept
 }
 
 // Routine Description:
-// - A private API call for updating the active soft font.
-// Arguments:
-// - bitPattern - An array of scanlines representing all the glyphs in the font.
-// - cellSize - The cell size for an individual glyph.
-// - centeringHint - The horizontal extent that glyphs are offset from center.
-// Return Value:
-// - S_OK if we succeeded, otherwise the HRESULT of the failure.
-[[nodiscard]] HRESULT DoSrvUpdateSoftFont(const gsl::span<const uint16_t> bitPattern,
-                                          const SIZE cellSize,
-                                          const size_t centeringHint) noexcept
-{
-    try
-    {
-        auto* pRender = ServiceLocator::LocateGlobals().pRender;
-        if (pRender)
-        {
-            pRender->UpdateSoftFont(bitPattern, cellSize, centeringHint);
-        }
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
 // - Gets title information from the console. It can be truncated if the buffer is too small.
 // Arguments:
 // - title - If given, this buffer is filled with the title information requested.
