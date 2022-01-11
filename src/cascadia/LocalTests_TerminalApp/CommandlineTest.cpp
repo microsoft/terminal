@@ -688,6 +688,54 @@ namespace TerminalAppLocalTests
             VERIFY_IS_FALSE(myArgs.TerminalArgs().ColorScheme().empty());
             VERIFY_ARE_EQUAL(expectedScheme, myArgs.TerminalArgs().ColorScheme());
         }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--elevate" };
+
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ColorScheme().empty());
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs().Elevate());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Elevate().Value());
+        }
+        {
+            AppCommandlineArgs appArgs{};
+            std::vector<const wchar_t*> rawCommands{ L"wt.exe", subcommand, L"--no-elevate" };
+
+            _buildCommandlinesHelper(appArgs, 1u, rawCommands);
+
+            VERIFY_ARE_EQUAL(1u, appArgs._startupActions.size());
+
+            auto actionAndArgs = appArgs._startupActions.at(0);
+            VERIFY_ARE_EQUAL(ShortcutAction::NewTab, actionAndArgs.Action());
+            VERIFY_IS_NOT_NULL(actionAndArgs.Args());
+            auto myArgs = actionAndArgs.Args().try_as<NewTabArgs>();
+            VERIFY_IS_NOT_NULL(myArgs);
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Commandline().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().StartingDirectory().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().TabTitle().empty());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().TabColor());
+            VERIFY_IS_NULL(myArgs.TerminalArgs().ProfileIndex());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().Profile().empty());
+            VERIFY_IS_TRUE(myArgs.TerminalArgs().ColorScheme().empty());
+            VERIFY_IS_NOT_NULL(myArgs.TerminalArgs().Elevate());
+            VERIFY_IS_FALSE(myArgs.TerminalArgs().Elevate().Value());
+        }
     }
 
     void CommandlineTest::ParseSplitPaneIntoArgs()
