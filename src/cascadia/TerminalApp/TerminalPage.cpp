@@ -1440,20 +1440,9 @@ namespace winrt::TerminalApp::implementation
 
         for (auto tab : _tabs)
         {
-            if (auto terminalTab = _GetTerminalTabImpl(tab))
-            {
-                auto tabActions = terminalTab->BuildStartupActions();
-                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
-            }
-            else if (tab.try_as<SettingsTab>())
-            {
-                ActionAndArgs action;
-                action.Action(ShortcutAction::OpenSettings);
-                OpenSettingsArgs args{ SettingsTarget::SettingsUI };
-                action.Args(args);
-
-                actions.emplace_back(std::move(action));
-            }
+            auto t = winrt::get_self<implementation::TabBase>(tab);
+            auto tabActions = t->BuildStartupActions();
+            actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 
         // if the focused tab was not the last tab, restore that

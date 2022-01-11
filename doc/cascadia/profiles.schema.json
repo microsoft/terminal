@@ -340,6 +340,7 @@
         "toggleShaderEffects",
         "wt",
         "quit",
+        "restoreLastClosed",
         "unbound"
       ],
       "type": "string"

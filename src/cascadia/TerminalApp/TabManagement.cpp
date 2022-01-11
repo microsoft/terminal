@@ -393,6 +393,26 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
+    // - Record the configuration information of the last closed thing .
+    // - Will occasionally prune the list so it doesn't grow infinitely.
+    // Arguments:
+    // - args: the list of actions to take to remake the pane/tab
+    void TerminalPage::_AddPreviouslyClosedPaneOrTab(std::vector<ActionAndArgs>&& args)
+    {
+        // Just make sure we don't get infinitely large, but still
+        // maintain a large replay buffer.
+        if (const auto size = _previouslyClosedPanesAndTabs.size(); size > 150)
+        {
+            const auto it = _previouslyClosedPanesAndTabs.begin();
+            // delete 50 at a time so that we don't have to do an erase
+            // of the buffer every time when at capacity.
+            _previouslyClosedPanesAndTabs.erase(it, it + (size - 100));
+        }
+
+        _previouslyClosedPanesAndTabs.emplace_back(args);
+    }
+
+    // Method Description:
     // - Removes the tab (both TerminalControl and XAML) after prompting for approval
     // Arguments:
     // - tab: the tab to remove
@@ -408,6 +428,11 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
         }
+
+        auto t = winrt::get_self<implementation::TabBase>(tab);
+        auto actions = t->BuildStartupActions();
+        _AddPreviouslyClosedPaneOrTab(std::move(actions));
+
         _RemoveTab(tab);
     }
 
@@ -708,6 +733,23 @@ namespace winrt::TerminalApp::implementation
                         }
                     });
                 }
+
+                // Build the list of actions to recreate the closed pane,
+                // BuildStartupActions returns the "first" pane and the rest of
+                // its actions are assuming that first pane has been created first.
+                // This doesn't handle refocusing anything in particular, the
+                // result will be that the last pane created is focused. In the
+                // case of a single pane that is the desired behavior anyways.
+                auto state = pane->BuildStartupActions(0, 1);
+                {
+                    ActionAndArgs splitPaneAction{};
+                    splitPaneAction.Action(ShortcutAction::SplitPane);
+                    SplitPaneArgs splitPaneArgs{ SplitDirection::Automatic, state.firstPane->GetTerminalArgsForPane() };
+                    splitPaneAction.Args(splitPaneArgs);
+
+                    state.args.emplace(state.args.begin(), std::move(splitPaneAction));
+                }
+                _AddPreviouslyClosedPaneOrTab(std::move(state.args));
 
                 pane->Close();
             }
