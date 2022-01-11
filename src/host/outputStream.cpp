@@ -595,15 +595,21 @@ bool ConhostInternalGetSet::PrivateRefreshWindow()
 }
 
 // Routine Description:
-// - Connects the PrivateWriteConsoleControlInput API call directly into our Driver Message servicing call inside Conhost.exe
+// - Writes the input KeyEvent to the console as a console control event. This
+//      can be used for potentially generating Ctrl-C events, as
+//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in
+//      the same way that it'd be handled from the window proc, with the proper
+//      processed vs raw input handling.
+//  If the input key is *not* a Ctrl-C key, then it will get written to the
+//      buffer just the same as any other KeyEvent.
 // Arguments:
-// - key - a KeyEvent representing a special type of keypress, typically Ctrl-C
+// - key - The keyevent to send to the console.
 // Return Value:
-// - true if successful (see DoSrvPrivateWriteConsoleControlInput). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateWriteConsoleControlInput(const KeyEvent key)
 {
-    return SUCCEEDED(DoSrvPrivateWriteConsoleControlInput(_io.GetActiveInputBuffer(),
-                                                          key));
+    HandleGenericKeyEvent(key, false);
+    return true;
 }
 
 // Routine Description:

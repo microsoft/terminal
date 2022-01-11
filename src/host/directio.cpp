@@ -516,32 +516,6 @@ void EventsToUnicode(_Inout_ std::deque<std::unique_ptr<IInputEvent>>& inEvents,
     CATCH_RETURN();
 }
 
-// Function Description:
-// - Writes the input KeyEvent to the console as a console control event. This
-//      can be used for potentially generating Ctrl-C events, as
-//      HandleGenericKeyEvent will correctly generate the Ctrl-C response in
-//      the same way that it'd be handled from the window proc, with the proper
-//      processed vs raw input handling.
-//  If the input key is *not* a Ctrl-C key, then it will get written to the
-//      buffer just the same as any other KeyEvent.
-// Arguments:
-// - pInputBuffer - the input buffer to write to. Currently unused, as
-//      HandleGenericKeyEvent just gets the global input buffer, but all
-//      ConGetSet API's require an input or output object.
-// - key - The keyevent to send to the console.
-// Return Value:
-// - HRESULT indicating success or failure
-[[nodiscard]] HRESULT DoSrvPrivateWriteConsoleControlInput(_Inout_ InputBuffer* const /*pInputBuffer*/,
-                                                           _In_ KeyEvent key)
-{
-    LockConsole();
-    auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-    HandleGenericKeyEvent(key, false);
-
-    return S_OK;
-}
-
 // Routine Description:
 // - This is used when the app is reading output as cells and needs them converted
 //   into a particular codepage on the way out.
