@@ -28,6 +28,7 @@ using namespace winrt::Microsoft::Terminal::Settings::Model;
 using namespace winrt::Windows::UI::Core;
 using namespace winrt::Windows::System;
 using namespace winrt::Windows::UI::Xaml::Controls;
+using namespace winrt::Windows::Foundation::Collections;
 
 static const std::wstring_view launchTag{ L"Launch_Nav" };
 static const std::wstring_view interactionTag{ L"Interaction_Nav" };
@@ -58,6 +59,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         Automation::AutomationProperties::SetHelpText(SaveButton(), RS_(L"Settings_SaveSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(ResetButton(), RS_(L"Settings_ResetSettingsButton/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
         Automation::AutomationProperties::SetHelpText(OpenJsonNavItem(), RS_(L"Nav_OpenJSON/[using:Windows.UI.Xaml.Controls]ToolTipService/ToolTip"));
+
+        _breadcrumbs = single_threaded_observable_vector<hstring>();
     }
 
     // Method Description:
@@ -278,6 +281,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void MainPage::_Navigate(hstring clickedItemTag)
     {
+        _profileViewModelChangedRevoker.revoke();
+        _breadcrumbs.Clear();
+
         if (clickedItemTag == launchTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(_settingsClone));
@@ -302,7 +308,31 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                 _settingsClone.GlobalSettings().ColorSchemes(),
                                                                 *this) };
 
-            contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
+            _profileViewModelChangedRevoker = _lastProfilesNavState.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+                    const auto settingName{ args.PropertyName() };
+                    if (settingName == L"CurrentPage")
+                    {
+                        const auto currentPage = _lastProfilesNavState.Profile().CurrentPage();
+                        if (currentPage == L"Base")
+                        {
+                            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), _lastProfilesNavState);
+                            _breadcrumbs.Clear();
+                            _breadcrumbs.Append(L"Global profile");
+                        }
+                        else if (currentPage == L"Appearance")
+                        {
+                            contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
+                            _breadcrumbs.Append(L"Appearance");
+                        }
+                        else if (currentPage == L"Advanced")
+                        {
+                            contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
+                            _breadcrumbs.Append(L"Advanced");
+                        }
+                    }
+                });
+
+            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
         }
         else if (clickedItemTag == colorSchemesTag)
         {
@@ -318,6 +348,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
             contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
         }
+
+        _breadcrumbs.Append(clickedItemTag);
     }
 
     // Method Description:
@@ -330,11 +362,48 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto state{ winrt::make<ProfilePageNavigationState>(profile,
                                                             _settingsClone.GlobalSettings().ColorSchemes(),
                                                             *this) };
+        _profileViewModelChangedRevoker.revoke();
+        _breadcrumbs.Clear();
 
         // Add an event handler for when the user wants to delete a profile.
         profile.DeleteProfile({ this, &MainPage::_DeleteProfile });
 
-        contentFrame().Navigate(xaml_typename<Editor::Profiles>(), state);
+        // Add an event handler to navigate to Profiles_Appearance or Profiles_Advanced
+        // Some notes on this:
+        // - At first we tried putting another frame inside Profiles.xaml and having that
+        //   frame default to showing Profiles_Base. This allowed the logic for navigation
+        //   to Profiles_Advanced/Profiles_Appearance to live within Profiles.cpp.
+        // - However, the header for the SUI lives in MainPage.xaml (because that's where
+        //   the whole NavigationView is) and so the BreadcrumbBar needs to be in MainPage.xaml.
+        //   We decided that it's better for the owner of the BreadcrumbBar to also be responsible
+        //   for navigation, so the navigation to Profiles_Advanced/Profiles_Appearance from
+        //   Profiles_Base got moved here.
+        _profileViewModelChangedRevoker = state.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            const auto settingName{ args.PropertyName() };
+            if (settingName == L"CurrentPage")
+            {
+                const auto currentPage = state.Profile().CurrentPage();
+                if (currentPage == L"Base")
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), _lastProfilesNavState);
+                    _breadcrumbs.Clear();
+                    _breadcrumbs.Append(profile.Name());
+                }
+                else if (currentPage == L"Appearance")
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
+                    _breadcrumbs.Append(L"Appearance");
+                }
+                else if (currentPage == L"Advanced")
+                {
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
+                    _breadcrumbs.Append(L"Advanced");
+                }
+            }
+        });
+
+        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
+        _breadcrumbs.Append(profile.Name());
     }
 
     void MainPage::OpenJsonTapped(IInspectable const& /*sender*/, Windows::UI::Xaml::Input::TappedRoutedEventArgs const& /*args*/)
@@ -367,6 +436,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         UpdateSettings(_settingsSource);
     }
+
+    void MainPage::BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& /*sender*/, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& /*args*/)
+    {
+        _lastProfilesNavState.Profile().CurrentPage(L"Base");
+    }
+
 
     void MainPage::_InitializeProfilesList()
     {
@@ -470,4 +545,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         _Navigate(newSelectedItem.try_as<MUX::Controls::NavigationViewItem>().Tag().try_as<Editor::ProfileViewModel>());
     }
 
+    bool MainPage::ShowBaseLayerMenuItem() const noexcept
+    {
+        return Feature_ShowProfileDefaultsInSettings::IsEnabled();
+    }
+
+    IObservableVector<IInspectable> MainPage::Breadcrumbs() noexcept
+    {
+        return _breadcrumbs;
+    }
 }

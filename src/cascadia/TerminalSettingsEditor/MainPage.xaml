@@ -36,12 +36,17 @@
     </Page.Resources>
 
     <muxc:NavigationView x:Name="SettingsNav"
-                         Header="{Binding ElementName=SettingsNav, Path=SelectedItem.Content, Mode=OneWay}"
                          IsBackButtonVisible="Collapsed"
                          IsSettingsVisible="False"
                          ItemInvoked="SettingsNav_ItemInvoked"
                          Loaded="SettingsNav_Loaded"
                          TabFocusNavigation="Cycle">
+        <muxc:NavigationView.Header>
+            <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
+                                ItemsSource="{x:Bind Breadcrumbs}"
+                                ItemClicked="BreadcrumbBar_ItemClicked">
+            </muxc:BreadcrumbBar>
+        </muxc:NavigationView.Header>
 
         <muxc:NavigationView.MenuItems>
 

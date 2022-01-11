@@ -21,14 +21,19 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SettingsNav_ItemInvoked(Microsoft::UI::Xaml::Controls::NavigationView const& sender, Microsoft::UI::Xaml::Controls::NavigationViewItemInvokedEventArgs const& args);
         void SaveButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
         void ResetButton_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& args);
+        void BreadcrumbBar_ItemClicked(Microsoft::UI::Xaml::Controls::BreadcrumbBar const& sender, Microsoft::UI::Xaml::Controls::BreadcrumbBarItemClickedEventArgs const& args);
 
         void SetHostingWindow(uint64_t hostingWindow) noexcept;
         bool TryPropagateHostingWindow(IInspectable object) noexcept;
         uint64_t GetHostingWindow() const noexcept;
 
+        bool ShowBaseLayerMenuItem() const noexcept;
+        Windows::Foundation::Collections::IObservableVector<IInspectable> Breadcrumbs() noexcept;
+
         TYPED_EVENT(OpenJson, Windows::Foundation::IInspectable, Model::SettingsTarget);
 
     private:
+        Windows::Foundation::Collections::IObservableVector<IInspectable> _breadcrumbs;
         Model::CascadiaSettings _settingsSource;
         Model::CascadiaSettings _settingsClone;
 
@@ -44,6 +49,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void _Navigate(const Editor::ProfileViewModel& profile);
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
+
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
     };
 }
 
