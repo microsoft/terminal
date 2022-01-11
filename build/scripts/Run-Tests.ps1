@@ -3,10 +3,11 @@ Param(
     [Parameter(Mandatory=$true, Position=0)][string]$MatchPattern,
     [Parameter(Mandatory=$true, Position=1)][string]$Platform,
     [Parameter(Mandatory=$true, Position=2)][string]$Configuration,
-    [Parameter(Mandatory=$false, Position=3)][string]$LogPath
+    [Parameter(Mandatory=$false, Position=3)][string]$LogPath,
+    [Parameter(Mandatory=$false)][string]$Root = "."
 )
 
-$testdlls = Get-ChildItem -Path ".\bin\$Platform\$Configuration" -Recurse -Filter $MatchPattern
+$testdlls = Get-ChildItem -Path "$Root\bin\$Platform\$Configuration" -Recurse -Filter $MatchPattern
 
 
 $args = @();
