@@ -44,7 +44,7 @@ jobs:
     inputs:
       targetType: filePath
       filePath: build\scripts\Run-Tests.ps1
-      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}"
+      arguments: -MatchPattern '*unit.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
     condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), or(eq(variables['BuildPlatform'], 'x64'), eq(variables['BuildPlatform'], 'x86')))
 
   - task: PowerShell@2
@@ -52,7 +52,7 @@ jobs:
     inputs:
       targetType: filePath
       filePath: build\scripts\Run-Tests.ps1
-      arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}"
+      arguments: -MatchPattern '*feature.test*.dll' -Platform '$(RationalizedBuildPlatform)' -Configuration '$(BuildConfiguration)' -LogPath '${{ parameters.testLogPath }}' -Root "$(System.ArtifactsDirectory)\\${{ parameters.artifactName }}\\$(BuildConfiguration)\\$(BuildPlatform)\\test"
     condition: and(and(succeeded(), ne(variables['PGOBuildMode'], 'Instrument')), eq(variables['BuildPlatform'], 'x64'))
 
   - task: PowerShell@2
