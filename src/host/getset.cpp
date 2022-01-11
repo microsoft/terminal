@@ -1555,61 +1555,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - A private API call for filling a region of the screen buffer.
-// Arguments:
-// - screenInfo - Reference to screen buffer info.
-// - startPosition - The position to begin filling at.
-// - fillLength - The number of characters to fill.
-// - fillChar - Character to fill the target region with.
-// - standardFillAttrs - If true, fill with the standard erase attributes.
-//                       If false, fill with the default attributes.
-// Return value:
-// - S_OK or failure code from thrown exception
-[[nodiscard]] HRESULT DoSrvPrivateFillRegion(SCREEN_INFORMATION& screenInfo,
-                                             const COORD startPosition,
-                                             const size_t fillLength,
-                                             const wchar_t fillChar,
-                                             const bool standardFillAttrs) noexcept
-{
-    try
-    {
-        if (fillLength == 0)
-        {
-            return S_OK;
-        }
-
-        LockConsole();
-        auto Unlock = wil::scope_exit([&] { UnlockConsole(); });
-
-        // For most VT erasing operations, the standard requires that the
-        // erased area be filled with the current background color, but with
-        // no additional meta attributes set. For all other cases, we just
-        // fill with the default attributes.
-        auto fillAttrs = TextAttribute{};
-        if (standardFillAttrs)
-        {
-            fillAttrs = screenInfo.GetAttributes();
-            fillAttrs.SetStandardErase();
-        }
-
-        const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
-        screenInfo.Write(fillData, startPosition, false);
-
-        // Notify accessibility
-        if (screenInfo.HasAccessibilityEventing())
-        {
-            auto endPosition = startPosition;
-            const auto bufferSize = screenInfo.GetBufferSize();
-            bufferSize.MoveInBounds(fillLength - 1, endPosition);
-            screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
-        }
-
-        return S_OK;
-    }
-    CATCH_RETURN();
-}
-
-// Routine Description:
 // - A private API call for moving a block of data in the screen buffer,
 //    optionally limiting the effects of the move to a clipping rectangle.
 // Arguments:

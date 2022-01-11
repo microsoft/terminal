@@ -807,30 +807,54 @@ void ConhostInternalGetSet::SetColorAliasIndex(const ColorAlias alias, const siz
 }
 
 // Routine Description:
-// - Connects the PrivateFillRegion call directly into our Driver Message servicing
-//    call inside Conhost.exe
-//   PrivateFillRegion is an internal-only "API" call that the vt commands can execute,
-//    but it is not represented as a function call on our public API surface.
+// - Fills a region of the screen buffer.
 // Arguments:
-// - screenInfo - Reference to screen buffer info.
 // - startPosition - The position to begin filling at.
 // - fillLength - The number of characters to fill.
 // - fillChar - Character to fill the target region with.
 // - standardFillAttrs - If true, fill with the standard erase attributes.
 //                       If false, fill with the default attributes.
 // Return value:
-// - true if successful (see DoSrvPrivateScrollRegion). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::PrivateFillRegion(const COORD startPosition,
                                               const size_t fillLength,
                                               const wchar_t fillChar,
                                               const bool standardFillAttrs) noexcept
+try
 {
-    return SUCCEEDED(DoSrvPrivateFillRegion(_io.GetActiveOutputBuffer(),
-                                            startPosition,
-                                            fillLength,
-                                            fillChar,
-                                            standardFillAttrs));
+    auto& screenInfo = _io.GetActiveOutputBuffer();
+
+    if (fillLength == 0)
+    {
+        return true;
+    }
+
+    // For most VT erasing operations, the standard requires that the
+    // erased area be filled with the current background color, but with
+    // no additional meta attributes set. For all other cases, we just
+    // fill with the default attributes.
+    auto fillAttrs = TextAttribute{};
+    if (standardFillAttrs)
+    {
+        fillAttrs = screenInfo.GetAttributes();
+        fillAttrs.SetStandardErase();
+    }
+
+    const auto fillData = OutputCellIterator{ fillChar, fillAttrs, fillLength };
+    screenInfo.Write(fillData, startPosition, false);
+
+    // Notify accessibility
+    if (screenInfo.HasAccessibilityEventing())
+    {
+        auto endPosition = startPosition;
+        const auto bufferSize = screenInfo.GetBufferSize();
+        bufferSize.MoveInBounds(fillLength - 1, endPosition);
+        screenInfo.NotifyAccessibilityEventing(startPosition.X, startPosition.Y, endPosition.X, endPosition.Y);
+    }
+
+    return true;
 }
+CATCH_RETURN_FALSE()
 
 // Routine Description:
 // - Connects the PrivateScrollRegion call directly into our Driver Message servicing

@@ -30,12 +30,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
 
-[[nodiscard]] HRESULT DoSrvPrivateFillRegion(SCREEN_INFORMATION& screenInfo,
-                                             const COORD startPosition,
-                                             const size_t fillLength,
-                                             const wchar_t fillChar,
-                                             const bool standardFillAttrs) noexcept;
-
 [[nodiscard]] HRESULT DoSrvPrivateScrollRegion(SCREEN_INFORMATION& screenInfo,
                                                const SMALL_RECT scrollRect,
                                                const std::optional<SMALL_RECT> clipRect,
