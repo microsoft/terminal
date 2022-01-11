@@ -5037,11 +5037,11 @@ void ScreenBufferTests::ClearAlternateBuffer()
 #pragma region Test ScrollConsoleScreenBufferWImpl()
         // Clear text of alt buffer (same params as in CMD)
         VERIFY_SUCCEEDED(g.api->ScrollConsoleScreenBufferWImpl(siMain,
-                                                              { 0, 0, 120, 9001 },
-                                                              { 0, -9001 },
-                                                              std::nullopt,
-                                                              L' ',
-                                                              7));
+                                                               { 0, 0, 120, 9001 },
+                                                               { 0, -9001 },
+                                                               std::nullopt,
+                                                               L' ',
+                                                               7));
 
         // Verify text is now gone
         VERIFY_ARE_EQUAL(L" ", altBuffer.GetTextBuffer().GetCellDataAt({ 0, 0 })->Chars());
