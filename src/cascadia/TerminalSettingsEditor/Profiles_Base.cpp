@@ -28,6 +28,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     void Profiles_Base::OnNavigatedTo(const NavigationEventArgs& e)
     {
         _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
+
+        // Check the use parent directory box if the starting directory is empty
+        if (_State.Profile().StartingDirectory().empty())
+        {
+            StartingDirectoryUseParentCheckbox().IsChecked(true);
+        }
+    }
+
+    void Profiles_Base::OnNavigatedFrom(const NavigationEventArgs& /*e*/)
+    {
+        _ViewModelChangedRevoker.revoke();
     }
 
     void Profiles_Base::Appearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)

@@ -70,7 +70,7 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </ClInclude>
     <ClInclude Include="Profiles.h">
-      <DependentUpon>Profiles.xaml</DependentUpon>
+      <DependentUpon>Profiles.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClInclude>
     <ClInclude Include="ProfileViewModel.h">
@@ -131,9 +131,6 @@
     <Page Include="MainPage.xaml">
       <SubType>Designer</SubType>
     </Page>
-    <Page Include="Profiles.xaml">
-      <SubType>Designer</SubType>
-    </Page>
     <Page Include="Profiles_Base.xaml">
       <SubType>Designer</SubType>
     </Page>
@@ -189,7 +186,7 @@
     </ClCompile>
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" />
     <ClCompile Include="Profiles.cpp">
-      <DependentUpon>Profiles.xaml</DependentUpon>
+      <DependentUpon>Profiles.idl</DependentUpon>
       <SubType>Code</SubType>
     </ClCompile>
     <ClCompile Include="ProfileViewModel.cpp">
@@ -263,7 +260,6 @@
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Midl>
     <Midl Include="Profiles.idl">
-      <DependentUpon>Profiles.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Midl>
     <Midl Include="ProfileViewModel.idl" />

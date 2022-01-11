@@ -44,7 +44,16 @@
         <muxc:NavigationView.Header>
             <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
                                 ItemsSource="{x:Bind Breadcrumbs}"
-                                ItemClicked="BreadcrumbBar_ItemClicked">
+                                ItemClicked="BreadcrumbBar_ItemClicked"
+                                Margin="-40,0,0,16">
+                <muxc:BreadcrumbBar.Resources>
+                    <ResourceDictionary>
+                        <x:Double x:Key="BreadcrumbBarItemThemeFontSize">28</x:Double>
+                        <Thickness x:Key="BreadcrumbBarChevronPadding">11,4,12,0</Thickness>
+                        <FontWeight x:Key="BreadcrumbBarItemFontWeight">SemiBold</FontWeight>
+                        <x:Double x:Key="BreadcrumbBarChevronFontSize">16</x:Double>
+                    </ResourceDictionary>
+                </muxc:BreadcrumbBar.Resources>
             </muxc:BreadcrumbBar>
         </muxc:NavigationView.Header>
 

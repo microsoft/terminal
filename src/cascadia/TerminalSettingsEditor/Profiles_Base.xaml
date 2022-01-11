@@ -36,7 +36,17 @@
 
     <!--  Use a Grid instead of a StackPanel. StackPanel suppresses the inner ScrollViewer.  -->
     <Grid>
-        <ScrollViewer ViewChanging="ViewChanging">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock x:Uid="Profile_BaseLayerDisclaimer"
+                   Grid.Row="0"
+                   Margin="{StaticResource StandardIndentMargin}"
+                   Style="{StaticResource DisclaimerStyle}"
+                   Visibility="{x:Bind State.Profile.IsBaseLayer}" />
+        <ScrollViewer ViewChanging="ViewChanging"
+                      Grid.Row="1">
             <StackPanel Style="{StaticResource PivotStackStyle}"
                         Margin="13,0,0,0">
 

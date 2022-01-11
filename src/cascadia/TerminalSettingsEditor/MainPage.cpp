@@ -287,18 +287,22 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         if (clickedItemTag == launchTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Launch>(), winrt::make<LaunchPageNavigationState>(_settingsClone));
+            _breadcrumbs.Append(RS_(L"Nav_Launch/Content"));
         }
         else if (clickedItemTag == interactionTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Interaction>(), winrt::make<InteractionPageNavigationState>(_settingsClone.GlobalSettings()));
+            _breadcrumbs.Append(RS_(L"Nav_Interaction/Content"));
         }
         else if (clickedItemTag == renderingTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Rendering>(), winrt::make<RenderingPageNavigationState>(_settingsClone.GlobalSettings()));
+            _breadcrumbs.Append(RS_(L"Nav_Rendering/Content"));
         }
         else if (clickedItemTag == actionsTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::Actions>(), winrt::make<ActionsPageNavigationState>(_settingsClone));
+            _breadcrumbs.Append(RS_(L"Nav_Actions/Content"));
         }
         else if (clickedItemTag == globalProfileTag)
         {
@@ -317,39 +321,41 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                         {
                             contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), _lastProfilesNavState);
                             _breadcrumbs.Clear();
-                            _breadcrumbs.Append(L"Global profile");
+                            _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
                         }
                         else if (currentPage == L"Appearance")
                         {
                             contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
-                            _breadcrumbs.Append(L"Appearance");
+                            _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
                         }
                         else if (currentPage == L"Advanced")
                         {
                             contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
-                            _breadcrumbs.Append(L"Advanced");
+                            _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
                         }
                     }
                 });
 
             contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
+            _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
         }
         else if (clickedItemTag == colorSchemesTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::ColorSchemes>(), _colorSchemesNavState);
+            _breadcrumbs.Append(RS_(L"Nav_ColorSchemes/Content"));
         }
         else if (clickedItemTag == globalAppearanceTag)
         {
             contentFrame().Navigate(xaml_typename<Editor::GlobalAppearance>(), winrt::make<GlobalAppearancePageNavigationState>(_settingsClone.GlobalSettings()));
+            _breadcrumbs.Append(RS_(L"Nav_Appearance/Content"));
         }
         else if (clickedItemTag == addProfileTag)
         {
             auto addProfileState{ winrt::make<AddProfilePageNavigationState>(_settingsClone) };
             addProfileState.AddNew({ get_weak(), &MainPage::_AddProfileHandler });
             contentFrame().Navigate(xaml_typename<Editor::AddProfile>(), addProfileState);
+            _breadcrumbs.Append(RS_(L"Nav_AddNewProfile/Content"));
         }
-
-        _breadcrumbs.Append(clickedItemTag);
     }
 
     // Method Description:
@@ -392,12 +398,12 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                 else if (currentPage == L"Appearance")
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
-                    _breadcrumbs.Append(L"Appearance");
+                    _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
                 }
                 else if (currentPage == L"Advanced")
                 {
                     contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
-                    _breadcrumbs.Append(L"Advanced");
+                    _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
                 }
             }
         });

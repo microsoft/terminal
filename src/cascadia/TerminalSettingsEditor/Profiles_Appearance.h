@@ -12,7 +12,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
     public:
         Profiles_Appearance();
+
         void OnNavigatedTo(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
+        void OnNavigatedFrom(const Windows::UI::Xaml::Navigation::NavigationEventArgs& e);
 
         void CreateUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
         void DeleteUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
@@ -23,6 +25,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     private:
         Microsoft::Terminal::Control::TermControl _previewControl;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
+        Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _AppearanceViewModelChangedRevoker;
     };
 };
 
