@@ -733,15 +733,15 @@ void ConhostInternalGetSet::_modifyLines(const size_t count, const bool insert)
 }
 
 // Method Description:
-// - Connects the MoveToBottom call directly into our Driver Message servicing
-//      call inside Conhost.exe
+// - Snaps the screen buffer's viewport to the "virtual bottom", the last place
+//      the viewport was before the user scrolled it (with the mouse or scrollbar)
 // Arguments:
-// <none>
+// - <none>
 // Return Value:
-// - true if successful (see DoSrvPrivateMoveToBottom). false otherwise.
+// - true if successful. false otherwise.
 bool ConhostInternalGetSet::MoveToBottom() const
 {
-    DoSrvPrivateMoveToBottom(_io.GetActiveOutputBuffer());
+    _io.GetActiveOutputBuffer().MoveToBottom();
     return true;
 }
 

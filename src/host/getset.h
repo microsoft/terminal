@@ -30,8 +30,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
 
-void DoSrvPrivateMoveToBottom(SCREEN_INFORMATION& screenInfo);
-
 [[nodiscard]] HRESULT DoSrvPrivateFillRegion(SCREEN_INFORMATION& screenInfo,
                                              const COORD startPosition,
                                              const size_t fillLength,
