@@ -5,6 +5,7 @@
 
 using ColorTool.ConsoleTargets;
 using ColorTool.SchemeWriters;
+using static ColorTool.ConsoleAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -121,6 +122,24 @@ namespace ColorTool
         private static void OutputUsage()
         {
             Console.WriteLine(Resources.OutputUsage);
+        }
+
+        public static bool DoInVTMode(Action VTAction)
+        {
+            IntPtr hOut = GetStdOutputHandle();
+            uint requestedMode;
+            uint originalConsoleMode;
+            bool succeeded = GetConsoleMode(hOut, out originalConsoleMode);
+            if (succeeded)
+            {
+                requestedMode = originalConsoleMode | (uint)ConsoleAPI.ConsoleOutputModes.ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                SetConsoleMode(hOut, requestedMode);
+            }
+
+            VTAction();
+
+            if (succeeded) SetConsoleMode(hOut, originalConsoleMode);
+            return succeeded;
         }
 
         private static void Version()
