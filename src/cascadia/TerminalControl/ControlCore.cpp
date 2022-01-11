@@ -995,6 +995,8 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             textData += text;
         }
 
+        const auto bgColor = _terminal->GetAttributeColors({}).second;
+
         // convert text to HTML format
         // GH#5347 - Don't provide a title for the generated HTML, as many
         // web applications will paste the title first, followed by the HTML
@@ -1003,7 +1005,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                   TextBuffer::GenHTML(bufferData,
                                                       _actualFont.GetUnscaledSize().Y,
                                                       _actualFont.GetFaceName(),
-                                                      til::color{ _settings->DefaultBackground() }) :
+                                                      bgColor) :
                                   "";
 
         // convert to RTF format
@@ -1011,7 +1013,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                                  TextBuffer::GenRTF(bufferData,
                                                     _actualFont.GetUnscaledSize().Y,
                                                     _actualFont.GetFaceName(),
-                                                    til::color{ _settings->DefaultBackground() }) :
+                                                    bgColor) :
                                  "";
 
         if (!_settings->CopyOnSelect())
@@ -1101,7 +1103,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
 
     til::color ControlCore::BackgroundColor() const
     {
-        return til::color{ _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND) }.with_alpha(0xff);
+        return _terminal->GetColorTableEntry(TextColor::DEFAULT_BACKGROUND);
     }
 
     // Method Description:

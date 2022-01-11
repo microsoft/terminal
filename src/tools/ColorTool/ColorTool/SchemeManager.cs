@@ -54,37 +54,35 @@ namespace ColorTool
 
             if (Directory.Exists(schemeDirectory))
             {
-                IntPtr handle = GetStdOutputHandle();
-                GetConsoleMode(handle, out var mode);
-                SetConsoleMode(handle, mode | 0x4);
-
-                int consoleWidth = Console.WindowWidth;
-                string fgText = " gYw ";
-                foreach (string schemeName in Directory.GetFiles(schemeDirectory).Select(Path.GetFileName))
+                Program.DoInVTMode(() =>
                 {
-                    ColorScheme colorScheme = GetScheme(schemeName, false);
-                    if (colorScheme != null)
+                    int consoleWidth = Console.WindowWidth;
+                    string fgText = " gYw ";
+                    foreach (string schemeName in Directory.GetFiles(schemeDirectory).Select(Path.GetFileName))
                     {
-                        string colors = string.Empty;
-                        for (var index = 0; index < 8; index++)
+                        ColorScheme colorScheme = GetScheme(schemeName, false);
+                        if (colorScheme != null)
                         {
-                            var color = colorScheme[index];
-                            // Set the background color to the color in the scheme, plus some text to show how it looks
-                            colors += $"\x1b[48;2;{color.R};{color.G};{color.B}m{fgText}";
+                            string colors = string.Empty;
+                            for (var index = 0; index < 8; index++)
+                            {
+                                var color = colorScheme[index];
+                                // Set the background color to the color in the scheme, plus some text to show how it looks
+                                colors += $"\x1b[48;2;{color.R};{color.G};{color.B}m{fgText}";
+                            }
+                            // Align scheme colors right, or on newline if it doesn't fit
+                            int schemeTextLength = fgText.Length * 8;
+                            int bufferLength = consoleWidth - (schemeName.Length + schemeTextLength);
+
+                            string bufferString = bufferLength >= 0
+                                ? new string(' ', bufferLength)
+                                : "\n" + new string(' ', consoleWidth - schemeTextLength);
+
+                            string outputString = schemeName + bufferString + colors + "\x1b[0m";
+                            Console.WriteLine(outputString);
                         }
-                        // Align scheme colors right, or on newline if it doesn't fit
-                        int schemeTextLength = fgText.Length * 8;
-                        int bufferLength = consoleWidth - (schemeName.Length + schemeTextLength);
-
-                        string bufferString = bufferLength >= 0
-                            ? new string(' ', bufferLength)
-                            : "\n" + new string(' ', consoleWidth - schemeTextLength);
-
-                        string outputString = schemeName + bufferString + colors;
-                        Console.WriteLine(outputString);
-                        Console.ResetColor();
                     }
-                }
+                });
             }
         }
 

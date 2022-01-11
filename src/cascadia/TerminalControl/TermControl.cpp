@@ -450,7 +450,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::_InitializeBackgroundBrush()
     {
         auto settings{ _core.Settings() };
-        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() }.with_alpha(0xff);
+        auto bgColor = til::color{ _core.FocusedAppearance().DefaultBackground() };
         if (settings.UseAcrylic())
         {
             // See if we've already got an acrylic background brush
@@ -732,8 +732,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _cursorTimer.emplace(std::move(cursorTimer));
             // As of GH#6586, don't start the cursor timer immediately, and
             // don't show the cursor initially. We'll show the cursor and start
-            // the timer when the control is first focused. cursorTimer.Start();
-            _core.CursorOn(false);
+            // the timer when the control is first focused.
+            //
+            // As of GH#11411, turn on the cursor if we've already been marked
+            // as focused. We suspect that it's possible for the Focused event
+            // to fire before the LayoutUpdated. In that case, the
+            // _GotFocusHandler would mark us _focused, but find that a
+            // _cursorTimer doesn't exist, and it would never turn on the
+            // cursor. To mitigate, we'll initialize the cursor's 'on' state
+            // with `_focused` here.
+            _core.CursorOn(_focused);
         }
         else
         {

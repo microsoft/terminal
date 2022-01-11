@@ -2,7 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
 #include "renderer.hpp"
 
 #pragma hdrstop
@@ -32,7 +31,7 @@ static constexpr auto renderBackoffBaseTimeMilliseconds{ 150 };
 Renderer::Renderer(IRenderData* pData,
                    _In_reads_(cEngines) IRenderEngine** const rgpEngines,
                    const size_t cEngines,
-                   std::unique_ptr<IRenderThread> thread) :
+                   std::unique_ptr<RenderThread> thread) :
     _pData(THROW_HR_IF_NULL(E_INVALIDARG, pData)),
     _pThread{ std::move(thread) },
     _viewport{ pData->GetViewport() }
@@ -51,7 +50,7 @@ Renderer::Renderer(IRenderData* pData,
 // - <none>
 Renderer::~Renderer()
 {
-    // IRenderThread blocks until it has shut down.
+    // RenderThread blocks until it has shut down.
     _destructing = true;
     _pThread.reset();
 }
@@ -142,7 +141,7 @@ try
     });
 
     // A. Prep Colors
-    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, _pData->GetDefaultBrushColors(), false, true));
+    RETURN_IF_FAILED(_UpdateDrawingBrushes(pEngine, {}, false, true));
 
     // B. Perform Scroll Operations
     RETURN_IF_FAILED(_PerformScrolling(pEngine));

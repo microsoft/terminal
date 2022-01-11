@@ -941,8 +941,8 @@ namespace winrt::TerminalApp::implementation
             // process until later, on another thread, after we've already
             // restored the CWD to it's original value.
             winrt::hstring newWorkingDirectory{ settings.StartingDirectory() };
-            if (newWorkingDirectory.size() <= 1 ||
-                !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
+            if (newWorkingDirectory.size() == 0 || newWorkingDirectory.size() == 1 &&
+                                                       !(newWorkingDirectory[0] == L'~' || newWorkingDirectory[0] == L'/'))
             { // We only want to resolve the new WD against the CWD if it doesn't look like a Linux path (see GH#592)
                 std::wstring cwdString{ wil::GetCurrentDirectoryW<std::wstring>() };
                 std::filesystem::path cwd{ cwdString };
@@ -1440,20 +1440,9 @@ namespace winrt::TerminalApp::implementation
 
         for (auto tab : _tabs)
         {
-            if (auto terminalTab = _GetTerminalTabImpl(tab))
-            {
-                auto tabActions = terminalTab->BuildStartupActions();
-                actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
-            }
-            else if (tab.try_as<SettingsTab>())
-            {
-                ActionAndArgs action;
-                action.Action(ShortcutAction::OpenSettings);
-                OpenSettingsArgs args{ SettingsTarget::SettingsUI };
-                action.Args(args);
-
-                actions.emplace_back(std::move(action));
-            }
+            auto t = winrt::get_self<implementation::TabBase>(tab);
+            auto tabActions = t->BuildStartupActions();
+            actions.insert(actions.end(), std::make_move_iterator(tabActions.begin()), std::make_move_iterator(tabActions.end()));
         }
 
         // if the focused tab was not the last tab, restore that
@@ -1481,6 +1470,13 @@ namespace winrt::TerminalApp::implementation
 
         WindowLayout layout{};
         layout.TabLayout(winrt::single_threaded_vector<ActionAndArgs>(std::move(actions)));
+
+        LaunchMode mode = LaunchMode::DefaultMode;
+        WI_SetFlagIf(mode, LaunchMode::FullscreenMode, _isFullscreen);
+        WI_SetFlagIf(mode, LaunchMode::FocusMode, _isInFocusMode);
+        WI_SetFlagIf(mode, LaunchMode::MaximizedMode, _isMaximized);
+
+        layout.LaunchMode({ mode });
 
         // Only save the content size because the tab size will be added on load.
         const float contentWidth = ::base::saturated_cast<float>(_tabContent.ActualWidth());
@@ -2607,10 +2603,10 @@ namespace winrt::TerminalApp::implementation
     // - <none>
     void TerminalPage::ToggleFocusMode()
     {
-        _SetFocusMode(!_isInFocusMode);
+        SetFocusMode(!_isInFocusMode);
     }
 
-    void TerminalPage::_SetFocusMode(const bool inFocusMode)
+    void TerminalPage::SetFocusMode(const bool inFocusMode)
     {
         const bool newInFocusMode = inFocusMode;
         if (newInFocusMode != FocusMode())
@@ -2856,6 +2852,25 @@ namespace winrt::TerminalApp::implementation
         _isFullscreen = newFullscreen;
         _UpdateTabView();
         _FullscreenChangedHandlers(*this, nullptr);
+    }
+
+    // Method Description:
+    // - Updates the page's state for isMaximized when the window changes externally.
+    void TerminalPage::Maximized(bool newMaximized)
+    {
+        _isMaximized = newMaximized;
+    }
+
+    // Method Description:
+    // - Asks the window to change its maximized state.
+    void TerminalPage::RequestSetMaximized(bool newMaximized)
+    {
+        if (_isMaximized == newMaximized)
+        {
+            return;
+        }
+        _isMaximized = newMaximized;
+        _ChangeMaximizeRequestedHandlers(*this, nullptr);
     }
 
     HRESULT TerminalPage::_OnNewConnection(const ConptyConnection& connection)
@@ -3260,7 +3275,7 @@ namespace winrt::TerminalApp::implementation
                         // If we're entering Quake Mode from ~Focus Mode, then this will enter Focus Mode
                         // If we're entering Quake Mode from Focus Mode, then this will do nothing
                         // If we're leaving Quake Mode (we're already in Focus Mode), then this will do nothing
-                        _SetFocusMode(true);
+                        SetFocusMode(true);
                         _IsQuakeWindowChangedHandlers(*this, nullptr);
                     }
                 }

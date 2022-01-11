@@ -12,7 +12,6 @@ ACTCTXW
 activatable
 ACTIVEBORDER
 ACTIVECAPTION
-adaa
 ADDALIAS
 ADDREF
 addressof
@@ -161,6 +160,7 @@ Borland
 BOTTOMLEFT
 BOTTOMRIGHT
 boutput
+boxheader
 BPBF
 bpp
 BPPF
@@ -287,8 +287,6 @@ codepage
 codepath
 codepoint
 codeproject
-coffgroup
-coffgrp
 coinit
 COLLECTIONURI
 colorizing
@@ -299,6 +297,7 @@ colorspaces
 colorspec
 colortable
 colortbl
+colortest
 colortool
 COLR
 combaseapi
@@ -402,6 +401,7 @@ creativecommons
 cred
 cref
 crend
+Crisman
 CRLFs
 crloew
 Crt
@@ -480,7 +480,6 @@ dai
 DATABLOCK
 DATAVIEW
 DATAW
-datetime
 DBatch
 dbcs
 DBCSCHAR
@@ -610,6 +609,7 @@ DINLINE
 directio
 DIRECTX
 Dirs
+DISABLEDELAYEDEXPANSION
 DISABLENOSCROLL
 DISPLAYATTRIBUTE
 DISPLAYATTRIBUTEPROPERTY
@@ -641,6 +641,7 @@ DPICHANGE
 DPICHANGED
 dpix
 dpiy
+dpnx
 DRAWFRAME
 DRAWITEM
 DRAWITEMSTRUCT
@@ -672,8 +673,8 @@ dxgidwm
 dxinterop
 dxsm
 dxttbmp
+Dyreen
 eachother
-eae
 eaf
 EASTEUROPE
 ECH
@@ -688,13 +689,13 @@ edputil
 edu
 Efast
 EHsc
+EINS
 EJO
 ELEMENTNOTAVAILABLE
 elems
 elif
 elseif
 emacs
-emplate
 EMPTYBOX
 enabledelayedexpansion
 endian
@@ -714,6 +715,7 @@ enumranges
 envvar
 eol
 EPres
+EQU
 ERASEBKGND
 errno
 errorlevel
@@ -763,11 +765,13 @@ fdw
 fesb
 FFDE
 FFrom
+fgbg
 FGCOLOR
 fgetc
 fgetwc
 FGHIJ
 fgidx
+FGs
 FILEDESCRIPTION
 fileno
 filepath
@@ -821,6 +825,7 @@ FORCEOFFFEEDBACK
 FORCEONFEEDBACK
 FORCEV
 foreach
+forground
 fprintf
 framebuffer
 FRAMECHANGED
@@ -853,7 +858,6 @@ gcy
 gdi
 gdip
 gdirenderer
-GENPROFILE
 geopol
 GETALIAS
 GETALIASES
@@ -938,6 +942,8 @@ groupbox
 gset
 gsl
 GTP
+GTR
+guardxfg
 guc
 gui
 guidatom
@@ -972,7 +978,6 @@ hfont
 hfontresource
 hglobal
 hhh
-HHmm
 hhook
 hhx
 HIBYTE
@@ -1002,7 +1007,6 @@ horiz
 HORZ
 hostable
 hostlib
-Hostx
 HPA
 HPAINTBUFFER
 HPCON
@@ -1129,7 +1133,6 @@ INPUTPROCESSORPROFILE
 inputrc
 Inputreadhandledata
 INSERTMODE
-installationpath
 intellisense
 INTERACTIVITYBASE
 INTERCEPTCOPYPASTE
@@ -1159,7 +1162,6 @@ IRaw
 IRead
 IReference
 IRender
-IRenderer
 IScheme
 ISelection
 IShell
@@ -1358,6 +1360,7 @@ lstrcmp
 lstrcmpi
 LTEXT
 LTLTLTLTL
+ltrim
 ltype
 LUID
 lval
@@ -1384,6 +1387,7 @@ MAXDIMENSTRING
 maxing
 MAXLENGTH
 MAXSHORT
+maxval
 maxversiontested
 MAXWORD
 maybenull
@@ -1429,7 +1433,6 @@ mkdir
 MMBB
 mmcc
 MMCPL
-MMdd
 mmsystem
 MNC
 MNOPQ
@@ -1586,6 +1589,7 @@ NOTSUPPORTED
 nouicompat
 nounihan
 NOUPDATE
+novtable
 NOWAIT
 NOYIELD
 NOZORDER
@@ -1687,6 +1691,7 @@ OUTOFCONTEXT
 OUTOFMEMORY
 outout
 Outptr
+outstr
 OVERLAPPEDWINDOW
 OWNDC
 OWNERDRAWFIXED
@@ -1763,6 +1768,7 @@ PFONTENUMDATA
 PFS
 pgd
 pgdn
+PGONu
 pgorepro
 pgort
 PGU
@@ -1797,6 +1803,7 @@ PNTSTATUS
 POBJECT
 Podcast
 POINTSLIST
+Poli
 POLYTEXTW
 popd
 POPF
@@ -1982,7 +1989,6 @@ REGISTERVDM
 regkey
 REGSTR
 reingest
-Relayout
 RELBINPATH
 remoting
 renamer
@@ -2045,6 +2051,8 @@ rtf
 RTFTo
 Rtl
 RTLREADING
+Rtn
+rtrim
 RTTI
 ruleset
 runas
@@ -2061,6 +2069,7 @@ runut
 runxamlformat
 rvalue
 RVERTICAL
+rvpa
 RWIN
 rxvt
 safearray
@@ -2260,6 +2269,7 @@ strrev
 strsafe
 strtok
 structs
+STUBHEAD
 STUVWX
 STX
 stylecop
@@ -2381,6 +2391,7 @@ TIcon
 tif
 tilunittests
 Timeline
+timelines
 titlebar
 TITLEISLINKNAME
 TJson
@@ -2769,6 +2780,7 @@ WRITECONSOLE
 WRITECONSOLEINPUT
 WRITECONSOLEOUTPUT
 WRITECONSOLEOUTPUTSTRING
+wrkstr
 wrl
 wrp
 WRunoff
@@ -2817,6 +2829,7 @@ xdy
 XEncoding
 xes
 xff
+xfg
 XFile
 XFORM
 XManifest

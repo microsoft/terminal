@@ -75,6 +75,22 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleRestoreLastClosed(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (_previouslyClosedPanesAndTabs.size() > 0)
+        {
+            const auto restoreActions = _previouslyClosedPanesAndTabs.back();
+            for (const auto& action : restoreActions)
+            {
+                _actionDispatch->DoAction(action);
+            }
+            _previouslyClosedPanesAndTabs.pop_back();
+
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
@@ -415,11 +431,41 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSetFocusMode(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFocusModeArgs>())
+        {
+            SetFocusMode(realArgs.IsFocusMode());
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const ActionEventArgs& args)
     {
         ToggleFullscreen();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetFullScreen(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFullScreenArgs>())
+        {
+            SetFullscreen(realArgs.IsFullScreen());
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleSetMaximized(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetMaximizedArgs>())
+        {
+            RequestSetMaximized(realArgs.IsMaximized());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,

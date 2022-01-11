@@ -2,9 +2,6 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
-#include <cwchar>
-
 #include "../inc/FontInfoBase.hpp"
 
 FontInfoBase::FontInfoBase(const std::wstring_view& faceName,

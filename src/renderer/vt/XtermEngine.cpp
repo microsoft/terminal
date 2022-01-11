@@ -512,7 +512,7 @@ CATCH_RETURN();
 }
 
 // Method Description:
-// - Wrapper for ITerminalOutputConnection. Write either an ascii-only, or a
+// - Wrapper for _Write. Write either an ascii-only, or a
 //      proper utf-8 string, depending on our mode.
 // Arguments:
 // - wstr - wstring of text to be written

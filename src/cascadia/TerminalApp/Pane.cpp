@@ -33,6 +33,7 @@ static const Duration AnimationDuration = DurationHelper::FromTimeSpan(winrt::Wi
 
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_focusedBorderBrush = { nullptr };
 winrt::Windows::UI::Xaml::Media::SolidColorBrush Pane::s_unfocusedBorderBrush = { nullptr };
+winrt::Windows::Media::Playback::MediaPlayer Pane::s_bellPlayer = { nullptr };
 
 Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFocused) :
     _control{ control },
@@ -69,6 +70,36 @@ Pane::Pane(const Profile& profile, const TermControl& control, const bool lastFo
         _FocusFirstChild();
         e.Handled(true);
     });
+
+    if (!s_bellPlayer)
+    {
+        try
+        {
+            s_bellPlayer = winrt::Windows::Media::Playback::MediaPlayer();
+            if (s_bellPlayer)
+            {
+                // BODGY
+                //
+                // Manually leak a ref to the MediaPlayer we just instantiated.
+                // We're doing this just like the way we do in AppHost with the
+                // App itself.
+                //
+                // We have to do this because there's some bug in the OS with
+                // the way a MediaPlayer gets torn down. At time of writing (Nov
+                // 2021), if you search for `remove_SoundLevelChanged` in the OS
+                // repo, you'll find a pile of bugs.
+                //
+                // We tried moving the MediaPlayer singleton up to the
+                // TerminalPage, but alas, that teardown had the same problem.
+                // So _whatever_. We'll leak it here. It needs to last the
+                // lifetime of the app anyways, and it'll get cleaned up when the
+                // Terminal is closed, so whatever.
+                winrt::Windows::Media::Playback::MediaPlayer p{ s_bellPlayer };
+                ::winrt::detach_abi(p);
+            }
+        }
+        CATCH_LOG();
+    }
 }
 
 Pane::Pane(std::shared_ptr<Pane> first,
@@ -1028,6 +1059,23 @@ void Pane::_ControlConnectionStateChangedHandler(const winrt::Windows::Foundatio
     }
 }
 
+winrt::fire_and_forget Pane::_playBellSound(winrt::Windows::Foundation::Uri uri)
+{
+    auto weakThis{ shared_from_this() };
+
+    co_await winrt::resume_foreground(_root.Dispatcher());
+    if (auto pane{ weakThis.get() })
+    {
+        if (s_bellPlayer)
+        {
+            const auto source{ winrt::Windows::Media::Core::MediaSource::CreateFromUri(uri) };
+            const auto item{ winrt::Windows::Media::Playback::MediaPlaybackItem(source) };
+            s_bellPlayer.Source(item);
+            s_bellPlayer.Play();
+        }
+    }
+}
+
 // Method Description:
 // - Plays a warning note when triggered by the BEL control character,
 //   using the sound configured for the "Critical Stop" system event.`
@@ -1051,8 +1099,18 @@ void Pane::_ControlWarningBellHandler(const winrt::Windows::Foundation::IInspect
             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Audible))
             {
                 // Audible is set, play the sound
-                const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
-                PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+                auto sounds{ _profile.BellSound() };
+                if (sounds && sounds.Size() > 0)
+                {
+                    winrt::hstring soundPath{ wil::ExpandEnvironmentStringsW<std::wstring>(sounds.GetAt(rand() % sounds.Size()).c_str()) };
+                    winrt::Windows::Foundation::Uri uri{ soundPath };
+                    _playBellSound(uri);
+                }
+                else
+                {
+                    const auto soundAlias = reinterpret_cast<LPCTSTR>(SND_ALIAS_SYSTEMHAND);
+                    PlaySound(soundAlias, NULL, SND_ALIAS_ID | SND_ASYNC | SND_SENTRY);
+                }
             }
 
             if (WI_IsFlagSet(_profile.BellStyle(), winrt::Microsoft::Terminal::Settings::Model::BellStyle::Window))

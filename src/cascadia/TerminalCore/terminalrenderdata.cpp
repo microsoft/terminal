@@ -42,11 +42,6 @@ void Terminal::SetFontInfo(const FontInfo& fontInfo)
     _fontInfo = fontInfo;
 }
 
-const TextAttribute Terminal::GetDefaultBrushColors() noexcept
-{
-    return TextAttribute{};
-}
-
 std::pair<COLORREF, COLORREF> Terminal::GetAttributeColors(const TextAttribute& attr) const noexcept
 {
     std::pair<COLORREF, COLORREF> colors;

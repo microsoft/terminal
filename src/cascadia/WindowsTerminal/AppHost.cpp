@@ -327,6 +327,14 @@ void AppHost::Initialize()
     _logic.AlwaysOnTopChanged({ this, &AppHost::_AlwaysOnTopChanged });
     _logic.RaiseVisualBell({ this, &AppHost::_RaiseVisualBell });
     _logic.SystemMenuChangeRequested({ this, &AppHost::_SystemMenuChangeRequested });
+    _logic.ChangeMaximizeRequested({ this, &AppHost::_ChangeMaximizeRequested });
+
+    _window->MaximizeChanged([this](bool newMaximize) {
+        if (_logic)
+        {
+            _logic.Maximized(newMaximize);
+        }
+    });
 
     _logic.Create();
 
@@ -348,7 +356,7 @@ void AppHost::Initialize()
     _window->SetContent(_logic.GetRoot());
     _window->OnAppInitialized();
 
-    // THIS IS A HACK
+    // BODGY
     //
     // We've got a weird crash that happens terribly inconsistently, but pretty
     // readily on migrie's laptop, only in Debug mode. Apparently, there's some
@@ -638,6 +646,29 @@ void AppHost::_FullscreenChanged(const winrt::Windows::Foundation::IInspectable&
                                  const winrt::Windows::Foundation::IInspectable&)
 {
     _window->FullscreenChanged(_logic.Fullscreen());
+}
+
+void AppHost::_ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspectable&,
+                                       const winrt::Windows::Foundation::IInspectable&)
+{
+    if (const auto handle = _window->GetHandle())
+    {
+        // Shamelessly copied from TitlebarControl::_OnMaximizeOrRestore
+        // since there doesn't seem to be another way to handle this
+        POINT point1 = {};
+        ::GetCursorPos(&point1);
+        const LPARAM lParam = MAKELPARAM(point1.x, point1.y);
+        WINDOWPLACEMENT placement = { sizeof(placement) };
+        ::GetWindowPlacement(handle, &placement);
+        if (placement.showCmd == SW_SHOWNORMAL)
+        {
+            ::PostMessage(handle, WM_SYSCOMMAND, SC_MAXIMIZE, lParam);
+        }
+        else if (placement.showCmd == SW_SHOWMAXIMIZED)
+        {
+            ::PostMessage(handle, WM_SYSCOMMAND, SC_RESTORE, lParam);
+        }
+    }
 }
 
 void AppHost::_AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable&,

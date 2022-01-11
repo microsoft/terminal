@@ -31,7 +31,7 @@ namespace Microsoft::Console::Render
         std::optional<CursorOptions> cursorInfo;
     };
 
-    class IRenderEngine
+    class __declspec(novtable) IRenderEngine
     {
     public:
         enum class GridLines
