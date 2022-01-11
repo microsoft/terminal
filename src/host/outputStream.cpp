@@ -650,18 +650,16 @@ bool ConhostInternalGetSet::PrivateSuppressResizeRepaint()
 }
 
 // Routine Description:
-// - Connects the IsConsolePty call directly into our Driver Message servicing call inside Conhost.exe
+// - Checks if the console host is acting as a pty.
 // - NOTE: This ONE method behaves differently! The rest of the methods on this
 //   interface return true if successful. This one just returns the result.
 // Arguments:
-// - isPty: receives the bool indicating whether or not we're in pty mode.
+// - <none>
 // Return Value:
 // - true if we're in pty mode.
 bool ConhostInternalGetSet::IsConsolePty() const
 {
-    bool isPty = false;
-    DoSrvIsConsolePty(isPty);
-    return isPty;
+    return ServiceLocator::LocateGlobals().getConsoleInformation().IsInVtIoMode();
 }
 
 bool ConhostInternalGetSet::DeleteLines(const size_t count)

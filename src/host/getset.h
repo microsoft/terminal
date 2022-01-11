@@ -30,8 +30,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo);
 
 [[nodiscard]] HRESULT DoSrvSetConsoleOutputCodePage(const unsigned int codepage);
 
-void DoSrvIsConsolePty(bool& isPty);
-
 void DoSrvPrivateDeleteLines(const size_t count);
 void DoSrvPrivateInsertLines(const size_t count);
 

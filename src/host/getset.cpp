@@ -1555,18 +1555,6 @@ void DoSrvEndHyperlink(SCREEN_INFORMATION& screenInfo)
 }
 
 // Routine Description:
-// - An API call for checking if the console host is acting as a pty.
-// Parameters:
-// - isPty: receives the bool indicating whether or not we're in pty mode.
-// Return value:
-//  <none>
-void DoSrvIsConsolePty(bool& isPty)
-{
-    const CONSOLE_INFORMATION& gci = ServiceLocator::LocateGlobals().getConsoleInformation();
-    isPty = gci.IsInVtIoMode();
-}
-
-// Routine Description:
 // - internal logic for adding or removing lines in the active screen buffer
 //   this also moves the cursor to the left margin, which is expected behavior for IL and DL
 // Parameters:
