@@ -18,7 +18,9 @@ namespace til
     template<typename T>
     T coalesce_value(const std::optional<T>& base)
     {
-        static_assert(false, "coalesce_value must be passed a base non-optional value to be used if all optionals are empty");
+        // There's no particular reason to use `sizeof(base) == 0`
+        // apart from making this static_assert lazily evaluated.
+        static_assert(sizeof(base) == 0, "coalesce_value must be passed a base non-optional value to be used if all optionals are empty");
         return T{};
     }
 
