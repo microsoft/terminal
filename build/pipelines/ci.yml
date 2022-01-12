@@ -61,6 +61,21 @@ stages:
       - template: ./templates/build-console-ci.yml
         parameters:
           platform: ARM64
+  - stage: Test_x64
+    displayName: Test x64
+    dependsOn: [Build_x64]
+    condition: succeeded()
+    jobs:
+      - template: ./templates/test-console-ci.yml
+        parameters:
+          platform: x64
+  - stage: Test_x86
+    displayName: Test x86
+    dependsOn: [Build_x86]
+    jobs:
+      - template: ./templates/test-console-ci.yml
+        parameters:
+          platform: x86
   - stage: Scripts
     displayName: Code Health Scripts
     dependsOn: []
