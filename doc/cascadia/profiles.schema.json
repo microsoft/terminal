@@ -281,6 +281,7 @@
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
+        "clearBuffer",
         "closeOtherTabs",
         "closePane",
         "closeTab",
@@ -289,6 +290,7 @@
         "commandPalette",
         "copy",
         "duplicateTab",
+        "exportBuffer",
         "find",
         "findMatch",
         "focusPane",
@@ -431,6 +433,14 @@
       "enum": [
         "action",
         "commandLine"
+      ],
+      "type": "string"
+    },
+    "ClearBufferType": {
+      "enum": [
+        "all",
+        "screen",
+        "scrollback"
       ],
       "type": "string"
     },
@@ -1266,6 +1276,48 @@
         }
       ]
     },
+    "ClearBufferAction": {
+      "description": "Arguments corresponding to a clearBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "clearBuffer"
+            },
+            "clear": {
+              "$ref": "#/$defs/ClearBufferType",
+              "default": "all",
+              "description": "What to clear. Accepts one of `screen`, `scrollback` or `all` (for both)."
+            }
+          }
+        }
+      ]
+    },
+    "ExportBufferAction": {
+      "description": "Arguments corresponding to a exportBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "exportBuffer"
+            },
+            "path": {
+              "type": "string",
+              "default": "",
+              "description": "The path to export the text buffer to. If left blank, the Terminal will open a file picker to choose the path."
+            }
+          }
+        }
+      ]
+    },
     "GlobalSummonAction": {
       "description": "This is a special action that works globally in the OS, rather than only in the context of the terminal window. When pressed, this action will summon the terminal window.",
       "allOf": [
@@ -1428,6 +1480,12 @@
             },
             {
               "$ref": "#/$defs/FocusPaneAction"
+            },
+            {
+              "$ref": "#/$defs/ExportBufferAction"
+            },
+            {
+              "$ref": "#/$defs/ClearBufferAction"
             },
             {
               "$ref": "#/$defs/GlobalSummonAction"

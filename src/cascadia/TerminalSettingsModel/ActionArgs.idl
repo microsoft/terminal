@@ -342,6 +342,12 @@ namespace Microsoft.Terminal.Settings.Model
         UInt32 Id { get; };
     };
 
+    [default_interface] runtimeclass ExportBufferArgs : IActionArgs
+    {
+        ExportBufferArgs(String path);
+        String Path { get; };
+    };
+
     [default_interface] runtimeclass ClearBufferArgs : IActionArgs
     {
         ClearBufferArgs(Microsoft.Terminal.Control.ClearBufferType clear);
