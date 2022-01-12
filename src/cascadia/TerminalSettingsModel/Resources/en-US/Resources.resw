@@ -496,4 +496,7 @@
   <data name="QuitCommandKey" xml:space="preserve">
     <value>Quit the Terminal</value>
   </data>
+  <data name="RestoreLastClosedCommandKey" xml:space="preserve">
+    <value>Restore the last closed pane or tab</value>
+  </data>
 </root>

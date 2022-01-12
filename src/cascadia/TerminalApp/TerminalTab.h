@@ -81,7 +81,7 @@ namespace winrt::TerminalApp::implementation
         void EnterZoom();
         void ExitZoom();
 
-        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const;
+        std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs> BuildStartupActions() const override;
 
         int GetLeafPaneCount() const noexcept;
 

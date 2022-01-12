@@ -193,6 +193,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
 
+        std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
+
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
         // use a weak reference to prevent circular dependency with AppLogic
@@ -304,6 +306,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
+        void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
