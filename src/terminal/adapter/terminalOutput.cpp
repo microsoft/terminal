@@ -10,10 +10,16 @@ using namespace Microsoft::Console::VirtualTerminal;
 
 TerminalOutput::TerminalOutput() noexcept
 {
+    // By default we set all of the G-sets to ASCII, so if someone accidentally
+    // triggers a locking shift, they won't end up with Latin1 in the GL table,
+    // making their system unreadable. If ISO-2022 encoding is selected, though,
+    // we'll reset the G2 and G3 tables to Latin1, so that 8-bit apps will get a
+    // more meaningful character mapping by default. This is triggered by a DOCS
+    // sequence, which will call the EnableGrTranslation method below.
     _gsetTranslationTables.at(0) = Ascii;
     _gsetTranslationTables.at(1) = Ascii;
-    _gsetTranslationTables.at(2) = Latin1;
-    _gsetTranslationTables.at(3) = Latin1;
+    _gsetTranslationTables.at(2) = Ascii;
+    _gsetTranslationTables.at(3) = Ascii;
 }
 
 bool TerminalOutput::Designate94Charset(size_t gsetNumber, const VTID charset)
@@ -91,7 +97,13 @@ bool TerminalOutput::NeedToTranslate() const noexcept
 void TerminalOutput::EnableGrTranslation(boolean enabled)
 {
     _grTranslationEnabled = enabled;
-    // We need to reapply the right locking shift to (de)activate the translation table.
+    // The default table for G2 and G3 is Latin1 when GR translation is enabled,
+    // and ASCII when disabled. The reason for this is explained in the constructor.
+    const auto defaultTranslationTable = enabled ? std::wstring_view{ Latin1 } : std::wstring_view{ Ascii };
+    _gsetTranslationTables.at(2) = defaultTranslationTable;
+    _gsetTranslationTables.at(3) = defaultTranslationTable;
+    // We need to reapply the locking shifts in case the underlying G-sets have changed.
+    LockingShift(_glSetNumber);
     LockingShiftRight(_grSetNumber);
 }
 

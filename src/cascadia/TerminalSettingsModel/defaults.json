@@ -305,6 +305,7 @@
         { "command": "quakeMode", "keys":"win+sc(41)" },
         { "command": "openSystemMenu", "keys": "alt+space" },
         { "command": "quit" },
+        { "command": "restoreLastClosed"},
 
         // Tab Management
         // "command": "closeTab" is unbound by default.
@@ -392,6 +393,7 @@
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
         { "command": { "action": "clearBuffer", "clear": "all" } },
+        { "command": "exportBuffer" },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },

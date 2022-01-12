@@ -14,7 +14,6 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _engine(std::move(engine)),
     _state(VTStates::Ground),
     _trace(Microsoft::Console::VirtualTerminal::ParserTracing()),
-    _isInAnsiMode(true),
     _parameters{},
     _parameterLimitReached(false),
     _oscString{},
@@ -24,9 +23,14 @@ StateMachine::StateMachine(std::unique_ptr<IStateMachineEngine> engine) :
     _ActionClear();
 }
 
-void StateMachine::SetAnsiMode(bool ansiMode) noexcept
+void StateMachine::SetParserMode(const Mode mode, const bool enabled) noexcept
 {
-    _isInAnsiMode = ansiMode;
+    _parserMode.set(mode, enabled);
+}
+
+bool StateMachine::GetParserMode(const Mode mode) const noexcept
+{
+    return _parserMode.test(mode);
 }
 
 const IStateMachineEngine& StateMachine::Engine() const noexcept
@@ -1064,7 +1068,7 @@ void StateMachine::_EventEscape(const wchar_t wch)
             _EnterEscapeIntermediate();
         }
     }
-    else if (_isInAnsiMode)
+    else if (_parserMode.test(Mode::Ansi))
     {
         if (_isCsiIndicator(wch))
         {
@@ -1129,7 +1133,7 @@ void StateMachine::_EventEscapeIntermediate(const wchar_t wch)
     {
         _ActionIgnore();
     }
-    else if (_isInAnsiMode)
+    else if (_parserMode.test(Mode::Ansi))
     {
         _ActionEscDispatch(wch);
         _EnterGround();
@@ -1729,8 +1733,16 @@ void StateMachine::ProcessCharacter(const wchar_t wch)
     // Preprocess C1 control characters and treat them as ESC + their 7-bit equivalent.
     else if (_isC1ControlCharacter(wch))
     {
-        ProcessCharacter(AsciiChars::ESC);
-        ProcessCharacter(_c1To7Bit(wch));
+        // But note that we only do this if C1 control code parsing has been
+        // explicitly requested, since there are some code pages with "unmapped"
+        // code points that get translated as C1 controls when that is not their
+        // intended use. In order to avoid them triggering unintentional escape
+        // sequences, we ignore these characters by default.
+        if (_parserMode.test(Mode::AcceptC1))
+        {
+            ProcessCharacter(AsciiChars::ESC);
+            ProcessCharacter(_c1To7Bit(wch));
+        }
     }
     // Don't go to escape from the OSC string state - ESC can be used to terminate OSC strings.
     else if (_isEscape(wch) && _state != VTStates::OscString)

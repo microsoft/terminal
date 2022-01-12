@@ -16,7 +16,6 @@ Abstract:
 --*/
 
 #pragma once
-#include "../inc/cppwinrt_utils.h"
 #include "ConnectionInformation.g.h"
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::implementation

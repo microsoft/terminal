@@ -2,19 +2,16 @@
 // Licensed under the MIT license.
 
 #include "precomp.h"
-
-#include "stateMachine.hpp"
 #include "OutputStateMachineEngine.hpp"
-#include "base64.hpp"
 
 #include "ascii.hpp"
+#include "base64.hpp"
+#include "stateMachine.hpp"
 #include "../../types/inc/utils.hpp"
+#include "../renderer/vt/vtrenderer.hpp"
 
 using namespace Microsoft::Console;
 using namespace Microsoft::Console::VirtualTerminal;
-
-// the console uses 0xffffffff as an "invalid color" value
-constexpr COLORREF INVALID_COLOR = 0xffffffff;
 
 // takes ownership of pDispatch
 OutputStateMachineEngine::OutputStateMachineEngine(std::unique_ptr<ITermDispatch> pDispatch) :
@@ -264,6 +261,10 @@ bool OutputStateMachineEngine::ActionEscDispatch(const VTID id)
     case EscActionCodes::LS3R_LockingShift:
         success = _dispatch->LockingShiftRight(3);
         TermTelemetry::Instance().Log(TermTelemetry::Codes::LS3R);
+        break;
+    case EscActionCodes::DECAC1_AcceptC1Controls:
+        success = _dispatch->AcceptC1Controls(true);
+        TermTelemetry::Instance().Log(TermTelemetry::Codes::DECAC1);
         break;
     case EscActionCodes::DECDHL_DoubleHeightLineTop:
         _dispatch->SetLineRendition(LineRendition::DoubleHeightTop);
@@ -1081,7 +1082,7 @@ CATCH_LOG_RETURN_FALSE()
 //      currently processing.
 // Return Value:
 // - <none>
-void OutputStateMachineEngine::SetTerminalConnection(ITerminalOutputConnection* const pTtyConnection,
+void OutputStateMachineEngine::SetTerminalConnection(Render::VtEngine* const pTtyConnection,
                                                      std::function<bool()> pfnFlushToTerminal)
 {
     this->_pTtyConnection = pTtyConnection;

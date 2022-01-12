@@ -1,4 +1,4 @@
-﻿//
+//
 // Copyright (C) Microsoft.  All rights reserved.
 // Licensed under the terms described in the LICENSE file in the root of this project.
 //
@@ -31,9 +31,8 @@ namespace ColorTool
         private const int BrightWhite = 15;
 
         // This is the order of colors when output by the table.
-        private static readonly IReadOnlyList<int> Foregrounds = new[]
+        private static readonly IReadOnlyList<int> TableColors = new[]
         {
-            BrightWhite,
             DarkBlack,
             BrightBlack,
             DarkRed,
@@ -52,88 +51,91 @@ namespace ColorTool
             BrightWhite
         };
 
-        private static readonly IReadOnlyList<int> Backgrounds = new[]
-        {
-            DarkBlack,
-            DarkRed,
-            DarkGreen,
-            DarkYellow,
-            DarkBlue,
-            DarkMagenta,
-            DarkCyan,
-            DarkWhite
-        };
-
-        private const string TestText = "  gYw  ";
-
         private static readonly IReadOnlyList<string> AnsiForegroundSequences = new[]
         {
-            "m",
-            "1m",
             "30m",
-            "1;30m",
+            "90m",
             "31m",
-            "1;31m",
+            "91m",
             "32m",
-            "1;32m",
+            "92m",
             "33m",
-            "1;33m",
+            "93m",
             "34m",
-            "1;34m",
+            "94m",
             "35m",
-            "1;35m",
+            "95m",
             "36m",
-            "1;36m",
+            "96m",
             "37m",
-            "1;37m"
+            "97m"
         };
 
         private static readonly IReadOnlyList<string> AnsiBackgroundSequences = new[]
         {
-            "m",
             "40m",
+            "100m",
             "41m",
+            "101m",
             "42m",
+            "102m",
             "43m",
+            "103m",
             "44m",
+            "104m",
             "45m",
+            "105m",
             "46m",
-            "47m"
+            "106m",
+            "47m",
+            "107m"
         };
 
-        public static void PrintTable()
+        private const string AnsiDefaultFg = "39m";
+        private const string AnsiDefaultBg = "49m";
+
+        public static void PrintTable(bool compact)
         {
+            string TestText = compact ? "  gYw  " : " gYw ";
             ConsoleColor[] colors = (ConsoleColor[])ConsoleColor.GetValues(typeof(ConsoleColor));
             // Save the current background and foreground colors.
             ConsoleColor currentBackground = Console.BackgroundColor;
             ConsoleColor currentForeground = Console.ForegroundColor;
 
-            Console.Write("\t");
-            for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
+            // first column
+            Console.Write("\t ");
+            if (compact) Console.Write(" ");
+            Console.Write(AnsiDefaultBg);
+            if (compact) Console.Write(" ");
+            Console.Write(" ");
+
+            for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg += 1 + Convert.ToUInt16(compact))
             {
-                if (bg > 0) Console.Write(" ");
                 Console.Write("  ");
-                Console.Write(bg == 0 ? "   " : AnsiBackgroundSequences[bg]);
-                Console.Write("  ");
+                if (compact) Console.Write(" ");
+                Console.Write(AnsiBackgroundSequences[bg]);
+                if (compact) Console.Write(" ");
+                if (AnsiBackgroundSequences[bg].Length == 3) Console.Write(" ");
             }
             Console.WriteLine();
 
-            for (int fg = 0; fg < AnsiForegroundSequences.Count; fg++)
+            for (int fg = 0; fg <= TableColors.Count && fg <= AnsiForegroundSequences.Count; fg++)
             {
                 Console.ForegroundColor = currentForeground;
                 Console.BackgroundColor = currentBackground;
 
-                if (fg >= 0) Console.Write(AnsiForegroundSequences[fg] + "\t");
+                Console.Write(fg == 0 ? AnsiDefaultFg : AnsiForegroundSequences[fg - 1]);
+                Console.Write("\t");
 
                 if (fg == 0) Console.ForegroundColor = currentForeground;
-                else Console.ForegroundColor = colors[Foregrounds[fg - 1]];
+                else Console.ForegroundColor = colors[TableColors[fg - 1]];
 
-                for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
+                for (int bg = 0; bg <= TableColors.Count; bg += 1 + Convert.ToUInt16(compact))
                 {
                     if (bg > 0) Console.Write(" ");
                     if (bg == 0)
                         Console.BackgroundColor = currentBackground;
-                    else Console.BackgroundColor = colors[Backgrounds[bg - 1]];
+                    else Console.BackgroundColor = colors[TableColors[bg - (1 + Convert.ToUInt16(compact))]];
                     Console.Write(TestText);
                     Console.BackgroundColor = currentBackground;
                 }
@@ -146,50 +148,41 @@ namespace ColorTool
             Console.BackgroundColor = currentBackground;
         }
 
-        public static void PrintTableWithVt()
+        public static void PrintTableWithVt(bool compact)
         {
-            Console.Write("\t");
-            for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
+            string TestText = compact ? "  gYw  " : " gYw ";
+            // first column
+            Console.Write("\t ");
+            if (compact) Console.Write(" ");
+            Console.Write(AnsiDefaultBg);
+            if (compact) Console.Write(" ");
+            Console.Write(" ");
+
+            for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg += 1 + Convert.ToUInt16(compact))
             {
-                if (bg > 0) Console.Write(" ");
                 Console.Write("  ");
-                Console.Write(bg == 0 ? "   " : AnsiBackgroundSequences[bg]);
-                Console.Write("  ");
+                if (compact) Console.Write(" ");
+                Console.Write(AnsiBackgroundSequences[bg]);
+                if (compact) Console.Write(" ");
+                if (AnsiBackgroundSequences[bg].Length == 3) Console.Write(" ");
             }
             Console.WriteLine();
 
-            for (int fg = 0; fg < AnsiForegroundSequences.Count; fg++)
+            for (int fg = 0; fg <= AnsiForegroundSequences.Count; fg++)
             {
                 Console.Write("\x1b[m");
 
-                if (fg >= 0)
-                {
-                    Console.Write(AnsiForegroundSequences[fg] + "\t");
-                }
+                Console.Write(fg == 0 ? AnsiDefaultFg : AnsiForegroundSequences[fg - 1]);
+                Console.Write("\t");
 
-                if (fg == 0)
-                {
-                    Console.Write("\x1b[39m");
-                }
-                else
-                {
-                    Console.Write("\x1b[" + AnsiForegroundSequences[fg]);
-                }
+                if (fg == 0) Console.Write("\x1b[" + AnsiDefaultFg);
+                else Console.Write("\x1b[" + AnsiForegroundSequences[fg - 1]);
 
-                for (int bg = 0; bg < AnsiBackgroundSequences.Count; bg++)
+                for (int bg = 0; bg <= AnsiBackgroundSequences.Count; bg += 1 + Convert.ToUInt16(compact))
                 {
-                    if (bg > 0)
-                    {
-                        Console.Write(" ");
-                    }
-                    if (bg == 0)
-                    {
-                        Console.Write("\x1b[49m");
-                    }
-                    else
-                    {
-                        Console.Write("\x1b[" + AnsiBackgroundSequences[bg]);
-                    }
+                    if (bg != 0) Console.Write(" ");
+                    if (bg == 0) Console.Write("\x1b[" + AnsiDefaultBg);
+                    else Console.Write("\x1b[" + AnsiBackgroundSequences[bg - (1 + Convert.ToUInt16(compact))]);
 
                     Console.Write(TestText);
                     Console.Write("\x1b[49m");

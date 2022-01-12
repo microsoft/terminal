@@ -24,7 +24,6 @@ class TextBuffer;
 class Cursor final
 {
 public:
-    static const unsigned int s_InvertCursorColor = INVALID_COLOR;
     // the following values are used to create the textmode cursor.
     static constexpr unsigned int CURSOR_SMALL_SIZE = 25; // large enough to be one pixel on a six pixel font
 
@@ -51,8 +50,6 @@ public:
     COORD GetPosition() const noexcept;
 
     const CursorType GetType() const noexcept;
-    const bool IsUsingColor() const noexcept;
-    const COLORREF GetColor() const noexcept;
 
     void StartDeferDrawing() noexcept;
     bool IsDeferDrawing() noexcept;
@@ -67,7 +64,7 @@ public:
     void SetIsPopupShown(const bool fIsPopupShown) noexcept;
     void SetDelay(const bool fDelay) noexcept;
     void SetSize(const ULONG ulSize) noexcept;
-    void SetStyle(const ULONG ulSize, const COLORREF color, const CursorType type) noexcept;
+    void SetStyle(const ULONG ulSize, const CursorType type) noexcept;
 
     void SetPosition(const COORD cPosition) noexcept;
     void SetXPosition(const int NewX) noexcept;
@@ -84,7 +81,6 @@ public:
     COORD GetDelayedAtPosition() const noexcept;
     bool IsDelayedEOLWrap() const noexcept;
 
-    void SetColor(const unsigned int color) noexcept;
     void SetType(const CursorType type) noexcept;
 
 private:
@@ -117,6 +113,4 @@ private:
     void _RedrawCursorAlways() noexcept;
 
     CursorType _cursorType;
-    bool _fUseColor;
-    COLORREF _color;
 };

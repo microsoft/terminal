@@ -59,7 +59,6 @@ void TerminalApiTest::SetColorTableEntry()
     VERIFY_IS_TRUE(term.SetColorTableEntry(128, 100));
     VERIFY_IS_TRUE(term.SetColorTableEntry(255, 100));
 
-    VERIFY_IS_FALSE(term.SetColorTableEntry(256, 100));
     VERIFY_IS_FALSE(term.SetColorTableEntry(512, 100));
 }
 
@@ -271,7 +270,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
     auto& stateMachine = *(term._stateMachine);
 
     // Process the opening osc 8 sequence
-    stateMachine.ProcessString(L"\x1b]8;;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
@@ -281,7 +280,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlink()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -297,7 +296,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomId()
     auto& stateMachine = *(term._stateMachine);
 
     // Process the opening osc 8 sequence
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -309,7 +308,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomId()
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
 
     // Process the closing osc 8 sequences
-    stateMachine.ProcessString(L"\x1b]8;;\x9c");
+    stateMachine.ProcessString(L"\x1b]8;;\x1b\\");
     VERIFY_IS_FALSE(tbi.GetCurrentAttributes().IsHyperlink());
 }
 
@@ -325,7 +324,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
     auto& stateMachine = *(term._stateMachine);
 
     // Process the opening osc 8 sequence
-    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;test.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"test.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"test.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -333,7 +332,7 @@ void TerminalCoreUnitTests::TerminalApiTest::AddHyperlinkCustomIdDifferentUri()
     const auto oldAttributes{ tbi.GetCurrentAttributes() };
 
     // Send any other text
-    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x9c");
+    stateMachine.ProcessString(L"\x1b]8;id=myId;other.url\x1b\\");
     VERIFY_IS_TRUE(tbi.GetCurrentAttributes().IsHyperlink());
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkUriFromId(tbi.GetCurrentAttributes().GetHyperlinkId()), L"other.url");
     VERIFY_ARE_EQUAL(tbi.GetHyperlinkId(L"other.url", L"myId"), tbi.GetCurrentAttributes().GetHyperlinkId());
@@ -356,58 +355,58 @@ void TerminalCoreUnitTests::TerminalApiTest::SetTaskbarProgress()
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
     // Set some values for taskbar state and progress through state machine
-    stateMachine.ProcessString(L"\x1b]9;4;1;50\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;1;50\x1b\\");
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(50));
 
     // Reset to 0
-    stateMachine.ProcessString(L"\x1b]9;4;0;0\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;0;0\x1b\\");
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
     // Set an out of bounds value for state
-    stateMachine.ProcessString(L"\x1b]9;4;5;50\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;5;50\x1b\\");
     // Nothing should have changed (dispatch should have returned false)
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
     // Set an out of bounds value for progress
-    stateMachine.ProcessString(L"\x1b]9;4;1;999\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;1;999\x1b\\");
     // Progress should have been clamped to 100
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(100));
 
     // Don't specify any params
-    stateMachine.ProcessString(L"\x1b]9;4\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4\x1b\\");
     // State and progress should both be reset to 0
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
     // Specify additional params
-    stateMachine.ProcessString(L"\x1b]9;4;1;80;123\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;1;80;123\x1b\\");
     // Additional params should be ignored, state and progress still set normally
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(1));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
 
     // Edge cases + trailing semicolon testing
-    stateMachine.ProcessString(L"\x1b]9;4;2;\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;2;\x1b\\");
     // String should be processed correctly despite the trailing semicolon,
     // taskbar progress should remain unchanged from previous value
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(2));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
 
-    stateMachine.ProcessString(L"\x1b]9;4;3;75\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;3;75\x1b\\");
     // Given progress value should be ignored because this is the indeterminate state,
     // so the progress value should remain unchanged
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(3));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(80));
 
-    stateMachine.ProcessString(L"\x1b]9;4;0;50\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;0;50\x1b\\");
     // Taskbar progress should be 0 (the given value should be ignored)
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(0));
     VERIFY_ARE_EQUAL(term.GetTaskbarProgress(), gsl::narrow<size_t>(0));
 
-    stateMachine.ProcessString(L"\x1b]9;4;2;\x9c");
+    stateMachine.ProcessString(L"\x1b]9;4;2;\x1b\\");
     // String should be processed correctly despite the trailing semicolon,
     // taskbar progress should be set to a 'minimum', non-zero value
     VERIFY_ARE_EQUAL(term.GetTaskbarState(), gsl::narrow<size_t>(2));
@@ -427,45 +426,45 @@ void TerminalCoreUnitTests::TerminalApiTest::SetWorkingDirectory()
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
     // Invalid sequences should not change CWD
-    stateMachine.ProcessString(L"\x1b]9;9\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9\x1b\\");
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
-    stateMachine.ProcessString(L"\x1b]9;9\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9\"\x1b\\");
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
-    stateMachine.ProcessString(L"\x1b]9;9\"C:\\\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9\"C:\\\"\x1b\\");
     VERIFY_IS_TRUE(term.GetWorkingDirectory().empty());
 
     // Valid sequences should change CWD
-    stateMachine.ProcessString(L"\x1b]9;9;\"C:\\\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;\"C:\\\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\");
 
-    stateMachine.ProcessString(L"\x1b]9;9;\"C:\\Program Files\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;\"C:\\Program Files\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\Program Files");
 
-    stateMachine.ProcessString(L"\x1b]9;9;\"D:\\中文\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;\"D:\\中文\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"D:\\中文");
 
     // Test OSC 9;9 sequences without quotation marks
-    stateMachine.ProcessString(L"\x1b]9;9;C:\\\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;C:\\\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\");
 
-    stateMachine.ProcessString(L"\x1b]9;9;C:\\Program Files\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;C:\\Program Files\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"C:\\Program Files");
 
-    stateMachine.ProcessString(L"\x1b]9;9;D:\\中文\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;D:\\中文\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"D:\\中文");
 
     // These OSC 9;9 sequences will result in invalid CWD. We shouldn't crash on these.
-    stateMachine.ProcessString(L"\x1b]9;9;\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
 
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
 
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"");
 
-    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\"\x9c");
+    stateMachine.ProcessString(L"\x1b]9;9;\"\"\"\"\x1b\\");
     VERIFY_ARE_EQUAL(term.GetWorkingDirectory(), L"\"\"");
 }

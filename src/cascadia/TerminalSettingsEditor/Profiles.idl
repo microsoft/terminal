@@ -1,113 +1,20 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 
-import "EnumEntry.idl";
 import "MainPage.idl";
-import "Appearances.idl";
-
-#include "ViewModelHelpers.idl.h"
-
-#define OBSERVABLE_PROJECTED_PROFILE_SETTING(Type, Name) \
-    OBSERVABLE_PROJECTED_SETTING(Type, Name);            \
-    Object Name##OverrideSource { get; }
+import "ProfileViewModel.idl";
 
 namespace Microsoft.Terminal.Settings.Editor
 {
-    runtimeclass ProfileViewModel : Windows.UI.Xaml.Data.INotifyPropertyChanged
-    {
-        Windows.Foundation.Collections.IObservableVector<Font> CompleteFontList { get; };
-        Windows.Foundation.Collections.IObservableVector<Font> MonospaceFontList { get; };
-        Microsoft.Terminal.Settings.Model.TerminalSettings TermSettings { get; };
-
-        void SetAcrylicOpacityPercentageValue(Double value);
-        void SetPadding(Double value);
-
-        Boolean CanDeleteProfile { get; };
-        Boolean IsBaseLayer;
-        Boolean UseParentProcessDirectory;
-        Boolean UseCustomStartingDirectory { get; };
-        AppearanceViewModel DefaultAppearance { get; };
-        Guid OriginalProfileGuid { get; };
-        Boolean HasUnfocusedAppearance { get; };
-        Boolean EditableUnfocusedAppearance { get; };
-        Boolean ShowUnfocusedAppearance { get; };
-        AppearanceViewModel UnfocusedAppearance { get; };
-
-        void CreateUnfocusedAppearance(Windows.Foundation.Collections.IMapView<String, Microsoft.Terminal.Settings.Model.ColorScheme> Schemes, IHostedInWindow WindowRoot);
-        void DeleteUnfocusedAppearance();
-
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Name);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, Guid);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Source);
-        PERMANENT_OBSERVABLE_PROJECTED_SETTING(Guid, ConnectionType);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, Hidden);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Icon);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.CloseOnExitMode, CloseOnExit);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, TabTitle);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, TabColor);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SuppressApplicationTitle);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, UseAcrylic);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Double, Opacity);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.ScrollbarState, ScrollState);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Padding);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, Commandline);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(String, StartingDirectory);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Control.TextAntialiasingMode, AntialiasingMode);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, ForceFullRepaintRendering);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SoftwareRendering);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Foreground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, Background);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, SelectionBackground);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Windows.Foundation.IReference<Microsoft.Terminal.Core.Color>, CursorColor);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Int32, HistorySize);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, SnapOnInput);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Boolean, AltGrAliasing);
-        OBSERVABLE_PROJECTED_PROFILE_SETTING(Microsoft.Terminal.Settings.Model.BellStyle, BellStyle);
-    }
-
-    runtimeclass DeleteProfileEventArgs
-    {
-        Guid ProfileGuid { get; };
-    }
-
-    enum ProfilesPivots
-    {
-        General = 0,
-        Appearance = 1,
-        Advanced = 2
-    };
-
     runtimeclass ProfilePageNavigationState
     {
-        IHostedInWindow WindowRoot; // necessary to send the right HWND into the file picker dialogs.
-
-        ProfileViewModel Profile;
-        ProfilesPivots LastActivePivot;
-
-        void CreateUnfocusedAppearance();
-        void DeleteUnfocusedAppearance();
-
-        event Windows.Foundation.TypedEventHandler<ProfilePageNavigationState, DeleteProfileEventArgs> DeleteProfile;
+        ProfileViewModel Profile { get; };
     };
 
     [default_interface] runtimeclass Profiles : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Profiles();
-        ProfilePageNavigationState State { get; };
-
-        Boolean IsBellStyleFlagSet(UInt32 flag);
-        void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);
-        void SetBellStyleWindow(Windows.Foundation.IReference<Boolean> on);
-        void SetBellStyleTaskbar(Windows.Foundation.IReference<Boolean> on);
-
-        IInspectable CurrentAntiAliasingMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> AntiAliasingModeList { get; };
-
-        IInspectable CurrentCloseOnExitMode;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> CloseOnExitModeList { get; };
-
-        IInspectable CurrentScrollState;
-        Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };
+        ProfileViewModel Profile { get; };
 
         Windows.UI.Xaml.Controls.Slider OpacitySlider { get; };
     }

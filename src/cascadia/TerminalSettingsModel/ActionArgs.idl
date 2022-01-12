@@ -117,13 +117,20 @@ namespace Microsoft.Terminal.Settings.Model
         String TabTitle;
         Windows.Foundation.IReference<Windows.UI.Color> TabColor;
         String Profile; // Either a GUID or a profile's name if the GUID isn't a match
+
+        // We use IReference<> to treat some args as nullable where null means
+        // "use the inherited value". See ProfileIndex,
+        // SuppressApplicationTitle, Elevate. Strings that behave this way just
+        // use `null` as "use the inherited value".
+
         // ProfileIndex can be null (for "use the default"), so this needs to be
         // a IReference, so it's nullable
         Windows.Foundation.IReference<Int32> ProfileIndex { get; };
-
         Windows.Foundation.IReference<Boolean> SuppressApplicationTitle;
-
         String ColorScheme;
+        // This needs to be an optional so that the default value (null) does
+        // not modify whatever the profile's value is (either true or false)
+        Windows.Foundation.IReference<Boolean> Elevate { get; };
 
         Boolean Equals(NewTerminalArgs other);
         String GenerateName();
@@ -207,6 +214,24 @@ namespace Microsoft.Terminal.Settings.Model
         SettingsTarget Target { get; };
     };
 
+    [default_interface] runtimeclass SetFocusModeArgs : IActionArgs
+    {
+        SetFocusModeArgs(Boolean isFocusMode);
+        Boolean IsFocusMode { get; };
+    };
+
+    [default_interface] runtimeclass SetFullScreenArgs : IActionArgs
+    {
+        SetFullScreenArgs(Boolean isFullScreen);
+        Boolean IsFullScreen { get; };
+    };
+
+    [default_interface] runtimeclass SetMaximizedArgs : IActionArgs
+    {
+        SetMaximizedArgs(Boolean isMaximized);
+        Boolean IsMaximized { get; };
+    };
+
     [default_interface] runtimeclass SetColorSchemeArgs : IActionArgs
     {
         SetColorSchemeArgs(String name);
@@ -221,6 +246,7 @@ namespace Microsoft.Terminal.Settings.Model
 
     [default_interface] runtimeclass RenameTabArgs : IActionArgs
     {
+        RenameTabArgs(String title);
         String Title { get; };
     };
 
@@ -314,6 +340,12 @@ namespace Microsoft.Terminal.Settings.Model
     {
         FocusPaneArgs(UInt32 Id);
         UInt32 Id { get; };
+    };
+
+    [default_interface] runtimeclass ExportBufferArgs : IActionArgs
+    {
+        ExportBufferArgs(String path);
+        String Path { get; };
     };
 
     [default_interface] runtimeclass ClearBufferArgs : IActionArgs

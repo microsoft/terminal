@@ -48,6 +48,8 @@ private:
                            const winrt::Windows::Foundation::IInspectable& arg);
     void _FullscreenChanged(const winrt::Windows::Foundation::IInspectable& sender,
                             const winrt::Windows::Foundation::IInspectable& arg);
+    void _ChangeMaximizeRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                  const winrt::Windows::Foundation::IInspectable& arg);
     void _AlwaysOnTopChanged(const winrt::Windows::Foundation::IInspectable& sender,
                              const winrt::Windows::Foundation::IInspectable& arg);
     void _RaiseVisualBell(const winrt::Windows::Foundation::IInspectable& sender,
@@ -96,6 +98,9 @@ private:
     void _OpenSystemMenu(const winrt::Windows::Foundation::IInspectable& sender,
                          const winrt::Windows::Foundation::IInspectable& args);
 
+    void _SystemMenuChangeRequested(const winrt::Windows::Foundation::IInspectable& sender,
+                                    const winrt::TerminalApp::SystemMenuChangeArgs& args);
+
     winrt::fire_and_forget _QuitRequested(const winrt::Windows::Foundation::IInspectable& sender,
                                           const winrt::Windows::Foundation::IInspectable& args);
 
@@ -115,4 +120,6 @@ private:
     winrt::event_token _ShowNotificationIconContextMenuToken;
     winrt::event_token _NotificationIconMenuItemSelectedToken;
     winrt::event_token _GetWindowLayoutRequestedToken;
+    winrt::event_token _WindowCreatedToken;
+    winrt::event_token _WindowClosedToken;
 };

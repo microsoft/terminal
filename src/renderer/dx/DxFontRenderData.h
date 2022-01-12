@@ -122,7 +122,7 @@ namespace Microsoft::Console::Render
         float _FontStretchToWidthAxisValue(DWRITE_FONT_STRETCH fontStretch) noexcept;
         float _FontStyleToSlantFixedAxisValue(DWRITE_FONT_STYLE fontStyle) noexcept;
         void _BuildFontRenderData(const FontInfoDesired& desired, FontInfo& actual, const int dpi);
-        Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo fontInfo, const std::wstring_view localeName);
+        Microsoft::WRL::ComPtr<IDWriteTextFormat> _BuildTextFormat(const DxFontInfo& fontInfo, const std::wstring_view localeName);
 
         std::unordered_map<FontAttributeMapKey, ::Microsoft::WRL::ComPtr<IDWriteTextFormat>> _textFormatMap;
         std::unordered_map<FontAttributeMapKey, ::Microsoft::WRL::ComPtr<IDWriteFontFace1>> _fontFaceMap;

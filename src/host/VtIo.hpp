@@ -4,20 +4,23 @@
 #pragma once
 
 #include "../inc/VtIoModes.hpp"
-#include "../inc/ITerminalOwner.hpp"
 #include "../renderer/vt/vtrenderer.hpp"
 #include "VtInputThread.hpp"
 #include "PtySignalInputThread.hpp"
 
 class ConsoleArguments;
 
+namespace Microsoft::Console::Render
+{
+    class VtEngine;
+}
+
 namespace Microsoft::Console::VirtualTerminal
 {
-    class VtIo : public Microsoft::Console::ITerminalOwner
+    class VtIo
     {
     public:
         VtIo();
-        virtual ~VtIo() override = default;
 
         [[nodiscard]] HRESULT Initialize(const ConsoleArguments* const pArgs);
 
@@ -33,8 +36,8 @@ namespace Microsoft::Console::VirtualTerminal
         [[nodiscard]] HRESULT SuppressResizeRepaint();
         [[nodiscard]] HRESULT SetCursorPosition(const COORD coordCursor);
 
-        void CloseInput() override;
-        void CloseOutput() override;
+        void CloseInput();
+        void CloseOutput();
 
         void BeginResize();
         void EndResize();

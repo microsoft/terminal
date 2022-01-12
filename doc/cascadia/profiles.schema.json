@@ -281,6 +281,7 @@
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
+        "clearBuffer",
         "closeOtherTabs",
         "closePane",
         "closeTab",
@@ -289,6 +290,7 @@
         "commandPalette",
         "copy",
         "duplicateTab",
+        "exportBuffer",
         "find",
         "findMatch",
         "focusPane",
@@ -330,13 +332,17 @@
         "tabSearch",
         "toggleAlwaysOnTop",
         "toggleFocusMode",
+        "setFocusMode",
         "toggleFullscreen",
+        "setFullScreen",
+        "setMaximized",
         "togglePaneZoom",
         "toggleSplitOrientation",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
         "quit",
+        "restoreLastClosed",
         "unbound"
       ],
       "type": "string"
@@ -430,6 +436,14 @@
       ],
       "type": "string"
     },
+    "ClearBufferType": {
+      "enum": [
+        "all",
+        "screen",
+        "scrollback"
+      ],
+      "type": "string"
+    },
     "NewTerminalArgs": {
       "properties": {
         "commandline": {
@@ -465,7 +479,12 @@
         "colorScheme": {
           "description": "The name of a color scheme to use, instead of the one specified by the profile",
           "type": "string"
-        }
+        },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "This will override the profile's `elevate` setting."
+        },
       },
       "type": "object"
     },
@@ -822,6 +841,66 @@
       "required": [
         "colorScheme"
       ]
+    },
+    "SetFocusModeAction": {
+      "description": "Arguments for a setFocusMode action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFocusMode"
+            },
+            "isFocusMode": {
+              "type": "boolean",
+              "description": "whether focus mode is enabled"
+            }
+          }
+        }
+      ],
+    },
+    "SetFullScreenAction": {
+      "description": "Arguments for a setFullScreen action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFullScreen"
+            },
+            "isFullScreen": {
+              "type": "boolean",
+              "description": "whether the window should be full screen"
+            }
+          }
+        }
+      ],
+    },
+    "SetMaximizedAction": {
+      "description": "Arguments for a setMaximized action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setMaximized"
+            },
+            "isMaximized": {
+              "type": "boolean",
+              "description": "whether the window should be maximized"
+            }
+          }
+        }
+      ],
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
@@ -1197,6 +1276,48 @@
         }
       ]
     },
+    "ClearBufferAction": {
+      "description": "Arguments corresponding to a clearBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "clearBuffer"
+            },
+            "clear": {
+              "$ref": "#/$defs/ClearBufferType",
+              "default": "all",
+              "description": "What to clear. Accepts one of `screen`, `scrollback` or `all` (for both)."
+            }
+          }
+        }
+      ]
+    },
+    "ExportBufferAction": {
+      "description": "Arguments corresponding to a exportBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "exportBuffer"
+            },
+            "path": {
+              "type": "string",
+              "default": "",
+              "description": "The path to export the text buffer to. If left blank, the Terminal will open a file picker to choose the path."
+            }
+          }
+        }
+      ]
+    },
     "GlobalSummonAction": {
       "description": "This is a special action that works globally in the OS, rather than only in the context of the terminal window. When pressed, this action will summon the terminal window.",
       "allOf": [
@@ -1361,6 +1482,12 @@
               "$ref": "#/$defs/FocusPaneAction"
             },
             {
+              "$ref": "#/$defs/ExportBufferAction"
+            },
+            {
+              "$ref": "#/$defs/ClearBufferAction"
+            },
+            {
               "$ref": "#/$defs/GlobalSummonAction"
             },
             {
@@ -1476,6 +1603,11 @@
         "trimBlockSelection": {
           "default": false,
           "description": "When set to true, trailing white-spaces will be removed from text in rectangular (block) selection while copied to your clipboard. When set to false, the white-spaces will be preserved.",
+          "type": "boolean"
+        },
+        "trimPaste": {
+          "default": true,
+          "description": "When enabled, the Terminal will automatically trim trailing whitespace characters when pasting text",
           "type": "boolean"
         },
         "experimental.detectURLs": {
@@ -1881,6 +2013,11 @@
             "vintage"
           ],
           "type": "string"
+        },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",

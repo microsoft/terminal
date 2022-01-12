@@ -90,7 +90,6 @@ namespace TerminalAppLocalTests
         TEST_METHOD(TestWindowRenameSuccessful);
         TEST_METHOD(TestWindowRenameFailure);
 
-        TEST_METHOD(TestControlSettingsHasParent);
         TEST_METHOD(TestPreviewCommitScheme);
         TEST_METHOD(TestPreviewDismissScheme);
         TEST_METHOD(TestPreviewSchemeWhilePreviewing);
@@ -134,10 +133,6 @@ namespace TerminalAppLocalTests
         // Just creating it is enough to know that everything is working.
         TerminalSettings settings;
         VERIFY_IS_NOT_NULL(settings);
-        auto oldFontSize = settings.FontSize();
-        settings.FontSize(oldFontSize + 5);
-        auto newFontSize = settings.FontSize();
-        VERIFY_ARE_NOT_EQUAL(oldFontSize, newFontSize);
     }
 
     void TabTests::TryCreateConnectionType()
@@ -508,7 +503,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the first pane"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, SplitType::Duplicate, 0.5f, nullptr);
+            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, true, nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -526,7 +521,7 @@ namespace TerminalAppLocalTests
 
         Log::Comment(NoThrowString().Format(L"Duplicate the pane, and don't crash"));
         result = RunOnUIThread([&page]() {
-            page->_SplitPane(SplitDirection::Automatic, SplitType::Duplicate, 0.5f, nullptr);
+            page->_SplitPane(SplitDirection::Automatic, 0.5f, page->_MakePane(nullptr, true, nullptr));
 
             VERIFY_ARE_EQUAL(1u, page->_tabs.Size());
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
@@ -844,7 +839,7 @@ namespace TerminalAppLocalTests
             // |   1    |   2    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Right, SplitType::Duplicate, 0.5f, nullptr);
+            page->_SplitPane(SplitDirection::Right, 0.5f, page->_MakePane(nullptr, true, nullptr));
             secondId = tab->_activePane->Id().value();
         });
         Sleep(250);
@@ -862,7 +857,7 @@ namespace TerminalAppLocalTests
             // |   3    |        |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, SplitType::Duplicate, 0.5f, nullptr);
+            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, true, nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             // Split again to make the 3rd tab
             thirdId = tab->_activePane->Id().value();
@@ -882,7 +877,7 @@ namespace TerminalAppLocalTests
             // |   3    |   4    |
             // |        |        |
             // -------------------
-            page->_SplitPane(SplitDirection::Down, SplitType::Duplicate, 0.5f, nullptr);
+            page->_SplitPane(SplitDirection::Down, 0.5f, page->_MakePane(nullptr, true, nullptr));
             auto tab = page->_GetTerminalTabImpl(page->_tabs.GetAt(0));
             fourthId = tab->_activePane->Id().value();
         });
@@ -1297,25 +1292,6 @@ namespace TerminalAppLocalTests
         });
     }
 
-    void TabTests::TestControlSettingsHasParent()
-    {
-        Log::Comment(L"Ensure that when we create a control, it always has a parent TerminalSettings");
-
-        auto page = _commonSetup();
-        VERIFY_IS_NOT_NULL(page);
-
-        TestOnUIThread([&page]() {
-            const auto& activeControl{ page->_GetActiveControl() };
-            VERIFY_IS_NOT_NULL(activeControl);
-
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
-            VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& originalSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
-        });
-    }
-
     void TabTests::TestPreviewCommitScheme()
     {
         Log::Comment(L"Preview a color scheme. Make sure it's applied, then committed accordingly");
@@ -1327,11 +1303,8 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& originalSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
 
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
         });
@@ -1346,17 +1319,12 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& previewSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(previewSettings);
-
-            const auto& originalSettings = previewSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+
             // And we should have stored a function to revert the change.
             VERIFY_ARE_EQUAL(1u, page->_restorePreviewFuncs.size());
         });
@@ -1373,20 +1341,22 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& originalSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
-
-            const auto& grandparentSettings = originalSettings.GetParent();
-            VERIFY_IS_NULL(grandparentSettings);
 
             Log::Comment(L"Color should be changed");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
+
             // After preview there should be no more restore functions to execute.
             VERIFY_ARE_EQUAL(0u, page->_restorePreviewFuncs.size());
         });
+
+        Log::Comment(L"Sleep to let events propagate");
+        // If you don't do this, we will _sometimes_ crash as we're tearing down
+        // the control from this test as we start the next one. We crash
+        // somewhere in the CursorPositionChanged handler. It's annoying, but
+        // this works.
+        Sleep(250);
     }
 
     void TabTests::TestPreviewDismissScheme()
@@ -1400,11 +1370,8 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& originalSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
 
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
         });
@@ -1419,14 +1386,8 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& previewSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(previewSettings);
-
-            const auto& originalSettings = previewSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
@@ -1441,18 +1402,14 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& originalSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
-
-            const auto& grandparentSettings = originalSettings.GetParent();
-            VERIFY_IS_NULL(grandparentSettings);
 
             Log::Comment(L"Color should be the same as it originally was");
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
         });
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
     }
 
     void TabTests::TestPreviewSchemeWhilePreviewing()
@@ -1468,11 +1425,8 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& originalSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
 
             VERIFY_ARE_EQUAL(til::color{ 0xff0c0c0c }, controlSettings.DefaultBackground());
         });
@@ -1487,14 +1441,8 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& previewSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(previewSettings);
-
-            const auto& originalSettings = previewSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xff000000 }, controlSettings.DefaultBackground());
@@ -1510,14 +1458,8 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& previewSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(previewSettings);
-
-            const auto& originalSettings = previewSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
 
             Log::Comment(L"Color should be changed to the preview");
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
@@ -1535,18 +1477,14 @@ namespace TerminalAppLocalTests
             const auto& activeControl{ page->_GetActiveControl() };
             VERIFY_IS_NOT_NULL(activeControl);
 
-            const auto& controlSettings = activeControl.Settings().as<TerminalSettings>();
+            const auto& controlSettings = activeControl.Settings();
             VERIFY_IS_NOT_NULL(controlSettings);
-
-            const auto& originalSettings = controlSettings.GetParent();
-            VERIFY_IS_NOT_NULL(originalSettings);
-
-            const auto& grandparentSettings = originalSettings.GetParent();
-            VERIFY_IS_NULL(grandparentSettings);
 
             Log::Comment(L"Color should be changed");
             VERIFY_ARE_EQUAL(til::color{ 0xffFAFAFA }, controlSettings.DefaultBackground());
         });
+        Log::Comment(L"Sleep to let events propagate");
+        Sleep(250);
     }
 
     void TabTests::TestClampSwitchToTab()

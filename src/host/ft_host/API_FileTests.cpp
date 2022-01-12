@@ -7,7 +7,7 @@
 
 #include <future>
 
-using WEX::Logging::Log;
+using namespace WEX::Logging;
 using WEX::TestExecution::TestData;
 using namespace WEX::Common;
 
@@ -104,7 +104,7 @@ void FileTests::TestUtf8WriteFileInvalid()
 
     DWORD dwWritten;
     DWORD dwExpectedWritten;
-    char* str;
+    const char* str;
     DWORD cbStr;
 
     // \x80 is an invalid UTF-8 continuation

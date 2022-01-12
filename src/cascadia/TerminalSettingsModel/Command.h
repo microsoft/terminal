@@ -22,7 +22,6 @@ Author(s):
 #include "TerminalWarnings.h"
 #include "Profile.h"
 #include "ActionAndArgs.h"
-#include "../inc/cppwinrt_utils.h"
 #include "SettingsTypes.h"
 
 // fwdecl unittest classes

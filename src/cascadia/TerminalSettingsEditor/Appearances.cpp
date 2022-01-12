@@ -142,7 +142,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         bool result{ false };
         const auto currentFont{ Appearance().FontFace() };
-        for (const auto& font : SourceProfile().MonospaceFontList())
+        for (const auto& font : ProfileViewModel::MonospaceFontList())
         {
             if (font.LocalizedName() == currentFont)
             {
@@ -175,7 +175,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         // look for the current font in our shown list of fonts
         const auto& appearanceVM{ Appearance() };
         const auto appearanceFontFace{ appearanceVM.FontFace() };
-        const auto& currentFontList{ ShowAllFonts() ? SourceProfile().CompleteFontList() : SourceProfile().MonospaceFontList() };
+        const auto& currentFontList{ ShowAllFonts() ? ProfileViewModel::CompleteFontList() : ProfileViewModel::MonospaceFontList() };
         IInspectable fallbackFont;
         for (const auto& font : currentFontList)
         {

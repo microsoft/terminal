@@ -57,6 +57,9 @@
     ON_ALL_ACTIONS(ToggleFullscreen)       \
     ON_ALL_ACTIONS(ToggleAlwaysOnTop)      \
     ON_ALL_ACTIONS(OpenSettings)           \
+    ON_ALL_ACTIONS(SetFocusMode)           \
+    ON_ALL_ACTIONS(SetFullScreen)          \
+    ON_ALL_ACTIONS(SetMaximized)           \
     ON_ALL_ACTIONS(SetColorScheme)         \
     ON_ALL_ACTIONS(SetTabColor)            \
     ON_ALL_ACTIONS(OpenTabColorPicker)     \
@@ -80,9 +83,11 @@
     ON_ALL_ACTIONS(QuakeMode)              \
     ON_ALL_ACTIONS(FocusPane)              \
     ON_ALL_ACTIONS(OpenSystemMenu)         \
+    ON_ALL_ACTIONS(ExportBuffer)           \
     ON_ALL_ACTIONS(ClearBuffer)            \
     ON_ALL_ACTIONS(MultipleActions)        \
-    ON_ALL_ACTIONS(Quit)
+    ON_ALL_ACTIONS(Quit)                   \
+    ON_ALL_ACTIONS(RestoreLastClosed)
 
 #define ALL_SHORTCUT_ACTIONS_WITH_ARGS             \
     ON_ALL_ACTIONS_WITH_ARGS(AdjustFontSize)       \
@@ -101,6 +106,9 @@
     ON_ALL_ACTIONS_WITH_ARGS(NewWindow)            \
     ON_ALL_ACTIONS_WITH_ARGS(NextTab)              \
     ON_ALL_ACTIONS_WITH_ARGS(OpenSettings)         \
+    ON_ALL_ACTIONS_WITH_ARGS(SetFocusMode)         \
+    ON_ALL_ACTIONS_WITH_ARGS(SetFullScreen)        \
+    ON_ALL_ACTIONS_WITH_ARGS(SetMaximized)         \
     ON_ALL_ACTIONS_WITH_ARGS(PrevTab)              \
     ON_ALL_ACTIONS_WITH_ARGS(RenameTab)            \
     ON_ALL_ACTIONS_WITH_ARGS(RenameWindow)         \
@@ -114,5 +122,6 @@
     ON_ALL_ACTIONS_WITH_ARGS(SwitchToTab)          \
     ON_ALL_ACTIONS_WITH_ARGS(ToggleCommandPalette) \
     ON_ALL_ACTIONS_WITH_ARGS(FocusPane)            \
+    ON_ALL_ACTIONS_WITH_ARGS(ExportBuffer)         \
     ON_ALL_ACTIONS_WITH_ARGS(ClearBuffer)          \
     ON_ALL_ACTIONS_WITH_ARGS(MultipleActions)

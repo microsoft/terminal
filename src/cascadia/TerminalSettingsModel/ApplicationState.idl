@@ -22,6 +22,7 @@ namespace Microsoft.Terminal.Settings.Model
         Windows.Foundation.Collections.IVector<ActionAndArgs> TabLayout;
         Windows.Foundation.IReference<LaunchPosition> InitialPosition;
         Windows.Foundation.IReference<Windows.Foundation.Size> InitialSize;
+        Windows.Foundation.IReference<LaunchMode> LaunchMode;
     };
 
     [default_interface] runtimeclass ApplicationState {
@@ -30,12 +31,15 @@ namespace Microsoft.Terminal.Settings.Model
         void Reload();
         void Reset();
 
-        String FilePath { get; };
+        Boolean IsStatePath(String filename);
 
         Windows.Foundation.Collections.IVector<WindowLayout> PersistedWindowLayouts { get; set; };
 
         Windows.Foundation.Collections.IVector<String> RecentCommands { get; set; };
 
         Windows.Foundation.Collections.IVector<InfoBarMessage> DismissedMessages { get; set; };
+
+        Windows.Foundation.Collections.IVector<String> AllowedCommandlines { get; set; };
+
     }
 }

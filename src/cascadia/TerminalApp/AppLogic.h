@@ -5,6 +5,7 @@
 
 #include "AppLogic.g.h"
 #include "FindTargetWindowResult.g.h"
+#include "SystemMenuChangeArgs.g.h"
 #include "Jumplist.h"
 #include "LanguageProfileNotifier.h"
 #include "TerminalPage.h"
@@ -33,6 +34,17 @@ namespace winrt::TerminalApp::implementation
 
         FindTargetWindowResult(const int32_t id) :
             FindTargetWindowResult(id, L""){};
+    };
+
+    struct SystemMenuChangeArgs : SystemMenuChangeArgsT<SystemMenuChangeArgs>
+    {
+        WINRT_PROPERTY(winrt::hstring, Name, L"");
+        WINRT_PROPERTY(SystemMenuChangeAction, Action, SystemMenuChangeAction::Add);
+        WINRT_PROPERTY(SystemMenuItemHandler, Handler, nullptr);
+
+    public:
+        SystemMenuChangeArgs(const winrt::hstring& name, SystemMenuChangeAction action, SystemMenuItemHandler handler = nullptr) :
+            _Name{ name }, _Action{ action }, _Handler{ handler } {};
     };
 
     struct AppLogic : AppLogicT<AppLogic, IInitializeWithWindow>
@@ -65,6 +77,7 @@ namespace winrt::TerminalApp::implementation
 
         bool FocusMode() const;
         bool Fullscreen() const;
+        void Maximized(bool newMaximized);
         bool AlwaysOnTop() const;
 
         bool ShouldUsePersistedLayout();
@@ -79,6 +92,7 @@ namespace winrt::TerminalApp::implementation
         void SetPersistedLayoutIdx(const uint32_t idx);
         void SetNumberOfOpenWindows(const uint64_t num);
         bool IsQuakeWindow() const noexcept;
+        void RequestExitFullscreen();
 
         Windows::Foundation::Size GetLaunchDimensions(uint32_t dpi);
         bool CenterOnLaunch();
@@ -113,6 +127,7 @@ namespace winrt::TerminalApp::implementation
         // -------------------------------- WinRT Events ---------------------------------
         TYPED_EVENT(RequestedThemeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::UI::Xaml::ElementTheme);
         TYPED_EVENT(SettingsChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable);
+        TYPED_EVENT(SystemMenuChangeRequested, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::SystemMenuChangeArgs);
 
     private:
         bool _isUwp{ false };
@@ -163,6 +178,7 @@ namespace winrt::TerminalApp::implementation
         void _RegisterSettingsChange();
         fire_and_forget _DispatchReloadSettings();
         void _ReloadSettings();
+        void _OpenSettingsUI();
 
         void _ApplyTheme(const Windows::UI::Xaml::ElementTheme& newTheme);
 
@@ -178,6 +194,7 @@ namespace winrt::TerminalApp::implementation
         FORWARDED_TYPED_EVENT(LastTabClosed, winrt::Windows::Foundation::IInspectable, winrt::TerminalApp::LastTabClosedEventArgs, _root, LastTabClosed);
         FORWARDED_TYPED_EVENT(FocusModeChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FocusModeChanged);
         FORWARDED_TYPED_EVENT(FullscreenChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, FullscreenChanged);
+        FORWARDED_TYPED_EVENT(ChangeMaximizeRequested, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, ChangeMaximizeRequested);
         FORWARDED_TYPED_EVENT(AlwaysOnTopChanged, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, AlwaysOnTopChanged);
         FORWARDED_TYPED_EVENT(RaiseVisualBell, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, RaiseVisualBell);
         FORWARDED_TYPED_EVENT(SetTaskbarProgress, winrt::Windows::Foundation::IInspectable, winrt::Windows::Foundation::IInspectable, _root, SetTaskbarProgress);
@@ -197,7 +214,5 @@ namespace winrt::TerminalApp::implementation
 
 namespace winrt::TerminalApp::factory_implementation
 {
-    struct AppLogic : AppLogicT<AppLogic, implementation::AppLogic>
-    {
-    };
+    BASIC_FACTORY(AppLogic);
 }

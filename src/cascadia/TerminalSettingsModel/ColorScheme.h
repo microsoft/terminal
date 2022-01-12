@@ -17,7 +17,6 @@ Author(s):
 #pragma once
 
 #include "../../inc/conattrs.hpp"
-#include "inc/cppwinrt_utils.h"
 #include "DefaultSettings.h"
 
 #include "ColorScheme.g.h"
@@ -46,6 +45,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
         static com_ptr<ColorScheme> FromJson(const Json::Value& json);
         Json::Value ToJson() const;
+
+        winrt::Microsoft::Terminal::Core::Scheme ToCoreScheme() const noexcept;
 
         com_array<Core::Color> Table() const noexcept;
         void SetColorTableEntry(uint8_t index, const Core::Color& value) noexcept;

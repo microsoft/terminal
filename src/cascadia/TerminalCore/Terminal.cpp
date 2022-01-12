@@ -6,7 +6,6 @@
 #include "../../terminal/parser/OutputStateMachineEngine.hpp"
 #include "TerminalDispatch.hpp"
 #include "../../inc/unicode.hpp"
-#include "../../inc/argb.h"
 #include "../../types/inc/utils.hpp"
 #include "../../types/inc/colorTable.hpp"
 
@@ -41,8 +40,6 @@ Terminal::Terminal() :
     _mutableViewport{ Viewport::Empty() },
     _title{},
     _colorTable{},
-    _defaultFg{ RGB(255, 255, 255) },
-    _defaultBg{ ARGB(0, 0, 0, 0) },
     _screenReversed{ false },
     _pfnWriteInput{ nullptr },
     _scrollOffset{ 0 },
@@ -61,6 +58,14 @@ Terminal::Terminal() :
 
     _stateMachine = std::make_unique<StateMachine>(std::move(engine));
 
+    // Until we have a true pass-through mode (GH#1173), the decision as to
+    // whether C1 controls are interpreted or not is made at the conhost level.
+    // If they are being filtered out, then we will simply never receive them.
+    // But if they are being accepted by conhost, there's a chance they may get
+    // passed through in some situations, so it's important that our state
+    // machine is always prepared to accept them.
+    _stateMachine->SetParserMode(StateMachine::Mode::AcceptC1, true);
+
     auto passAlongInput = [&](std::deque<std::unique_ptr<IInputEvent>>& inEventsToWrite) {
         if (!_pfnWriteInput)
         {
@@ -73,6 +78,10 @@ Terminal::Terminal() :
     _terminalInput = std::make_unique<TerminalInput>(passAlongInput);
 
     _InitializeColorTable();
+
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = RGB(255, 255, 255);
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = RGB(0, 0, 0);
+    _colorTable.at(TextColor::CURSOR_COLOR) = INVALID_COLOR;
 }
 
 void Terminal::Create(COORD viewportSize, SHORT scrollbackLines, IRenderTarget& renderTarget)
@@ -127,12 +136,12 @@ void Terminal::UpdateSettings(ICoreSettings settings)
     }
     else
     {
-        _tabColor = til::color{ settings.TabColor().Value() }.with_alpha(0xff);
+        _tabColor = settings.TabColor().Value();
     }
 
     if (!_startingTabColor && settings.StartingTabColor())
     {
-        _startingTabColor = til::color{ settings.StartingTabColor().Value() }.with_alpha(0xff);
+        _startingTabColor = settings.StartingTabColor().Value();
     }
 
     if (_pfnTabColorChanged)
@@ -170,11 +179,18 @@ void Terminal::UpdateSettings(ICoreSettings settings)
 // - appearance: an ICoreAppearance with new settings values for us to use.
 void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 {
+    _intenseIsBright = appearance.IntenseIsBright();
+    _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
+
     // Set the default background as transparent to prevent the
     // DX layer from overwriting the background image or acrylic effect
-    til::color newBackgroundColor{ appearance.DefaultBackground() };
-    _defaultBg = newBackgroundColor.with_alpha(0);
-    _defaultFg = appearance.DefaultForeground();
+    const til::color newBackgroundColor{ appearance.DefaultBackground() };
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = newBackgroundColor;
+    const til::color newForegroundColor{ appearance.DefaultForeground() };
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = newForegroundColor;
+    const til::color newCursorColor{ appearance.CursorColor() };
+    _colorTable.at(TextColor::CURSOR_COLOR) = newCursorColor;
+
     _intenseIsBright = appearance.IntenseIsBright();
     _adjustIndistinguishableColors = appearance.AdjustIndistinguishableColors();
 
@@ -213,9 +229,7 @@ void Terminal::UpdateAppearance(const ICoreAppearance& appearance)
 
     if (_buffer)
     {
-        _buffer->GetCursor().SetStyle(appearance.CursorHeight(),
-                                      til::color{ appearance.CursorColor() },
-                                      cursorShape);
+        _buffer->GetCursor().SetStyle(appearance.CursorHeight(), cursorShape);
     }
 
     _defaultCursorShape = cursorShape;
@@ -1210,11 +1224,7 @@ try
 {
     const gsl::span<COLORREF> tableView = { _colorTable.data(), _colorTable.size() };
     // First set up the basic 256 colors
-    Utils::Initialize256ColorTable(tableView);
-    // Then use fill the first 16 values with the Campbell scheme
-    Utils::InitializeCampbellColorTable(tableView);
-    // Then make sure all the values have an alpha of 255
-    Utils::SetColorTableAlpha(tableView, 0xff);
+    Utils::InitializeColorTable(tableView);
 }
 CATCH_LOG()
 
@@ -1291,4 +1301,63 @@ const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarState() const noexce
 const size_t Microsoft::Terminal::Core::Terminal::GetTaskbarProgress() const noexcept
 {
     return _taskbarProgress;
+}
+
+Scheme Terminal::GetColorScheme() const noexcept
+{
+    Scheme s;
+
+    s.Foreground = til::color{ _colorTable.at(TextColor::DEFAULT_FOREGROUND) };
+    s.Background = til::color{ _colorTable.at(TextColor::DEFAULT_BACKGROUND) };
+
+    // SelectionBackground is stored in the ControlAppearance
+    s.CursorColor = til::color{ _colorTable.at(TextColor::CURSOR_COLOR) };
+
+    s.Black = til::color{ _colorTable[0] };
+    s.Red = til::color{ _colorTable[1] };
+    s.Green = til::color{ _colorTable[2] };
+    s.Yellow = til::color{ _colorTable[3] };
+    s.Blue = til::color{ _colorTable[4] };
+    s.Purple = til::color{ _colorTable[5] };
+    s.Cyan = til::color{ _colorTable[6] };
+    s.White = til::color{ _colorTable[7] };
+    s.BrightBlack = til::color{ _colorTable[8] };
+    s.BrightRed = til::color{ _colorTable[9] };
+    s.BrightGreen = til::color{ _colorTable[10] };
+    s.BrightYellow = til::color{ _colorTable[11] };
+    s.BrightBlue = til::color{ _colorTable[12] };
+    s.BrightPurple = til::color{ _colorTable[13] };
+    s.BrightCyan = til::color{ _colorTable[14] };
+    s.BrightWhite = til::color{ _colorTable[15] };
+    return s;
+}
+
+void Terminal::ApplyScheme(const Scheme& colorScheme)
+{
+    _colorTable.at(TextColor::DEFAULT_FOREGROUND) = til::color{ colorScheme.Foreground };
+    _colorTable.at(TextColor::DEFAULT_BACKGROUND) = til::color{ colorScheme.Background };
+
+    _colorTable[0] = til::color{ colorScheme.Black };
+    _colorTable[1] = til::color{ colorScheme.Red };
+    _colorTable[2] = til::color{ colorScheme.Green };
+    _colorTable[3] = til::color{ colorScheme.Yellow };
+    _colorTable[4] = til::color{ colorScheme.Blue };
+    _colorTable[5] = til::color{ colorScheme.Purple };
+    _colorTable[6] = til::color{ colorScheme.Cyan };
+    _colorTable[7] = til::color{ colorScheme.White };
+    _colorTable[8] = til::color{ colorScheme.BrightBlack };
+    _colorTable[9] = til::color{ colorScheme.BrightRed };
+    _colorTable[10] = til::color{ colorScheme.BrightGreen };
+    _colorTable[11] = til::color{ colorScheme.BrightYellow };
+    _colorTable[12] = til::color{ colorScheme.BrightBlue };
+    _colorTable[13] = til::color{ colorScheme.BrightPurple };
+    _colorTable[14] = til::color{ colorScheme.BrightCyan };
+    _colorTable[15] = til::color{ colorScheme.BrightWhite };
+
+    _colorTable.at(TextColor::CURSOR_COLOR) = til::color{ colorScheme.CursorColor };
+
+    if (_adjustIndistinguishableColors)
+    {
+        _MakeAdjustedColorArray();
+    }
 }

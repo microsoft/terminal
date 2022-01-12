@@ -4,7 +4,6 @@ Licensed under the MIT license.
 --*/
 #pragma once
 
-#include "../inc/cppwinrt_utils.h"
 #include <DefaultSettings.h>
 #include <conattrs.hpp>
 
@@ -35,7 +34,6 @@ namespace ControlUnitTests
         WINRT_PROPERTY(uint32_t, CursorHeight, DEFAULT_CURSOR_HEIGHT);
         WINRT_PROPERTY(winrt::hstring, WordDelimiters, DEFAULT_WORD_DELIMITERS);
         WINRT_PROPERTY(bool, CopyOnSelect, false);
-        WINRT_PROPERTY(bool, InputServiceWarning, true);
         WINRT_PROPERTY(bool, FocusFollowMouse, false);
 
         WINRT_PROPERTY(winrt::Windows::Foundation::IReference<winrt::Microsoft::Terminal::Core::Color>, TabColor, nullptr);
@@ -51,6 +49,7 @@ namespace ControlUnitTests
         // ------------------------ End of Core Settings -----------------------
 
         WINRT_PROPERTY(winrt::hstring, ProfileName);
+        WINRT_PROPERTY(winrt::hstring, ProfileSource);
         WINRT_PROPERTY(bool, UseAcrylic, false);
         WINRT_PROPERTY(double, Opacity, .5);
         WINRT_PROPERTY(winrt::hstring, Padding, DEFAULT_PADDING);
@@ -75,6 +74,7 @@ namespace ControlUnitTests
         WINRT_PROPERTY(winrt::hstring, EnvironmentVariables);
 
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::ScrollbarState, ScrollState, winrt::Microsoft::Terminal::Control::ScrollbarState::Visible);
+        WINRT_PROPERTY(bool, UseAtlasEngine, false);
 
         WINRT_PROPERTY(winrt::Microsoft::Terminal::Control::TextAntialiasingMode, AntialiasingMode, winrt::Microsoft::Terminal::Control::TextAntialiasingMode::Grayscale);
 

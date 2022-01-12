@@ -49,28 +49,28 @@ namespace Microsoft::Console::Render
         // Used to release device resources so that another instance of
         // conhost can render to the screen (i.e. only one DirectX
         // application may control the screen at a time.)
-        [[nodiscard]] HRESULT Enable() noexcept;
+        [[nodiscard]] HRESULT Enable() noexcept override;
         [[nodiscard]] HRESULT Disable() noexcept;
 
-        [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept;
+        [[nodiscard]] HRESULT SetHwnd(const HWND hwnd) noexcept override;
 
-        [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept;
+        [[nodiscard]] HRESULT SetWindowSize(const SIZE pixels) noexcept override;
 
-        void SetCallback(std::function<void()> pfn);
-        void SetWarningCallback(std::function<void(const HRESULT)> pfn);
+        void SetCallback(std::function<void()> pfn) noexcept override;
+        void SetWarningCallback(std::function<void(const HRESULT)> pfn) noexcept override;
 
-        void ToggleShaderEffects();
+        void ToggleShaderEffects() noexcept override;
 
-        bool GetRetroTerminalEffect() const noexcept;
-        void SetRetroTerminalEffect(bool enable) noexcept;
+        bool GetRetroTerminalEffect() const noexcept override;
+        void SetRetroTerminalEffect(bool enable) noexcept override;
 
-        void SetPixelShaderPath(std::wstring_view value) noexcept;
+        void SetPixelShaderPath(std::wstring_view value) noexcept override;
 
-        void SetForceFullRepaintRendering(bool enable) noexcept;
+        void SetForceFullRepaintRendering(bool enable) noexcept override;
 
-        void SetSoftwareRendering(bool enable) noexcept;
+        void SetSoftwareRendering(bool enable) noexcept override;
 
-        HANDLE GetSwapChainHandle();
+        HANDLE GetSwapChainHandle() noexcept override;
 
         // IRenderEngine Members
         [[nodiscard]] HRESULT Invalidate(const SMALL_RECT* const psrRegion) noexcept override;
@@ -110,7 +110,7 @@ namespace Microsoft::Console::Render
                                                    const bool usingSoftFont,
                                                    const bool isSettingDefaultBrushes) noexcept override;
         [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo) noexcept override;
-        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept;
+        [[nodiscard]] HRESULT UpdateFont(const FontInfoDesired& fiFontInfoDesired, FontInfo& fiFontInfo, const std::unordered_map<std::wstring_view, uint32_t>& features, const std::unordered_map<std::wstring_view, float>& axes) noexcept override;
         [[nodiscard]] HRESULT UpdateDpi(int const iDpi) noexcept override;
         [[nodiscard]] HRESULT UpdateViewport(const SMALL_RECT srNewViewport) noexcept override;
 
@@ -121,17 +121,17 @@ namespace Microsoft::Console::Render
         [[nodiscard]] HRESULT GetFontSize(_Out_ COORD* const pFontSize) noexcept override;
         [[nodiscard]] HRESULT IsGlyphWideByFont(const std::wstring_view glyph, _Out_ bool* const pResult) noexcept override;
 
-        [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) noexcept;
-        [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInPixels(const ::Microsoft::Console::Types::Viewport& viewInCharacters) noexcept;
+        [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInCharacters(const ::Microsoft::Console::Types::Viewport& viewInPixels) const noexcept override;
+        [[nodiscard]] ::Microsoft::Console::Types::Viewport GetViewportInPixels(const ::Microsoft::Console::Types::Viewport& viewInCharacters) const noexcept override;
 
-        float GetScaling() const noexcept;
+        float GetScaling() const noexcept override;
 
-        void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept;
-        void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept;
-        void SetDefaultTextBackgroundOpacity(const float opacity) noexcept;
-        void SetIntenseIsBold(const bool opacity) noexcept;
+        void SetSelectionBackground(const COLORREF color, const float alpha = 0.5f) noexcept override;
+        void SetAntialiasingMode(const D2D1_TEXT_ANTIALIAS_MODE antialiasingMode) noexcept override;
+        void EnableTransparentBackground(const bool isTransparent) noexcept override;
+        void SetIntenseIsBold(const bool opacity) noexcept override;
 
-        void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept;
+        void UpdateHyperlinkHoveredId(const uint16_t hoveredId) noexcept override;
 
     protected:
         [[nodiscard]] HRESULT _DoUpdateTitle(_In_ const std::wstring_view newTitle) noexcept override;
@@ -257,7 +257,7 @@ namespace Microsoft::Console::Render
 
         D2D1_TEXT_ANTIALIAS_MODE _antialiasingMode;
 
-        float _defaultTextBackgroundOpacity;
+        bool _defaultBackgroundIsTransparent;
         bool _intenseIsBold;
 
         // DirectX constant buffers need to be a multiple of 16; align to pad the size.

@@ -11,7 +11,6 @@
 #include <mutex>
 #include <condition_variable>
 
-#include "../cascadia/inc/cppwinrt_utils.h"
 #include "ConnectionStateHolder.h"
 #include "AzureClient.h"
 
@@ -104,7 +103,5 @@ namespace winrt::Microsoft::Terminal::TerminalConnection::implementation
 
 namespace winrt::Microsoft::Terminal::TerminalConnection::factory_implementation
 {
-    struct AzureConnection : AzureConnectionT<AzureConnection, implementation::AzureConnection>
-    {
-    };
+    BASIC_FACTORY(AzureConnection);
 }

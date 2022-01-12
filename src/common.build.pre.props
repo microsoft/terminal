@@ -75,7 +75,7 @@
   </ItemGroup>
 
   <PropertyGroup Label="Globals">
-    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.19041.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion Condition="'$(WindowsTargetPlatformVersion)' == ''">10.0.22000.0</WindowsTargetPlatformVersion>
     <WindowsTargetPlatformMinVersion Condition="'$(WindowsTargetPlatformMinVersion)' == ''">10.0.18362.0</WindowsTargetPlatformMinVersion>
   </PropertyGroup>
 
@@ -116,9 +116,11 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <MinimalRebuild>false</MinimalRebuild>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <ConformanceMode>true</ConformanceMode>
+      <UseStandardPreprocessor>true</UseStandardPreprocessor>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <LanguageStandard_C>stdc17</LanguageStandard_C>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>%(AdditionalOptions) /utf-8 /Zc:externConstexpr /Zc:lambda /Zc:throwingNew</AdditionalOptions>
       <ControlFlowGuard>Guard</ControlFlowGuard>
       <FloatingPointModel>Fast</FloatingPointModel>
     </ClCompile>
@@ -166,6 +168,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -174,8 +177,10 @@
     </Link>
   </ItemDefinitionGroup>
 
-  <Import Condition="'$(PgoTarget)' == 'true' And '$(Configuration)' == 'Release'" Project="$(SolutionDir)\src\common.pgo.compile.props" />
-  <Import Condition="'$(PgoTarget)' == 'true' And '$(PGOBuildMode)' == 'Optimize'" Project="$(SolutionDir)\tools\PGODatabase\PGO.version.props" />
+  <!-- Install an empty one for projects that won't have one.
+       The following import will override it when it needs to happen. -->
+  <Target Name="MergePGOCounts" />
+  <Import Condition="'$(PgoTarget)' == 'true' And '$(Platform)'=='x64' And '$(PGOBuildMode)'!=''" Project="$(SolutionDir)\build\PGO\Terminal.PGO.props" />
 
   <!-- For Win32 (x86) ONLY ... we use all defaults for AMD64. No def for those. -->
   <ItemDefinitionGroup Condition="'$(Platform)'=='Win32'">

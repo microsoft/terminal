@@ -36,7 +36,7 @@ winrt::com_ptr<Profile> Model::implementation::CreateChild(const winrt::com_ptr<
     profile->Name(parent->Name());
     profile->Guid(parent->Guid());
     profile->Hidden(parent->Hidden());
-    profile->InsertParent(parent);
+    profile->AddLeastImportantParent(parent);
     return profile;
 }
 
@@ -219,6 +219,18 @@ Model::Profile CascadiaSettings::CreateNewProfile()
     return *newProfile;
 }
 
+template<typename T>
+static bool isProfilesDefaultsOrigin(const T& profile)
+{
+    return profile && profile.Origin() != winrt::Microsoft::Terminal::Settings::Model::OriginTag::ProfilesDefaults;
+}
+
+template<typename T>
+static bool isProfilesDefaultsOriginSub(const T& sub)
+{
+    return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
+}
+
 // Method Description:
 // - Duplicate a new profile based off another profile's settings
 // - This differs from Profile::Copy because it also copies over settings
@@ -250,14 +262,6 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
 
     const auto duplicated = _createNewProfile(newName);
 
-    static constexpr auto isProfilesDefaultsOrigin = [](const auto& profile) -> bool {
-        return profile && profile.Origin() != OriginTag::ProfilesDefaults;
-    };
-
-    static constexpr auto isProfilesDefaultsOriginSub = [](const auto& sub) -> bool {
-        return sub && isProfilesDefaultsOrigin(sub.SourceProfile());
-    };
-
 #define NEEDS_DUPLICATION(settingName) source.Has##settingName() || isProfilesDefaultsOrigin(source.settingName##OverrideSource())
 #define NEEDS_DUPLICATION_SUB(source, settingName) source.Has##settingName() || isProfilesDefaultsOriginSub(source.settingName##OverrideSource())
 
@@ -287,8 +291,6 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
     DUPLICATE_SETTING_MACRO(Commandline);
     DUPLICATE_SETTING_MACRO(StartingDirectory);
     DUPLICATE_SETTING_MACRO(AntialiasingMode);
-    DUPLICATE_SETTING_MACRO(ForceFullRepaintRendering);
-    DUPLICATE_SETTING_MACRO(SoftwareRendering);
     DUPLICATE_SETTING_MACRO(HistorySize);
     DUPLICATE_SETTING_MACRO(SnapOnInput);
     DUPLICATE_SETTING_MACRO(AltGrAliasing);
@@ -338,7 +340,7 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         // Make sure to add the default appearance of the duplicated profile as a parent to the duplicate's UnfocusedAppearance
         winrt::com_ptr<AppearanceConfig> defaultAppearance;
         defaultAppearance.copy_from(winrt::get_self<AppearanceConfig>(duplicated->DefaultAppearance()));
-        unfocusedAppearance->InsertParent(defaultAppearance);
+        unfocusedAppearance->AddLeastImportantParent(defaultAppearance);
 
         duplicated->UnfocusedAppearance(*unfocusedAppearance);
     }

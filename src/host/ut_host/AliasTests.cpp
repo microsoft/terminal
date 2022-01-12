@@ -153,7 +153,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyTrailingCRLF)
     {
-        PWSTR pwszSource = L"SourceWithoutCRLF\r\n";
+        const auto pwszSource = L"SourceWithoutCRLF\r\n";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 60;
@@ -193,7 +193,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyInvalidExeName)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -225,7 +225,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyExeNotFound)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -257,7 +257,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyAliasNotFound)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -294,7 +294,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyTargetTooSmall)
     {
-        PWSTR pwszSource = L"Source";
+        const auto pwszSource = L"Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;
@@ -330,7 +330,7 @@ class AliasTests
 
     TEST_METHOD(TestMatchAndCopyLeadingSpaces)
     {
-        PWSTR pwszSource = L" Source";
+        const auto pwszSource = L" Source";
         const size_t cbSource = wcslen(pwszSource) * sizeof(wchar_t);
 
         const size_t cchTarget = 12;

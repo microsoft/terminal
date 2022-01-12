@@ -65,7 +65,7 @@
     </ProjectReference>
 
     <ProjectReference Include="$(OpenConsoleDir)src\cascadia\TerminalControl\dll\TerminalControl.vcxproj">
-      <!-- Private:false and ReferenceOutputAssembly:false, in combination with
+      <!-- Private:true and ReferenceOutputAssembly:false, in combination with
       the manual reference to TerminalControl.winmd below make sure that this
       project will compile correct, and that we won't roll up the TermControl
       xbf's into the packaging project twice. -->

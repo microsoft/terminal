@@ -32,7 +32,7 @@ constexpr std::array<BYTE, 256> CompressedRgbToIndex16 = {
 // A table mapping indexed colors from the 256-color palette,
 // down to one of the 16 colors in the legacy palette.
 constexpr std::array<BYTE, 256> Index256ToIndex16 = {
-     0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15,
+     0,  4,  2,  6,  1,  5,  3,  7,  8, 12, 10, 14,  9, 13, 11, 15,
      0,  1,  1,  1,  9,  9,  2,  1,  1,  1,  1,  1,  2,  2,  3,  3,
      3,  3,  2,  2, 11, 11,  3,  3, 10, 10, 11, 11, 11, 11, 10, 10,
     10, 10, 11, 11,  5,  5,  5,  5,  1,  1,  8,  8,  1,  1,  9,  9,
@@ -139,14 +139,16 @@ void TextColor::SetDefault() noexcept
 // Arguments:
 // - colorTable: The table of colors we should use to look up the value of
 //      an indexed attribute from.
-// - defaultColor: The color value to use if we're a default attribute.
+// - defaultIndex: The color table index to use if we're a default attribute.
 // - brighten: if true, we'll brighten a dark color table index.
 // Return Value:
 // - a COLORREF containing the real value of this TextColor.
-COLORREF TextColor::GetColor(const std::array<COLORREF, 256>& colorTable, const COLORREF defaultColor, bool brighten) const noexcept
+COLORREF TextColor::GetColor(const std::array<COLORREF, TextColor::TABLE_SIZE>& colorTable, const size_t defaultIndex, bool brighten) const noexcept
 {
     if (IsDefault())
     {
+        const auto defaultColor = til::at(colorTable, defaultIndex);
+
         if (brighten)
         {
             // See MSFT:20266024 for context on this fix.
@@ -252,11 +254,7 @@ BYTE TextColor::GetLegacyIndex(const BYTE defaultIndex) const noexcept
     {
         return defaultIndex;
     }
-    else if (IsIndex16())
-    {
-        return GetIndex();
-    }
-    else if (IsIndex256())
+    else if (IsIndex16() || IsIndex256())
     {
         return til::at(Index256ToIndex16, GetIndex());
     }

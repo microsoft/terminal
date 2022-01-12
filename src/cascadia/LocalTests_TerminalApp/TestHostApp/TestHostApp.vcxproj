@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
     <ProjectGuid>{A021EDFF-45C8-4DC2-BEF7-36E1B3B8CFE8}</ProjectGuid>
@@ -51,10 +51,10 @@
 
   <ItemDefinitionGroup>
     <ClCompile>
+      <!-- Disable two-phase name lookup for C++/CLI & C++/CX code. -->
+      <AdditionalOptions>%(AdditionalOptions) /Zc:twoPhase-</AdditionalOptions>
       <DisableSpecificWarnings>4453;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)
-        ;$(IntermediateOutputPath)
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IntermediateOutputPath)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>INLINE_TEST_METHOD_MARKUP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>

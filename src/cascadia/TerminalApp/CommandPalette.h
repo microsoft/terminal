@@ -6,7 +6,6 @@
 #include "FilteredCommand.h"
 #include "CommandPalette.g.h"
 #include "AppCommandlineArgs.h"
-#include "../../cascadia/inc/cppwinrt_utils.h"
 
 // fwdecl unittest classes
 namespace TerminalAppLocalTests

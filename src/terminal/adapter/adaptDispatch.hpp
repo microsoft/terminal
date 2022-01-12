@@ -101,6 +101,7 @@ namespace Microsoft::Console::VirtualTerminal
         bool LockingShift(const size_t gsetNumber) override; // LS0, LS1, LS2, LS3
         bool LockingShiftRight(const size_t gsetNumber) override; // LS1R, LS2R, LS3R
         bool SingleShift(const size_t gsetNumber) override; // SS2, SS3
+        bool AcceptC1Controls(const bool enabled) override; // DECAC1
         bool SoftReset() override; // DECSTR
         bool HardReset() override; // RIS
         bool ScreenAlignmentPattern() override; // DECALN
@@ -155,6 +156,7 @@ namespace Microsoft::Console::VirtualTerminal
             bool IsOriginModeRelative = false;
             TextAttribute Attributes = {};
             TerminalOutput TermOutput = {};
+            bool C1ControlsAccepted = false;
             unsigned int CodePage = 0;
         };
         struct Offset

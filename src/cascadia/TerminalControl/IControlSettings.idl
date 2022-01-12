@@ -24,33 +24,37 @@ namespace Microsoft.Terminal.Control
     //      TermControl's behavior. In these settings there is both the entirety
     //      of the Core ITerminalSettings interface, and any additional settings
     //      for specifically the control.
-    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings, Microsoft.Terminal.Control.IControlAppearance
+    interface IControlSettings requires Microsoft.Terminal.Core.ICoreSettings,
+                               Microsoft.Terminal.Control.IControlAppearance
     {
         String ProfileName;
+        String ProfileSource;
 
-        Boolean UseAcrylic;
-        ScrollbarState ScrollState;
+        Boolean UseAcrylic { get; };
+        ScrollbarState ScrollState { get; };
 
-        String FontFace;
-        Int32 FontSize;
-        Windows.UI.Text.FontWeight FontWeight;
-        String Padding;
-        Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures;
-        Windows.Foundation.Collections.IMap<String, Single> FontAxes;
+        Boolean UseAtlasEngine { get; };
 
-        Microsoft.Terminal.Control.IKeyBindings KeyBindings;
+        String FontFace { get; };
+        Int32 FontSize { get; };
+        Windows.UI.Text.FontWeight FontWeight { get; };
+        String Padding { get; };
+        Windows.Foundation.Collections.IMap<String, UInt32> FontFeatures { get; };
+        Windows.Foundation.Collections.IMap<String, Single> FontAxes { get; };
 
-        Boolean CopyOnSelect;
-        Boolean FocusFollowMouse;
+        Microsoft.Terminal.Control.IKeyBindings KeyBindings { get; };
 
-        String Commandline;
-        String StartingDirectory;
-        String EnvironmentVariables;
+        Boolean CopyOnSelect { get; };
+        Boolean FocusFollowMouse { get; };
 
-        TextAntialiasingMode AntialiasingMode;
+        String Commandline { get; };
+        String StartingDirectory { get; };
+        String EnvironmentVariables { get; };
+
+        TextAntialiasingMode AntialiasingMode { get; };
 
         // Experimental Settings
-        Boolean ForceFullRepaintRendering;
-        Boolean SoftwareRendering;
+        Boolean ForceFullRepaintRendering { get; };
+        Boolean SoftwareRendering { get; };
     };
 }

@@ -40,7 +40,7 @@ class Tracing
 public:
     ~Tracing();
 
-    static Tracing s_TraceApiCall(const NTSTATUS& result, PCSTR traceName);
+    static Tracing s_TraceApiCall(const NTSTATUS result, PCSTR traceName);
 
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_GETLARGESTWINDOWSIZE_MSG* const a);
     static void s_TraceApi(const NTSTATUS status, const CONSOLE_SCREENBUFFERINFO_MSG* const a, const bool fSet);
@@ -62,7 +62,8 @@ public:
     static void s_TraceWindowMessage(const MSG& msg);
     static void s_TraceInputRecord(const INPUT_RECORD& inputRecord);
 
-    static void s_TraceCookedRead(_In_z_ const wchar_t* pwszCookedBuffer);
+    static void s_TraceCookedRead(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_reads_(cchCookedBufferLength) const wchar_t* pwchCookedBuffer, _In_ ULONG cchCookedBufferLength);
+    static void s_TraceConsoleAttachDetach(_In_ ConsoleProcessHandle* const pConsoleProcessHandle, _In_ bool bIsAttach);
 
     static void __stdcall TraceFailure(const wil::FailureInfo& failure) noexcept;
 
