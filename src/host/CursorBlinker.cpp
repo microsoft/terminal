@@ -166,7 +166,7 @@ void CursorBlinker::SetCaretTimer() const noexcept
     static constexpr DWORD dwDefTimeout = 0x212;
 
     const auto periodInMS = _uCaretBlinkTime == -1 ? dwDefTimeout : _uCaretBlinkTime;
-    // The FILETIME struct measures time in 100ns steps. 1ms is 10000ns.
+    // The FILETIME struct measures time in 100ns steps. 10000 thus equals 1ms.
     auto periodInFiletime = -static_cast<int64_t>(periodInMS) * 10000;
     SetThreadpoolTimer(_timer.get(), reinterpret_cast<FILETIME*>(&periodInFiletime), periodInMS, 0);
 }

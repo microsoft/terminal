@@ -48,6 +48,15 @@ CONSOLE_INFORMATION::CONSOLE_INFORMATION() :
     ZeroMemory((void*)&OutputCPInfo, sizeof(OutputCPInfo));
 }
 
+// Access to thread-local variables is thread-safe, because each thread
+// gets its own copy of this variable with a default value of 0.
+//
+// Whenever we want to acquire the lock we increment recursionCount and on
+// each release we decrement it again. We can then make the lock safe for
+// reentrancy by only acquiring/releasing the lock if the recursionCount is 0.
+// In a sense, recursionCount is counting the actual function
+// call recursion depth of the caller. This works as long as
+// the caller makes sure to properly call Unlock() once for each Lock().
 static thread_local ULONG recursionCount = 0;
 static til::ticket_lock lock;
 
@@ -59,6 +68,7 @@ bool CONSOLE_INFORMATION::IsConsoleLocked()
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::LockConsole()
 {
+    // See description of recursionCount a few lines above.
     const auto rc = ++recursionCount;
     FAIL_FAST_IF(rc == 0);
     if (rc == 1)
@@ -70,6 +80,7 @@ void CONSOLE_INFORMATION::LockConsole()
 #pragma prefast(suppress : 26135, "Adding lock annotation spills into entire project. Future work.")
 void CONSOLE_INFORMATION::UnlockConsole()
 {
+    // See description of recursionCount a few lines above.
     const auto rc = --recursionCount;
     FAIL_FAST_IF(rc == ULONG_MAX);
     if (rc == 0)
