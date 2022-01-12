@@ -68,6 +68,17 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
+        // Try to handle auto-elevation
+        if (_maybeElevate(newTerminalArgs, settings, profile))
+        {
+            return S_OK;
+        }
+        // We can't go in the other direction (elevated->unelevated)
+        // unfortunately. This seems to be due to Centennial quirks. It works
+        // unpackaged, but not packaged.
+        //
+        // This call to _MakePane won't return nullptr, we already checked that
+        // case above with the _maybeElevate call.
         _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
 
         const uint32_t tabCount = _tabs.Size();
@@ -240,8 +251,11 @@ namespace winrt::TerminalApp::implementation
     // - pane: The pane to use as the root.
     void TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane)
     {
-        auto newTabImpl = winrt::make_self<TerminalTab>(pane);
-        _InitializeTab(newTabImpl);
+        if (pane)
+        {
+            auto newTabImpl = winrt::make_self<TerminalTab>(pane);
+            _InitializeTab(newTabImpl);
+        }
     }
 
     // Method Description:

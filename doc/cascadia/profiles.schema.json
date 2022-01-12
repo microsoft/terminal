@@ -469,7 +469,12 @@
         "colorScheme": {
           "description": "The name of a color scheme to use, instead of the one specified by the profile",
           "type": "string"
-        }
+        },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "This will override the profile's `elevate` setting."
+        },
       },
       "type": "object"
     },
@@ -1950,6 +1955,11 @@
             "vintage"
           ],
           "type": "string"
+        },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",
