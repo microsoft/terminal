@@ -43,9 +43,9 @@
                          TabFocusNavigation="Cycle">
         <muxc:NavigationView.Header>
             <muxc:BreadcrumbBar x:Name="NavigationBreadcrumbBar"
-                                ItemsSource="{x:Bind Breadcrumbs}"
+                                Margin="-40,0,0,16"
                                 ItemClicked="BreadcrumbBar_ItemClicked"
-                                Margin="-40,0,0,16">
+                                ItemsSource="{x:Bind Breadcrumbs}">
                 <muxc:BreadcrumbBar.Resources>
                     <ResourceDictionary>
                         <x:Double x:Key="BreadcrumbBarItemThemeFontSize">28</x:Double>

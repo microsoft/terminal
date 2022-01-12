@@ -313,28 +313,28 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
                                                                 *this) };
 
             _profileViewModelChangedRevoker = _lastProfilesNavState.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
-                    const auto settingName{ args.PropertyName() };
-                    if (settingName == L"CurrentPage")
+                const auto settingName{ args.PropertyName() };
+                if (settingName == L"CurrentPage")
+                {
+                    const auto currentPage = _lastProfilesNavState.Profile().CurrentPage();
+                    if (currentPage == L"Base")
                     {
-                        const auto currentPage = _lastProfilesNavState.Profile().CurrentPage();
-                        if (currentPage == L"Base")
-                        {
-                            contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), _lastProfilesNavState);
-                            _breadcrumbs.Clear();
-                            _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
-                        }
-                        else if (currentPage == L"Appearance")
-                        {
-                            contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
-                            _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
-                        }
-                        else if (currentPage == L"Advanced")
-                        {
-                            contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
-                            _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
-                        }
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), _lastProfilesNavState);
+                        _breadcrumbs.Clear();
+                        _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
                     }
-                });
+                    else if (currentPage == L"Appearance")
+                    {
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
+                        _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
+                    }
+                    else if (currentPage == L"Advanced")
+                    {
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
+                        _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
+                    }
+                }
+            });
 
             contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
             _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
@@ -447,7 +447,6 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         _lastProfilesNavState.Profile().CurrentPage(L"Base");
     }
-
 
     void MainPage::_InitializeProfilesList()
     {

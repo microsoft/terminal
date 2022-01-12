@@ -19,8 +19,10 @@
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{StaticResource SystemBaseMediumColor}" />
             <Color x:Key="CardStrokeColorDefault">#0F000000</Color>
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush"
+                             Color="{StaticResource CardStrokeColorDefault}" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush"
+                            ResourceKey="CardStrokeColorDefaultBrush" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="HighContrast">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -28,7 +30,8 @@
             <!--  Do not mess with the foreground color for High Contrast. Let it ride as is.  -->
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{ThemeResource SystemColorWindowTextColor}" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="SystemColorButtonTextColorBrush" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush"
+                            ResourceKey="SystemColorButtonTextColorBrush" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <Style x:Key="SecondaryTextBlockStyle"
@@ -38,8 +41,10 @@
             <SolidColorBrush x:Key="SubgroupHeaderBrush"
                              Color="{StaticResource SystemBaseMediumColor}" />
             <Color x:Key="CardStrokeColorDefault">#19000000</Color>
-            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="{StaticResource CardStrokeColorDefault}" />
-            <StaticResource x:Key="ExpanderHeaderBorderBrush" ResourceKey="CardStrokeColorDefaultBrush" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush"
+                             Color="{StaticResource CardStrokeColorDefault}" />
+            <StaticResource x:Key="ExpanderHeaderBorderBrush"
+                            ResourceKey="CardStrokeColorDefaultBrush" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
