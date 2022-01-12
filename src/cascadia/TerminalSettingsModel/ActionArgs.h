@@ -39,6 +39,7 @@
 #include "RenameWindowArgs.g.h"
 #include "GlobalSummonArgs.g.h"
 #include "FocusPaneArgs.g.h"
+#include "ExportBufferArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
 
@@ -209,6 +210,10 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define FOCUS_PANE_ARGS(X) \
     X(uint32_t, Id, "id", false, 0u)
+
+////////////////////////////////////////////////////////////////////////////////
+#define EXPORT_BUFFER_ARGS(X) \
+    X(winrt::hstring, Path, "path", false, L"")
 
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
@@ -631,6 +636,8 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
 
     ACTION_ARGS_STRUCT(FocusPaneArgs, FOCUS_PANE_ARGS);
 
+    ACTION_ARGS_STRUCT(ExportBufferArgs, EXPORT_BUFFER_ARGS);
+
     ACTION_ARGS_STRUCT(ClearBufferArgs, CLEAR_BUFFER_ARGS);
 
     struct MultipleActionsArgs : public MultipleActionsArgsT<MultipleActionsArgs>
@@ -713,6 +720,7 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(FocusPaneArgs);
     BASIC_FACTORY(PrevTabArgs);
     BASIC_FACTORY(NextTabArgs);
+    BASIC_FACTORY(ExportBufferArgs);
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
 }
