@@ -36,7 +36,13 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR pCmdLine, int)
     module.replace_filename(L"WindowsTerminal.exe");
 
     // Go!
+
+    // disable warnings from SHELLEXECUTEINFO struct. We can't fix that.
+#pragma warning(push)
+#pragma warning(disable : 26476) // Macro uses naked union over variant.
     SHELLEXECUTEINFOW seInfo{ 0 };
+#pragma warning(pop)
+
     seInfo.cbSize = sizeof(seInfo);
     seInfo.fMask = SEE_MASK_DEFAULT;
     seInfo.lpVerb = L"runas"; // This asks the shell to elevate the process
