@@ -445,11 +445,20 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             return;
         }
 
-        auto newOpacity = std::clamp(Opacity() + adjustment,
-                                     0.0,
-                                     1.0);
+        _setOpacity(Opacity() + adjustment);
+    }
 
-        auto lock = _terminal->LockForWriting();
+    void ControlCore::_setOpacity(const double opacity)
+    {
+        const auto newOpacity = std::clamp(opacity,
+                                           0.0,
+                                           1.0);
+
+        if (newOpacity == Opacity())
+        {
+            return;
+        }
+
         // Update our runtime opacity value
         Opacity(newOpacity);
 
@@ -1701,6 +1710,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         _settings->FocusedAppearance()->SetColorTableEntry(15, scheme.BrightWhite);
 
         _terminal->ApplyScheme(scheme);
+
         _renderEngine->SetSelectionBackground(til::color{ _settings->SelectionBackground() });
 
         _renderer->TriggerRedrawAll();
@@ -1710,6 +1720,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     bool ControlCore::HasUnfocusedAppearance() const
     {
         return _settings->HasUnfocusedAppearance();
+    }
+
+    void ControlCore::AdjustOpacity(const int32_t& opacity, const bool& relative)
+    {
+        const double opacityAdjust = static_cast<double>(opacity) / 100.0;
+        if (relative)
+        {
+            AdjustOpacity(opacityAdjust);
+        }
+        else
+        {
+            _setOpacity(opacityAdjust);
+        }
     }
 
     bool ControlCore::_isBackgroundTransparent()

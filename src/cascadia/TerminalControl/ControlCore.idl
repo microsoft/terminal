@@ -98,6 +98,8 @@ namespace Microsoft.Terminal.Control
 
         String ReadEntireBuffer();
 
+        void AdjustOpacity(Int32 Opacity, Boolean relative);
+
         event FontSizeChangedEventArgs FontSizeChanged;
 
         event Windows.Foundation.TypedEventHandler<Object, CopyToClipboardEventArgs> CopyToClipboard;

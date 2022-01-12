@@ -398,8 +398,9 @@ namespace winrt::TerminalApp::implementation
 
         void _PreviewActionHandler(const IInspectable& sender, const Microsoft::Terminal::Settings::Model::Command& args);
         void _EndPreview();
-        void _EndPreviewColorScheme();
+        void _RunRestorePreviews();
         void _PreviewColorScheme(const Microsoft::Terminal::Settings::Model::SetColorSchemeArgs& args);
+        void _PreviewAdjustOpacity(const Microsoft::Terminal::Settings::Model::AdjustOpacityArgs& args);
         winrt::Microsoft::Terminal::Settings::Model::Command _lastPreviewedCommand{ nullptr };
         std::vector<std::function<void()>> _restorePreviewFuncs{};
 

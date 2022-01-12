@@ -42,6 +42,7 @@
 #include "ExportBufferArgs.g.h"
 #include "ClearBufferArgs.g.h"
 #include "MultipleActionsArgs.g.h"
+#include "AdjustOpacityArgs.g.h"
 
 #include "JsonUtils.h"
 #include "HashUtils.h"
@@ -218,6 +219,11 @@ private:                                                                        
 ////////////////////////////////////////////////////////////////////////////////
 #define CLEAR_BUFFER_ARGS(X) \
     X(winrt::Microsoft::Terminal::Control::ClearBufferType, Clear, "clear", false, winrt::Microsoft::Terminal::Control::ClearBufferType::All)
+
+////////////////////////////////////////////////////////////////////////////////
+#define ADJUST_OPACITY_ARGS(X)               \
+    X(int32_t, Opacity, "opacity", false, 0) \
+    X(bool, Relative, "relative", false, true)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -690,6 +696,9 @@ namespace winrt::Microsoft::Terminal::Settings::Model::implementation
             return h.finalize();
         }
     };
+
+    ACTION_ARGS_STRUCT(AdjustOpacityArgs, ADJUST_OPACITY_ARGS);
+
 }
 
 namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
@@ -723,4 +732,5 @@ namespace winrt::Microsoft::Terminal::Settings::Model::factory_implementation
     BASIC_FACTORY(ExportBufferArgs);
     BASIC_FACTORY(ClearBufferArgs);
     BASIC_FACTORY(MultipleActionsArgs);
+    BASIC_FACTORY(AdjustOpacityArgs);
 }

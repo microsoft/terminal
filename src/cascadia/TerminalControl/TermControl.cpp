@@ -2001,7 +2001,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
-
             return GetProposedDimensions(_core.Settings(), dpi, minSize);
         }
     }
@@ -2707,5 +2706,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
     {
         _core.ColorScheme(scheme);
+    }
+
+    void TermControl::AdjustOpacity(const int32_t& opacity, const bool& relative)
+    {
+        _core.AdjustOpacity(opacity, relative);
+    }
+
+    // - You'd think this should just be "Opacity", but UIElement already
+    //   defines an "Opacity", which we're actually not setting at all. We're
+    //   not overriding or changing _that_ value. Callers that want the opacity
+    //   set by the settings should call this instead.
+    double TermControl::BackgroundOpacity() const
+    {
+        return _core.Opacity();
     }
 }

@@ -359,4 +359,11 @@ namespace Microsoft.Terminal.Settings.Model
         MultipleActionsArgs();
         Windows.Foundation.Collections.IVector<ActionAndArgs> Actions;
     };
+
+    [default_interface] runtimeclass AdjustOpacityArgs : IActionArgs
+    {
+        AdjustOpacityArgs();
+        Int32 Opacity { get; };
+        Boolean Relative { get; };
+    };
 }
