@@ -101,5 +101,9 @@
         "**/obj/**": true,
         "**/packages/**": true,
         "**/Generated Files/**": true
-    }
+    },
+    "vscode-nmake-tools.workspaceBuildDirectories": [
+        "c:\\Users\\migrie\\dev\\public\\terminal"
+    ],
+    "C_Cpp.default.configurationProvider": "microsoft.vscode-nmake-tools"
 }

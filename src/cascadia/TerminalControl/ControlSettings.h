@@ -65,7 +65,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // appearance is being used should be more careful. Fortunately, this
         // situation is generally only used when a control is first created, or
         // when calling UpdateSettings.
-
 #define APPEARANCE_GEN(type, name, ...)                               \
     type name() const noexcept { return _focusedAppearance->name(); } \
     void name(const type& value) noexcept { _focusedAppearance->name(value); }

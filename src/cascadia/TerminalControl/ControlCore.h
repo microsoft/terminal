@@ -23,8 +23,6 @@
 
 #include <til/ticket_lock.h>
 
-#include <til/ticket_lock.h>
-
 namespace ControlUnitTests
 {
     class ControlCoreTests;

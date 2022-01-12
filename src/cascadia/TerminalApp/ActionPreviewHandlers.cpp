@@ -59,9 +59,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Revert any changes from the preview on a SetColorScheme action. This
-    //   will remove the preview TerminalSettings we inserted into the control's
-    //   TerminalSettings graph, and update the control.
+    // - Revert any changes from the preview on a previewable action. This
+    //   will run the restore function that the preview added to _restorePreviewFuncs
     // Arguments:
     // - <none>
     // Return Value:
@@ -115,11 +114,11 @@ namespace winrt::TerminalApp::implementation
     void TerminalPage::_PreviewAdjustOpacity(const Settings::Model::AdjustOpacityArgs& args)
     {
         // Clear the saved preview funcs because we don't need to add a restore each time
-        // the preview color changes, we only need to be able to restore the last one.
+        // the preview changes, we only need to be able to restore the last one.
         _restorePreviewFuncs.clear();
 
         _ApplyToActiveControls([&](const auto& control) {
-            // Stash a copy of the original scheme.
+            // Stash a copy of the original opacity.
             auto originalOpacity{ control.BackgroundOpacity() };
 
             // Apply the new opacity

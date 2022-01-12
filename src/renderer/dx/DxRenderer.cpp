@@ -910,15 +910,6 @@ void DxEngine::_ReleaseDeviceResources() noexcept
     // DANGER: Layers slow us down. Only do this in the specific case where
     // someone has chosen the slower ClearType antialiasing (versus the faster
     // grayscale antialiasing)
-    //
-    // October 2021: We're no longer forcing the BG of the run to be opaque when
-    // cleartype is enabled and the background isn't fully opaque. In the case
-    // of (!useAcrylic && opacity<1.0), we actually can still render cleartype
-    // text just fine. It's only acrylic that messes us up. So we're making a
-    // small change. Now, when the user requests acrylic, text that's rendered
-    // on the default text BG will always use grayscale, rather than cleartype.
-    // This helps support the scenario where the user has (useAcrylic &&
-    // opacity==1.0)
     const bool usingCleartype = _antialiasingMode == D2D1_TEXT_ANTIALIAS_MODE_CLEARTYPE;
     const bool usingTransparency = _defaultBackgroundIsTransparent;
     // Another way of naming "bgIsDefault" is "bgHasTransparency"
