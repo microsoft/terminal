@@ -77,9 +77,6 @@
     <ClInclude Include="..\..\inc\IRenderEngine.hpp">
       <Filter>Header Files\inc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\inc\IRenderer.hpp">
-      <Filter>Header Files\inc</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\inc\RenderEngineBase.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

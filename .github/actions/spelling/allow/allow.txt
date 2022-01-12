@@ -82,3 +82,4 @@ We'd
 wildcards
 yeru
 zhe
+allcolors

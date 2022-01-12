@@ -89,6 +89,9 @@ namespace winrt::TerminalApp::implementation
         bool Fullscreen() const;
         bool AlwaysOnTop() const;
         void SetFullscreen(bool);
+        void SetFocusMode(const bool inFocusMode);
+        void Maximized(bool newMaximized);
+        void RequestSetMaximized(bool newMaximized);
 
         void SetStartupActions(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>& actions);
 
@@ -137,6 +140,7 @@ namespace winrt::TerminalApp::implementation
         TYPED_EVENT(SetTitleBarContent, IInspectable, winrt::Windows::UI::Xaml::UIElement);
         TYPED_EVENT(FocusModeChanged, IInspectable, IInspectable);
         TYPED_EVENT(FullscreenChanged, IInspectable, IInspectable);
+        TYPED_EVENT(ChangeMaximizeRequested, IInspectable, IInspectable);
         TYPED_EVENT(AlwaysOnTopChanged, IInspectable, IInspectable);
         TYPED_EVENT(RaiseVisualBell, IInspectable, IInspectable);
         TYPED_EVENT(SetTaskbarProgress, IInspectable, IInspectable);
@@ -176,6 +180,7 @@ namespace winrt::TerminalApp::implementation
 
         bool _isInFocusMode{ false };
         bool _isFullscreen{ false };
+        bool _isMaximized{ false };
         bool _isAlwaysOnTop{ false };
         winrt::hstring _WindowName{};
         uint64_t _WindowId{ 0 };
@@ -187,6 +192,8 @@ namespace winrt::TerminalApp::implementation
         std::optional<int> _rearrangeFrom{};
         std::optional<int> _rearrangeTo{};
         bool _removing{ false };
+
+        std::vector<std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>> _previouslyClosedPanesAndTabs{};
 
         uint32_t _systemRowsToScroll{ DefaultRowsToScroll };
 
@@ -299,6 +306,7 @@ namespace winrt::TerminalApp::implementation
 
         winrt::fire_and_forget _SetFocusedTab(const winrt::TerminalApp::TabBase tab);
         winrt::fire_and_forget _CloseFocusedPane();
+        void _AddPreviouslyClosedPaneOrTab(std::vector<Microsoft::Terminal::Settings::Model::ActionAndArgs>&& args);
 
         winrt::fire_and_forget _RemoveOnCloseRoutine(Microsoft::UI::Xaml::Controls::TabViewItem tabViewItem, winrt::com_ptr<TerminalPage> page);
 
@@ -405,9 +413,12 @@ namespace winrt::TerminalApp::implementation
 
         void _UpdateTeachingTipTheme(winrt::Windows::UI::Xaml::FrameworkElement element);
 
-        void _SetFocusMode(const bool inFocusMode);
-
         winrt::Microsoft::Terminal::Settings::Model::Profile GetClosestProfileForDuplicationOfProfile(const winrt::Microsoft::Terminal::Settings::Model::Profile& profile) const noexcept;
+
+        bool _maybeElevate(const winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs& newTerminalArgs,
+                           const winrt::Microsoft::Terminal::Settings::Model::TerminalSettingsCreateResult& controlSettings,
+                           const winrt::Microsoft::Terminal::Settings::Model::Profile& profile);
+        void _OpenElevatedWT(winrt::Microsoft::Terminal::Settings::Model::NewTerminalArgs newTerminalArgs);
 
         winrt::fire_and_forget _ConnectionStateChangedHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;
         void _CloseOnExitInfoDismissHandler(const winrt::Windows::Foundation::IInspectable& sender, const winrt::Windows::Foundation::IInspectable& args) const;

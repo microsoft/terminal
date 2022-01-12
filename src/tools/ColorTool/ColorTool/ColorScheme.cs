@@ -39,6 +39,10 @@ namespace ColorTool
 
         public Color this[int index] => UIntToColor(ColorTable[index]);
 
+        public Color Foreground => UIntToColor(ConsoleAttributes.Foreground.Value);
+        public Color Background => UIntToColor(ConsoleAttributes.Background.Value);
+        public Color Cursor => UIntToColor(ConsoleAttributes.Cursor.Value);
+
         private static Color UIntToColor(uint color)
         {
             byte r = (byte)(color >> 0);

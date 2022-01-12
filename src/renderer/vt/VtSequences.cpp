@@ -3,6 +3,8 @@
 
 #include "precomp.h"
 #include "vtrenderer.hpp"
+
+#include "../renderer/base/renderer.hpp"
 #include "../../inc/conattrs.hpp"
 
 #pragma hdrstop
