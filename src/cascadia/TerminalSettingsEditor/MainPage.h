@@ -50,6 +50,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         winrt::Microsoft::Terminal::Settings::Editor::ColorSchemesPageNavigationState _colorSchemesNavState{ nullptr };
 
+        winrt::Microsoft::Terminal::Settings::Editor::ProfilePageNavigationState _lastProfilesNavState{ nullptr };
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _profileViewModelChangedRevoker;
     };
 }

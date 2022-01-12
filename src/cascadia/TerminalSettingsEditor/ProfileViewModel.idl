@@ -54,6 +54,7 @@ namespace Microsoft.Terminal.Settings.Editor
 
         Boolean CanDeleteProfile { get; };
         Boolean IsBaseLayer;
+        String CurrentPage;
         Boolean UseParentProcessDirectory;
         Boolean UseCustomStartingDirectory { get; };
         AppearanceViewModel DefaultAppearance { get; };

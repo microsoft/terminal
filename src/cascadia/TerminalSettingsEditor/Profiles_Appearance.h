@@ -20,8 +20,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteUnfocusedAppearance_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, State().Profile, ScrollState);
+        WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+        GETSET_BINDABLE_ENUM_SETTING(ScrollState, Microsoft::Terminal::Control::ScrollbarState, _Profile, ScrollState);
 
     private:
         Microsoft::Terminal::Control::TermControl _previewControl;

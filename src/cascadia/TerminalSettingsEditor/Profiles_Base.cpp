@@ -27,10 +27,11 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
+        auto state{ e.Parameter().as<Editor::ProfilePageNavigationState>() };
+        _Profile = state.Profile();
 
         // Check the use parent directory box if the starting directory is empty
-        if (_State.Profile().StartingDirectory().empty())
+        if (_Profile.StartingDirectory().empty())
         {
             StartingDirectoryUseParentCheckbox().IsChecked(true);
         }
@@ -43,18 +44,17 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Base::Appearance_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _State.Profile().CurrentPage(L"Appearance");
+        _Profile.CurrentPage(L"Appearance");
     }
 
     void Profiles_Base::Advanced_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*args*/)
     {
-        _State.Profile().CurrentPage(L"Advanced");
+        _Profile.CurrentPage(L"Advanced");
     }
 
     void Profiles_Base::DeleteConfirmation_Click(IInspectable const& /*sender*/, RoutedEventArgs const& /*e*/)
     {
-        auto state{ winrt::get_self<ProfilePageNavigationState>(_State) };
-        state->DeleteProfile();
+        winrt::get_self<ProfileViewModel>(_Profile)->DeleteProfile();
     }
 
     fire_and_forget Profiles_Base::Commandline_Click(IInspectable const&, RoutedEventArgs const&)
@@ -67,7 +67,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         };
 
         static constexpr winrt::guid clientGuidExecutables{ 0x2E7E4331, 0x0800, 0x48E6, { 0xB0, 0x17, 0xA1, 0x4C, 0xD8, 0x73, 0xDD, 0x58 } };
-        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(winrt::get_self<ProfileViewModel>(_Profile)->WindowRoot().GetHostingWindow()) };
         auto path = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExecutables));
             try
@@ -83,7 +83,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!path.empty())
         {
-            _State.Profile().Commandline(path);
+            _Profile.Commandline(path);
         }
     }
 
@@ -91,18 +91,18 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
     {
         auto lifetime = get_strong();
 
-        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(winrt::get_self<ProfileViewModel>(_Profile)->WindowRoot().GetHostingWindow()) };
         auto file = co_await OpenImagePicker(parentHwnd);
         if (!file.empty())
         {
-            _State.Profile().Icon(file);
+            _Profile.Icon(file);
         }
     }
 
     fire_and_forget Profiles_Base::StartingDirectory_Click(IInspectable const&, RoutedEventArgs const&)
     {
         auto lifetime = get_strong();
-        const auto parentHwnd{ reinterpret_cast<HWND>(_State.WindowRoot().GetHostingWindow()) };
+        const auto parentHwnd{ reinterpret_cast<HWND>(winrt::get_self<ProfileViewModel>(_Profile)->WindowRoot().GetHostingWindow()) };
         auto folder = co_await OpenFilePicker(parentHwnd, [](auto&& dialog) {
             static constexpr winrt::guid clientGuidFolderPicker{ 0xAADAA433, 0xB04D, 0x4BAE, { 0xB1, 0xEA, 0x1E, 0x6C, 0xD1, 0xCD, 0xA6, 0x8B } };
             THROW_IF_FAILED(dialog->SetClientGuid(clientGuidFolderPicker));
@@ -120,7 +120,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
         if (!folder.empty())
         {
-            _State.Profile().StartingDirectory(folder);
+            _Profile.StartingDirectory(folder);
         }
     }
 }

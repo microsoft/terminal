@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass Profiles_Advanced : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Profiles_Advanced();
-        ProfilePageNavigationState State { get; };
+        ProfileViewModel Profile { get; };
 
         Boolean IsBellStyleFlagSet(UInt32 flag);
         void SetBellStyleAudible(Windows.Foundation.IReference<Boolean> on);

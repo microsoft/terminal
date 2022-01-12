@@ -8,6 +8,6 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass Profiles_Base : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Profiles_Base();
-        ProfilePageNavigationState State { get; };
+        ProfileViewModel Profile { get; };
     }
 }

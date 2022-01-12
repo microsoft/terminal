@@ -23,12 +23,13 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     void Profiles_Advanced::OnNavigatedTo(const NavigationEventArgs& e)
     {
-        _State = e.Parameter().as<Editor::ProfilePageNavigationState>();
+        auto state{ e.Parameter().as<Editor::ProfilePageNavigationState>() };
+        _Profile = state.Profile();
 
         // Subscribe to some changes in the view model
         // These changes should force us to update our own set of "Current<Setting>" members,
         // and propagate those changes to the UI
-        _ViewModelChangedRevoker = _State.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+        _ViewModelChangedRevoker = _Profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
             if (settingName == L"AntialiasingMode")
             {
@@ -52,27 +53,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
 
     bool Profiles_Advanced::IsBellStyleFlagSet(const uint32_t flag)
     {
-        return (WI_EnumValue(_State.Profile().BellStyle()) & flag) == flag;
+        return (WI_EnumValue(_Profile.BellStyle()) & flag) == flag;
     }
 
     void Profiles_Advanced::SetBellStyleAudible(winrt::Windows::Foundation::IReference<bool> on)
     {
-        auto currentStyle = State().Profile().BellStyle();
+        auto currentStyle = _Profile.BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Audible, winrt::unbox_value<bool>(on));
-        State().Profile().BellStyle(currentStyle);
+        _Profile.BellStyle(currentStyle);
     }
 
     void Profiles_Advanced::SetBellStyleWindow(winrt::Windows::Foundation::IReference<bool> on)
     {
-        auto currentStyle = State().Profile().BellStyle();
+        auto currentStyle = _Profile.BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Window, winrt::unbox_value<bool>(on));
-        State().Profile().BellStyle(currentStyle);
+        _Profile.BellStyle(currentStyle);
     }
 
     void Profiles_Advanced::SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on)
     {
-        auto currentStyle = State().Profile().BellStyle();
+        auto currentStyle = _Profile.BellStyle();
         WI_UpdateFlag(currentStyle, Model::BellStyle::Taskbar, winrt::unbox_value<bool>(on));
-        State().Profile().BellStyle(currentStyle);
+        _Profile.BellStyle(currentStyle);
     }
 }

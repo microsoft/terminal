@@ -34,24 +34,24 @@
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
-                   Visibility="{x:Bind State.Profile.IsBaseLayer}" />
+                   Visibility="{x:Bind Profile.IsBaseLayer}" />
         <ScrollViewer Grid.Row="1"
                       ViewChanging="ViewChanging">
             <StackPanel Margin="13,0,0,0"
                         Style="{StaticResource PivotStackStyle}">
                 <!--  Suppress Application Title  -->
                 <local:SettingContainer x:Uid="Profile_SuppressApplicationTitle"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearSuppressApplicationTitle}"
-                                        HasSettingValue="{x:Bind State.Profile.HasSuppressApplicationTitle, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
-                    <ToggleSwitch IsOn="{x:Bind State.Profile.SuppressApplicationTitle, Mode=TwoWay}" />
+                                        ClearSettingValue="{x:Bind Profile.ClearSuppressApplicationTitle}"
+                                        HasSettingValue="{x:Bind Profile.HasSuppressApplicationTitle, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.SuppressApplicationTitleOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.SuppressApplicationTitle, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Antialiasing Mode  -->
                 <local:SettingContainer x:Uid="Profile_AntialiasingMode"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearAntialiasingMode}"
-                                        HasSettingValue="{x:Bind State.Profile.HasAntialiasingMode, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.AntialiasingModeOverrideSource, Mode=OneWay}"
+                                        ClearSettingValue="{x:Bind Profile.ClearAntialiasingMode}"
+                                        HasSettingValue="{x:Bind Profile.HasAntialiasingMode, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.AntialiasingModeOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
@@ -61,38 +61,38 @@
 
                 <!--  AltGr Aliasing  -->
                 <local:SettingContainer x:Uid="Profile_AltGrAliasing"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearAltGrAliasing}"
-                                        HasSettingValue="{x:Bind State.Profile.HasAltGrAliasing, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
-                    <ToggleSwitch IsOn="{x:Bind State.Profile.AltGrAliasing, Mode=TwoWay}" />
+                                        ClearSettingValue="{x:Bind Profile.ClearAltGrAliasing}"
+                                        HasSettingValue="{x:Bind Profile.HasAltGrAliasing, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.AltGrAliasingOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.AltGrAliasing, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Snap On Input  -->
                 <local:SettingContainer x:Uid="Profile_SnapOnInput"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearSnapOnInput}"
-                                        HasSettingValue="{x:Bind State.Profile.HasSnapOnInput, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.SnapOnInputOverrideSource, Mode=OneWay}">
-                    <ToggleSwitch IsOn="{x:Bind State.Profile.SnapOnInput, Mode=TwoWay}" />
+                                        ClearSettingValue="{x:Bind Profile.ClearSnapOnInput}"
+                                        HasSettingValue="{x:Bind Profile.HasSnapOnInput, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.SnapOnInputOverrideSource, Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.SnapOnInput, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  History Size  -->
                 <local:SettingContainer x:Uid="Profile_HistorySize"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearHistorySize}"
-                                        HasSettingValue="{x:Bind State.Profile.HasHistorySize, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.HistorySizeOverrideSource, Mode=OneWay}">
+                                        ClearSettingValue="{x:Bind Profile.ClearHistorySize}"
+                                        HasSettingValue="{x:Bind Profile.HasHistorySize, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.HistorySizeOverrideSource, Mode=OneWay}">
                     <muxc:NumberBox x:Uid="Profile_HistorySizeBox"
                                     LargeChange="100"
                                     Minimum="0"
                                     SmallChange="10"
                                     Style="{StaticResource NumberBoxSettingStyle}"
-                                    Value="{x:Bind State.Profile.HistorySize, Mode=TwoWay}" />
+                                    Value="{x:Bind Profile.HistorySize, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Close On Exit  -->
                 <local:SettingContainer x:Uid="Profile_CloseOnExit"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearCloseOnExit}"
-                                        HasSettingValue="{x:Bind State.Profile.HasCloseOnExit, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.CloseOnExitOverrideSource, Mode=OneWay}"
+                                        ClearSettingValue="{x:Bind Profile.ClearCloseOnExit}"
+                                        HasSettingValue="{x:Bind Profile.HasCloseOnExit, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.CloseOnExitOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <muxc:RadioButtons AutomationProperties.AccessibilityView="Content"
                                        ItemTemplate="{StaticResource EnumRadioButtonTemplate}"
@@ -102,9 +102,9 @@
 
                 <!--  Bell Style  -->
                 <local:SettingContainer x:Uid="Profile_BellStyle"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearBellStyle}"
-                                        HasSettingValue="{x:Bind State.Profile.HasBellStyle, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.BellStyleOverrideSource, Mode=OneWay}"
+                                        ClearSettingValue="{x:Bind Profile.ClearBellStyle}"
+                                        HasSettingValue="{x:Bind Profile.HasBellStyle, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.BellStyleOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel>
                         <CheckBox x:Uid="Profile_BellStyleAudible"

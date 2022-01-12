@@ -311,26 +311,27 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
             auto state{ winrt::make<ProfilePageNavigationState>(profileVM,
                                                                 _settingsClone.GlobalSettings().ColorSchemes(),
                                                                 *this) };
+            _lastProfilesNavState = state;
 
-            _profileViewModelChangedRevoker = _lastProfilesNavState.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+            _profileViewModelChangedRevoker = state.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
                 const auto settingName{ args.PropertyName() };
                 if (settingName == L"CurrentPage")
                 {
-                    const auto currentPage = _lastProfilesNavState.Profile().CurrentPage();
+                    const auto currentPage = state.Profile().CurrentPage();
                     if (currentPage == L"Base")
                     {
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), _lastProfilesNavState);
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
                         _breadcrumbs.Clear();
                         _breadcrumbs.Append(RS_(L"Nav_ProfileDefaults/Content"));
                     }
                     else if (currentPage == L"Appearance")
                     {
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
                         _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
                     }
                     else if (currentPage == L"Advanced")
                     {
-                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
+                        contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
                         _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
                     }
                 }
@@ -368,6 +369,8 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         auto state{ winrt::make<ProfilePageNavigationState>(profile,
                                                             _settingsClone.GlobalSettings().ColorSchemes(),
                                                             *this) };
+        _lastProfilesNavState = state;
+
         _profileViewModelChangedRevoker.revoke();
         _breadcrumbs.Clear();
 
@@ -384,25 +387,25 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         //   We decided that it's better for the owner of the BreadcrumbBar to also be responsible
         //   for navigation, so the navigation to Profiles_Advanced/Profiles_Appearance from
         //   Profiles_Base got moved here.
-        _profileViewModelChangedRevoker = state.Profile().PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
+        _profileViewModelChangedRevoker = profile.PropertyChanged(winrt::auto_revoke, [=](auto&&, const PropertyChangedEventArgs& args) {
             const auto settingName{ args.PropertyName() };
             if (settingName == L"CurrentPage")
             {
                 const auto currentPage = state.Profile().CurrentPage();
                 if (currentPage == L"Base")
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), _lastProfilesNavState);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Base>(), state);
                     _breadcrumbs.Clear();
                     _breadcrumbs.Append(profile.Name());
                 }
                 else if (currentPage == L"Appearance")
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), _lastProfilesNavState);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Appearance>(), state);
                     _breadcrumbs.Append(RS_(L"Profile_Appearance/Header"));
                 }
                 else if (currentPage == L"Advanced")
                 {
-                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), _lastProfilesNavState);
+                    contentFrame().Navigate(xaml_typename<Editor::Profiles_Advanced>(), state);
                     _breadcrumbs.Append(RS_(L"Profile_Advanced/Header"));
                 }
             }

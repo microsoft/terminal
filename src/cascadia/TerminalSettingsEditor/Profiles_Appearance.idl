@@ -8,7 +8,7 @@ namespace Microsoft.Terminal.Settings.Editor
     [default_interface] runtimeclass Profiles_Appearance : Windows.UI.Xaml.Controls.Page, Windows.UI.Xaml.Data.INotifyPropertyChanged
     {
         Profiles_Appearance();
-        ProfilePageNavigationState State { get; };
+        ProfileViewModel Profile { get; };
 
         IInspectable CurrentScrollState;
         Windows.Foundation.Collections.IObservableVector<Microsoft.Terminal.Settings.Editor.EnumEntry> ScrollStateList { get; };

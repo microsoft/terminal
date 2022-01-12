@@ -24,9 +24,9 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void SetBellStyleTaskbar(winrt::Windows::Foundation::IReference<bool> on);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
-        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, State().Profile, AntialiasingMode);
-        GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, State().Profile, CloseOnExit);
+        WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
+        GETSET_BINDABLE_ENUM_SETTING(AntiAliasingMode, Microsoft::Terminal::Control::TextAntialiasingMode, _Profile, AntialiasingMode);
+        GETSET_BINDABLE_ENUM_SETTING(CloseOnExitMode, Microsoft::Terminal::Settings::Model::CloseOnExitMode, _Profile, CloseOnExit);
 
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;

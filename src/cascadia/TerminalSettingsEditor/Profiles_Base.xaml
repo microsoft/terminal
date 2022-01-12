@@ -44,7 +44,7 @@
                    Grid.Row="0"
                    Margin="{StaticResource StandardIndentMargin}"
                    Style="{StaticResource DisclaimerStyle}"
-                   Visibility="{x:Bind State.Profile.IsBaseLayer}" />
+                   Visibility="{x:Bind Profile.IsBaseLayer}" />
         <ScrollViewer Grid.Row="1"
                       ViewChanging="ViewChanging">
             <StackPanel Margin="13,0,0,0"
@@ -57,27 +57,27 @@
                     so the name will always be overridden.
                 -->
                 <local:SettingContainer x:Uid="Profile_Name"
-                                        CurrentValue="{x:Bind State.Profile.Name, Mode=OneWay}"
+                                        CurrentValue="{x:Bind Profile.Name, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}"
-                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
+                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                     <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind State.Profile.Name, Mode=TwoWay}" />
+                             Text="{x:Bind Profile.Name, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Commandline  -->
                 <local:SettingContainer x:Name="CommandlineContainer"
                                         x:Uid="Profile_Commandline"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearCommandline}"
-                                        CurrentValue="{x:Bind State.Profile.Commandline, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind State.Profile.HasCommandline, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.CommandlineOverrideSource, Mode=OneWay}"
+                                        ClearSettingValue="{x:Bind Profile.ClearCommandline}"
+                                        CurrentValue="{x:Bind Profile.Commandline, Mode=OneWay}"
+                                        HasSettingValue="{x:Bind Profile.HasCommandline, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.CommandlineOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}"
-                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
+                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Uid="Profile_CommandlineBox"
                                  IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind State.Profile.Commandline, Mode=TwoWay}" />
+                                 Text="{x:Bind Profile.Commandline, Mode=TwoWay}" />
                         <Button x:Uid="Profile_CommandlineBrowse"
                                 Click="Commandline_Click"
                                 Style="{StaticResource BrowseButtonStyle}" />
@@ -87,43 +87,43 @@
                 <!--  Starting Directory  -->
                 <local:SettingContainer x:Name="StartingDirectoryContainer"
                                         x:Uid="Profile_StartingDirectory"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearStartingDirectory}"
-                                        CurrentValue="{x:Bind State.Profile.StartingDirectory, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind State.Profile.HasStartingDirectory, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
+                                        ClearSettingValue="{x:Bind Profile.ClearStartingDirectory}"
+                                        CurrentValue="{x:Bind Profile.StartingDirectory, Mode=OneWay}"
+                                        HasSettingValue="{x:Bind Profile.HasStartingDirectory, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.StartingDirectoryOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal">
                             <TextBox x:Uid="Profile_StartingDirectoryBox"
-                                     IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                     IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                      IsSpellCheckEnabled="False"
                                      Style="{StaticResource TextBoxSettingStyle}"
-                                     Text="{x:Bind State.Profile.StartingDirectory, Mode=TwoWay}" />
+                                     Text="{x:Bind Profile.StartingDirectory, Mode=TwoWay}" />
                             <Button x:Name="StartingDirectoryBrowse"
                                     x:Uid="Profile_StartingDirectoryBrowse"
                                     Click="StartingDirectory_Click"
-                                    IsEnabled="{x:Bind State.Profile.UseCustomStartingDirectory, Mode=OneWay}"
+                                    IsEnabled="{x:Bind Profile.UseCustomStartingDirectory, Mode=OneWay}"
                                     Style="{StaticResource BrowseButtonStyle}" />
                         </StackPanel>
                         <CheckBox x:Name="StartingDirectoryUseParentCheckbox"
                                   x:Uid="Profile_StartingDirectoryUseParentCheckbox"
-                                  IsChecked="{x:Bind State.Profile.UseParentProcessDirectory, Mode=TwoWay}" />
+                                  IsChecked="{x:Bind Profile.UseParentProcessDirectory, Mode=TwoWay}" />
                     </StackPanel>
                 </local:SettingContainer>
 
                 <!--  Icon  -->
                 <local:SettingContainer x:Uid="Profile_Icon"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearIcon}"
-                                        CurrentValue="{x:Bind State.Profile.Icon, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind State.Profile.HasIcon, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.IconOverrideSource, Mode=OneWay}"
+                                        ClearSettingValue="{x:Bind Profile.ClearIcon}"
+                                        CurrentValue="{x:Bind Profile.Icon, Mode=OneWay}"
+                                        HasSettingValue="{x:Bind Profile.HasIcon, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.IconOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <StackPanel Orientation="Horizontal">
                         <TextBox x:Uid="Profile_IconBox"
                                  FontFamily="Segoe UI, Segoe MDL2 Assets"
                                  IsSpellCheckEnabled="False"
                                  Style="{StaticResource TextBoxSettingStyle}"
-                                 Text="{x:Bind State.Profile.Icon, Mode=TwoWay}" />
+                                 Text="{x:Bind Profile.Icon, Mode=TwoWay}" />
                         <Button x:Uid="Profile_IconBrowse"
                                 Click="Icon_Click"
                                 Style="{StaticResource BrowseButtonStyle}" />
@@ -132,19 +132,19 @@
 
                 <!--  Tab Title  -->
                 <local:SettingContainer x:Uid="Profile_TabTitle"
-                                        ClearSettingValue="{x:Bind State.Profile.ClearTabTitle}"
-                                        CurrentValue="{x:Bind State.Profile.TabTitle, Mode=OneWay}"
-                                        HasSettingValue="{x:Bind State.Profile.HasTabTitle, Mode=OneWay}"
-                                        SettingOverrideSource="{x:Bind State.Profile.TabTitleOverrideSource, Mode=OneWay}"
+                                        ClearSettingValue="{x:Bind Profile.ClearTabTitle}"
+                                        CurrentValue="{x:Bind Profile.TabTitle, Mode=OneWay}"
+                                        HasSettingValue="{x:Bind Profile.HasTabTitle, Mode=OneWay}"
+                                        SettingOverrideSource="{x:Bind Profile.TabTitleOverrideSource, Mode=OneWay}"
                                         Style="{StaticResource ExpanderSettingContainerStyle}">
                     <TextBox Style="{StaticResource TextBoxSettingStyle}"
-                             Text="{x:Bind State.Profile.TabTitle, Mode=TwoWay}" />
+                             Text="{x:Bind Profile.TabTitle, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <!--  Hidden  -->
                 <local:SettingContainer x:Uid="Profile_Hidden"
-                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(State.Profile.IsBaseLayer), Mode=OneWay}">
-                    <ToggleSwitch IsOn="{x:Bind State.Profile.Hidden, Mode=TwoWay}" />
+                                        Visibility="{x:Bind local:Converters.InvertedBooleanToVisibility(Profile.IsBaseLayer), Mode=OneWay}">
+                    <ToggleSwitch IsOn="{x:Bind Profile.Hidden, Mode=TwoWay}" />
                 </local:SettingContainer>
 
                 <ToggleButton Click="Appearance_Click"
@@ -164,7 +164,7 @@
                 <Button x:Name="DeleteButton"
                         Margin="{StaticResource StandardControlMargin}"
                         Style="{StaticResource DeleteButtonStyle}"
-                        Visibility="{x:Bind State.Profile.CanDeleteProfile}">
+                        Visibility="{x:Bind Profile.CanDeleteProfile}">
                     <Button.Resources>
                         <ResourceDictionary>
                             <ResourceDictionary.ThemeDictionaries>

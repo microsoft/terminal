@@ -25,7 +25,7 @@ namespace winrt::Microsoft::Terminal::Settings::Editor::implementation
         void DeleteConfirmation_Click(Windows::Foundation::IInspectable const& sender, Windows::UI::Xaml::RoutedEventArgs const& e);
 
         WINRT_CALLBACK(PropertyChanged, Windows::UI::Xaml::Data::PropertyChangedEventHandler);
-        WINRT_PROPERTY(Editor::ProfilePageNavigationState, State, nullptr);
+        WINRT_PROPERTY(Editor::ProfileViewModel, Profile, nullptr);
 
     private:
         Windows::UI::Xaml::Data::INotifyPropertyChanged::PropertyChanged_revoker _ViewModelChangedRevoker;
