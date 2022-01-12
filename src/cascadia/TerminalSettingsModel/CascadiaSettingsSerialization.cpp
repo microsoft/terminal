@@ -985,12 +985,12 @@ void CascadiaSettings::_validateCorrectDefaultShellPaths() const
         if (profile.Guid() == DEFAULT_COMMAND_PROMPT_GUID &&
             profile.Commandline() == L"cmd.exe")
         {
-            profile.Commandline(L"%SystemRoot%\\System32\\cmd.exe");
+            profile.ClearCommandline();
         }
         else if (profile.Guid() == DEFAULT_WINDOWS_POWERSHELL_GUID &&
                  profile.Commandline() == L"powershell.exe")
         {
-            profile.Commandline(L"%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe");
+            profile.ClearCommandline();
         }
     }
 }
