@@ -21,7 +21,7 @@ using namespace Microsoft::WRL;
 
 using namespace Microsoft::Console::Interactivity::Win32;
 
-static constexpr til::point point_offset_by_char(const til::point start, const til::rect bounds, til::CoordType amt)
+static constexpr til::point point_offset_by_char(const til::point start, const til::rect& bounds, til::CoordType amt)
 {
     auto pos_x = start.x;
     auto pos_y = start.y;
@@ -71,7 +71,7 @@ static constexpr til::point point_offset_by_char(const til::point start, const t
     return { pos_x, pos_y };
 }
 
-static constexpr til::point point_offset_by_line(const til::point start, const til::rect bounds, til::CoordType amt)
+static constexpr til::point point_offset_by_line(const til::point start, const til::rect& bounds, til::CoordType amt)
 {
     // X = left boundary for UIA
     auto pos_x = bounds.left;

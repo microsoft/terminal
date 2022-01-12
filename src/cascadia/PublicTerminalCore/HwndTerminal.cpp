@@ -590,7 +590,7 @@ try
         const auto dy = cursorPosition.y - touchdownPoint.y;
         const auto w = fontSize.width;
         const auto distanceSquared = dx * dx + dy * dy;
-        const auto maxDistanceSquared = w * w / 16; // (w /4)^2
+        const auto maxDistanceSquared = w * w / 16; // (w / 4)^2
 
         if (distanceSquared >= maxDistanceSquared)
         {

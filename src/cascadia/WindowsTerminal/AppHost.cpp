@@ -554,7 +554,7 @@ void AppHost::_HandleCreateWindow(const HWND hwnd, RECT proposedRect, LaunchMode
     // for the top here - the IslandWindow includes the titlebar in
     // nonClientFrame.top, so adjusting for that would actually place the
     // titlebar _off_ the monitor.
-    til::point origin{ (proposedRect.left + nonClientFrame.narrow_left<LONG>()),
+    til::point origin{ (proposedRect.left + nonClientFrame.left),
                        (proposedRect.top) };
 
     if (_logic.IsQuakeWindow())

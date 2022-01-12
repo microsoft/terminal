@@ -2158,10 +2158,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         const til::point relativeToMarginInDIPs = cursorPosInDIPs - marginsInDips;
 
         // Convert it to pixels
-        const auto panel = SwapChainPanel();
-        const auto scaleX = panel.CompositionScaleX();
-        const auto scaleY = panel.CompositionScaleY();
-        const til::point relativeToMarginInPixels{ til::math::flooring, relativeToMarginInDIPs.x * scaleX, relativeToMarginInDIPs.y * scaleY };
+        const auto scale = SwapChainPanel().CompositionScaleX();
+        const til::point relativeToMarginInPixels{
+            til::math::flooring,
+            relativeToMarginInDIPs.x * scale,
+            relativeToMarginInDIPs.y * scale,
+        };
 
         return relativeToMarginInPixels;
     }
@@ -2600,16 +2602,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                 if (!uriText.empty())
                 {
                     const auto panel = SwapChainPanel();
-                    const auto scaleX = panel.CompositionScaleX();
-                    const auto scaleY = panel.CompositionScaleY();
+                    const auto scale = panel.CompositionScaleX();
+                    const auto offset = panel.ActualOffset();
 
                     // Update the tooltip with the URI
                     HoveredUri().Text(uriText);
 
                     // Set the border thickness so it covers the entire cell
                     const auto charSizeInPixels = CharacterDimensions();
-                    const auto htInDips = charSizeInPixels.Height / scaleY;
-                    const auto wtInDips = charSizeInPixels.Width / scaleX;
+                    const auto htInDips = charSizeInPixels.Height / scale;
+                    const auto wtInDips = charSizeInPixels.Width / scale;
                     const Thickness newThickness{ wtInDips, htInDips, 0, 0 };
                     HyperlinkTooltipBorder().BorderThickness(newThickness);
 
@@ -2618,12 +2620,12 @@ namespace winrt::Microsoft::Terminal::Control::implementation
                     const til::point startPos{ lastHoveredCell.Value() };
                     const til::size fontSize{ til::math::rounding, _core.FontSize() };
                     const til::point posInPixels{ startPos * fontSize };
-                    const til::point posInDIPs{ til::math::flooring, posInPixels.x / scaleX, posInPixels.y / scaleY };
+                    const til::point posInDIPs{ til::math::flooring, posInPixels.x / scale, posInPixels.y / scale };
                     const til::point locationInDIPs{ posInDIPs + marginsInDips };
 
                     // Move the border to the top left corner of the cell
-                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - panel.ActualOffset().x);
-                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - panel.ActualOffset().y);
+                    OverlayCanvas().SetLeft(HyperlinkTooltipBorder(), locationInDIPs.x - offset.x);
+                    OverlayCanvas().SetTop(HyperlinkTooltipBorder(), locationInDIPs.y - offset.y);
                 }
             }
         }

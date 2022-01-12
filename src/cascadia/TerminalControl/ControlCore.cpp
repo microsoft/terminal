@@ -947,12 +947,9 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // you move its endpoints while it is generating a frame.
         auto lock = _terminal->LockForWriting();
 
-        const short lastVisibleRow = std::max<short>(_terminal->GetViewport().Height() - 1, 0);
-        const short lastVisibleCol = std::max<short>(_terminal->GetViewport().Width() - 1, 0);
-
         til::point terminalPosition{
-            std::clamp<short>(position.narrow_x<short>(), 0, lastVisibleCol),
-            std::clamp<short>(position.narrow_y<short>(), 0, lastVisibleRow)
+            std::clamp(position.x, 0, _terminal->GetViewport().Width() - 1),
+            std::clamp(position.y, 0, _terminal->GetViewport().Height() - 1)
         };
 
         // save location (for rendering) + render

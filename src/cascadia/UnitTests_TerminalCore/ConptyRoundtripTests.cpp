@@ -1085,7 +1085,7 @@ void ConptyRoundtripTests::PassthroughClearAll()
         sm.ProcessString(L"~");
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport, const bool afterClear = false) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool afterClear = false) {
         const auto width = viewport.narrow_width<short>();
 
         // "~" rows
@@ -1456,7 +1456,7 @@ void ConptyRoundtripTests::ScrollWithChangesInMiddle()
                          L"8"); // Restore
     hostSm.ProcessString(std::wstring(wrappedLineLength, L'A')); // Print 100 'A's
 
-    auto verifyBuffer = [](const TextBuffer& tb, const til::rect viewport) {
+    auto verifyBuffer = [](const TextBuffer& tb, const til::rect& viewport) {
         const auto wrappedRow = gsl::narrow<short>(viewport.bottom - 2);
         const short start = viewport.narrow_top<short>();
         for (short i = start; i < wrappedRow; i++)
@@ -2272,7 +2272,7 @@ void ConptyRoundtripTests::OutputWrappedLineWithSpaceAtBottomOfBuffer()
     sm.ProcessString(std::wstring(spacesLength, L' '));
     sm.ProcessString(std::wstring(secondTextLength, L'B'));
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
         // Buffer contents should look like the following: (80 wide)
         // (w) means we hard wrapped the line
         // (b) means the line is _not_ wrapped (it's broken, the default state.)
@@ -2587,7 +2587,7 @@ void ConptyRoundtripTests::ResizeRepaintVimExeBuffer()
 
     drawVim();
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
         const auto firstRow = viewport.narrow_top<short>();
         const auto width = viewport.narrow_width<short>();
 
@@ -2697,7 +2697,7 @@ void ConptyRoundtripTests::ClsAndClearHostClearsScrollbackTest()
         sm.ProcessString(L"~");
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport, const bool afterClear = false) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool afterClear = false) {
         const auto width = viewport.narrow_width<short>();
 
         // "~" rows
@@ -2933,7 +2933,7 @@ void ConptyRoundtripTests::ResizeInitializeBufferWithDefaultAttrs()
         sm.ProcessString(L"#");
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport, const bool isTerminal, const bool afterResize) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool isTerminal, const bool afterResize) {
         const auto width = viewport.narrow_width<short>();
 
         // Conhost and Terminal attributes are potentially different.
@@ -3071,7 +3071,7 @@ void ConptyRoundtripTests::NewLinesAtBottomWithBackground()
         }
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
         const auto width = viewport.narrow_width<short>();
         const auto isTerminal = viewport.top != 0;
 
@@ -3271,7 +3271,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottom()
     // row[4]: |~~~~~~~~~~~~~~~~~~~| <wrap>
     // row[5]: |~~~~~~             | <break>
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
         const auto width = viewport.narrow_width<short>();
         const auto isTerminal = viewport.top != 0;
 
@@ -3473,7 +3473,7 @@ void ConptyRoundtripTests::WrapNewLineAtBottomLikeMSYS()
         }
     }
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport) {
         const auto width = viewport.narrow_width<short>();
         const auto isTerminal = viewport.top != 0;
         auto lastRow = gsl::narrow<short>(viewport.bottom - 1);
@@ -3549,7 +3549,7 @@ void ConptyRoundtripTests::DeleteWrappedWord()
     sm.ProcessString(std::wstring(50, L'B'));
     sm.ProcessString(L"\x1b[?25h");
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport, const bool after) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool after) {
         const auto width = viewport.narrow_width<short>();
 
         auto iter1 = tb.GetCellDataAt({ 0, 0 });
@@ -3711,7 +3711,7 @@ void ConptyRoundtripTests::ClearBufferSignal()
     sm.ProcessString(L"\x1b[?m");
     sm.ProcessString(L"\x1b[?25h");
 
-    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect viewport, const bool before) {
+    auto verifyBuffer = [&](const TextBuffer& tb, const til::rect& viewport, const bool before) {
         const short width = viewport.narrow_width<short>();
         const short numCharsOnSecondLine = 50 - (width - 51);
         auto iter1 = tb.GetCellDataAt({ 0, 0 });

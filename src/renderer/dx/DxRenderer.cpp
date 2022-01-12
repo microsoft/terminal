@@ -463,8 +463,8 @@ void DxEngine::_ComputePixelShaderSettings() noexcept
             _pixelShaderSettings.Scale = _scale;
 
             // Set the display resolution
-            const float w = 1.0f * _displaySizePixels.narrow_width<UINT>();
-            const float h = 1.0f * _displaySizePixels.narrow_height<UINT>();
+            const float w = static_cast<float>(_displaySizePixels.width);
+            const float h = static_cast<float>(_displaySizePixels.height);
             _pixelShaderSettings.Resolution = XMFLOAT2{ w, h };
 
             // Set the background
@@ -1679,7 +1679,7 @@ CATCH_RETURN()
 // Return Value:
 // - S_OK or relevant DirectX error
 [[nodiscard]] HRESULT DxEngine::PaintBufferLine(gsl::span<const Cluster> const clusters,
-                                                COORD coord,
+                                                COORD const coord,
                                                 const bool /*trimLeft*/,
                                                 const bool /*lineWrapped*/) noexcept
 try

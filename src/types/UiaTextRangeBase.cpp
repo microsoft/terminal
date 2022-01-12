@@ -1381,7 +1381,7 @@ const til::point UiaTextRangeBase::_getDocumentEnd() const
 // - coords - vector to add the calculated coords to
 // Return Value:
 // - <none>
-void UiaTextRangeBase::_getBoundingRect(const til::rect textRect, _Inout_ std::vector<double>& coords) const
+void UiaTextRangeBase::_getBoundingRect(const til::rect& textRect, _Inout_ std::vector<double>& coords) const
 {
     const til::size currentFontSize{ _getScreenFontSize() };
 

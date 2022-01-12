@@ -30,6 +30,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool operator==(const size rhs) const noexcept
         {
+            // `__builtin_memcmp` isn't an official standard, but it's the
+            // only way at the time of writing to get a constexpr `memcmp`.
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
         }
 

@@ -385,7 +385,7 @@ void IslandWindow::_OnGetMinMaxInfo(const WPARAM /*wParam*/, const LPARAM lParam
 
     auto lpMinMaxInfo = reinterpret_cast<LPMINMAXINFO>(lParam);
     lpMinMaxInfo->ptMinTrackSize.x = _calculateTotalSize(true, minimumWidth * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cx);
-    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpix / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cy);
+    lpMinMaxInfo->ptMinTrackSize.y = _calculateTotalSize(false, minimumHeight * dpiy / USER_DEFAULT_SCREEN_DPI, nonClientSizeScaled.cy);
 }
 
 // Method Description:

@@ -144,7 +144,7 @@ namespace winrt::Microsoft::Terminal::Control::implementation
         // Get the cursor position in text buffer position
         auto cursorArgs = winrt::make_self<CursorPositionEventArgs>();
         _CurrentCursorPositionHandlers(*this, *cursorArgs);
-        const til::point cursorPos{ gsl::narrow_cast<til::CoordType>(cursorArgs->CurrentPosition().X), gsl::narrow_cast<til::CoordType>(cursorArgs->CurrentPosition().Y) };
+        const til::point cursorPos{ til::math::flooring, cursorArgs->CurrentPosition() };
 
         const double actualCanvasWidth{ Canvas().ActualWidth() };
         const double actualTextBlockHeight{ TextBlock().ActualHeight() };

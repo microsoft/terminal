@@ -53,6 +53,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
             constexpr bool operator==(const _rectangle_const_iterator& rhs) const noexcept
             {
+                // `__builtin_memcmp` isn't an official standard, but it's the
+                // only way at the time of writing to get a constexpr `memcmp`.
                 return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
             }
 
@@ -134,6 +136,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool operator==(const rect& rhs) const noexcept
         {
+            // `__builtin_memcmp` isn't an official standard, but it's the
+            // only way at the time of writing to get a constexpr `memcmp`.
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
         }
 
@@ -822,7 +826,7 @@ namespace WEX::TestExecution
     class VerifyOutputTraits<til::rect>
     {
     public:
-        static WEX::Common::NoThrowString ToString(const til::rect rect)
+        static WEX::Common::NoThrowString ToString(const til::rect& rect)
         {
             return WEX::Common::NoThrowString(rect.to_string().c_str());
         }
@@ -832,21 +836,21 @@ namespace WEX::TestExecution
     class VerifyCompareTraits<til::rect, til::rect>
     {
     public:
-        static bool AreEqual(const til::rect expected, const til::rect actual) noexcept
+        static bool AreEqual(const til::rect& expected, const til::rect& actual) noexcept
         {
             return expected == actual;
         }
 
-        static bool AreSame(const til::rect expected, const til::rect actual) noexcept
+        static bool AreSame(const til::rect& expected, const til::rect& actual) noexcept
         {
             return &expected == &actual;
         }
 
-        static bool IsLessThan(const til::rect expectedLess, const til::rect expectedGreater) = delete;
+        static bool IsLessThan(const til::rect& expectedLess, const til::rect& expectedGreater) = delete;
 
-        static bool IsGreaterThan(const til::rect expectedGreater, const til::rect expectedLess) = delete;
+        static bool IsGreaterThan(const til::rect& expectedGreater, const til::rect& expectedLess) = delete;
 
-        static bool IsNull(const til::rect object) noexcept
+        static bool IsNull(const til::rect& object) noexcept
         {
             return object == til::rect{};
         }

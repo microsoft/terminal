@@ -44,6 +44,8 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr bool operator==(const point rhs) const noexcept
         {
+            // `__builtin_memcmp` isn't an official standard, but it's the
+            // only way at the time of writing to get a constexpr `memcmp`.
             return __builtin_memcmp(this, &rhs, sizeof(rhs)) == 0;
         }
 
@@ -166,7 +168,7 @@ namespace til // Terminal Implementation Library. Also: "Today I Learned"
 
         constexpr COORD to_win32_coord() const
         {
-            return { gsl::narrow<short>(x), gsl::narrow<short>(y) };
+            return { narrow_x<short>(), narrow_y<short>() };
         }
 #endif
 

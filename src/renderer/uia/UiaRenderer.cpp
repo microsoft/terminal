@@ -444,7 +444,7 @@ void UiaEngine::WaitUntilCanRender() noexcept
 {
     // Magic static is only valid because any instance of this object has the same behavior.
     // Use member variable instead if this ever changes.
-    const static til::rect empty;
+    static constexpr til::rect empty;
     area = { &empty, 1 };
     return S_OK;
 }
