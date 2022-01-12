@@ -128,7 +128,7 @@
                                   Style="{StaticResource ToggleSwitchInExpanderStyle}" />
                 </local:SettingContainer>
 
-                <!-- VtPassthrough -->
+                <!--  VtPassthrough  -->
                 <local:SettingContainer x:Uid="Profile_VtPassthrough"
                                         ClearSettingValue="{x:Bind Profile.ClearVtPassthrough}"
                                         HasSettingValue="{x:Bind Profile.HasVtPassthrough, Mode=OneWay}"
