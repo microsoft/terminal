@@ -37,7 +37,7 @@ int __stdcall wWinMain(HINSTANCE, HINSTANCE, LPWSTR pCmdLine, int)
 
     // Go!
 
-    // disable warnings from SHELLEXECUTEINFO struct. We can't fix that.
+    // disable warnings from SHELLEXECUTEINFOW struct. We can't fix that.
 #pragma warning(push)
 #pragma warning(disable : 26476) // Macro uses naked union over variant.
     SHELLEXECUTEINFOW seInfo{ 0 };
