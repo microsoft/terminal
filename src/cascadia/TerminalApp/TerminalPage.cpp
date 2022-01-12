@@ -302,6 +302,31 @@ namespace winrt::TerminalApp::implementation
                settings.GlobalSettings().FirstWindowPreference() == FirstWindowPreference::PersistedWindowLayout;
     }
 
+    bool TerminalPage::ShouldActuallySpawnPersistedLayouts() const
+    {
+        if (!_startupActions || IsElevated())
+        {
+            // there arent startup actions, or we're elevated. In that case, go for it.
+            return true;
+        }
+
+        // Check that there's at least one action that's not just an elevated newTab action.
+        for (const auto& action : _startupActions)
+        {
+            if (action.Action() == ShortcutAction::NewTab)
+            {
+                const auto& args{ action.Args().try_as<NewTabArgs>() };
+                if (args && args.TerminalArgs().Elevate())
+                {
+                    continue;
+                }
+            }
+
+            return true;
+        }
+        return false;
+    }
+
     // Method Description;
     // - Checks if the current window is configured to load a particular layout
     // Arguments:

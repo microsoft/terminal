@@ -1472,6 +1472,11 @@ namespace winrt::TerminalApp::implementation
         return _root != nullptr ? _root->ShouldUsePersistedLayout(_settings) : false;
     }
 
+    bool AppLogic::ShouldActuallySpawnPersistedLayouts()
+    {
+        return _root != nullptr ? _root->ShouldActuallySpawnPersistedLayouts() : false;
+    }
+
     void AppLogic::SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts)
     {
         std::vector<WindowLayout> converted;
