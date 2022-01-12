@@ -345,7 +345,13 @@ Model::Profile CascadiaSettings::DuplicateProfile(const Model::Profile& source)
         duplicated->UnfocusedAppearance(*unfocusedAppearance);
     }
 
-    if (source.HasConnectionType())
+    // GH#12120: Check if the connection type isn't just the default value. If
+    // it is, then we should copy it. The only case this applies right now is
+    // for the Azure Cloud Shell, which is the only thing that has a non-{}
+    // guid. The user's version of this profile won't have connectionType set,
+    // because it inherits the setting from the parent. If we fail to copy it
+    // here, they won't actually get a Azure shell profile.
+    if (source.ConnectionType() != winrt::guid{})
     {
         duplicated->ConnectionType(source.ConnectionType());
     }
