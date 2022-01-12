@@ -977,3 +977,20 @@ void CascadiaSettings::_resolveDefaultProfile() const
     // Use the first profile as the new default.
     GlobalSettings().DefaultProfile(_allProfiles.GetAt(0).Guid());
 }
+
+void CascadiaSettings::_validateCorrectDefaultShellPaths() const
+{
+    for (auto profile : _allProfiles)
+    {
+        if (profile.Guid() == DEFAULT_COMMAND_PROMPT_GUID &&
+            profile.Commandline() == L"cmd.exe")
+        {
+            profile.ClearCommandline();
+        }
+        else if (profile.Guid() == DEFAULT_WINDOWS_POWERSHELL_GUID &&
+                 profile.Commandline() == L"powershell.exe")
+        {
+            profile.ClearCommandline();
+        }
+    }
+}
