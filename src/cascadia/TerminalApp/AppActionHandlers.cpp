@@ -906,6 +906,27 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleExportBuffer(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            if (args)
+            {
+                if (const auto& realArgs = args.ActionArgs().try_as<ExportBufferArgs>())
+                {
+                    _ExportTab(*activeTab, realArgs.Path());
+                    args.Handled(true);
+                    return;
+                }
+            }
+
+            // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
+            _ExportTab(*activeTab, L"");
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {

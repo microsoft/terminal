@@ -393,6 +393,7 @@
         { "command": "scrollToTop", "keys": "ctrl+shift+home" },
         { "command": "scrollToBottom", "keys": "ctrl+shift+end" },
         { "command": { "action": "clearBuffer", "clear": "all" } },
+        { "command": "exportBuffer" },
 
         // Visual Adjustments
         { "command": { "action": "adjustFontSize", "delta": 1 }, "keys": "ctrl+plus" },

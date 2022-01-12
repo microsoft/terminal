@@ -194,7 +194,9 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                page->_ExportTab(*tab);
+                // Passing null args to the ExportBuffer handler will default it
+                // to prompting for the path
+                page->_HandleExportBuffer(nullptr, nullptr);
             }
         });
 
@@ -359,7 +361,7 @@ namespace winrt::TerminalApp::implementation
     // - Exports the content of the Terminal Buffer inside the tab
     // Arguments:
     // - tab: tab to export
-    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab)
+    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -376,25 +378,38 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control{ tab.GetActiveTerminalControl() })
             {
-                // GH#11356 - we can't use the UWP apis for writing the file,
-                // because they don't work elevated (shocker) So just use the
-                // shell32 file picker manually.
-                auto path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
-                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
-                    try
-                    {
-                        // Default to the Downloads folder
-                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
-                        dialog->SetDefaultFolder(folderShellItem.get());
-                    }
-                    CATCH_LOG(); // non-fatal
-                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
-                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
-                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+                auto path = filepath;
 
-                    // Default to using the tab title as the file name
-                    THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
-                });
+                if (path.empty())
+                {
+                    // GH#11356 - we can't use the UWP apis for writing the file,
+                    // because they don't work elevated (shocker) So just use the
+                    // shell32 file picker manually.
+                    path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
+                        THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                        try
+                        {
+                            // Default to the Downloads folder
+                            auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                            dialog->SetDefaultFolder(folderShellItem.get());
+                        }
+                        CATCH_LOG(); // non-fatal
+                        THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                        THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                        THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+
+                        // Default to using the tab title as the file name
+                        THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
+                    });
+                }
+                else
+                {
+                    // The file picker isn't going to give us paths with
+                    // environment variables, but the user might have set one in
+                    // the settings. Expand those here.
+
+                    path = { wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+                }
 
                 if (!path.empty())
                 {

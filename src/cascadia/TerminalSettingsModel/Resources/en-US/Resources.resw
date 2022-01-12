@@ -473,6 +473,13 @@
     <value>Focus pane {0}</value>
     <comment>{0} will be replaced with a user-specified number</comment>
   </data>
+  <data name="ExportBufferToPathCommandKey" xml:space="preserve">
+    <value>Export text to {0}</value>
+    <comment>{0} will be replaced with a user-specified file path</comment>
+  </data>
+  <data name="ExportBufferCommandKey" xml:space="preserve">
+    <value>Export text</value>
+  </data>
   <data name="ClearAllCommandKey" xml:space="preserve">
     <value>Clear buffer</value>
     <comment>A command to clear the entirety of the Terminal output buffer</comment>
