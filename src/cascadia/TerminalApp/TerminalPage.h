@@ -64,6 +64,7 @@ namespace winrt::TerminalApp::implementation
         void Create();
 
         bool ShouldUsePersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
+        bool ShouldActuallySpawnPersistedLayouts() const;
         std::optional<uint32_t> LoadPersistedLayoutIdx(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         winrt::Microsoft::Terminal::Settings::Model::WindowLayout LoadPersistedLayout(Microsoft::Terminal::Settings::Model::CascadiaSettings& settings) const;
         Microsoft::Terminal::Settings::Model::WindowLayout GetWindowLayout();

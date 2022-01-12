@@ -81,6 +81,7 @@ namespace winrt::TerminalApp::implementation
         bool AlwaysOnTop() const;
 
         bool ShouldUsePersistedLayout();
+        bool ShouldActuallySpawnPersistedLayouts();
         hstring GetWindowLayoutJson(Microsoft::Terminal::Settings::Model::LaunchPosition position);
         void SaveWindowLayoutJsons(const Windows::Foundation::Collections::IVector<hstring>& layouts);
         void IdentifyWindow();
