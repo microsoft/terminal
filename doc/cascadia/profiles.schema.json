@@ -1286,7 +1286,7 @@
             },
             "opacity": {
               "type": "boolean",
-              "default": false,
+              "default": true,
               "description": "If true, then adjust the current opacity by the given `opacity` parameter. If false, set the opacity to exactly that value."
             }
           }
