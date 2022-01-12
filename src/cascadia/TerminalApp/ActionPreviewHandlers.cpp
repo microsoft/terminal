@@ -59,8 +59,8 @@ namespace winrt::TerminalApp::implementation
     }
 
     // Method Description:
-    // - Revert any changes from the preview on a previewable action. This
-    //   will run the restore function that the preview added to _restorePreviewFuncs
+    // - Revert any changes from the preview action. This will run the restore
+    //   function that the preview added to _restorePreviewFuncs
     // Arguments:
     // - <none>
     // Return Value:
