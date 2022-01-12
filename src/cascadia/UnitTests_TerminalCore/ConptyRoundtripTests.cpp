@@ -93,6 +93,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
         // Set up some sane defaults
         auto& g = ServiceLocator::LocateGlobals();
+        g.api = new ApiRoutines();
         auto& gci = g.getConsoleInformation();
 
         gci.SetColorTableEntry(TextColor::DEFAULT_FOREGROUND, INVALID_COLOR);
@@ -155,6 +156,7 @@ class TerminalCoreUnitTests::ConptyRoundtripTests final
 
         auto& g = ServiceLocator::LocateGlobals();
         delete g.pRender;
+        delete g.api;
 
         VERIFY_ARE_EQUAL(0u, expectedOutput.size(), L"Tests should drain all the output they push into the expected output buffer.");
 
