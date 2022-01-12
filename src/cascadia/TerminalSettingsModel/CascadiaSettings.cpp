@@ -569,24 +569,16 @@ Model::Profile CascadiaSettings::GetProfileForArgs(const Model::NewTerminalArgs&
         }
     }
 
-    if constexpr (Feature_ShowProfileDefaultsInSettings::IsEnabled())
-    {
-        // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
-        // what we do is dependent on whether there was a commandline.
-        // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
-        // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
-        //   launch in the user's actual default profile.
-        // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
-        // TODO GH#10952: Detect the profile based on the commandline (add matching support)
-        return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
-                   FindProfile(GlobalSettings().DefaultProfile()) :
-                   ProfileDefaults();
-    }
-    else
-    {
-        // For compatibility with the stable version's behavior, return the default by GUID in all other cases.
-        return FindProfile(GlobalSettings().DefaultProfile());
-    }
+    // If the user has access to the "Defaults" profile, and no profile was otherwise specified,
+    // what we do is dependent on whether there was a commandline.
+    // If there was a commandline (case 1), we we'll launch in the "Defaults" profile.
+    // If there wasn't a commandline or there wasn't a NewTerminalArgs (case 2), we'll
+    //   launch in the user's actual default profile.
+    // Case 2 above could be the result of a "nt" or "sp" invocation that doesn't specify anything.
+    // TODO GH#10952: Detect the profile based on the commandline (add matching support)
+    return (!newTerminalArgs || newTerminalArgs.Commandline().empty()) ?
+               FindProfile(GlobalSettings().DefaultProfile()) :
+               ProfileDefaults();
 }
 
 // The method does some crude command line matching for our console hand-off support.

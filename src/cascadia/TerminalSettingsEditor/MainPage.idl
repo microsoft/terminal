@@ -23,7 +23,5 @@ namespace Microsoft.Terminal.Settings.Editor
         // Due to the aforementioned bug, we can't use IInitializeWithWindow _here_ either.
         // Let's just smuggle the HWND in as a UInt64 :|
         void SetHostingWindow(UInt64 window);
-
-        Boolean ShowBaseLayerMenuItem { get; };
     }
 }
