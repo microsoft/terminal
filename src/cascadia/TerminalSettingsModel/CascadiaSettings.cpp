@@ -409,6 +409,7 @@ winrt::com_ptr<Profile> CascadiaSettings::_createNewProfile(const std::wstring_v
 // - <none>
 void CascadiaSettings::_validateSettings()
 {
+    _validateCorrectDefaultShellPaths();
     _validateAllSchemesExist();
     _validateMediaResources();
     _validateKeybindings();
