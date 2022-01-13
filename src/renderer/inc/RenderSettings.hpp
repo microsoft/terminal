@@ -46,7 +46,7 @@ namespace Microsoft::Console::Render
     private:
         til::enumset<Mode> _renderMode{ Mode::BlinkAllowed, Mode::IntenseIsBright };
         std::array<COLORREF, TextColor::TABLE_SIZE> _colorTable;
-        std::array<size_t, 2> _colorAliasIndices;
+        std::array<size_t, static_cast<size_t>(ColorAlias::ENUM_COUNT)> _colorAliasIndices;
         std::array<std::array<COLORREF, 18>, 18> _adjustedForegroundColors;
         size_t _blinkCycle = 0;
         mutable bool _blinkIsInUse = false;

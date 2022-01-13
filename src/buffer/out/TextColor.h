@@ -48,7 +48,8 @@ enum class ColorType : BYTE
 enum class ColorAlias : size_t
 {
     DefaultForeground,
-    DefaultBackground
+    DefaultBackground,
+    ENUM_COUNT // must be the last element in the enum class
 };
 
 struct TextColor
