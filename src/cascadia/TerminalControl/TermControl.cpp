@@ -732,8 +732,16 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             _cursorTimer.emplace(std::move(cursorTimer));
             // As of GH#6586, don't start the cursor timer immediately, and
             // don't show the cursor initially. We'll show the cursor and start
-            // the timer when the control is first focused. cursorTimer.Start();
-            _core.CursorOn(false);
+            // the timer when the control is first focused.
+            //
+            // As of GH#11411, turn on the cursor if we've already been marked
+            // as focused. We suspect that it's possible for the Focused event
+            // to fire before the LayoutUpdated. In that case, the
+            // _GotFocusHandler would mark us _focused, but find that a
+            // _cursorTimer doesn't exist, and it would never turn on the
+            // cursor. To mitigate, we'll initialize the cursor's 'on' state
+            // with `_focused` here.
+            _core.CursorOn(_focused);
         }
         else
         {
@@ -1993,7 +2001,6 @@ namespace winrt::Microsoft::Terminal::Control::implementation
             const winrt::Windows::Foundation::Size minSize{ 1, 1 };
             const double scaleFactor = DisplayInformation::GetForCurrentView().RawPixelsPerViewPixel();
             const auto dpi = ::base::saturated_cast<uint32_t>(USER_DEFAULT_SCREEN_DPI * scaleFactor);
-
             return GetProposedDimensions(_core.Settings(), dpi, minSize);
         }
     }
@@ -2699,5 +2706,19 @@ namespace winrt::Microsoft::Terminal::Control::implementation
     void TermControl::ColorScheme(const Core::Scheme& scheme) const noexcept
     {
         _core.ColorScheme(scheme);
+    }
+
+    void TermControl::AdjustOpacity(const int32_t& opacity, const bool& relative)
+    {
+        _core.AdjustOpacity(opacity, relative);
+    }
+
+    // - You'd think this should just be "Opacity", but UIElement already
+    //   defines an "Opacity", which we're actually not setting at all. We're
+    //   not overriding or changing _that_ value. Callers that want the opacity
+    //   set by the settings should call this instead.
+    double TermControl::BackgroundOpacity() const
+    {
+        return _core.Opacity();
     }
 }

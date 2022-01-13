@@ -75,6 +75,22 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleRestoreLastClosed(const IInspectable& /*sender*/,
+                                                const ActionEventArgs& args)
+    {
+        if (_previouslyClosedPanesAndTabs.size() > 0)
+        {
+            const auto restoreActions = _previouslyClosedPanesAndTabs.back();
+            for (const auto& action : restoreActions)
+            {
+                _actionDispatch->DoAction(action);
+            }
+            _previouslyClosedPanesAndTabs.pop_back();
+
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleCloseWindow(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
@@ -415,11 +431,41 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleSetFocusMode(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFocusModeArgs>())
+        {
+            SetFocusMode(realArgs.IsFocusMode());
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleToggleFullscreen(const IInspectable& /*sender*/,
                                                const ActionEventArgs& args)
     {
         ToggleFullscreen();
         args.Handled(true);
+    }
+
+    void TerminalPage::_HandleSetFullScreen(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetFullScreenArgs>())
+        {
+            SetFullscreen(realArgs.IsFullScreen());
+            args.Handled(true);
+        }
+    }
+
+    void TerminalPage::_HandleSetMaximized(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto& realArgs = args.ActionArgs().try_as<SetMaximizedArgs>())
+        {
+            RequestSetMaximized(realArgs.IsMaximized());
+            args.Handled(true);
+        }
     }
 
     void TerminalPage::_HandleToggleAlwaysOnTop(const IInspectable& /*sender*/,
@@ -860,6 +906,27 @@ namespace winrt::TerminalApp::implementation
         args.Handled(true);
     }
 
+    void TerminalPage::_HandleExportBuffer(const IInspectable& /*sender*/,
+                                           const ActionEventArgs& args)
+    {
+        if (const auto activeTab{ _GetFocusedTabImpl() })
+        {
+            if (args)
+            {
+                if (const auto& realArgs = args.ActionArgs().try_as<ExportBufferArgs>())
+                {
+                    _ExportTab(*activeTab, realArgs.Path());
+                    args.Handled(true);
+                    return;
+                }
+            }
+
+            // If we didn't have args, or the args weren't ExportBufferArgs (somehow)
+            _ExportTab(*activeTab, L"");
+            args.Handled(true);
+        }
+    }
+
     void TerminalPage::_HandleClearBuffer(const IInspectable& /*sender*/,
                                           const ActionEventArgs& args)
     {
@@ -888,6 +955,21 @@ namespace winrt::TerminalApp::implementation
                 }
 
                 args.Handled(true);
+            }
+        }
+    }
+
+    void TerminalPage::_HandleAdjustOpacity(const IInspectable& /*sender*/,
+                                            const ActionEventArgs& args)
+    {
+        if (args)
+        {
+            if (const auto& realArgs = args.ActionArgs().try_as<AdjustOpacityArgs>())
+            {
+                const auto res = _ApplyToActiveControls([&](auto& control) {
+                    control.AdjustOpacity(realArgs.Opacity(), realArgs.Relative());
+                });
+                args.Handled(res);
             }
         }
     }

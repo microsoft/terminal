@@ -4,11 +4,11 @@
 //
 
 using System;
-using System.Linq;
-using System.Text;
-using System.Runtime.InteropServices;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
 using static ColorTool.ConsoleAPI;
 
 namespace ColorTool.SchemeParsers
@@ -56,6 +56,7 @@ namespace ColorTool.SchemeParsers
             uint? backgroundColor = null;
             uint? popupForegroundColor = null;
             uint? popupBackgroundColor = null;
+            uint? cursorColor = null;
 
             for (int i = 0; i < ColorTableSize; i++)
             {
@@ -85,7 +86,7 @@ namespace ColorTool.SchemeParsers
                         colorTable[i] = ParseColor(tableStrings[i]);
                     }
 
-                    if (ReadAttributes("popup", out var foreground, out var background))
+                    if (ReadAttributes("popup", out var foreground, out var background, out var cursor))
                     {
                         var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
                         var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
@@ -96,14 +97,29 @@ namespace ColorTool.SchemeParsers
                         }
                     }
 
-                    if (ReadAttributes("screen", out foreground, out background))
+                    if (ReadAttributes("screen", out foreground, out background, out cursor))
                     {
                         var foregroundIndex = (ColorNames as IList<string>).IndexOf(foreground);
                         var backgroundIndex = (ColorNames as IList<string>).IndexOf(background);
-                        if (foregroundIndex != -1 && backgroundIndex != -1)
+                        if (foregroundIndex != -1)
                         {
                             foregroundColor = colorTable[foregroundIndex];
+                        }
+                        else
+                        {
+                            foregroundColor = ParseColor(foreground);
+                        }
+                        if (backgroundIndex != -1)
+                        {
                             backgroundColor = colorTable[backgroundIndex];
+                        }
+                        else
+                        {
+                            backgroundColor = ParseColor(background);
+                        }
+                        if (cursor.Length > 1)
+                        {
+                            cursorColor = ParseColor(cursor);
                         }
                     }
                 }
@@ -120,7 +136,7 @@ namespace ColorTool.SchemeParsers
 
             if (colorTable != null)
             {
-                var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor);
+                var consoleAttributes = new ConsoleAttributes(backgroundColor, foregroundColor, popupBackgroundColor, popupForegroundColor, cursorColor);
                 return new ColorScheme(ExtractSchemeName(schemeName), colorTable, consoleAttributes);
             }
             else
@@ -128,23 +144,28 @@ namespace ColorTool.SchemeParsers
                 return null;
             }
 
-            bool ReadAttributes(string section, out string foreground, out string background)
+            bool ReadAttributes(string section, out string foreground, out string background, out string cursor)
             {
                 foreground = null;
                 background = null;
+                cursor = null;
 
                 StringBuilder buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "FOREGROUND", null, buffer, 512, filename);
                 foreground = buffer.ToString();
-                if (!ColorNames.Contains(foreground))
+                if (foreground.Length <= 1)
                     return false;
 
 
                 buffer = new StringBuilder(512);
                 GetPrivateProfileString(section, "BACKGROUND", null, buffer, 512, filename);
                 background = buffer.ToString();
-                if (!ColorNames.Contains(background))
+                if (background.Length <= 1)
                     return false;
+
+                buffer = new StringBuilder(512);
+                GetPrivateProfileString(section, "CURSOR", null, buffer, 512, filename);
+                cursor = buffer.ToString();
 
                 return true;
             }

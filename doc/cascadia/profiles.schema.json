@@ -281,6 +281,7 @@
     "ShortcutActionName": {
       "enum": [
         "adjustFontSize",
+        "clearBuffer",
         "closeOtherTabs",
         "closePane",
         "closeTab",
@@ -289,6 +290,7 @@
         "commandPalette",
         "copy",
         "duplicateTab",
+        "exportBuffer",
         "find",
         "findMatch",
         "focusPane",
@@ -330,13 +332,18 @@
         "tabSearch",
         "toggleAlwaysOnTop",
         "toggleFocusMode",
+        "setFocusMode",
         "toggleFullscreen",
+        "setFullScreen",
+        "setMaximized",
         "togglePaneZoom",
         "toggleSplitOrientation",
         "toggleReadOnlyMode",
         "toggleShaderEffects",
         "wt",
         "quit",
+        "adjustOpacity",
+        "restoreLastClosed",
         "unbound"
       ],
       "type": "string"
@@ -430,6 +437,14 @@
       ],
       "type": "string"
     },
+    "ClearBufferType": {
+      "enum": [
+        "all",
+        "screen",
+        "scrollback"
+      ],
+      "type": "string"
+    },
     "NewTerminalArgs": {
       "properties": {
         "commandline": {
@@ -465,7 +480,12 @@
         "colorScheme": {
           "description": "The name of a color scheme to use, instead of the one specified by the profile",
           "type": "string"
-        }
+        },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "This will override the profile's `elevate` setting."
+        },
       },
       "type": "object"
     },
@@ -822,6 +842,66 @@
       "required": [
         "colorScheme"
       ]
+    },
+    "SetFocusModeAction": {
+      "description": "Arguments for a setFocusMode action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFocusMode"
+            },
+            "isFocusMode": {
+              "type": "boolean",
+              "description": "whether focus mode is enabled"
+            }
+          }
+        }
+      ],
+    },
+    "SetFullScreenAction": {
+      "description": "Arguments for a setFullScreen action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setFullScreen"
+            },
+            "isFullScreen": {
+              "type": "boolean",
+              "description": "whether the window should be full screen"
+            }
+          }
+        }
+      ],
+    },
+    "SetMaximizedAction": {
+      "description": "Arguments for a setMaximized action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "setMaximized"
+            },
+            "isMaximized": {
+              "type": "boolean",
+              "description": "whether the window should be maximized"
+            }
+          }
+        }
+      ],
     },
     "WtAction": {
       "description": "Arguments corresponding to a wt Action",
@@ -1197,6 +1277,48 @@
         }
       ]
     },
+    "ClearBufferAction": {
+      "description": "Arguments corresponding to a clearBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "clearBuffer"
+            },
+            "clear": {
+              "$ref": "#/$defs/ClearBufferType",
+              "default": "all",
+              "description": "What to clear. Accepts one of `screen`, `scrollback` or `all` (for both)."
+            }
+          }
+        }
+      ]
+    },
+    "ExportBufferAction": {
+      "description": "Arguments corresponding to a exportBuffer Action",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "exportBuffer"
+            },
+            "path": {
+              "type": "string",
+              "default": "",
+              "description": "The path to export the text buffer to. If left blank, the Terminal will open a file picker to choose the path."
+            }
+          }
+        }
+      ]
+    },
     "GlobalSummonAction": {
       "description": "This is a special action that works globally in the OS, rather than only in the context of the terminal window. When pressed, this action will summon the terminal window.",
       "allOf": [
@@ -1259,6 +1381,34 @@
             "action": {
               "type": "string",
               "const": "quakeMode"
+            }
+          }
+        }
+      ]
+    },
+    "AdjustOpacityAction": {
+      "description": "Changes the opacity of the active Terminal window. If `relative` is specified, then this action will increase/decrease relative to the current opacity.",
+      "allOf": [
+        {
+          "$ref": "#/$defs/ShortcutAction"
+        },
+        {
+          "properties": {
+            "action": {
+              "type": "string",
+              "const": "adjustOpacity"
+            },
+            "opacity": {
+              "type": "integer",
+              "minimum": -100,
+              "maximum": 100,
+              "default": 0,
+              "description": "How opaque the terminal should become or how much the opacity should be changed by, depending on the value of `relative`"
+            },
+            "relative": {
+              "type": "boolean",
+              "default": true,
+              "description": "If true, then adjust the current opacity by the given `opacity` parameter, additively. If false, set the opacity to exactly that value."
             }
           }
         }
@@ -1361,10 +1511,19 @@
               "$ref": "#/$defs/FocusPaneAction"
             },
             {
+              "$ref": "#/$defs/ExportBufferAction"
+            },
+            {
+              "$ref": "#/$defs/ClearBufferAction"
+            },
+            {
               "$ref": "#/$defs/GlobalSummonAction"
             },
             {
               "$ref": "#/$defs/QuakeModeAction"
+            },
+            {
+              "$ref": "#/$defs/AdjustOpacityAction"
             },
             {
               "type": "null"
@@ -1886,6 +2045,11 @@
             "vintage"
           ],
           "type": "string"
+        },
+        "elevate": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, this profile should always open in an elevated context. If the window isn't running as an Administrator, then a new elevated window will be created."
         },
         "experimental.retroTerminalEffect": {
           "description": "When set to true, enable retro terminal effects. This is an experimental feature, and its continued existence is not guaranteed.",

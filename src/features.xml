@@ -65,13 +65,6 @@
     </feature>
 
     <feature>
-        <name>Feature_ShowProfileDefaultsInSettings</name>
-        <description>Whether to show the "defaults" page in the Terminal settings UI</description>
-        <id>10430</id>
-        <stage>AlwaysEnabled</stage>
-    </feature>
-
-    <feature>
         <name>Feature_PersistedWindowLayout</name>
         <description>Whether to allow the user to enable persisted window layout saving and loading</description>
         <id>766</id>

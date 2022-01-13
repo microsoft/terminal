@@ -68,6 +68,17 @@ namespace winrt::TerminalApp::implementation
         const auto profile{ _settings.GetProfileForArgs(newTerminalArgs) };
         const auto settings{ TerminalSettings::CreateWithNewTerminalArgs(_settings, newTerminalArgs, *_bindings) };
 
+        // Try to handle auto-elevation
+        if (_maybeElevate(newTerminalArgs, settings, profile))
+        {
+            return S_OK;
+        }
+        // We can't go in the other direction (elevated->unelevated)
+        // unfortunately. This seems to be due to Centennial quirks. It works
+        // unpackaged, but not packaged.
+        //
+        // This call to _MakePane won't return nullptr, we already checked that
+        // case above with the _maybeElevate call.
         _CreateNewTabFromPane(_MakePane(newTerminalArgs, false, existingConnection));
 
         const uint32_t tabCount = _tabs.Size();
@@ -183,7 +194,9 @@ namespace winrt::TerminalApp::implementation
 
             if (page && tab)
             {
-                page->_ExportTab(*tab);
+                // Passing null args to the ExportBuffer handler will default it
+                // to prompting for the path
+                page->_HandleExportBuffer(nullptr, nullptr);
             }
         });
 
@@ -240,8 +253,11 @@ namespace winrt::TerminalApp::implementation
     // - pane: The pane to use as the root.
     void TerminalPage::_CreateNewTabFromPane(std::shared_ptr<Pane> pane)
     {
-        auto newTabImpl = winrt::make_self<TerminalTab>(pane);
-        _InitializeTab(newTabImpl);
+        if (pane)
+        {
+            auto newTabImpl = winrt::make_self<TerminalTab>(pane);
+            _InitializeTab(newTabImpl);
+        }
     }
 
     // Method Description:
@@ -345,7 +361,7 @@ namespace winrt::TerminalApp::implementation
     // - Exports the content of the Terminal Buffer inside the tab
     // Arguments:
     // - tab: tab to export
-    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab)
+    winrt::fire_and_forget TerminalPage::_ExportTab(const TerminalTab& tab, winrt::hstring filepath)
     {
         // This will be used to set up the file picker "filter", to select .txt
         // files by default.
@@ -362,25 +378,38 @@ namespace winrt::TerminalApp::implementation
         {
             if (const auto control{ tab.GetActiveTerminalControl() })
             {
-                // GH#11356 - we can't use the UWP apis for writing the file,
-                // because they don't work elevated (shocker) So just use the
-                // shell32 file picker manually.
-                auto path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
-                    THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
-                    try
-                    {
-                        // Default to the Downloads folder
-                        auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
-                        dialog->SetDefaultFolder(folderShellItem.get());
-                    }
-                    CATCH_LOG(); // non-fatal
-                    THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
-                    THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
-                    THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+                auto path = filepath;
 
-                    // Default to using the tab title as the file name
-                    THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
-                });
+                if (path.empty())
+                {
+                    // GH#11356 - we can't use the UWP apis for writing the file,
+                    // because they don't work elevated (shocker) So just use the
+                    // shell32 file picker manually.
+                    path = co_await SaveFilePicker(*_hostingHwnd, [control](auto&& dialog) {
+                        THROW_IF_FAILED(dialog->SetClientGuid(clientGuidExportFile));
+                        try
+                        {
+                            // Default to the Downloads folder
+                            auto folderShellItem{ winrt::capture<IShellItem>(&SHGetKnownFolderItem, FOLDERID_Downloads, KF_FLAG_DEFAULT, nullptr) };
+                            dialog->SetDefaultFolder(folderShellItem.get());
+                        }
+                        CATCH_LOG(); // non-fatal
+                        THROW_IF_FAILED(dialog->SetFileTypes(ARRAYSIZE(supportedFileTypes), supportedFileTypes));
+                        THROW_IF_FAILED(dialog->SetFileTypeIndex(1)); // the array is 1-indexed
+                        THROW_IF_FAILED(dialog->SetDefaultExtension(L"txt"));
+
+                        // Default to using the tab title as the file name
+                        THROW_IF_FAILED(dialog->SetFileName((control.Title() + L".txt").c_str()));
+                    });
+                }
+                else
+                {
+                    // The file picker isn't going to give us paths with
+                    // environment variables, but the user might have set one in
+                    // the settings. Expand those here.
+
+                    path = { wil::ExpandEnvironmentStringsW<std::wstring>(path.c_str()) };
+                }
 
                 if (!path.empty())
                 {
@@ -390,6 +419,26 @@ namespace winrt::TerminalApp::implementation
             }
         }
         CATCH_LOG();
+    }
+
+    // Method Description:
+    // - Record the configuration information of the last closed thing .
+    // - Will occasionally prune the list so it doesn't grow infinitely.
+    // Arguments:
+    // - args: the list of actions to take to remake the pane/tab
+    void TerminalPage::_AddPreviouslyClosedPaneOrTab(std::vector<ActionAndArgs>&& args)
+    {
+        // Just make sure we don't get infinitely large, but still
+        // maintain a large replay buffer.
+        if (const auto size = _previouslyClosedPanesAndTabs.size(); size > 150)
+        {
+            const auto it = _previouslyClosedPanesAndTabs.begin();
+            // delete 50 at a time so that we don't have to do an erase
+            // of the buffer every time when at capacity.
+            _previouslyClosedPanesAndTabs.erase(it, it + (size - 100));
+        }
+
+        _previouslyClosedPanesAndTabs.emplace_back(args);
     }
 
     // Method Description:
@@ -408,6 +457,11 @@ namespace winrt::TerminalApp::implementation
                 co_return;
             }
         }
+
+        auto t = winrt::get_self<implementation::TabBase>(tab);
+        auto actions = t->BuildStartupActions();
+        _AddPreviouslyClosedPaneOrTab(std::move(actions));
+
         _RemoveTab(tab);
     }
 
@@ -708,6 +762,23 @@ namespace winrt::TerminalApp::implementation
                         }
                     });
                 }
+
+                // Build the list of actions to recreate the closed pane,
+                // BuildStartupActions returns the "first" pane and the rest of
+                // its actions are assuming that first pane has been created first.
+                // This doesn't handle refocusing anything in particular, the
+                // result will be that the last pane created is focused. In the
+                // case of a single pane that is the desired behavior anyways.
+                auto state = pane->BuildStartupActions(0, 1);
+                {
+                    ActionAndArgs splitPaneAction{};
+                    splitPaneAction.Action(ShortcutAction::SplitPane);
+                    SplitPaneArgs splitPaneArgs{ SplitDirection::Automatic, state.firstPane->GetTerminalArgsForPane() };
+                    splitPaneAction.Args(splitPaneArgs);
+
+                    state.args.emplace(state.args.begin(), std::move(splitPaneAction));
+                }
+                _AddPreviouslyClosedPaneOrTab(std::move(state.args));
 
                 pane->Close();
             }

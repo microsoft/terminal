@@ -17,6 +17,7 @@ static constexpr std::wstring_view elevatedStateFileName{ L"elevated-state.json"
 static constexpr std::string_view TabLayoutKey{ "tabLayout" };
 static constexpr std::string_view InitialPositionKey{ "initialPosition" };
 static constexpr std::string_view InitialSizeKey{ "initialSize" };
+static constexpr std::string_view LaunchModeKey{ "launchMode" };
 
 namespace Microsoft::Terminal::Settings::Model::JsonUtils
 {
@@ -31,6 +32,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
             GetValueForKey(json, TabLayoutKey, layout->_TabLayout);
             GetValueForKey(json, InitialPositionKey, layout->_InitialPosition);
+            GetValueForKey(json, LaunchModeKey, layout->_LaunchMode);
             GetValueForKey(json, InitialSizeKey, layout->_InitialSize);
 
             return *layout;
@@ -47,6 +49,7 @@ namespace Microsoft::Terminal::Settings::Model::JsonUtils
 
             SetValueForKey(json, TabLayoutKey, val.TabLayout());
             SetValueForKey(json, InitialPositionKey, val.InitialPosition());
+            SetValueForKey(json, LaunchModeKey, val.LaunchMode());
             SetValueForKey(json, InitialSizeKey, val.InitialSize());
 
             return json;
